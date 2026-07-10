@@ -261,11 +261,24 @@ class QtHistogramWidget(QWidget):
         popup vs the inline histogram) re-reads the freshly computed data.
         Only the owning view connects this slot, so reaching here means we
         held the compute.
+
+        ``finished`` fires whether ``compute()`` succeeded, raised (e.g. a
+        remote chunk failed to load), or was superseded by a newer
+        generation — in every case the model clears ``_dirty`` only on a
+        clean result.  So a still-dirty model here means there is nothing
+        new to publish; emitting ``events.counts()`` anyway would re-enter
+        ``_on_model_event`` (still dirty + enabled) and spawn a replacement
+        worker, i.e. retry a persistent failure in a tight loop.  The error
+        itself is already surfaced to the user by the worker's notification
+        mixin (see ``napari._qt.qthreading``), so we simply stop here.
         """
         if self._cleaned_up:
             return
         self._compute_worker = None
         self._histogram._compute_scheduled = False
+
+        if self._histogram._dirty:
+            return
 
         self._histogram.events.counts()
 

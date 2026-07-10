@@ -5,6 +5,7 @@ from napari._qt.qthreading import create_worker
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
+from napari.components.histogram import HistogramModel
 from napari.layers import Image
 from napari.settings import get_settings
 from napari.utils.theme import get_theme
@@ -642,3 +643,68 @@ def test_closing_owning_view_mid_compute_hands_off_to_survivor(qtbot):
         lambda: QThreadPool.globalInstance().activeThreadCount() == 0,
         timeout=10000,
     )
+
+
+# The worker deliberately re-raises the simulated load error into the Qt
+# event loop (superqt's default ``reraise`` slot on ``errored``), which is how
+# napari surfaces it to the user; opt out of pytest-qt's capture-as-failure.
+@pytest.mark.qt_no_exception_capture
+def test_persistent_chunk_load_error_does_not_retry_forever(
+    qtbot, monkeypatch
+):
+    """A persistent chunk-load failure in full mode must not spawn an
+    unbounded stream of retry workers.
+
+    Regression test: when ``compute()`` raises mid-chunk (e.g. a remote zarr
+    read fails), it leaves ``_dirty=True`` because it never reached a clean
+    result.  ``_on_async_compute_done`` used to emit ``events.counts()``
+    unconditionally on ``finished`` (which fires on error too), re-entering
+    ``_on_model_event`` — still dirty + enabled — and spawning a replacement
+    worker that repeated the identical failing I/O forever.  The fix skips
+    the counts re-emit while the model is still dirty; the worker's
+    notification mixin already surfaces the error to the user.
+
+    Each spawned worker reaches exactly one ``_load_chunk`` call before it
+    raises, so the ``_load_chunk`` invocation count is the worker count.
+    """
+    dask = pytest.importorskip('dask.array')
+    data = dask.random.random((200, 200), chunks=(50, 50))
+    layer = Image(data)
+    layer.histogram.mode = 'full'
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    load_calls = {'n': 0}
+
+    def boom(*args, **kwargs):
+        load_calls['n'] += 1
+        raise OSError('simulated remote chunk read failure')
+
+    monkeypatch.setattr(HistogramModel, '_load_chunk', staticmethod(boom))
+
+    # Enabling triggers the shared async compute for chunked full-mode data.
+    layer.histogram.enabled = True
+
+    # Wait for the single worker to run, fail, and release the compute slot.
+    qtbot.waitUntil(
+        lambda: (
+            not layer.histogram._compute_scheduled
+            and widget._compute_worker is None
+        ),
+        timeout=15000,
+    )
+
+    # Give the event loop room to spin: a retry loop would keep spawning
+    # workers (and calling _load_chunk) during this window.
+    qtbot.wait(300)
+
+    # Exactly one worker ran — the persistent failure was not retried.
+    assert load_calls['n'] == 1
+    # The model correctly stayed dirty (no valid result was produced) ...
+    assert layer.histogram._dirty
+    # ... and the compute slot was released, not leaked.
+    assert not layer.histogram._compute_scheduled
+    assert widget._compute_worker is None
+
+    widget.cleanup()
