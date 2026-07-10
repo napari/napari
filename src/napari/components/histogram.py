@@ -87,6 +87,16 @@ class HistogramModel(EventedModel):
     _dirty: bool = PrivateAttr(default=True)
     _computing: bool = PrivateAttr(default=False)
     _compute_generation: int = PrivateAttr(default=0)
+    # Set True (on the main thread) by the first view that starts a
+    # background compute for this model, so the other view sharing the model
+    # (e.g. the inline histogram vs. the contrast-limits popup) does not start
+    # a second, competing worker: two concurrent workers would fight over
+    # ``_computing`` / ``_compute_generation`` (corrupting the progressive
+    # accumulation) and double the remote I/O.  A plain bool keeps Qt out of
+    # this (non-Qt) model — the Qt widget layer owns the actual worker object.
+    # Distinct from ``_computing`` (set inside the worker thread) because
+    # scheduling must be serialized on the main thread before the thread runs.
+    _compute_scheduled: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -125,6 +135,14 @@ class HistogramModel(EventedModel):
 
         self._layer = layer
         self._layer_events_connected = False
+
+        # Render-only broadcast event (psygnal, like every other event here —
+        # no Qt).  The widget layer emits this after each progressive chunk so
+        # that *all* views sharing this model (the inline histogram and the
+        # contrast-limits popup) re-render the partial in lockstep, regardless
+        # of which view owns the compute.  Unlike ``events.counts`` (which
+        # views also use as a recompute trigger), this never restarts compute.
+        self.events.add(partial_computed=Event)
 
         # Connect to our own events (these are internal to the model and
         # don't leak external callbacks on the layer).
