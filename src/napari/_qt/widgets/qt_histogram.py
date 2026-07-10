@@ -194,6 +194,8 @@ class QtHistogramWidget(QWidget):
         is never triggered by model-event handlers (they are disconnected
         during the background compute).
         """
+        if self._cleaned_up:
+            return
         bins, counts = bins_counts
         gamma = self.layer.gamma
         clims = self.layer.contrast_limits
@@ -313,13 +315,20 @@ class QtHistogramWidget(QWidget):
         # chunks, it will exit on the next loop iteration.  If it's
         # mid-chunk (blocking on I/O) the thread pool will terminate
         # it at shutdown — the _cleaned_up guard in
-        # _on_async_compute_done prevents stale callbacks.
+        # _on_async_compute_done and _on_partial_histogram prevents
+        # stale callbacks.
         if self._compute_worker is not None:
             self._compute_worker.finished.disconnect(
                 self._on_async_compute_done
             )
+            self._compute_worker.yielded.disconnect(self._on_partial_histogram)
             self._compute_worker.quit()
             self._compute_worker = None
+            # The old worker's generator holds _computing=True, which
+            # would block future compute() calls via the reentrancy
+            # guard.  Reset it so a new histogram can be created
+            # later without a stuck flag.
+            self._histogram._computing = False
 
         self.histogram_visual.destroy()
         self.canvas.close()
