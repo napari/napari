@@ -381,6 +381,54 @@ class TestRGB:
         assert lum.shape == (20, 20)
         assert lum.dtype == np.float32
 
+    def test_multiscale_dask_rgb_full_mode(self):
+        """Full-mode histogram on multiscale dask RGB must not raise.
+
+        Regression test: ``_sample_rgb_and_luminance`` previously used
+        multi-axis ("nd") fancy indexing, which dask does not support and
+        which raised ``NotImplementedError`` ("Don't yet support nd fancy
+        indexing").  Because ``NotImplementedError`` subclasses
+        ``RuntimeError``, the async worker also swallowed it without firing
+        ``finished``, leaving the progress spinner running.  The coarsest
+        level here has more pixels than ``max_samples`` so the sampling path
+        (the one that used nd fancy indexing) is exercised.
+        """
+        dask = pytest.importorskip('dask.array')
+        levels = [
+            dask.from_array(
+                np.random.randint(0, 256, (h, h, 3), dtype=np.uint8),
+                chunks=(h // 2, h // 2, 3),
+            )
+            for h in (256, 128, 64)
+        ]
+        model = _model(levels, rgb=True, multiscale=True)
+        model.max_samples = (
+            1000  # < coarsest n_pixels (64*64) to force sampling
+        )
+        model.mode = 'full'
+        model.enabled = True
+        counts = model.counts
+        assert len(counts) == 256
+        assert counts.sum() > 0
+
+    def test_sample_rgb_and_luminance_dask(self):
+        """_sample_rgb_and_luminance returns a materialized 1D array for dask.
+
+        Exercises the sampling branch (n_pixels > max_samples) directly on a
+        dask array to guard the single-axis fancy-indexing implementation.
+        """
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.randint(0, 256, (64, 64, 3), dtype=np.uint8),
+            chunks=(32, 32, 3),
+        )
+        model = _model(data, rgb=True)
+        model.max_samples = 500
+        lum = model._sample_rgb_and_luminance(data)
+        assert isinstance(lum, np.ndarray)
+        assert lum.ndim == 1
+        assert lum.size <= 500
+
 
 class TestEvents:
     """Test histogram event emissions."""

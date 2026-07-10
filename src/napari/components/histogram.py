@@ -445,8 +445,11 @@ class HistogramModel(EventedModel):
         pixel_indices = rng.choice(
             n_pixels, size=self.max_samples, replace=False
         )
-        nd_indices = np.unravel_index(pixel_indices, data.shape[:-1])
-        sampled_rgb = data[nd_indices + (slice(None),)]
+        # Flatten the spatial dimensions to (n_pixels, channels) and select
+        # the sampled rows along a single axis.
+        n_channels = data.shape[-1]
+        flat = data.reshape(n_pixels, n_channels)
+        sampled_rgb = np.asarray(flat[pixel_indices])
         luminance = self._rgb_to_luminance(sampled_rgb)
         valid = np.isfinite(luminance)
         return luminance[valid]
