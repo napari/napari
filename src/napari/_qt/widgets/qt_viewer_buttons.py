@@ -574,9 +574,10 @@ class QtViewerButtons(QFrame):
         synced_help_symbol = help_tooltip(
             parent=popup,
             text=(
-                'Controls how camera state is managed when switching between '
-                '2D and 3D views. When checked, camera center and zoom are '
-                'shared between modes. When unchecked, each mode remembers '
+                'Controls how camera state is managed when switching between\n'
+                '2D and 3D views. When checked, camera center and zoom are\n'
+                'shared between views, with the depth (z) component synced via\n'
+                'the dims slider When unchecked, each mode remembers\n'
                 'its own camera state independently.'
             ),
         )
