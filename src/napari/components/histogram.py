@@ -262,7 +262,16 @@ class HistogramModel(EventedModel):
                 self._finalize_histogram(data)
                 yield self._bin_edges, self._counts
         finally:
-            self._computing = False
+            # Only the compute owning the current generation may clear the
+            # flag.  An aborted generator (e.g. one unblocked from remote I/O
+            # after a parameter change spawned a replacement) resumes on its
+            # worker thread and would otherwise run this ``finally`` *after*
+            # the replacement set ``_computing = True``, clearing it out from
+            # under the live compute and defeating the re-entrancy guard for
+            # any concurrent synchronous compute.  Gating on generation makes
+            # the stale generator's clear a no-op.
+            if self._compute_generation == generation:
+                self._computing = False
 
     def _finalize_histogram(self, data: np.ndarray) -> None:
         """Compute histogram from a complete data array.
@@ -738,3 +747,14 @@ class HistogramModel(EventedModel):
         self._counts = np.array([0.0])
         self._dirty = True
         self._full_cache = None
+        # Invalidate any in-flight async compute: bumping the generation
+        # makes its next stale-guard check (see ``_compute_chunked_progressive``)
+        # trip, so it discards its results instead of overwriting the reset
+        # state.  Every other invalidation path advances this counter; reset()
+        # must too, or a worker started before the reset could clobber it.
+        # ``_computing`` is cleared here rather than left to that worker's
+        # ``finally``: because the bump above makes the worker stale, its
+        # generation-gated ``finally`` (see ``compute``) will no longer clear
+        # the flag, so reset() owns restoring it to the pristine default.
+        self._compute_generation += 1
+        self._computing = False

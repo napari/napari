@@ -467,6 +467,41 @@ class TestReset:
         counts = model.counts
         assert len(counts) == 256
 
+    def test_reset_invalidates_in_flight_compute(self):
+        """A compute generator in flight when reset() is called must not
+        write its result back over the reset state.
+
+        reset() bumps _compute_generation, so the generator's stale-guard
+        trips and it discards its results; it also clears _computing so the
+        model is not left stuck (the now-stale generator's generation-gated
+        finally will not clear it).
+        """
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(100, 100).astype(np.float32), chunks=(50, 50)
+        )
+        model = _model(np.zeros((10, 10)))
+        model._layer = Image(data)
+        model.mode = 'full'
+        model.enabled = True
+
+        # Start the progressive compute and load one chunk, then pause it —
+        # this stands in for a background worker suspended between chunks.
+        gen = model.compute()
+        next(gen)
+        assert model._computing
+
+        model.reset()
+
+        # Draining the stale generator must not overwrite the reset state.
+        for _ in gen:
+            pass
+        assert model._dirty
+        np.testing.assert_array_equal(model._counts, np.array([0.0]))
+        np.testing.assert_array_equal(model._bin_edges, np.array([0.0, 1.0]))
+        # The model is usable again, not stuck with _computing left True.
+        assert model._computing is False
+
 
 class TestCalcHistogram:
     """Test the pure numpy _calc_histogram method directly."""
@@ -1092,3 +1127,36 @@ class TestComputeProgressive:
         results = list(model.compute())
         assert len(results) == 0
         assert not model._dirty
+
+    def test_stale_generator_does_not_clear_computing(self):
+        """A superseded generator's finally must not clear _computing.
+
+        When a compute is aborted and replaced (e.g. a parameter change
+        starts a fresh worker), the old generator can resume later on its
+        worker thread and run its finally *after* the replacement set
+        _computing=True.  compute()'s finally is generation-gated so the
+        stale generator leaves the flag owned by the current generation;
+        without the gate it would clear it, defeating the re-entrancy guard.
+        """
+        dask = pytest.importorskip('dask.array')
+        data = dask.from_array(
+            np.random.rand(100, 100).astype(np.float32), chunks=(50, 50)
+        )
+        model = _model(np.zeros((10, 10)))
+        model._layer = Image(data)
+        model.mode = 'full'
+        model.enabled = True
+
+        gen = model.compute()
+        next(gen)  # in flight: _computing=True at this generation
+        assert model._computing
+
+        # Simulate a replacement compute taking over: it owns _computing and
+        # advances the generation past the paused generator's.
+        model._compute_generation += 1
+
+        # Draining the now-stale generator must leave _computing set for the
+        # replacement rather than clearing it.
+        for _ in gen:
+            pass
+        assert model._computing

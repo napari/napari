@@ -209,8 +209,10 @@ class QtHistogramWidget(QWidget):
 
         Resets the model's ``_computing`` re-entrancy guard and
         ``_compute_scheduled`` flag so a replacement compute can proceed.
-        The aborted generator's ``finally`` also clears ``_computing``
-        (harmless double reset).
+        The aborted generator's own ``finally`` is generation-gated (see
+        ``HistogramModel.compute``), so once a replacement compute bumps the
+        generation it will *not* clear ``_computing`` a second time — this
+        reset is the sole owner while the replacement runs.
 
         ``_compute_scheduled`` is cleared here because we disconnected
         ``_on_async_compute_done``, so that callback (which normally
