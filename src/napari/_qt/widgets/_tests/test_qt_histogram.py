@@ -645,26 +645,10 @@ def test_closing_owning_view_mid_compute_hands_off_to_survivor(qtbot):
     )
 
 
-# pytest-qt would capture the re-raised error as a test failure; opt out.
-@pytest.mark.qt_no_exception_capture
 def test_persistent_chunk_load_error_does_not_retry_forever(
     qtbot, monkeypatch
 ):
-    """A persistent chunk-load failure in full mode must not spawn an
-    unbounded stream of retry workers.
-
-    Regression test: when ``compute()`` raises mid-chunk (e.g. a remote zarr
-    read fails), it leaves ``_dirty=True`` because it never reached a clean
-    result.  ``_on_async_compute_done`` used to emit ``events.counts()``
-    unconditionally on ``finished`` (which fires on error too), re-entering
-    ``_on_model_event`` — still dirty + enabled — and spawning a replacement
-    worker that repeated the identical failing I/O forever.  The fix skips
-    the counts re-emit while the model is still dirty; the worker's
-    notification mixin already surfaces the error to the user.
-
-    Each spawned worker reaches exactly one ``_load_chunk`` call before it
-    raises, so the ``_load_chunk`` invocation count is the worker count.
-    """
+    """Persistent chunk-load error must not spawn infinite retry workers."""
     dask = pytest.importorskip('dask.array')
     data = dask.random.random((200, 200), chunks=(50, 50))
     layer = Image(data)

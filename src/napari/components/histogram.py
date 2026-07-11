@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import warnings
 from collections.abc import Generator, Sequence
@@ -12,6 +13,8 @@ from pydantic import PrivateAttr
 
 from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import Event, EventedModel
+
+logger = logging.getLogger('napari.components.histogram')
 
 if TYPE_CHECKING:
     from napari.layers.image.image import Image  # noqa: TC004
@@ -293,7 +296,17 @@ class HistogramModel(EventedModel):
             # Early stale guard to abort worker early if a new compute has started.
             if self._compute_generation != generation:
                 return
-            block = self._load_chunk(data, ci)
+            try:
+                block = self._load_chunk(data, ci)
+            except Exception:  # noqa: BLE001
+                # Chunk load failure (e.g. remote zarr read error) is
+                # non-fatal. Stop the generator instead of letting the
+                # exception propagate through the GeneratorWorker's Qt
+                # signal/slot machinery, which causes qFatal/abort on
+                # PyQt6. The dirty guard in _on_async_compute_done
+                # prevents any retry loop.
+                logger.warning('Histogram chunk load failed', exc_info=True)
+                return
             chunk_counts, _ = np.histogram(
                 block,
                 bins=self.bins,
