@@ -162,9 +162,6 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
 def _toggle_synced_camera(viewer: ViewerModel) -> None:
     """Toggle the camera synced mode between synced and separate."""
     viewer.camera.synced = not viewer.camera.synced
-    from napari.utils.notifications import show_info
-
-    show_info(f'Camera synced: {viewer.camera.synced}')
 
 
 def _get_current_synced_camera(viewer: ViewerModel) -> bool:
