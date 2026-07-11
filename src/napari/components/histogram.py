@@ -412,11 +412,11 @@ class HistogramModel(EventedModel):
         if n_pixels <= self.max_samples:
             return self._rgb_to_luminance(data)
 
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(0)
         pixel_indices = rng.choice(
             n_pixels, size=self.max_samples, replace=False
         )
-        pixel_indices.sort()  # sort for smaller task graph and to avoid min_req PerformanceWarning
+        pixel_indices.sort()  # sort for better dask graph contiguity
         # Flatten the spatial dimensions to (n_pixels, channels) and select
         # the sampled rows along a single axis.
         n_channels = data.shape[-1]
@@ -571,7 +571,7 @@ class HistogramModel(EventedModel):
         if valid_data.size <= max_samples:
             return valid_data
 
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(0)
         indices = rng.choice(valid_data.size, size=max_samples, replace=False)
         return valid_data[indices]
 
