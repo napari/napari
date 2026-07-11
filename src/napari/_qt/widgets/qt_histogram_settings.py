@@ -20,10 +20,7 @@ if TYPE_CHECKING:
 
 
 class QtHistogramSettingsWidget(QWidget):
-    """Reusable widget for histogram mode and log scale controls.
-
-    This widget provides the shared histogram controls used by the
-    layer controls histogram panel and the contrast limits popup.
+    """Widget for histogram mode and log scale controls.
 
     Parameters
     ----------

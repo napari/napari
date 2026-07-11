@@ -87,21 +87,10 @@ class HistogramModel(EventedModel):
     _dirty: bool = PrivateAttr(default=True)
     _computing: bool = PrivateAttr(default=False)
     _compute_generation: int = PrivateAttr(default=0)
-    # Set True (on the main thread) by the first view that starts a
-    # background compute for this model, so the other view sharing the model
-    # (e.g. the inline histogram vs. the contrast-limits popup) does not start
-    # a second, competing worker: two concurrent workers would fight over
-    # ``_computing`` / ``_compute_generation`` (corrupting the progressive
-    # accumulation) and double the remote I/O.  A plain bool keeps Qt out of
-    # this (non-Qt) model — the Qt widget layer owns the actual worker object.
-    # Distinct from ``_computing`` (set inside the worker thread) because
-    # scheduling must be serialized on the main thread before the thread runs.
+    # Set True by the first main thread view that starts a background compute for this
+    # model, preventing a second competing worker. Distinct from _computing
+    # (set inside the worker thread) since scheduling is serialized on the main thread.
     _compute_scheduled: bool = PrivateAttr(default=False)
-    # Cached full-mode result: (bin_edges, counts, log_scale_at_compute_time).
-    # Full-mode compute is costly and slice-independent, so we keep the last
-    # result and restore it on switch-back instead of recomputing.  Canvas
-    # mode is cheap and not cached.  Invalidated by data/param changes (see
-    # ``_invalidate``); a slice change never touches it (full is unaffected).
     _full_cache: tuple[np.ndarray, np.ndarray, bool] | None = PrivateAttr(
         default=None
     )
@@ -144,12 +133,9 @@ class HistogramModel(EventedModel):
         self._layer = layer
         self._layer_events_connected = False
 
-        # Render-only broadcast event (psygnal, like every other event here —
-        # no Qt).  The widget layer emits this after each progressive chunk so
-        # that *all* views sharing this model (the inline histogram and the
-        # contrast-limits popup) re-render the partial in lockstep, regardless
-        # of which view owns the compute.  Unlike ``events.counts`` (which
-        # views also use as a recompute trigger), this never restarts compute.
+        # Render-only broadcast so all views sharing this model re-render
+        # progressive partials in lockstep, regardless of which owns the
+        # worker. Unlike events.counts, this never restarts compute.
         self.events.add(partial_computed=Event)
 
         # Connect to our own events (these are internal to the model and
@@ -161,13 +147,7 @@ class HistogramModel(EventedModel):
         self.events.enabled.connect(self._on_enabled_change)
 
     def _connect_layer_events(self) -> None:
-        """Connect to layer events to trigger recomputation.
-
-        Connections are made lazily (only when the histogram is actually
-        computing or enabled) so that they don't leak on the layer when
-        the histogram was never used or when the layer is removed from
-        the viewer.
-        """
+        """Connect layer events lazily to avoid leaking on unused/removed layers."""
         if self._layer_events_connected:
             return
         self._layer_events_connected = True
@@ -176,8 +156,7 @@ class HistogramModel(EventedModel):
         self._layer.events.set_data.connect(self._on_slice_change)
 
     def _disconnect_layer_events(self) -> None:
-        """Disconnect layer events, the symmetric counterpart to
-        ``_connect_layer_events``."""
+        """Disconnect layer events."""
         if not self._layer_events_connected:
             return
         self._layer_events_connected = False
@@ -212,16 +191,12 @@ class HistogramModel(EventedModel):
     def compute(
         self,
     ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
-        """Generator yielding ``(bin_edges, counts)`` for histogram computation.
+        """Yield ``(bin_edges, counts)`` for histogram computation.
 
-        For chunked arrays in full mode, yields an intermediate result after
-        each chunk so the caller can update the display progressively (e.g.
-        via a ``GeneratorWorker`` in a background thread).  For non-chunked
-        data, yields the final result once.
-
-        Does **not** emit ``events.counts()`` — the caller (e.g.
-        ``_on_async_compute_done`` on the main thread) is responsible for
-        emitting after the generator completes.
+        For chunked full-mode data, yields intermediate results after each
+        chunk for progressive display via ``GeneratorWorker``. For
+        non-chunked data, yields the final result once. Does **not** emit
+        ``events.counts()`` — callers must do that.
 
         Yields
         ------
@@ -262,28 +237,13 @@ class HistogramModel(EventedModel):
                 self._finalize_histogram(data)
                 yield self._bin_edges, self._counts
         finally:
-            # Only the compute owning the current generation may clear the
-            # flag.  An aborted generator (e.g. one unblocked from remote I/O
-            # after a parameter change spawned a replacement) resumes on its
-            # worker thread and would otherwise run this ``finally`` *after*
-            # the replacement set ``_computing = True``, clearing it out from
-            # under the live compute and defeating the re-entrancy guard for
-            # any concurrent synchronous compute.  Gating on generation makes
-            # the stale generator's clear a no-op.
+            # Only the current generation may clear _computing, so a stale
+            # generator's finally doesn't steal the flag from a replacement.
             if self._compute_generation == generation:
                 self._computing = False
 
     def _finalize_histogram(self, data: np.ndarray) -> None:
-        """Compute histogram from a complete data array.
-
-        Sets ``_bin_edges``, ``_counts``, and clears the dirty flag.
-        Does **not** emit ``events.counts()`` — callers handle that.
-
-        Parameters
-        ----------
-        data : np.ndarray
-            Pre-processed data array to histogram (already sampled if needed).
-        """
+        """Compute histogram from a complete data array and set model state."""
         range_min, range_max = self._layer.contrast_limits_range
         if range_min is None or range_max is None:
             range_min = float(np.nanmin(data))
@@ -312,10 +272,8 @@ class HistogramModel(EventedModel):
         data : Any
             Chunked array (dask, zarr, etc.).
         generation : int
-            Generation counter from the calling ``compute()`` invocation.
-            If ``self._compute_generation`` differs, intermediate results
-            are discarded to prevent stale async data from overwriting
-            fresher computations.
+            Generation counter; stale results are discarded if this doesn't
+            match ``self._compute_generation``.
         """
         n = min(self.max_samples, data.size)
         chunk_sizes = self._chunk_sizes(data)
@@ -332,10 +290,7 @@ class HistogramModel(EventedModel):
 
         running_counts = np.zeros(self.bins, dtype=np.float64)
         for ci in order:
-            # Early stale guard: check before the I/O-bound chunk load so
-            # that aborted workers (e.g. after a mode switch to canvas)
-            # exit quickly instead of blocking the thread pool on a chunk
-            # whose results will be discarded anyway.
+            # Early stale guard to abort worker early if a new compute has started.
             if self._compute_generation != generation:
                 return
             block = self._load_chunk(data, ci)
@@ -354,17 +309,12 @@ class HistogramModel(EventedModel):
             else:
                 counts = running_counts.astype(np.float32)
 
-            # Post-load guard: also check after computation to prevent
-            # a freshly-computed partial from overwriting state that was
-            # set by a newer compute while this chunk was loading.
+            # Post-load guard to avoid emitting stale results after a new compute has started.
             if self._compute_generation != generation:
                 return
             yield bins, counts
 
-        # Stale guard: only update model state if this generation is
-        # still current.  Without this, a stale async worker that
-        # finishes all its chunks after a newer inline compute has
-        # already set state would overwrite the fresh data.
+        # Guard final model-state update against stale async workers.
         if self._compute_generation == generation:
             self._bin_edges = bins
             self._counts = counts
@@ -400,8 +350,7 @@ class HistogramModel(EventedModel):
         # Handle edge case where min == max (constant data).
         # For integer types, ±0.5 places bin edges at half-integer
         # boundaries (e.g. uint8 value 42 → bin [41.5, 42.5]).
-        # For float types, expand by 1 % of the value (min 0.5) to
-        # keep the bin width proportional to the data magnitude.
+        # For float types, expand by 1 % of the value (min 0.5).
         if range_min == range_max:
             if np.issubdtype(self._layer.dtype, np.integer):
                 range_min = float(range_min) - 0.5
@@ -477,11 +426,7 @@ class HistogramModel(EventedModel):
         ``_slice.image.raw`` which contains the data being displayed.
 
         Returns None if the slice is not yet available (e.g. during initial
-        loading) — the caller will produce empty bins/counts instead of
-        silently falling back to full-volume data. Because
-        ``HistogramModel`` is created lazily (only on first property
-        access), slicing has typically already completed by the time this
-        is called.
+        loading).
         """
         raw = self._get_slice_raw_data()
         if raw is not None and raw.size > 0:
@@ -497,13 +442,7 @@ class HistogramModel(EventedModel):
         return np.asarray(raw) if raw is not None else None
 
     def _get_full_data(self) -> np.ndarray | None:
-        """Get full volume data.
-
-        For multiscale data, uses the lowest resolution level for
-        efficiency.  For chunked arrays (dask, zarr), returns the raw
-        data as-is — sampling is handled by
-        ``_compute_chunked_progressive``.
-        """
+        """Get full volume data, using coarsest level for multiscale."""
         data = self._layer.data
 
         # Unpack multiscale to the coarsest level.
@@ -586,11 +525,7 @@ class HistogramModel(EventedModel):
 
     @staticmethod
     def _load_chunk(data: Any, flat_idx: int) -> np.ndarray:
-        """Load a single chunk by its flat index.
-
-        Works for both dask arrays (via ``.blocks``) and zarr arrays
-        (via direct indexing with computed slice boundaries).
-        """
+        """Load a single chunk by its flat index (dask or zarr)."""
         import dask.array as da
 
         if isinstance(data, da.Array):
@@ -669,8 +604,7 @@ class HistogramModel(EventedModel):
         self.events.counts()
 
     def _on_enabled_change(self) -> None:
-        """When enabled flips to True, compute if dirty (non-chunked) or
-        connect layer events and defer to widget (chunked full-mode)."""
+        """Connect/disconnect layer events when enabled toggles."""
         if self.enabled:
             self._connect_layer_events()
             if self._dirty:
@@ -681,24 +615,14 @@ class HistogramModel(EventedModel):
     def _invalidate(self, event: Event | None = None) -> None:
         """Drop the cached full histogram, then mark dirty.
 
-        Cache-clearing is kept out of ``_mark_dirty`` so the mode-restore path
-        can call ``_mark_dirty`` without discarding the cache it may reuse.
-        Connected to the events that actually change histogram values: layer
-        ``data``/``contrast_limits_range`` and the ``bins``/``max_samples``
-        params.  (A slice change goes through ``_on_slice_change`` instead and
-        leaves the full cache intact, since full mode is slice-independent.)
+        Cache-clearing is separate from _mark_dirty so the mode-restore path
+        can call _mark_dirty without discarding the cache.
         """
         self._full_cache = None
         self._mark_dirty(event)
 
     def _on_mode_change(self) -> None:
-        """Handle a mode switch, restoring the cached full histogram if present.
-
-        Full-mode compute is costly and slice-independent, so switching back to
-        ``full`` restores the cached result (adjusting only for a log-scale
-        difference) instead of recomputing.  Canvas mode is cheap and always
-        recomputes via ``_mark_dirty``.
-        """
+        """Restore cached full histogram or trigger recompute on mode switch."""
         if self.mode == 'full' and self._full_cache is not None:
             bin_edges, counts, cached_log = self._full_cache
             self._bin_edges = bin_edges
@@ -714,13 +638,7 @@ class HistogramModel(EventedModel):
         self._mark_dirty()
 
     def _mark_dirty(self, event: Event | None = None) -> None:
-        """Mark histogram as needing recomputation and compute if possible.
-
-        For chunked arrays (dask, zarr) in full mode, defers computation
-        to the widget's async ``GeneratorWorker`` to avoid blocking the
-        main thread on I/O.  For all other cases, computes synchronously
-        so the histogram updates immediately.
-        """
+        """Mark dirty and compute immediately, or defer for chunked full mode."""
         self._dirty = True
         if not self._computing and self.enabled:
             if self.mode == 'full' and self._has_chunks(self._layer.data):
@@ -747,14 +665,7 @@ class HistogramModel(EventedModel):
         self._counts = np.array([0.0])
         self._dirty = True
         self._full_cache = None
-        # Invalidate any in-flight async compute: bumping the generation
-        # makes its next stale-guard check (see ``_compute_chunked_progressive``)
-        # trip, so it discards its results instead of overwriting the reset
-        # state.  Every other invalidation path advances this counter; reset()
-        # must too, or a worker started before the reset could clobber it.
-        # ``_computing`` is cleared here rather than left to that worker's
-        # ``finally``: because the bump above makes the worker stale, its
-        # generation-gated ``finally`` (see ``compute``) will no longer clear
-        # the flag, so reset() owns restoring it to the pristine default.
+        # Bump generation so in-flight async compute discards its results;
+        # clear _computing since the stale worker's gated finally won't.
         self._compute_generation += 1
         self._computing = False

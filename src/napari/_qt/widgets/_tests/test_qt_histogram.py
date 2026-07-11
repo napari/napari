@@ -645,9 +645,7 @@ def test_closing_owning_view_mid_compute_hands_off_to_survivor(qtbot):
     )
 
 
-# The worker deliberately re-raises the simulated load error into the Qt
-# event loop (superqt's default ``reraise`` slot on ``errored``), which is how
-# napari surfaces it to the user; opt out of pytest-qt's capture-as-failure.
+# pytest-qt would capture the re-raised error as a test failure; opt out.
 @pytest.mark.qt_no_exception_capture
 def test_persistent_chunk_load_error_does_not_retry_forever(
     qtbot, monkeypatch

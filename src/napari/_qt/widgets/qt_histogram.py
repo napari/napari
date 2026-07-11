@@ -27,16 +27,7 @@ _DEFAULT_CANVAS_MIN_HEIGHT = 100
 
 
 class QtHistogramWidget(QWidget):
-    """
-    Qt widget that embeds a vispy histogram visualization.
-
-    This widget wraps a HistogramVisual in a vispy SceneCanvas,
-    providing a Qt-compatible widget that can be embedded in
-    layer controls.
-
-    For chunked arrays in full mode, computation runs in a background
-    thread via :func:`napari._qt.qthreading.create_worker` to keep
-    the UI responsive during I/O-bound loads (e.g. remote S3 zarr).
+    """Qt widget embedding a vispy histogram visualization.
 
     Parameters
     ----------
@@ -99,15 +90,14 @@ class QtHistogramWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
-        # Connect model events to a single handler that decides whether
-        # to re-render or trigger async compute, depending on whether the
-        # model computed synchronously or deferred for chunked full data.
+        # Connect model events to a single handler for sync/async dispatch.
         self._histogram.events.counts.connect(self._on_model_event)
         self._histogram.events.enabled.connect(self._on_model_event)
         self._histogram.events.log_scale.connect(self._on_model_event)
         self._histogram.events.mode.connect(self._on_model_event)
         self._histogram.events.bins.connect(self._on_model_event)
         self._histogram.events.max_samples.connect(self._on_model_event)
+
         # Progressive partials are broadcast on a render-only channel so this
         # view animates chunk-by-chunk even when another view owns the worker.
         self._histogram.events.partial_computed.connect(self._update_histogram)
@@ -128,15 +118,7 @@ class QtHistogramWidget(QWidget):
         self._update_histogram()
 
     def _on_model_event(self) -> None:
-        """Respond to model property changes — re-render or trigger async compute.
-
-        The model's own event handlers (``_mark_dirty``,
-        ``_on_log_scale_change``) either compute synchronously (clearing
-        ``_dirty`` and emitting ``events.counts()``), or defer for chunked
-        full-mode data (leaving ``_dirty=True``).  This handler picks up
-        deferred work via async compute, and otherwise just re-renders the
-        fresh data already in the model.
-        """
+        """Respond to model property changes — re-render or trigger async compute."""
         if self._histogram._dirty and self._histogram.enabled:
             self._ensure_histogram_computed()
         else:
@@ -160,29 +142,13 @@ class QtHistogramWidget(QWidget):
     def _ensure_histogram_computed(self, event: Event | None = None) -> None:
         """Trigger histogram computation in a background thread.
 
-        Uses a ``GeneratorWorker`` so intermediate results are yielded
-        progressively for chunked data (e.g. remote zarr), while
-        non-chunked data completes with a single yield.
-
-        At most one worker runs per model.  The inline histogram and the
-        popup share one model, so the first view to reach here claims the
-        compute — flipping the model's Qt-free ``_compute_scheduled`` flag on
-        the main thread — and owns the worker.  The other view returns and
-        instead animates from ``events.partial_computed`` broadcasts,
-        rendering the final result on ``events.counts()``.  The owner may
-        abort and restart its own worker (e.g. on a parameter change) to
-        recompute with fresh settings.
+        At most one worker runs per model to avoid competing compute.
+        Others animate from ``partial_computed`` broadcasts.
         """
         if self._compute_worker is not None:
-            # We own the in-flight worker: abort and restart so a parameter
-            # change recomputes with fresh settings (we stay the owner, so
-            # ``_compute_scheduled`` stays True throughout).
             self._abort_worker(self._compute_worker)
             self._compute_worker = None
         elif self._histogram._compute_scheduled:
-            # Another view drives the shared compute; it reacts to the same
-            # model event and (re)starts as needed.  We animate from its
-            # partial_computed broadcasts and render on events.counts().
             return
 
         worker = cast(
@@ -199,26 +165,11 @@ class QtHistogramWidget(QWidget):
         worker.start()
 
     def _abort_worker(self, worker: GeneratorWorker) -> None:
-        """Disconnect our slots from *worker* and ask its generator to stop.
+        """Stop a worker and reset model state for a replacement compute.
 
-        Only disconnects **our** specific slots (``_on_async_compute_done``,
-        ``_on_partial_histogram``), leaving napari's built-in handlers
-        (task status cleanup, progress bar close) attached so they fire
-        normally when the aborted worker's thread pool thread finishes its
-        current chunk and exits.
-
-        Resets the model's ``_computing`` re-entrancy guard and
-        ``_compute_scheduled`` flag so a replacement compute can proceed.
-        The aborted generator's own ``finally`` is generation-gated (see
-        ``HistogramModel.compute``), so once a replacement compute bumps the
-        generation it will *not* clear ``_computing`` a second time — this
-        reset is the sole owner while the replacement runs.
-
-        ``_compute_scheduled`` is cleared here because we disconnected
-        ``_on_async_compute_done``, so that callback (which normally
-        clears ``_compute_scheduled``) will never fire for this worker.
-        Without this clear, the flag would leak as ``True`` forever,
-        preventing any future async compute for the model.
+        Disconnects our specific slots, leaving napari's built-in handlers
+        (task status, progress bar) attached so they fire normally when the
+        thread finishes.
         """
         worker.finished.disconnect(self._on_async_compute_done)
         worker.yielded.disconnect(self._on_partial_histogram)
@@ -232,22 +183,7 @@ class QtHistogramWidget(QWidget):
     def _on_partial_histogram(
         self, bins_counts: tuple[np.ndarray, np.ndarray]
     ) -> None:
-        """Publish a partial histogram result and broadcast it to all views.
-
-        Called on the main thread each time the background generator yields
-        ``(bins, counts)`` — only on the view that owns the worker.  We write
-        the partial into the shared model and emit ``partial_computed`` so
-        that every view (this one and, e.g., the inline histogram or the
-        popup) re-renders the same snapshot in lockstep.  This decouples
-        *which view drives the worker* from *which views animate*, so the
-        visible view always updates even when the other one owns the worker.
-
-        Yields from a stale worker that was aborted mid-compute are
-        discarded when the model already has clean data (e.g. after a
-        canvas-mode sync compute that bumped the generation).  Without
-        this guard, a full-mode chunk that completed after the mode
-        switch would overwrite the canvas histogram with stale data.
-        """
+        """Publish a partial histogram result and broadcast it to all views."""
         if self._cleaned_up or not self._histogram._dirty:
             return
         bins, counts = bins_counts
@@ -256,23 +192,10 @@ class QtHistogramWidget(QWidget):
         self._histogram.events.partial_computed()
 
     def _on_async_compute_done(self, _: Any = None) -> None:
-        """Called on the main thread when our background compute finishes.
+        """Called on main thread when our background compute finishes.
 
-        Releases the shared compute slot and emits ``events.counts()`` so
-        every view (this widget and any other sharing the model, e.g. the
-        popup vs the inline histogram) re-reads the freshly computed data.
-        Only the owning view connects this slot, so reaching here means we
-        held the compute.
-
-        ``finished`` fires whether ``compute()`` succeeded, raised (e.g. a
-        remote chunk failed to load), or was superseded by a newer
-        generation — in every case the model clears ``_dirty`` only on a
-        clean result.  So a still-dirty model here means there is nothing
-        new to publish; emitting ``events.counts()`` anyway would re-enter
-        ``_on_model_event`` (still dirty + enabled) and spawn a replacement
-        worker, i.e. retry a persistent failure in a tight loop.  The error
-        itself is already surfaced to the user by the worker's notification
-        mixin (see ``napari._qt.qthreading``), so we simply stop here.
+        Emits events.counts() on success; skips if still dirty (e.g. error)
+        to prevent infinite retry loops.
         """
         if self._cleaned_up:
             return

@@ -468,14 +468,7 @@ class TestReset:
         assert len(counts) == 256
 
     def test_reset_invalidates_in_flight_compute(self):
-        """A compute generator in flight when reset() is called must not
-        write its result back over the reset state.
-
-        reset() bumps _compute_generation, so the generator's stale-guard
-        trips and it discards its results; it also clears _computing so the
-        model is not left stuck (the now-stale generator's generation-gated
-        finally will not clear it).
-        """
+        """reset() must bump generation so in-flight compute discards its results."""
         dask = pytest.importorskip('dask.array')
         data = dask.from_array(
             np.random.rand(100, 100).astype(np.float32), chunks=(50, 50)

@@ -54,14 +54,11 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
 
-        # The content_widget is a persistent container that stays in the
-        # form layout at all times; it is shown/hidden via the histogram
-        # button toggle, never inserted/removed from the layout.
+        # Persistent container — always in the form layout, shown/hidden
+        # via button toggle, never inserted/removed at runtime.
         self.content_widget = QWidget(parent)
         self.content_widget.hide()
-        # Set size policy to Ignored so the form layout doesn't reserve
-        # space for the hidden widget, preventing wide controls after
-        # the histogram is toggled off.
+        # Ignored size policy prevents layout from reserving space when hidden.
         self.content_widget.setSizePolicy(
             QSizePolicy.Policy.Ignored,
             QSizePolicy.Policy.Ignored,
@@ -75,21 +72,13 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         self._content_layout.setSpacing(4)
         self.content_widget.setLayout(self._content_layout)
 
-        # Connect to histogram model enabled event to show/hide widget
-        # when the API is used directly (e.g. layer.histogram.enabled = True)
-        # Use the local ``layer`` parameter (typed ``Image``) instead of
-        # ``self._layer`` (typed ``Layer``) to satisfy Pylance.
+        # Bridge API-enabled changes to UI visibility.
         layer.histogram.events.enabled.connect(
             self._on_histogram_enabled_changed
         )
 
     def _on_histogram_enabled_changed(self) -> None:
-        """Show/hide the histogram widget when ``enabled`` changes via the API.
-
-        This bridges the programmatic API (``layer.histogram.enabled = True``)
-        to the UI, so that enabling/disabling the histogram from code also
-        shows/hides the inline widget in the layer controls.
-        """
+        """Show/hide histogram when enabled changes via the API."""
         layer = cast(Image, self._layer)
         if layer.histogram.enabled:
             self.ensure_content()
@@ -106,7 +95,7 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
             self.content_widget.hide()
 
     def ensure_content(self) -> None:
-        """Create the histogram UI lazily when it is first requested."""
+        """Lazy-create histogram UI on first request."""
         if self.histogram_content is not None:
             return
 
@@ -120,18 +109,7 @@ class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         self.settings_widget = self.histogram_content.settings_widget
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        """
-        Return an empty list since this widget is dynamically added/removed.
-
-        The histogram widget is controlled by the histogram button on the
-        contrast limits control and should not be added to the layer controls
-        by default.
-
-        Returns
-        -------
-        list
-            Empty list - widget is not added to controls by default.
-        """
+        """Return empty list; histogram is dynamically shown/hidden."""
         return []
 
     def disconnect_widget_controls(self) -> None:
