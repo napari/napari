@@ -485,12 +485,24 @@ class Labels(ScalarFieldBase):
         self._staged_history: list[HistoryAtom]
         self._block_history: bool
 
-    def _slice_dtype(self):
-        """Calculate dtype of data view based on data dtype and current colormap"""
+    def _data_to_texture(self, values):
+        """Cast data to the texture dtype, applying the layer's selection state.
+
+        Single choke point for pairing ``colormap._data_to_texture`` with
+        the layer-owned ``show_selected_label`` / ``selected_label``; every
+        texture cast must go through here so no call site can forget the
+        selection kwargs.
+        """
         return self.colormap._data_to_texture(
-            np.zeros(0, dtype=normalize_dtype(self.dtype)),
+            values,
             use_selection=self.show_selected_label,
             selection=self.selected_label,
+        )
+
+    def _slice_dtype(self):
+        """Calculate dtype of data view based on data dtype and current colormap"""
+        return self._data_to_texture(
+            np.zeros(0, dtype=normalize_dtype(self.dtype))
         ).dtype
 
     def _post_init(self):
@@ -1039,11 +1051,7 @@ class Labels(ScalarFieldBase):
         if sliced_labels is None:
             sliced_labels = labels[data_slice]
 
-        return self.colormap._data_to_texture(
-            sliced_labels,
-            use_selection=self.show_selected_label,
-            selection=self.selected_label,
-        )
+        return self._data_to_texture(sliced_labels)
 
     def _update_thumbnail(self):
         """Update the thumbnail with current data and colormap.
@@ -2015,10 +2023,8 @@ class Labels(ScalarFieldBase):
             return
 
         # Update texture view cache by compute new color only once
-        new_color = self.colormap._data_to_texture(
-            np.array([new_label], dtype=visible_data.dtype),
-            use_selection=self.show_selected_label,
-            selection=self.selected_label,
+        new_color = self._data_to_texture(
+            np.array([new_label], dtype=visible_data.dtype)
         )[0]
 
         # Update cache in-place for changed pixels only
@@ -2183,12 +2189,8 @@ class Labels(ScalarFieldBase):
 
         if self.contour == 0:
             # update data view
-            self._slice.image.view[displayed_indices] = (
-                self.colormap._data_to_texture(
-                    visible_values,
-                    use_selection=self.show_selected_label,
-                    selection=self.selected_label,
-                )
+            self._slice.image.view[displayed_indices] = self._data_to_texture(
+                visible_values
             )
 
         self._accumulate_updated_slice(updated_slice)

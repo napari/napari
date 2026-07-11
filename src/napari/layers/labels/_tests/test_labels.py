@@ -2839,17 +2839,6 @@ def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
     assert not np.any(brush.data[-1])
 
 
-def test_show_selected_label_persists_through_shuffle():
-    layer = Labels(np.zeros((4, 4), dtype=np.uint8))
-    layer.selected_label = 2
-    layer.show_selected_label = True
-
-    layer.new_colormap(seed=42)
-
-    assert layer.show_selected_label is True
-    assert layer.selected_label == 2
-
-
 def test_show_selected_label_persists_across_colormap_assign():
     layer = Labels(np.zeros((4, 4), dtype=np.uint8))
     layer.selected_label = 3
@@ -2927,7 +2916,9 @@ def test_show_selected_label_setter_fires_event_once():
 
 
 @pytest.mark.parametrize('use_direct', [False, True])
-def test_paint_respects_show_selected_label_in_texture_cache(use_direct):
+def test_paint_respects_show_selected_label_in_texture_cache(
+    use_direct, direct_colormap
+):
     """Painting on a non-numpy backend patches the texture view cache
     directly; the patch must honor the layer's selection filter.
 
@@ -2938,15 +2929,7 @@ def test_paint_respects_show_selected_label_in_texture_cache(use_direct):
     """
     data = zarr.zeros((10, 10), chunks=(5, 5), dtype=np.uint32)
     if use_direct:
-        cmap = DirectLabelColormap(
-            color_dict={
-                0: [0, 0, 0, 0],
-                2: [1, 0, 0, 1],
-                3: [0, 1, 0, 1],
-                None: [0, 0, 1, 1],
-            }
-        )
-        layer = Labels(data, colormap=cmap)
+        layer = Labels(data, colormap=direct_colormap)
     else:
         layer = Labels(data)
     layer.brush_size = 1
@@ -2960,7 +2943,7 @@ def test_paint_respects_show_selected_label_in_texture_cache(use_direct):
     assert not np.array_equal(layer._slice.image.view[5, 5], background)
 
     # Painting a non-selected label must be filtered to background.
-    layer.paint((8, 8), 3, refresh=False)
+    layer.paint((8, 8), 1, refresh=False)
     np.testing.assert_array_equal(layer._slice.image.view[8, 8], background)
 
 

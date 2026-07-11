@@ -301,8 +301,13 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             else:  # float32 texture
                 scale = 1.0
 
-            selection_texture = colormap._selection_as_minimum_dtype(
-                selected_label, raw_dtype, use_selection=use_selection
+            # The shader only reads $selection when $use_selection is true.
+            selection_texture = (
+                colormap._selection_as_minimum_dtype(
+                    selected_label, raw_dtype, use_selection=True
+                )
+                if use_selection
+                else 0
             )
             self.node.cmap = DirectLabelVispyColormap(
                 use_selection=use_selection,

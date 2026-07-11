@@ -222,6 +222,45 @@ class _RebuildableCache(dict):
         return type(self)()
 
 
+def _removed_selection_field(
+    name: str, layer_attr: str, *, default
+) -> property:
+    """Deprecation shim for a selection field removed from label colormaps.
+
+    Reading warns with ``FutureWarning`` and returns the old default;
+    writing raises ``AttributeError`` pointing to the Labels layer
+    attribute that owns the state now.
+    """
+
+    def getter(self):
+        warn(
+            trans._(
+                'LabelColormapBase.{name} was removed; label colormaps no'
+                ' longer carry selection state. Read layer.{layer_attr}'
+                ' instead.',
+                deferred=True,
+                name=name,
+                layer_attr=layer_attr,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return default
+
+    def setter(self, value):
+        raise AttributeError(
+            trans._(
+                'LabelColormapBase.{name} was removed; label colormaps are'
+                ' immutable value objects. Set layer.{layer_attr} instead.',
+                deferred=True,
+                name=name,
+                layer_attr=layer_attr,
+            )
+        )
+
+    return property(getter, setter, doc=f'Removed: use layer.{layer_attr}.')
+
+
 class LabelColormapBase(Colormap):
     background_value: int = 0
     interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
@@ -243,56 +282,12 @@ class LabelColormapBase(Colormap):
         # TODO: ensure that this is actually needed
     )
 
-    @property
-    def use_selection(self) -> bool:
-        """Deprecated: selection filtering moved to the Labels layer."""
-        warn(
-            trans._(
-                'LabelColormapBase.use_selection was removed; label colormaps'
-                ' no longer carry selection state. Read'
-                ' layer.show_selected_label instead.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return False
-
-    @use_selection.setter
-    def use_selection(self, value: bool) -> None:
-        raise AttributeError(
-            trans._(
-                'LabelColormapBase.use_selection was removed; label colormaps'
-                ' are immutable value objects. Set layer.show_selected_label'
-                ' instead.',
-                deferred=True,
-            )
-        )
-
-    @property
-    def selection(self) -> int:
-        """Deprecated: selection filtering moved to the Labels layer."""
-        warn(
-            trans._(
-                'LabelColormapBase.selection was removed; label colormaps no'
-                ' longer carry selection state. Read layer.selected_label'
-                ' instead.',
-                deferred=True,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        return 0
-
-    @selection.setter
-    def selection(self, value: int) -> None:
-        raise AttributeError(
-            trans._(
-                'LabelColormapBase.selection was removed; label colormaps are'
-                ' immutable value objects. Set layer.selected_label instead.',
-                deferred=True,
-            )
-        )
+    use_selection = _removed_selection_field(
+        'use_selection', 'show_selected_label', default=False
+    )
+    selection = _removed_selection_field(
+        'selection', 'selected_label', default=0
+    )
 
     @overload
     def _data_to_texture(
@@ -654,10 +649,7 @@ class DirectLabelColormap(LabelColormapBase):
         if mapper is not None:
             mapped = mapper[values]
         else:
-            values_cast = _accel_cmap.labels_raw_to_texture_direct(
-                values, self
-            )
-            mapped = self._map_precast(values_cast)
+            mapped = self._map_without_cache(values)
         return mapped
 
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
