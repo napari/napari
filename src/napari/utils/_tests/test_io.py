@@ -1,10 +1,14 @@
+import multiprocessing.spawn
 import struct
+import sys
+from contextlib import nullcontext
 
 import numpy as np
 import pytest
 import tifffile
 from imageio.v3 import imread
 
+from napari.utils import io
 from napari.utils.io import imsave
 
 
@@ -109,3 +113,43 @@ def test_imsave_large_file(monkeypatch, tmp_path):
     imsave(image_path, data)
     with tifffile.TiffFile(image_path) as tiff:
         assert tiff.is_bigtiff
+
+
+def test_execute_python_code_sets_spawn_main_path(monkeypatch, tmp_path):
+    """Executed scripts should be exposed as the multiprocessing main path."""
+    script_path = tmp_path / 'script.py'
+    script_path.write_text('class Worker:\n    pass\n')
+    script_key = str(script_path)
+
+    monkeypatch.setattr(io, '_patched_viewer_new', nullcontext)
+    monkeypatch.setattr(io, '_noop_napari_run', nullcontext)
+    monkeypatch.setattr(
+        io, '_add_variables_to_viewer_console', lambda *a, **k: None
+    )
+    monkeypatch.setattr('napari.viewer.current_viewer', lambda: None)
+    monkeypatch.setattr(
+        io.notification_manager,
+        'receive_error',
+        lambda *_args, **_kwargs: pytest.fail(
+            'execute_python_code raised unexpectedly'
+        ),
+    )
+
+    main_module = sys.modules['__main__']
+    old_spec = getattr(main_module, '__spec__', None)
+    old_file = getattr(main_module, '__file__', None)
+
+    try:
+        io.execute_python_code(script_path.read_text(), script_path)
+
+        preparation_data = multiprocessing.spawn.get_preparation_data('worker')
+        assert preparation_data.get('init_main_from_path') == script_key
+        assert 'init_main_from_name' not in preparation_data
+        assert io._SCRIPT_NAMESPACES[script_key]['Worker'].__name__ == 'Worker'
+    finally:
+        io._SCRIPT_NAMESPACES.pop(script_key, None)
+        main_module.__spec__ = old_spec
+        if old_file is None:
+            main_module.__dict__.pop('__file__', None)
+        else:
+            main_module.__file__ = old_file
