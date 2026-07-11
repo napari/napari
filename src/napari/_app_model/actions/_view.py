@@ -235,7 +235,9 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_toggle_synced_camera,
         toggled=ToggleRule(get_current=_get_current_synced_camera),
-        keybindings=[KeyBindingRule(primary='Ctrl+U')],
+        keybindings=[
+            KeyBindingRule(primary='Ctrl+U', mac='Cmd+U'),
+        ],
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
