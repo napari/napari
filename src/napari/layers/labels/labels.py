@@ -491,12 +491,13 @@ class Labels(ScalarFieldBase):
         Single choke point for pairing ``colormap._data_to_texture`` with
         the layer-owned ``show_selected_label`` / ``selected_label``; every
         texture cast must go through here so no call site can forget the
-        selection kwargs.
+        selection state.
         """
         return self.colormap._data_to_texture(
             values,
-            use_selection=self.show_selected_label,
-            selection=self.selected_label,
+            selection=self.selected_label
+            if self.show_selected_label
+            else None,
         )
 
     def _slice_dtype(self):

@@ -294,8 +294,7 @@ class LabelColormapBase(Colormap):
         self,
         values: np.ndarray,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray: ...
 
     @overload
@@ -303,18 +302,21 @@ class LabelColormapBase(Colormap):
         self,
         values: np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.integer: ...
 
     def _data_to_texture(
         self,
         values: np.ndarray | np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray | np.integer:
-        """Map input values to values for send to GPU."""
+        """Map input values to values for send to GPU.
+
+        When ``selection`` is not None, values other than the selection are
+        mapped to the background texture value (the
+        ``Labels.show_selected_label`` filter).
+        """
         raise NotImplementedError
 
     def _get_mapping_from_cache(
@@ -348,13 +350,9 @@ class LabelColormapBase(Colormap):
         raise NotImplementedError
 
     def _selection_as_minimum_dtype(
-        self,
-        selection: int,
-        dtype: np.dtype,
-        *,
-        use_selection: bool = False,
+        self, selection: int, dtype: np.dtype
     ) -> int:
-        """Treat selection as given dtype and calculate value with min dtype.
+        """Texture value of the selected label while the filter is active.
 
         Parameters
         ----------
@@ -362,23 +360,16 @@ class LabelColormapBase(Colormap):
             Label value the layer is filtering on.
         dtype : np.dtype
             The dtype to convert the selection to.
-        use_selection : bool
-            When True, the returned texture-index reflects the 2-entry
-            selection-shortcut mapping (always 1 for the selection),
-            matching what `_data_to_texture(..., use_selection=True)`
-            produces for the data texture.
 
         Returns
         -------
         int
-            The selection converted.
+            The texture-index of the selection under the filtered mapping,
+            matching what `_data_to_texture(..., selection=selection)`
+            produces for the data texture.
         """
         return int(
-            self._data_to_texture(
-                dtype.type(selection),
-                use_selection=use_selection,
-                selection=selection,
-            )
+            self._data_to_texture(dtype.type(selection), selection=selection)
         )
 
 
@@ -432,8 +423,7 @@ class CyclicLabelColormap(LabelColormapBase):
         self,
         values: np.ndarray,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray: ...
 
     @overload
@@ -441,23 +431,18 @@ class CyclicLabelColormap(LabelColormapBase):
         self,
         values: np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.integer: ...
 
     def _data_to_texture(
         self,
         values: np.ndarray | np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray | np.integer:
         """Map input values to values for send to GPU."""
         return _cast_labels_data_to_texture_dtype_auto(
-            values,
-            self,
-            use_selection=use_selection,
-            selection=selection,
+            values, self, selection=selection
         )
 
     def _map_without_cache(self, values) -> np.ndarray:
@@ -596,8 +581,7 @@ class DirectLabelColormap(LabelColormapBase):
         self,
         values: np.ndarray,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray: ...
 
     @overload
@@ -605,23 +589,18 @@ class DirectLabelColormap(LabelColormapBase):
         self,
         values: np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.integer: ...
 
     def _data_to_texture(
         self,
         values: np.ndarray | np.integer,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> np.ndarray | np.integer:
         """Map input values to values for send to GPU."""
         return _cast_labels_data_to_texture_dtype_direct(
-            values,
-            self,
-            use_selection=use_selection,
-            selection=selection,
+            values, self, selection=selection
         )
 
     def map(self, values: np.ndarray | np.integer | int) -> np.ndarray:
@@ -703,8 +682,7 @@ class DirectLabelColormap(LabelColormapBase):
     def _values_mapping_to_minimum_values_set(
         self,
         *,
-        use_selection: bool = False,
-        selection: int = 0,
+        selection: int | None = None,
     ) -> tuple[dict[int | None, int], dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
@@ -717,7 +695,7 @@ class DirectLabelColormap(LabelColormapBase):
             Mapping from new values to colors.
 
         """
-        if use_selection:
+        if selection is not None:
             # Two-entry shortcut: pair with the 0/1 data short-circuit
             # in `_labels_raw_to_texture_direct_*` so the texture stays
             # tiny (one selection color + transparent).
@@ -885,8 +863,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray,
     colormap: CyclicLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray: ...
 
 
@@ -895,8 +872,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     data: np.integer,
     colormap: CyclicLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.integer: ...
 
 
@@ -904,8 +880,7 @@ def _cast_labels_data_to_texture_dtype_auto(
     data: np.ndarray | np.integer,
     colormap: CyclicLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray | np.integer:
     """Convert labels data to the data type used in the texture.
 
@@ -946,7 +921,7 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     dtype = _accel_cmap.minimum_dtype_for_labels(num_colors + 1)
 
-    if use_selection:
+    if selection is not None:
         # Modulo hashing can map non-selected labels to the same texture
         # index as the selection, which the shader would then render as
         # the selection color. Zero non-selected pixels in the texture
@@ -973,8 +948,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     data: np.ndarray,
     direct_colormap: DirectLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray: ...
 
 
@@ -983,8 +957,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     data: np.integer,
     direct_colormap: DirectLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.integer: ...
 
 
@@ -992,8 +965,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     data: np.ndarray | np.integer,
     direct_colormap: DirectLabelColormap,
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray | np.integer:
     """Convert labels data to the data type used in the texture.
 
@@ -1035,7 +1007,7 @@ def _cast_labels_data_to_texture_dtype_direct(
         target_dtype = _accel_cmap.minimum_dtype_for_labels(
             direct_colormap._num_unique_colors + 2
         )
-        if use_selection:
+        if selection is not None:
             return target_dtype.type(1 if int(data) == selection else 0)
         mapper = direct_colormap._label_mapping_and_color_dict[0]
         return target_dtype.type(
@@ -1046,10 +1018,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     array_data = np.atleast_1d(data)
     return np.reshape(
         _accel_cmap.labels_raw_to_texture_direct(
-            array_data,
-            direct_colormap,
-            use_selection=use_selection,
-            selection=selection,
+            array_data, direct_colormap, selection=selection
         ),
         original_shape,
     )

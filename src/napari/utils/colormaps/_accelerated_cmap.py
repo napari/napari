@@ -192,8 +192,7 @@ def _labels_raw_to_texture_direct_numpy(
     data: np.ndarray,
     direct_colormap: 'DirectLabelColormap',
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray:
     """Convert labels data to the data type used in the texture.
 
@@ -201,7 +200,7 @@ def _labels_raw_to_texture_direct_numpy(
 
     See `_cast_labels_data_to_texture_dtype_direct` for more details.
     """
-    if use_selection:
+    if selection is not None:
         return (data == selection).astype(np.uint8)
     mapper = direct_colormap._array_map
     if any(x < 0 for x in direct_colormap.color_dict if x is not None):
@@ -217,8 +216,7 @@ def _labels_raw_to_texture_direct_loop(
     data: np.ndarray,
     direct_colormap: 'DirectLabelColormap',
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray:
     """
     Cast direct labels to the minimum type.
@@ -235,7 +233,7 @@ def _labels_raw_to_texture_direct_loop(
     np.ndarray
         The cast data array.
     """
-    if use_selection:
+    if selection is not None:
         return (data == selection).astype(np.uint8)
 
     dkt = direct_colormap._get_typed_dict_mapping(data.dtype)
@@ -278,10 +276,9 @@ def labels_raw_to_texture_direct_partsegcore(
     data: np.ndarray,
     direct_colormap: 'DirectLabelColormap',
     *,
-    use_selection: bool = False,
-    selection: int = 0,
+    selection: int | None = None,
 ) -> np.ndarray:
-    if use_selection:
+    if selection is not None:
         dkt = {None: 0, selection: 1}
     else:
         iinfo = np.iinfo(data.dtype)

@@ -269,13 +269,13 @@ def test_selection_fields_deprecation_shim(direct_label_colormap):
 
 
 def test_values_mapping_selection_shortcut(direct_label_colormap):
-    """With selection kwargs, the minimum-values-set mapping collapses to
+    """With a selection, the minimum-values-set mapping collapses to
     the 2-entry {background, selection} shortcut."""
     (
         label_mapping,
         color_dict,
     ) = direct_label_colormap._values_mapping_to_minimum_values_set(
-        use_selection=True, selection=2
+        selection=2
     )
 
     assert len(label_mapping) == 2
