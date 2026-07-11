@@ -1,5 +1,10 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
+from app_model.types import (
+    KeyBindingRule,
+    StandardKeyBinding,
+    SubmenuItem,
+    ToggleRule,
+)
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
@@ -233,6 +238,7 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_toggle_synced_camera,
         toggled=ToggleRule(get_current=_get_current_synced_camera),
+        keybindings=[KeyBindingRule(primary='Ctrl+U')],
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
