@@ -546,6 +546,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             elif self.dims.ndisplay == 2:
                 center[0] = 0.0
             self.camera.center = center[0], center[1], center[2]
+            self._previous_ndisplay = self.dims.ndisplay
             return
 
         # Separate (synced=False) — per-mode caching
