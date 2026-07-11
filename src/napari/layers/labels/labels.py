@@ -406,6 +406,9 @@ class Labels(ScalarFieldBase):
         self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = show_selected_label
+        # Set before super().__init__ because _slice_dtype reads it during
+        # the initial empty-slice construction.
+        self._selected_label = selected_label
         self._contour = 0
 
         data = self._ensure_int_labels(data)
@@ -467,7 +470,6 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = selected_label
         self._prev_selected_label = None
         self._selected_color = self.get_color(self._selected_label)
         self._updated_slice: tuple[slice, ...] | None = None
@@ -486,7 +488,9 @@ class Labels(ScalarFieldBase):
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
-            np.zeros(0, dtype=normalize_dtype(self.dtype))
+            np.zeros(0, dtype=normalize_dtype(self.dtype)),
+            use_selection=self.show_selected_label,
+            selection=self.selected_label,
         ).dtype
 
     def _post_init(self):
@@ -602,10 +606,6 @@ class Labels(ScalarFieldBase):
         new_cmap = shuffle_and_extend_colormap(
             self._original_random_colormap, seed
         )
-        # Sync from the layer (source of truth) before assignment, so
-        # `events.colormap` listeners observe the correct `use_selection`.
-        new_cmap.use_selection = self._show_selected_label
-        new_cmap.selection = self._selected_label
         self.colormap = new_cmap
         self._original_random_colormap = orig
 
@@ -2016,7 +2016,9 @@ class Labels(ScalarFieldBase):
 
         # Update texture view cache by compute new color only once
         new_color = self.colormap._data_to_texture(
-            np.array([new_label], dtype=visible_data.dtype)
+            np.array([new_label], dtype=visible_data.dtype),
+            use_selection=self.show_selected_label,
+            selection=self.selected_label,
         )[0]
 
         # Update cache in-place for changed pixels only

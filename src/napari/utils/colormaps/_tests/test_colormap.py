@@ -254,6 +254,20 @@ def test_direct_label_colormap_deepcopy_after_map(direct_label_colormap):
     assert cmap_copy._cache_mapping is not direct_label_colormap._cache_mapping
 
 
+def test_selection_fields_deprecation_shim(direct_label_colormap):
+    """Reading the removed selection fields warns and returns the old
+    defaults; writing raises with a pointer to the layer API."""
+    with pytest.warns(FutureWarning, match='show_selected_label'):
+        assert direct_label_colormap.use_selection is False
+    with pytest.warns(FutureWarning, match='selected_label'):
+        assert direct_label_colormap.selection == 0
+
+    with pytest.raises(AttributeError, match='show_selected_label'):
+        direct_label_colormap.use_selection = True
+    with pytest.raises(AttributeError, match='selected_label'):
+        direct_label_colormap.selection = 2
+
+
 def test_values_mapping_selection_shortcut(direct_label_colormap):
     """With selection kwargs, the minimum-values-set mapping collapses to
     the 2-entry {background, selection} shortcut."""
@@ -266,7 +280,6 @@ def test_values_mapping_selection_shortcut(direct_label_colormap):
 
     assert len(label_mapping) == 2
     assert len(color_dict) == 2
-
 
 
 @pytest.mark.usefixtures('_disable_jit')

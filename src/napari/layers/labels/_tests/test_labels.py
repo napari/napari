@@ -2224,7 +2224,12 @@ def test_color_mapping_with_show_selected_label():
 
 
 def test_show_selected_label_preserved_after_shuffle():
-    """Shuffling colors must not silently disable show_selected_label."""
+    """Shuffling colors must not silently disable show_selected_label.
+
+    Regression test for the original drift bug (#8947): the layer owns
+    the selection state, so a colormap swap must leave it untouched and
+    the rendered slice must stay filtered.
+    """
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
     layer.selected_label = 2
@@ -2232,38 +2237,45 @@ def test_show_selected_label_preserved_after_shuffle():
 
     seen = {}
     layer.events.colormap.connect(
-        lambda e: seen.update(use_selection=layer.colormap.use_selection)
+        lambda e: seen.update(filtered=layer.show_selected_label)
     )
     layer.new_colormap(seed=0)
 
-    # Selection state must be set before `events.colormap` fires, so the
-    # vispy shader is rebuilt with the right `use_selection`.
-    assert seen['use_selection'] is True
-    # And it must stick on the final colormap.
-    assert layer.colormap.use_selection is True
-    assert layer.colormap.selection == 2
-    label_mask = data == 2
-    npt.assert_allclose(layer.colormap.map(data)[~label_mask], 0)
+    # Selection state must already be correct when `events.colormap`
+    # fires, so the vispy shader is rebuilt with the right filter.
+    assert seen['filtered'] is True
+    assert layer.show_selected_label is True
+    assert layer.selected_label == 2
+    # The rendered slice honors the filter: non-selected labels get the
+    # background texture value.
+    displayed = layer._raw_to_displayed(data)
+    background = displayed[data == 0].ravel()[0]
+    assert np.all(displayed[data == 2] != background)
+    for value in (1, 3, 4):
+        assert np.all(displayed[data == value] == background)
 
 
 def test_shuffle_does_not_revive_stale_show_selected():
-    """Shuffling must reflect the layer's current show_selected_label state."""
+    """Shuffling must reflect the layer's current show_selected_label state.
+
+    Enable, shuffle, then disable. Before the layer owned the selection
+    state, the next shuffle would seed from a stale
+    `_original_random_colormap` and revive the filter (#8947).
+    """
     data = np.arange(5, dtype=np.int32)[:, np.newaxis].repeat(5, axis=1)
     layer = Labels(data)
     layer.selected_label = 2
 
-    # Enable, shuffle (detaches `_original_random_colormap` from the layer's
-    # mutations), then disable. Without the fix, the next shuffle would seed
-    # from the now-stale original and revive `use_selection=True`.
     layer.show_selected_label = True
     layer.new_colormap(seed=0)
     layer.show_selected_label = False
     layer.new_colormap(seed=1)
 
-    assert layer.colormap.use_selection is False
-    mapped = layer.colormap.map(data)
+    assert layer.show_selected_label is False
+    displayed = layer._raw_to_displayed(data)
+    background = displayed[data == 0].ravel()[0]
     for value in range(1, 5):
-        assert np.any(mapped[data == value] != 0)
+        assert np.all(displayed[data == value] != background)
 
 
 def test_color_mapping_when_seed_is_changed():
@@ -2912,3 +2924,57 @@ def test_show_selected_label_setter_fires_event_once():
     layer.show_selected_label = False
 
     assert fired == [True, False]
+
+
+@pytest.mark.parametrize('use_direct', [False, True])
+def test_paint_respects_show_selected_label_in_texture_cache(use_direct):
+    """Painting on a non-numpy backend patches the texture view cache
+    directly; the patch must honor the layer's selection filter.
+
+    Regression test for the interaction between layer-owned selection
+    state and the painting refactor's cache patching: painting a
+    non-selected label while ``show_selected_label`` is on must write the
+    filtered background value into the view cache, not the label's color.
+    """
+    data = zarr.zeros((10, 10), chunks=(5, 5), dtype=np.uint32)
+    if use_direct:
+        cmap = DirectLabelColormap(
+            color_dict={
+                0: [0, 0, 0, 0],
+                2: [1, 0, 0, 1],
+                3: [0, 1, 0, 1],
+                None: [0, 0, 1, 1],
+            }
+        )
+        layer = Labels(data, colormap=cmap)
+    else:
+        layer = Labels(data)
+    layer.brush_size = 1
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    background = np.copy(layer._slice.image.view[0, 0])
+
+    # Painting the selected label must show up in the view cache.
+    layer.paint((5, 5), 2, refresh=False)
+    assert not np.array_equal(layer._slice.image.view[5, 5], background)
+
+    # Painting a non-selected label must be filtered to background.
+    layer.paint((8, 8), 3, refresh=False)
+    np.testing.assert_array_equal(layer._slice.image.view[8, 8], background)
+
+
+def test_data_setitem_respects_show_selected_label_in_texture_cache():
+    """``data_setitem`` patches mapped values into the view cache; the
+    patch must honor the layer's selection filter."""
+    layer = Labels(np.zeros((10, 10), dtype=np.int32))
+    layer.selected_label = 2
+    layer.show_selected_label = True
+
+    background = np.copy(layer._slice.image.view[0, 0])
+
+    layer.data_setitem((np.array([5]), np.array([5])), 2, refresh=False)
+    assert not np.array_equal(layer._slice.image.view[5, 5], background)
+
+    layer.data_setitem((np.array([8]), np.array([8])), 3, refresh=False)
+    np.testing.assert_array_equal(layer._slice.image.view[8, 8], background)

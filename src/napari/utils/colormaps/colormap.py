@@ -7,7 +7,6 @@ from typing import (
     Annotated,
     Any,
     Literal,
-    Self,
     cast,
     overload,
 )
@@ -243,6 +242,57 @@ class LabelColormapBase(Colormap):
         ignored_types=(cached_property,)
         # TODO: ensure that this is actually needed
     )
+
+    @property
+    def use_selection(self) -> bool:
+        """Deprecated: selection filtering moved to the Labels layer."""
+        warn(
+            trans._(
+                'LabelColormapBase.use_selection was removed; label colormaps'
+                ' no longer carry selection state. Read'
+                ' layer.show_selected_label instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return False
+
+    @use_selection.setter
+    def use_selection(self, value: bool) -> None:
+        raise AttributeError(
+            trans._(
+                'LabelColormapBase.use_selection was removed; label colormaps'
+                ' are immutable value objects. Set layer.show_selected_label'
+                ' instead.',
+                deferred=True,
+            )
+        )
+
+    @property
+    def selection(self) -> int:
+        """Deprecated: selection filtering moved to the Labels layer."""
+        warn(
+            trans._(
+                'LabelColormapBase.selection was removed; label colormaps no'
+                ' longer carry selection state. Read layer.selected_label'
+                ' instead.',
+                deferred=True,
+            ),
+            FutureWarning,
+            stacklevel=2,
+        )
+        return 0
+
+    @selection.setter
+    def selection(self, value: int) -> None:
+        raise AttributeError(
+            trans._(
+                'LabelColormapBase.selection was removed; label colormaps are'
+                ' immutable value objects. Set layer.selected_label instead.',
+                deferred=True,
+            )
+        )
 
     @overload
     def _data_to_texture(
