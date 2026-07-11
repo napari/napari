@@ -216,9 +216,6 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_toggle_canvas_ndim,
     ),
-]
-
-VIEW_ACTIONS.append(
     Action(
         id='napari.viewer.toggle_synced_camera',
         title=trans._('Toggle Synced Camera'),
@@ -231,9 +228,6 @@ VIEW_ACTIONS.append(
         ],
         callback=_toggle_synced_camera,
     ),
-)
-
-VIEW_ACTIONS.append(
     Action(
         id='napari.window.view.toggle_layer_tooltips',
         title=trans._('Toggle Layer Tooltips'),
@@ -247,7 +241,7 @@ VIEW_ACTIONS.append(
         callback=_tooltip_visibility_toggle,
         toggled=ToggleRule(get_current=_get_current_tooltip_visibility),
     ),
-)
+]
 
 for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
     VIEW_ACTIONS.append(
