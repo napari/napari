@@ -274,8 +274,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         settings.application.events.horizontal_axis_orientation.connect(
             self._update_camera_orientation
         )
-        self._update_camera_synced()
-        settings.application.events.synced.connect(self._update_camera_synced)
+        self._update_synced_camera()
+        settings.application.events.synced_camera.connect(
+            self._update_synced_camera
+        )
 
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
@@ -372,10 +374,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             settings.application.horizontal_axis_orientation,
         )
 
-    def _update_camera_synced(self):
+    def _update_synced_camera(self):
         """Update camera synced mode based on settings."""
         settings = get_settings()
-        self.camera.synced = settings.application.synced
+        self.camera.synced = settings.application.synced_camera
 
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""

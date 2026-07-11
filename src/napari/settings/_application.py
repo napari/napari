@@ -211,7 +211,7 @@ class ApplicationSettings(EventedModel):
             'Default is "Right".'
         ),
     )
-    synced: bool = Field(
+    synced_camera: bool = Field(
         default=True,
         title='Synced Camera',
         description=trans._(_SYNCED_CAMERA_DESCRIPTION),
