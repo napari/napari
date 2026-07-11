@@ -8,6 +8,7 @@ from psutil import virtual_memory
 from pydantic import Field, field_validator
 from pydantic_settings import SettingsConfigDict
 
+from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
@@ -213,13 +214,7 @@ class ApplicationSettings(EventedModel):
     synced: bool = Field(
         default=True,
         title='Synced Camera',
-        description=trans._(
-            'Controls how camera state is managed when switching between\n'
-            '2D and 3D views. When checked, camera center and zoom are\n'
-            'shared between views, with the depth (Z) component synced via\n'
-            'the dims slider. When unchecked, each mode remembers\n'
-            'its own camera state independently.'
-        ),
+        description=trans._(_SYNCED_CAMERA_DESCRIPTION),
     )
 
     grid_stride: GridStride = Field(
