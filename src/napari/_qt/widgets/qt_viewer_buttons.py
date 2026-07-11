@@ -25,7 +25,6 @@ from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
-from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
@@ -574,7 +573,7 @@ class QtViewerButtons(QFrame):
         )
         synced_help_symbol = help_tooltip(
             parent=popup,
-            text=_SYNCED_CAMERA_DESCRIPTION,
+            text=self.viewer.camera.model_fields['synced'].description,
         )
         grid_layout.addWidget(self.camera_synced_checkbox, row, 0, 1, 2)
         grid_layout.addWidget(synced_help_symbol, row, 2)

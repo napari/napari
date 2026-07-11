@@ -22,15 +22,6 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 
-_SYNCED_CAMERA_DESCRIPTION = (
-    'Controls how camera state is managed when switching between\n'
-    '2D and 3D views. When checked, camera center and zoom are\n'
-    'shared between views, with the depth (Z) component synced via\n'
-    'the dims slider. When unchecked, each mode remembers\n'
-    'its own camera state independently.'
-)
-
-
 @dataclass(frozen=True)
 class _CameraState:
     """Captured camera state for a single ndisplay mode.
@@ -88,7 +79,13 @@ class Camera(EventedModel):
     ] = DEFAULT_ORIENTATION_TYPED
     synced: bool = Field(
         True,
-        description=_SYNCED_CAMERA_DESCRIPTION,
+        description=(
+            'Controls how camera state is managed when switching between\n'
+            '2D and 3D views. When checked, camera center and zoom are\n'
+            'shared between views, with the depth (Z) component synced via\n'
+            'the dims slider. When unchecked, each mode remembers\n'
+            'its own camera state independently.'
+        ),
     )
 
     # Per-mode camera state cache for the "separate" (synced=False) mode.
