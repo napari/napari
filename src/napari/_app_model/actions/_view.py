@@ -162,6 +162,11 @@ def _toggle_synced_camera(viewer: ViewerModel) -> None:
     show_info(f'Camera synced: {viewer.camera.synced}')
 
 
+def _get_current_synced_camera(viewer: ViewerModel) -> bool:
+    """Return the current synced state of the camera."""
+    return viewer.camera.synced
+
+
 VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.fit_to_view',
@@ -227,6 +232,7 @@ VIEW_ACTIONS: list[Action] = [
             }
         ],
         callback=_toggle_synced_camera,
+        toggled=ToggleRule(get_current=_get_current_synced_camera),
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
