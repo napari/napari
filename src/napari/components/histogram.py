@@ -416,6 +416,7 @@ class HistogramModel(EventedModel):
         pixel_indices = rng.choice(
             n_pixels, size=self.max_samples, replace=False
         )
+        pixel_indices.sort()  # sort for smaller task graph and to avoid min_req PerformanceWarning
         # Flatten the spatial dimensions to (n_pixels, channels) and select
         # the sampled rows along a single axis.
         n_channels = data.shape[-1]
