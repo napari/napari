@@ -13,13 +13,16 @@ from napari.components.overlays.interaction_box import (
     TransformBoxOverlay,
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
+from napari.components.overlays.rectangle import (
+    SelectionRectOverlay,
+    ZoomRectOverlay,
+)
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.text import (
     CurrentSliceOverlay,
     LayerNameOverlay,
     TextOverlay,
 )
-from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
     'AxesOverlay',
@@ -35,7 +38,8 @@ __all__ = [
     'ScaleBarOverlay',
     'SceneOverlay',
     'SelectionBoxOverlay',
+    'SelectionRectOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
-    'ZoomOverlay',
+    'ZoomRectOverlay',
 ]

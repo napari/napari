@@ -23,13 +23,16 @@ from napari._vispy.overlays.interaction_box import (
     VispyTransformBoxOverlay,
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
+from napari._vispy.overlays.rectangle import (
+    VispyLayerRectOverlay,
+    VispyViewerRectOverlay,
+)
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.text import (
     VispyCurrentSliceOverlay,
     VispyLayerNameOverlay,
     VispyTextOverlay,
 )
-from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
     AxesOverlay,
     BoundingBoxOverlay,
@@ -42,9 +45,10 @@ from napari.components.overlays import (
     Overlay,
     ScaleBarOverlay,
     SelectionBoxOverlay,
+    SelectionRectOverlay,
     TextOverlay,
     TransformBoxOverlay,
-    ZoomOverlay,
+    ZoomRectOverlay,
 )
 from napari.layers import (
     Image,
@@ -82,7 +86,8 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
     LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
-    ZoomOverlay: VispyZoomOverlay,
+    ZoomRectOverlay: VispyViewerRectOverlay,
+    SelectionRectOverlay: VispyLayerRectOverlay,
     LayerNameOverlay: VispyLayerNameOverlay,
     CurrentSliceOverlay: VispyCurrentSliceOverlay,
     ColorBarOverlay: VispyColorBarOverlay,
