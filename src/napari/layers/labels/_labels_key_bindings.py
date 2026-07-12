@@ -182,7 +182,13 @@ def redo(layer: Labels) -> None:
 )
 def reset_polygon(layer: Labels) -> None:
     """Reset the drawing of the current polygon or abort a brush stroke."""
-    brush_stroke = layer._overlays['brush_stroke']
+    from napari.components.overlays.labels_brush_stroke import (
+        LabelsBrushStrokeOverlay,
+    )
+
+    brush_stroke = cast(
+        LabelsBrushStrokeOverlay, layer._overlays['brush_stroke']
+    )
     if brush_stroke.active:
         brush_stroke.abort(layer)
         return

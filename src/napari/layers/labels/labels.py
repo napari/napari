@@ -1137,9 +1137,13 @@ class Labels(ScalarFieldBase):
         self._block_history = False
         self._commit_staged_history()
 
-    def _abort_stroke(self):
+    def _abort_stroke(self) -> None:
         """Discard the staged (uncommitted) edits of an in-progress stroke."""
-        for indices, prev_values, _ in reversed(self._staged_history):
+        for atom in reversed(self._staged_history):
+            if isinstance(atom, _MaskedPaintAtom):
+                self._replay_masked_atom(atom, undoing=True)
+                continue
+            indices, prev_values, _ = atom
             self.data[indices] = prev_values
         self._staged_history = []
         self._block_history = False

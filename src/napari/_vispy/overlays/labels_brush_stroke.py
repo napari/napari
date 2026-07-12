@@ -78,7 +78,8 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         dd = list(self._dims_displayed)
         center = np.array(self.overlay.center, dtype=float)
-        radius = float(self.overlay.radius)
+        # radius can get recast to a tuple below when scale differs per axis
+        radius: float | tuple[float, float] = float(self.overlay.radius)
 
         # convert data -> texture space when downsampling is active, like the
         # labels polygon overlay does for its points
