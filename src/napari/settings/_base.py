@@ -4,7 +4,6 @@ import contextlib
 import json
 import logging
 import os
-import warnings
 from collections.abc import Mapping
 from enum import StrEnum
 from functools import partial
@@ -341,39 +340,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def _on_sub_event(self, event, field=None):
         super()._on_sub_event(event, field)
         self._maybe_save()
-
-    def dict(
-        self,
-        *,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-    ) -> DictStrAny:
-        """Return dict representation of the model.
-
-        May optionally specify which fields to include or exclude.
-
-        .. deprecated:: 0.7.0
-              `dict` will be removed in napari 0.8.0 it is replaced by
-              `model_dump` following pydantic 1 to 2 changes.
-        """
-        warnings.warn(
-            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.',
-            category=FutureWarning,
-        )
-        return self.model_dump(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_env=exclude_env,
-        )
 
     def model_dump(
         self,
