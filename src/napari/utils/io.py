@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import struct
 import sys
-import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -137,30 +136,6 @@ def imsave_tiff(filename, data):
                 compressionargs={'level': 1},
                 bigtiff=True,
             )
-
-
-def __getattr__(name: str):
-    if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
-    }:
-        warnings.warn(
-            trans._(
-                '{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
-                deferred=True,
-                name=name,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        import napari_builtins.io
-
-        return getattr(napari_builtins.io, name)
-
-    raise AttributeError(f'module {__name__} has no attribute {name}')
 
 
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
