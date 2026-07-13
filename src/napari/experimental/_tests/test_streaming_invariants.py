@@ -471,6 +471,7 @@ def test_held_present_self_releases_by_deadline(
         assert dbuf._present_hold_until - time.monotonic() <= 1.6
 
         dbuf.hold_presents(timeout=0.3)
+        dbuf._suppress_full = False
         node.set_data(np.full(dbuf.shape, 3, dtype=np.uint8))
         dbuf._stage_deadline = 0.0
         assert dbuf.dirty
