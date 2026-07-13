@@ -807,6 +807,7 @@ module = [
     "napari._vispy.layers.vectors",
     "napari._vispy.overlays.axes",
     "napari._vispy.overlays.interaction_box",
+    "napari._vispy.overlays.labels_brush_stroke",
     "napari._vispy.overlays.labels_polygon",
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
@@ -1009,9 +1010,6 @@ name = "Block imports from napari_builtins in napari core"
 type = "forbidden"
 source_modules = "napari"
 forbidden_modules = ["napari_builtins"]
-ignore_imports = [
-    "napari.utils.io -> napari_builtins"  # to be removed in 0.8.0
-]
 
 [tool.check-wheel-contents]
 toplevel = ["napari", "napari_builtins"]

@@ -210,6 +210,17 @@ class ApplicationSettings(EventedModel):
             'Default is "Right".'
         ),
     )
+    synced_camera: bool = Field(
+        default=True,
+        title='Synced Camera',
+        description=trans._(
+            'Controls how camera state is managed when switching between\n'
+            '2D and 3D views. When checked, camera center and zoom are\n'
+            'shared between views, with the depth (Z) component synced via\n'
+            'the dims slider. When unchecked, each mode remembers\n'
+            'its own camera state independently.'
+        ),
+    )
 
     grid_stride: GridStride = Field(
         default=1,
