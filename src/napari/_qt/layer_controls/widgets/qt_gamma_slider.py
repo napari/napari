@@ -34,8 +34,10 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
-        # Setup widgets
-        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent)
+
+        # Setup gamma slider - exactly like opacity slider
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
