@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pydantic import field_validator
+from pydantic import Field, PrivateAttr, field_validator
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -19,6 +20,29 @@ from napari.utils.misc import ensure_n_tuple
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+
+_SYNCED_CAMERA_DESCRIPTION = (
+    'Controls how camera state is managed when switching between\n'
+    '2D and 3D views. When checked, camera center and zoom are\n'
+    'shared between views, with the depth (Z) component synced via\n'
+    'the dims slider. When unchecked, each mode remembers\n'
+    'its own camera state independently.'
+)
+
+
+@dataclass(frozen=True)
+class _CameraState:
+    """Captured camera state for a single ndisplay mode.
+
+    This is a lightweight private data container used internally by
+    :class:`Camera` to preserve per-mode center, zoom, and angles when
+    switching between 2D and 3D views.
+    """
+
+    center: tuple[float, float, float] | tuple[float, float]
+    zoom: float
+    angles: tuple[float, float, float]
 
 
 class Camera(EventedModel):
@@ -62,6 +86,33 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
+    synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
+
+    # Per-mode camera state cache for the "separate" (synced=False) mode.
+    _cached_2d_state: _CameraState | None = PrivateAttr(None)
+    _cached_3d_state: _CameraState | None = PrivateAttr(None)
+
+    def _cache_state(self, ndisplay_mode: int) -> None:
+        """Save current camera state for a given ndisplay mode."""
+        state = _CameraState(
+            center=self.center,
+            zoom=self.zoom,
+            angles=self.angles,
+        )
+        if ndisplay_mode == 2:
+            self._cached_2d_state = state
+        else:
+            self._cached_3d_state = state
+
+    def _pop_cached_state(self, ndisplay_mode: int) -> _CameraState | None:
+        """Retrieve and remove cached state for a given ndisplay mode."""
+        if ndisplay_mode == 2:
+            state = self._cached_2d_state
+            self._cached_2d_state = None
+        else:
+            state = self._cached_3d_state
+            self._cached_3d_state = None
+        return state
 
     @field_validator('center', 'angles', mode='before')
     @classmethod
