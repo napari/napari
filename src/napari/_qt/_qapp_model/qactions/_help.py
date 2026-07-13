@@ -13,6 +13,7 @@ from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari._qt.widgets.qt_logger import LogWidget
 from napari._qt.widgets.qt_tips import TipsWidget
+from napari._qt.widgets.qt_viewer_tour import build_viewer_tour
 from napari.utils.translations import trans
 
 
@@ -28,6 +29,18 @@ def _show_logs(window: Window):
 
 def _show_tips(window: Window):
     window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
+
+
+def _start_viewer_tour(window: Window):
+    qt_window = window._qt_window
+    if qt_window._viewer_tour is not None:
+        return
+    if not window._qt_viewer.viewer.layers:
+        window._qt_viewer.viewer.open_sample('napari', 'balls_3d')
+    tour = build_viewer_tour(qt_window)
+    qt_window._viewer_tour = tour
+    tour.finished.connect(lambda: setattr(qt_window, '_viewer_tour', None))
+    tour.start()
 
 
 v = parse(__version__)
@@ -85,6 +98,13 @@ Q_HELP_ACTIONS: list[Action] = [
         callback=_show_tips,
         menus=[{'id': MenuId.MENUBAR_HELP}],
         status_tip=trans._('Show some quick napari tips and tricks'),
+    ),
+    Action(
+        id='napari.window.help.viewer_tour',
+        title=trans._('Take a tour'),
+        callback=_start_viewer_tour,
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+        status_tip=trans._('Start a guided tour of the napari viewer'),
     ),
     Action(
         id='napari.window.help.layers_guide',
