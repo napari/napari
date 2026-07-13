@@ -103,9 +103,7 @@ def test_chunk_source_provenance_tracked():
     # moving the interval prunes provenance with the chunks
     fresh[0].set_interval((32, 32), (64, 64))
     assert all(
-        start >= 32
-        for key in fresh[0].chunk_source
-        for start, _stop in key
+        start >= 32 for key in fresh[0].chunk_source for start, _stop in key
     )
 
 
@@ -129,8 +127,9 @@ def test_debug_overlay_draws_chunk_grid(
         _wait_for_idle_loader(qtbot, loader)
 
         qtbot.waitUntil(
-            lambda: overlay._shapes is not None
-            and len(overlay._shapes.data) > 0,
+            lambda: (
+                overlay._shapes is not None and len(overlay._shapes.data) > 0
+            ),
             timeout=10000,
         )
         level = int(layer.data_level)

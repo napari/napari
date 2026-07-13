@@ -226,8 +226,7 @@ def test_camera_move_does_no_sync_read_on_gui_thread(
     """
     reads: list[int] = []
     wrapped = [
-        _ThreadRecordingArray(level, reads)
-        for level in big_multiscale_arrays
+        _ThreadRecordingArray(level, reads) for level in big_multiscale_arrays
     ]
     viewer = make_napari_viewer()
     # explicit contrast limits: estimation is a deliberate one-time read
@@ -416,9 +415,7 @@ def test_settled_view_change_completes_without_further_events(
         )
         assert loader._held_batches == []
         lo, hi = vdata.interval
-        key = tuple(
-            slice(int(a), int(b)) for a, b in zip(lo, hi, strict=True)
-        )
+        key = tuple(slice(int(a), int(b)) for a, b in zip(lo, hi, strict=True))
         np.testing.assert_array_equal(
             np.asarray(vdata[key]),
             np.asarray(big_multiscale_arrays[0][key]),

@@ -2144,14 +2144,9 @@ class ProgressiveLoader:
         resident_loaded = bool(self._data[self._resident_level].loaded_chunks)
         for lvl in range(self._resident_level - 1, target, -1):
             vdata = self._data[lvl]
-            ratio = [
-                factors[target][d] / factors[lvl][d] for d in range(ndim)
-            ]
+            ratio = [factors[target][d] / factors[lvl][d] for d in range(ndim)]
             region_min = np.array(
-                [
-                    int(np.floor(min_coord[d] * ratio[d]))
-                    for d in range(ndim)
-                ],
+                [int(np.floor(min_coord[d] * ratio[d])) for d in range(ndim)],
                 dtype=np.int64,
             )
             region_max = np.array(

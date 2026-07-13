@@ -296,7 +296,9 @@ class VirtualData:
 
         self.lock = threading.RLock()
         self.translate: tuple[int, ...] = (0,) * self.ndim
-        self.hyperslice = np.full((0,) * self.ndim, fill_value, dtype=self.dtype)
+        self.hyperslice = np.full(
+            (0,) * self.ndim, fill_value, dtype=self.dtype
+        )
         self._min_coord: list[int] | None = None
         self._max_coord: list[int] | None = None
         self._boundaries = chunk_boundaries(array)
@@ -417,7 +419,9 @@ class VirtualData:
                     )
             used_backdrop = next_hyperslice is not None
             if next_hyperslice is None:
-                next_hyperslice = np.full(new_shape, self.fill_value, dtype=self.dtype)
+                next_hyperslice = np.full(
+                    new_shape, self.fill_value, dtype=self.dtype
+                )
 
             # Carry over data overlapping the previous interval to avoid
             # re-fetching and visual flashing.

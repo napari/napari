@@ -180,8 +180,7 @@ def test_progressive_bench_zoom_pan(qtbot, make_napari_viewer, monkeypatch):
             now = time.perf_counter() - start
             if (
                 t_content is None
-                and _viewport_zero_fraction(loader, layer)
-                < CONTENT_THRESHOLD
+                and _viewport_zero_fraction(loader, layer) < CONTENT_THRESHOLD
             ):
                 t_content = now
             if idle() and _coverage_complete(loader, layer):
@@ -219,8 +218,8 @@ def test_progressive_bench_zoom_pan(qtbot, make_napari_viewer, monkeypatch):
     worst_blank = max(row[5] for row in rows)
     print(  # noqa: T201
         f'\nworst stall {worst_stall:.0f}ms | '
-        f"worst _check {sections['_check'] * 1e3:.0f}ms | "
-        f"worst _on_set_data {sections['_on_set_data'] * 1e3:.0f}ms | "
+        f'worst _check {sections["_check"] * 1e3:.0f}ms | '
+        f'worst _on_set_data {sections["_on_set_data"] * 1e3:.0f}ms | '
         f'worst blank@settle {worst_blank:.1%}\n'
         'target: stall ~0ms, first content ~0s, blank 0%',
     )
