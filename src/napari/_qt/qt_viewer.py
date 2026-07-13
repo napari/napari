@@ -183,7 +183,9 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
+        self._welcome_widget = QtWelcomeWidget(
+            self.canvas.native, viewer=self.viewer, tips=tips
+        )
         self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
         self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
