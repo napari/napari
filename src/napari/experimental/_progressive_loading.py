@@ -979,6 +979,7 @@ class ProgressiveLoader:
             )
         with contextlib.suppress(Exception):
             self._debounce_timer.stop()
+        self._data = []
         self._viewer = None  # type: ignore[assignment]
         self._layer = None  # type: ignore[assignment]
 

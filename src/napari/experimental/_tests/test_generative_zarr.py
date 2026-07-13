@@ -71,6 +71,9 @@ def test_mandelbrot_levels_consistent(mandelbrot_arrays):
 
 
 def test_mandelbrot_store_through_cache():
+    pytest.importorskip(
+        'zarr.experimental', reason='zarr.experimental not available'
+    )
     from zarr.experimental.cache_store import CacheStore
     from zarr.storage import MemoryStore
 

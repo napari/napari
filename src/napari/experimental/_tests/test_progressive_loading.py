@@ -5,12 +5,18 @@ import dask.array as da
 import numpy as np
 import pytest
 
-pytest.importorskip('qtpy', reason='requires Qt backend')
+qtpy = pytest.importorskip('qtpy', reason='requires Qt backend')
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == 'darwin' and os.environ.get('CI') == 'true',
-    reason='Progressive loading tests hang on macOS CI (no real display)',
-)
+pytestmark = [
+    pytest.mark.skipif(
+        sys.platform == 'darwin' and os.environ.get('CI') == 'true',
+        reason='Progressive loading tests hang on macOS CI (no real display)',
+    ),
+    pytest.mark.skipif(
+        qtpy.API_NAME.startswith('PySide'),
+        reason='QTimer wedge under pytest with PySide6; see #9067',
+    ),
+]
 
 from napari.experimental._progressive_loading import (  # noqa: E402
     ProgressiveLoader,
@@ -1403,6 +1409,7 @@ def _engaged_3d_dbuf(qtbot, make_napari_viewer, arrays):
     qtbot.waitUntil(lambda: loader._dbuf is not None, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     _settle_dbuf(qtbot, loader._dbuf)
+    loader._dbuf._suppress_full = False
     return viewer, layer, loader
 
 
@@ -1431,6 +1438,7 @@ def test_transform_applied_at_swap_not_before(
     transform = node.transform
     old_matrix = np.array(transform.matrix, copy=True)
 
+    dbuf._suppress_full = False
     vol = np.full(dbuf.shape, 7, dtype=np.uint8)
     node.set_data(vol)  # staged full rewrite; transform hold begins
     new_matrix = old_matrix.copy()
@@ -1477,6 +1485,7 @@ def test_full_rewrite_present_waits_for_upload_drain(
     monkeypatch.setattr(dbuf, '_queued_upload_bytes', lambda: 0)
 
     monkeypatch.setattr(gm, 'pending_upload_bytes', lambda: 123456)
+    dbuf._suppress_full = False
     vol = np.full(dbuf.shape, 9, dtype=np.uint8)
     node.set_data(vol)
     assert dbuf.dirty
@@ -1508,6 +1517,7 @@ def test_full_rewrite_present_waits_for_preflush_queue(
     node = loader._get_volume_node()
     front_before = dbuf._front
 
+    dbuf._suppress_full = False
     vol = np.full(dbuf.shape, 5, dtype=np.uint8)
     node.set_data(vol)
     assert dbuf.dirty
@@ -1564,6 +1574,7 @@ def test_dtype_change_rewrite_routes_to_reshape(
     )
 
     # same spatial shape and channel count, wider dtype -> format change
+    dbuf._suppress_full = False
     vol = np.full(dbuf.shape, 7, dtype=np.uint16)
     node.set_data(vol)  # must not raise
 
@@ -1592,6 +1603,7 @@ def test_hold_presents_vetoes_until_released(
     front_before = dbuf._front
 
     dbuf.hold_presents(timeout=30.0)
+    dbuf._suppress_full = False
     vol = np.zeros(dbuf.shape, dtype=np.uint8)
     node.set_data(vol)
     assert dbuf.dirty
