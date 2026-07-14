@@ -595,21 +595,24 @@ def compute_multiscale_level(
     level : int
         Level of the multiscale to be viewing.
     """
+
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
-    active_dims = requested_shape > shape_threshold
 
-    # Find the highest level (lowest resolution) allowed
-    if np.any(active_dims):
-        locations = np.argwhere(
-            np.all((scaled_shape > shape_threshold)[:, active_dims], axis=1))
-    else:
-        locations = np.array([[0]])
+    exceeds_threshold = requested_shape > shape_threshold
+    is_downsampled = np.any(downsample_factors > 1, axis=0)
+    active_dims = exceeds_threshold & is_downsampled
 
-    if len(locations) > 0:
-        return locations[-1][0]
-    else:
+    if not np.any(active_dims):
         return 0
+
+    locations = np.flatnonzero(
+        np.all(
+            scaled_shape[:, active_dims] > shape_threshold[active_dims],
+            axis=1,
+        )
+    )
+    return int(locations[-1]) if locations.size else 0
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
