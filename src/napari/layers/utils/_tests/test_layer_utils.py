@@ -115,7 +115,6 @@ def test_compute_multiscale_level_ignores_non_downsampled_dimension():
             ]
         ),
     )
-
     assert level == 4
 
 
@@ -134,7 +133,6 @@ def test_compute_multiscale_level_ignores_dimension_below_threshold():
             ]
         ),
     )
-
     assert level == 4
 
 

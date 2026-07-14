@@ -610,11 +610,12 @@ def compute_multiscale_level(
 
     locations = np.flatnonzero(
         np.all(
-            scaled_shape[:, active_dims] > shape_threshold[active_dims],
+            (scaled_shape > shape_threshold)[:, active_dims],
             axis=1,
         )
     )
     return int(locations[-1]) if locations.size else 0
+
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
