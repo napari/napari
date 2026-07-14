@@ -599,6 +599,8 @@ def compute_multiscale_level(
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
+    # Find the highest level (lowest resolution) allowed, ignoring dimensions
+    # that already fit within the canvas or are not downsampled.
     exceeds_threshold = requested_shape > shape_threshold
     is_downsampled = np.any(downsample_factors > 1, axis=0)
     active_dims = exceeds_threshold & is_downsampled
