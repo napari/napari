@@ -700,9 +700,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if isinstance(
             base_layer := self.layers.selection.active, ScalarFieldBase
         ):
-            shape = base_layer.data.shape[
-                : base_layer.ndim
-            ]  # use :base_layer.ndim to cut channels from rgb images
             dtype = get_settings().application.new_labels_dtype
 
             if 'progressive_loader' in base_layer.metadata:
@@ -734,14 +731,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     )
                 add_progressive_loading_labels(
                     label_arrays,
-                    viewer=self,
+                    viewer=self,  # type: ignore[arg-type]
                     name=base_layer.name + ' - Labels',
                     scale=tuple(base_layer.scale),
                     translate=tuple(base_layer.translate),
                 )
                 return
 
-            data = np.zeros(shape, dtype=dtype)
+            # use :base_layer.ndim to cut channels from rgb images
+            data = np.zeros(
+                base_layer.data.shape[: base_layer.ndim], dtype=dtype
+            )
 
             layer = Labels(
                 data=data,
