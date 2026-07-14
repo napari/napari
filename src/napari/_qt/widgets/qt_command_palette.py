@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
 from app_model.types import CommandRule, MenuItem
@@ -10,6 +11,7 @@ from qtpy.QtCore import Qt, Signal
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
 from napari.settings import get_settings
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -120,6 +122,13 @@ class QCommandPalette(QtW.QWidget):
         self.raise_()
         self._line.setFocus()
 
+        exp = get_settings().experimental
+        if exp.command_palette_fuzzy_search and find_spec('rapidfuzz') is None:
+            show_warning(
+                'Fuzzy command search is enabled in experimental settings, but '
+                'rapidfuzz is not installed. Falling back to simple word matching. '
+                'To suppress this warning, disable the setting or install rapidfuzz.'
+            )
         return
 
     def hide(self) -> None:
@@ -453,7 +462,7 @@ def _iter_matched_actions(
     input_text: str, name_to_command: dict[str, CommandRule]
 ) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
-    if not exp.command_palette_fuzzy_search:
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
         # basic word matching
         words = input_text.lower().split(' ')
         for name, command in name_to_command.items():
@@ -491,7 +500,7 @@ def _iter_highlight_slices(
     but should help visualize a bit what's being matched.
     """
     exp = get_settings().experimental
-    if not exp.command_palette_fuzzy_search:
+    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
         # basic word matching
         import re
 
