@@ -132,7 +132,7 @@ class ExperimentalSettings(EventedSettings):
     )
 
     command_palette_fuzzy_search: PaletteFuzzySearch = Field(
-        default=PaletteFuzzySearch.enabled,
+        default=PaletteFuzzySearch.enabled_if_available,
         title='Enable fuzzy search in the command palette',
         description=(
             'When searching for commands via the command palette, use fuzzy finding\n'
