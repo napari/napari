@@ -24,6 +24,7 @@ _COMMON_ALIASES = {
     'colorbar': 'calibration bar',
     'color': 'colour',
     'visualize': 'visualise',
+    'preferences': 'settings',
 }
 
 
