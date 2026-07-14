@@ -15,7 +15,7 @@ class QtFontSizeWidget(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self._spinbox = QtSpinBox()
         self._reset_button = QPushButton(trans._('Reset font size'))
@@ -33,7 +33,7 @@ class QtFontSizeWidget(QWidget):
         """
         Reset the widget value to the current selected theme font size value.
         """
-        current_theme_name = get_settings().appearance.theme
+        current_theme_name: str = get_settings().appearance.theme
         if current_theme_name == 'system':
             # system isn't a theme, so get the name
             current_theme_name = get_system_theme()
