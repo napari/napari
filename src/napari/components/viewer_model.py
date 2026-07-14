@@ -720,9 +720,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 ndim = base_layer.ndim
                 label_arrays = []
                 for src in ms_data.arrays:
-                    lvl_shape = tuple(
-                        int(s) for s in src.shape[:ndim]
-                    )
+                    lvl_shape = tuple(int(s) for s in src.shape[:ndim])
                     chunks = tuple(
                         min(c, s)
                         for c, s in zip(
