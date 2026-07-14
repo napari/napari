@@ -125,14 +125,14 @@ class QCommandPalette(QtW.QWidget):
 
         exp = get_settings().experimental
         if (
-            exp.command_palette_fuzzy_search == PaletteFuzzySearch.FUZZY
+            exp.command_palette_fuzzy_search == PaletteFuzzySearch.enabled
             and find_spec('rapidfuzz') is None
         ):
             show_warning(
                 'Fuzzy command search is enabled in experimental settings, but '
                 'rapidfuzz is not installed. Falling back to simple word matching. '
-                'To suppress this warning, either change the setting to `none` or `fuzzy_if_available`, '
-                'or install `rapidfuzz` to enable fuzzy search.'
+                'To suppress this warning, change the setting to `Disabled` or `Enabled if available`. '
+                'Alternatively, install `rapidfuzz` to enable fuzzy search.'
             )
         return
 
@@ -468,7 +468,7 @@ def _iter_matched_actions(
 ) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
     if (
-        exp.command_palette_fuzzy_search == PaletteFuzzySearch.NONE
+        exp.command_palette_fuzzy_search == PaletteFuzzySearch.disabled
         or find_spec('rapidfuzz') is None
     ):
         # basic word matching
@@ -509,7 +509,7 @@ def _iter_highlight_slices(
     """
     exp = get_settings().experimental
     if (
-        exp.command_palette_fuzzy_search == PaletteFuzzySearch.NONE
+        exp.command_palette_fuzzy_search == PaletteFuzzySearch.disabled
         or find_spec('rapidfuzz') is None
     ):
         # basic word matching

@@ -1,4 +1,4 @@
-from enum import StrEnum, auto
+from enum import StrEnum
 from typing import Any
 
 from pydantic import AliasChoices, Field
@@ -21,9 +21,9 @@ class PaletteFuzzySearch(StrEnum):
     Enum for palette fuzzy search.
     """
 
-    FUZZY = auto()
-    FUZZY_IF_AVAILABLE = auto()
-    NONE = auto()
+    enabled_if_available = 'Enabled if available'
+    enabled = 'Enabled'
+    disabled = 'Disabled'
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -132,7 +132,7 @@ class ExperimentalSettings(EventedSettings):
     )
 
     command_palette_fuzzy_search: PaletteFuzzySearch = Field(
-        default=PaletteFuzzySearch.FUZZY,
+        default=PaletteFuzzySearch.enabled,
         title='Enable fuzzy search in the command palette',
         description=(
             'When searching for commands via the command palette, use fuzzy finding\n'
