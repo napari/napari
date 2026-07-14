@@ -11,6 +11,7 @@ from qtpy.QtCore import Qt, Signal
 from napari._app_model import get_app_model
 from napari._app_model.context._context import get_context
 from napari.settings import get_settings
+from napari.settings._experimental import PaletteFuzzySearch
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
@@ -123,11 +124,15 @@ class QCommandPalette(QtW.QWidget):
         self._line.setFocus()
 
         exp = get_settings().experimental
-        if exp.command_palette_fuzzy_search and find_spec('rapidfuzz') is None:
+        if (
+            exp.command_palette_fuzzy_search == PaletteFuzzySearch.FUZZY
+            and find_spec('rapidfuzz') is None
+        ):
             show_warning(
                 'Fuzzy command search is enabled in experimental settings, but '
                 'rapidfuzz is not installed. Falling back to simple word matching. '
-                'To suppress this warning, disable the setting or install rapidfuzz.'
+                'To suppress this warning, either change the setting to `none` or `fuzzy_if_available`, '
+                'or install `rapidfuzz` to enable fuzzy search.'
             )
         return
 
@@ -462,7 +467,10 @@ def _iter_matched_actions(
     input_text: str, name_to_command: dict[str, CommandRule]
 ) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
-    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+    if (
+        exp.command_palette_fuzzy_search == PaletteFuzzySearch.NONE
+        or find_spec('rapidfuzz') is None
+    ):
         # basic word matching
         words = input_text.lower().split(' ')
         for name, command in name_to_command.items():
@@ -500,7 +508,10 @@ def _iter_highlight_slices(
     but should help visualize a bit what's being matched.
     """
     exp = get_settings().experimental
-    if not exp.command_palette_fuzzy_search or find_spec('rapidfuzz') is None:
+    if (
+        exp.command_palette_fuzzy_search == PaletteFuzzySearch.NONE
+        or find_spec('rapidfuzz') is None
+    ):
         # basic word matching
         import re
 
