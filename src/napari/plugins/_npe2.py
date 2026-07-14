@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
 from typing import (
     TYPE_CHECKING,
     cast,
 )
 
-from app_model import Action
 from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
@@ -15,6 +14,9 @@ from npe2.manifest import contributions
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+    from app_model import Action
     from npe2.manifest import PluginManifest
     from npe2.manifest.contributions import WriterContribution
     from npe2.plugin_manager import PluginName
@@ -22,23 +24,26 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
-    from napari.types import SampleDict
+    from napari.types import PathLike, SampleDict
 
 
 def read(
-    paths: Sequence[str], plugin: str | None = None, *, stack: bool
+    paths: Sequence[PathLike], plugin: str | None = None, *, stack: bool
 ) -> tuple[list[LayerData], str]:
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     assert stack is not None
+    # npe2 still requires str paths at runtime; normalise Path here
+    str_paths = [os.fspath(p) for p in paths]
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
     # and not have this conditional here.
     # this would also allow the npe2-npe1 shim to do this transform as well
+    npe1_path: str | list[str]
     if stack:
-        npe1_path = paths
+        npe1_path = str_paths
     else:
-        assert len(paths) == 1
-        npe1_path = paths[0]
+        assert len(str_paths) == 1
+        npe1_path = str_paths[0]
     layer_data, reader = io_utils.read_get_reader(
         npe1_path, plugin_name=plugin
     )
@@ -46,7 +51,7 @@ def read(
 
 
 def write_layers(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     plugin_name: str | None = None,
     writer: WriterContribution | None = None,
@@ -56,7 +61,7 @@ def write_layers(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         The path (file, directory, url) to write.
     layers : list of Layers
         The layers to write.
@@ -77,6 +82,8 @@ def write_layers(
     writer name: str
         Name of the plugin selected to write the data.
     """
+    # npe2 still requires str paths at runtime; normalise Path here
+    path = os.fspath(path)
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
@@ -188,7 +195,7 @@ def file_extensions_string_for_layers(
     )
 
 
-def get_readers(path: str | None = None) -> dict[str, str]:
+def get_readers(path: PathLike | None = None) -> dict[str, str]:
     """Get valid reader plugin_name:display_name mapping given path.
 
     Iterate through compatible readers for the given path and return
@@ -197,7 +204,7 @@ def get_readers(path: str | None = None) -> dict[str, str]:
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         path for which to find compatible readers
 
     Returns
@@ -207,6 +214,8 @@ def get_readers(path: str | None = None) -> dict[str, str]:
     """
 
     if path:
+        # npe2 still requires str paths at runtime; normalise Path here
+        path = os.fspath(path)
         return {
             reader.plugin_name: pm.get_manifest(reader.command).display_name
             for reader in pm.iter_compatible_readers([path])

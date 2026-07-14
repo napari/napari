@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from importlib import resources
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PIL.ImageFont import FreeTypeFont
+from qtpy.QtCore import QRectF, Qt
+from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication
 
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
 
 if TYPE_CHECKING:
     from napari._vispy.visuals.text import Text
-
-
-FONT_DIR = resources.files('napari') / 'resources' / 'fonts' / 'AlataPlus'
-FONT_FILE = FONT_DIR / 'AlataPlus-Regular.ttf'
 
 
 def update_text(
@@ -86,9 +82,43 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
     return len(layer._indices_view) != 0
 
 
-@lru_cache
-def _load_font(size: int = 10):
-    return FreeTypeFont(str(FONT_FILE), size=size)
+@lru_cache(maxsize=128)
+def _get_qt_font_metrics(
+    face: str, size: int, bold: bool = False, italic: bool = False
+):
+    """Get cached Qt font metrics for the given font properties.
+
+    Parameters
+    ----------
+    face : str
+        Font face name.
+    size : int
+        Font size in points.
+    bold : bool, optional
+        Whether the font is bold.
+    italic : bool, optional
+        Whether the font is italic.
+
+    Returns
+    -------
+    QFontMetricsF
+        Qt font metrics object.
+    """
+    qfont = QFont(face, size)
+    qfont.setBold(bold)
+    qfont.setItalic(italic)
+    return QFontMetricsF(qfont)
+
+
+def get_text_metrics(text: Text) -> QFontMetricsF:
+    """Get qt font metrics from a text visual."""
+    face = (
+        text.face if hasattr(text, 'face') else QGuiApplication.font().family()
+    )
+    bold = text.bold if hasattr(text, 'bold') else False
+    italic = text.italic if hasattr(text, 'italic') else False
+
+    return _get_qt_font_metrics(face, int(text.font_size), bold, italic)
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
@@ -98,32 +128,23 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     by vispy.
     """
     if isinstance(text.text, str):
-        strings = [text.text]
+        string = text.text
     elif isinstance(text.text, list):
-        strings = text.text
+        string = '\n'.join(text.text)
     else:
         raise TypeError('Text should either be a string or a list of strings')
 
-    font = _load_font(size=text.font_size)
-    font_height = sum(font.getmetrics()) * 0.81
+    # Get font properties from the text visual
+    face = (
+        text.face if hasattr(text, 'face') else QGuiApplication.font().family()
+    )
+    bold = text.bold if hasattr(text, 'bold') else False
+    italic = text.italic if hasattr(text, 'italic') else False
 
-    height = 0
-    width = 0
+    metrics = _get_qt_font_metrics(face, int(text.font_size), bold, italic)
 
-    for string in strings:
-        if string == '':
-            continue
+    size = metrics.boundingRect(
+        QRectF(0, 0, 1000, 1000), Qt.AlignmentFlag.AlignLeft, string
+    ).size()
 
-        for lineno, line in enumerate(string.split('\n')):
-            width = max(width, font.getlength(line))
-            height_lines = font_height * (lineno + 1)
-            height_line_spacing = font_height * (text.line_height - 1) * lineno
-            height = max(height, height_lines + height_line_spacing)
-
-    return width, height
-
-
-def register_napari_fonts() -> None:
-    from vispy.util.fonts import register_vispy_font
-
-    register_vispy_font(FONT_DIR, 'AlataPlus', False, False)
+    return size.width(), size.height()

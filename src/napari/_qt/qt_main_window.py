@@ -3,15 +3,14 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
+from __future__ import annotations
+
 import contextlib
 import inspect
 import os
 import sys
 import time
-import uuid
 import warnings
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,7 +22,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-import numpy as np
+from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -34,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -87,19 +86,28 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_warning
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from pathlib import Path
+
+    import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
+    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
     from napari.viewer import Viewer
 
 _sentinel = object()
 
+SHOW_QT_WARNING = QT5
+# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
+
+del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -116,15 +124,15 @@ class _QtMainWindow(QMainWindow):
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list['_QtMainWindow']] = []
+    _instances: ClassVar[list[_QtMainWindow]] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
         self,
-        viewer: 'Viewer',
-        window: 'Window',
+        viewer: Viewer,
+        window: Window,
         parent=None,
         show_welcome_screen=True,
     ) -> None:
@@ -190,11 +198,6 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        # only after qaction are initialized we can get all shortcuts and actions,
-        # so we have to force update the welcome screen here.
-        viewer.welcome_screen.events.shortcuts()
-        viewer.welcome_screen.events.tips()
-
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer.update_status_from_cursor
@@ -229,6 +232,8 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
+        global SHOW_QT_WARNING
+
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -237,6 +242,14 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
+
+        if SHOW_QT_WARNING:
+            show_warning(
+                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
+            )
+
+            SHOW_QT_WARNING = False
+
         super().showEvent(event)
 
     def enterEvent(self, a0):
@@ -266,11 +279,11 @@ class _QtMainWindow(QMainWindow):
         ) is not None:
             self._qt_viewer.viewer.help = active.help
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional[_QtMainWindow]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -691,7 +704,7 @@ class Window:
 
     def __init__(
         self,
-        viewer: 'Viewer',
+        viewer: Viewer,
         *,
         show: bool = True,
         show_welcome_screen: bool = True,
@@ -855,8 +868,8 @@ class Window:
         warnings.warn(
             trans._(
                 'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
-                'not part of the napari viewer model. If your use case\n'
+                'no earlier than v0.9.0. It is considered an "implementation detail" '
+                'of the napari\napplication, not part of the napari viewer model. If your use case\n'
                 'requires access to qt_viewer, please open an issue to discuss.',
                 deferred=True,
             ),
@@ -1112,7 +1125,7 @@ class Window:
 
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str | None = None,
@@ -1243,7 +1256,7 @@ class Window:
         return self._wrapped_dock_widgets
 
     @property
-    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
+    def dock_widgets(self) -> Mapping[str, QWidget | Widget]:
         """Read-only mapping of widgets docked in napari window.
 
         Notes
@@ -1665,7 +1678,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> 'QImage':
+    ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1904,7 +1917,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer, ViewerModel
 
@@ -1943,7 +1956,7 @@ class InnerWidgetMappingProxy(MappingProxy):
     without exposing the QDockWidget itself.
     """
 
-    def __getitem__(self, key, /) -> 'QWidget | Widget':
+    def __getitem__(self, key, /) -> QWidget | Widget:
         """Get the inner widget of the QDockWidget."""
         return self._wrapped[key].inner_widget()
 

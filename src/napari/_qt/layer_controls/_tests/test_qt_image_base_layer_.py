@@ -1,5 +1,4 @@
 import os
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -12,7 +11,6 @@ from napari._qt.layer_controls.qt_image_controls_base import (
 )
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QContrastLimitsPopup,
-    QRangeSliderPopup,
     range_to_decimals,
 )
 from napari.components.dims import Dims
@@ -40,10 +38,19 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
+def test_clim_right_click_shows_popup(qtbot, layer, monkeypatch):
     """Right clicking on the contrast limits slider should show a popup."""
+    # Suppress the actual window with a plain recorder function rather than a
+    # Mock.  QContrastLimitsPopup connects a signal to one of its own bound
+    # methods in __init__, so opening the popup makes PySide6 build the class
+    # metaobject (parsePythonType), which walks the class __dict__.  A Mock
+    # left there by patch.object crashes that walk (segfault on
+    # PySide6 6.10 / Python 3.14); a plain function is introspected safely.
+    show_calls = []
+    monkeypatch.setattr(
+        QContrastLimitsPopup, 'show', lambda self: show_calls.append(self)
+    )
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(
@@ -54,7 +61,7 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     # this mock doesn't seem to be working on cirrus windows
     # but it works on local windows tests...
     if not (os.name == 'nt' and os.getenv('CI')):
-        mock_show.assert_called_once()
+        assert len(show_calls) == 1
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
@@ -70,12 +77,15 @@ def test_changing_model_updates_view(qtbot, layer):
     )
 
 
-@patch.object(QRangeSliderPopup, 'show')
 @pytest.mark.parametrize(
     'layer', [Image(_IMAGE), Image(_IMAGE.astype(np.int32)), Surface(_SURF)]
 )
-def test_range_popup_clim_buttons(mock_show, qtbot, qapp, layer):
+def test_range_popup_clim_buttons(qtbot, qapp, layer, monkeypatch):
     """The buttons in the clim_popup should adjust the contrast limits value"""
+    # Plain no-op function instead of a Mock: a Mock in the popup class
+    # __dict__ segfaults PySide6's metaobject introspection (see
+    # test_clim_right_click_shows_popup).
+    monkeypatch.setattr(QContrastLimitsPopup, 'show', lambda self: None)
     # this test relies implicitly on ndisplay=3 which is now a broken assumption?
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
     qtctrl = QtBaseImageControls(layer)
@@ -154,8 +164,55 @@ def test_tensorstore_clim_popup(qtbot):
     qtbot.addWidget(QContrastLimitsPopup(layer))
 
 
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
+    """Image layers (including RGB via luminance) should expose histogram UI."""
+    qtctrl = QtBaseImageControls(layer)
+    qtbot.addWidget(qtctrl)
+
+    assert (qtctrl._histogram_control is not None) is supports_histogram
+    assert (
+        qtctrl._contrast_limits_control.histogram_button is not None
+    ) is supports_histogram
+
+
+@pytest.mark.parametrize(
+    ('layer', 'supports_histogram'),
+    [
+        (Image(_IMAGE), True),
+        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
+        (Surface(_SURF), False),
+    ],
+)
+def test_contrast_limits_popup_histogram_boundary(
+    qtbot, layer, supports_histogram
+):
+    """The contrast popup embeds histogram UI only when the layer type supports it
+    AND histogram was enabled before popup creation.  Content is lazy-created
+    in _ensure_histogram_content()."""
+    if supports_histogram:
+        layer.histogram.enabled = True
+    popup = QContrastLimitsPopup(layer)
+    qtbot.addWidget(popup)
+
+    # Popup has histogram_content only after lazy creation is triggered
+    if supports_histogram:
+        popup._ensure_histogram_content()
+    assert (popup.histogram_content is not None) is supports_histogram
+    if supports_histogram:
+        assert popup.histogram_content.histogram_widget is not None
+        assert popup.histogram_content.settings_widget is not None
+
+
 def test_blending_opacity_slider(qtbot):
-    """Tests whether opacity slider is disabled for minimum and opaque blending."""
+    """Tests whether opacity slider is disabled for minimum, opaque, and multiplicative blending."""
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtLayerControls(layer)
     qtbot.addWidget(qtctrl)
@@ -176,6 +233,14 @@ def test_blending_opacity_slider(qtbot):
     # set the blending back to 'translucent' confirm the slider is enabled
     layer.blending = 'translucent'
     assert layer.blending == 'translucent'
+    assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
+    # set multiplicative blending, the opacity slider should be disabled
+    layer.blending = 'multiplicative'
+    assert layer.blending == 'multiplicative'
+    assert not qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
+    # set the blending back to 'additive' confirm the slider is enabled
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
     assert qtctrl._opacity_blending_controls.opacity_slider.isEnabled()
 
 

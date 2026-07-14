@@ -20,7 +20,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -35,17 +34,16 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "BSD-3-Clause"
 license-files = [
     "LICENSE",
 ]
 dependencies = [
-    "appdirs>=1.4.4",
     "app-model>=0.5.0,<0.6.0",
     "cachey>=0.2.1",
     "certifi>=2018.1.18",
-    "dask[array]>=2021.10.0",
+    "dask[array]>=2022.1.1",
     "imageio>=2.20,!=2.22.1",
     "jsonschema>=3.2.0",
     "lazy_loader>=0.3",
@@ -54,11 +52,12 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-svg>=0.1.8",
     "npe2>=0.8.1",
-    "numpy>=1.24.2",
-    "pandas>=1.3.3",
+    "numpy>=1.25",
+    "pandas>=1.5.0",
     "Pillow>=10.0",
     "pint>=0.17",
-    "psutil>=5.9.0",
+    "platformdirs>=4.3.0",
+    "psutil>=5.9.4",
     "psygnal>=0.14.2",
     "pydantic>=2.8.0",
     "pygments>=2.13.0",
@@ -68,15 +67,15 @@ dependencies = [
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
     "qtpy>=2.4.0",
-    "scikit-image[data]>=0.19.1",
+    "scikit-image[data]>=0.20.0",
     "scipy>=1.14.0",
     "superqt>=0.7.8",
     "tifffile>=2022.7.28",
-    "toolz>=0.11.0",
+    "toolz>=0.12.1",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.16.1,<0.17",
-    "wrapt>=1.13.3",
+    "vispy>=0.16.2,<0.17",
+    "wrapt>=1.14.1",
 ]
 dynamic = [
     "version",
@@ -95,11 +94,12 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside6 = [
-    "PySide6 > 6.7"
+    "PySide6 > 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
     "PyQt6 > 6.5",
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'"
+    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'",
+    "pyqt6-qt6 !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyside = [
     "napari[pyside6]"
@@ -118,21 +118,23 @@ all = [
     "napari[pyqt,optional]"
 ]
 optional-base = [
-    "zarr>=2.12.0", # needed by `builtins` (dask.array.from_zarr) to open zarr
+    "zarr>=3.0.8", # needed by `builtins` (dask.array.from_zarr) to open zarr
     "aiohttp", # needed to open remote files by zarr, replace by extras once https://github.com/zarr-developers/zarr-python/issues/3453 is done
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",
 ]
 optional-numba = [
-    "numba>=0.57.1,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
-    "numba>=0.57.1 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
+    "numba>=0.58.0,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "numba>=0.58.0 ; platform_system != 'Darwin' or platform_machine != 'x86_64'",
 ]
 optional = [
     "napari[optional-base,optional-numba,bermuda]",
-    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 bermuda = [
     "bermuda>=0.1.5",
+]
+triangle = [
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
 ]
 partsegcore = [
     "PartSegCore-compiled-backend>=0.15.11",
@@ -154,22 +156,20 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
-    "virtualenv>=20.17",
-    "xarray>=0.16.2",
+    "virtualenv>=20.24.7",
+    "xarray>=2023.5.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
-    "rich>=12.0.0",
-    "napari[optional-base]",
+    "rich>=14.0.0",
+    "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
@@ -194,7 +194,7 @@ docs = [
     "napari-skimage",
     "ndevio",
     "numpydoc>=1.0.0",
-    "sphinx<8",
+    "sphinx>=8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
@@ -208,14 +208,14 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -253,22 +253,20 @@ testing = [
     "pooch>=1.6.0",
     "coverage>7",
     "pretend>=1.0.9",
-    "pyautogui>=0.9.54",
-    "pytest-qt >=4.4.0; python_version > '3.10'",
-    "pytest-qt ==4.4.0; python_version <= '3.10'",
+    "pytest-qt >=4.4.0",
     "pytest-pretty>=1.1.0",
     "pytest>=8.3.5",
     "pytest-rerunfailures>=15.1",
     "tensorstore>=0.1.32",
-    "virtualenv>=20.17",
-    "xarray>=0.16.2",
+    "virtualenv>=20.24.7",
+    "xarray>=2023.5.0",
     "IPython>=7.25.0",
     "qtconsole>=4.5.1",
-    "rich>=12.0.0",
-    "napari[optional-base]",
+    "rich>=14.0.0",
+    "napari[optional-base, bermuda]",
 ]
 testing_extra = [
-    "torch>=1.10.2",
+    "torch>=1.13.1",
 ]
 # needed for gallery examples
 gallery = [
@@ -293,7 +291,7 @@ docs = [
     "napari-skimage",
     "ndevio",
     "numpydoc>=1.0.0",
-    "sphinx<8",
+    "sphinx>=8",
     "sphinx-autobuild",
     "sphinx-tabs",
     "sphinx-tags",
@@ -307,14 +305,14 @@ docs = [
     "sphinxext-opengraph[social-cards]",
     "sphinxext-rediraffe",
     "myst-nb",
-    "napari-sphinx-theme>=1.0.0",
+    "napari-sphinx-theme>=1.1.3",
     "matplotlib",
     "lxml[html_clean]>5",
     "imageio-ffmpeg",
     "pydeps",
     "seedir",
     # triangle and bermuda needed for docs/guides/triangulation.md
-    "triangle",
+    "triangle; python_version <= '3.13'",  # there is no wheel for triangle on python 3.14 at the time and build from source causes problems.
     "bermuda>=0.1.4",
     "pytest",
     "linkify-it-py",
@@ -347,7 +345,7 @@ napari = "napari.utils._testsupport"
 napari_builtins = "napari_builtins:builtins.yaml"
 
 [project.scripts]
-napari = "napari.__main__:main"
+napari = "napari._main:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -373,7 +371,7 @@ napari_builtins = [
 
 [tool.setuptools_scm]
 write_to = "src/napari/_version.py"
-fallback_version = "0.6.4.dev0"
+fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
@@ -441,7 +439,7 @@ select = [
     "T20", # flake8-print
 ]
 ignore = [
-    "E501", "TC001", "TC002", "TC003",
+    "E501", "TC001",
     "A003", # flake8-builtins - we have class attributes violating these rule
     "COM812", # flake8-commas - we don't like adding comma on single line of arguments
     "COM819", # conflicts with ruff-format
@@ -458,16 +456,21 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/napari/_vispy/__init__.py" = ["E402"]
-"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012"]
+"**/_tests/*.py" = ["B011", "INP001", "TRY301", "B018", "RUF012", "TID253"]
 "src/napari/utils/_testsupport.py" = ["B011"]
 "tools/validate_strings.py" = ["F401"]
 "tools/**" = ["INP001", "T20", "LOG015"]
-"examples/**" = ["ICN001", "INP001", "T20", "LOG015"]
+"examples/**" = ["ICN001", "INP001", "T20", "LOG015", "TID253"]
 "**/vendored/**" = ["TID"]
-"src/napari/benchmarks/**" = ["RUF012", "TID252"]
+"src/napari/benchmarks/**" = ["RUF012", "TID252", "TID253"]
+"src/napari_builtins/**" = ["TID253"]
 
 [tool.ruff.lint.flake8-builtins]
 builtins-allowed-modules = ["io", "types", "threading"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "pydantic.ConfigDict", "napari.utils.events.EventedModel"]
+#quote-annotations = true
 
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
@@ -480,6 +483,8 @@ multiline-quotes = "double"
 [tool.ruff.lint.flake8-tidy-imports]
 # Disallow all relative imports.
 ban-relative-imports = "all"
+# Expensive imports should be lazy loaded within functions instead of module
+banned-module-level-imports = ["scipy", "pandas", "dask.array"]
 
 [tool.ruff.lint.isort]
 known-first-party=['napari']
@@ -530,7 +535,11 @@ filterwarnings = [
   "ignore:__array__ implementation doesn't accept a copy keyword, so passing copy=False failed.",
   "ignore:pkg_resources is deprecated",
   "ignore:Deprecated call to `pkg_resources.declare_namespace",
-  "ignore:Use Group.create_array instead."
+  "ignore:'asyncio.WindowsProactorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16:DeprecationWarning", # windows ipykernel issue #8666
+  "ignore:'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16:DeprecationWarning",  # windows ipykernel issue #8666
+  "ignore:System theme detection requires a Qt6 backend:UserWarning",  # delete once Qt5 support is dropped
 ]
 markers = [
     "examples: Test of examples",
@@ -601,12 +610,9 @@ module = [
     'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_model',
-    'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
-    'napari._qt.containers.qt_tree_view',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
-    'napari._qt.dialogs.qt_about',
     'napari._qt.dialogs.qt_activity_dialog',
     'napari._qt.dialogs.qt_modal',
     'napari._qt.dialogs.qt_notification',
@@ -614,7 +620,6 @@ module = [
     'napari._qt.dialogs.qt_plugin_dialog',
     'napari._qt.dialogs.qt_plugin_report',
     'napari._qt.dialogs.qt_reader_dialog',
-    'napari._qt.dialogs.screenshot_dialog',
     'napari._qt.experimental.qt_chunk_receiver',
     'napari._qt.experimental.qt_poll',
     'napari._qt.layer_controls.qt_colormap_combobox',
@@ -682,21 +687,15 @@ module = [
     'napari._qt.widgets.qt_dict_table',
     'napari._qt.widgets.qt_dims',
     'napari._qt.widgets.qt_dims_slider',
-    'napari._qt.widgets.qt_dims_sorter',
     'napari._qt.widgets.qt_extension2reader',
-    'napari._qt.widgets.qt_font_size',
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_logger',
-    'napari._qt.widgets.qt_message_popup',
     'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_progress_bar',
-    'napari._qt.widgets.qt_range_slider_popup',
     'napari._qt.widgets.qt_scrollbar',
     'napari._qt.widgets.qt_size_preview',
-    'napari._qt.widgets.qt_spinbox',
-    'napari._qt.widgets.qt_theme_sample',
     'napari._qt.widgets.qt_tooltip',
     'napari._qt.widgets.qt_viewer_buttons',
     'napari._qt.widgets.qt_viewer_dock_widget',
@@ -724,22 +723,18 @@ module = [
     'napari.layers.utils.text_manager',
     'napari.utils._magicgui',
     'napari.utils._testsupport',
-    'napari.utils._tracebacks',
     'napari.utils.action_manager',
     'napari.utils.events.containers._evented_dict',
     'napari.utils.events.containers._evented_list',
     'napari.utils.events.containers._nested_list',
-    'napari.utils.events.custom_types',
     'napari.utils.events.debugging',
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',
     'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
-    'napari.utils.shortcuts',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
-    'napari.utils.tree.group',
     'napari.view_layers',
     'napari._app_model.injection._processors',
 ]
@@ -813,6 +808,7 @@ module = [
     "napari._vispy.layers.vectors",
     "napari._vispy.overlays.axes",
     "napari._vispy.overlays.interaction_box",
+    "napari._vispy.overlays.labels_brush_stroke",
     "napari._vispy.overlays.labels_polygon",
     "napari._vispy.overlays.scale_bar",
     "napari._vispy.overlays.text",
@@ -876,7 +872,6 @@ module = [
     "napari._vispy.layers.shapes",
     "napari._vispy.layers.surface",
     "napari.components._viewer_key_bindings",
-    "napari.layers.labels.labels",
     "napari.layers.surface.surface",
     "napari.layers.tracks.tracks",
     "napari.layers.utils.layer_utils",
@@ -885,6 +880,14 @@ module = [
     "napari.utils.misc",
 ]
 check_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "napari.layers.labels.labels",
+]
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
@@ -944,11 +947,8 @@ warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
-    "napari._vispy.overlays.bounding_box",
-    "napari._vispy.overlays.brush_circle",
     "napari.utils._test_utils",
 ]
-check_untyped_defs = false
 disallow_untyped_defs = false
 
 [tool.coverage.report]
@@ -1005,3 +1005,12 @@ layers = ["napari.qt","napari.components"]
 ignore_imports = [
     "napari.plugins._npe2 -> napari._qt._qplugins",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Block imports from napari_builtins in napari core"
+type = "forbidden"
+source_modules = "napari"
+forbidden_modules = ["napari_builtins"]
+
+[tool.check-wheel-contents]
+toplevel = ["napari", "napari_builtins"]

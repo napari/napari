@@ -27,10 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: "Set up Python 3.12"
+        with:
+          persist-credentials: false
+      - name: "Set up Python 3.14"
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -49,30 +51,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-2022]
-        python: ["3.10", "3.11", "3.12", "3.13"]
+        platform: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13", "3.14"]
         backend: [pyqt5]
         include:
           - python: "3.11"
-            platform: macos-latest
+            platform: macos-15
             backend: pyqt5
           # test with minimum specified requirements
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: headless
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"
+          - python: "3.14"
+            platform: ubuntu-24.04-arm
+            backend: pyqt6
 
     with:
       python_version: ${{ matrix.python }}
@@ -118,6 +123,8 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
+          # explicitly set persist-credentials: 'true' to push changes to bot repo
+          persist-credentials: true
       - name: Synchronize bot repository
         run: |
           git remote add napari-bot https://github.com/napari-bot/napari.git

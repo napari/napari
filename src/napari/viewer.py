@@ -1,5 +1,4 @@
 import typing
-from pathlib import Path
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -11,6 +10,8 @@ from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
     # helpful for IDE support
+    from pathlib import Path
+
     from napari._qt.qt_main_window import Window
 
 
@@ -175,7 +176,7 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: str | Path | list[str | Path] | None = None,
+        paths: 'str | Path | list[str | Path] | None' = None,
         scale: float = 1.0,
     ):
         """Export the given rectangular rois to specified file paths.
@@ -269,8 +270,7 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
-        self.welcome_screen.visible = False
-        # Remove all the layers and overlays from the viewer
+        # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
         self.window.close()

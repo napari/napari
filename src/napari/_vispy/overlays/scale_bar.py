@@ -1,30 +1,40 @@
+from __future__ import annotations
+
 import bisect
 from decimal import Decimal
 from math import floor, log
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
 from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
+from napari.utils.notifications import show_warning
+
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import ScaleBarOverlay
 
 
 class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Scale bar in world coordinates."""
 
     overlay: ScaleBarOverlay
+    node: ScaleBar
 
-    def __init__(self, *, viewer, overlay, parent=None) -> None:
+    def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(), viewer=viewer, overlay=overlay, parent=parent
+            node=ScaleBar(font_info=font_info),
+            font_info=font_info,
+            **kwargs,
         )
 
         self.overlay.events.color.connect(self._on_rendering_change)
@@ -39,6 +49,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
         self.viewer.events.theme.connect(self._on_rendering_change)
+        self.viewer.dims.events.order.connect(self._on_unit_change)
+        self.viewer.dims.events.ndisplay.connect(self._on_unit_change)
 
         get_settings().appearance.events.theme.connect(
             self._on_rendering_change
@@ -47,7 +59,24 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
     def _on_unit_change(self):
-        self._unit = pint.get_application_registry()(self.overlay.unit)
+        # NOTE: this is also called by VispyCanvas when layer units are updated
+        #       so it doesn't need to be connected to events for that
+        if self.viewer.layers.units is not None:
+            units = np.array(self.viewer.layers.units)[
+                list(self.viewer.dims.displayed)
+            ]
+            if any(
+                u.dimensionality != units[0].dimensionality for u in units[1:]
+            ):
+                dim_repr = tuple(str(d.dimensionality) for d in units)
+                show_warning(
+                    f'Displayed dimensions have mismatched dimensionality {dim_repr}. '
+                    'The scale bar will only use the unit from the last displayed axis.',
+                )
+            unit = units[-1]
+        else:
+            unit = pint.get_application_registry()('dimensionless')
+        self._unit = unit * 1  # convert unit to quantity
         self._on_size_or_zoom_change(force=True)
 
     def _on_font_size_change(self):

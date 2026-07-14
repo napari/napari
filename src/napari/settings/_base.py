@@ -4,8 +4,8 @@ import contextlib
 import json
 import logging
 import os
-import warnings
 from collections.abc import Mapping
+from enum import StrEnum
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -19,7 +19,6 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
-from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
@@ -29,7 +28,6 @@ from pydantic_settings import (
 
 from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._yaml import PydanticYamlMixin
-from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
 from napari.utils.translations import trans
@@ -40,6 +38,8 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any, Union
+
+    from pydantic.fields import FieldInfo
 
     # TODO: needs to be fixed properly
     SettingsSourceCallable = Any
@@ -340,39 +340,6 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     def _on_sub_event(self, event, field=None):
         super()._on_sub_event(event, field)
         self._maybe_save()
-
-    def dict(
-        self,
-        *,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-    ) -> DictStrAny:
-        """Return dict representation of the model.
-
-        May optionally specify which fields to include or exclude.
-
-        .. deprecated:: 0.7.0
-              `dict` will be removed in napari 0.8.0 it is replaced by
-              `model_dump` following pydantic 1 to 2 changes.
-        """
-        warnings.warn(
-            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.',
-            category=FutureWarning,
-        )
-        return self.model_dump(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_env=exclude_env,
-        )
 
     def model_dump(
         self,

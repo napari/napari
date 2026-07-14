@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Iterable, Iterator
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from napari.utils._appdirs import user_cache_dir
+from napari.utils._platformdirs import user_cache_dir
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 LOADING_GIF_PATH = str((Path(__file__).parent / 'loading.gif').resolve())
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
@@ -169,7 +174,7 @@ def build_theme_svgs(theme_name: str, source) -> str:
         theme_override={
             'warning': 'warning',
             'error': 'error',
-            'logo_silhouette': 'background',
+            'logo_silhouette': 'foreground',
         },
     )
     with (out / PLUGIN_FILE_NAME).open('w') as f:

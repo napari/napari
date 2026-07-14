@@ -13,6 +13,9 @@ from napari.utils.events import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from vispy.scene import Node, ViewBox
+
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -28,11 +31,19 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    viewer: ViewerModel
 
-    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
+    def __init__(
+        self,
+        *,
+        overlay: Overlay,
+        font_info: FontInfo,
+        viewer: ViewerModel,
+        node: Node,
+        parent: ViewBox | None = None,
+    ) -> None:
         super().__init__()
         self.overlay = overlay
+        self._font_info = font_info
         self.viewer = viewer
 
         self.node = node
@@ -90,11 +101,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
+    def __init__(self, **kwargs) -> None:
 
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent
-        )
+        super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
@@ -187,24 +196,18 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(self, *, overlay, viewer, node, parent=None) -> None:
-        super().__init__(
-            overlay=overlay, viewer=viewer, node=node, parent=parent
-        )
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
     layer: Layer
+    overlay: Overlay
 
-    def __init__(
-        self, *, overlay, layer: Layer, viewer, node, parent=None
-    ) -> None:
+    def __init__(self, *, layer: Layer, **kwargs) -> None:
         super().__init__(
-            node=node,
-            overlay=overlay,
-            viewer=viewer,
-            parent=parent,
+            **kwargs,
         )
         self.layer = layer
         # need manual connection here because these overlays are not necessarily

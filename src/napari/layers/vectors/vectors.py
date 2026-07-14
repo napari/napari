@@ -1,13 +1,15 @@
 import warnings
 from copy import copy
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -25,6 +27,11 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from napari.components.dims import Dims
 
 
 class Vectors(Layer):
@@ -188,6 +195,7 @@ class Vectors(Layer):
     """
 
     _projectionclass = VectorsProjectionMode
+    _slicing_state: '_VectorsSlicingState'
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
@@ -374,7 +382,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -418,7 +426,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -788,7 +796,9 @@ class _VectorsSlicingState(_LayerSlicingState):
         super().__init__(layer, data, cache)
 
         # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
+        self._view_data: np.ndarray[
+            tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
+        ] = np.empty((0, 2, 2))
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 
@@ -799,7 +809,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         response = request()
         self._update_slice_response(response)
 
-    def make_slice_request(self, dims) -> _VectorSliceRequest:
+    def make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # TODO: [see Image]
@@ -809,10 +819,8 @@ class _VectorsSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_slice(
-            self.layer._data_to_world.inverse
-        )
-        return self.make_slice_request_internal(slice_input, slice_indices)
+        data_slice = self._slice_indices(slice_input, dims)
+        return self.make_slice_request_internal(slice_input, data_slice)
 
     def make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
