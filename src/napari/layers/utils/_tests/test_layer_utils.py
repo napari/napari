@@ -9,6 +9,7 @@ from napari.layers.utils.layer_utils import (
     _FeatureTable,
     calc_data_range,
     coerce_current_properties,
+    compute_multiscale_level,
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     get_current_properties,
@@ -97,6 +98,59 @@ def test_calc_data_range_fast(data):
     assert len(val) > 0
     elapsed = time.monotonic() - now
     assert elapsed < 5, 'test took too long, computation was likely not lazy'
+
+
+def test_compute_multiscale_level_ignores_non_downsampled_dimension():
+    level = compute_multiscale_level(
+        requested_shape=np.array((2000, 20_000)),
+        shape_threshold=np.array((1024, 1024)),
+        downsample_factors=np.array(
+            [
+                (1, 1),
+                (1, 2),
+                (1, 4),
+                (1, 8),
+                (1, 16),
+                (1, 32),
+            ]
+        ),
+    )
+
+    assert level == 4
+
+
+def test_compute_multiscale_level_ignores_dimension_below_threshold():
+    level = compute_multiscale_level(
+        requested_shape=np.array((700, 20_000)),
+        shape_threshold=np.array((1024, 1024)),
+        downsample_factors=np.array(
+            [
+                (1, 1),
+                (2, 2),
+                (4, 4),
+                (8, 8),
+                (16, 16),
+                (32, 32),
+            ]
+        ),
+    )
+
+    assert level == 4
+
+
+def test_compute_multiscale_level_returns_zero_when_view_fits_canvas():
+    level = compute_multiscale_level(
+        requested_shape=np.array((700, 800)),
+        shape_threshold=np.array((1024, 1024)),
+        downsample_factors=np.array(
+            [
+                (1, 1),
+                (2, 2),
+                (4, 4),
+            ]
+        ),
+    )
+    assert level == 0
 
 
 def test_segment_normal_2d():
