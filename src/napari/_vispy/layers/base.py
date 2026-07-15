@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from vispy.scene import VisualNode
 
     from napari._vispy.utils.qt_font import FontInfo
+    from napari.utils.events import Event
 
 _L = TypeVar('_L', bound=Layer)
 
@@ -165,7 +166,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None) -> None:
+    def _on_blending_change(self, event: Event | None = None) -> None:
         blending = self.layer.blending
         blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 

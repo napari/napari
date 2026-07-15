@@ -466,7 +466,7 @@ class VispyCanvas:
         box_center_world = np.mean(zoom_area, axis=0)
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
-        self.viewer.camera.center = box_center_world
+        self.viewer.camera.center = tuple(box_center_world.tolist())
 
     def _map_canvas2world(
         self,
