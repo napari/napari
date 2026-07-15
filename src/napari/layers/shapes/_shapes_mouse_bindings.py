@@ -854,6 +854,7 @@ def _move_selected_layer(
 def _add_rectangle_ellipse_line(
     layer: Shapes, coordinates: tuple[float, ...], vertex: int
 ) -> None:
+    """Recompute the vertices of a shape to follow the cursor."""
     coord = np.array(coordinates, dtype=float)
     layer._moving_coordinates = coordinates
     layer._is_moving = True
@@ -864,29 +865,26 @@ def _add_rectangle_ellipse_line(
 
     if layer._fixed_aspect:
         start_displayed = creation_start[displayed]
-        coord_displayed = coord[displayed]
-        if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
-            offset = coord_displayed - start_displayed
-            if np.linalg.norm(offset) > 0:
+        offset = coord[displayed] - start_displayed
+        length = np.linalg.norm(offset)
+        if length > 0:
+            if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
+                # snap the line to the nearest 45 degree step
                 angle_rad = np.arctan2(offset[0], -offset[1])
                 angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
                 coord[displayed] = (
-                    np.array([np.sin(angle_rad), -np.cos(angle_rad)])
-                    * np.linalg.norm(offset)
+                    np.array([np.sin(angle_rad), -np.cos(angle_rad)]) * length
                     + start_displayed
                 )
-        else:
-            offset = coord_displayed - start_displayed
-            if np.linalg.norm(offset) > 0:
+            else:
+                # lock the aspect ratio, growing into the drag's quadrant
                 aspect = np.array([1, layer._aspect_ratio], dtype=float)
-                aspect = aspect / np.linalg.norm(aspect)
+                aspect /= np.linalg.norm(aspect)
                 direction = np.sign(offset)
-                nonzero_mask = direction != 0
-                if nonzero_mask.any():
-                    direction[~nonzero_mask] = direction[nonzero_mask].max()
+                # grow the unmoved axis in the same direction as the moved one
+                direction[direction == 0] = direction[direction != 0].max()
                 coord[displayed] = (
-                    start_displayed
-                    + direction * np.linalg.norm(offset) * aspect
+                    start_displayed + direction * length * aspect
                 )
 
     index = next(iter(layer.selected_data))
