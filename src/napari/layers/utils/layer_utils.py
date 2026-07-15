@@ -575,10 +575,12 @@ def compute_multiscale_level(
     """Computed desired level of the multiscale given requested field of view.
 
     The level of the multiscale should be the lowest resolution such that
-    the requested shape is above the shape threshold. By passing a shape
-    threshold corresponding to the shape of the canvas on the screen this
+    the requested shape exceeds the shape threshold in the dimensions that
+    contribute to level selection. Dimensions that already fit within the
+    canvas or are not downsampled across pyramid levels are ignored. By
+    passing a shape threshold corresponding to the size of the canvas, this
     ensures that we have at least one data pixel per screen pixel, but no
-    more than we need.
+    more than necessary.
 
     Parameters
     ----------
