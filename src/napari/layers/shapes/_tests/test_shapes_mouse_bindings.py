@@ -1163,6 +1163,44 @@ def test_rotate_shape(create_known_shapes_layer):
     np.testing.assert_allclose(layer.data[1][2], original_data[0])
 
 
+def test_resize_shape_from_center(create_known_shapes_layer):
+    """Alt-drag a resize handle in SELECT mode grows the shape from its center."""
+    layer = create_known_shapes_layer[0]
+
+    layer.mode = 'select'
+    layer.selected_data = {1}
+    center = layer._selected_box[Box.CENTER].copy()
+    corner = layer._selected_box[Box.TOP_LEFT]
+    # drag the corner handle outward, away from the box center
+    target = tuple(corner + (corner - center))
+
+    # Alt held: resize symmetrically about the center
+    layer._draw_from_center = True
+
+    # grab the corner handle
+    event = read_only_mouse_event(
+        type='mouse_press', is_dragging=True, position=tuple(corner)
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_move', is_dragging=True, position=tuple(corner)
+    )
+    mouse_move_callbacks(layer, event)
+    # drag it out
+    event = read_only_mouse_event(
+        type='mouse_move', is_dragging=True, position=target
+    )
+    mouse_move_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', is_dragging=True, position=target
+    )
+    mouse_release_callbacks(layer, event)
+
+    # the center is preserved (grown symmetrically), not the opposite corner
+    np.testing.assert_allclose(layer._selected_box[Box.CENTER], center)
+    np.testing.assert_allclose(layer.data[1].mean(axis=0), center)
+
+
 def test_drag_vertex(create_known_shapes_layer):
     """Select and drag vertex."""
     layer, _n_shapes, _ = create_known_shapes_layer

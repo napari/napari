@@ -746,11 +746,17 @@ def _move_selected_layer(
         layer.refresh()
     elif vertex < Box.LEN:
         # Corner / edge vertex is being dragged so resize object
-        # Also applies while drawing line, rectangle, ellipse
         box = layer._selected_box
         if layer._fixed_vertex is None:
+            # _fixed_index still classifies the drag as corner vs edge below,
+            # but the pivot depends on whether we resize from center (Alt held).
             layer._fixed_index = (vertex + 4) % Box.LEN
-            layer._fixed_vertex = box[layer._fixed_index]
+            if layer._draw_from_center:
+                # resize symmetrically about the box center
+                layer._fixed_vertex = box[Box.CENTER]
+            else:
+                # resize about the vertex opposite the dragged one
+                layer._fixed_vertex = box[layer._fixed_index]
 
         handle_offset = box[Box.HANDLE] - box[Box.CENTER]
         if np.linalg.norm(handle_offset) == 0:
