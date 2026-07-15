@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from vispy.util import keys
 
 from napari.utils import key_bindings
 from napari.utils.key_bindings import (
@@ -14,6 +15,7 @@ from napari.utils.key_bindings import (
     _bind_user_key,
     _get_user_keymap,
     bind_key,
+    coerce_keybinding,
 )
 
 
@@ -417,3 +419,55 @@ def test_key_release_callback(monkeypatch):
     monkeypatch.setattr(time, 'time', lambda: 2)
     handler.release_key('K')
     assert called2
+
+
+def _vispy_event(key_name, modifiers=()):
+    """Build a minimal stand-in for a vispy key event.
+
+    ``_vispy2appmodel`` only reads ``event.key.name`` (the key that triggered
+    *this* event) and ``event.modifiers`` (the modifiers currently held).
+    """
+    return types.SimpleNamespace(
+        key=types.SimpleNamespace(name=key_name),
+        modifiers=tuple(modifiers),
+    )
+
+
+@pytest.mark.key_bindings
+@pytest.mark.parametrize(
+    ('key_name', 'modifiers', 'expected'),
+    [
+        # Pressing a modifier while another modifier is held resolves to the
+        # bare pressed modifier, so bindings on the lone modifier still match
+        # (e.g. Shapes' hold-Alt-to-draw-from-center while hold-Shift-to-lock-
+        # aspect-ratio is active). Without this, the combo would resolve to
+        # e.g. "Shift+Alt" and match neither lone-modifier binding.
+        pytest.param(
+            keys.ALT.name, (keys.SHIFT, keys.ALT), 'Alt', id='alt-while-shift'
+        ),
+        pytest.param(
+            keys.SHIFT.name,
+            (keys.SHIFT, keys.ALT),
+            'Shift',
+            id='shift-while-alt',
+        ),
+        # Unchanged behavior below: pressing a lone modifier drops the
+        # redundant held copy of itself ("Shift-Shift" -> "Shift").
+        pytest.param(
+            keys.SHIFT.name, (keys.SHIFT,), 'Shift', id='shift-alone'
+        ),
+        # A regular key keeps every held modifier: combos ending in a real key
+        # (the only kind napari registers) are untouched by the modifier fix.
+        pytest.param(
+            'P', (keys.SHIFT, keys.ALT), 'Shift+Alt+P', id='shift-alt-p'
+        ),
+        pytest.param('P', (), 'P', id='bare-letter'),
+        # A non-modifier special key also keeps held modifiers.
+        pytest.param(
+            keys.DELETE.name, (keys.SHIFT,), 'Shift+Delete', id='shift-delete'
+        ),
+    ],
+)
+def test_vispy2appmodel_modifier_combinations(key_name, modifiers, expected):
+    result = key_bindings._vispy2appmodel(_vispy_event(key_name, modifiers))
+    assert result == coerce_keybinding(expected)
