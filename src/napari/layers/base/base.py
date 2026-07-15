@@ -2148,7 +2148,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
+    ) -> None:
         """Update canvas scale and corner values on draw.
 
         For layer multiscale determining if a new resolution level or tile is

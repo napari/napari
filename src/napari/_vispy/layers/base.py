@@ -165,7 +165,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def _on_opacity_change(self):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, event=None) -> None:
         blending = self.layer.blending
         blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 
@@ -200,7 +200,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
-    def _on_matrix_change(self):
+    def _on_matrix_change(self) -> None:
         dims_displayed = self.layer._slice_input.displayed
         # If the layer's dimensionality changed (e.g., data swapped from 2D
         # to 3D), _world_to_layer_units_scale reflects the old ndim
@@ -330,7 +330,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         VRAM or animating itself.
         """
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.events, self)
         self.node.transforms = MatrixTransform()
