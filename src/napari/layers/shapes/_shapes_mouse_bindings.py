@@ -177,13 +177,14 @@ def add_line(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     coordinates = layer.world_to_data(event.position)
     layer._moving_coordinates = coordinates
 
-    center = np.array(coordinates)
+    initial_point = np.array(coordinates)
     if layer._draw_from_center:
+        # initial_point is the center of the line
         full_size = full_size / 2
-        data = np.array([center - full_size, center + full_size])
+        data = np.array([initial_point - full_size, initial_point + full_size])
     else:
-        # corner is first datapoint defining the line
-        data = np.array([center, center + full_size])
+        # initial_point is the first endpoint of the line
+        data = np.array([initial_point, initial_point + full_size])
 
     # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
     yield from _add_line_rectangle_ellipse(

@@ -52,7 +52,7 @@ def hold_to_lock_aspect_ratio(layer: Shapes) -> Generator[None, None, None]:
 def hold_to_draw_shape_from_center(
     layer: Shapes,
 ) -> Generator[None, None, None]:
-    """Hold to draw new shapes from their center."""
+    """Hold to draw or resize shapes from center."""
     # on key press
     layer._draw_from_center = True
     if layer._is_moving:
