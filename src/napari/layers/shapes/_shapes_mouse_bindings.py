@@ -177,13 +177,42 @@ def add_line(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     coordinates = layer.world_to_data(event.position)
     layer._moving_coordinates = coordinates
 
-    # corner is first datapoint defining the line
-    corner = np.array(coordinates)
-    data = np.array([corner, corner + full_size])
+    center = np.array(coordinates)
+    if layer._draw_from_center:
+        full_size = full_size / 2
+        data = np.array([center - full_size, center + full_size])
+    else:
+        # corner is first datapoint defining the line
+        data = np.array([center, center + full_size])
 
     # adds data to layer.data and handles mouse move (cursor tracking) and release event (setting second point)
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
+    )
+
+
+def _initialize_rectangle_or_ellipse_data(
+    corner: npt.NDArray,
+    size_h: npt.NDArray,
+    size_v: npt.NDArray,
+    *,
+    draw_from_center: bool,
+) -> npt.NDArray:
+    """Create the initial interaction box used while drawing rectangles and ellipses."""
+    if draw_from_center:
+        size_h = size_h / 2
+        size_v = size_v / 2
+        return np.array(
+            [
+                corner - size_h - size_v,
+                corner - size_h + size_v,
+                corner + size_h + size_v,
+                corner + size_h - size_v,
+            ]
+        )
+
+    return np.array(
+        [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
 
 
@@ -208,8 +237,11 @@ def add_ellipse(
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
-    data = np.array(
-        [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
+    data = _initialize_rectangle_or_ellipse_data(
+        corner,
+        size_h,
+        size_v,
+        draw_from_center=layer._draw_from_center,
     )
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='ellipse'
@@ -236,8 +268,11 @@ def add_rectangle(
 
     coordinates = layer.world_to_data(event.position)
     corner = np.array(coordinates)
-    data = np.array(
-        [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
+    data = _initialize_rectangle_or_ellipse_data(
+        corner,
+        size_h,
+        size_v,
+        draw_from_center=layer._draw_from_center,
     )
 
     yield from _add_line_rectangle_ellipse(
@@ -263,6 +298,7 @@ def _add_line_rectangle_ellipse(
     """
     # on press
     layer._is_creating = True
+    layer._creation_start = np.array(layer.world_to_data(event.position))
     # reset layer._aspect_ratio for a new shape
     layer._aspect_ratio = 1
     # Start drawing rectangle / ellipse / line
@@ -812,93 +848,66 @@ def _move_selected_layer(
 def _add_rectangle_ellipse_line(
     layer: Shapes, coordinates: tuple[float, ...], vertex: int
 ) -> None:
-    coord = _set_drag_start(layer, coordinates)
+    coord = np.array(coordinates, dtype=float)
     layer._moving_coordinates = coordinates
     layer._is_moving = True
     assert vertex == 4, 'vertex should be 4 on creation'
+    assert layer._creation_start is not None
+    creation_start = layer._creation_start.astype(float, copy=True)
+    displayed = layer._slice_input.displayed
 
-    box = layer._selected_box
-    if layer._fixed_vertex is None:
-        layer._fixed_index = 0
-        layer._fixed_vertex = box[layer._fixed_index]
-
-    handle_offset = box[Box.HANDLE] - box[Box.CENTER]
-    if np.linalg.norm(handle_offset) == 0:
-        handle_offset = [1, 1]
-    handle_offset_norm = handle_offset / np.linalg.norm(handle_offset)
-
-    if layer._mode == Mode.ADD_LINE:
-        sign = np.sign(handle_offset_norm[0])
-        rot = np.array(
-            [
-                [sign, 0],
-                [0, sign],
-            ]
-        )
-        inv_rot = rot
-    else:
-        sign = np.sign(handle_offset_norm[1])
-
-        rot = np.array(
-            [
-                [0, -sign],
-                [sign, 0],
-            ]
-        )
-        inv_rot = -rot
-
-    fixed = layer._fixed_vertex
-    new = list(coord)
-    box_center = box[Box.CENTER]
-    if layer._fixed_aspect and layer._fixed_index % 2 == 0:
-        # corner
-        # ensure line rotates through 45 degree steps if aspect ratio is 1
+    if layer._fixed_aspect:
+        start_displayed = creation_start[displayed]
+        coord_displayed = coord[displayed]
         if layer._mode == Mode.ADD_LINE and layer._aspect_ratio == 1:
-            new_offset = coord - layer._fixed_vertex
-            angle_rad = np.arctan2(new_offset[0], -new_offset[1])
-            angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
-            new = (
-                np.array([np.sin(angle_rad), -np.cos(angle_rad)])
-                * np.linalg.norm(new - box_center)
-                + box_center
-            )
+            offset = coord_displayed - start_displayed
+            if np.linalg.norm(offset) > 0:
+                angle_rad = np.arctan2(offset[0], -offset[1])
+                angle_rad = np.round(angle_rad / (np.pi / 4)) * (np.pi / 4)
+                coord[displayed] = (
+                    np.array([np.sin(angle_rad), -np.cos(angle_rad)])
+                    * np.linalg.norm(offset)
+                    + start_displayed
+                )
         else:
-            # get the direction to grow the shape from the mouse coord
-            direction = np.sign(coord - fixed)
-            nonzero_direction = direction[direction != 0]
-            if len(nonzero_direction) == 1:
-                direction[direction == 0] = nonzero_direction[0]
-            elif len(nonzero_direction) == 0:
-                direction = box[vertex] - box_center
+            offset = coord_displayed - start_displayed
+            if np.linalg.norm(offset) > 0:
+                aspect = np.array([1, layer._aspect_ratio], dtype=float)
+                aspect = aspect / np.linalg.norm(aspect)
+                direction = np.sign(offset)
+                nonzero_mask = direction != 0
+                if nonzero_mask.any():
+                    direction[~nonzero_mask] = direction[nonzero_mask].max()
+                coord[displayed] = (
+                    start_displayed
+                    + direction * np.linalg.norm(offset) * aspect
+                )
 
-            # Scale by the aspect ratio
-            direction = np.array(
-                [direction[0], direction[1] * layer._aspect_ratio]
-            )
-
-            new = (
-                direction
-                / np.linalg.norm(direction)
-                * np.linalg.norm(new - box_center)
-                + box_center
-            )
-
-    drag_scale = (inv_rot @ (new - fixed)) / (inv_rot @ (box[vertex] - fixed))
-
-    # prevent box from shrinking below a threshold size
-    size = (np.linalg.norm(box[Box.TOP_LEFT] - box_center),)
-    drag_scale_thr = (
-        np.abs(size * drag_scale) < layer._normalized_vertex_radius
-    )
-    drag_scale[drag_scale_thr] = 1
-
-    scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
-    transform = rot @ scale_mat @ inv_rot
     index = next(iter(layer.selected_data))
-    layer._data_view.shift(index, -layer._fixed_vertex)
-    layer._data_view.transform(index, transform)
-    layer._data_view.shift(index, layer._fixed_vertex)
-    layer._transform_box(transform, center=layer._fixed_vertex)
+    if layer._mode == Mode.ADD_LINE:
+        if layer._draw_from_center:
+            data = np.array([2 * creation_start - coord, coord])
+        else:
+            data = np.array([creation_start, coord])
+    else:
+        min_corner = np.minimum(creation_start, coord)
+        max_corner = np.maximum(creation_start, coord)
+        if layer._draw_from_center:
+            radius = np.abs(coord[displayed] - creation_start[displayed])
+            min_corner[displayed] = creation_start[displayed] - radius
+            max_corner[displayed] = creation_start[displayed] + radius
+
+        # Only the two displayed axes differ between min_corner and
+        # max_corner; build the two remaining corners by swapping one
+        # displayed axis each. Order matches _initialize_rectangle_or_ellipse_data.
+        top_right = min_corner.copy()
+        top_right[displayed[1]] = max_corner[displayed[1]]
+        bottom_left = min_corner.copy()
+        bottom_left[displayed[0]] = max_corner[displayed[0]]
+        data = np.array([min_corner, top_right, max_corner, bottom_left])
+
+    layer._data_view.edit(index, data)
+    layer._selected_box = layer.interaction_box(index)
     layer.refresh()
 
 

@@ -43,6 +43,31 @@ def hold_to_lock_aspect_ratio(layer: Shapes) -> Generator[None, None, None]:
 
     # on key release
     layer._fixed_aspect = False
+    if layer._is_moving and not layer._is_creating:
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
+
+
+@Shapes.bind_key(KeyCode.Alt, overwrite=True)
+def hold_to_draw_shape_from_center(
+    layer: Shapes,
+) -> Generator[None, None, None]:
+    """Hold to draw new shapes from their center."""
+    # on key press
+    layer._draw_from_center = True
+    if layer._is_moving:
+        layer._fixed_vertex = None
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
+
+    yield
+
+    # on key release
+    layer._draw_from_center = False
+    if layer._is_moving and not layer._is_creating:
+        layer._fixed_vertex = None
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
 
 
 def register_shapes_action(

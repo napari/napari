@@ -253,8 +253,14 @@ def _vispy2appmodel(event) -> KeyBinding:
         key = key.upper()
         cond = lambda m: True  # noqa: E731
     elif key in _VISPY_SPECIAL_KEYS:
-        # remove redundant information i.e. an output of 'Shift-Shift'
-        cond = lambda m: m != key  # noqa: E731
+        if any(key == mod_key for mod_key in _VISPY_MODS):
+            # pressing a modifier while another modifier is held;
+            # don't include the held modifier (it would prevent
+            # matching the binding for the bare modifier key)
+            cond = lambda m: False  # noqa: E731
+        else:
+            # remove redundant information i.e. an output of 'Shift-Shift'
+            cond = lambda m: m != key  # noqa: E731
     else:
         # Shift is consumed to transform key
 
