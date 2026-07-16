@@ -17,11 +17,6 @@ Requires network access and anonymous S3 (no credentials needed).
 .. tags:: experimental
 """
 
-import contextlib
-
-with contextlib.suppress(ModuleNotFoundError):
-    import napari_colormaps  # noqa: F401 - registers colormaps
-
 import napari
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,

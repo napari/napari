@@ -7,12 +7,10 @@
 #     "aiohttp",
 #     "requests",
 #     "s3fs",
-#     "napari-colormaps",
 # ]
 #
 # [tool.uv.sources]
 # napari = { git = "https://github.com/kephale/napari", branch = "progressive-loading-rebase" }
-# napari-colormaps = { git = "https://github.com/kephale/napari-colormaps" }
 # ///
 """
 Progressive loading: generic OME-Zarr viewer
@@ -50,13 +48,8 @@ Options::
 """
 
 import argparse
-import contextlib
 
 import napari
-
-with contextlib.suppress(ImportError):
-    import napari_colormaps  # noqa: F401 - registers colormaps
-
 from napari.experimental._progressive_loading import (
     add_progressive_loading_image,
 )
@@ -123,7 +116,7 @@ PRESETS = {
         'path': 's3://janelia-cosem-datasets/jrc_mus-kidney/jrc_mus-kidney.zarr/recon-1/em/fibsem-uint8',
         'levels': 5,
         'contrast': (0, 255),
-        'colormap': 'earth_clay_cb',
+        'colormap': 'magma',
         'threed': True,
         'rendering': 'attenuated_mip',
     },
@@ -132,7 +125,7 @@ PRESETS = {
         'path': 'https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0083A/9822152.zarr/',
         'levels': 11,
         'contrast': (0, 65535),
-        'colormap': 'dark_cobalt',
+        'colormap': 'gray',
     },
     'mandelbrot': {
         'desc': 'Generative Mandelbrot set (local, no network)',
@@ -143,7 +136,7 @@ PRESETS = {
     'mandelbulb': {
         'desc': 'Generative Mandelbulb (local, no network)',
         'path': '__generative_mandelbulb__',
-        'colormap': 'sunset_blaze',
+        'colormap': 'inferno',
         'contrast': (0, 255),
         'threed': True,
         'rendering': 'attenuated_mip',
