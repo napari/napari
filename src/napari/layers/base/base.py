@@ -2149,7 +2149,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _update_draw(
         self,
         scale_factor: float,
-        corner_pixels_displayed: npt.NDArray,
+        corner_pixels_displayed: npt.NDArray[Any],
         shape_threshold: tuple[int, ...],
     ) -> None:
         """Update canvas scale and corner values on draw.
