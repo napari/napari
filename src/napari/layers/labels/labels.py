@@ -15,7 +15,6 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
-from PIL import Image, ImageDraw
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
@@ -1670,6 +1669,8 @@ class Labels(ScalarFieldBase):
         ndarray
             Boolean mask with True inside polygon.
         """
+        from PIL import Image, ImageDraw
+
         # PIL uses (x, y) = (col, row), so reverse the points
         img = Image.new('L', (shape[1], shape[0]), 0)
         draw = ImageDraw.Draw(img)
