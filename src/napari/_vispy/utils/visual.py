@@ -17,9 +17,13 @@ from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
 from napari._vispy.overlays.colorbar import VispyColorBarOverlay
+from napari._vispy.overlays.floating_axes import VispyFloatingAxesOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
+)
+from napari._vispy.overlays.labels_brush_stroke import (
+    VispyLabelsBrushStrokeOverlay,
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
@@ -28,7 +32,6 @@ from napari._vispy.overlays.text import (
     VispyLayerNameOverlay,
     VispyTextOverlay,
 )
-from napari._vispy.overlays.welcome import VispyWelcomeOverlay
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
     AxesOverlay,
@@ -36,6 +39,8 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     ColorBarOverlay,
     CurrentSliceOverlay,
+    FloatingAxesOverlay,
+    LabelsBrushStrokeOverlay,
     LabelsPolygonOverlay,
     LayerNameOverlay,
     Overlay,
@@ -43,7 +48,6 @@ from napari.components.overlays import (
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
-    WelcomeOverlay,
     ZoomOverlay,
 )
 from napari.layers import (
@@ -76,12 +80,13 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
     AxesOverlay: VispyAxesOverlay,
+    FloatingAxesOverlay: VispyFloatingAxesOverlay,
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
     BrushCircleOverlay: VispyBrushCircleOverlay,
     LabelsPolygonOverlay: VispyLabelsPolygonOverlay,
-    WelcomeOverlay: VispyWelcomeOverlay,
+    LabelsBrushStrokeOverlay: VispyLabelsBrushStrokeOverlay,
     ZoomOverlay: VispyZoomOverlay,
     LayerNameOverlay: VispyLayerNameOverlay,
     CurrentSliceOverlay: VispyCurrentSliceOverlay,

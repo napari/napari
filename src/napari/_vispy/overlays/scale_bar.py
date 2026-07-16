@@ -3,7 +3,7 @@ from __future__ import annotations
 import bisect
 from decimal import Decimal
 from math import floor, log
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pint
@@ -15,8 +15,7 @@ from napari.utils._units import PREFERRED_VALUES
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ScaleBarOverlay
 
 
@@ -26,22 +25,15 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: ScaleBarOverlay
     node: ScaleBar
 
-    def __init__(
-        self,
-        *,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
         super().__init__(
-            node=ScaleBar(font_manager=font_manager, font_family=font_family),
-            font_manager=font_manager,
-            font_family=font_family,
+            node=ScaleBar(font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
 
@@ -69,9 +61,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_unit_change(self):
         # NOTE: this is also called by VispyCanvas when layer units are updated
         #       so it doesn't need to be connected to events for that
-        if self.overlay.unit is not None:
-            unit = pint.get_application_registry()(self.overlay.unit)
-        elif self.viewer.layers.units is not None:
+        if self.viewer.layers.units is not None:
             units = np.array(self.viewer.layers.units)[
                 list(self.viewer.dims.displayed)
             ]
