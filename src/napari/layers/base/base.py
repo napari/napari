@@ -2164,7 +2164,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[int, ...]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor
