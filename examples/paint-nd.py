@@ -23,12 +23,12 @@ blobs = np.stack(
     ],
     axis=0,
 )
-viewer = napari.view_image(blobs.astype(float), rendering='attenuated_mip')
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float), rendering='attenuated_mip')
 labels = viewer.add_labels(np.zeros_like(blobs, dtype=np.int32))
 labels.n_edit_dimensions = 3
 labels.brush_size = 15
 labels.mode = 'paint'
-labels.n_dimensional = True
 
 if __name__ == '__main__':
     napari.run()

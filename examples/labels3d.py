@@ -15,8 +15,8 @@ from skimage import data, filters, morphology
 import napari
 
 cells3d = data.cells3d()
-
-viewer = napari.view_image(
+viewer = napari.Viewer()
+membranes_layer, nuclei_layer = viewer.add_image(
     cells3d, channel_axis=1, name=['membranes', 'nuclei']
 )
 membrane, nuclei = cells3d.transpose((1, 0, 2, 3)) / np.max(cells3d)
@@ -39,6 +39,8 @@ segmented = ndi.label(cleaned)[0]
 # )
 
 labels_layer = viewer.add_labels(segmented)
+
+viewer.dims.ndisplay = 3
 
 if __name__ == '__main__':
     napari.run()

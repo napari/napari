@@ -48,7 +48,7 @@ body:
     attributes:
       label: "\U0001F30E Environment"
       description: |
-        Please provide detailed information regarding your environment. Please paste the output of `napari --info` here or copy  the information from the "napari info" dialog in the napari Help menu.
+        Please provide detailed information regarding your environment. Please paste the information from the "napari info" dialog in the napari Help menu or the output of `napari --info` here.
 
         Otherwise, please provide information regarding your operating system (OS), Python version, napari version, Qt backend and version, Qt platform, method of installation, and any other relevant information related to your environment.
 

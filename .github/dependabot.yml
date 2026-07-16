@@ -10,3 +10,9 @@ updates:
       prefix: "ci(dependabot):"
     labels:
       - "maintenance"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7

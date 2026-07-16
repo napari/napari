@@ -3,57 +3,137 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  pull_request:
+    paths:
+      - .github/workflows/make_release.yml
 
 name: Create Release
 
+permissions: {}
+
 jobs:
-  build:
+  build-and-inspect-package:
+    name: Build & inspect package.
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: hynek/build-and-inspect-python-package@fe0a0fb1925ca263d076ca4f2c13e93a6e92a33e  # v2.17.0
+        with:
+          attest-build-provenance-github: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+
+  extract_release_notes:
+    name: Extract release notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: napari/docs
+          path: docs
+          persist-credentials: false
+      - name: Get release tag from github ref
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "tag_=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
+      - name: Get latest relese
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          echo "tag_=$(gh release view --repo napari/napari --json tagName --jq '.tagName | ltrimstr("v")')" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Find Release Notes
+        id: release_notes
+        run: |
+          VER="${TAG/a*/}"  # remove alpha identifier
+          VER="${VER/b*/}"  # remove beta identifier
+          VER="${VER/rc*/}"  # remove rc identifier
+          VER="${VER/post*/}"  # remove post identifier
+          RELEASE_NOTES_PATH="docs/docs/release/release_${VER//./_}.md"
+
+          echo "tag=${TAG}" >> "$GITHUB_ENV"
+          echo "release_notes_path=${RELEASE_NOTES_PATH}" >> "$GITHUB_ENV"
+          echo tag: "${TAG}"
+          echo release_notes_path: "${RELEASE_NOTES_PATH}"
+          ls docs/docs/release
+        env:
+          TAG: ${{ env.tag_ }}
+
+
+      - name: Copy Release Notes
+        run: |
+          cp "${RELEASE_NOTES_PATH}" release_notes.md
+        env:
+          RELEASE_NOTES_PATH: ${{ env.release_notes_path }}
+
+      - name: Upload Release Notes to GitHub
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release_notes
+          path: release_notes.md
+
+  create-github-release:
+    needs: [extract_release_notes, build-and-inspect-package]
     permissions:
       contents: write
-      id-token: write
     name: Create Release
     runs-on: ubuntu-latest
     if: github.repository == 'napari/napari'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Install Python
-        uses: actions/setup-python@v5
+      - name: Download build artifact to dist/
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          python-version: 3.11
-          cache-dependency-path: pyproject.toml
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .[build]  # need full install so we can build type stubs
-      - name: Build Distribution
-        run: make dist
-      - name: Find Release Notes
-        id: release_notes
-        run: |
-          TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
-          if [[ "$TAG" != *"rc"* ]]; then
-            VER="${TAG/rc*/}"  # remove pre-release identifier
-            RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
-            # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
-            RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
-            RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
-            RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
-          else
-            RELEASE_NOTES="pre-release $TAG"
-          fi
-          echo "tag=${TAG}" >> $GITHUB_ENV
-          # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "name=contents=${RELEASE_NOTES}" >> $GITHUB_ENV
+          name: Packages
+          path: dist
+      - name: Download release notes to notes/
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release_notes
+          path: notes
+
       - name: Create Release
-        uses: "softprops/action-gh-release@v1"
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          prerelease=()
+          if [[ "${name}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$ ]]; then
+              prerelease=(--prerelease)
+          fi
+
+          gh release create "${name}" dist/* \
+              --title "${name}" \
+              --notes-file notes/release_notes.md \
+              --target "${target_commit}" \
+              --repo "${repository}" \
+              "${prerelease[@]}"
+        shell: bash
+        env:
+          repository: ${{ github.repository }}
+          name: ${{ github.ref_name }}
+          target_commit: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+
+  publish-to-pypi:
+    name: Publish release to PyPI
+    needs: [extract_release_notes, build-and-inspect-package]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing, but
+      # should NOT be granted anywhere else!
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/napari
+    steps:
+      - name: Download build artifact to dist/
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          tag_name: ${{ github.ref }}
-          name: ${{ env.tag }}
-          body: ${{ steps.release_notes.outputs.contents }}
-          draft: false
-          prerelease: ${{ contains(github.ref, 'rc') }}
-          files: |
-            dist/*
-      - name: Publish PyPI Package
-        uses: pypa/gh-action-pypi-publish@release/v1
+          name: Packages
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0

@@ -1,0 +1,785 @@
+import os
+from unittest.mock import Mock
+
+import npe2
+import numpy as np
+import numpy.testing as npt
+import pytest
+from pint import get_application_registry
+
+from napari.components import LayerList
+from napari.layers import Image
+from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
+
+REG = get_application_registry()
+
+
+def test_empty_layers_list():
+    """
+    Test instantiating an empty LayerList object
+    """
+    layers = LayerList()
+
+    assert len(layers) == 0
+
+
+def test_initialize_from_list():
+    layers = LayerList(
+        [Image(np.random.random((10, 10))), Image(np.random.random((10, 10)))]
+    )
+    assert len(layers) == 2
+
+
+def test_adding_layer():
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+
+    # LayerList should err if you add anything other than a layer
+    with pytest.raises(TypeError):
+        layers.append('something')
+
+    assert len(layers) == 1
+
+
+def test_removing_layer():
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    layers.remove(layer)
+
+    assert len(layers) == 0
+
+
+def test_popping_layer():
+    """Test popping a layer off layerlist."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    assert len(layers) == 1
+    layers.pop(0)
+    assert len(layers) == 0
+
+
+def test_indexing():
+    """
+    Test indexing into a LayerList
+    """
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='image')
+    layers.append(layer)
+
+    assert layers[0] == layer
+    assert layers['image'] == layer
+
+
+def test_insert():
+    """
+    Test inserting into a LayerList
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='image_a')
+    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layers.append(layer_a)
+    layers.insert(0, layer_b)
+
+    assert list(layers) == [layer_b, layer_a]
+
+
+def test_get_index():
+    """
+    Test getting indexing from LayerList
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='image_a')
+    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+
+    assert layers.index(layer_a) == 0
+    assert layers.index('image_a') == 0
+    assert layers.index(layer_b) == 1
+    assert layers.index('image_b') == 1
+
+
+def test_reordering():
+    """
+    Test indexing into a LayerList by name
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='image_a')
+    layer_b = Image(np.random.random((15, 15)), name='image_b')
+    layer_c = Image(np.random.random((15, 15)), name='image_c')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+
+    # Rearrange layers by tuple
+    layers[:] = [layers[i] for i in (1, 0, 2)]
+    assert list(layers) == [layer_b, layer_a, layer_c]
+
+    # Reverse layers
+    layers.reverse()
+    assert list(layers) == [layer_c, layer_a, layer_b]
+
+
+def test_clearing_layerlist():
+    """Test clearing layer list."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layer2 = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    layers.append(layer2)
+    assert len(layers) == 2
+
+    layers.clear()
+    assert len(layers) == 0
+
+
+def test_remove_selected():
+    """Test removing selected layers."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+
+    # remove last added layer as only one selected
+    layers.selection.clear()
+    layers.selection.add(layer_c)
+    layers.remove_selected()
+    assert list(layers) == [layer_a, layer_b]
+
+    # select and remove all layers
+    layers.select_all()
+    layers.remove_selected()
+    assert len(layers) == 0
+
+
+def test_remove_linked_layer():
+    """Test removing a layer that is linked to other layers"""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layers.extend([layer_a, layer_b, layer_c])
+
+    # link layer_c with layer_b
+    layers.link_layers([layer_c, layer_b])
+    assert len(get_linked_layers(layer_c)) == 1
+    assert len(get_linked_layers(layer_b)) == 1
+
+    layers.selection.add(layer_b)
+    layers.remove_selected()
+    assert len(get_linked_layers(layer_c)) == 0
+
+
+@pytest.mark.filterwarnings('ignore::FutureWarning')
+def test_move_selected():
+    """
+    Test removing selected layers
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layer_d = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+    layers.append(layer_d)
+
+    # Check nothing moves if given same insert and origin
+    layers.selection.clear()
+    layers.move_selected(2, 2)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_c}
+
+    # Move middle element to front of list and back
+    layers.selection.clear()
+    layers.move_selected(2, 0)
+    assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
+    assert layers.selection == {layer_c}
+
+    layers.selection.clear()
+    layers.move_selected(0, 2)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_c}
+
+    # Move middle element to end of list and back
+    layers.selection.clear()
+    layers.move_selected(2, 3)
+    assert list(layers) == [layer_a, layer_b, layer_d, layer_c]
+    assert layers.selection == {layer_c}
+
+    layers.selection.clear()
+    layers.move_selected(3, 2)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_c}
+
+    # Select first two layers only
+    layers.selection = layers[:2]
+
+    # Move unselected middle element to front of list even if others selected
+    layers.move_selected(2, 0)
+    assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
+    # Move selected first element back to middle of list
+    layers.move_selected(0, 2)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+
+    # Select first two layers only
+    layers.selection = layers[:2]
+    # Check nothing moves if given same insert and origin and multiple selected
+    layers.move_selected(0, 0)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Check nothing moves if given same insert and origin and multiple selected
+    layers.move_selected(1, 1)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Move first two selected to middle of list
+    layers.move_selected(0, 2)
+    assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Move middle selected to front of list
+    layers.move_selected(2, 0)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Move first two selected to middle of list
+    layers.move_selected(1, 2)
+    assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Move middle selected to front of list
+    layers.move_selected(1, 0)
+    assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_b}
+
+    # Select first and third layers only
+    layers.selection = layers[::2]
+    # Move selection together to middle
+    layers.move_selected(2, 2)
+    assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_c}
+    layers.move_multiple((1, 0, 2, 3), 0)
+
+    # Move selection together to middle
+    layers.move_selected(0, 1)
+    assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
+    assert layers.selection == {layer_a, layer_c}
+    layers.move_multiple((1, 0, 2, 3), 0)
+
+    # Move selection together to end
+    layers.move_selected(2, 3)
+    assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
+    assert layers.selection == {layer_a, layer_c}
+    layers.move_multiple((2, 0, 3, 1), 0)
+
+    # Move selection together to end
+    layers.move_selected(0, 3)
+    assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
+    assert layers.selection == {layer_a, layer_c}
+    layers.move_multiple((2, 0, 3, 1), 0)
+
+    layer_e = Image(np.random.random((15, 15)))
+    layer_f = Image(np.random.random((15, 15)))
+    layers.append(layer_e)
+    layers.append(layer_f)
+    # Check current order is correct
+    assert list(layers) == [
+        layer_a,
+        layer_b,
+        layer_c,
+        layer_d,
+        layer_e,
+        layer_f,
+    ]
+    # Select second and firth layers only
+    layers.selection = {layers[1], layers[4]}
+
+    # Move selection together to middle
+    layers.move_selected(1, 2)
+    assert list(layers) == [
+        layer_a,
+        layer_c,
+        layer_b,
+        layer_e,
+        layer_d,
+        layer_f,
+    ]
+    assert layers.selection == {layer_b, layer_e}
+
+
+def test_toggle_visibility():
+    """
+    Test toggling layer visibility
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layer_d = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+    layers.append(layer_d)
+
+    layers[0].visible = False
+    layers[1].visible = True
+    layers[2].visible = False
+    layers[3].visible = True
+
+    layers.select_all()
+    layers.selection.remove(layers[0])
+
+    layers.toggle_selected_visibility()
+
+    assert [lay.visible for lay in layers] == [False, False, True, False]
+
+    layers.toggle_selected_visibility()
+
+    assert [lay.visible for lay in layers] == [False, True, False, True]
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+@pytest.mark.filterwarnings('ignore:distutils Version classes are deprecated')
+def test_layers_save(builtins, tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data
+    layers.save(path, plugin=builtins.name)
+
+    # Check folder now exists
+    assert os.path.isdir(path)
+
+    # Check individual files now exist
+    for f in filenames:
+        assert os.path.isfile(os.path.join(path, f))
+
+    # Check no additional files exist
+    assert set(os.listdir(path)) == set(filenames)
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save_none_selected(builtins, tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+    layers.selection.clear()
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data (will get a warning that nothing is selected)
+    with pytest.warns(UserWarning, match='No layers selected'):
+        layers.save(path, selected=True, plugin=builtins.name)
+
+    # Check folder still does not exist
+    assert not os.path.isdir(path)
+
+    # Check individual files still do not exist
+    for f in filenames:
+        assert not os.path.isfile(os.path.join(path, f))
+
+    # Check no additional files exist
+    assert set(os.listdir(tmpdir)) == set('')
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+    layers.selection.clear()
+    layers.selection.update({layers[0], layers[2]})
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data
+    layers.save(path, selected=True, plugin=builtins.name)
+
+    # Check folder exists
+    assert os.path.isdir(path)
+
+    # Check only appropriate files exist
+    assert os.path.isfile(os.path.join(path, filenames[0]))
+    assert not os.path.isfile(os.path.join(path, filenames[1]))
+    assert os.path.isfile(os.path.join(path, filenames[2]))
+    assert not os.path.isfile(os.path.join(path, filenames[1]))
+
+    # Check no additional files exist
+    assert set(os.listdir(path)) == {filenames[0], filenames[2]}
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
+
+
+# the layers fixture is defined in napari/conftest.py
+# TODO: this warning filter can be removed when a new version
+# of napari-svg includes the following PR:
+# https://github.com/napari/napari-svg/pull/38
+@pytest.mark.filterwarnings('ignore:edge_:FutureWarning')
+def test_layers_save_svg(tmpdir, layers, napari_svg_name):
+    """Test saving all layer data to an svg."""
+    pm = npe2.PluginManager.instance()
+    pm.register(npe2.PluginManifest.from_distribution('napari-svg'))
+
+    path = os.path.join(tmpdir, 'layers_file.svg')
+
+    # Check file does not exist
+    assert not os.path.isfile(path)
+
+    # Write data
+    layers.save(path, plugin=napari_svg_name)
+
+    # Check file now exists
+    assert os.path.isfile(path)
+
+
+def test_world_extent():
+    """Test world extent after adding layers."""
+    layers = LayerList()
+
+    # Empty data is taken to be 512 x 512
+    np.testing.assert_allclose(layers.extent.world[0], (0, 0))
+    np.testing.assert_allclose(layers.extent.world[1], (511, 511))
+    np.testing.assert_allclose(layers.extent.step, (1, 1))
+
+    # Add one layer
+    layer_a = Image(
+        np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
+    )
+    layers.append(layer_a)
+    np.testing.assert_allclose(layer_a.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(layer_a.extent.world[1], (25, 29, 19))
+    np.testing.assert_allclose(layers.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(layers.extent.world[1], (25, 29, 19))
+    np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
+
+    # Add another layer
+    layer_b = Image(
+        np.random.random((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
+    )
+    layers.append(layer_b)
+    np.testing.assert_allclose(layer_b.extent.world[0], (-5, -10, 10))
+    np.testing.assert_allclose(layer_b.extent.world[1], (37, 0, 24))
+    np.testing.assert_allclose(layers.extent.world[0], (-5, -10, 5))
+    np.testing.assert_allclose(layers.extent.world[1], (37, 29, 24))
+    np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
+
+
+def test_world_extent_mixed_ndim():
+    """Test world extent after adding layers of different dimensionality."""
+    layers = LayerList()
+
+    # Add 3D layer
+    layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
+    layers.append(layer_a)
+    np.testing.assert_allclose(layers.extent.world[0], (0, 0, 0))
+    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 28))
+
+    # Add 2D layer
+    layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
+    layers.append(layer_b)
+    np.testing.assert_allclose(layers.extent.world[0], (0, 0, 0))
+    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 36))
+    np.testing.assert_allclose(layers.extent.step, (4, 6, 2))
+
+
+def test_world_extent_mixed_flipped():
+    """Test world extent after adding data with a flip."""
+    # Flipped data results in a negative scale value which should be
+    # made positive when taking into consideration for the step size
+    # calculation
+    layers = LayerList()
+
+    layer = Image(
+        np.random.random((15, 15)), affine=[[0, 1, 0], [1, 0, 0], [0, 0, 1]]
+    )
+    layers.append(layer)
+    np.testing.assert_allclose(layer._data_to_world.scale, (1, 1))
+    np.testing.assert_allclose(layers.extent.step, (1, 1))
+
+
+def test_ndim():
+    """Test world extent after adding layers."""
+    layers = LayerList()
+
+    assert layers.ndim == 2
+
+    # Add one layer
+    layer_a = Image(np.random.random((10, 15)))
+    layers.append(layer_a)
+    assert layers.ndim == 2
+
+    # Add another layer
+    layer_b = Image(np.random.random((8, 6, 15)))
+    layers.append(layer_b)
+    assert layers.ndim == 3
+
+    # Remove layer
+    layers.remove(layer_b)
+    assert layers.ndim == 2
+
+
+def test_name_uniqueness():
+    layers = LayerList()
+    layers.append(Image(np.random.random((10, 15)), name='Image [1]'))
+    layers.append(Image(np.random.random((10, 15)), name='Image'))
+    layers.append(Image(np.random.random((10, 15)), name='Image'))
+    assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
+
+
+def test_readd_layers():
+    layers = LayerList()
+    imgs = []
+    for _i in range(5):
+        img = Image(np.random.random((10, 10, 10)))
+        layers.append(img)
+        imgs.append(img)
+
+    assert layers == imgs
+
+    with pytest.raises(ValueError, match='already present'):
+        layers.append(imgs[1])
+    assert layers == imgs
+
+    layers[1] = layers[1]
+    assert layers == imgs
+
+    with pytest.raises(ValueError, match='already present'):
+        layers[1] = layers[2]
+    assert layers == imgs
+
+    layers[:3] = layers[:3]
+    assert layers == imgs
+
+    # invert a section
+    layers[:3] = layers[2::-1]
+    assert set(layers) == set(imgs)
+
+    with pytest.raises(ValueError, match='already present'):
+        layers[:3] = layers[:]
+    assert set(layers) == set(imgs)
+
+
+def test_layer_renamed_event():
+    """Test the layer renamed event."""
+    layers = LayerList()
+    layer_a = Image(np.zeros((5, 5)), name='image_a')
+    layer_b = Image(np.zeros((5, 5)), name='image_b')
+    layers.extend([layer_a, layer_b])
+
+    mock_callback = Mock()
+    layers.events.renamed.connect(mock_callback)
+
+    layers[0].name = 'new_name_a'
+    mock_callback.assert_called_once()
+    event = mock_callback.call_args[0][0]
+    assert event.index == 0
+
+    layers[-1].name = 'new_name_b'
+    assert mock_callback.call_count == 2
+    event = mock_callback.call_args[0][0]
+    assert event.index == 1
+
+
+def test_layer_renamed_event_connection_management():
+    """Test that the renamed event is connected and disconnected properly."""
+    layers = LayerList()
+    layer = Image(np.zeros((5, 5)), name='image')
+    assert len(layer.events.name.callbacks) == 0
+
+    layers.append(layer)
+    # When the layer is added to the list, two callbacks are connected.
+    # One is the LayerList._on_layer_renamed, and the other is the
+    # layer.events EmitterGroup itself (from EventedList._connect_child_emitters).
+    assert len(layer.events.name.callbacks) == 2
+
+    layers.remove(layer)
+    assert len(layer.events.name.callbacks) == 0
+
+
+def test_update_units_in_layer():
+    layer_n = Image(
+        np.zeros((5, 5)), name='image', scale=(500, 500), units=('um', 'um')
+    )
+    layer_u = Image(
+        np.zeros((5, 5)), name='image', scale=(0.5, 0.5), units=('um', 'um')
+    )
+
+    layer_list = LayerList([layer_u, layer_n])
+    npt.assert_array_equal(layer_list.extent.step, (0.500, 0.500))
+    assert layer_list.extent.units == layer_u.units
+
+    layer_n.units = ('nm', 'nm')
+    npt.assert_almost_equal(layer_list.extent.step, (500, 500))
+    assert layer_list.extent.units == layer_n.units
+
+
+def test_incompatible_units():
+    layer_u = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_px = Image(np.zeros((5, 5)), units=('pixels', 'pixels'))
+    layer_list = LayerList([layer_u, layer_px])
+    assert layer_list.extent.units is None
+    npt.assert_array_equal(layer_list._step_size, (1, 1))
+
+
+def test_extent_world():
+    """Test world extent after adding layers."""
+    image_1 = Image(np.zeros((7, 5)))
+    image_2 = Image(np.zeros((5, 7)))
+    ll = LayerList([image_1, image_2])
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (6, 6)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (6.5, 6.5))
+    )
+
+
+def test_default_extent_world():
+    """Test default extent after adding layers."""
+    ll = LayerList()
+    npt.assert_array_equal(ll._extent_world, ((0, 0), (511, 511)))
+    npt.assert_array_equal(
+        ll._extent_world_augmented, ((-0.5, -0.5), (511.5, 511.5))
+    )
+
+
+def test_overload_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.extent.units == (REG.um, REG.um)
+    assert layer_list.units == (REG.um, REG.um)
+
+    layer_1.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+    assert layer_list.extent.units == (REG.nm, REG.nm)
+    assert layer_list._get_units([x.extent for x in layer_list]) == (
+        REG.nm,
+        REG.nm,
+    )
+
+
+def test_warn_units_dimensions1():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1])
+
+    assert layer_list.units == (REG.um, REG.um)
+    layer_list.units = ('nm', 'nm')
+    assert layer_list.units == (REG.nm, REG.nm)
+
+    with pytest.warns(
+        UserWarning,
+        match='New layer has more dimensions than the current units, dropping units override',
+    ):
+        layer_list.append(layer_2)
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_warn_units_dimensions2():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((3, 5, 5)), units=('um', 'um', 'um'))
+
+    layer_list = LayerList([layer_1, layer_2])
+
+    with pytest.raises(
+        ValueError,
+        match='Number of units must be at least the number of dimensions',
+    ):
+        layer_list.units = ('nm', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um, REG.um)
+
+
+def test_cannot_override_unit_when_inconsistent_layers():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_2 = Image(np.zeros((5, 5)), units=('s', 'nm'))
+    layer_list = LayerList([layer_1, layer_2])
+    assert layer_list.units is None
+    with pytest.raises(
+        ValueError,
+        match='Cannot set units when layers have inconsistent dimensionality',
+    ):
+        layer_list.units = ('nm', 'nm')
+    assert layer_list.units is None
+
+
+def test_warn_incompatible_overriding_units():
+    layer_1 = Image(np.zeros((5, 5)), units=('um', 'um'))
+    layer_list = LayerList([layer_1])
+    assert layer_list.units == (REG.um, REG.um)
+    with pytest.raises(
+        ValueError, match='On axis -2 units must be consistent'
+    ):
+        layer_list.units = ('s', 'nm')
+
+    assert layer_list.units == (REG.um, REG.um)
+
+
+def test_unlink_on_delete():
+    """Test that layer is unlinked after user removes the layer from the
+    viewer."""
+    layer1 = Image(np.zeros((5, 5)), name='image1')
+    layer2 = Image(np.zeros((5, 5)), name='image2')
+    layer3 = Image(np.zeros((5, 5)), name='image3')
+    ll = LayerList([layer1, layer2, layer3])
+    ll.link_layers([layer1, layer2, layer3])
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert layer_is_linked(layer3)
+    del ll['image3']
+
+    assert layer_is_linked(layer1)
+    assert layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+    ll.remove(layer2)
+    assert not layer_is_linked(layer1)
+    assert not layer_is_linked(layer2)
+    assert not layer_is_linked(layer3)
+
+
+def test_remove_selected_skips_locked():
+    """Locked layers should not be removed by remove_selected."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='a')
+    layer_b = Image(np.random.random((10, 10)), name='b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layer_a.locked = True
+    layers.selection = {layer_a, layer_b}
+    layers.remove_selected()
+    assert len(layers) == 1
+    assert layers[0] is layer_a
+
+
+def test_remove_selected_all_locked():
+    """When all selected layers are locked, none should be removed."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.locked = True
+    layers.selection = {layer}
+    layers.remove_selected()
+    assert len(layers) == 1

@@ -10,7 +10,6 @@ It demonstrates:
 
 .. tags:: gui
 """
-import typing
 from typing import Annotated
 
 import skimage.data
@@ -28,13 +27,13 @@ import napari
 # napari object type without actually importing or depending on napari.
 # We also use the `Annotated` type to pass an additional dictionary that can be used
 # to aid widget generation. The keys of the dictionary are keyword arguments to
-# the corresponding magicgui widget type. For more informaiton see
+# the corresponding magicgui widget type. For more information see
 # https://napari.org/magicgui/api/widgets.html.
 def gaussian_blur(
     layer: 'napari.layers.Image',
     sigma: Annotated[float, {'widget_type': 'FloatSlider', 'max': 6}] = 1.0,
     mode: Annotated[str, {'choices': ['reflect', 'constant', 'nearest', 'mirror', 'wrap']}]='nearest',
-) -> 'typing.Optional[napari.types.ImageData]':
+) -> 'napari.types.ImageData | None':
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)

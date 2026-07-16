@@ -6,7 +6,7 @@ Display one shapes layer ontop of one image layer using the ``add_shapes`` and
 ``add_image`` APIs. When the window is closed it will print the coordinates of
 your shapes.
 
-.. tags:: visualization-basic
+.. tags:: visualization-basic, features-table
 """
 
 import numpy as np
@@ -15,7 +15,8 @@ from skimage import data
 import napari
 
 # add the image
-viewer = napari.view_image(data.camera(), name='photographer')
+viewer = napari.Viewer()
+layer = viewer.add_image(data.camera(), name='photographer')
 
 # create a list of polygons
 polygons = [

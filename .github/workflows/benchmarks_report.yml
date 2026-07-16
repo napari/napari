@@ -11,16 +11,21 @@ name: "Benchmarks - Report"
 
 on:
   workflow_run:
-    workflows: [Benchmarks]
+    workflows: [Benchmarks, "Benchmark Trigger by Label"]
     types:
       - completed
+
+permissions:
+  pull-requests: write
+  issues: write
 
 jobs:
   download:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion != 'skipped' }}
     steps:
       - name: "Download artifact"
-        uses: actions/github-script@v6
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
@@ -29,9 +34,14 @@ jobs:
                run_id: context.payload.workflow_run.id,
             });
             let artifactName = `asv-benchmark-results-${context.payload.workflow_run.id}-${context.payload.workflow_run.run_number}-${context.payload.workflow_run.run_attempt}`
+            console.log(`Artifact name: ${artifactName}`);
+            console.log(`All artifacts: ${JSON.stringify(allArtifacts.data.artifacts)}`);
             let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name == artifactName
             })[0];
+            if (matchArtifact === undefined) {
+              throw TypeError('Build Artifact not found!');
+            }
             let download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
@@ -49,17 +59,19 @@ jobs:
 
       - name: Replace URLs
         run: |
-          sed -i 's@||BENCHMARK_CI_LOGS_URL||@${{ github.event.workflow_run.html_url }}@g' message.txt
+          sed -i "s@||BENCHMARK_CI_LOGS_URL||@${GITHUB_EVENT_WORKFLOW_RUN_HTML_URL}@g" message.txt
+        env:
+          GITHUB_EVENT_WORKFLOW_RUN_HTML_URL: ${{ github.event.workflow_run.html_url }}
 
       - name: Collect PR number if available
         run: |
           if [[ -f pr_number ]]; then
-            echo "PR_NUMBER=$(cat pr_number)" >> $GITHUB_ENV
+            echo "PR_NUMBER=$(cat pr_number)" >> "$GITHUB_ENV"
           fi
 
       - name: "Comment on PR"
         if: env.PR_NUMBER != ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -71,4 +83,19 @@ jobs:
               repo: context.repo.repo,
               issue_number: issue_number,
               body: body,
+            });
+
+      - name: "Remove run-benchmarks label"
+        if: env.PR_NUMBER != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let fs = require('fs');
+            let issue_number = Number(process.env.PR_NUMBER);
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              name: 'run-benchmarks',
             });

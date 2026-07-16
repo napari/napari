@@ -43,14 +43,6 @@
       "utils",
       "sys_info",
       "notification_manager",
-      "view_image",
-      "view_labels",
-      "view_path",
-      "view_points",
-      "view_shapes",
-      "view_surface",
-      "view_tracks",
-      "view_vectors",
       "Viewer",
       "current_viewer"
     ],
@@ -68,7 +60,7 @@
         "https://napari.org/{VERSION}/howtos/layers/index.html",
         "https://napari.org/{VERSION}/release/release_{VERSION.replace(\".\", \"_\")}.html",
         "https://napari.org/{VERSION}/tutorials/index.html",
-        "https://napari.org/{VERSION}/tutorials/start_index.html",
+        "https://napari.org/{VERSION}/getting_started/start_index.html",
         "id",
         "layers_guide",
         "release_notes",
@@ -156,6 +148,7 @@
       "napari:window:view:toggle_viewer_axes_labels",
       "napari:window:view:toggle_viewer_axesdashed",
       "napari:window:view:toggle_viewer_scale_bar",
+      "napari:window:view:toggle_viewer_scale_bar_box",
       "napari:window:view:toggle_viewer_scale_bar_colored",
       "napari:window:view:toggle_viewer_scale_bar_ticks"
     ],
@@ -548,6 +541,7 @@
       "vertex_remove",
       "activate_add_ellipse_mode",
       "activate_add_line_mode",
+      "activate_add_polyline_mode",
       "activate_add_path_mode",
       "activate_add_polygon_mode",
       "activate_add_rectangle_mode",
@@ -898,11 +892,11 @@
     "napari/_qt/widgets/qt_range_slider_popup.py": [],
     "napari/_qt/widgets/qt_scrollbar.py": ["position"],
     "napari/_qt/widgets/qt_size_preview.py": ["m", "px", "horizontalAdvance"],
-    "napari/_qt/widgets/qt_splash_screen.py": [],
     "napari/_qt/widgets/qt_viewer_buttons.py": [
       "viewer",
       "napari:roll_axes",
       "napari:transpose_axes",
+      "napari:rotate_layers",
       "napari:reset_view",
       "napari:toggle_grid",
       "napari:toggle_ndisplay",
@@ -1416,7 +1410,7 @@
     "napari/components/experimental/chunk/_request.py": [
       "image",
       "napari.loader",
-      "thumbnail_source",
+      "data_at_thumbnail_level",
       "location=({self.level_index}, {self.row}, {self.col}) "
     ],
     "napari/components/experimental/chunk/_utils.py": ["EMPTY", "dask"],
@@ -1666,7 +1660,7 @@
       "image",
       "napari.loader",
       "thumbnail_slice",
-      "thumbnail_source"
+      "data_at_thumbnail_level"
     ],
     "napari/layers/image/experimental/_image_location.py": [
       "location=({self.data_id}, {self.data_level}, {self.indices}) "
@@ -1885,7 +1879,7 @@
     ],
     "napari/layers/shapes/_shapes_key_bindings.py": ["mode"],
     "napari/layers/shapes/_shapes_models/__init__.py": [],
-    "napari/layers/shapes/_shapes_models/_polgyon_base.py": ["int", "polygon"],
+    "napari/layers/shapes/_shapes_models/_polygon_base.py": ["int", "polygon"],
     "napari/layers/shapes/_shapes_models/ellipse.py": ["ellipse", "int"],
     "napari/layers/shapes/_shapes_models/line.py": ["int", "line"],
     "napari/layers/shapes/_shapes_models/path.py": ["path"],
@@ -1990,6 +1984,7 @@
       "properties",
       "tail_length",
       "tail_width",
+      "hide_completed_tracks",
       "track_id",
       "turbo",
       "head_length",

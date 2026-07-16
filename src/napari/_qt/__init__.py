@@ -1,0 +1,125 @@
+from warnings import warn
+
+from napari.utils.translations import trans
+
+try:
+    from qtpy import API_NAME, QtCore
+except Exception as e:
+    if 'No Qt bindings could be found' in str(e):
+        import os
+        import traceback
+        from importlib import import_module
+        from importlib.metadata import version
+        from inspect import cleandoc
+
+        from napari.utils._env_detection import (
+            detect_environment,
+            detect_installed_qt_bindings,
+        )
+
+        qt_api_enforce = os.environ.get('QT_API', '')
+
+        if installed_bindings := detect_installed_qt_bindings():
+            available_qt_bindins = ', '.join(
+                f'{name}={version}'
+                for name, version in installed_bindings.items()
+            )
+            if qt_api_enforce and qt_api_enforce not in installed_bindings:
+                if len(installed_bindings) > 1:
+                    qt_text = f'but {available_qt_bindins} are installed in your environment'
+                else:
+                    qt_text = f'but {available_qt_bindins} is installed in your environment'
+
+                raise ImportError(
+                    cleandoc(
+                        f"""
+                    The Qt bindings enforced by QT_API environment variable are not installed.
+                    You have QT_API={qt_api_enforce} installed, {qt_text}.
+                    """
+                    )
+                ) from e
+
+            name_to_module = {
+                'pyqt5': 'PyQt5',
+                'pyqt6': 'PyQt6',
+                'pyside6': 'PySide6',
+            }
+
+            fail_inf = {}
+
+            for binding in name_to_module:
+                if binding in installed_bindings:
+                    try:
+                        import_module(f'{name_to_module[binding]}.QtWidgets')
+                    except:  # noqa: E722
+                        fail_inf[binding] = traceback.format_exc()
+                    else:
+                        fail_inf[binding] = 'No error'
+
+            error_summary = '\n\n'.join(
+                f'{binding}: {exc}' for binding, exc in fail_inf.items()
+            )
+
+            raise ImportError(
+                cleandoc(f"""
+            Failed to import Qt bindings. We found following Qt bindings installed: {available_qt_bindins}.
+            We have tried to import existing bindings and here are the errors:
+            {error_summary}
+            """)
+            ) from e
+
+        raise ImportError(
+            trans._(
+                cleandoc(
+                    """
+                No Qt bindings could be found for napari=={version}.
+
+                napari requires either PyQt5, PyQt6 (default) or PySide6 to be installed in the environment.
+
+                With pip, you can install either with:
+                  $ pip install -U 'napari[all]'  # default choice
+                  $ pip install -U 'napari[pyqt5]'
+                  $ pip install -U 'napari[pyqt6]'
+                  $ pip install -U 'napari[pyside6]'
+
+                With conda, you need to do:
+                  $ conda install -c conda-forge pyqt6
+                  $ conda install -c conda-forge pyside6
+
+                Our heuristics suggest you are using '{tool}' to manage your packages.
+                """
+                ),
+                deferred=True,
+                tool=detect_environment().value,
+                version=version('napari'),
+            )
+        ) from e
+    raise
+
+
+# When QT is not the specific version, we raise a warning:
+if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
+    import importlib.metadata
+
+    try:
+        dist_info_version = importlib.metadata.version(API_NAME)
+        if dist_info_version != QtCore.__version__:
+            warn_message = trans._(
+                "\n\nIMPORTANT:\nYou are using QT version {version}, but version {dversion} was also found in your environment.\nThis usually happens when you 'conda install' something that also depends on PyQt\n*after* you have pip installed napari (such as jupyter notebook).\nYou will likely run into problems and should create a fresh environment.\nIf you want to install conda packages into the same environment as napari,\nplease add conda-forge to your channels: https://conda-forge.org\n",
+                deferred=True,
+                version=QtCore.__version__,
+                dversion=dist_info_version,
+            )
+    except ModuleNotFoundError:
+        warn_message = trans._(
+            '\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.',
+            deferred=True,
+            version=QtCore.__version__,
+        )
+    warn(message=warn_message, stacklevel=1)
+
+
+from napari._qt.qt_event_loop import get_qapp, quit_app, run
+from napari._qt.qt_main_window import Window
+
+__all__ = ['Window', 'get_qapp', 'quit_app', 'run']

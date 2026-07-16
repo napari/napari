@@ -1,0 +1,21 @@
+name: Actionlint
+# https://github.com/rhysd/actionlint
+
+on:
+  pull_request:
+    paths:
+      - '.github/**'
+
+jobs:
+  actionlint:
+    name: Action lint
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Check workflow files
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -ignore SC2129
+        shell: bash
