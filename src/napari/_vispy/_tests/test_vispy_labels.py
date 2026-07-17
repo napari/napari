@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import numpy as np
 import pytest
 
@@ -64,12 +62,18 @@ def test_colormap_rebuilt_when_slice_dtypes_change():
             }
         )
         assert layer._slice.empty
+        # The empty placeholder uses uint8 for both raw and view, so the
+        # colormap is initially configured for that pair. Retaining this state
+        # for the real (uint32, uint8) slice would produce stale label colors.
+        # _on_data_change detects this transition and rebuilds the colormap.
         assert visual._colormap_dtypes == (np.dtype('uint8'),) * 2
         assert isinstance(visual.node.cmap, LabelVispyColormap)
 
         layer.set_view_slice()
         layer.events.set_data()
 
+        # set_data must rebuild the colormap instead of leaving the
+        # LabelVispyColormap configured for the placeholder.
         assert visual._colormap_dtypes == (
             np.dtype('uint32'),
             np.dtype('uint8'),
@@ -85,12 +89,10 @@ def test_colormap_not_rebuilt_when_slice_dtypes_are_unchanged():
     visual = VispyLabelsLayer(layer, font_info=FontInfo())
 
     try:
-        visual._on_colormap_change = MagicMock(
-            wraps=visual._on_colormap_change
-        )
+        colormap = visual.node.cmap
 
         layer.events.set_data()
 
-        visual._on_colormap_change.assert_not_called()
+        assert visual.node.cmap is colormap
     finally:
         visual.close()
