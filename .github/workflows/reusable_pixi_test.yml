@@ -1,0 +1,56 @@
+# Run the napari test suite in a single pixi environment on a single runner.
+# Called by test.yml once per matrix cell. Keeping the per-cell steps here lets
+# the caller express the PR vs comprehensive matrices as plain literal YAML.
+name: pixi test (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "pixi environment to run (must exist in pixi.toml)"
+        type: string
+        required: true
+      runner:
+        description: "runs-on runner label"
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  test:
+    name: ${{ inputs.environment }} · ${{ inputs.runner }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0  # setuptools_scm needs full history/tags
+          persist-credentials: false
+
+      - name: Setup headless display
+        if: runner.os == 'Linux'
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        with:
+          qt: true
+          wm: herbstluftwm
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
+
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+      - name: Set up pixi
+        uses: prefix-dev/setup-pixi@a09b6247153796b190642a2b53fac4241043cf6f # v0.10.0
+        with:
+          environments: ${{ inputs.environment }}
+          # Use the committed pixi.lock verbatim; never re-solve in CI.
+          frozen: true
+          cache: true
+
+      - name: Run tests
+        run: pixi run --frozen -e ${{ inputs.environment }} test

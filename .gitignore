@@ -48,6 +48,8 @@ pip-wheel-metadata/
 # Unit test / coverage reports
 htmlcov/
 .tox/
+# pixi local environments (pixi.lock IS committed)
+.pixi/
 .coverage
 .coverage.*
 .cache

@@ -1,0 +1,84 @@
+# pixi manifest for napari — https://pixi.sh
+#
+# This is a PILOT that runs *alongside* the existing tox + resources/constraints
+# setup while we evaluate migrating CI off them. It is not yet the source of
+# truth for the full test matrix.
+#
+# Design (see also the discussion in the PR that introduced this file):
+#   * PyPI-first: pixi provides only the Python interpreter (from conda-forge);
+#     napari and every Python dependency are installed from PyPI via uv, so
+#     pyproject.toml stays the single source of truth for versions/pins.
+#   * napari is installed *editable* (pure-Python project, setuptools_scm) — no
+#     pixi-build backend is needed.
+#   * Features are kept orthogonal so environments compose cleanly. Crucially,
+#     `napari` is defined exactly once per environment (a backend feature, or the
+#     `headless` feature); duplicate pypi definitions across combined features
+#     are an error.
+#
+# Common commands:
+#   pixi run test                              # default env (py3.12 + PyQt6)
+#   pixi run -e test-py314-pyqt6 test
+#   pixi run -e test-py312-headless test
+#   pixi update                                # regenerate pixi.lock (replaces
+#                                              # tools/compile_constraints.sh)
+
+[workspace]
+name = "napari"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+# TODO(full-migration): add "linux-aarch64" (CI runs ubuntu-24.04-arm).
+
+# --- Python-version features: pin only the interpreter -----------------------
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py314.dependencies]
+python = "3.14.*"
+# TODO(full-migration): add py313 feature + environments for the full matrix.
+
+# --- Backend features: the sole definer of the editable napari install -------
+# Version pins for the Qt bindings live in pyproject.toml's extras, so they are
+# reused here rather than duplicated. `testing` and `optional-numba` are folded
+# in because every pilot environment is a test environment.
+[feature.pyqt6.pypi-dependencies]
+napari = { path = ".", editable = true, extras = ["pyqt6", "testing", "optional-numba"] }
+
+[feature.pyqt5.pypi-dependencies]
+napari = { path = ".", editable = true, extras = ["pyqt5", "testing", "optional-numba"] }
+
+[feature.pyside6.pypi-dependencies]
+napari = { path = ".", editable = true, extras = ["pyside6", "testing", "optional-numba"] }
+
+# --- Headless feature: napari without any Qt binding -------------------------
+[feature.headless.pypi-dependencies]
+napari = { path = ".", editable = true, extras = ["testing", "optional-numba"] }
+
+[feature.headless.tasks]
+# Mirrors the tox `headless` env: skip the Qt/vispy suites that require bindings.
+test = "pytest src/napari src/napari_builtins --color=yes --import-mode=importlib --ignore src/napari/_vispy --ignore src/napari/_qt --ignore src/napari/_tests --ignore src/napari_builtins/_qt"
+
+# --- Shared test tasks for the Qt environments -------------------------------
+# The `headless` feature defines its own `test` task above; the `test` feature is
+# never combined with `headless`, so the task name does not collide.
+[feature.test.tasks]
+test = "pytest src/napari src/napari_builtins --color=yes --import-mode=importlib"
+test-cov = "coverage run --parallel-mode -m pytest src/napari src/napari_builtins --color=yes --import-mode=importlib"
+
+# --- Environments ------------------------------------------------------------
+# Pixi has no automatic matrix expansion (deliberate) — each combination is an
+# explicit, named entry. Features keep the *content* DRY. Platforms are solved
+# per-environment in the one lockfile, so only Python x backend multiplies the
+# count. solve-group is keyed by Python version so same-interpreter environments
+# resolve shared deps to identical versions.
+#
+# This is a representative PILOT subset (fast PR gate + a couple of variants),
+# not the full tox matrix.
+[environments]
+default = { features = ["py312", "pyqt6", "test"], solve-group = "py312" }
+test-py311-pyqt5 = { features = ["py311", "pyqt5", "test"], solve-group = "py311" }
+test-py314-pyqt6 = { features = ["py314", "pyqt6", "test"], solve-group = "py314" }
+test-py312-pyside6 = { features = ["py312", "pyside6", "test"], solve-group = "py312" }
+test-py312-headless = { features = ["py312", "headless"], solve-group = "py312" }

@@ -1,0 +1,164 @@
+# Unified test workflow (pixi-based).
+#
+# Combines what used to be two separate workflows — "PR Test"
+# (test_pull_requests.yml) and "Comprehensive Test" (test_comprehensive.yml) —
+# into one, selecting the test *scope* by trigger:
+#   * pull_request           -> test-pr             (fast, representative subset)
+#   * push to main / v* tags -> test-comprehensive  (broad matrix)
+#   * workflow_dispatch      -> whichever the `mode` input selects
+#
+# The per-cell steps live in reusable_pixi_test.yml, so the matrices below stay
+# plain literal YAML. Tests run inside the pixi environments in pixi.toml /
+# pixi.lock; packaging is validated by building the wheel and testing it.
+#
+# NOTE: while migration off tox is in progress this runs ALONGSIDE the existing
+# tox suites and should stay OUT of branch-protection required checks until the
+# pixi matrix fully covers the supported combinations.
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "v*x"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Test scope to run"
+        type: choice
+        default: comprehensive
+        options:
+          - pr
+          - comprehensive
+
+concurrency:
+  # Cancel superseded runs on PRs; let push/tag runs finish.
+  group: test-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build + inspect the sdist/wheel directly (packaging/manifest validation).
+  # ---------------------------------------------------------------------------
+  build-package:
+    name: Build & inspect package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0  # setuptools_scm needs full history/tags
+          persist-credentials: false
+      - uses: hynek/build-and-inspect-python-package@d44ca7d91762de7a7d5436ddae667c6da6d1c3df # v2.18.0
+
+  # ---------------------------------------------------------------------------
+  # Test the BUILT WHEEL (not the editable tree). Installs the artifact from
+  # build-package and runs the suite via `--pyargs`, so we exercise the packaged
+  # code + data files + entry points a real `pip install` gets. This is the
+  # packaging-fidelity net that the editable matrix intentionally trades away
+  # for speed (src-layout editable installs mask missing package data).
+  # ---------------------------------------------------------------------------
+  test-wheel:
+    needs: build-package
+    name: Test built wheel (--pyargs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      # Checked out only for the pytest config; the code under test comes from
+      # the installed wheel (src/ is deliberately NOT on sys.path here).
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: napari-src
+          persist-credentials: false
+
+      - name: Download built package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: Packages
+          path: dist
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        with:
+          qt: true
+          wm: herbstluftwm
+
+      - name: Install napari from the built wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          WHEEL=$(ls dist/*.whl)
+          python -m pip install "${WHEEL}[pyqt6]"
+          python -m pip install --group napari-src/pyproject.toml:testing
+
+      - name: Test the installed package
+        run: |
+          python -m pytest --pyargs napari napari_builtins \
+            --color=yes --basetemp=.pytest_tmp \
+            --config-file=napari-src/pyproject.toml
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-artifacts-wheel
+          path: .pytest_tmp
+          include-hidden-files: true
+
+  # ---------------------------------------------------------------------------
+  # PR scope: fast, representative subset (Linux only). Runs on pull_request,
+  # or on a manual dispatch that selects `pr`.
+  # ---------------------------------------------------------------------------
+  test-pr:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'pr')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { environment: test-py311-pyqt5, runner: ubuntu-latest }
+          - { environment: test-py314-pyqt6, runner: ubuntu-latest }
+          - { environment: test-py312-headless, runner: ubuntu-latest }
+    uses: ./.github/workflows/reusable_pixi_test.yml
+    with:
+      environment: ${{ matrix.environment }}
+      runner: ${{ matrix.runner }}
+
+  # ---------------------------------------------------------------------------
+  # Comprehensive scope: every pixi test env on Linux, plus cross-OS coverage of
+  # the key backends. Runs on push to main / v* tags, or a manual dispatch that
+  # selects `comprehensive`.
+  # ---------------------------------------------------------------------------
+  test-comprehensive:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'comprehensive')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { environment: test-py311-pyqt5, runner: ubuntu-latest }
+          - { environment: test-py314-pyqt6, runner: ubuntu-latest }
+          - { environment: test-py312-pyside6, runner: ubuntu-latest }
+          - { environment: test-py312-headless, runner: ubuntu-latest }
+          - { environment: test-py311-pyqt5, runner: windows-latest }
+          - { environment: test-py314-pyqt6, runner: windows-latest }
+          - { environment: test-py314-pyqt6, runner: macos-15 }
+          - { environment: test-py312-pyside6, runner: macos-15 }
+    uses: ./.github/workflows/reusable_pixi_test.yml
+    with:
+      environment: ${{ matrix.environment }}
+      runner: ${{ matrix.runner }}
