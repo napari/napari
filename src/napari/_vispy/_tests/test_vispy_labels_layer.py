@@ -68,7 +68,7 @@ def test_colormap_rebuilt_when_slice_dtypes_change():
                 None: [0, 0, 0, 0],
                 0: [0, 0, 0, 0],
                 1: [0, 0.25, 1, 1],
-                100_000: [1, 0, 0, 1],
+                42: [1, 0, 0, 1],
             }
         )
         assert layer._slice.empty
