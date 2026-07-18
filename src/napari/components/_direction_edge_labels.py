@@ -141,10 +141,13 @@ def _validate_direction_labels(
     if len(direction_labels) != ndim:
         raise ValueError(
             trans._(
+                # NB: not ``n=`` — ``trans._`` reserves ``n`` for pluralization,
+                # so a ``{n}`` placeholder crashes message construction for any
+                # count != 1 (it looks for a nonexistent plural form).
                 'direction_labels must have one entry per dimension: got '
-                '{n} for ndim={ndim}.',
+                '{n_labels} for ndim={ndim}.',
                 deferred=True,
-                n=len(direction_labels),
+                n_labels=len(direction_labels),
                 ndim=ndim,
             )
         )

@@ -153,8 +153,11 @@ def test_length_mismatch_raises_value_error():
     dims = Dims(ndim=3, ndisplay=2)
     cam = Camera()
 
+    # Use two entries, not one: the message interpolates the label count, and a
+    # count != 1 exercises the path that a `{n}` placeholder would crash on
+    # (``trans._`` reserves ``n`` for pluralization).
     with pytest.raises(ValueError, match='one entry per dimension'):
-        direction_edge_labels((('R', 'L'),), dims=dims, camera=cam)
+        direction_edge_labels((('R', 'L'), ('A', 'P')), dims=dims, camera=cam)
 
 
 def test_malformed_pair_raises_value_error():
