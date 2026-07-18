@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import csv
-import itertools
 import os
 import re
 import tokenize
 from contextlib import suppress
 from glob import glob
+from itertools import chain, pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
@@ -21,7 +21,12 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from napari.types import FullLayerData, LayerData, ReaderFunction
+    from napari.types import (
+        FullLayerData,
+        LayerData,
+        PathOrPaths,
+        ReaderFunction,
+    )
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -411,7 +416,7 @@ def _shapes_csv_to_layerdata(
 
     data = []
     shape_type = []
-    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
+    for ind_a, ind_b in pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
@@ -570,32 +575,44 @@ def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
-def _obj_reader(path: str | Sequence[str]) -> list[LayerData]:
+def _read_wavefront_obj(pathOrPaths: PathOrPaths) -> list[LayerData]:
+    # if it is a sequence of paths, we process each separately and return all results
+    if not isinstance(pathOrPaths, (str, Path)):
+        return list(
+            chain.from_iterable(
+                _read_wavefront_obj(path) for path in pathOrPaths
+            )
+        )
+
     vertices = []
     faces = []
 
-    # TODO: support sequence of paths (or ensure only single path)
-    with open(path) as f:
-        data = f.readlines()
+    # TODO: will napari work if the obj contains mixed polygons (i.e. various number of vertices?)
+    # TODO: and do we want support for generic polys? Or triangulate all instead?
+    with open(pathOrPaths, encoding='utf-8') as obj_file:
+        for line in obj_file:
+            # clear any prepended or appended whitespace (like newlines)
+            line = line.strip()
 
-    # TODO: support generic polys?
-    for line in data:
-        if 'vn' in line:
-            continue
-        if 'vt' in line:
-            continue
-        if line[0] == 'v':
-            vertices.append([float(v) for v in line.strip().split()[1:]])
-        elif line[0] == 'f':
-            vertices_2 = line.strip().split()[1:]
-            vertex_indices = [vertex.split('/')[0] for vertex in vertices_2]
-            faces.append([int(v) - 1 for v in vertex_indices])
+            if line:
+                element_type, *values = line.split()
+                match element_type:
+                    # we are currently only interested in vertices and faces, no other features
+                    # (like normals, textures, object groups, ...)
+                    case 'v':
+                        vertices.append([float(value) for value in values])
+                    case 'f':
+                        # we only take the first part of the split, which is the vertex index
+                        # (because we ignore normals and texture coordinates)
+                        indices = (value.split('/')[0] for value in values)
+                        # subtract one for each index, since OBJ uses 1-based indexing
+                        faces.append([int(index) - 1 for index in indices])
 
+    # flip y-axis to turn model 'right' side up
     vertices = [(z, -y, x) for x, y, z in vertices]
 
     vertices = np.array(vertices)
     faces = np.array(faces)
-
     surface = (vertices, faces)
 
     add_kwargs = {
@@ -606,10 +623,30 @@ def _obj_reader(path: str | Sequence[str]) -> list[LayerData]:
     return [(surface, add_kwargs, 'surface')]
 
 
-def napari_get_obj_reader(
-    path: str | list[str],
-) -> ReaderFunction:
-    return _obj_reader
+def napari_get_obj_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Wavefront OBJ files.
+
+    It is used to read the mesh data contained in the OBJ file and
+    convert it to a Surface for internal use.
+
+    Parameters
+    ----------
+    path : str
+        Path to the OBJ file to be read.
+
+    Returns
+    -------
+    callable
+        A function parses the OBJ file and converts it to a Surface.
+    """
+    # TODO: needs url check as well, like .py reader?
+    if not os.path.exists(path):
+        return None
+
+    if os.path.splitext(path)[1] != '.obj':
+        return None
+
+    return _read_wavefront_obj
 
 
 def napari_get_reader(
