@@ -155,7 +155,7 @@ class QtLabelControl(QtWidgetControlsBase):
         self.new_label_button.setText(trans._('new'))
         self.new_label_button.setObjectName('newLabelButton')
         self.new_label_button.setToolTip(
-            trans._('Add a new label with the next highest unused level')
+            trans._('Add a new label with the next highest unused value')
         )
         self.new_label_button.clicked.connect(self._on_button_click)
 
@@ -194,7 +194,7 @@ class QtLabelControl(QtWidgetControlsBase):
         super().disconnect_widget_controls()
 
     def _on_button_click(self):
-        """Add a new label to the label layer when the button is clicked."""
+        """Select a new label for the labels layer when the button is clicked."""
         new_label(self._layer)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
