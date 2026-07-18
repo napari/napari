@@ -69,7 +69,7 @@ class StereoViewerWidget(QWidget):
 
         for model in self._all_models:
             model.dims.ndisplay = 3
-        
+
         # eye separation control
         controls = QHBoxLayout()
         controls.addWidget(QLabel('Eye separation'))
