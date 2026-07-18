@@ -122,9 +122,7 @@ class StereoViewerWidget(QWidget):
         )
 
     def _reset_view(self) -> None:
-        # reset the view of all viewers
-        self.viewer_left.reset_view()
-        self.viewer_right.reset_view()
+        # Main viewer already reset; push its camera through stereo sync.
         cam = self.viewer.camera
         self._apply_stereo_from(
             cam.angles, cam.center, cam.zoom, cam.perspective
