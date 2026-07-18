@@ -67,7 +67,7 @@ class StereoViewerWidget(QWidget):
             self.viewer_left.layers.append(copy_layer(layer))
             self.viewer_right.layers.append(copy_layer(layer))
 
-        for model in self._all_models:
+        for model in self._all_models():
             model.dims.ndisplay = 3
 
         # eye separation control
@@ -94,7 +94,7 @@ class StereoViewerWidget(QWidget):
         layout.addLayout(eye_layout)
         self.setLayout(layout)
 
-        for model in self._all_models:
+        for model in self._all_models():
             model.camera.events.angles.connect(self._camera_update)
             model.camera.events.center.connect(self._camera_update)
             model.camera.events.zoom.connect(self._camera_update)
@@ -104,11 +104,10 @@ class StereoViewerWidget(QWidget):
         # Mild perspective helps stereo depth cues.
         self.viewer.camera.perspective = 30
 
-    @property
-    def _all_models(self):
+    def _all_models(self) -> tuple[ViewerModel, ViewerModel, ViewerModel]:
         return (self.viewer, self.viewer_left, self.viewer_right)
 
-    def _on_separation_changed(self, value: float):
+    def _on_separation_changed(self, value: float) -> None:
         # when the eye separation is changed, re-calculate and apply camera state to all viewers
         self._eye_separation = value
         cam = self.viewer.camera
@@ -116,7 +115,7 @@ class StereoViewerWidget(QWidget):
             cam.angles, cam.center, cam.zoom, cam.perspective
         )
 
-    def _reset_view(self):
+    def _reset_view(self) -> None:
         # reset the view of all viewers
         self.viewer_left.reset_view()
         self.viewer_right.reset_view()
@@ -166,11 +165,11 @@ class StereoViewerWidget(QWidget):
         finally:
             self._block = False
 
-    def _camera_update(self, event):
+    def _camera_update(self, event) -> None:
         if self._block:
             return
         source_cam = event.source
-        model = next(m for m in self._all_models if m.camera is source_cam)
+        model = next(m for m in self._all_models() if m.camera is source_cam)
         # undo the eye offset to recover the shared (cyclopean) look-at
         base = self._base_center_from(
             model, source_cam.angles, source_cam.center
