@@ -38,16 +38,6 @@ def copy_layer(layer: Layer) -> Layer:
     return Layer.create(*layer.as_layer_data_tuple())
 
 
-def _camera_right_vector(angles: tuple[float, float, float]) -> np.ndarray:
-    """Unit vector pointing right on the canvas for the given Euler angles."""
-    cam = Camera(angles=angles)
-    right = np.cross(cam.up_direction, cam.view_direction)
-    norm = np.linalg.norm(right)
-    if norm < 1e-8:
-        return np.array([0.0, 0.0, 1.0])
-    return right / norm
-
-
 class StereoViewerWidget(QWidget):
     """Side-by-side 3D viewers with a stereo camera offset."""
 
@@ -58,6 +48,8 @@ class StereoViewerWidget(QWidget):
         self.viewer_right = ViewerModel(title='right eye')
         self._block = False
         self._eye_separation = 20.0
+        # Reused only to derive view/up directions from Euler angles.
+        self._direction_camera = Camera()
 
         # Create viewers first, then add layers
         self.qt_left = QtViewer(self.viewer_left)
@@ -107,6 +99,20 @@ class StereoViewerWidget(QWidget):
     def _all_models(self) -> tuple[ViewerModel, ViewerModel, ViewerModel]:
         return (self.viewer, self.viewer_left, self.viewer_right)
 
+    def _camera_right_vector(
+        self, angles: tuple[float, float, float]
+    ) -> np.ndarray:
+        """Unit vector pointing right on the canvas for the given Euler angles."""
+        self._direction_camera.angles = angles
+        right = np.cross(
+            self._direction_camera.up_direction,
+            self._direction_camera.view_direction,
+        )
+        norm = np.linalg.norm(right)
+        if norm < 1e-8:
+            return np.array([0.0, 0.0, 1.0])
+        return right / norm
+
     def _on_separation_changed(self, value: float) -> None:
         # when the eye separation is changed, re-calculate and apply camera state to all viewers
         self._eye_separation = value
@@ -131,7 +137,7 @@ class StereoViewerWidget(QWidget):
         center: tuple[float, float, float] | tuple[float, float],
     ) -> np.ndarray:
         """Undo eye offset to recover the shared (cyclopean) look-at."""
-        right = _camera_right_vector(angles)
+        right = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         center_arr = np.asarray(center, dtype=float)
         if model is self.viewer_left:
@@ -148,7 +154,7 @@ class StereoViewerWidget(QWidget):
         perspective: float,
     ) -> None:
         """Apply shared camera state with left/right look-at offsets."""
-        right = _camera_right_vector(angles)
+        right = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         base = np.asarray(center, dtype=float)
         try:
