@@ -49,17 +49,15 @@ jobs:
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
-        run: pip install --upgrade pip
-      - name: Install Napari dev
-        run: pip install -e .  --group build
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
+        run: pip install --upgrade pip tox
       - name: Make Typestubs
         run: |
-          make typestubs
+          tox -e typestubs
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Check Manifest
         run: |
-          make check-manifest
+          tox -e check-manifest
 
   localization_syntax:
     # make sure all necessary files will be bundled in the release
