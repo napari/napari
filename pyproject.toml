@@ -513,6 +513,7 @@ testpaths = ["napari", "napari_builtins"]
 # instead... assert the warning with `pytest.warns()` in the relevant test,
 # That way we can clean them up when no longer necessary
 filterwarnings = [
+  "error",
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
