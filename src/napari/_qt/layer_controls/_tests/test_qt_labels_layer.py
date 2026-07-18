@@ -229,6 +229,7 @@ def test_label_button_adds_new_label(make_labels_controls):
     """Test that clicking the new label button sets selected_label to max + 1."""
     layer, qtctrl = make_labels_controls()
     expected = int(layer.data.max()) + 1
+    layer.selected_label = 1
     qtctrl._label_control.new_label_button.click()
     assert layer.selected_label == expected
 
