@@ -258,6 +258,12 @@ class Shapes(Layer):
         List of currently selected shapes.
     nshapes : int
         Total number of shapes.
+    is_creating : bool
+        Read-only flag that is ``True`` while a shape is being drawn, from the
+        first vertex until the shape is finished or cancelled. The
+        ``drawing_started`` and ``drawing_finished`` events fire at its
+        boundaries. Unlike ``mode`` (which stays on an ``add_*`` value before,
+        during, and after a draw) this tracks the actual construction window.
     mode : Mode
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -524,6 +530,8 @@ class Shapes(Layer):
             highlight=Event,
             features=Event,
             feature_defaults=Event,
+            drawing_started=Event,
+            drawing_finished=Event,
         )
 
         # Flag set to false to block thumbnail refresh
@@ -581,7 +589,7 @@ class Shapes(Layer):
         self._is_selecting = False
         self._drag_box = None
         self._drag_box_stored = None
-        self._is_creating = False
+        self._private_is_creating = False
         self._clipboard: dict[str, Shapes] = {}
         self._outlines_cache: dict[
             int | None, tuple[np.ndarray, np.ndarray, np.ndarray]
@@ -1335,6 +1343,33 @@ class Shapes(Layer):
         if value:
             assert self._moving_coordinates is not None
         self._private_is_moving = value
+
+    @property
+    def is_creating(self) -> bool:
+        """bool: whether a shape is currently being drawn.
+
+        ``True`` from the moment the first vertex of a new shape is placed
+        until the shape is finished or cancelled. Unlike ``mode``, which stays
+        on an ``add_*`` value before, during, and after a draw, this tracks the
+        actual construction window. The ``drawing_started`` and
+        ``drawing_finished`` events fire at its boundaries.
+        """
+        return self._is_creating
+
+    @property
+    def _is_creating(self) -> bool:
+        return self._private_is_creating
+
+    @_is_creating.setter
+    def _is_creating(self, value: bool) -> None:
+        value = bool(value)
+        if value == self._private_is_creating:
+            return
+        self._private_is_creating = value
+        if value:
+            self.events.drawing_started()
+        else:
+            self.events.drawing_finished()
 
     def _set_color(self, color, attribute: str):
         """Set the face_color or edge_color property

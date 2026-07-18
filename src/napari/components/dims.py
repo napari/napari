@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from numbers import Integral
 from typing import (
     Any,
+    ClassVar,
     Literal,
     NamedTuple,
 )
@@ -12,6 +13,7 @@ import pint
 from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
+from napari.utils.events.event import Event
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 from napari.utils.translations import trans
 
@@ -111,10 +113,28 @@ class Dims(EventedModel):
 
     last_used: int = 0
 
+    # Capability marker for the navigation lock (see lock_navigation). Downstream
+    # code should feature-detect the *contract version*, not method presence:
+    #   getattr(type(dims), 'NAVIGATION_LOCK_VERSION', 0) >= 1
+    # Version 1 guards navigation through the *methods* only: set_point and
+    # everything that funnels through it (set_current_step, _increment_dims_*) and,
+    # when lock_order is set, order changes via roll()/transpose(). It does NOT
+    # guard direct field/property assignment — `dims.point = ...`,
+    # `dims.current_step = ...`, `dims.order = ...`, `dims.ndisplay = ...` — which
+    # bypass the lock by design (they are also how the internal validator
+    # normalizes state; see _check_dims). Callers who expose those assignment paths
+    # are responsible for gating them.
+    NAVIGATION_LOCK_VERSION: ClassVar[int] = 1
+
     # private vars
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
     _validating: bool = False
+    # Navigation lock: None when unlocked, else the owning object. `_nav_lock_exempt`
+    # lists axes still movable while locked; `_nav_lock_order` locks roll/transpose.
+    _nav_lock_owner: Any = None
+    _nav_lock_exempt: tuple[int, ...] = ()
+    _nav_lock_order: bool = True
 
     # validators
     # check fields is false to allow private fields to work
@@ -244,6 +264,12 @@ class Dims(EventedModel):
             self.last_used = not_displayed[0]
 
         return self
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        # Not a field: an event fired when the navigation lock engages/releases,
+        # so views (e.g. the Qt dim sliders) can disable themselves while locked.
+        self.events.add(navigation_lock=Event)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -377,6 +403,8 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         value: float | Sequence[float],
+        *,
+        force: bool = False,
     ):
         """Sets point to slice dimension in world coordinates.
 
@@ -386,10 +414,25 @@ class Dims(EventedModel):
             Dimension index or a sequence of axes whos point will be set.
         value : scalar or sequence of scalars
             Value of the point for each axis.
+        force : bool
+            When True, bypass the navigation lock (see ``lock_navigation``).
+            Defaults to False, so locked axes are silently skipped.
         """
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
         )
+        if self._nav_lock_owner is not None and not force:
+            allowed = [
+                (ax, val)
+                for ax, val in zip(axis, value, strict=False)
+                if ax in self._nav_lock_exempt
+            ]
+            # Fully blocked: no-op, and crucially emit no event, so a blocked
+            # write cannot feed a dims-change listener loop.
+            if not allowed:
+                return
+            axis = [ax for ax, _ in allowed]
+            value = [val for _, val in allowed]
         full_point = list(self.point)
         for ax, val in zip(axis, value, strict=False):
             full_point[ax] = val
@@ -399,6 +442,8 @@ class Dims(EventedModel):
         self,
         axis: int | Sequence[int],
         value: int | Sequence[int],
+        *,
+        force: bool = False,
     ):
         axis, value = self._sanitize_input(
             axis, value, value_is_sequence=False
@@ -408,7 +453,7 @@ class Dims(EventedModel):
         for ax, val in zip(axis, value, strict=False):
             rng = range_[ax]
             value_world.append(rng.start + val * rng.step)
-        self.set_point(axis, value_world)
+        self.set_point(axis, value_world, force=force)
 
     def set_axis_label(
         self,
@@ -444,12 +489,20 @@ class Dims(EventedModel):
         self.margin_right = (0,) * self.ndim
         self.rollable = (True,) * self.ndim
 
-    def transpose(self):
+    def transpose(self, *, force: bool = False):
         """Transpose displayed dimensions.
 
         This swaps the order of the last two displayed dimensions.
         The order of the displayed is taken from Dims.order.
+
+        Pass ``force=True`` to bypass an active navigation lock.
         """
+        if (
+            self._nav_lock_owner is not None
+            and self._nav_lock_order
+            and not force
+        ):
+            return
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
@@ -496,8 +549,17 @@ class Dims(EventedModel):
         index = (sliders.index(self.last_used) - 1) % len(sliders)
         self.last_used = sliders[index]
 
-    def roll(self):
-        """Roll order of dimensions for display."""
+    def roll(self, *, force: bool = False):
+        """Roll order of dimensions for display.
+
+        Pass ``force=True`` to bypass an active navigation lock.
+        """
+        if (
+            self._nav_lock_owner is not None
+            and self._nav_lock_order
+            and not force
+        ):
+            return
         order = np.array(self.order)
         # we combine "rollable" and "nsteps" into a mask for rolling
         # this mask has to be aligned to "order" as "rollable" and
@@ -510,6 +572,104 @@ class Dims(EventedModel):
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+
+    @property
+    def navigation_locked(self) -> bool:
+        """bool: whether slice navigation is currently locked.
+
+        See ``lock_navigation``. While locked, ``set_point`` /
+        ``set_current_step`` (and everything that funnels through them, i.e. the
+        sliders, wheel and arrow-key stepping) are no-ops for non-exempt axes,
+        and — when locked with ``lock_order`` — ``roll``/``transpose`` are no-ops.
+        Pass ``force=True`` to ``set_point``/``set_current_step`` to bypass.
+        """
+        return self._nav_lock_owner is not None
+
+    @property
+    def navigation_lock_exempt(self) -> tuple[int, ...]:
+        """Axes that stay navigable while navigation is locked (see lock_navigation)."""
+        return self._nav_lock_exempt
+
+    def lock_navigation(
+        self,
+        owner: Any,
+        *,
+        exempt: Sequence[int] = (),
+        lock_order: bool = True,
+    ) -> None:
+        """Lock slice navigation until ``unlock_navigation`` is called.
+
+        Intended for an application that must freeze the viewed slice during an
+        operation (e.g. drawing a shape keyed to the current slice). A single
+        owner holds the lock at a time.
+
+        Parameters
+        ----------
+        owner : Any
+            The object taking the lock (must not be None). ``unlock_navigation``
+            must be called with the same object. Acquiring while a *different*
+            owner holds the lock raises ``RuntimeError``.
+        exempt : sequence of int
+            Axes that remain freely navigable while locked (e.g. a parametric
+            axis the application chooses to allow).
+        lock_order : bool
+            Also lock ``roll``/``transpose`` (axis-order changes). Default True.
+        """
+        if owner is None:
+            # None is the unlocked sentinel; accepting it would silently no-op.
+            raise ValueError(
+                trans._(
+                    'Navigation lock owner must not be None.', deferred=True
+                )
+            )
+        if (
+            self._nav_lock_owner is not None
+            and self._nav_lock_owner is not owner
+        ):
+            raise RuntimeError(
+                trans._(
+                    'Dims navigation is already locked by another owner.',
+                    deferred=True,
+                )
+            )
+        self._nav_lock_owner = owner
+        self._nav_lock_exempt = tuple(exempt)
+        self._nav_lock_order = lock_order
+        self.events.navigation_lock()
+
+    def unlock_navigation(self, owner: Any) -> None:
+        """Release a navigation lock taken by ``owner``.
+
+        A no-op if navigation is not locked. Raises ``RuntimeError`` if a
+        *different* owner holds the lock, so one owner cannot release another's.
+        """
+        if self._nav_lock_owner is None:
+            return
+        if self._nav_lock_owner is not owner:
+            raise RuntimeError(
+                trans._(
+                    'Dims navigation is locked by a different owner.',
+                    deferred=True,
+                )
+            )
+        self._nav_lock_owner = None
+        self._nav_lock_exempt = ()
+        self.events.navigation_lock()
+
+    @contextlib.contextmanager
+    def navigation_lock(
+        self,
+        owner: Any,
+        *,
+        exempt: Sequence[int] = (),
+        lock_order: bool = True,
+    ):
+        """Context manager wrapping ``lock_navigation``/``unlock_navigation``."""
+        self.lock_navigation(owner, exempt=exempt, lock_order=lock_order)
+        try:
+            yield
+        finally:
+            self.unlock_navigation(owner)
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False

@@ -64,6 +64,20 @@ class QtDims(QWidget):
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
+        self.dims.events.navigation_lock.connect(self._on_navigation_lock)
+
+    def _on_navigation_lock(self, event=None):
+        """Disable slider widgets while navigation is locked.
+
+        Locked axes cannot move the plane anyway (``Dims.set_current_step`` is a
+        no-op), but leaving the widget enabled lets the thumb drag with no effect,
+        which reads as a broken slider. Disabling it makes the freeze legible.
+        Exempt axes (``Dims.navigation_lock_exempt``) stay enabled.
+        """
+        locked = self.dims.navigation_locked
+        exempt = set(self.dims.navigation_lock_exempt) if locked else set()
+        for widget in self.slider_widgets:
+            widget.setEnabled(not locked or widget.axis in exempt)
 
     @property
     def nsliders(self):
@@ -134,6 +148,8 @@ class QtDims(QWidget):
             if self._displayed_sliders[i]:
                 self._update_slider()
         self.stop()
+        # Freshly created sliders default to enabled; reapply any active lock.
+        self._on_navigation_lock()
 
     def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label

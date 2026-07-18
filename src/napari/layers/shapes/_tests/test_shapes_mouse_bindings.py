@@ -111,6 +111,45 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
+def test_add_simple_shape_drawing_events(
+    shape_type, create_known_shapes_layer
+):
+    """A single-action shape draw emits exactly one drawing_started and one
+    drawing_finished across the press/drag/release."""
+    layer, _, known_non_shape = create_known_shapes_layer
+    layer.mode = f'add_{shape_type}'
+
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert layer.is_creating is False
+    started.assert_called_once()
+    finished.assert_called_once()
+
+
 def test_line_fixed_angles(create_known_shapes_layer):
     """Draw line with fixed angles."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
