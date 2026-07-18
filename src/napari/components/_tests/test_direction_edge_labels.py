@@ -19,44 +19,29 @@ def _camera(vertical, horizontal, depth=DepthAxisOrientation.TOWARDS):
     return Camera(orientation=(depth, vertical, horizontal))
 
 
-def test_default_orientation_places_all_four_edges():
-    # displayed == (1, 2): axis 1 vertical, axis 2 horizontal.
+UP, DOWN = VerticalAxisOrientation.UP, VerticalAxisOrientation.DOWN
+LEFT, RIGHT = HorizontalAxisOrientation.LEFT, HorizontalAxisOrientation.RIGHT
+
+
+@pytest.mark.parametrize(
+    ('vertical', 'horizontal', 'expected'),
+    [
+        # default: +y (posterior) DOWN -> bottom, +x (left) RIGHT -> right
+        (DOWN, RIGHT, {'top': 'A', 'bottom': 'P', 'left': 'R', 'right': 'L'}),
+        (UP, RIGHT, {'top': 'P', 'bottom': 'A', 'left': 'R', 'right': 'L'}),
+        (DOWN, LEFT, {'top': 'A', 'bottom': 'P', 'left': 'L', 'right': 'R'}),
+        (UP, LEFT, {'top': 'P', 'bottom': 'A', 'left': 'L', 'right': 'R'}),
+    ],
+)
+def test_camera_orientation_places_each_label_on_its_edge(
+    vertical, horizontal, expected
+):
+    # LPS_AXIAL displayed as (1, 2): axis 1 (A/P) vertical, axis 2 (R/L)
+    # horizontal. Each screen axis flips independently with camera.orientation.
     dims = Dims(ndim=3, ndisplay=2)
-    cam = _camera(
-        VerticalAxisOrientation.DOWN, HorizontalAxisOrientation.RIGHT
-    )
+    cam = _camera(vertical, horizontal)
 
-    edges = direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam)
-
-    # +y (posterior) is DOWN -> bottom; +x (left) is RIGHT -> right.
-    assert edges == {'top': 'A', 'bottom': 'P', 'left': 'R', 'right': 'L'}
-
-
-def test_vertical_flip_swaps_top_and_bottom():
-    dims = Dims(ndim=3, ndisplay=2)
-    cam = _camera(VerticalAxisOrientation.UP, HorizontalAxisOrientation.RIGHT)
-
-    edges = direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam)
-
-    assert edges == {'top': 'P', 'bottom': 'A', 'left': 'R', 'right': 'L'}
-
-
-def test_horizontal_flip_swaps_left_and_right():
-    dims = Dims(ndim=3, ndisplay=2)
-    cam = _camera(VerticalAxisOrientation.DOWN, HorizontalAxisOrientation.LEFT)
-
-    edges = direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam)
-
-    assert edges == {'top': 'A', 'bottom': 'P', 'left': 'L', 'right': 'R'}
-
-
-def test_both_in_plane_flips_swap_both_edge_pairs():
-    dims = Dims(ndim=3, ndisplay=2)
-    cam = _camera(VerticalAxisOrientation.UP, HorizontalAxisOrientation.LEFT)
-
-    edges = direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam)
-
-    assert edges == {'top': 'P', 'bottom': 'A', 'left': 'L', 'right': 'R'}
+    assert direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam) == expected
 
 
 def test_depth_orientation_does_not_affect_in_plane_edges():
