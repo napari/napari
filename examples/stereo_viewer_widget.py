@@ -136,7 +136,7 @@ class StereoViewerWidget(QWidget):
         angles: tuple[float, float, float],
         center: tuple[float, float, float] | tuple[float, float],
     ) -> np.ndarray:
-        """Undo eye offset to recover the shared (cyclopean) look-at."""
+        """Shared (cyclopean) look-at center implied by an eye camera center."""
         right_direction = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         center_arr = np.asarray(center, dtype=float)
@@ -179,7 +179,7 @@ class StereoViewerWidget(QWidget):
             return
         source_cam = event.source
         model = next(m for m in self._all_models() if m.camera is source_cam)
-        # undo the eye offset to recover the shared (cyclopean) look-at
+        # shared look-at without this eye's stereo offset
         base = self._base_center_from(
             model, source_cam.angles, source_cam.center
         )
