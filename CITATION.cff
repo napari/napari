@@ -539,5 +539,9 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Revathy
+  family-names: Venugopal
+  affiliation: Synopsys, Inc.
+  alias: revathyvenugopal162
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
