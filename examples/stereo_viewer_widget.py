@@ -157,8 +157,9 @@ class StereoViewerWidget(QWidget):
         right = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         base = np.asarray(center, dtype=float)
+        prev = self._block
+        self._block = True
         try:
-            self._block = True
             for model, sign in (
                 (self.viewer, 0.0),
                 (self.viewer_left, -1.0),
@@ -169,7 +170,7 @@ class StereoViewerWidget(QWidget):
                 model.camera.perspective = perspective
                 model.camera.center = tuple(base + sign * half * right)
         finally:
-            self._block = False
+            self._block = prev
 
     def _camera_update(self, event) -> None:
         if self._block:
