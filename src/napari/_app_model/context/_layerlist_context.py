@@ -174,6 +174,16 @@ def _active_is_image_3d(s: LayerSel) -> bool:
     )
 
 
+def _active_is_points_3d(s: LayerSel) -> bool:
+    # Use `layer.ndim` (coordinate count): points keep data in an (N, D) array,
+    # so `data.ndim` is always 2.
+    return (
+        _active_type(s) == 'points'
+        and s.active is not None
+        and s.active.ndim > 2
+    )
+
+
 def _shapes_selection_check(s: ReferenceType[LayerSel]) -> bool:
     s_ = s()
     if s_ is None:
@@ -317,6 +327,13 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         trans._('True when the active layer is a 3D image.'),
         _active_is_image_3d,
+    )
+    active_layer_is_points_3d = ContextKey(
+        False,
+        trans._(
+            'True when the active layer is a 3D (or higher) points layer.'
+        ),
+        _active_is_points_3d,
     )
     active_layer_dtype = ContextKey(
         None,

@@ -42,7 +42,10 @@ LAYERLIST_CONTEXT_SUBMENUS = [
             title=trans._('Projections'),
             group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
             order=None,
-            enablement=LLSCK.active_layer_is_image_3d,
+            enablement=(
+                LLSCK.active_layer_is_image_3d
+                | LLSCK.active_layer_is_points_3d
+            ),
         ),
     ),
     (
@@ -344,3 +347,15 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
         )
     )
+
+# Points have no reduction mode: a single entry in the same Projections submenu
+# that drops the leading axis.
+LAYERLIST_CONTEXT_ACTIONS.append(
+    Action(
+        id='napari.layer.project_points_single_plane',
+        title=trans._('Single plane'),
+        callback=_layer_actions._project_points,
+        enablement=LLSCK.active_layer_is_points_3d,
+        menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
+    )
+)
