@@ -103,31 +103,6 @@ class QtColorBox(QWidget):
         super().closeEvent(event)
 
 
-class QtNewLabel(QWidget):
-    """A widget that shows a button to add a new label to the label layer.
-
-    Parameters
-    ----------
-    parent : qtpy.QtWidgets.QWidget
-        An instance of QWidget that will be used as the parent for this widget.
-    layer : napari.layers.Labels
-        An instance of a napari Labels layer.
-    """
-
-    def __init__(self, parent: QWidget, layer: Labels) -> None:
-        super().__init__(None)
-        self._layer = layer
-        self.button = QPushButton(trans._('new'), self)
-        self.button.setToolTip(
-            trans._('Add a new label with the next highest unused level')
-        )
-        self.button.clicked.connect(self._on_button_click)
-
-    def _on_button_click(self):
-        """Add a new label to the label layer when the button is clicked."""
-        new_label(self._layer)
-
-
 class QtLabelControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current label
@@ -160,7 +135,6 @@ class QtLabelControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.selection_spinbox = QLargeIntSpinBox()
-        self.new_label_button = QtNewLabel(self, self._layer)
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selection_spinbox.setRange(*dtype_lims)
         self.selection_spinbox.setValue(self._layer.selected_label)
@@ -175,6 +149,13 @@ class QtLabelControl(QtWidgetControlsBase):
                 'setValue',
             )
         )
+        self.new_label_button = QPushButton()
+        self.new_label_button.setText(trans._('new'))
+        self.new_label_button.setFixedWidth(40)
+        self.new_label_button.setToolTip(
+            trans._('Add a new label with the next highest unused level')
+        )
+        self.new_label_button.clicked.connect(self._on_button_click)
 
         self.label_color_label = QtWrappedLabel(trans._('label:'))
         self.label_color = QWidget()
@@ -209,6 +190,10 @@ class QtLabelControl(QtWidgetControlsBase):
     def disconnect_widget_controls(self) -> None:
         self.colorbox.disconnect_widget_controls()
         super().disconnect_widget_controls()
+
+    def _on_button_click(self):
+        """Add a new label to the label layer when the button is clicked."""
+        new_label(self._layer)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.label_color_label, self.label_color)]

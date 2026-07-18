@@ -222,14 +222,14 @@ def test_label_button_exists(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     layer.data = np.random.randint(5, size=(10, 15), dtype=np.uint8)
     assert qtctrl._label_control.new_label_button is not None
-    assert qtctrl._label_control.new_label_button.button.text() == 'new'
+    assert qtctrl._label_control.new_label_button.text() == 'new'
 
 
 def test_label_button_adds_new_label(make_labels_controls):
     """Test that clicking the new label button sets selected_label to max + 1."""
     layer, qtctrl = make_labels_controls()
     expected = int(layer.data.max()) + 1
-    qtctrl._label_control.new_label_button.button.click()
+    qtctrl._label_control.new_label_button.click()
     assert layer.selected_label == expected
 
 
@@ -238,5 +238,5 @@ def test_label_button_no_change_if_reached_at_max(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     layer.selected_label = int(layer.data.max()) + 1
     before = layer.selected_label
-    qtctrl._label_control.new_label_button.button.click()
+    qtctrl._label_control.new_label_button.click()
     assert layer.selected_label == before
