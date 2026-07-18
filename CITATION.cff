@@ -539,6 +539,11 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Filippo Maria
+  family-names: Castelli
+  affiliation: Delta Tribe SRL
+  orcid: https://orcid.org/0000-0001-8170-8905
+  alias: filippocastelli
 - given-names: Revathy
   family-names: Venugopal
   affiliation: Synopsys, Inc.
