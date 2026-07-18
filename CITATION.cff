@@ -209,6 +209,10 @@ authors:
   affiliation: Imaging Methods Core Facility at Biocev, Charles University
   orcid: https://orcid.org/0000-0002-7623-5848
   alias: cockovaz
+- given-names: Arne
+  family-names: Defauw
+  affiliation: Flemish Institute for Biotechnology
+  alias: ArneDefauw
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
