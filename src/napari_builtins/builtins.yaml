@@ -10,6 +10,9 @@ contributions:
     - id: napari.get_py_reader
       python_name: napari_builtins.io:napari_get_py_reader
       title: Builtin Python Reader
+    - id: napari.get_obj_reader
+      python_name: napari_builtins.io:napari_get_obj_reader
+      title: Builtin Wavefront OBJ Reader
 
     # writers
     - id: napari.write_image
@@ -144,6 +147,9 @@ contributions:
       enablement: active_layer_type == 'shapes'
 
   readers:
+    - command: napari.get_obj_reader
+      accepts_directories: false
+      filename_patterns: ['*.obj']
     - command: napari.get_reader
       accepts_directories: true
       filename_patterns:

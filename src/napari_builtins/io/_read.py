@@ -570,6 +570,48 @@ def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
+def _obj_reader(path: str | Sequence[str]) -> list[LayerData]:
+    vertices = []
+    faces = []
+
+    # TODO: support sequence of paths (or ensure only single path)
+    with open(path) as f:
+        data = f.readlines()
+
+    # TODO: support generic polys?
+    for line in data:
+        if 'vn' in line:
+            continue
+        if 'vt' in line:
+            continue
+        if line[0] == 'v':
+            vertices.append([float(v) for v in line.strip().split()[1:]])
+        elif line[0] == 'f':
+            vertices_2 = line.strip().split()[1:]
+            vertex_indices = [vertex.split('/')[0] for vertex in vertices_2]
+            faces.append([int(v) - 1 for v in vertex_indices])
+
+    vertices = [(z, -y, x) for x, y, z in vertices]
+
+    vertices = np.array(vertices)
+    faces = np.array(faces)
+
+    surface = (vertices, faces)
+
+    add_kwargs = {
+        'blending': 'opaque',
+        'shading': 'smooth',
+    }
+
+    return [(surface, add_kwargs, 'surface')]
+
+
+def napari_get_obj_reader(
+    path: str | list[str],
+) -> ReaderFunction:
+    return _obj_reader
+
+
 def napari_get_reader(
     path: str | list[str],
 ) -> ReaderFunction:
