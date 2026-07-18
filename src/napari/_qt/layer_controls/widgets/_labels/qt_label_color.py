@@ -151,7 +151,6 @@ class QtLabelControl(QtWidgetControlsBase):
         )
         self.new_label_button = QPushButton()
         self.new_label_button.setText(trans._('new'))
-        self.new_label_button.setFixedWidth(40)
         self.new_label_button.setToolTip(
             trans._('Add a new label with the next highest unused level')
         )
@@ -163,9 +162,9 @@ class QtLabelControl(QtWidgetControlsBase):
         color_layout.setContentsMargins(0, 2, 0, 1)
         color_layout.setSpacing(4)
         self.colorbox = QtColorBox(layer)
-        color_layout.addWidget(self.colorbox)
-        color_layout.addWidget(self.selection_spinbox)
-        color_layout.addWidget(self.new_label_button)
+        color_layout.addWidget(self.colorbox, 0)
+        color_layout.addWidget(self.selection_spinbox, 1)
+        color_layout.addWidget(self.new_label_button, 0)
         self.label_color.setLayout(color_layout)
         self.label_color.setProperty('foreground', 'true')
 

@@ -227,7 +227,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
-/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
+/* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
