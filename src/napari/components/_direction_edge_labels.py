@@ -48,7 +48,7 @@ def direction_edge_labels(
 
     Parameters
     ----------
-    direction_labels : sequence of (str or None, str or None) or None, or None
+    direction_labels : sequence of (str or None, str or None) or None
         One ``(negative, positive)`` label pair per world axis, indexed by
         world-axis number (same length and indexing as ``dims`` has axes). The
         pair labels the axis's decreasing and increasing *world* directions;

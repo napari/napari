@@ -50,6 +50,15 @@ def test_horizontal_flip_swaps_left_and_right():
     assert edges == {'top': 'A', 'bottom': 'P', 'left': 'L', 'right': 'R'}
 
 
+def test_both_in_plane_flips_swap_both_edge_pairs():
+    dims = Dims(ndim=3, ndisplay=2)
+    cam = _camera(VerticalAxisOrientation.UP, HorizontalAxisOrientation.LEFT)
+
+    edges = direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam)
+
+    assert edges == {'top': 'P', 'bottom': 'A', 'left': 'L', 'right': 'R'}
+
+
 def test_depth_orientation_does_not_affect_in_plane_edges():
     dims = Dims(ndim=3, ndisplay=2)
     toward = direction_edge_labels(

@@ -9,6 +9,10 @@ Dims
     are being displayed, projected, sliced...
 LayerList
     List of layers currently present in the viewer.
+DirectionLabelPair
+    A pair of opaque labels for the negative and positive directions of one world axis.
+direction_edge_labels
+    Map per-axis direction labels to the four edges of a 2D view.
 ViewerModel
     Data viewer displaying the currently rendered scene and
     layer-related controls.
