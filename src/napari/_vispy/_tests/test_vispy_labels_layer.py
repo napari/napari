@@ -58,7 +58,7 @@ def make_labels_layer(array_type, shape):
 def test_colormap_rebuilt_when_slice_dtypes_change():
     get_settings().experimental.async_ = True
     data = np.zeros((8, 8), dtype=np.uint32)
-    data[0, 0] = 100_000
+    data[0, 0] = 42
     layer = Labels(data)
     visual = VispyLabelsLayer(layer, font_info=FontInfo())
 
