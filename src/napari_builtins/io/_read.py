@@ -575,12 +575,12 @@ def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
-def _read_wavefront_obj(pathOrPaths: PathOrPaths) -> list[LayerData]:
+def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
     # if it is a sequence of paths, we process each separately and return all results
-    if not isinstance(pathOrPaths, (str, Path)):
+    if not isinstance(path_or_paths, (str, Path)):
         return list(
             chain.from_iterable(
-                _read_wavefront_obj(path) for path in pathOrPaths
+                _read_wavefront_obj(path) for path in path_or_paths
             )
         )
 
@@ -589,7 +589,7 @@ def _read_wavefront_obj(pathOrPaths: PathOrPaths) -> list[LayerData]:
 
     # TODO: will napari work if the obj contains mixed polygons (i.e. various number of vertices?)
     # TODO: and do we want support for generic polys? Or triangulate all instead?
-    with open(pathOrPaths, encoding='utf-8') as obj_file:
+    with open(path_or_paths, encoding='utf-8') as obj_file:
         for line in obj_file:
             # clear any prepended or appended whitespace (like newlines)
             line = line.strip()
