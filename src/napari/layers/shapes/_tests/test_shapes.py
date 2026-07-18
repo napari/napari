@@ -75,10 +75,15 @@ def test_empty_shapes_with_features():
 
     assert_colors_equal(shapes.face_color, list('rgb'))
 
+
 # NOTE: If this is changed, default values have to be updated in tests below
 properties_cycle = ['A', 'B']
-properties_array = {'shape_type': _make_cycled_properties(properties_cycle, 10)}
-properties_list = {'shape_type': list(_make_cycled_properties(properties_cycle, 10))}
+properties_array = {
+    'shape_type': _make_cycled_properties(properties_cycle, 10)
+}
+properties_list = {
+    'shape_type': list(_make_cycled_properties(properties_cycle, 10))
+}
 
 
 @pytest.mark.current
@@ -115,7 +120,9 @@ def test_properties(properties):
     new_data = np.random.random((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
-    add_properties = np.concatenate((remove_properties, [default_property]), axis=0)
+    add_properties = np.concatenate(
+        (remove_properties, [default_property]), axis=0
+    )
     assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -1850,6 +1857,7 @@ color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
+
 @pytest.mark.current
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 @pytest.mark.parametrize(
@@ -1903,7 +1911,13 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color(default_color_str))),
+        np.vstack(
+            (
+                color_array[1],
+                color_array[3:],
+                transform_color(default_color_str),
+            )
+        ),
     )
 
     # refresh colors
@@ -1995,7 +2009,9 @@ def test_adding_value_color_cycle(attribute):
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 
+
 color_colormap_cycle = ['black', 'white']
+
 
 @pytest.mark.current
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
@@ -2006,7 +2022,9 @@ def test_color_colormap(attribute):
     # Default color is the last propertu in the cycle because when no default
     # values are provided, the ``_get_default_column`` method is used and it
     # returns the last value in the cycle.
-    default_color_colormap_str = color_colormap_cycle[(shape[0] + 1) % len(color_colormap_cycle)]
+    default_color_colormap_str = color_colormap_cycle[
+        (shape[0] + 1) % len(color_colormap_cycle)
+    ]
 
     np.random.seed(0)
     data = 20 * np.random.random(shape)
