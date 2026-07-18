@@ -137,13 +137,13 @@ class StereoViewerWidget(QWidget):
         center: tuple[float, float, float] | tuple[float, float],
     ) -> np.ndarray:
         """Undo eye offset to recover the shared (cyclopean) look-at."""
-        right = self._camera_right_vector(angles)
+        right_direction = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         center_arr = np.asarray(center, dtype=float)
         if model is self.viewer_left:
-            return center_arr + half * right
+            return center_arr + half * right_direction
         if model is self.viewer_right:
-            return center_arr - half * right
+            return center_arr - half * right_direction
         return center_arr
 
     def _apply_stereo_from(
@@ -154,7 +154,7 @@ class StereoViewerWidget(QWidget):
         perspective: float,
     ) -> None:
         """Apply shared camera state with left/right look-at offsets."""
-        right = self._camera_right_vector(angles)
+        right_direction = self._camera_right_vector(angles)
         half = self._eye_separation / 2.0
         base = np.asarray(center, dtype=float)
         prev = self._block
@@ -168,7 +168,9 @@ class StereoViewerWidget(QWidget):
                 model.camera.angles = angles
                 model.camera.zoom = zoom
                 model.camera.perspective = perspective
-                model.camera.center = tuple(base + sign * half * right)
+                model.camera.center = tuple(
+                    base + sign * half * right_direction
+                )
         finally:
             self._block = prev
 
