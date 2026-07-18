@@ -2,39 +2,42 @@
 Stereo 3D viewer widget
 =======================
 
-Two side-by-side 3D viewers with synchronized layers and cameras.
-A small horizontal eye separation is applied so the pair can be viewed
-stereoscopically (parallel / wall-eyed fusion).
+Two side-by-side 3D viewers in a standalone window, with synchronized
+layers and cameras. A small horizontal eye separation is applied so the
+pair can be viewed stereoscopically (parallel / wall-eyed fusion).
 
 Interact with either eye view or the main viewer: angles, zoom, and
 perspective stay locked; only the look-at center is offset left/right.
 
 Use the eye-separation spinbox to tune parallax for your data and
 screen size. Cross-eyed viewing: swap which pane is left vs right, or
-use a negative separation.
+use a negative separation. If the stereo window is closed, reopen it
+from the "Stereo" dock button in the main viewer.
+
+Based on the layer-sync pattern in ``multiple_viewer_widget.py``.
 
 .. tags:: gui, visualization-nD
 """
 
-from copy import deepcopy
-
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
+    QApplication,
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
-    QSplitter,
+    QMainWindow,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 import napari
+from napari.components.camera import Camera
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer
 from napari.qt import QtViewer
 from napari.utils.events.event import WarningEmitter
-
 
 def copy_layer(layer: Layer, name: str = ''):
     res_layer = Layer.create(*layer.as_layer_data_tuple())
@@ -60,35 +63,12 @@ def get_property_names(layer: Layer):
 
 def _camera_right_vector(angles: tuple[float, float, float]) -> np.ndarray:
     """Unit vector pointing right on the canvas for the given Euler angles."""
-    from napari.components.camera import Camera
-
     cam = Camera(angles=angles)
     right = np.cross(cam.up_direction, cam.view_direction)
     norm = np.linalg.norm(right)
     if norm < 1e-8:
         return np.array([0.0, 0.0, 1.0])
     return right / norm
-
-
-class own_partial:
-    """Workaround for deepcopy not copying partial functions."""
-
-    def __init__(self, func, *args, **kwargs) -> None:
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*(self.args + args), **{**self.kwargs, **kwargs})
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        return own_partial(
-            self.func,
-            *deepcopy(self.args, memodict),
-            **deepcopy(self.kwargs, memodict),
-        )
 
 
 class QtViewerWrap(QtViewer):
@@ -104,13 +84,14 @@ class QtViewerWrap(QtViewer):
         layer_type: str | None = None,
         **kwargs,
     ):
+        """Forward drag-and-drop opens to the main viewer."""
         self.main_viewer.window._qt_viewer._qt_open(
             filenames, stack, plugin, layer_type, **kwargs
         )
 
 
 class StereoViewerWidget(QWidget):
-    """Side-by-side 3D viewers with stereo camera offset."""
+    """Side-by-side 3D viewers with a stereo camera offset."""
 
     def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__()
@@ -123,12 +104,13 @@ class StereoViewerWidget(QWidget):
         self.qt_left = QtViewerWrap(viewer, self.viewer_left)
         self.qt_right = QtViewerWrap(viewer, self.viewer_right)
 
-        # Force 3D on all viewers
         self.viewer.dims.ndisplay = 3
         self.viewer_left.dims.ndisplay = 3
         self.viewer_right.dims.ndisplay = 3
 
         controls = QHBoxLayout()
+
+        # eye separation control
         controls.addWidget(QLabel('Eye separation'))
         self.separation_spin = QDoubleSpinBox()
         self.separation_spin.setRange(-500.0, 500.0)
@@ -139,60 +121,69 @@ class StereoViewerWidget(QWidget):
         controls.addWidget(self.separation_spin)
         controls.addStretch(1)
 
-        eye_splitter = QSplitter()
-        eye_splitter.setOrientation(Qt.Orientation.Horizontal)
-        eye_splitter.addWidget(self.qt_left)
-        eye_splitter.addWidget(self.qt_right)
-        eye_splitter.setSizes([400, 400])
+        # place the left and right viewers side by side
+        eye_layout = QHBoxLayout()
+        eye_layout.addWidget(self.qt_left)
+        eye_layout.addWidget(self.qt_right)
 
+        # layout the controls and the viewers
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addLayout(controls)
-        layout.addWidget(eye_splitter)
+        layout.addLayout(eye_layout)
         self.setLayout(layout)
 
-        # Layer sync
+        # listen to layer events
         self.viewer.layers.events.inserted.connect(self._layer_added)
         self.viewer.layers.events.removed.connect(self._layer_removed)
         self.viewer.layers.events.moved.connect(self._layer_moved)
         self.viewer.layers.selection.events.active.connect(
             self._layer_selection_changed
         )
-
-        # Dims sync
         self.viewer.dims.events.current_step.connect(self._point_update)
         self.viewer_left.dims.events.current_step.connect(self._point_update)
         self.viewer_right.dims.events.current_step.connect(self._point_update)
         self.viewer.dims.events.ndisplay.connect(self._ndisplay_update)
         self.viewer.events.reset_view.connect(self._reset_view)
 
-        # Camera sync (stereo)
-        for model in (self.viewer, self.viewer_left, self.viewer_right):
+        # listen to camera events
+        for model in self._all_models:
             model.camera.events.angles.connect(self._camera_update)
             model.camera.events.center.connect(self._camera_update)
             model.camera.events.zoom.connect(self._camera_update)
             model.camera.events.perspective.connect(self._camera_update)
 
+        # listen to status events
         self.viewer_left.events.status.connect(self._status_update)
         self.viewer_right.events.status.connect(self._status_update)
 
         # Mild perspective helps stereo depth cues
         self.viewer.camera.perspective = 30
 
+    @property
+    def _all_models(self):
+        return (self.viewer, self.viewer_left, self.viewer_right)
+
+    @property
+    def _eye_models(self):
+        return (self.viewer_left, self.viewer_right)
+
     def _status_update(self, event):
         self.viewer.status = event.value
 
-    def _on_separation_changed(self, value: float):
-        self._eye_separation = value
+    def _resync_from_main_camera(self):
+        """Re-derive both eye views from the main viewer's camera."""
+        cam = self.viewer.camera
         self._apply_stereo_from(
-            self.viewer.camera.angles,
-            self.viewer.camera.center,
-            self.viewer.camera.zoom,
-            self.viewer.camera.perspective,
+            cam.angles, cam.center, cam.zoom, cam.perspective
         )
 
+    def _on_separation_changed(self, value: float):
+        self._eye_separation = value
+        self._resync_from_main_camera()
+
     def _ndisplay_update(self, event):
-        # Keep the stereo pair in 3D even if the main viewer flips to 2D
+        """Keep the stereo pair in 3D when the main viewer is in 3D."""
         if event.value != 3:
             return
         self.viewer_left.dims.ndisplay = 3
@@ -201,12 +192,7 @@ class StereoViewerWidget(QWidget):
     def _reset_view(self):
         self.viewer_left.reset_view()
         self.viewer_right.reset_view()
-        self._apply_stereo_from(
-            self.viewer.camera.angles,
-            self.viewer.camera.center,
-            self.viewer.camera.zoom,
-            self.viewer.camera.perspective,
-        )
+        self._resync_from_main_camera()
 
     def _base_center_from(self, model, angles, center) -> np.ndarray:
         """Undo eye offset to recover the shared (cyclopean) look-at."""
@@ -220,6 +206,7 @@ class StereoViewerWidget(QWidget):
         return center
 
     def _apply_stereo_from(self, angles, center, zoom, perspective):
+        """Apply shared camera state with left/right look-at offsets."""
         right = _camera_right_vector(tuple(angles))
         half = self._eye_separation / 2.0
         base = np.asarray(center, dtype=float)
@@ -242,11 +229,7 @@ class StereoViewerWidget(QWidget):
         if self._block:
             return
         source_cam = event.source
-        model = next(
-            m
-            for m in (self.viewer, self.viewer_left, self.viewer_right)
-            if m.camera is source_cam
-        )
+        model = next(m for m in self._all_models if m.camera is source_cam)
         base = self._base_center_from(
             model, source_cam.angles, source_cam.center
         )
@@ -258,6 +241,7 @@ class StereoViewerWidget(QWidget):
         )
 
     def _layer_selection_changed(self, event):
+        """Update the active layer in the eye viewers."""
         if self._block:
             return
         if event.value is None:
@@ -272,7 +256,7 @@ class StereoViewerWidget(QWidget):
         ]
 
     def _point_update(self, event):
-        for model in (self.viewer, self.viewer_left, self.viewer_right):
+        for model in self._all_models:
             if model.dims is event.source:
                 continue
             if len(self.viewer.layers) != len(model.layers):
@@ -280,6 +264,7 @@ class StereoViewerWidget(QWidget):
             model.dims.current_step = event.value
 
     def _layer_added(self, event):
+        """Add the layer to both eye viewers and connect sync events."""
         self.viewer_left.layers.insert(
             event.index, copy_layer(event.value, 'left')
         )
@@ -287,14 +272,12 @@ class StereoViewerWidget(QWidget):
             event.index, copy_layer(event.value, 'right')
         )
         for name in get_property_names(event.value):
-            getattr(event.value.events, name).connect(
-                own_partial(self._property_sync, name)
-            )
+            getattr(event.value.events, name).connect(self._property_sync)
 
         if isinstance(event.value, Labels):
             event.value.events.set_data.connect(self._set_data_refresh)
             event.value.events.labels_update.connect(self._set_data_refresh)
-            for eye in (self.viewer_left, self.viewer_right):
+            for eye in self._eye_models:
                 eye.layers[event.value.name].events.set_data.connect(
                     self._set_data_refresh
                 )
@@ -311,14 +294,16 @@ class StereoViewerWidget(QWidget):
         event.value.events.name.connect(self._sync_name)
 
     def _sync_name(self, event):
+        """Sync layer names across viewers."""
         index = self.viewer.layers.index(event.source)
         self.viewer_left.layers[index].name = event.source.name
         self.viewer_right.layers[index].name = event.source.name
 
     def _sync_data(self, event):
+        """Sync data modifications from an eye viewer back to the others."""
         if self._block:
             return
-        for model in (self.viewer, self.viewer_left, self.viewer_right):
+        for model in self._all_models:
             layer = model.layers[event.source.name]
             if layer is event.source:
                 continue
@@ -329,9 +314,10 @@ class StereoViewerWidget(QWidget):
                 self._block = False
 
     def _set_data_refresh(self, event):
+        """Synchronize Labels refresh between viewers."""
         if self._block:
             return
-        for model in (self.viewer, self.viewer_left, self.viewer_right):
+        for model in self._all_models:
             layer = model.layers[event.source.name]
             if layer is event.source:
                 continue
@@ -342,10 +328,12 @@ class StereoViewerWidget(QWidget):
                 self._block = False
 
     def _layer_removed(self, event):
+        """Remove the layer from both eye viewers."""
         self.viewer_left.layers.pop(event.index)
         self.viewer_right.layers.pop(event.index)
 
     def _layer_moved(self, event):
+        """Update layer order in both eye viewers."""
         dest_index = (
             event.new_index
             if event.new_index < event.index
@@ -354,9 +342,15 @@ class StereoViewerWidget(QWidget):
         self.viewer_left.layers.move(event.index, dest_index)
         self.viewer_right.layers.move(event.index, dest_index)
 
-    def _property_sync(self, name, event):
+    def _property_sync(self, event):
+        """Sync layer properties (except name) to both eye viewers.
+
+        Property name comes from ``event.type`` (e.g. ``'opacity'``), so we
+        can connect this method directly without ``functools.partial``.
+        """
         if event.source not in self.viewer.layers:
             return
+        name = event.type
         try:
             self._block = True
             value = getattr(event.source, name)
@@ -366,16 +360,60 @@ class StereoViewerWidget(QWidget):
             self._block = False
 
 
-if __name__ == '__main__':
-    from qtpy import QtWidgets
+class StereoViewerWindow(QMainWindow):
+    """Standalone window hosting the left/right stereo viewers."""
 
-    QtWidgets.QApplication.setAttribute(
+    def __init__(self, viewer: napari.Viewer) -> None:
+        super().__init__()
+        self.setWindowTitle('Stereo 3D')
+        # Keep the window alive when closed so it can be re-opened
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
+        self.stereo = StereoViewerWidget(viewer)
+        self.setCentralWidget(self.stereo)
+        self.resize(1000, 500)
+
+    def closeEvent(self, event):
+        self.hide()
+        event.accept()
+
+
+class StereoOpenButton(QWidget):
+    """Dock control to (re)open the stereo window."""
+
+    def __init__(self, stereo_window: StereoViewerWindow) -> None:
+        super().__init__()
+        self._stereo_window = stereo_window
+        btn = QPushButton('Open stereo window')
+        btn.clicked.connect(self._open)
+        layout = QVBoxLayout()
+        layout.addWidget(btn)
+        layout.addStretch(1)
+        self.setLayout(layout)
+
+    def _open(self):
+        self._stereo_window.show()
+        self._stereo_window.raise_()
+        self._stereo_window.activateWindow()
+
+
+if __name__ == '__main__':
+
+
+    # Needed so additional OpenGL canvases can share contexts with the main viewer
+    QApplication.setAttribute(
         Qt.ApplicationAttribute.AA_ShareOpenGLContexts
     )
 
     view = napari.Viewer(ndisplay=3)
-    stereo = StereoViewerWidget(view)
-    view.window.add_dock_widget(stereo, name='Stereo 3D', area='bottom')
+    stereo_window = StereoViewerWindow(view)
+    stereo_window.show()
+
+    # Dock widget holds a reference to stereo_window (via StereoOpenButton)
+    view.window.add_dock_widget(
+        StereoOpenButton(stereo_window),
+        name='Stereo',
+        area='left',
+    )
 
     view.open_sample('napari', 'cells3d')
     view.camera.angles = (-20, 20, -20)
