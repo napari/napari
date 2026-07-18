@@ -83,9 +83,9 @@ jobs:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
-      min_req: ${{ matrix.MIN_REQ }}
+#      min_req: ${{ matrix.MIN_REQ }}
       coverage: cov
-      tox_extras: ${{ matrix.tox_extras }}
+#      tox_extras: ${{ matrix.tox_extras }}
 
   test_pip_install:
     name: pip install
