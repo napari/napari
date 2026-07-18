@@ -75,20 +75,27 @@ def test_empty_shapes_with_features():
 
     assert_colors_equal(shapes.face_color, list('rgb'))
 
+# NOTE: If this is changed, default values have to be updated in tests below
+properties_cycle = ['A', 'B']
+properties_array = {'shape_type': _make_cycled_properties(properties_cycle, 10)}
+properties_list = {'shape_type': list(_make_cycled_properties(properties_cycle, 10))}
 
-properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
-properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
 
-
+@pytest.mark.current
 @pytest.mark.parametrize('properties', [properties_array, properties_list])
 def test_properties(properties):
     shape = (10, 4, 2)
+    # Default property is the last property in the cycle because when no
+    # default values are provided, the ``_get_default_column`` method is used
+    # and it returns the last value in the cycle.
+    default_property = properties_cycle[(shape[0] + 1) % len(properties_cycle)]
+    non_default_property = properties_cycle[shape[0] % len(properties_cycle)]
+
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, properties=copy(properties))
     np.testing.assert_equal(layer.properties, properties)
-
-    current_prop = {'shape_type': np.array(['B'])}
+    current_prop = {'shape_type': np.array([default_property])}
     assert layer.current_properties == current_prop
 
     # test removing shapes
@@ -102,13 +109,13 @@ def test_properties(properties):
     layer.selected_data = {0}
     selected_annotation = layer.current_properties['shape_type']
     assert len(selected_annotation) == 1
-    assert selected_annotation[0] == 'A'
+    assert selected_annotation[0] == default_property
 
     # test adding shapes with properties
     new_data = np.random.random((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
-    add_properties = np.concatenate((remove_properties, ['A']), axis=0)
+    add_properties = np.concatenate((remove_properties, [default_property]), axis=0)
     assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -125,10 +132,10 @@ def test_properties(properties):
     # test updating a property
     layer.mode = 'select'
     layer.selected_data = {0}
-    new_property = {'shape_type': np.array(['B'])}
+    new_property = {'shape_type': np.array([non_default_property])}
     layer.current_properties = new_property
     updated_properties = layer.properties
-    assert updated_properties['shape_type'][0] == 'B'
+    assert updated_properties['shape_type'][0] == non_default_property
 
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
@@ -302,6 +309,12 @@ def test_text_from_property_value(properties):
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
     shape = (10, 4, 2)
+    # Default property is the last property in the cycle because when no
+    # default values are provided, the ``_get_default_column`` method is used
+    # and it returns the last value in the cycle.
+    default_property = properties_cycle[(shape[0] + 1) % len(properties_cycle)]
+    non_default_property = properties_cycle[shape[0] % len(properties_cycle)]
+
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(
@@ -320,14 +333,14 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = [*expected_text_2, 'type-ish: A']
+    expected_text_3 = [*expected_text_2, f'type-ish: {non_default_property}']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, 'type-ish: A']
+    expected_text_4 = [*expected_text_3, f'type-ish: {default_property}']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
@@ -1832,11 +1845,12 @@ def test_single_shape_properties(attribute):
     np.testing.assert_allclose([1, 0, 0, 1], layer_color[0])
 
 
+# NOTE: If this is changed, default values in test_color_cycle have to be updated
 color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
-
+@pytest.mark.current
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
@@ -1846,6 +1860,12 @@ def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
     # create Shapes using list color cycle
     shape = (10, 4, 2)
+
+    # Default property is the last property in the cycle because when no
+    # default values are provided, the ``_get_default_column`` method is used
+    # and it returns the last value in the cycle.
+    default_color_str = properties_cycle[(shape[0] + 1) % len(color_cycle_str)]
+
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
@@ -1871,7 +1891,7 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array, transform_color('red'))),
+        np.vstack((color_array, transform_color(default_color_str))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1883,7 +1903,7 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+        np.vstack((color_array[1], color_array[3:], transform_color(default_color_str))),
     )
 
     # refresh colors
@@ -1975,12 +1995,19 @@ def test_adding_value_color_cycle(attribute):
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 
+color_colormap_cycle = ['black', 'white']
 
+@pytest.mark.current
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_color_colormap(attribute):
     """Test setting edge/face color with a colormap"""
     # create Shapes using with a colormap
     shape = (10, 4, 2)
+    # Default color is the last propertu in the cycle because when no default
+    # values are provided, the ``_get_default_column`` method is used and it
+    # returns the last value in the cycle.
+    default_color_colormap_str = color_colormap_cycle[(shape[0] + 1) % len(color_colormap_cycle)]
+
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
@@ -1993,7 +2020,7 @@ def test_color_colormap(attribute):
     np.testing.assert_equal(layer.properties, properties)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
-    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
+    color_array = transform_color(color_colormap_cycle * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.array_equal(attribute_color, color_array)
 
@@ -2010,7 +2037,7 @@ def test_color_colormap(attribute):
     assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
         attribute_color,
-        np.vstack((color_array, transform_color('black'))),
+        np.vstack((color_array, transform_color(default_color_colormap_str))),
     )
 
     # Check removing data adjusts colors correctly
@@ -2025,7 +2052,7 @@ def test_color_colormap(attribute):
             (
                 color_array[1],
                 color_array[3:],
-                transform_color('black'),
+                transform_color(default_color_colormap_str),
             )
         ),
     )
