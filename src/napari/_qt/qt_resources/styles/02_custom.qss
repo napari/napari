@@ -190,6 +190,10 @@ QtColorBox {
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   color: {{ text }};
 }
+QPushButton#newLabelButton {
+  min-height: 12px;
+  max-height: 12px;
+}
 
 SliderLabel {
   background-color: {{ darken(background, 15) }};

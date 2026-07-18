@@ -126,6 +126,8 @@ class QtLabelControl(QtWidgetControlsBase):
     selection_spinbox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
+    new_label_button : qtpy.QtWidgets.QPushButton
+        Button to add a new label to the label layer.
     """
 
     def __init__(self, parent: QWidget, layer: Labels) -> None:
@@ -151,6 +153,7 @@ class QtLabelControl(QtWidgetControlsBase):
         )
         self.new_label_button = QPushButton()
         self.new_label_button.setText(trans._('new'))
+        self.new_label_button.setObjectName('newLabelButton')
         self.new_label_button.setToolTip(
             trans._('Add a new label with the next highest unused level')
         )
