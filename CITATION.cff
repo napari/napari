@@ -548,5 +548,9 @@ authors:
   family-names: Venugopal
   affiliation: Synopsys, Inc.
   alias: revathyvenugopal162
+- given-names: Edouard
+  family-names: Coussoux
+  affiliation: Synopsys, Inc.
+  alias: ecoussoux-ansys
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
