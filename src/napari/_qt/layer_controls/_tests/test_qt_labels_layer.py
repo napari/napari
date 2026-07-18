@@ -215,3 +215,28 @@ def test_iso_gradient_mode_with_rendering(make_labels_controls):
     assert not qtctrl._render_control.iso_gradient_combobox.isEnabled()
     layer.rendering = LabelsRendering.ISO_CATEGORICAL
     assert qtctrl._render_control.iso_gradient_combobox.isEnabled()
+
+
+def test_label_button_exists(make_labels_controls):
+    """Test that the new label button exists."""
+    layer, qtctrl = make_labels_controls()
+    layer.data = np.random.randint(5, size=(10, 15), dtype=np.uint8)
+    assert qtctrl._label_control.new_label_button is not None
+    assert qtctrl._label_control.new_label_button.button.text() == 'new'
+
+
+def test_label_button_adds_new_label(make_labels_controls):
+    """Test that clicking the new label button sets selected_label to max + 1."""
+    layer, qtctrl = make_labels_controls()
+    expected = int(layer.data.max()) + 1
+    qtctrl._label_control.new_label_button.button.click()
+    assert layer.selected_label == expected
+
+
+def test_label_button_no_change_if_reached_at_max(make_labels_controls):
+    """Test that clicking again when already at max+1 does not change selected_label."""
+    layer, qtctrl = make_labels_controls()
+    layer.selected_label = int(layer.data.max()) + 1
+    before = layer.selected_label
+    qtctrl._label_control.new_label_button.button.click()
+    assert layer.selected_label == before

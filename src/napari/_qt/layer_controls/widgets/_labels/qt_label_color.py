@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
 from qtpy.QtWidgets import (
     QHBoxLayout,
+    QPushButton,
     QWidget,
 )
 from superqt import QLargeIntSpinBox
@@ -13,6 +14,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr, qt_signals_blocked
 from napari.layers import Labels
+from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
@@ -101,6 +103,31 @@ class QtColorBox(QWidget):
         super().closeEvent(event)
 
 
+class QtNewLabel(QWidget):
+    """A widget that shows a button to add a new label to the label layer.
+
+    Parameters
+    ----------
+    parent : qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as the parent for this widget.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
+    """
+
+    def __init__(self, parent: QWidget, layer: Labels) -> None:
+        super().__init__(None)
+        self._layer = layer
+        self.button = QPushButton(trans._('new'), self)
+        self.button.setToolTip(
+            trans._('Add a new label with the next highest unused level')
+        )
+        self.button.clicked.connect(self._on_button_click)
+
+    def _on_button_click(self):
+        """Add a new label to the label layer when the button is clicked."""
+        new_label(self._layer)
+
+
 class QtLabelControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current label
@@ -133,6 +160,7 @@ class QtLabelControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.selection_spinbox = QLargeIntSpinBox()
+        self.new_label_button = QtNewLabel(self, self._layer)
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selection_spinbox.setRange(*dtype_lims)
         self.selection_spinbox.setValue(self._layer.selected_label)
@@ -152,9 +180,11 @@ class QtLabelControl(QtWidgetControlsBase):
         self.label_color = QWidget()
         color_layout = QHBoxLayout()
         color_layout.setContentsMargins(0, 2, 0, 1)
+        color_layout.setSpacing(4)
         self.colorbox = QtColorBox(layer)
         color_layout.addWidget(self.colorbox)
         color_layout.addWidget(self.selection_spinbox)
+        color_layout.addWidget(self.new_label_button)
         self.label_color.setLayout(color_layout)
         self.label_color.setProperty('foreground', 'true')
 
