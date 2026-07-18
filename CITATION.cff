@@ -552,5 +552,10 @@ authors:
   family-names: Coussoux
   affiliation: Synopsys, Inc.
   alias: ecoussoux-ansys
+- given-names: Mridul
+  family-names: Seth
+  affiliation: European Spallation Source
+  orcid: https://orcid.org/0000-0002-0969-0437
+  alias: mriduls
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
