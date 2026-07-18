@@ -47,7 +47,7 @@ jobs:
           - benchmark-name: Qt
             asv-command: continuous
             selection-regex: "^benchmark_qt_.*"
-            runs-on: macos-15
+            runs-on: macos-latest
             # Qt tests run on macOS to avoid using Xvfb business
             # xvfb makes everything run, but some tests segfault :shrug:
             # Fortunately, macOS graphics stack does not need xvfb!
