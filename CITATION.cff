@@ -544,5 +544,9 @@ authors:
   affiliation: Delta Tribe SRL
   orcid: https://orcid.org/0000-0001-8170-8905
   alias: filippocastelli
+- given-names: Edouard
+  family-names: Coussoux
+  affiliation: Synopsys, Inc.
+  alias: ecoussoux-ansys
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
