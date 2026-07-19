@@ -19,7 +19,7 @@ from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from napari.types import (
         FullLayerData,
@@ -575,6 +575,31 @@ def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
+def _read_wavefront_obj_lines(
+    lines: Iterable[str],
+) -> tuple[list[list[float]], list[list[int]]]:
+    vertices = []
+    faces = []
+    for line in lines:
+        parts = line.strip().split()
+        # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
+        if len(parts) > 1:
+            element_type, *values = parts
+            match element_type:
+                # we are currently only interested in vertices and faces, no other features
+                case 'v':
+                    vertices.append([float(value) for value in values])
+                case 'f':
+                    # we only take the first part of the split, which is the vertex index
+                    # (because we ignore normals and texture coordinates)
+                    indices = [value.split('/')[0] for value in values]
+                    if len(indices) != 3:
+                        raise ValueError('Only triangular faces are supported')
+                    # subtract one for each index, since OBJ uses 1-based indexing
+                    faces.append([int(index) - 1 for index in indices])
+    return vertices, faces
+
+
 def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
     # if it is a sequence of paths, we process each file separately and return all results
     if not isinstance(path_or_paths, (str, Path)):
@@ -584,40 +609,20 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
             )
         )
 
-    vertices = []
-    faces = []
-
     with open(path_or_paths, encoding='utf-8') as obj_file:
-        for line in obj_file:
-            parts = line.strip().split()
-            # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
-            if len(parts) > 1:
-                element_type, *values = parts
-                match element_type:
-                    # we are currently only interested in vertices and faces, no other features
-                    case 'v':
-                        vertices.append([float(value) for value in values])
-                    case 'f':
-                        # we only take the first part of the split, which is the vertex index
-                        # (because we ignore normals and texture coordinates)
-                        indices = (value.split('/')[0] for value in values)
-                        # subtract one for each index, since OBJ uses 1-based indexing
-                        faces.append([int(index) - 1 for index in indices])
+        vertices, faces = _read_wavefront_obj_lines(obj_file)
 
-    # flip y-axis to turn model 'right' side up
-    vertices = [(z, -y, x) for x, y, z in vertices]
+        vertices = np.array(vertices)
+        faces = np.array(faces)
+        surface = (vertices, faces)
 
-    vertices = np.array(vertices)
-    faces = np.array(faces)
-    surface = (vertices, faces)
+        add_kwargs = {
+            'blending': 'opaque',
+            # we default to smooth shading for now (in the future we could process the 's' type if necessary)
+            'shading': 'smooth',
+        }
 
-    add_kwargs = {
-        'blending': 'opaque',
-        # we default to smooth shading for now (in the future we could process the 's' type if necessary)
-        'shading': 'smooth',
-    }
-
-    return [(surface, add_kwargs, 'surface')]
+        return [(surface, add_kwargs, 'surface')]
 
 
 def napari_get_obj_reader(path: str) -> ReaderFunction | None:
