@@ -576,7 +576,7 @@ def _magic_imreader(path: str) -> list[LayerData]:
 
 
 def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
-    # if it is a sequence of paths, we process each separately and return all results
+    # if it is a sequence of paths, we process each file separately and return all results
     if not isinstance(path_or_paths, (str, Path)):
         return list(
             chain.from_iterable(
@@ -591,11 +591,10 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
     # TODO: and do we want support for generic polys? Or triangulate all instead?
     with open(path_or_paths, encoding='utf-8') as obj_file:
         for line in obj_file:
-            # clear any prepended or appended whitespace (like newlines)
-            line = line.strip()
-
-            if line:
-                element_type, *values = line.split()
+            parts = line.strip().split()
+            # we need at least a type (like v for vertex, f for faces) and their components
+            if len(parts) > 1:
+                element_type, *values = parts
                 match element_type:
                     # we are currently only interested in vertices and faces, no other features
                     # (like normals, textures, object groups, ...)
