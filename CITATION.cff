@@ -454,6 +454,7 @@ authors:
   orcid: https://orcid.org/0000-0002-3676-5318
   alias: p-j-smith
 - given-names: Konstantin
+  alias: ksofiyuk
   family-names: Sofiiuk
   alias: ksofiyuk
 - given-names: Johannes
@@ -466,6 +467,9 @@ authors:
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
+- given-names: Michal
+  family-names: Steuer
+  alias: michalslabs
 - given-names: Wulin
   family-names: Teo
   affiliation: Houston Methodist Research Institute
