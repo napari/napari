@@ -28,6 +28,14 @@ SHAPE_DIM_1 = 4
 SHAPE_DIM_2 = 2
 SHAPE_DIMS = (SHAPE_DIM_0, SHAPE_DIM_1, SHAPE_DIM_2)
 """Shape of the data used in many tests."""
+COMMON_PROPERTIES_ARRAY = {
+    'shape_type': np.array(list(islice(cycle(['A', 'B']), 0, SHAPE_DIM_0)))
+}
+"""Common properties used with ``SHAPE_DIMS`` in many tests."""
+COMMON_PROPERTIES_LIST = {
+    'shape_type': list(islice(cycle(['A', 'B']), 0, SHAPE_DIM_0))
+}
+"""Common properties used with ``SHAPE_DIMS`` in many tests."""
 
 
 def _make_cycled_properties(values, length):
@@ -83,19 +91,13 @@ def test_empty_shapes_with_features():
 
 
 properties_cycle = ['A', 'B']
-properties_array = {
-    'shape_type': _make_cycled_properties(properties_cycle, SHAPE_DIM_0)
-}
-properties_list = {
-    'shape_type': list(_make_cycled_properties(properties_cycle, SHAPE_DIM_0))
-}
 # With cycle ['A', 'B'] and 10 initial shapes, the next inserted shape
 # uses 'B' as current default, while index 0 starts as 'A'.
 default_property = properties_cycle[(SHAPE_DIM_0 + 1) % len(properties_cycle)]
 non_default_property = properties_cycle[SHAPE_DIM_0 % len(properties_cycle)]
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_properties(properties):
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
@@ -153,17 +155,13 @@ def test_adding_properties(attribute):
     data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
 
-    # add properties
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    layer.properties = COMMON_PROPERTIES_ARRAY
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
     # add properties as a dataframe
-    properties_df = pd.DataFrame(properties)
+    properties_df = pd.DataFrame(COMMON_PROPERTIES_ARRAY)
     layer.properties = properties_df
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
     # add properties as a dictionary with list values
     properties_list = {
@@ -204,10 +202,7 @@ def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
-    layer = Shapes(data, properties=properties)
+    layer = Shapes(data, properties=COMMON_PROPERTIES_ARRAY)
     layer.events.data = Mock()
 
     # test setting to data with fewer shapes
@@ -232,13 +227,10 @@ def test_properties_dataframe():
     """Test if properties can be provided as a DataFrame"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
-    properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['shape_type'].dtype)
+    properties_df = pd.DataFrame(COMMON_PROPERTIES_ARRAY)
+    properties_df = properties_df.astype(COMMON_PROPERTIES_ARRAY['shape_type'].dtype)
     layer = Shapes(data, properties=properties_df)
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
 
 def test_setting_current_properties():
@@ -305,7 +297,7 @@ def test_empty_layer_with_text_formatted():
     np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
     np.random.seed(0)
@@ -315,7 +307,7 @@ def test_text_from_property_value(properties):
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
     np.random.seed(0)
@@ -347,7 +339,7 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {shape_type}',
@@ -372,7 +364,7 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
     np.random.seed(0)
@@ -452,7 +444,7 @@ def test_nd_text(prepend):
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""
     np.random.seed(0)
@@ -1837,13 +1829,12 @@ def test_single_shape_properties(attribute):
     np.testing.assert_allclose([1, 0, 0, 1], layer_color[0])
 
 
-# NOTE: If this is changed, default values in test_color_cycle have to be updated
 color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 # With cycle ['red', 'blue'] and 10 initial shapes, the next inserted
 # shape uses 'blue' as the current default color.
-default_color_str = properties_cycle[(SHAPE_DIM_0 + 1) % len(color_cycle_str)]
+default_color_str = color_cycle_str[(SHAPE_DIM_0 + 1) % len(color_cycle_str)]
 
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
@@ -1855,17 +1846,14 @@ def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
     shapes_kwargs = {
-        'properties': properties,
+        'properties': COMMON_PROPERTIES_ARRAY,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, SHAPE_DIM_0))
     )
@@ -1970,12 +1958,9 @@ def test_adding_value_color_cycle(attribute):
     """
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
-        'properties': properties,
+        'properties': COMMON_PROPERTIES_ARRAY,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
@@ -2081,10 +2066,7 @@ def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {
-        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
-    }
-    layer = Shapes(data, properties=properties)
+    layer = Shapes(data, properties=COMMON_PROPERTIES_ARRAY)
 
     with (
         pytest.warns(UserWarning, match='was not set, setting to: shape_type'),
