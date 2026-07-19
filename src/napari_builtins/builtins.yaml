@@ -331,6 +331,7 @@ contributions:
       display_name: Features table widget
 
   menus:
+    napari/layers/metadata:
+      - command: napari.widgets.features_table
     napari/layers/measure:
       - command: napari.toggle_shape_measures
-      - command: napari.widgets.features_table
