@@ -590,6 +590,11 @@ class Shapes(Layer):
         self._drag_box = None
         self._drag_box_stored = None
         self._private_is_creating = False
+        # Out-of-plane (not-displayed) data coordinates captured when a draw
+        # begins, so every vertex of an in-progress shape stays pinned to its
+        # origin slice even if a navigable (exempt) axis is stepped mid-draw
+        # (napari #9207). {data_axis: value}; empty when not drawing.
+        self._creation_anchor: dict[int, float] = {}
         self._clipboard: dict[str, Shapes] = {}
         self._outlines_cache: dict[
             int | None, tuple[np.ndarray, np.ndarray, np.ndarray]
@@ -1369,6 +1374,8 @@ class Shapes(Layer):
         if value:
             self.events.drawing_started()
         else:
+            # Drop the origin-slice anchor; the next draw re-captures it.
+            self._creation_anchor = {}
             self.events.drawing_finished()
 
     def _set_color(self, color, attribute: str):
