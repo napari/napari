@@ -557,5 +557,9 @@ authors:
   affiliation: European Spallation Source
   orcid: https://orcid.org/0000-0002-0969-0437
   alias: mriduls
+- given-names: Bas
+  family-names: Bloemsaat
+  affiliation: QStarsIT
+  alias: basbloemsaat
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
