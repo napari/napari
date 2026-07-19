@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 
-class QtHistogramControl(QtWidgetControlsBase):  # type: ignore[metaclass]
+class QtHistogramControl(QtWidgetControlsBase):
     """
     Histogram control widget for Image layers.
 
