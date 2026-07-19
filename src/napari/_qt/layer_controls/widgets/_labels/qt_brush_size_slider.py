@@ -55,7 +55,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""
         with qt_signals_blocked(self.brush_size_slider):
-            value = self._layer.brush_size
+            value = self._layer.brush_size  # type: ignore[attr-defined]
             value = np.maximum(1, int(value))
             if value > self.brush_size_slider.maximum():
                 self.brush_size_slider.setMaximum(int(value))
