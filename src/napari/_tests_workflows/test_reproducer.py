@@ -1,5 +1,6 @@
-import pytest
 from importlib.metadata import PackageNotFoundError, distribution
+
+import pytest
 from napari_plugin_manager.base_qt_package_installer import InstallerActions
 
 pytestmark = pytest.mark.workflow
@@ -12,11 +13,14 @@ try:
 except PackageNotFoundError:
     is_package_installed = False
 
+
 @pytest.mark.xfail(
     is_package_installed,
-    reason=f"{PACKAGE} plugin is already installed.",
+    reason=f'{PACKAGE} plugin is already installed.',
 )
-def test_plugin_installation_uninstallation(make_napari_viewer, qtbot, monkeypatch):
+def test_plugin_installation_uninstallation(
+    make_napari_viewer, qtbot, monkeypatch
+):
     """Test interaction between napari and the plugin manager dialog.
 
     The scenario evaluated consist in installing the `napari-animation`
@@ -52,11 +56,16 @@ def test_plugin_installation_uninstallation(make_napari_viewer, qtbot, monkeypat
     index = installed_plugins.index(PACKAGE)
     item = plugin_manager_dialog.installed_list.item(index)
 
-    with qtbot.waitSignal(plugin_manager_dialog.installer.allFinished, timeout=30_000):
+    with qtbot.waitSignal(
+        plugin_manager_dialog.installer.allFinished, timeout=30_000
+    ):
         plugin_manager_dialog.installed_list.handle_action(
             item,
             PACKAGE,
             InstallerActions.UNINSTALL,
         )
 
-    assert init_installed_plugins == plugin_manager_dialog.installed_list.packages()
+    assert (
+        init_installed_plugins
+        == plugin_manager_dialog.installed_list.packages()
+    )
