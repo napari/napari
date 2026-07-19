@@ -3,11 +3,12 @@ import logging
 import os
 import sys
 import warnings
+from collections.abc import Callable, Generator
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 from weakref import WeakSet
 
@@ -16,14 +17,18 @@ import pytest
 if TYPE_CHECKING:
     from pytest import FixtureRequest  # noqa: PT013
 
+    from napari import Viewer
+    from napari._app_model._app import NapariApplication
+    from napari.utils._proxies import PublicOnlyProxy
+
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
 
 
-def _empty(*_, **__):
+def _empty(*_: Any, **__: Any) -> None:
     """Empty function for mocking"""
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         '--show-napari-viewer',
         action='store_true',
@@ -43,7 +48,7 @@ def pytest_addoption(parser):
 COUNTER = 0
 
 
-def fail_obj_graph(Klass):  # pragma: no cover
+def fail_obj_graph(Klass: Any) -> None:  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -87,7 +92,7 @@ GCPASS = 0
 
 
 @pytest.fixture(autouse=True)
-def _clean_themes():
+def _clean_themes() -> Generator[None, None, None]:
     from napari.utils import theme
 
     themes = set(theme.available_themes())
@@ -98,7 +103,9 @@ def _clean_themes():
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo[Any]
+) -> Generator[None, Any, None]:
     # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
     # execute all other hooks to obtain the report object
     outcome = yield
@@ -111,7 +118,7 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.fixture
-def mock_app_model():
+def mock_app_model() -> Generator['NapariApplication', None, None]:
     """Mock clean 'test_app' `NapariApplication` instance.
 
     This fixture must be used whenever `napari._app_model.get_app_model()` is called to
@@ -143,11 +150,11 @@ def mock_app_model():
     except ImportError:
 
         @lru_cache
-        def init_qactions():
+        def init_qactions() -> None:
             pass
 
         @lru_cache
-        def _initialize_plugins():
+        def _initialize_plugins() -> None:
             pass
 
     app = NapariApplication('test_app')
@@ -162,7 +169,7 @@ def mock_app_model():
 
 
 @pytest.fixture(autouse=True)
-def _disable_qt_warnings(monkeypatch):
+def _disable_qt_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         from napari._qt import qt_main_window
     except ImportError:
@@ -172,11 +179,11 @@ def _disable_qt_warnings(monkeypatch):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot,
+    qtbot: Any,
     request: 'FixtureRequest',
-    mock_app_model,
-    monkeypatch,
-):
+    mock_app_model: 'NapariApplication',
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[Callable[..., 'Viewer'], None, None]:
     """A pytest fixture function that creates a napari viewer for use in testing.
 
     This fixture will take care of creating a viewer and cleaning up at the end of the
@@ -249,7 +256,7 @@ def make_napari_viewer(
     )
 
     settings = get_settings()
-    settings.reset()
+    settings.reset()  # type: ignore[no-untyped-call]
 
     _initialize_plugins.cache_clear()
     init_qactions.cache_clear()
@@ -258,7 +265,7 @@ def make_napari_viewer(
     request.node._viewer_weak_set = viewers
 
     # may be overridden by using the parameter `strict_qt`
-    _strict = False
+    _strict: bool | str = False
 
     initial = QApplication.topLevelWidgets()
     prior_exception = getattr(sys, 'last_value', None)
@@ -272,9 +279,9 @@ def make_napari_viewer(
 
     if 'enable_console' not in request.keywords:
 
-        def _dummy_widget(*_):
+        def _dummy_widget(*_: Any) -> QWidget:
             w = QWidget()
-            w._update_theme = _empty
+            w._update_theme = _empty  # type: ignore[attr-defined]
             return w
 
         monkeypatch.setattr(
@@ -282,13 +289,13 @@ def make_napari_viewer(
         )
 
     def actual_factory(
-        *model_args,
-        ViewerClass=Viewer,
-        strict_qt=None,
-        **model_kwargs,
-    ):
+        *model_args: Any,
+        ViewerClass: type['Viewer'] = Viewer,
+        strict_qt: bool | str | None = None,
+        **model_kwargs: Any,
+    ) -> 'Viewer':
         if strict_qt is None:
-            strict_qt = is_internal_test or os.getenv('NAPARI_STRICT_QT')
+            strict_qt = is_internal_test or bool(os.getenv('NAPARI_STRICT_QT'))
         nonlocal _strict
         _strict = strict_qt
 
@@ -308,7 +315,7 @@ def make_napari_viewer(
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
     with suppress(AttributeError):
-        get_settings().reset()
+        get_settings().reset()  # type: ignore[no-untyped-call]
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
@@ -316,9 +323,9 @@ def make_napari_viewer(
             with patch.object(
                 viewer.window._qt_window, '_save_current_window_settings'
             ):
-                viewer.close()
+                viewer.close()  # type: ignore[no-untyped-call]
         else:
-            viewer.close()
+            viewer.close()  # type: ignore[no-untyped-call]
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
@@ -345,12 +352,17 @@ def make_napari_viewer(
     # and "strict" mode was used.
     if _strict and getattr(sys, 'last_value', None) is prior_exception:
         QApplication.processEvents()
-        leak = set(QApplication.topLevelWidgets()).difference(initial)
-        leak = (x for x in leak if x.objectName() != 'handled_widget')
+        leak: set[QWidget] = set(QApplication.topLevelWidgets()).difference(
+            initial
+        )
+        leak_filtered = (x for x in leak if x.objectName() != 'handled_widget')
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
         # observed in `test_sys_info.py`
-        if any(n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak):
+        if any(
+            n.__class__.__name__ != 'CanvasBackendDesktop'
+            for n in leak_filtered
+        ):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
             msg = f"""The following Widgets leaked!: {leak}.
@@ -372,7 +384,10 @@ def make_napari_viewer(
 
 
 @pytest.fixture
-def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
+def make_napari_viewer_proxy(
+    make_napari_viewer: Callable[..., 'Viewer'],
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[..., 'PublicOnlyProxy']:
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
 
@@ -388,9 +403,11 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
     """
     from napari.utils._proxies import PublicOnlyProxy
 
-    proxies = []
+    proxies: list[PublicOnlyProxy] = []
 
-    def actual_factory(*model_args, ensure_main_thread=True, **model_kwargs):
+    def actual_factory(
+        *model_args: Any, ensure_main_thread: bool = True, **model_kwargs: Any
+    ) -> 'PublicOnlyProxy':
         monkeypatch.setenv(
             'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
@@ -404,7 +421,7 @@ def make_napari_viewer_proxy(make_napari_viewer, monkeypatch):
 
 
 @pytest.fixture
-def MouseEvent():
+def MouseEvent() -> type:
     """Create a subclass for simulating vispy mouse events.
 
     Returns
@@ -417,13 +434,13 @@ def MouseEvent():
     @dataclass
     class Event:
         type: str
-        position: tuple[float]
+        position: tuple[float, float]
         is_dragging: bool = False
-        dims_displayed: tuple[int] = (0, 1)
-        dims_point: list[float] = None
-        view_direction: list[int] = None
-        pos: list[int] = (0, 0)
-        button: int = None
+        dims_displayed: tuple[int, int] = (0, 1)
+        dims_point: list[float] | None = None
+        view_direction: list[int] | None = None
+        pos: tuple[int, int] = (0, 0)
+        button: int | None = None
         handled: bool = False
 
     return Event
@@ -432,7 +449,7 @@ def MouseEvent():
 class LeakSafeLogRecord(logging.LogRecord):
     """LogRecord that converts args to strings to prevent reference retention."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Convert args to strings immediately
         if self.args:
@@ -443,7 +460,7 @@ class LeakSafeLogRecord(logging.LogRecord):
 
 
 @pytest.fixture(autouse=True, scope='session')
-def use_leak_safe_log_records():
+def use_leak_safe_log_records() -> Generator[None, None, None]:
     """Use custom LogRecord factory that doesn't retain object references."""
     original_record_factory = logging.getLogRecordFactory()
 
