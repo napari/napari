@@ -97,7 +97,9 @@ default_property = properties_cycle[(SHAPE_DIM_0 + 1) % len(properties_cycle)]
 non_default_property = properties_cycle[SHAPE_DIM_0 % len(properties_cycle)]
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_properties(properties):
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
@@ -228,7 +230,9 @@ def test_properties_dataframe():
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     properties_df = pd.DataFrame(COMMON_PROPERTIES_ARRAY)
-    properties_df = properties_df.astype(COMMON_PROPERTIES_ARRAY['shape_type'].dtype)
+    properties_df = properties_df.astype(
+        COMMON_PROPERTIES_ARRAY['shape_type'].dtype
+    )
     layer = Shapes(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
@@ -297,7 +301,9 @@ def test_empty_layer_with_text_formatted():
     np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
     np.random.seed(0)
@@ -307,7 +313,9 @@ def test_text_from_property_value(properties):
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
     np.random.seed(0)
@@ -339,7 +347,9 @@ def test_text_from_property_fstring(properties):
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {shape_type}',
@@ -364,7 +374,9 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
     np.random.seed(0)
@@ -444,7 +456,9 @@ def test_nd_text(prepend):
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-@pytest.mark.parametrize('properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""
     np.random.seed(0)
