@@ -54,6 +54,14 @@ def extend_selection_to_layer_below(viewer: ViewerModel) -> None:
 
 @register_viewer_action(trans._('Toggle 2D/3D view'))
 def toggle_ndisplay(viewer: ViewerModel) -> None:
+    # ndisplay is set by direct assignment, which the navigation lock does not
+    # guard (it guards methods only); block it here so a 2D/3D toggle cannot
+    # change the displayed axes while navigation is locked (e.g. mid-draw).
+    if viewer.dims.navigation_locked:
+        show_info(
+            trans._('Cannot toggle 2D/3D view while navigation is locked.')
+        )
+        return
     if viewer.dims.ndisplay == 2:
         viewer.dims.ndisplay = 3
     else:
