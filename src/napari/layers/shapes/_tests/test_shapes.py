@@ -116,7 +116,9 @@ def test_properties(properties):
     new_data = np.random.random((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
-    add_properties = np.concatenate((remove_properties, [default_property]), axis=0)
+    add_properties = np.concatenate(
+        (remove_properties, [default_property]), axis=0
+    )
     assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -1876,7 +1878,13 @@ def test_color_cycle(attribute, color_cycle):
     assert len(layer_color) == SHAPE_DIM_0 - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color(default_color_str))),
+        np.vstack(
+            (
+                color_array[1],
+                color_array[3:],
+                transform_color(default_color_str),
+            )
+        ),
     )
 
     # refresh colors
@@ -1966,6 +1974,7 @@ def test_adding_value_color_cycle(attribute):
     color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
+
 
 color_colormap_cycle = ['black', 'white']
 # With cycle ['black', 'white'] and 10 initial shapes, the next inserted
