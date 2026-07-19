@@ -580,6 +580,7 @@ def _read_wavefront_obj_lines(
 ) -> tuple[list[list[float]], list[list[int]]]:
     vertices = []
     faces = []
+
     for line in lines:
         parts = line.strip().split()
         # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
@@ -593,10 +594,12 @@ def _read_wavefront_obj_lines(
                     # we only take the first part of the split, which is the vertex index
                     # (because we ignore normals and texture coordinates)
                     indices = [value.split('/')[0] for value in values]
+                    # we only support triangles (for now)
                     if len(indices) != 3:
                         raise ValueError('Only triangular faces are supported')
                     # subtract one for each index, since OBJ uses 1-based indexing
                     faces.append([int(index) - 1 for index in indices])
+
     return vertices, faces
 
 
