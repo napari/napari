@@ -587,17 +587,14 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
     vertices = []
     faces = []
 
-    # TODO: will napari work if the obj contains mixed polygons (i.e. various number of vertices?)
-    # TODO: and do we want support for generic polys? Or triangulate all instead?
     with open(path_or_paths, encoding='utf-8') as obj_file:
         for line in obj_file:
             parts = line.strip().split()
-            # we need at least a type (like v for vertex, f for faces) and their components
+            # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
             if len(parts) > 1:
                 element_type, *values = parts
                 match element_type:
                     # we are currently only interested in vertices and faces, no other features
-                    # (like normals, textures, object groups, ...)
                     case 'v':
                         vertices.append([float(value) for value in values])
                     case 'f':
@@ -616,6 +613,7 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
 
     add_kwargs = {
         'blending': 'opaque',
+        # we default to smooth shading for now (in the future we could process the 's' type if necessary)
         'shading': 'smooth',
     }
 
@@ -638,7 +636,6 @@ def napari_get_obj_reader(path: str) -> ReaderFunction | None:
     callable
         A function parses the OBJ file and converts it to a Surface.
     """
-    # TODO: needs url check as well, like .py reader?
     if not os.path.exists(path):
         return None
 
