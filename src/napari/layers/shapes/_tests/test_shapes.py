@@ -2737,7 +2737,7 @@ def test_default_features_not_changed_when_selected_data_changes():
         shape.feature_defaults.values[0][1], origin_values[0][1]
     )
 
-    shape.selected_data = set([0])
+    shape.selected_data = {0}
 
     np.testing.assert_equal(
         shape.feature_defaults.values[0][0], origin_values[0][0]
