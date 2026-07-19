@@ -3,6 +3,7 @@
 import pytest
 
 from napari.components import Camera, Dims, direction_edge_labels
+from napari.components._direction_edge_labels import reconcile_direction_labels
 from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     HorizontalAxisOrientation,
@@ -190,3 +191,38 @@ def test_non_string_label_raises_value_error():
 
     with pytest.raises(ValueError, match='must be a string'):
         direction_edge_labels(labels, dims=dims, camera=cam)
+
+
+def test_reconcile_pads_leading_axes_with_none():
+    labels = (('A', 'P'), ('R', 'L'))
+    assert reconcile_direction_labels(labels, 3) == (
+        None,
+        ('A', 'P'),
+        ('R', 'L'),
+    )
+
+
+def test_reconcile_keeps_trailing_when_reducing():
+    labels = (('I', 'S'), ('A', 'P'), ('R', 'L'))
+    assert reconcile_direction_labels(labels, 2) == (('A', 'P'), ('R', 'L'))
+
+
+def test_reconcile_exact_length_is_unchanged():
+    labels = (('A', 'P'), ('R', 'L'))
+    assert reconcile_direction_labels(labels, 2) == labels
+
+
+def test_reconcile_empty_source_fills_with_none():
+    assert reconcile_direction_labels((), 2) == (None, None)
+
+
+def test_reconcile_to_zero_ndim_is_empty():
+    assert reconcile_direction_labels((('A', 'P'),), 0) == ()
+
+
+def test_reconcile_is_non_destructive_across_ndim_roundtrip():
+    # The stored source is a stable suffix frame: reducing then restoring ndim
+    # recovers every label, because reconcile always runs from the source.
+    stored = (('I', 'S'), ('A', 'P'), ('R', 'L'))
+    assert reconcile_direction_labels(stored, 2) == (('A', 'P'), ('R', 'L'))
+    assert reconcile_direction_labels(stored, 3) == stored

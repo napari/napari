@@ -35,7 +35,11 @@ if TYPE_CHECKING:
 # the whole pair) may be ``None`` to leave that direction unlabeled.
 DirectionLabelPair = tuple[Optional[str], Optional[str]]
 
-__all__ = ['DirectionLabelPair', 'direction_edge_labels']
+__all__ = [
+    'DirectionLabelPair',
+    'direction_edge_labels',
+    'reconcile_direction_labels',
+]
 
 
 def direction_edge_labels(
@@ -192,3 +196,27 @@ def _place_axis(
         edges[negative_edge] = negative
     if positive is not None:
         edges[positive_edge] = positive
+
+
+def reconcile_direction_labels(
+    labels: Sequence[Optional[DirectionLabelPair]],
+    ndim: int,
+) -> tuple[Optional[DirectionLabelPair], ...]:
+    """Reconcile a stored direction-label tuple to ``ndim``.
+
+    ``labels`` is a *suffix* (trailing) coordinate frame: it aligns with the
+    highest-numbered world axes, so a caller may store labels for more axes than
+    are currently present. Reconcile to exactly ``ndim`` entries the same way
+    napari reindexes ``axis_labels`` when dimensionality changes -- prepend
+    ``None`` for new leading axes, keep the trailing entries when reducing.
+
+    This is meant to run at render time against a stored, *unmutated* label
+    tuple, so labels survive ``dims.ndim`` changes (layer add/remove) without a
+    stored value ever going stale. The result always has length ``ndim`` (empty
+    for ``ndim <= 0``), so ``direction_edge_labels`` can consume it directly.
+    """
+    labels = tuple(labels)
+    if len(labels) < ndim:
+        return (None,) * (ndim - len(labels)) + labels
+    # Trailing ndim entries; for ndim <= 0 this is the empty tuple.
+    return labels[len(labels) - ndim :]
