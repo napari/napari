@@ -131,6 +131,9 @@ contributions:
     - id: napari.data.balls_3d
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
+    - id: napari.data.diffusion_4d
+      title: Generate heat diffusion sample
+      python_name: napari_builtins._diffusion_4d:cylinder_diffusion
 
     # widgets
     - id: napari.widgets.features_table
@@ -325,6 +328,9 @@ contributions:
     - display_name: Text
       key: text
       command: napari.data.text
+    - display_name: Heat diffusion (4D)
+      key: diffusion_4d
+      command: napari.data.diffusion_4d
 
   widgets:
     - command: napari.widgets.features_table
