@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import gc
 import logging
 import os
@@ -15,6 +17,9 @@ from weakref import WeakSet
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+    from typing import Any
+
     from pytest import FixtureRequest  # noqa: PT013
 
     from napari import Viewer
@@ -118,7 +123,7 @@ def pytest_runtest_makereport(
 
 
 @pytest.fixture
-def mock_app_model() -> Generator['NapariApplication', None, None]:
+def mock_app_model() -> Generator[NapariApplication, None, None]:
     """Mock clean 'test_app' `NapariApplication` instance.
 
     This fixture must be used whenever `napari._app_model.get_app_model()` is called to
@@ -180,10 +185,10 @@ def _disable_qt_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def make_napari_viewer(
     qtbot: Any,
-    request: 'FixtureRequest',
-    mock_app_model: 'NapariApplication',
+    request: FixtureRequest,
+    mock_app_model: NapariApplication,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[Callable[..., 'Viewer'], None, None]:
+) -> Generator[Callable[..., Viewer], None, None]:
     """A pytest fixture function that creates a napari viewer for use in testing.
 
     This fixture will take care of creating a viewer and cleaning up at the end of the
@@ -290,10 +295,10 @@ def make_napari_viewer(
 
     def actual_factory(
         *model_args: Any,
-        ViewerClass: type['Viewer'] = Viewer,
+        ViewerClass: type[Viewer] = Viewer,
         strict_qt: bool | str | None = None,
         **model_kwargs: Any,
-    ) -> 'Viewer':
+    ) -> Viewer:
         if strict_qt is None:
             strict_qt = is_internal_test or bool(os.getenv('NAPARI_STRICT_QT'))
         nonlocal _strict
@@ -385,9 +390,9 @@ def make_napari_viewer(
 
 @pytest.fixture
 def make_napari_viewer_proxy(
-    make_napari_viewer: Callable[..., 'Viewer'],
+    make_napari_viewer: Callable[..., Viewer],
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[..., 'PublicOnlyProxy']:
+) -> Callable[..., PublicOnlyProxy]:
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
 
@@ -407,7 +412,7 @@ def make_napari_viewer_proxy(
 
     def actual_factory(
         *model_args: Any, ensure_main_thread: bool = True, **model_kwargs: Any
-    ) -> 'PublicOnlyProxy':
+    ) -> PublicOnlyProxy:
         monkeypatch.setenv(
             'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
