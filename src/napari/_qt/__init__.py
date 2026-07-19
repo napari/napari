@@ -51,7 +51,7 @@ except Exception as e:
                 if binding in installed_bindings:
                     try:
                         import_module(f'{name_to_module[binding]}.QtWidgets')
-                    except:  # noqa: E722
+                    except Exception:
                         fail_inf[binding] = traceback.format_exc()
                     else:
                         fail_inf[binding] = 'No error'
