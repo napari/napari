@@ -81,9 +81,14 @@ def test_empty_shapes_with_features():
 
     assert_colors_equal(shapes.face_color, list('rgb'))
 
+
 properties_cycle = ['A', 'B']
-properties_array = {'shape_type': _make_cycled_properties(properties_cycle, SHAPE_DIM_0)}
-properties_list = {'shape_type': list(_make_cycled_properties(properties_cycle, SHAPE_DIM_0))}
+properties_array = {
+    'shape_type': _make_cycled_properties(properties_cycle, SHAPE_DIM_0)
+}
+properties_list = {
+    'shape_type': list(_make_cycled_properties(properties_cycle, SHAPE_DIM_0))
+}
 # With cycle ['A', 'B'] and 10 initial shapes, the next inserted shape
 # uses 'B' as current default, while index 0 starts as 'A'.
 default_property = properties_cycle[(SHAPE_DIM_0 + 1) % len(properties_cycle)]
@@ -149,7 +154,9 @@ def test_adding_properties(attribute):
     layer = Shapes(data)
 
     # add properties
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     layer.properties = properties
     np.testing.assert_equal(layer.properties, properties)
 
@@ -197,7 +204,9 @@ def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     layer = Shapes(data, properties=properties)
     layer.events.data = Mock()
 
@@ -223,7 +232,9 @@ def test_properties_dataframe():
     """Test if properties can be provided as a DataFrame"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     properties_df = pd.DataFrame(properties)
     properties_df = properties_df.astype(properties['shape_type'].dtype)
     layer = Shapes(data, properties=properties_df)
@@ -1834,6 +1845,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 # shape uses 'blue' as the current default color.
 default_color_str = properties_cycle[(SHAPE_DIM_0 + 1) % len(color_cycle_str)]
 
+
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
@@ -1843,7 +1855,9 @@ def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     shapes_kwargs = {
         'properties': properties,
         f'{attribute}_color': 'shape_type',
@@ -1956,7 +1970,9 @@ def test_adding_value_color_cycle(attribute):
     """
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
         'properties': properties,
@@ -1979,7 +1995,10 @@ def test_adding_value_color_cycle(attribute):
 color_colormap_cycle = ['black', 'white']
 # With cycle ['black', 'white'] and 10 initial shapes, the next inserted
 # shape uses 'white' as the current default color.
-default_color_colormap_str = color_colormap_cycle[(SHAPE_DIM_0 + 1) % len(color_colormap_cycle)]
+default_color_colormap_str = color_colormap_cycle[
+    (SHAPE_DIM_0 + 1) % len(color_colormap_cycle)
+]
+
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_color_colormap(attribute):
@@ -2062,7 +2081,9 @@ def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)}
+    properties = {
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
+    }
     layer = Shapes(data, properties=properties)
 
     with (
@@ -2077,7 +2098,9 @@ def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
-    annotations = {'shape_type': _make_cycled_properties([0, 1.5], SHAPE_DIM_0)}
+    annotations = {
+        'shape_type': _make_cycled_properties([0, 1.5], SHAPE_DIM_0)
+    }
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
