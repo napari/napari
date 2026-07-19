@@ -119,6 +119,11 @@ class GridCanvas(EventedModel):
         if not self.enabled:
             return (0, 0)
 
+        if index < 0 or index >= nlayers:
+            raise ValueError(
+                f'Index {index} is out of bounds for number of layers {nlayers}.'
+            )
+
         effective_indices = self._effective_indices(nlayers, layers)
         if index not in effective_indices:
             return (-1, -1)
