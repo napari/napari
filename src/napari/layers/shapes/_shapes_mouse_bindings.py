@@ -50,6 +50,12 @@ def _creation_coordinates(
     The anchor is captured on the first call of a new draw -- ``_is_creating`` is
     still ``False`` at the first vertex of every shape type and flips ``True``
     immediately after -- and applied on every subsequent call.
+
+    This fixes the *geometry* (vertices never span slices). The *interaction* of
+    navigating an exempt axis mid-draw is fully smooth only for click-based
+    drawing: a real slice change clears ``selected_data``, which stalls the
+    drag-follow of a held-button draw until napari preserves the in-progress
+    selection across a reslice (gh #9059). Geometry stays pinned in both cases.
     """
     coordinates = layer.world_to_data(event.position)
     not_displayed = layer._slice_input.not_displayed

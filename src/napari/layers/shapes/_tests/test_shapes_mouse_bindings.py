@@ -271,12 +271,58 @@ def test_anchor_holds_through_real_dims_reslice():
     np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
 
 
+def test_drag_draw_pins_slice_through_real_dims_reslice():
+    """Guarantee the anchor makes: geometry stays on the origin slice even when a
+    real ``Dims`` reslice happens mid-drag.
+
+    Note the *interaction* still degrades here -- a real reslice clears
+    ``selected_data`` (``_set_view_slice``), so the drag-follow stalls until
+    napari preserves the in-progress selection across a slice change (gh #9059).
+    Exempt-axis navigation during creation is therefore reliable for click-based
+    drawing (selection is re-established per click); mid-drag reslicing pins the
+    geometry but does not keep tracking the cursor. This test pins the guarantee
+    (no multi-slice geometry), not the degraded follow."""
+    from napari.components import Dims
+
+    layer = Shapes(ndim=3)
+    layer.mode = 'add_rectangle'
+    dims = Dims(ndim=3, ndisplay=2, range=[(0, 50, 1)] * 3)
+    dims.current_step = (5, 0, 0)
+    layer._slice_dims(dims)
+
+    _press(layer, [5, 10, 20], drag=True)
+    dims.current_step = (9, 0, 0)  # a genuine slice step mid-drag
+    layer._slice_dims(dims)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[9, 40, 60],
+        pos=np.array([40, 60], dtype=float),
+    )
+    mouse_move_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=[9, 40, 60],
+        pos=np.array([40, 60], dtype=float),
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == 1
+    # Geometry never spans slices, regardless of the follow degradation.
+    np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
+
+
 def test_anchor_invalidated_on_partition_change_mid_draw():
     """If an axis-order/ndisplay change reshapes which axes are displayed while
     drawing, the anchor (keyed to the old axes) is invalidated rather than
-    overwriting a now-displayed axis. Correctness degrades to pre-anchor
-    behavior; it never corrupts the in-plane geometry. Blocking the partition
-    change is separate, opt-out work."""
+    overwriting a now-displayed axis -- so the anchor never *adds* corruption.
+
+    This does not make the partition change itself safe: vertices already placed
+    can still span the axis that became not-displayed (the pre-anchor multi-slice
+    condition). That is why partition changes are blocked while navigation is
+    locked (see the sorter / 2D-3D guards); this test only pins the anchor's own
+    non-regression, not partition-change safety."""
     from napari.components import Dims
 
     layer = Shapes(ndim=4)
