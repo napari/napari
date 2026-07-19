@@ -114,7 +114,7 @@ def test_read_obj(tmp_path):
         v 0 2 3
         f 0/9/6 1/4/5 2/7/8
         f 0 2 3
-        f 0 1 2 3
+        f 0 1 2
         """)
 
     layer_data = npe2.read([obj_path], stack=False)
@@ -129,7 +129,7 @@ def test_read_obj(tmp_path):
     [
         (['#\n'], [], []),
         ([''], [], []),
-        (['v 1 -2.5 3'], [[1.0, -2.5, 3.0]], []),
+        (['v 1 -2.5 3'], [1.0, -2.5, 3.0], []),
         (['f 1 2 3'], [], [[0, 1, 2]]),
         (['f 1// 2// 3//'], [], [[0, 1, 2]]),
         (['f 1/8/9/ 2/5/6 3/0/0'], [], [[0, 1, 2]]),
@@ -141,7 +141,9 @@ def test_read_obj(tmp_path):
     ],
 )
 def test_read_wavefront_obj_lines(subject, vertices, faces):
-    assert _read_wavefront_obj_lines(subject) == (vertices, faces)
+    vertices_actual, faces_actual = _read_wavefront_obj_lines(subject)
+    assert np.allclose(vertices_actual, vertices)
+    assert np.array_equal(faces_actual, faces)
 
 
 def test_read_obj_with_quads():

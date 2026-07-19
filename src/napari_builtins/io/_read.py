@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import imageio.v3 as iio
 import numpy as np
+import numpy.typing as npt
 from dask import delayed
 
 from napari.utils.io import execute_python_code
@@ -577,7 +578,7 @@ def _magic_imreader(path: str) -> list[LayerData]:
 
 def _read_wavefront_obj_lines(
     lines: Iterable[str],
-) -> tuple[list[list[float]], list[list[int]]]:
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
     vertices = []
     faces = []
 
@@ -600,7 +601,9 @@ def _read_wavefront_obj_lines(
                     # subtract one for each index, since OBJ uses 1-based indexing
                     faces.append([int(index) - 1 for index in indices])
 
-    return vertices, faces
+    return np.array(vertices, dtype=np.float64), np.array(
+        faces, dtype=np.int32
+    )
 
 
 def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
@@ -614,9 +617,6 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
 
     with open(path_or_paths, encoding='utf-8') as obj_file:
         vertices, faces = _read_wavefront_obj_lines(obj_file)
-
-        vertices = np.array(vertices)
-        faces = np.array(faces)
         surface = (vertices, faces)
 
         add_kwargs = {
