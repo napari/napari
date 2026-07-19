@@ -565,5 +565,9 @@ authors:
   family-names: Creeten
   affiliation: Netherlands Forensic Institute
   alias: ccreeten
+- given-names: Bas
+  family-names: Bloemsaat
+  affiliation: QStarsIT
+  alias: basbloemsaat
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
