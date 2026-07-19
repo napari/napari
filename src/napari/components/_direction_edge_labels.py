@@ -7,12 +7,12 @@ never interprets the strings, so any domain (medical LPS, a microscopy stage,
 a detector frame) uses the identical mechanism.
 
 The mapping is only defined when the world-to-screen map is a signed axis
-permutation. In napari that is exactly the ``ndisplay == 2`` case: the 2D
+permutation. In napari that is a 2D view with exactly two displayed axes: the
 canvas is a ``PanZoomCamera`` with no rotation and ``camera.angles`` is unused,
 so the two displayed world axes map to the screen axes up to a sign taken from
-``camera.orientation``. For ``ndisplay == 3`` (arbitrary rotation/perspective)
-there are no unambiguous edge labels, and this returns ``None`` rather than a
-guess.
+``camera.orientation``. For 3D (arbitrary rotation/perspective) or degenerate
+views with fewer than two displayed axes, there are no unambiguous edge labels,
+and this returns ``None`` rather than a guess.
 """
 
 from __future__ import annotations
@@ -67,11 +67,11 @@ def direction_edge_labels(
     Returns
     -------
     dict of str to str, or None
-        ``None`` when the mapping is undefined (``dims.ndisplay != 2``).
-        Otherwise a dict whose keys are a subset of ``{'top', 'bottom',
-        'left', 'right'}`` mapping each edge to the label facing it; edges
-        whose direction is unlabeled are omitted, so the dict is empty when
-        nothing is labeled.
+        ``None`` when the mapping is undefined (the view does not display
+        exactly two axes). Otherwise a dict whose keys are a subset of
+        ``{'top', 'bottom', 'left', 'right'}`` mapping each edge to the label
+        facing it; edges whose direction is unlabeled are omitted, so the dict
+        is empty when nothing is labeled.
 
     Raises
     ------
@@ -101,13 +101,14 @@ def direction_edge_labels(
     if direction_labels is not None:
         _validate_direction_labels(direction_labels, dims.ndim)
 
-    if dims.ndisplay != 2:
+    displayed_axes = dims.displayed
+    if dims.ndisplay != 2 or len(displayed_axes) != 2:
         return None
 
     if direction_labels is None:
         return {}
 
-    vertical_axis, horizontal_axis = dims.displayed
+    vertical_axis, horizontal_axis = displayed_axes
     _, vertical, horizontal = camera.orientation
 
     edges: dict[str, str] = {}

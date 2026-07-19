@@ -76,6 +76,17 @@ def test_ndisplay_3_returns_none():
     assert direction_edge_labels(LPS_AXIAL, dims=dims, camera=cam) is None
 
 
+@pytest.mark.parametrize(
+    ('ndim', 'labels'),
+    [(0, ()), (1, (('L', 'R'),))],
+)
+def test_fewer_than_two_displayed_axes_returns_none(ndim, labels):
+    dims = Dims(ndim=ndim, ndisplay=2)
+    cam = Camera()
+
+    assert direction_edge_labels(labels, dims=dims, camera=cam) is None
+
+
 def test_none_labels_return_empty_mapping_in_2d():
     dims = Dims(ndim=3, ndisplay=2)
     cam = Camera()
