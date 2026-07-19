@@ -44,6 +44,7 @@ from napari.components.overlays import (
     AxesOverlay,
     BrushCircleOverlay,
     CurrentSliceOverlay,
+    DirectionLabelsOverlay,
     FloatingAxesOverlay,
     Overlay,
     ScaleBarOverlay,
@@ -133,6 +134,7 @@ DEFAULT_OVERLAYS = {
     'text': TextOverlay,
     'axes': AxesOverlay,
     'floating_axes': FloatingAxesOverlay,
+    'direction_labels': DirectionLabelsOverlay,
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
@@ -344,6 +346,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     @property
     def floating_axes(self) -> FloatingAxesOverlay:
         return self._overlays['floating_axes']  # type: ignore[return-value]
+
+    @property
+    def direction_labels(self) -> DirectionLabelsOverlay:
+        return self._overlays['direction_labels']  # type: ignore[return-value]
 
     @property
     def scale_bar(self) -> ScaleBarOverlay:
