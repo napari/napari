@@ -539,5 +539,23 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Filippo Maria
+  family-names: Castelli
+  affiliation: Delta Tribe SRL
+  orcid: https://orcid.org/0000-0001-8170-8905
+  alias: filippocastelli
+- given-names: Revathy
+  family-names: Venugopal
+  affiliation: Synopsys, Inc.
+  alias: revathyvenugopal162
+- given-names: Edouard
+  family-names: Coussoux
+  affiliation: Synopsys, Inc.
+  alias: ecoussoux-ansys
+- given-names: Mridul
+  family-names: Seth
+  affiliation: European Spallation Source
+  orcid: https://orcid.org/0000-0002-0969-0437
+  alias: mriduls
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
