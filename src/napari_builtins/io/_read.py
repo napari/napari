@@ -601,8 +601,9 @@ def _read_wavefront_obj_lines(
                     # subtract one for each index, since OBJ uses 1-based indexing
                     faces.append([int(index) - 1 for index in indices])
 
-    return np.array(vertices, dtype=np.float64), np.array(
-        faces, dtype=np.int32
+    return (
+        np.array(vertices, dtype=np.float64),
+        np.array(faces, dtype=np.int32),
     )
 
 
