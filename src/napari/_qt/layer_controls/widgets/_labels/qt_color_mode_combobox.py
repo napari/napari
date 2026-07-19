@@ -43,9 +43,9 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         color_mode_comboBox = QComboBox()
-        for data, text in LABEL_COLOR_MODE_TRANSLATIONS.items():
-            data = data.value
-            color_mode_comboBox.addItem(text, data)
+        for mode, text in LABEL_COLOR_MODE_TRANSLATIONS.items():
+            value = mode.value
+            color_mode_comboBox.addItem(text, value)
 
         self.color_mode_combobox = color_mode_comboBox
         self._on_colormap_change()
@@ -56,13 +56,13 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""
         if self.color_mode_combobox.currentData() == LabelColorMode.AUTO.value:
-            self._layer.colormap = self._layer._original_random_colormap
+            self._layer.colormap = self._layer._original_random_colormap  # type: ignore[attr-defined]
         else:
-            self._layer.colormap = self._layer._direct_colormap
+            self._layer.colormap = self._layer._direct_colormap  # type: ignore[attr-defined]
 
     def _on_colormap_change(self) -> None:
-        enable_combobox = not self._layer._is_default_colors(
-            self._layer._direct_colormap.color_dict
+        enable_combobox = not self._layer._is_default_colors(  # type: ignore[attr-defined]
+            self._layer._direct_colormap.color_dict  # type: ignore[attr-defined]
         )
         self.color_mode_combobox.setEnabled(enable_combobox)
         if not enable_combobox:
@@ -70,7 +70,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
                 'Layer needs a user-set DirectLabelColormap to enable direct '
                 'mode.'
             )
-        if isinstance(self._layer.colormap, CyclicLabelColormap):
+        if isinstance(self._layer.colormap, CyclicLabelColormap):  # type: ignore[attr-defined]
             self.color_mode_combobox.setCurrentIndex(
                 self.color_mode_combobox.findData(LabelColorMode.AUTO.value)
             )
