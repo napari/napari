@@ -21,6 +21,7 @@ except PackageNotFoundError as e:
         "The 'napari-plugin-manager' package is required to run this test."
     ) from e
 
+
 @pytest.mark.xfail(
     is_package_installed,
     reason=f'{PACKAGE} plugin is already installed.',
