@@ -13,6 +13,13 @@ try:
 except PackageNotFoundError:
     is_package_installed = False
 
+# This is mandatory to ensure that the plugin manager is installed, otherwise the test will fail.
+try:
+    distribution('napari-plugin-manager')
+except PackageNotFoundError as e:
+    raise RuntimeError(
+        "The 'napari-plugin-manager' package is required to run this test."
+    ) from e
 
 @pytest.mark.xfail(
     is_package_installed,
