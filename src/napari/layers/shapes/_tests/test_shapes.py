@@ -2704,3 +2704,32 @@ def test_remove_shape_that_is_value(remove: list[int]):
 
     assert len(layer.data) > 0
     assert layer._value == (None, None)
+
+
+def test_default_features_not_changed_when_selected_data_changes():
+    """Test that the default features are not changed when selected_data changes.
+    
+    Reproducer of https://github.com/napari/napari/issues/8564
+    """
+    two_rectangles = [
+        np.array([[10, 10], [10, 50], [50, 50], [50, 10]]),
+        np.array([[60, 60], [60, 100], [100, 100], [100, 60]]),
+    ]
+    features = pd.DataFrame({
+        'number': [100., 200],
+        'feature1': ['A', 'B']
+    })
+    feature_defaults = pd.DataFrame({
+        'number': [None],
+        'feature1': [None],
+    })
+    shape = Shapes(two_rectangles, shape_type='rectangle', features=features, feature_defaults=feature_defaults)
+
+    origin_values = shape.feature_defaults.values.copy()
+    np.testing.assert_equal(shape.feature_defaults.values[0][0], origin_values[0][0])
+    np.testing.assert_equal(shape.feature_defaults.values[0][1], origin_values[0][1])
+
+    shape.selected_data=set([0])
+
+    np.testing.assert_equal(shape.feature_defaults.values[0][0], origin_values[0][0])
+    np.testing.assert_equal(shape.feature_defaults.values[0][1], origin_values[0][1])
