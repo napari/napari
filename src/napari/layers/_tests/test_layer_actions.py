@@ -347,6 +347,13 @@ def test_project_points_rejects_non_points():
         _project_points(ll)
 
 
+def test_project_points_no_active_layer():
+    # with nothing selected the action is a no-op, matching image projection
+    ll = LayerList()
+    _project_points(ll)
+    assert len(ll) == 0
+
+
 @pytest.mark.parametrize(
     'mode',
     ['int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'],

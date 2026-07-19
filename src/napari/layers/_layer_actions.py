@@ -265,6 +265,8 @@ def _project_points(ll: LayerList, axis: int = 0) -> None:
     colors, symbol, features) is preserved. See napari/napari#9195.
     """
     layer = ll.selection.active
+    if not layer:
+        return
     if not isinstance(layer, Points):
         raise NotImplementedError(
             trans._(
