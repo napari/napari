@@ -5,12 +5,11 @@ import logging
 import os
 import sys
 import warnings
-from collections.abc import Callable, Generator
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from weakref import WeakSet
 
