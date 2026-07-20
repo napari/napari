@@ -565,6 +565,10 @@ authors:
   family-names: Creeten
   affiliation: Netherlands Forensic Institute
   alias: ccreeten
+- given-names: Sébastien
+  family-names: Morais
+  affiliation: Synopsys, Inc.
+  alias: SMoraisAnsys
 - given-names: Bas
   family-names: Bloemsaat
   affiliation: QStarsIT
