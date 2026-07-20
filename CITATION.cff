@@ -427,6 +427,10 @@ authors:
 - given-names: James
   family-names: Ryan
   alias: jamesyan-git
+- given-names: Tom
+  family-names: Saveur
+  orcid: https://orcid.org/0009-0002-6410-4063
+  alias: Tommaati
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
