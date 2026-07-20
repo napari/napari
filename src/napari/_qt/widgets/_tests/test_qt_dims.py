@@ -390,3 +390,25 @@ def test_loop_mode_model_update_emits_once(qtbot):
     assert slider.loop_mode == 'once'
     assert slider.play_button.mode_combo.currentText() == 'once'
     assert observed == ['once']
+
+
+def test_navigation_lock_disables_sliders(qtbot):
+    """While Dims navigation is locked, non-exempt slider widgets are disabled."""
+    dims = Dims(ndim=4, ndisplay=2)
+    dims.range = ((0, 4, 1),) * 4
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    assert all(w.isEnabled() for w in view.slider_widgets)
+
+    owner = object()
+    dims.lock_navigation(owner)  # lock all
+    assert all(not w.isEnabled() for w in view.slider_widgets)
+
+    dims.unlock_navigation(owner)
+    assert all(w.isEnabled() for w in view.slider_widgets)
+
+    dims.lock_navigation(owner, exempt=(0,))  # axis 0 stays navigable
+    enabled = {w.axis: w.isEnabled() for w in view.slider_widgets}
+    assert enabled[0] is True
+    assert all(not enabled[a] for a in (1, 2, 3))

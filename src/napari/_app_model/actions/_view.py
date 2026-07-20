@@ -152,11 +152,12 @@ def _zoom_out(viewer: ViewerModel) -> None:
 
 
 def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
-    """Toggle the current canvas between 3D and 2D."""
-    if viewer.dims.ndisplay == 2:
-        viewer.dims.ndisplay = 3
-    else:  # == 3
-        viewer.dims.ndisplay = 2
+    """Toggle the current canvas between 3D and 2D.
+
+    Delegates to the single guarded implementation so the View menu honors the
+    navigation lock identically to the keybinding action.
+    """
+    viewer._toggle_ndisplay()
 
 
 def _toggle_synced_camera(viewer: ViewerModel) -> None:

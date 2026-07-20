@@ -54,10 +54,9 @@ def extend_selection_to_layer_below(viewer: ViewerModel) -> None:
 
 @register_viewer_action(trans._('Toggle 2D/3D view'))
 def toggle_ndisplay(viewer: ViewerModel) -> None:
-    if viewer.dims.ndisplay == 2:
-        viewer.dims.ndisplay = 3
-    else:
-        viewer.dims.ndisplay = 2
+    # Delegate to the single guarded implementation shared with the View menu
+    # action so both paths honor the navigation lock identically.
+    viewer._toggle_ndisplay()
 
 
 # Making this an action makes vispy really unhappy during the tests

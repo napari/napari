@@ -387,3 +387,204 @@ def test_nsteps():
 def test_thickness():
     dims = Dims(margin_left=(0, 0.5), margin_right=(1, 1))
     assert dims.thickness == (1, 1.5)
+
+
+def _nav_dims():
+    dims = Dims(ndim=4, ndisplay=2)
+    dims.range = ((0, 2, 1), (0, 4, 1), (0, 31, 1), (0, 31, 1))
+    dims.current_step = (0, 2, 0, 0)
+    return dims
+
+
+def test_navigation_lock_blocks_slice_nav_without_events():
+    dims = _nav_dims()
+    owner = object()
+    assert dims.navigation_locked is False
+
+    events = []
+    dims.events.point.connect(lambda e=None: events.append(1))
+
+    dims.lock_navigation(owner)
+    assert dims.navigation_locked is True
+
+    dims.set_current_step(1, 4)  # z
+    dims.set_point(0, 1.0)  # series, world coords
+    assert dims.current_step == (0, 2, 0, 0)  # unchanged
+    assert events == []  # a blocked write emits nothing
+
+
+def test_navigation_lock_exempt_axis_moves():
+    dims = _nav_dims()
+    owner = object()
+    dims.lock_navigation(owner, exempt=(0,))  # series exempt
+    dims.set_current_step(0, 1)  # series -> allowed
+    dims.set_current_step(1, 4)  # z -> blocked
+    assert dims.current_step == (1, 2, 0, 0)
+
+
+def test_navigation_lock_force_bypasses():
+    dims = _nav_dims()
+    dims.lock_navigation(object())
+    dims.set_current_step(1, 4, force=True)
+    assert dims.current_step == (0, 4, 0, 0)
+
+
+def test_navigation_lock_order_methods():
+    dims = Dims(ndim=3)
+    dims.lock_navigation(object())  # lock_order defaults True
+    before = dims.order
+    dims.transpose()
+    dims.roll()
+    assert dims.order == before  # no-op while locked
+
+    dims2 = Dims(ndim=3)
+    dims2.lock_navigation(object(), lock_order=False)
+    dims2.transpose()
+    assert dims2.order != (0, 1, 2)  # order change allowed when not locked
+
+
+def test_navigation_lock_ownership():
+    dims = _nav_dims()
+    a, b = object(), object()
+    dims.lock_navigation(a)
+    with pytest.raises(RuntimeError):
+        dims.lock_navigation(b)  # different owner cannot take it
+    with pytest.raises(RuntimeError):
+        dims.unlock_navigation(b)  # different owner cannot release it
+    dims.lock_navigation(a, exempt=(0,))  # same owner may re-lock
+    dims.unlock_navigation(a)
+    assert dims.navigation_locked is False
+    dims.unlock_navigation(a)  # idempotent no-op when already unlocked
+
+
+def test_navigation_lock_context_manager():
+    dims = _nav_dims()
+    owner = object()
+    with dims.navigation_lock(owner):
+        assert dims.navigation_locked is True
+        dims.set_current_step(1, 4)
+        assert dims.current_step == (0, 2, 0, 0)
+    assert dims.navigation_locked is False
+    dims.set_current_step(1, 4)
+    assert dims.current_step == (0, 4, 0, 0)
+
+
+def test_navigation_lock_capability_marker():
+    assert getattr(Dims, 'NAVIGATION_LOCK_VERSION', 0) >= 1
+
+
+def test_navigation_lock_rejects_none_owner():
+    dims = _nav_dims()
+    with pytest.raises(ValueError, match='owner must not be None'):
+        dims.lock_navigation(None)
+    assert dims.navigation_locked is False
+
+
+def test_navigation_lock_force_on_order_methods():
+    dims = Dims(ndim=3)
+    dims.lock_navigation(object())  # lock_order=True
+    before = dims.order
+    dims.transpose(force=True)
+    assert dims.order != before  # force bypasses the order lock
+    rolled = dims.order
+    dims.roll(force=True)
+    assert dims.order != rolled
+
+
+def test_navigation_lock_does_not_block_validator_normalization():
+    # _check_dims reassigns point/order via direct field assignment under
+    # _validating_ctx; the lock guards *methods*, so normalization must still run.
+    dims = _nav_dims()
+    events = []
+    dims.events.point.connect(lambda e=None: events.append(1))
+    dims.lock_navigation(object())
+    dims.ndim = 5  # triggers _check_dims: pads/normalizes point and order
+    assert len(dims.point) == 5
+    assert set(dims.order) == set(range(5))
+    assert dims.navigation_locked is True
+
+
+def test_navigation_lock_does_not_guard_direct_assignment():
+    # Documented v1 exclusion: direct field/property assignment bypasses the lock
+    # (it is also how the validator normalizes). This test pins that contract.
+    dims = _nav_dims()
+    dims.lock_navigation(object())
+    dims.current_step = (1, 3, 0, 0)  # property assignment -> not guarded
+    assert dims.current_step == (1, 3, 0, 0)
+    dims.order = (1, 0, 2, 3)  # field assignment -> not guarded
+    assert tuple(dims.order) == (1, 0, 2, 3)
+    dims.ndisplay = 3  # field assignment -> not guarded
+    assert dims.ndisplay == 3
+
+
+def test_navigation_lock_emits_event():
+    dims = _nav_dims()
+    fired = []
+    dims.events.navigation_lock.connect(lambda e=None: fired.append(1))
+    owner = object()
+    dims.lock_navigation(owner, exempt=(0,))
+    assert dims.navigation_lock_exempt == (0,)
+    dims.unlock_navigation(owner)
+    assert dims.navigation_lock_exempt == ()
+    assert len(fired) == 2  # one on lock, one on unlock
+
+
+def test_navigation_lock_exempt_negative_axis_normalized():
+    # A negative exempt axis must be normalized to the same non-negative index
+    # set_point compares against; otherwise the intended axis is silently blocked.
+    dims = _nav_dims()  # ndim=4
+    owner = object()
+    dims.lock_navigation(owner, exempt=(-1,))  # last axis
+    assert dims.navigation_lock_exempt == (3,)
+    dims.set_current_step(3, 5)  # exempt via negative -> allowed
+    assert dims.current_step[3] == 5
+    dims.set_current_step(-1, 7)  # same axis, negative form -> allowed
+    assert dims.current_step[3] == 7
+    dims.set_current_step(1, 3)  # non-exempt -> blocked
+    assert dims.current_step[1] == 2
+
+
+def test_navigation_lock_exempt_out_of_range_raises():
+    dims = _nav_dims()  # ndim=4
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
+        dims.lock_navigation(object(), exempt=(99,))
+    assert dims.navigation_locked is False  # rejected, no partial lock
+
+
+def test_navigation_lock_owner_property():
+    dims = _nav_dims()
+    owner = object()
+    assert dims.navigation_lock_owner is None
+    dims.lock_navigation(owner)
+    assert dims.navigation_lock_owner is owner
+    dims.unlock_navigation(owner)
+    assert dims.navigation_lock_owner is None
+
+
+def test_navigation_lock_unlock_returns_state_to_defaults():
+    # Invariant: releasing the lock returns the config to its unlocked defaults
+    # (symmetry between _nav_lock_exempt and _nav_lock_order). This is cosmetic
+    # cleanup, not a functional guard -- a fresh lock overwrites _nav_lock_order
+    # regardless -- so this only pins the unlocked-state defaults.
+    dims = Dims(ndim=3)
+    owner = object()
+    dims.lock_navigation(owner, exempt=(0,), lock_order=False)
+    dims.unlock_navigation(owner)
+    assert dims.navigation_lock_exempt == ()
+    assert dims._nav_lock_order is True
+
+
+def test_navigation_lock_nested_context_manager():
+    # A nested same-owner context must restore the outer lock on inner exit,
+    # not release it wholesale.
+    dims = _nav_dims()
+    owner = object()
+    with dims.navigation_lock(owner, exempt=(0,)):
+        assert dims.navigation_lock_exempt == (0,)
+        with dims.navigation_lock(owner, exempt=(1,)):
+            assert dims.navigation_lock_exempt == (1,)
+        # inner exit restores the outer config, does NOT unlock
+        assert dims.navigation_locked is True
+        assert dims.navigation_lock_exempt == (0,)
+    # outermost exit releases
+    assert dims.navigation_locked is False

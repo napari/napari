@@ -2676,6 +2676,72 @@ def test_finish_drawing_called_when_is_creating():
     assert not layer._is_creating
 
 
+def test_is_creating_and_drawing_events():
+    """is_creating tracks the draw window and emits started/finished events."""
+    layer = Shapes()
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    # Freshly constructed: not creating. Construction initializes the backing
+    # field directly (not via the setter), so a same-value write must not emit.
+    assert layer.is_creating is False
+    layer._is_creating = False
+    started.assert_not_called()
+    finished.assert_not_called()
+
+    # False -> True fires drawing_started exactly once.
+    layer._is_creating = True
+    assert layer.is_creating is True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    # Repeated True is a no-op.
+    layer._is_creating = True
+    started.assert_called_once()
+
+    # True -> False fires drawing_finished exactly once.
+    layer._is_creating = False
+    assert layer.is_creating is False
+    finished.assert_called_once()
+
+    # Repeated False is a no-op.
+    layer._is_creating = False
+    finished.assert_called_once()
+
+
+def test_is_creating_is_read_only():
+    """is_creating is a read-only public view of the private flag."""
+    layer = Shapes()
+    with pytest.raises(AttributeError):
+        layer.is_creating = True
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_path'])
+def test_drawing_events_via_multivertex_lifecycle(mode):
+    """A multi-vertex draw emits drawing_started on the first vertex and
+    exactly one drawing_finished when the draw ends."""
+    from napari.layers.shapes import _shapes_mouse_bindings as mb
+
+    layer = Shapes()
+    layer.mode = mode
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    mb.initiate_polygon_draw(layer, np.array([10.0, 10.0]))
+    assert layer.is_creating is True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    layer._finish_drawing()
+    assert layer.is_creating is False
+    started.assert_called_once()
+    finished.assert_called_once()
+
+
 @pytest.mark.parametrize('remove', [[0], [1], [2], [1, 2]])
 def test_remove_shape_that_is_value(remove: list[int]):
     layer = Shapes(

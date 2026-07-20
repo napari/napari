@@ -111,6 +111,269 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
+def test_add_simple_shape_drawing_events(
+    shape_type, create_known_shapes_layer
+):
+    """A single-action shape draw emits exactly one drawing_started and one
+    drawing_finished across the press/drag/release."""
+    layer, _, known_non_shape = create_known_shapes_layer
+    layer.mode = f'add_{shape_type}'
+
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert layer.is_creating is False
+    started.assert_called_once()
+    finished.assert_called_once()
+
+
+# --- #9207: an in-progress shape stays pinned to its origin slice -----------
+# The out-of-plane (not-displayed) axes of every vertex are held at the values
+# captured when the draw began, so stepping a navigable (exempt) axis mid-draw
+# cannot re-attribute geometry to another slice. Data-space z of the first
+# position below is 5.0 for every scale.
+
+
+def _slice_stepping_positions(scale_z):
+    """World positions whose not-displayed (axis 0) value changes each step."""
+    zs = [5, 9, 2, 7]
+    ys = [10, 40, 60, 30]
+    xs = [20, 60, 40, 80]
+    return [
+        [z * scale_z, y, x]
+        for z, y, x in zip(zs, ys, xs, strict=True)
+    ]
+
+
+def _press(layer, pos, *, drag=False):
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=drag,
+        position=pos,
+        pos=np.array(pos[1:], dtype=float),
+    )
+    mouse_press_callbacks(layer, event)
+
+
+@pytest.mark.parametrize('scale', [(1, 1, 1), (4, 2, 3)])
+def test_click_polygon_pins_out_of_plane_axis(scale):
+    """Clicking successive vertices while an exempt axis is stepped keeps every
+    vertex on the origin slice, so a polygon can never span slices (#9207)."""
+    layer = Shapes(ndim=3)
+    layer.scale = list(scale)
+    layer.mode = 'add_polygon'
+    positions = _slice_stepping_positions(scale[0])
+
+    for pos in positions:
+        _press(layer, pos)
+    event = read_only_mouse_event(
+        type='mouse_double_click',
+        position=positions[-1],
+        pos=np.array(positions[-1][1:], dtype=float),
+    )
+    mouse_double_click_callbacks(layer, event)
+
+    assert len(layer.data) == 1
+    # Every vertex pinned to the first click's data-space slice (z == 5).
+    np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
+
+
+@pytest.mark.parametrize(
+    'mode',
+    [
+        'add_rectangle',
+        'add_ellipse',
+        'add_line',
+        'add_path',
+        'add_polygon_lasso',
+    ],
+)
+@pytest.mark.parametrize('scale', [(1, 1, 1), (4, 2, 3)])
+def test_drag_draw_pins_out_of_plane_axis(mode, scale):
+    """Dragging (tablet path, lasso, or a single-drag rectangle/ellipse/line)
+    while an exempt axis is stepped keeps every vertex on the origin slice."""
+    get_settings().experimental.rdp_epsilon = 0
+    layer = Shapes(ndim=3)
+    layer.scale = list(scale)
+    layer.mode = mode
+    positions = _slice_stepping_positions(scale[0])
+
+    _press(layer, positions[0], drag=True)
+    for pos in positions[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=pos,
+            pos=np.array(pos[1:], dtype=float),
+        )
+        mouse_move_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=positions[-1],
+        pos=np.array(positions[-1][1:], dtype=float),
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == 1
+    np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
+
+
+def test_anchor_holds_through_real_dims_reslice():
+    """Integration: stepping the slice through a real ``Dims`` model (which
+    replaces the layer slice input and clears selection) between vertices still
+    keeps every vertex on the origin slice."""
+    from napari.components import Dims
+
+    layer = Shapes(ndim=3)
+    layer.mode = 'add_polygon'
+    dims = Dims(ndim=3, ndisplay=2, range=[(0, 50, 1)] * 3)
+    dims.current_step = (5, 0, 0)
+    layer._slice_dims(dims)
+
+    _press(layer, [5, 10, 20])
+    # A genuine navigation to slice 9 between vertices, not just a changed event.
+    dims.current_step = (9, 0, 0)
+    layer._slice_dims(dims)
+    _press(layer, [9, 40, 60])
+    _press(layer, [9, 60, 40])
+    event = read_only_mouse_event(
+        type='mouse_double_click',
+        position=[9, 60, 40],
+        pos=np.array([60, 40], dtype=float),
+    )
+    mouse_double_click_callbacks(layer, event)
+
+    assert len(layer.data) == 1
+    np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
+
+
+def test_drag_draw_pins_slice_through_real_dims_reslice():
+    """Guarantee the anchor makes: geometry stays on the origin slice even when a
+    real ``Dims`` reslice happens mid-drag.
+
+    Note the *interaction* still degrades here -- a real reslice clears
+    ``selected_data`` (``_set_view_slice``), so the drag-follow stalls until
+    napari preserves the in-progress selection across a slice change (gh #9059).
+    Exempt-axis navigation during creation is therefore reliable for click-based
+    drawing (selection is re-established per click); mid-drag reslicing pins the
+    geometry but does not keep tracking the cursor. This test pins the guarantee
+    (no multi-slice geometry), not the degraded follow."""
+    from napari.components import Dims
+
+    layer = Shapes(ndim=3)
+    layer.mode = 'add_rectangle'
+    dims = Dims(ndim=3, ndisplay=2, range=[(0, 50, 1)] * 3)
+    dims.current_step = (5, 0, 0)
+    layer._slice_dims(dims)
+
+    _press(layer, [5, 10, 20], drag=True)
+    dims.current_step = (9, 0, 0)  # a genuine slice step mid-drag
+    layer._slice_dims(dims)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[9, 40, 60],
+        pos=np.array([40, 60], dtype=float),
+    )
+    mouse_move_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=[9, 40, 60],
+        pos=np.array([40, 60], dtype=float),
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == 1
+    # Geometry never spans slices, regardless of the follow degradation.
+    np.testing.assert_allclose(layer.data[-1][:, 0], 5.0)
+
+
+def test_anchor_invalidated_on_partition_change_mid_draw():
+    """If an axis-order/ndisplay change reshapes which axes are displayed while
+    drawing, the anchor (keyed to the old axes) is invalidated rather than
+    overwriting a now-displayed axis -- so the anchor never *adds* corruption.
+
+    This does not make the partition change itself safe: vertices already placed
+    can still span the axis that became not-displayed (the pre-anchor multi-slice
+    condition). That is why partition changes are blocked while navigation is
+    locked (see the sorter / 2D-3D guards); this test only pins the anchor's own
+    non-regression, not partition-change safety."""
+    from napari.components import Dims
+
+    layer = Shapes(ndim=4)
+    layer.mode = 'add_polygon'
+    dims = Dims(ndim=4, ndisplay=2, range=[(0, 50, 1)] * 4)
+    dims.order = (0, 1, 2, 3)  # not-displayed [0, 1], displayed [2, 3]
+    dims.current_step = (5, 6, 0, 0)
+    layer._slice_dims(dims)
+
+    _press(layer, [5, 6, 10, 20])
+    _press(layer, [5, 6, 40, 60])
+    assert set(layer._creation_anchor) == {0, 1}
+
+    # Reorder so axis 0 becomes displayed -- a partition change.
+    dims.order = (2, 1, 0, 3)
+    layer._slice_dims(dims)
+    # Cursor value 99 on the now-displayed axis 0 must NOT be forced to the
+    # stale anchor value (5); the anchor invalidates instead.
+    _press(layer, [99, 6, 30, 40])
+
+    assert layer._creation_anchor == {}
+    # The post-reorder vertex kept its cursor value on the freed axis.
+    assert layer.data[-1][-1, 0] == 99.0
+
+
+def test_second_draw_reanchors_to_new_origin_slice():
+    """The origin-slice anchor is dropped when a draw finishes, so the next draw
+    pins to its own origin slice rather than the previous one."""
+    layer = Shapes(ndim=3)
+    layer.mode = 'add_polygon'
+
+    def draw(zs):
+        ys, xs = [10, 40, 60], [20, 60, 40]
+        for z, y, x in zip(zs, ys, xs, strict=True):
+            _press(layer, [z, y, x])
+        event = read_only_mouse_event(
+            type='mouse_double_click',
+            position=[zs[-1], ys[-1], xs[-1]],
+            pos=np.array([ys[-1], xs[-1]], dtype=float),
+        )
+        mouse_double_click_callbacks(layer, event)
+
+    draw([3, 8, 1])
+    draw([12, 4, 19])
+
+    assert len(layer.data) == 2
+    np.testing.assert_allclose(layer.data[0][:, 0], 3.0)
+    np.testing.assert_allclose(layer.data[1][:, 0], 12.0)
+    assert layer._creation_anchor == {}
+
+
 def test_line_fixed_angles(create_known_shapes_layer):
     """Draw line with fixed angles."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
