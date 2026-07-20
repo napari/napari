@@ -527,3 +527,64 @@ def test_navigation_lock_emits_event():
     dims.unlock_navigation(owner)
     assert dims.navigation_lock_exempt == ()
     assert len(fired) == 2  # one on lock, one on unlock
+
+
+def test_navigation_lock_exempt_negative_axis_normalized():
+    # A negative exempt axis must be normalized to the same non-negative index
+    # set_point compares against; otherwise the intended axis is silently blocked.
+    dims = _nav_dims()  # ndim=4
+    owner = object()
+    dims.lock_navigation(owner, exempt=(-1,))  # last axis
+    assert dims.navigation_lock_exempt == (3,)
+    dims.set_current_step(3, 5)  # exempt via negative -> allowed
+    assert dims.current_step[3] == 5
+    dims.set_current_step(-1, 7)  # same axis, negative form -> allowed
+    assert dims.current_step[3] == 7
+    dims.set_current_step(1, 3)  # non-exempt -> blocked
+    assert dims.current_step[1] == 2
+
+
+def test_navigation_lock_exempt_out_of_range_raises():
+    dims = _nav_dims()  # ndim=4
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
+        dims.lock_navigation(object(), exempt=(99,))
+    assert dims.navigation_locked is False  # rejected, no partial lock
+
+
+def test_navigation_lock_owner_property():
+    dims = _nav_dims()
+    owner = object()
+    assert dims.navigation_lock_owner is None
+    dims.lock_navigation(owner)
+    assert dims.navigation_lock_owner is owner
+    dims.unlock_navigation(owner)
+    assert dims.navigation_lock_owner is None
+
+
+def test_navigation_lock_unlock_returns_state_to_defaults():
+    # Invariant: releasing the lock returns the config to its unlocked defaults
+    # (symmetry between _nav_lock_exempt and _nav_lock_order). This is cosmetic
+    # cleanup, not a functional guard -- a fresh lock overwrites _nav_lock_order
+    # regardless -- so this only pins the unlocked-state defaults.
+    dims = Dims(ndim=3)
+    owner = object()
+    dims.lock_navigation(owner, exempt=(0,), lock_order=False)
+    dims.unlock_navigation(owner)
+    assert dims.navigation_lock_exempt == ()
+    assert dims._nav_lock_order is True
+
+
+def test_navigation_lock_nested_context_manager():
+    # A nested same-owner context must restore the outer lock on inner exit,
+    # not release it wholesale.
+    dims = _nav_dims()
+    owner = object()
+    with dims.navigation_lock(owner, exempt=(0,)):
+        assert dims.navigation_lock_exempt == (0,)
+        with dims.navigation_lock(owner, exempt=(1,)):
+            assert dims.navigation_lock_exempt == (1,)
+        # inner exit restores the outer config, does NOT unlock
+        assert dims.navigation_locked is True
+        assert dims.navigation_lock_exempt == (0,)
+    # outermost exit releases
+    assert dims.navigation_locked is False

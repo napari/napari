@@ -590,6 +590,16 @@ class Dims(EventedModel):
         """Axes that stay navigable while navigation is locked (see lock_navigation)."""
         return self._nav_lock_exempt
 
+    @property
+    def navigation_lock_owner(self) -> Any:
+        """The object currently holding the navigation lock, or None if unlocked.
+
+        See ``lock_navigation``. Exposed read-only so a caller can check whether
+        it (or an object it manages) holds the lock before releasing it, e.g. to
+        avoid the ``RuntimeError`` ``unlock_navigation`` raises for a non-owner.
+        """
+        return self._nav_lock_owner
+
     def lock_navigation(
         self,
         owner: Any,
@@ -632,8 +642,18 @@ class Dims(EventedModel):
                     deferred=True,
                 )
             )
+        # Normalize exempt axes to canonical non-negative indices, validating
+        # each is in range *before* mutating any lock state. Without this,
+        # exempt=(-1,) would never match the normalized axes set_point compares
+        # against (silently blocking the axis the caller meant to free), and an
+        # out-of-range axis would be accepted silently. ensure_axis_in_bounds
+        # raises ValueError on out-of-range; doing it first keeps a rejected
+        # call from leaving a partial lock.
+        exempt_normalized = tuple(
+            sorted({ensure_axis_in_bounds(ax, self.ndim) for ax in exempt})
+        )
         self._nav_lock_owner = owner
-        self._nav_lock_exempt = tuple(exempt)
+        self._nav_lock_exempt = exempt_normalized
         self._nav_lock_order = lock_order
         self.events.navigation_lock()
 
@@ -654,6 +674,11 @@ class Dims(EventedModel):
             )
         self._nav_lock_owner = None
         self._nav_lock_exempt = ()
+        # Cosmetic symmetry with _nav_lock_exempt: return the unlocked state to
+        # defaults. Not load-bearing — every lock_navigation overwrites
+        # _nav_lock_order, and the order guards check the owner first, so a
+        # lingering value is never observed while unlocked.
+        self._nav_lock_order = True
         self.events.navigation_lock()
 
     @contextlib.contextmanager
@@ -664,12 +689,32 @@ class Dims(EventedModel):
         exempt: Sequence[int] = (),
         lock_order: bool = True,
     ):
-        """Context manager wrapping ``lock_navigation``/``unlock_navigation``."""
+        """Context manager wrapping ``lock_navigation``/``unlock_navigation``.
+
+        Re-entrant for a single owner: nesting ``with dims.navigation_lock(owner)``
+        blocks restore the *outer* lock's configuration on exit rather than
+        releasing the lock, so an inner block with different ``exempt``/
+        ``lock_order`` does not strand the outer block unlocked. The outermost
+        block releases the lock.
+        """
+        # Snapshot the lock state we are about to overwrite so we can restore it
+        # (rather than fully unlocking) when unwinding a nested acquisition.
+        prev_owner = self._nav_lock_owner
+        prev_exempt = self._nav_lock_exempt
+        prev_order = self._nav_lock_order
         self.lock_navigation(owner, exempt=exempt, lock_order=lock_order)
         try:
             yield
         finally:
-            self.unlock_navigation(owner)
+            if prev_owner is None:
+                # We were the outermost acquisition: release the lock.
+                self.unlock_navigation(owner)
+            else:
+                # Nested: hand control back to the enclosing block's config.
+                self._nav_lock_owner = prev_owner
+                self._nav_lock_exempt = prev_exempt
+                self._nav_lock_order = prev_order
+                self.events.navigation_lock()
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False
@@ -698,8 +743,10 @@ class Dims(EventedModel):
                 trans._('axis and value sequences must have equal length')
             )
 
-        for ax in axis:
-            ensure_axis_in_bounds(ax, self.ndim)
+        # Normalize to canonical non-negative indices so downstream comparisons
+        # (notably the navigation-lock exempt set) and callers see a single axis
+        # numbering rather than a mix of negative and positive indices.
+        axis = [ensure_axis_in_bounds(ax, self.ndim) for ax in axis]
         return axis, value
 
     @contextlib.contextmanager
