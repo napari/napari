@@ -120,8 +120,6 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         super()._on_visible_change()
         # necessary to update outdated values since we skip updating when
         # invisible
-        if self.node.parent is None or self.node.parent.canvas is None:
-            return  # node is detached or canvas destroyed
         self._on_gamma_change()
         self._on_ticks_change()
 
@@ -157,6 +155,8 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
+        if not self.node.visible:
+            return
         if self.source_wrapper.contrast_limits is None:
             return
 
