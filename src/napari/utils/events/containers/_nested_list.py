@@ -10,6 +10,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Generator, Iterable, MutableSequence
 from typing import (
+    Any,
     NewType,
     TypeVar,
     Union,
@@ -181,15 +182,17 @@ class NestableEventedList(EventedList[_T]):
         self, key: NestedIndex
     ) -> _T | NestableEventedList[_T]: ...  # pragma: no cover
 
-    def __getitem__(self, key: MaybeNestedIndex):
+    def __getitem__(
+        self, key: MaybeNestedIndex
+    ) -> _T | NestableEventedList[_T]:
         if isinstance(key, tuple):
-            item: NestableEventedList[_T] = self
+            item: _T | NestableEventedList[_T] = self
             for idx in key:
                 if not isinstance(item, MutableSequence):
                     raise IndexError(f'index out of range: {key}')
-                item = item[idx]
+                item = item[idx]  # type: ignore[assignment]
             return item
-        return super().__getitem__(key)
+        return super().__getitem__(key)  # type: ignore[return-value]
 
     @overload
     def __setitem__(
@@ -201,7 +204,9 @@ class NestableEventedList(EventedList[_T]):
         self, key: slice, value: Iterable[_T]
     ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key, value):
+    def __setitem__(
+        self, key: int | NestedIndex | slice, value: _T | Iterable[_T]
+    ) -> None:
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -210,10 +215,10 @@ class NestableEventedList(EventedList[_T]):
             value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            self[parent_i].__setitem__(index, value)
+            self[parent_i].__setitem__(index, value)  # type: ignore[index,assignment]
             return
-        self._connect_child_emitters(value)
-        super().__setitem__(key, value)
+        self._connect_child_emitters(value)  # type: ignore[arg-type]
+        super().__setitem__(key, value)  # type: ignore[assignment]
 
     def _delitem_indices(
         self, key: MaybeNestedIndex
@@ -235,7 +240,7 @@ class NestableEventedList(EventedList[_T]):
         # but there is a high risk here of clobbering attributes of a special
         # child class
         if isinstance(value, list):
-            value = self.__newlike__(value)
+            value = self.__newlike__(value)  # type: ignore[assignment]
         super().insert(index, value)
 
     def _reemit_child_event(self, event: Event) -> None:
@@ -259,7 +264,7 @@ class NestableEventedList(EventedList[_T]):
         # potentially different emitter
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)
+                event.index = self.index(event.source)  # type: ignore[attr-defined]
 
         emitter(event)
 
@@ -273,7 +278,7 @@ class NestableEventedList(EventedList[_T]):
             dest_index += len(destination_group) + 1
         return dest_index
 
-    def _move_plan(
+    def _move_plan(  # type: ignore[override]
         self, sources: Iterable[MaybeNestedIndex], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
@@ -326,7 +331,7 @@ class NestableEventedList(EventedList[_T]):
         dumped: list[int] = []
 
         # we iterate indices from the end first, so pop() always works
-        for idx in sorted(sources, reverse=True):
+        for idx in sorted(sources, reverse=True):  # type: ignore[type-var]
             if isinstance(idx, int | slice):
                 idx = (idx,)
             if idx == ():
@@ -342,6 +347,7 @@ class NestableEventedList(EventedList[_T]):
             _parlen = len(dest_par)
             if len(idx) > _parlen:
                 _idx: list[Index] = list(idx)
+                _cur = _idx[_parlen]
                 if isinstance(_idx[_parlen], slice):
                     raise NotImplementedError(
                         trans._(
@@ -349,7 +355,8 @@ class NestableEventedList(EventedList[_T]):
                             deferred=True,
                         )
                     )
-                _idx[_parlen] += sum(x <= _idx[_parlen] for x in dumped)
+                _cur_int = cast(int, _cur)
+                _idx[_parlen] = _cur_int + sum(x <= _cur_int for x in dumped)
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
@@ -458,9 +465,9 @@ class NestableEventedList(EventedList[_T]):
         self.events.reordered(value=self)
         return True
 
-    def _type_check(self, e) -> _T:
+    def _type_check(self, e: Any) -> _T:
         if isinstance(e, list):
-            return self.__newlike__(e)
+            return self.__newlike__(e)  # type: ignore[return-value]
         if self._basetypes:
             _types = self._basetypes + (NestableEventedList,)
             if not isinstance(e, _types):
@@ -474,12 +481,12 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(
+    def _iter_indices(  # type: ignore[override]
         self,
         start: int = 0,
         stop: int | None = None,
         root: tuple[int, ...] = (),
-    ) -> Generator[int | tuple[int]]:
+    ) -> Generator[int | tuple[int, ...], None, None]:
         """Iter indices from start to stop.
 
         Depth first traversal of the tree
