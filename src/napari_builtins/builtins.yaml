@@ -283,6 +283,9 @@ contributions:
     - display_name: Gravel
       key: gravel
       command: napari.data.gravel
+    - display_name: Heat diffusion (4D)
+      key: diffusion_4d
+      command: napari.data.diffusion_4d
     - display_name: Horse
       key: horse
       command: napari.data.horse
@@ -328,9 +331,6 @@ contributions:
     - display_name: Text
       key: text
       command: napari.data.text
-    - display_name: Heat diffusion (4D)
-      key: diffusion_4d
-      command: napari.data.diffusion_4d
 
   widgets:
     - command: napari.widgets.features_table

@@ -565,5 +565,9 @@ authors:
   family-names: Bloemsaat
   affiliation: QStarsIT
   alias: basbloemsaat
+- given-names: Kamil
+  family-names: Kania
+  alias: Grzyb33k
+  orcid: https://orcid.org/0009-0008-1188-1081
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause

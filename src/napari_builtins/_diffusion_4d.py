@@ -1,8 +1,9 @@
-from os import path
+from os import path, makedirs
 
 import numpy as np
+import tifffile
 
-from  napari.utils.notifications import show_warning
+from napari.utils.notifications import show_warning
 from napari.utils._platformdirs import user_cache_dir
 
 try:
@@ -13,11 +14,13 @@ except ImportError:
     def njit(func):
         return func
     
-DATA_NAME = 'cylinder_difusion.tiff'
+DATA_NAME = 'cylinder_diffusion.tif'
+CACHE_DIR = user_cache_dir()
 
 
 @njit
 def process_diffusion(dt, alpha, initial_state, t_max, n_snapshots):
+    """Solver for 3D heat diffusion using FTCS method."""
     alpha_dt = alpha * dt
 
     u = np.copy(initial_state)
@@ -25,10 +28,9 @@ def process_diffusion(dt, alpha, initial_state, t_max, n_snapshots):
     nz, ny, nx = u.shape
 
     it_max = int(t_max / dt)
-    
     n_frames = (it_max - 1) // n_snapshots + 1
 
-    evolution = np.zeros((n_frames, nz, ny, nx), dtype=u.dtype)
+    evolution = np.zeros((n_frames, nz, ny, nx), dtype=np.float64)
 
     it = 0
     frame = 0
@@ -65,9 +67,8 @@ def process_diffusion(dt, alpha, initial_state, t_max, n_snapshots):
     return evolution
 
 
-def cylinder_diffusion():
-    # example_data = np.random.randint(0, 255, size=(50, 64, 32, 32))
-
+def initial_cylinder_state():
+    """Creates the initial state of temperature distribution over cylinder geometry."""
     nz, nx, ny = 64, 32, 32
     z, y, x = np.ogrid[:nz, :ny, :nx]
 
@@ -92,25 +93,53 @@ def cylinder_diffusion():
 
     cylinder_volume = np.where(cylinder_volume == 0, np.nan, cylinder_volume)
 
-    process_diffusion(1, 1, cylinder_volume, 1, 1)
+    return cylinder_volume
 
-    evolution = process_diffusion(0.1, 0.8, cylinder_volume, 500.0, 50)
+def simulate_diffusion():
+    initial_cylinder = initial_cylinder_state()
 
-    evolution = np.nan_to_num(evolution)
+    #Numba warm-up call
+    process_diffusion(1.0, 1.0, initial_cylinder, 1.0, 1)
+
+    evolution = process_diffusion(0.1, 0.8, initial_cylinder, 500.0, 50)
+
+    evolution = np.nan_to_num(evolution).astype(np.float32)
+
     return evolution
 
+def cylinder_diffusion():
+    """
+    Loads the heat diffusion sample from cache if exists.
+    Otherwise checks if numba is installed and runs the simulation.
+    """
+    makedirs(CACHE_DIR, exist_ok=True)
 
-def cyclic_difusion_():
-    # cache
-    evolution = cylinder_diffusion()
-    # check if there si numba, otherwise show warnig 
+    data_path = path.join(CACHE_DIR, DATA_NAME)
+
+    if path.exists(data_path):
+        evolution = tifffile.imread(data_path)
+    else:
+        if is_numba:
+            evolution = simulate_diffusion()
+
+            tifffile.imwrite(
+                data_path,
+                evolution,
+                compression='zlib'
+            )
+
+        else:
+            show_warning('Numba is not installed but required for this sample data.')
+            return []
+        
+
     return [
         (
             evolution,
             {
                 'name': 'heat_diffusion',
                 'metadata': {'axes': ['t', 'z', 'y', 'x']},
-                'colormap': 'viridis'
+                'colormap': 'plasma'
             },
             'image'
         )
