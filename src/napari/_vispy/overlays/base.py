@@ -146,11 +146,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.transform = self.node.transform
 
     def _get_canvas_bgcolor(self) -> ColorValue:
-        if (
-            self.node.parent is not None
-            and self.node.parent.canvas.bgcolor is not None
-            and self.node.parent.canvas.bgcolor
-        ):
+        if self.node.parent is not None and self.node.parent.canvas.bgcolor:
             return ColorValue(self.node.parent.canvas.bgcolor.rgba)
 
         return ColorValue(
