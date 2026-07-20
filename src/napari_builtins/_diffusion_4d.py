@@ -22,72 +22,41 @@ CACHE_DIR = user_cache_dir()
 
 
 @njit
+def _neighbor_value(u, i, j, k, di, dj, dk):
+    """Get neighbor value, using center value if neighbor is NaN."""
+    neighbor = u[i + di, j + dj, k + dk]
+    if np.isnan(neighbor):
+        return u[i, j, k]
+    return neighbor
+
+
+@njit
 def process_diffusion(dt, alpha, initial_state, t_max, n_snapshots):
     """Solver for 3D heat diffusion using FTCS method."""
     alpha_dt = alpha * dt
-
     u = np.copy(initial_state)
-
-    nz, ny, nx = u.shape
 
     it_max = int(t_max / dt)
     n_frames = (it_max - 1) // n_snapshots + 1
+    evolution = np.zeros((n_frames, *u.shape), dtype=np.float64)
 
-    evolution = np.zeros((n_frames, nz, ny, nx), dtype=np.float64)
-
-    it = 0
     frame = 0
-
-    while it < it_max:
+    for it in range(it_max):
         u_new = np.copy(u)
 
-        for i in range(1, nz - 1):
-            for j in range(1, ny - 1):
-                for k in range(1, nx - 1):
+        for i in range(1, u.shape[0] - 1):
+            for j in range(1, u.shape[1] - 1):
+                for k in range(1, u.shape[2] - 1):
                     if not np.isnan(u[i, j, k]):
-                        u_dz_p = (
-                            u[i, j, k]
-                            if np.isnan(u[i + 1, j, k])
-                            else u[i + 1, j, k]
-                        )
-                        u_dz_n = (
-                            u[i, j, k]
-                            if np.isnan(u[i - 1, j, k])
-                            else u[i - 1, j, k]
-                        )
-
-                        u_dy_p = (
-                            u[i, j, k]
-                            if np.isnan(u[i, j + 1, k])
-                            else u[i, j + 1, k]
-                        )
-                        u_dy_n = (
-                            u[i, j, k]
-                            if np.isnan(u[i, j - 1, k])
-                            else u[i, j - 1, k]
-                        )
-
-                        u_dx_p = (
-                            u[i, j, k]
-                            if np.isnan(u[i, j, k + 1])
-                            else u[i, j, k + 1]
-                        )
-                        u_dx_n = (
-                            u[i, j, k]
-                            if np.isnan(u[i, j, k - 1])
-                            else u[i, j, k - 1]
-                        )
-
                         laplacian = (
-                            u_dz_p
-                            + u_dz_n
-                            + u_dy_p
-                            + u_dy_n
-                            + u_dx_p
-                            + u_dx_n
+                            _neighbor_value(u, i, j, k, 1, 0, 0)
+                            + _neighbor_value(u, i, j, k, -1, 0, 0)
+                            + _neighbor_value(u, i, j, k, 0, 1, 0)
+                            + _neighbor_value(u, i, j, k, 0, -1, 0)
+                            + _neighbor_value(u, i, j, k, 0, 0, 1)
+                            + _neighbor_value(u, i, j, k, 0, 0, -1)
                             - 6 * u[i, j, k]
                         )
-
                         u_new[i, j, k] = u[i, j, k] + alpha_dt * laplacian
 
         if it % n_snapshots == 0:
@@ -95,8 +64,6 @@ def process_diffusion(dt, alpha, initial_state, t_max, n_snapshots):
             frame += 1
 
         u = u_new
-
-        it += 1
 
     return evolution
 
