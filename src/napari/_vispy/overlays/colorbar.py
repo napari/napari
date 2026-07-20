@@ -120,6 +120,8 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         super()._on_visible_change()
         # necessary to update outdated values since we skip updating when
         # invisible
+        if self.node.parent is None or self.node.parent.canvas is None:
+            return  # node is detached or canvas destroyed
         self._on_gamma_change()
         self._on_ticks_change()
 
