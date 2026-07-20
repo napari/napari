@@ -100,6 +100,7 @@ from napari.utils.events import (
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
+from napari.utils.notifications import show_info
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 from napari.utils.translations import trans
@@ -973,6 +974,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
+        # A layer that reports a slice-keyed drawing window (currently Shapes)
+        # freezes slice navigation while a shape is being constructed, so the
+        # viewed plane cannot move out from under the in-progress vertices.
+        # Both boundary events are required: the lock is taken on one and
+        # released on the other, so a layer exposing only one is not wired.
+        if hasattr(layer.events, 'drawing_started') and hasattr(
+            layer.events, 'drawing_finished'
+        ):
+            layer.events.drawing_started.connect(self._on_layer_drawing_started)
+            layer.events.drawing_finished.connect(
+                self._on_layer_drawing_finished
+            )
         self._layer_help_from_mode(layer)
 
         # Update dims
@@ -1025,6 +1038,49 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
+    def _on_layer_drawing_started(self, event) -> None:
+        """Freeze slice navigation while a layer draws a slice-keyed shape.
+
+        The drawing layer takes the navigation lock (as owner), so the sliders,
+        2D/3D toggle and axis-order controls are inert until the draw finishes.
+        This keeps every vertex on the shape's origin slice (napari #9207).
+        """
+        layer = event.source
+        prev_owner = self.dims.navigation_lock_owner
+        if prev_owner is not None and prev_owner is not layer:
+            # Another layer's draw is still open (e.g. the active layer was
+            # switched mid-draw, which does not finish the previous draw). It
+            # owns the single navigation lock, so acquiring here would raise a
+            # RuntimeError out of this mouse-event callback. Finish the stale
+            # draw first: that commits/discards its partial shape and releases
+            # its lock via drawing_finished, leaving at most one open draw.
+            finish = getattr(prev_owner, '_finish_drawing', None)
+            if finish is not None:
+                finish()
+        self.dims.lock_navigation(layer, lock_order=True)
+
+    def _on_layer_drawing_finished(self, event) -> None:
+        """Release the navigation lock taken for a layer's draw."""
+        layer = event.source
+        if self.dims.navigation_lock_owner is layer:
+            self.dims.unlock_navigation(layer)
+
+    def _toggle_ndisplay(self) -> None:
+        """Toggle the displayed dimensionality between 2 and 3.
+
+        Single guarded implementation shared by the keybinding action and the
+        View menu action. ``ndisplay`` is a direct field assignment, which the
+        navigation lock does not guard, so the lock is enforced here: changing
+        the displayed axes mid-draw would strand an in-progress slice-keyed
+        shape on axes that are no longer displayed.
+        """
+        if self.dims.navigation_locked:
+            show_info(
+                trans._('Cannot toggle 2D/3D view while navigation is locked.')
+            )
+            return
+        self.dims.ndisplay = 3 if self.dims.ndisplay == 2 else 2
+
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
 
@@ -1039,6 +1095,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             The layer that was added (same as input).
         """
         layer = event.value
+
+        # If the layer is removed mid-draw it may never fire drawing_finished
+        # (and its events are about to be disconnected), so release any
+        # navigation lock it holds here to avoid stranding dims locked.
+        if self.dims.navigation_lock_owner is layer:
+            self.dims.unlock_navigation(layer)
 
         # Disconnect all connections from layer
         disconnect_events(layer.events, self)

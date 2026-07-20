@@ -43,9 +43,12 @@ def _creation_coordinates(
     Scope: this guards slice-*point* changes only. It does not make anchoring
     valid across a *partition* change -- reordering axes (``Dims.order``) or
     toggling 2D/3D (``Dims.ndisplay``) mid-draw changes *which* axes are
-    displayed, leaving the captured anchor keyed to the old axes. Those routes
-    must be blocked while a shape is being created (see the partition guards in
-    the navigation-lock work); the anchor alone does not cover them.
+    displayed, leaving the captured anchor keyed to the old axes. In a viewer
+    those routes are blocked while a shape is being created, because the layer
+    takes the Dims navigation lock (with ``lock_order=True``) for the duration
+    of the draw (see ``ViewerModel._on_layer_drawing_started``). The anchor is
+    the geometry-level backstop for the slice-point case and for standalone
+    layers not wired to a Dims lock; it does not by itself cover partitions.
 
     The anchor is captured on the first call of a new draw -- ``_is_creating`` is
     still ``False`` at the first vertex of every shape type and flips ``True``
@@ -75,8 +78,9 @@ def _creation_coordinates(
             # displayed, so the anchor is keyed to the old axes; applying it
             # would overwrite a now-displayed axis. Invalidate it -- correctness
             # degrades to pre-anchor behavior rather than corrupting geometry.
-            # Blocking the partition change while drawing keeps the anchor valid;
-            # that guard is separate and opt-out.
+            # In a viewer the draw holds the navigation lock (lock_order=True),
+            # so this branch is only reached when nothing engages that lock
+            # (e.g. a standalone layer driven directly in a test).
             layer._creation_anchor = {}
     return coordinates
 
