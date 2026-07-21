@@ -220,7 +220,19 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
+
+    # The check splits multiscale data so that images with layer.multiscale
+    # create a multiscale image as a result and not only the deepest level
+    # projection is created
+
+    if layer.multiscale:
+        data = tuple(
+            getattr(np, mode)(level_data, axis=axis, keepdims=False)
+            for level_data in layer.data
+        )
+
+    else:
+        data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
     # Get the meta-data of the layer, but without transforms,
     # the transforms are updated bellow as projection of transforms
