@@ -1,3 +1,15 @@
+"""
+Generate 4D sample data for heat diffusion over a cylinder.
+
+This code simulates the diffusion of a heat within 3D object (cylinder).
+The numerical solution for every time step is calculated by a solver which
+implements the FTCS method.
+
+The initial state of the cylinder has a non-uniform temperature distribution.
+As an expected output it should be visible that the heat diffuses from regions
+with higher temperatures, smoothing out the differencies over time.
+"""
+
 from os import makedirs, path
 
 import numpy as np
@@ -140,8 +152,10 @@ def cylinder_diffusion():
             evolution,
             {
                 'name': 'heat_diffusion',
-                'metadata': {'axes': ['t', 'z', 'y', 'x']},
+                'axis_labels': ('t', 'z', 'y', 'x'),
+                'contrast_limits': [0, 200],
                 'colormap': 'plasma',
+                'interpolation3d': 'nearest'
             },
             'image',
         )
