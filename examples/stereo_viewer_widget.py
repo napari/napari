@@ -28,10 +28,11 @@ from qtpy.QtWidgets import (
 )
 
 import napari
+from napari.settings import get_settings
 from napari.components.camera import Camera
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Layer
-from napari.qt import QtViewer
+from napari.qt import QtViewer, get_stylesheet
 
 
 def copy_layer(layer: Layer) -> Layer:
@@ -199,6 +200,7 @@ if __name__ == '__main__':
     viewer.camera.angles = (-20, 20, -20)
 
     window = QMainWindow()
+    window.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
     window.setWindowTitle('Stereo 3D')
     window.setCentralWidget(StereoViewerWidget(viewer))
     window.resize(1000, 500)
