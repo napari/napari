@@ -155,7 +155,7 @@ def cylinder_diffusion():
                 'axis_labels': ('t', 'z', 'y', 'x'),
                 'contrast_limits': [0, 200],
                 'colormap': 'plasma',
-                'interpolation3d': 'nearest'
+                'interpolation3d': 'nearest',
             },
             'image',
         )
