@@ -414,3 +414,17 @@ def make_three_layer_layerlist():
     layer_list.append(Image(np.random.rand(8, 8, 8)))
 
     return layer_list
+
+
+def test_multiscale_projection():
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode='max')
+    projected_layer = ll[-1]
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+    assert np.array_equal(projected_layer.data[0], np.max(data[0], axis=0))
+    assert np.array_equal(projected_layer.data[1], np.max(data[1], axis=0))
