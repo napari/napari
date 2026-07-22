@@ -39,7 +39,7 @@ import time
 from collections import ChainMap
 from collections.abc import Callable, MutableMapping
 from types import EllipsisType, MethodType
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, overload
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
@@ -48,7 +48,6 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from typing import ClassVar
 
     from vispy.util.event import Event
 
