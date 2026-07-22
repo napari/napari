@@ -35,6 +35,15 @@ from napari.layers import Layer
 from napari.qt import QtViewer, get_stylesheet
 
 
+class StereoViewerWindow(QMainWindow):
+    def closeEvent(self, event) -> None:
+        # Avoid macOS black-space quirk when closing while fullscreen
+        # (borrowed idea from napari's main window closeEvent).
+        if self.isFullScreen():
+            self.showNormal()
+        super().closeEvent(event)
+
+
 def copy_layer(layer: Layer) -> Layer:
     return Layer.create(*layer.as_layer_data_tuple())
 
@@ -199,7 +208,7 @@ if __name__ == '__main__':
     viewer.open_sample('napari', 'cells3d')
     viewer.camera.angles = (-20, 20, -20)
 
-    window = QMainWindow()
+    window = StereoViewerWindow()
     window.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
     window.setWindowTitle('Stereo 3D')
     window.setCentralWidget(StereoViewerWidget(viewer))
