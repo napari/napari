@@ -28,11 +28,11 @@ from qtpy.QtWidgets import (
 )
 
 import napari
-from napari.settings import get_settings
 from napari.components.camera import Camera
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Layer
 from napari.qt import QtViewer, get_stylesheet
+from napari.settings import get_settings
 
 
 class StereoViewerWindow(QMainWindow):
