@@ -55,10 +55,9 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         # Setup layer
         self._layer = layer
         # Track registered callbacks (defined via `attr_to_settr` for example)
-        # so it is possible to disconnect them when the widget is being closed/deleted
-        # TODO: what are the possible input types of the callbacks?
-        # maybe Any should do the trick?
-        self._callbacks: list[Callable[[], None]] = []
+        # so it is possible to disconnect them when the widget is being closed/deleted.
+        # Arguments of callbacks are hard to track; Any is the best we can do here.
+        self._callbacks: list[Callable[[Any], None]] = []
 
     @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
