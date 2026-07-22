@@ -416,15 +416,46 @@ def make_three_layer_layerlist():
     return layer_list
 
 
-def test_multiscale_projection():
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_projection(mode):
     data = (
         np.arange(4 * 8 * 8).reshape(4, 8, 8),
         np.arange(2 * 4 * 4).reshape(2, 4, 4),
     )
     ll = LayerList([Image(data=data, multiscale=True)])
-    _project(ll, mode='max')
+    _project(ll, mode=mode)
     projected_layer = ll[-1]
     assert projected_layer.multiscale
     assert len(projected_layer.data) == 2
-    assert np.array_equal(projected_layer.data[0], np.max(data[0], axis=0))
-    assert np.array_equal(projected_layer.data[1], np.max(data[1], axis=0))
+    assert np.array_equal(
+        projected_layer.data[0], getattr(np, mode)(data[0], axis=0)
+    )
+    assert np.array_equal(
+        projected_layer.data[1], getattr(np, mode)(data[1], axis=0)
+    )
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_to_singlescale_projection(mode):
+    data = (
+        np.arange(8 * 8 * 8).reshape(8, 8, 8),
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 8 * 8).reshape(2, 8, 8),
+    )
+    multiscale_layer = Image(data=data, multiscale=True)
+    multiscale_layer.locked_data_level = 1
+    ll = LayerList([multiscale_layer])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+    assert not projected_layer.multiscale
+    assert multiscale_layer.data_level == 1
+    assert np.array_equal(
+        projected_layer.data,
+        getattr(np, mode)(
+            multiscale_layer.data[multiscale_layer.data_level], axis=0
+        ),
+    )
