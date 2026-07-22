@@ -27,7 +27,7 @@ WARN_MESSAGE = (
 
 @pytest.mark.parametrize(
     ('colors', 'true_colors'),
-    zip(single_color_options, single_colors_as_array, strict=True),
+    list(zip(single_color_options, single_colors_as_array, strict=True)),
 )
 def test_oned_points(colors, true_colors):
     np.testing.assert_array_equal(true_colors, transform_color(colors))
@@ -35,7 +35,7 @@ def test_oned_points(colors, true_colors):
 
 @pytest.mark.parametrize(
     ('color', 'true_color', 'warn_message'),
-    zip(COLORS, TRUE_COLORS, WARN_MESSAGE, strict=True),
+    list(zip(COLORS, TRUE_COLORS, WARN_MESSAGE, strict=True)),
 )
 def test_warns_but_parses(color, true_color, warn_message):
     """Test collection of colors that raise a warning but do not return
@@ -48,7 +48,7 @@ def test_warns_but_parses(color, true_color, warn_message):
 
 @pytest.mark.parametrize(
     ('colors', 'true_colors'),
-    zip(two_color_options, two_colors_as_array, strict=False),
+    list(zip(two_color_options, two_colors_as_array, strict=False)),
 )
 def test_twod_points(colors, true_colors):
     np.testing.assert_array_equal(true_colors, transform_color(colors))
