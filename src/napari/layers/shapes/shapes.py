@@ -2568,6 +2568,11 @@ class Shapes(Layer):
     def _outline_shapes(self):
         """Find outlines of any selected or hovered shapes.
 
+        Only shapes on the currently viewed slice are outlined. The outline
+        geometry is built from in-plane vertices and is not slice-aware, so a
+        selected or hovered shape sitting on another slice would otherwise draw
+        its highlight over the viewed slice.
+
         Returns
         -------
         vertices : None | np.ndarray
@@ -2590,6 +2595,8 @@ class Shapes(Layer):
                 value = None
             if value in selected_in_view:
                 value = None
+            if value is None and not selected_in_view:
+                return None, None
 
             if value in self._outlines_cache:
                 centers, offsets, triangles = self._outlines_cache[value]
