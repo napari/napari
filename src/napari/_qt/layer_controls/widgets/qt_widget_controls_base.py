@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    MetaBase = ABCMeta
+    _QtABCMeta = ABCMeta
 
 else:
 
-    class MetaBase(type(QObject), ABCMeta):
+    class _QtABCMeta(type(QObject), ABCMeta):
         pass
 
 
@@ -35,7 +35,7 @@ class QtWrappedLabel(QLabel):
         )
 
 
-class QtWidgetControlsBase(QObject, metaclass=MetaBase):
+class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
     """
     Base class that defines base methods for wrapper classes that do the
     connection of events/signals between layer attributes and Qt widgets.
