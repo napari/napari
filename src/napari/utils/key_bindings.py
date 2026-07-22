@@ -32,25 +32,35 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
+from __future__ import annotations
+
 import inspect
 import time
 from collections import ChainMap
-from collections.abc import Callable, Mapping
-from types import EllipsisType, MethodType
-from typing import Union
+from collections.abc import Callable
+from types import MethodType
+from typing import TYPE_CHECKING
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from typing_extensions import Sentinel
 from vispy.util import keys
 
 from napari.utils.translations import trans
 
-KeyBindingLike = Union[KeyBinding, str, int]
-Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
+if TYPE_CHECKING:
+    from collections.abc import MutableMapping
+    from types import EllipsisType
+    from typing import Any
+
+    from vispy.util.event import Event
+
+    KeyBindingLike = KeyBinding | str | int
+    Keymap = MutableMapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
 # global user keymap; to be made public later in refactoring process
-USER_KEYMAP: Mapping[str, Callable] = {}
+USER_KEYMAP: MutableMapping[str, Callable] = {}
 
-KEY_SUBS = {
+KEY_SUBS: dict[str, str] = {
     'Super': 'Meta',
     'Command': 'Meta',
     'Cmd': 'Meta',
@@ -58,9 +68,9 @@ KEY_SUBS = {
     'Option': 'Alt',
 }
 
-_UNDEFINED = object()
+_UNDEFINED = Sentinel('_UNDEFINED')
 
-_VISPY_SPECIAL_KEYS = [
+_VISPY_SPECIAL_KEYS: list[keys.Key] = [
     keys.SHIFT,
     keys.CONTROL,
     keys.ALT,
@@ -94,7 +104,7 @@ _VISPY_SPECIAL_KEYS = [
     keys.TAB,
 ]
 
-_VISPY_MODS = {
+_VISPY_MODS: dict[keys.Key, KeyMod] = {
     keys.CONTROL: KeyMod.CtrlCmd,
     keys.SHIFT: KeyMod.Shift,
     keys.ALT: KeyMod.Alt,
@@ -128,9 +138,9 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func=_UNDEFINED,
+    func: Callable | None | EllipsisType | _UNDEFINED = _UNDEFINED,
     *,
-    overwrite=False,
+    overwrite: bool = False,
 ):
     """Bind a key combination to a keymap.
 
@@ -153,7 +163,7 @@ def bind_key(
 
     Returns
     -------
-    unbound : callable or None
+    Callable | None
         Callable unbound by this operation, if any.
 
     Notes
@@ -247,7 +257,7 @@ def _bind_user_key(
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
 
-def _vispy2appmodel(event) -> KeyBinding:
+def _vispy2appmodel(event: Event) -> KeyBinding:
     key, modifiers = event.key.name, event.modifiers
     if len(key) == 1 and key.isalpha():  # it's a letter
         key = key.upper()
@@ -303,14 +313,14 @@ class KeymapProvider:
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._keymap = {}
+        self._keymap: Keymap = {}
 
     @property
-    def keymap(self):
+    def keymap(self) -> Keymap:
         return self._keymap
 
     @keymap.setter
-    def keymap(self, value):
+    def keymap(self, value: Keymap) -> None:
         self._keymap = {coerce_keybinding(k): v for k, v in value.items()}
 
     def __init_subclass__(cls, **kwargs):
@@ -327,7 +337,7 @@ class KeymapProvider:
     bind_key = KeybindingDescriptor(bind_key)
 
 
-def _bind_keymap(keymap, instance):
+def _bind_keymap(keymap: Keymap, instance: Any) -> Keymap:
     """Bind all functions in a keymap to an instance.
 
     Parameters
@@ -359,7 +369,6 @@ class KeymapHandler:
     """
 
     def __init__(self) -> None:
-        super().__init__()
         self._key_release_generators = {}
         self.keymap_providers = []
 
