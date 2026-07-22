@@ -38,6 +38,15 @@ if TYPE_CHECKING:
     from napari._qt.widgets.qt_dims import QtDims
 
 
+# Minimum width for a dimension slider's groove, in pixels. Without one the
+# row's minimum width is whatever its labels need and the slider absorbs the
+# rest, so at the main window's minimum size the groove collapses to ~58 px --
+# of which the style's minimum handle (26 px on macOS) leaves ~32 px of travel
+# for the whole axis. QtDims already constrains the row's minimum *height*
+# (SLIDERHEIGHT); this is the matching width constraint.
+SLIDER_MINIMUM_WIDTH = 150
+
+
 class _ModifiedScrollBar(ModifiedScrollBar):
     def mousePressEvent(self, event):
         """Update the slider, or, on right-click, pop-up the margin controls.
@@ -176,6 +185,7 @@ class QtDimSliderWidget(QWidget):
         # shape of the layer as the endpoint is included
         slider = _ModifiedScrollBar(Qt.Orientation.Horizontal)
         slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        slider.setMinimumWidth(SLIDER_MINIMUM_WIDTH)
         slider.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
