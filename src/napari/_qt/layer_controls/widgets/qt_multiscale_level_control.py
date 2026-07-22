@@ -37,11 +37,7 @@ def _format_level_label(
     return f'{index}: {shape_str} ({size_str})'
 
 
-# MetaWidgetControlsBase merges type(QObject) and type(ABC) at runtime,
-# but mypy cannot verify this is safe.
-class QtMultiscaleLevelControl(
-    QtWidgetControlsBase,
-):
+class QtMultiscaleLevelControl(QtWidgetControlsBase):
     """Widget to manually select which multiscale level to render.
 
     Shows a combobox with "Auto" plus one entry per resolution level.
