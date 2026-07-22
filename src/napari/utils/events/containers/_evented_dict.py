@@ -145,7 +145,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, PsygnalModel):
-            child.events.connect(self._reemit_child_event_psygnal, unique=True)  # type: ignore[call-arg]
+            child.events.all.connect(self._reemit_child_event_psygnal, unique=True)
         elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
