@@ -190,6 +190,10 @@ QtColorBox {
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   color: {{ text }};
 }
+QPushButton#newLabelButton {
+  min-height: 12px;
+  max-height: 12px;
+}
 
 SliderLabel {
   background-color: {{ darken(background, 15) }};
@@ -227,7 +231,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
-/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
+/* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */
@@ -450,6 +454,32 @@ QtVersionLabel {
   font-size: {{ increase(font_size, 6) }};
 }
 
+/* ------------- Help tooltip labels --------- */
+#error_label, #help_label, #righthand_label, #lefthand_label {
+  max-width: 18px;
+  max-height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0px;
+  margin-left: 1px;
+  padding: 2px;
+}
+#error_label {
+  image: url("theme_{{ id }}:/warning.svg");
+}
+
+#help_label {
+  image: url("theme_{{ id }}:/help_50.svg");
+}
+
+#righthand_label {
+  image: url("theme_{{ id }}:/righthand_50.svg");
+}
+
+#lefthand_label {
+  image: url("theme_{{ id }}:/lefthand_50.svg");
+}
+
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtListView QScrollBar:vertical {
@@ -487,6 +517,11 @@ QtListView::item:selected {
   background: {{ current }};
 }
 
+QtLayerList {
+  font-size: {{ font_size }};
+  font-weight: bold;
+}
+
 QtLayerList::item {
   margin: 2px 0px 2px 28px;
   border-top-right-radius: 2px;
@@ -498,7 +533,6 @@ QtLayerList QLineEdit {
   margin: -2px;  /* offset editor back to overlap correctly to layer name */
   background-color: {{ current }};
   selection-background-color: {{ darken(current, 20) }};
-  font-size: {{ font_size }};
 }
 
 /* TODO: all these darken/lighten in the layerlist seem unnecessarily complicated */

@@ -97,6 +97,10 @@ class LayerDelegate(QStyledItemDelegate):
         index: QtCore.QModelIndex,
     ):
         """Paint the item in the model at `index`."""
+        # Guard against stale indices (e.g. layer was removed while
+        # an async paint event was queued).
+        if not index.isValid():
+            return
         # update the icon based on layer type
         option.textElideMode = Qt.TextElideMode.ElideMiddle
         self.get_layer_icon(option, index)

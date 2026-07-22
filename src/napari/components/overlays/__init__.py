@@ -7,9 +7,13 @@ from napari.components.overlays.base import (
 from napari.components.overlays.bounding_box import BoundingBoxOverlay
 from napari.components.overlays.brush_circle import BrushCircleOverlay
 from napari.components.overlays.colorbar import ColorBarOverlay
+from napari.components.overlays.floating_axes import FloatingAxesOverlay
 from napari.components.overlays.interaction_box import (
     SelectionBoxOverlay,
     TransformBoxOverlay,
+)
+from napari.components.overlays.labels_brush_stroke import (
+    LabelsBrushStrokeOverlay,
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
@@ -27,6 +31,8 @@ __all__ = [
     'CanvasOverlay',
     'ColorBarOverlay',
     'CurrentSliceOverlay',
+    'FloatingAxesOverlay',
+    'LabelsBrushStrokeOverlay',
     'LabelsPolygonOverlay',
     'LayerNameOverlay',
     'Overlay',

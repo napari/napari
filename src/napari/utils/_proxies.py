@@ -67,7 +67,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
             trans._(
                 "Private attribute access ('{typ}.{name}') in this context "
                 '(e.g. inside a plugin widget or dock widget) is deprecated '
-                'and will be unavailable in version 0.7.0',
+                'and will be unavailable in version 0.9.0',
                 deferred=True,
                 name=name,
                 typ=typ,

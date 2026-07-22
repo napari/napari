@@ -31,6 +31,14 @@ LAYERS_SUBMENUS = [
     (
         MenuId.MENUBAR_LAYERS,
         SubmenuItem(
+            submenu=MenuId.LAYERS_METADATA,
+            title=trans._('Metadata'),
+            group=MenuGroup.LAYERS.CONVERT,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
             submenu=MenuId.LAYERS_LAYER_TYPE,
             title=trans._('Layer Type'),
             group=MenuGroup.LAYERS.CONVERT,

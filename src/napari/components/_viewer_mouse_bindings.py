@@ -21,10 +21,11 @@ def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:
         return
-    if event.native.inverted():
-        viewer.dims._scroll_progress += event.delta[1]
-    else:
-        viewer.dims._scroll_progress -= event.delta[1]
+    # always scroll by 1 at most, even if scroll wheel is set to
+    # scroll many lines at once.
+    delta = np.clip(event.delta[1], -1, 1)
+    forward = 1 if event.native.inverted() else -1
+    viewer.dims._scroll_progress += delta * forward
     while abs(viewer.dims._scroll_progress) >= 1:
         if viewer.dims._scroll_progress < 0:
             viewer.dims._increment_dims_left()

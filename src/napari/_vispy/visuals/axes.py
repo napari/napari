@@ -145,8 +145,6 @@ class Axes(Compound):
             [0, 0, 1, 1],
         ]
 
-        self._text_offsets = 0.1 * np.array([1, 1, 1])
-
         # note order is x, y, z for VisPy
         self._line_data2D = np.array(
             [[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0]]
@@ -214,7 +212,16 @@ class Axes(Compound):
     def text(self):
         return self._subvisuals[2]
 
-    def set_data(self, axes, reversed_axes, colored, bg_color, dashed, arrows):
+    def set_data(
+        self,
+        axes,
+        reversed_axes,
+        colored,
+        bg_color,
+        dashed,
+        arrows,
+        text_offset=0.3,
+    ):
         ndisplay = len(axes)
 
         # Determine colors of axes based on reverse position
@@ -282,4 +289,4 @@ class Axes(Compound):
         )
 
         self.text.color = axes_colors
-        self.text.pos = text_data + self._text_offsets
+        self.text.pos = text_data + np.eye(3)[:ndisplay] * text_offset

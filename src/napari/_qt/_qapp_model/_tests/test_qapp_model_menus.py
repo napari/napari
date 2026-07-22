@@ -1,12 +1,13 @@
 import numpy as np
 import pytest
-from app_model.types import Action
+from app_model.types import Action, SubmenuItem
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model._tests.utils import get_submenu_action
+from napari._qt._qapp_model.qactions._layers_actions import LAYERS_SUBMENUS
 from napari.layers import Image
 
 
@@ -66,6 +67,31 @@ def test_update_menu_state_context(make_napari_viewer):
     viewer.window._update_file_menu_state()
     assert dummy_action.isVisible()
     assert dummy_action.isEnabled()
+
+
+@pytest.mark.parametrize(
+    ('submenu_id', 'submenu_title'),
+    [
+        (item.submenu, item.title)
+        for menu_id, item in LAYERS_SUBMENUS
+        if menu_id == MenuId.MENUBAR_LAYERS
+    ],
+)
+def test_layers_menu_has_declared_submenus(
+    make_napari_viewer, submenu_id, submenu_title
+):
+    app = get_app_model()
+    make_napari_viewer()
+    layers_menu = app.menus.get_menu(MenuId.MENUBAR_LAYERS)
+    submenus = [
+        item
+        for item in layers_menu
+        if isinstance(item, SubmenuItem) and item.submenu == submenu_id
+    ]
+
+    assert len(submenus) == 1
+    assert submenus[0].title == submenu_title
+    assert app.menus.get_menu(submenu_id)
 
 
 @pytest.mark.parametrize(

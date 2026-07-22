@@ -13,9 +13,9 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Self
 
     import numpy.typing as npt
-    from typing_extensions import Self
 
     from napari.components.dims import Dims
 

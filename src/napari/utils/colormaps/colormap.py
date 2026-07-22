@@ -1,11 +1,13 @@
 from collections import defaultdict
 from collections.abc import MutableMapping, Sequence
+from enum import StrEnum
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
     Literal,
+    Self,
     cast,
     overload,
 )
@@ -19,13 +21,11 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
-from typing_extensions import Self
 
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
@@ -207,6 +207,22 @@ class Colormap(EventedModel):
         )
 
 
+class _RebuildableCache(dict):
+    """Cache dict that is emptied on (deep)copy and rebuilt lazily.
+
+    ``DirectLabelColormap`` stores a numba ``typed.Dict`` here after a layer
+    has been rendered; that object holds an unpicklable
+    ``_nrt_python._MemInfo`` that breaks ``copy.deepcopy`` of the colormap.
+    The cache is a pure performance memoization, so emptying it on copy is
+    always safe -- it is recomputed on the next ``map`` call. Defending the
+    value itself keeps this independent of where pydantic stores private
+    attributes or which hook a copy routes through.
+    """
+
+    def __deepcopy__(self, memo):
+        return type(self)()
+
+
 class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
@@ -215,9 +231,11 @@ class LabelColormapBase(Colormap):
         ColormapInterpolationMode.ZERO, frozen=True
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
-        default={}
+        default_factory=_RebuildableCache
     )
-    _cache_other: dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(
+        default_factory=_RebuildableCache
+    )
 
     model_config = EventedModel.model_config | ConfigDict(
         # this config is to avoid deepcopy of cached_property
@@ -265,8 +283,8 @@ class LabelColormapBase(Colormap):
 
     def _clear_cache(self):
         """Mechanism to clean cached properties"""
-        self._cache_mapping = {}
-        self._cache_other = {}
+        self._cache_mapping = _RebuildableCache()
+        self._cache_other = _RebuildableCache()
 
     @property
     def _num_unique_colors(self) -> int:

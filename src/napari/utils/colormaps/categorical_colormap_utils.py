@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -75,15 +74,6 @@ class ColorCycle:
 
     def current_color(self) -> np.ndarray:
         return self.values[self.current_index]
-
-    @property
-    def cycle(self):
-        warnings.warn(
-            'ColorCycle.cycle is deprecated and will be removed in 0.8.0. '
-            'To iterate colors, use next(ColorCycle) directly.',
-            stacklevel=2,
-        )
-        return self
 
 
 def _coerce_colorcycle_from_dict(

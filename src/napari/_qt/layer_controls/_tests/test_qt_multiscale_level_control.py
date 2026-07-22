@@ -63,7 +63,7 @@ def test_combobox_populated(multiscale_controls):
     _layer, qtctrl = multiscale_controls
     combo = qtctrl._multiscale_level_control.level_combobox
     assert combo.count() == 1 + len(_MULTISCALE_DATA)
-    assert combo.itemText(0) == 'Auto'
+    assert combo.itemText(0) == f'Auto ({_layer.data_level})'
     assert combo.itemData(0) is None
     for i in range(len(_MULTISCALE_DATA)):
         assert combo.itemData(i + 1) == i
@@ -127,6 +127,17 @@ def test_combobox_updates_on_data_change(multiscale_controls):
     assert combo.count() == 1 + len(new_data)
     for i in range(len(new_data)):
         assert combo.itemData(i + 1) == i
+
+
+def test_auto_label_shows_data_level(multiscale_controls):
+    """The 'Auto' entry should display the current data_level."""
+    layer, qtctrl = multiscale_controls
+    combo = qtctrl._multiscale_level_control.level_combobox
+    assert combo.itemText(0) == f'Auto ({layer.data_level})'
+
+    layer._data_level = 1
+    layer.events.set_data()
+    assert combo.itemText(0) == 'Auto (1)'
 
 
 def test_not_multiscale_is_hidden(qtbot):

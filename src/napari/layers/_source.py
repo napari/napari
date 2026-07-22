@@ -13,8 +13,7 @@ from napari.layers.base.base import Layer
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
-    from typing_extensions import Self
+    from typing import Self
 
 
 class Source(BaseModel):

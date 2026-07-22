@@ -1,3 +1,4 @@
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -64,7 +65,12 @@ class ConfirmCloseDialog(QDialog):
         layout2 = QHBoxLayout()
         layout2.addWidget(icon_label)
         layout3 = QVBoxLayout()
-        layout3.addWidget(QLabel(text))
+        text_label = QLabel(text)
+        text_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.TextSelectableByKeyboard
+        )
+        layout3.addWidget(text_label)
         layout3.addWidget(self.do_not_ask)
         layout2.addLayout(layout3)
         layout4 = QHBoxLayout()

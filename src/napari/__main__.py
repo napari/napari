@@ -208,8 +208,7 @@ def parse_sys_argv():
     return args, kwargs
 
 
-def _run() -> None:
-    from napari import run
+def _build_viewer() -> Viewer:
     from napari.settings import get_settings
 
     """Main program."""
@@ -245,6 +244,8 @@ def _run() -> None:
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
 
+    npe2_plugins = []
+
     if args.with_:
         from napari.plugins import (
             _initialize_plugins,
@@ -255,7 +256,6 @@ def _run() -> None:
         # if the requested plugin/widget is not available.
         _initialize_plugins()
 
-        npe2_plugins = []
         for plugin in args.with_:
             pname, *wnames = plugin
             for name, (w_pname, wnames) in _npe2.widget_iterator():
@@ -344,6 +344,13 @@ def _run() -> None:
         maybe_patch_conda_exe()
     # now that we've processed all the args, show viewer
     viewer.show()
+    return viewer
+
+
+def _run() -> None:
+    from napari import run
+
+    _viewer = _build_viewer()
     run(gui_exceptions=True)
 
 
@@ -370,9 +377,10 @@ def _run_plugin_module(mod, plugin_name):
     run()
 
 
-def main():
+def main() -> None:
     _run()
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+    sys.exit(0)

@@ -21,8 +21,9 @@ from napari.utils.transforms._units import get_units_from_name
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from npe2.manifest.io import WriterContribution
-    from typing_extensions import Self
 
 __all__ = ('LayerList',)
 
