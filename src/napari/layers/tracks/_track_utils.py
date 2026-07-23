@@ -513,11 +513,11 @@ class TrackManager:
 
 def prepare_tracks_data(
     data: 'pd.DataFrame',
-    track_id: int,
-    t: int,
-    y: int,
-    x: int,
-    z: int | None = None,
+    track_id: int | str = 'track_id',
+    t: int | str = 't',
+    y: int | str = 'y',
+    x: int | str = 'x',
+    z: int | str | None = None,
 ) -> np.ndarray:
     """Extract and reorder track coordinate columns as a NumPy array.
 
@@ -529,16 +529,16 @@ def prepare_tracks_data(
     ----------
     data : pd.DataFrame
         Input dataframe containing track data.
-    track_id : int
-        Column index for the track identifier.
-    t : int
-        Column index for the time coordinate.
-    y : int
-        Column index for the y coordinate.
-    x : int
-        Column index for the x coordinate.
-    z : int | None, optional
-        Column index for the z coordinate. If ``None``, no z coordinate is
+    track_id : int | str
+        Column index or name for the track identifier.
+    t : int | str
+        Column index or name for the time coordinate.
+    y : int | str
+        Column index or name for the y coordinate.
+    x : int | str
+        Column index or name for the x coordinate.
+    z : int | str | None, optional
+        Column index or name for the z coordinate. If ``None``, no z coordinate is
         included.
 
     Returns
@@ -546,7 +546,6 @@ def prepare_tracks_data(
     np.ndarray
         A NumPy array containing the selected columns in the expected order.
     """
-
     order = [track_id, t]
 
     if z is not None:
@@ -554,5 +553,14 @@ def prepare_tracks_data(
 
     order.extend([y, x])
 
+    columns = []
+
+    # convert column index to column name if necessary
+    for col in order:
+        if isinstance(col, int):
+            columns.append(data.columns[col])
+        else:
+            columns.append(col)
+
     # convert to numpy
-    return data[:, order].to_numpy()
+    return data[columns].to_numpy()
