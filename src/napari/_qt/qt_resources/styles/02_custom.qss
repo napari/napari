@@ -216,7 +216,7 @@ PlaneNormalButtons QPushButton {
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ highlight }};
+    background: {{ current }};
 }
 
 /* Greyed-out handle when the slider is disabled (e.g. while a navigation lock

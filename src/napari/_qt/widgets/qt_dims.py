@@ -161,6 +161,11 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        # Freshly created sliders have no `last_used` style property yet, and
+        # the `last_used` event only fires on a change — when it is already at
+        # its default (0) no event arrives and the active slider is never
+        # marked, so it opens unhighlighted.
+        self._on_last_used_changed()
         self.stop()
         # Freshly created sliders default to enabled; reapply any active lock.
         self._on_navigation_lock()

@@ -23,6 +23,20 @@ from napari.utils._test_utils import (
 )
 from napari.utils.colormaps.standardize_color import transform_color
 
+SHAPE_DIM_0 = 10
+SHAPE_DIM_1 = 4
+SHAPE_DIM_2 = 2
+SHAPE_DIMS = (SHAPE_DIM_0, SHAPE_DIM_1, SHAPE_DIM_2)
+"""Shape of the data used in many tests."""
+COMMON_PROPERTIES_ARRAY = {
+    'shape_type': np.array(list(islice(cycle(['A', 'B']), 0, SHAPE_DIM_0)))
+}
+"""Common properties used with ``SHAPE_DIMS`` in many tests."""
+COMMON_PROPERTIES_LIST = {
+    'shape_type': list(islice(cycle(['A', 'B']), 0, SHAPE_DIM_0))
+}
+"""Common properties used with ``SHAPE_DIMS`` in many tests."""
+
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
@@ -76,39 +90,44 @@ def test_empty_shapes_with_features():
     assert_colors_equal(shapes.face_color, list('rgb'))
 
 
-properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
-properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
+properties_cycle = ['A', 'B']
+# With cycle ['A', 'B'] and 10 initial shapes, the next inserted shape
+# uses 'B' as current default, while index 0 starts as 'A'.
+default_property = properties_cycle[(SHAPE_DIM_0 + 1) % len(properties_cycle)]
+non_default_property = properties_cycle[SHAPE_DIM_0 % len(properties_cycle)]
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_properties(properties):
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data, properties=copy(properties))
     np.testing.assert_equal(layer.properties, properties)
-
-    current_prop = {'shape_type': np.array(['B'])}
+    current_prop = {'shape_type': np.array([default_property])}
     assert layer.current_properties == current_prop
 
     # test removing shapes
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['shape_type'][2::]
-    assert len(layer.properties['shape_type']) == (shape[0] - 2)
+    assert len(layer.properties['shape_type']) == (SHAPE_DIM_0 - 2)
     assert np.array_equal(layer.properties['shape_type'], remove_properties)
 
     # test selection of properties
     layer.selected_data = {0}
     selected_annotation = layer.current_properties['shape_type']
     assert len(selected_annotation) == 1
-    assert selected_annotation[0] == 'A'
+    assert selected_annotation[0] == default_property
 
     # test adding shapes with properties
     new_data = np.random.random((1, 4, 2))
     new_shape_type = ['rectangle']
     layer.add(new_data, shape_type=new_shape_type)
-    add_properties = np.concatenate((remove_properties, ['A']), axis=0)
+    add_properties = np.concatenate(
+        (remove_properties, [default_property]), axis=0
+    )
     assert np.array_equal(layer.properties['shape_type'], add_properties)
 
     # test copy/paste
@@ -125,33 +144,30 @@ def test_properties(properties):
     # test updating a property
     layer.mode = 'select'
     layer.selected_data = {0}
-    new_property = {'shape_type': np.array(['B'])}
+    new_property = {'shape_type': np.array([non_default_property])}
     layer.current_properties = new_property
     updated_properties = layer.properties
-    assert updated_properties['shape_type'][0] == 'B'
+    assert updated_properties['shape_type'][0] == non_default_property
 
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
 
-    # add properties
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
+    layer.properties = COMMON_PROPERTIES_ARRAY
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
     # add properties as a dataframe
-    properties_df = pd.DataFrame(properties)
+    properties_df = pd.DataFrame(COMMON_PROPERTIES_ARRAY)
     layer.properties = properties_df
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
     # add properties as a dictionary with list values
     properties_list = {
-        'shape_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+        'shape_type': list(_make_cycled_properties(['A', 'B'], SHAPE_DIM_0))
     }
     layer.properties = properties_list
     assert isinstance(layer.properties['shape_type'], np.ndarray)
@@ -159,14 +175,14 @@ def test_adding_properties(attribute):
     # removing a property that was the _*_color_property should give a warning
     setattr(layer, f'_{attribute}_color_property', 'shape_type')
     properties_2 = {
-        'not_shape_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0)
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
 
 
 def test_colormap_scale_change():
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
     layer = Shapes(data, properties=properties, edge_color='b')
 
@@ -186,11 +202,9 @@ def test_colormap_scale_change():
 
 def test_data_setter_with_properties():
     """Test layer data on a layer with properties via the data setter"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Shapes(data, properties=properties)
+    data = 20 * np.random.random(SHAPE_DIMS)
+    layer = Shapes(data, properties=COMMON_PROPERTIES_ARRAY)
     layer.events.data = Mock()
 
     # test setting to data with fewer shapes
@@ -213,14 +227,14 @@ def test_data_setter_with_properties():
 
 def test_properties_dataframe():
     """Test if properties can be provided as a DataFrame"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['shape_type'].dtype)
+    data = 20 * np.random.random(SHAPE_DIMS)
+    properties_df = pd.DataFrame(COMMON_PROPERTIES_ARRAY)
+    properties_df = properties_df.astype(
+        COMMON_PROPERTIES_ARRAY['shape_type'].dtype
+    )
     layer = Shapes(data, properties=properties_df)
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
 
 
 def test_setting_current_properties():
@@ -287,23 +301,25 @@ def test_empty_layer_with_text_formatted():
     np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data, properties=copy(properties), text='shape_type')
 
     np.testing.assert_equal(layer.text.values, properties['shape_type'])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_from_property_fstring(properties):
     """Test setting text with an f-string from the property value"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(
         data, properties=copy(properties), text='type: {shape_type}'
     )
@@ -320,18 +336,20 @@ def test_text_from_property_fstring(properties):
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
-    expected_text_3 = [*expected_text_2, 'type-ish: A']
+    expected_text_3 = [*expected_text_2, f'type-ish: {non_default_property}']
     np.testing.assert_equal(layer.text.values, expected_text_3)
 
     # add shape
     layer.selected_data = {0}
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    expected_text_4 = [*expected_text_3, 'type-ish: A']
+    expected_text_4 = [*expected_text_3, f'type-ish: {default_property}']
     np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'string': 'type: {shape_type}',
@@ -342,9 +360,8 @@ def test_set_text_with_kwarg_dict(properties):
         'size': 10,
         'visible': True,
     }
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data, properties=copy(properties), text=text_kwargs)
 
     expected_text = ['type: ' + v for v in properties['shape_type']]
@@ -357,12 +374,13 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_text_error(properties):
     """creating a layer with text as the wrong type should raise an error"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     # try adding text as the wrong type
     with pytest.raises(ValidationError):
         Shapes(data, properties=copy(properties), text=123)
@@ -380,13 +398,12 @@ def test_select_properties_object_dtype():
 
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': ['A'] * shape[0]}
+    data = 20 * np.random.random(SHAPE_DIMS)
+    properties = {'shape_type': ['A'] * SHAPE_DIM_0}
     layer = Shapes(data, properties=copy(properties), text='shape_type')
 
-    new_properties = {'shape_type': ['B'] * shape[0]}
+    new_properties = {'shape_type': ['B'] * SHAPE_DIM_0}
     layer.properties = new_properties
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
@@ -439,30 +456,31 @@ def test_nd_text(prepend):
     np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
-@pytest.mark.parametrize('properties', [properties_array, properties_list])
+@pytest.mark.parametrize(
+    'properties', [COMMON_PROPERTIES_ARRAY, COMMON_PROPERTIES_LIST]
+)
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data, properties=copy(properties), text='shape_type')
 
     # test setting to data with fewer shapes
-    n_new_shapes = 4
-    new_data = 20 * np.random.random((n_new_shapes, 4, 2))
+    new_shape_dims = (4, 4, 2)
+    new_data = 20 * np.random.random(new_shape_dims)
     layer.data = new_data
-    assert len(layer.text.values) == n_new_shapes
+    assert len(layer.text.values) == new_shape_dims[0]
 
     # test setting to data with more shapes
-    n_new_shapes_2 = 6
-    new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    new_shape_dims_2 = (6, 4, 2)
+    new_data_2 = 20 * np.random.random(new_shape_dims_2)
     layer.data = new_data_2
-    assert len(layer.text.values) == n_new_shapes_2
+    assert len(layer.text.values) == new_shape_dims_2[0]
 
     # test setting to data with same shapes
-    new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    new_data_3 = 20 * np.random.random(new_shape_dims_2)
     layer.data = new_data_3
-    assert len(layer.text.values) == n_new_shapes_2
+    assert len(layer.text.values) == new_shape_dims_2[0]
 
 
 def test_rectangles(two_and_four_corners):
@@ -555,9 +573,8 @@ def test_rectangles_with_shape_type_per_element(
 
 def test_rectangles_roundtrip():
     """Test a full roundtrip with rectangles data."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     new_layer = Shapes(layer.data)
     assert np.all(
@@ -567,13 +584,12 @@ def test_rectangles_roundtrip():
 
 def test_integer_rectangle():
     """Test instantiating rectangles with integer data."""
-    shape = (10, 2, 2)
     np.random.seed(1)
-    data = np.random.randint(20, size=shape)
+    data = np.random.randint(20, size=SHAPE_DIMS)
     layer = Shapes(data)
-    assert layer.nshapes == shape[0]
+    assert layer.nshapes == SHAPE_DIM_0
     assert np.all([len(ld) == 4 for ld in layer.data])
-    assert layer.ndim == shape[2]
+    assert layer.ndim == SHAPE_DIM_2
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
@@ -788,9 +804,8 @@ def test_4D_ellispse():
 
 def test_ellipses_roundtrip():
     """Test a full roundtrip with ellipss data."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data, shape_type='ellipse')
     new_layer = Shapes(layer.data, shape_type='ellipse')
     assert np.all(
@@ -1206,14 +1221,13 @@ def test_mixed_shapes_with_shape_type():
 
 def test_data_shape_type_overwrites_meta():
     """Test shape type passed through data property overwrites metadata shape type"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    vertices = 20 * np.random.random(shape)
+    vertices = 20 * np.random.random(SHAPE_DIMS)
     data = (vertices, 'ellipse')
     layer = Shapes(data, shape_type='rectangle')
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
-    data = [(vertices[i], 'ellipse') for i in range(shape[0])]
+    data = [(vertices[i], 'ellipse') for i in range(SHAPE_DIM_0)]
     layer = Shapes(data, shape_type='rectangle')
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
@@ -1278,7 +1292,7 @@ def test_changing_shapes(ten_four_corner, twenty_four_corner):
 def test_changing_shape_type():
     """Test changing shape type"""
     np.random.seed(0)
-    rectangles = 20 * np.random.random((10, 4, 2))
+    rectangles = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(rectangles, shape_type='rectangle')
     layer.shape_type = 'ellipse'
     assert np.all([s == 'ellipse' for s in layer.shape_type])
@@ -1362,7 +1376,7 @@ def test_adding_shapes_to_empty():
 
 def test_selecting_shapes():
     """Test selecting shapes."""
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     np.random.seed(0)
     layer = Shapes(data)
     emitted_events = Mock()
@@ -1385,7 +1399,7 @@ def test_selecting_shapes():
 
 def test_removing_all_shapes_empty_list():
     """Test removing all shapes with an empty list."""
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     np.random.seed(0)
     layer = Shapes(data)
     layer.events.data = Mock()
@@ -1410,7 +1424,7 @@ def test_removing_all_shapes_empty_list():
 
 def test_removing_all_shapes_empty_array():
     """Test removing all shapes with an empty list."""
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     np.random.seed(0)
     layer = Shapes(data)
     layer.events.data = Mock()
@@ -1589,7 +1603,7 @@ def test_popping_shapes():
 def test_changing_modes():
     """Test changing modes."""
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
     assert layer.mouse_pan is True
@@ -1620,7 +1634,7 @@ def test_changing_modes():
 def test_name():
     """Test setting layer name."""
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer.name == 'Shapes'
 
@@ -1634,7 +1648,7 @@ def test_name():
 def test_visiblity():
     """Test setting layer visibility."""
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer.visible is True
 
@@ -1650,9 +1664,8 @@ def test_visiblity():
 
 def test_opacity():
     """Test setting opacity."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     # Check default opacity value of 0.7
     assert layer.opacity == 0.7
@@ -1676,14 +1689,14 @@ def test_opacity():
     # Check removing data shouldn't change opacity
     layer2.selected_data = {0, 2}
     layer2.remove_selected()
-    assert len(layer2.data) == shape[0] - 2
+    assert len(layer2.data) == SHAPE_DIM_0 - 2
     assert layer2.opacity == 0.2
 
 
 def test_blending():
     """Test setting layer blending."""
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer.blending == 'translucent'
 
@@ -1700,15 +1713,14 @@ def test_blending():
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     # create a continuous property with a known value in the last element
-    continuous_prop = np.random.random((shape[0],))
+    continuous_prop = np.random.random((SHAPE_DIM_0,))
     continuous_prop[-1] = 1
     properties = {
         'shape_truthiness': continuous_prop,
-        'shape_type': _make_cycled_properties(['A', 'B'], shape[0]),
+        'shape_type': _make_cycled_properties(['A', 'B'], SHAPE_DIM_0),
     }
     initial_color = [1, 0, 0, 1]
     color_cycle = ['red', 'blue']
@@ -1726,7 +1738,7 @@ def test_switch_color_mode(attribute):
     layer_color = getattr(layer, f'{attribute}_color')
     assert layer_color_mode == 'direct'
     np.testing.assert_allclose(
-        layer_color, np.repeat([initial_color], shape[0], axis=0)
+        layer_color, np.repeat([initial_color], SHAPE_DIM_0, axis=0)
     )
 
     # there should not be an edge_color_property
@@ -1749,7 +1761,7 @@ def test_switch_color_mode(attribute):
     setattr(layer, f'{attribute}_color_mode', 'cycle')
     setattr(layer, f'{attribute}_color', 'shape_type')
     color = getattr(layer, f'{attribute}_color')
-    layer_color = transform_color(color_cycle * int(shape[0] / 2))
+    layer_color = transform_color(color_cycle * int(SHAPE_DIM_0 / 2))
     np.testing.assert_allclose(color, layer_color)
 
     # switch back to direct, edge_colors shouldn't change
@@ -1761,17 +1773,16 @@ def test_switch_color_mode(attribute):
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_color_direct(attribute: str):
     """Test setting face/edge color directly."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer_kwargs = {f'{attribute}_color': 'black'}
     layer = Shapes(data, **layer_kwargs)
-    color_array = transform_color(['black'] * shape[0])
+    color_array = transform_color(['black'] * SHAPE_DIM_0)
 
     current_color = getattr(layer, f'current_{attribute}_color')
     layer_color = getattr(layer, f'{attribute}_color')
     assert current_color == 'black'
-    assert len(layer.edge_color) == shape[0]
+    assert len(layer.edge_color) == SHAPE_DIM_0
     np.testing.assert_allclose(color_array, layer_color)
 
     # With no data selected changing color has no effect
@@ -1797,16 +1808,16 @@ def test_color_direct(attribute: str):
     layer.add(new_shape)
     color_array = np.vstack([color_array, transform_color('blue')])
     layer_color = getattr(layer, f'{attribute}_color')
-    assert len(layer_color) == shape[0] + 1
+    assert len(layer_color) == SHAPE_DIM_0 + 1
     np.testing.assert_allclose(color_array, layer_color)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
+    assert len(layer.data) == SHAPE_DIM_0 - 1
 
     layer_color = getattr(layer, f'{attribute}_color')
-    assert len(layer_color) == shape[0] - 1
+    assert len(layer_color) == SHAPE_DIM_0 - 1
     np.testing.assert_allclose(
         layer_color,
         np.vstack((color_array[1], color_array[3:])),
@@ -1835,6 +1846,9 @@ def test_single_shape_properties(attribute):
 color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
+# With cycle ['red', 'blue'] and 10 initial shapes, the next inserted
+# shape uses 'blue' as the current default color.
+default_color_str = color_cycle_str[(SHAPE_DIM_0 + 1) % len(color_cycle_str)]
 
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
@@ -1844,21 +1858,18 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 )
 def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
-    # create Shapes using list color cycle
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    data = 20 * np.random.random(SHAPE_DIMS)
     shapes_kwargs = {
-        'properties': properties,
+        'properties': COMMON_PROPERTIES_ARRAY,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    np.testing.assert_equal(layer.properties, properties)
+    np.testing.assert_equal(layer.properties, COMMON_PROPERTIES_ARRAY)
     color_array = transform_color(
-        list(islice(cycle(color_cycle), 0, shape[0]))
+        list(islice(cycle(color_cycle), 0, SHAPE_DIM_0))
     )
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color, color_array)
@@ -1868,22 +1879,28 @@ def test_color_cycle(attribute, color_cycle):
     layer.selected_data = {0}
     layer.add(new_shape)
     layer_color = getattr(layer, f'{attribute}_color')
-    assert len(layer_color) == shape[0] + 1
+    assert len(layer_color) == SHAPE_DIM_0 + 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array, transform_color('red'))),
+        np.vstack((color_array, transform_color(default_color_str))),
     )
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
+    assert len(layer.data) == SHAPE_DIM_0 - 1
 
     layer_color = getattr(layer, f'{attribute}_color')
-    assert len(layer_color) == shape[0] - 1
+    assert len(layer_color) == SHAPE_DIM_0 - 1
     np.testing.assert_allclose(
         layer_color,
-        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+        np.vstack(
+            (
+                color_array[1],
+                color_array[3:],
+                transform_color(default_color_str),
+            )
+        ),
     )
 
     # refresh colors
@@ -1953,13 +1970,11 @@ def test_adding_value_color_cycle(attribute):
     and then calling Shapes.refresh_colors() performs the update and adds the
     new value to the face/edge_color_cycle_map.
     """
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    data = 20 * np.random.random(SHAPE_DIMS)
     color_cycle = ['red', 'blue']
     shapes_kwargs = {
-        'properties': properties,
+        'properties': COMMON_PROPERTIES_ARRAY,
         f'{attribute}_color': 'shape_type',
         f'{attribute}_color_cycle': color_cycle,
     }
@@ -1976,14 +1991,20 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
+color_colormap_cycle = ['black', 'white']
+# With cycle ['black', 'white'] and 10 initial shapes, the next inserted
+# shape uses 'white' as the current default color.
+default_color_colormap_str = color_colormap_cycle[
+    (SHAPE_DIM_0 + 1) % len(color_colormap_cycle)
+]
+
+
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_color_colormap(attribute):
     """Test setting edge/face color with a colormap"""
-    # create Shapes using with a colormap
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    data = 20 * np.random.random(SHAPE_DIMS)
+    properties = {'shape_type': _make_cycled_properties([0, 1.5], SHAPE_DIM_0)}
     shapes_kwargs = {
         'properties': properties,
         f'{attribute}_color': 'shape_type',
@@ -1993,7 +2014,7 @@ def test_color_colormap(attribute):
     np.testing.assert_equal(layer.properties, properties)
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
-    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
+    color_array = transform_color(color_colormap_cycle * int(SHAPE_DIM_0 / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.array_equal(attribute_color, color_array)
 
@@ -2007,25 +2028,25 @@ def test_color_colormap(attribute):
     layer.selected_data = {0}
     layer.add(new_shape)
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert len(attribute_color) == shape[0] + 1
+    assert len(attribute_color) == SHAPE_DIM_0 + 1
     np.testing.assert_allclose(
         attribute_color,
-        np.vstack((color_array, transform_color('black'))),
+        np.vstack((color_array, transform_color(default_color_colormap_str))),
     )
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
+    assert len(layer.data) == SHAPE_DIM_0 - 1
     attribute_color = getattr(layer, f'{attribute}_color')
-    assert len(attribute_color) == shape[0] - 1
+    assert len(attribute_color) == SHAPE_DIM_0 - 1
     np.testing.assert_allclose(
         attribute_color,
         np.vstack(
             (
                 color_array[1],
                 color_array[3:],
-                transform_color('black'),
+                transform_color(default_color_colormap_str),
             )
         ),
     )
@@ -2046,9 +2067,8 @@ def test_color_colormap(attribute):
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
 
     with pytest.raises(ValueError, match=r'must be a valid Shapes.properties'):
@@ -2058,11 +2078,9 @@ def test_colormap_without_properties(attribute):
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Shapes(data, properties=properties)
+    data = 20 * np.random.random(SHAPE_DIMS)
+    layer = Shapes(data, properties=COMMON_PROPERTIES_ARRAY)
 
     with (
         pytest.warns(UserWarning, match='was not set, setting to: shape_type'),
@@ -2074,10 +2092,11 @@ def test_colormap_with_categorical_properties(attribute):
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    data = 20 * np.random.random(SHAPE_DIMS)
+    annotations = {
+        'shape_type': _make_cycled_properties([0, 1.5], SHAPE_DIM_0)
+    }
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
@@ -2090,31 +2109,30 @@ def test_add_colormap(attribute):
 
 def test_edge_width():
     """Test setting edge width."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer.current_edge_width == 1
-    assert len(layer.edge_width) == shape[0]
-    assert layer.edge_width == [1] * shape[0]
+    assert len(layer.edge_width) == SHAPE_DIM_0
+    assert layer.edge_width == [1] * SHAPE_DIM_0
 
     # With no data selected changing edge width has no effect
     layer.current_edge_width = 2
     assert layer.current_edge_width == 2
-    assert layer.edge_width == [1] * shape[0]
+    assert layer.edge_width == [1] * SHAPE_DIM_0
 
     # Select data and change edge color of selection
     layer.selected_data = {0, 1}
     assert layer.current_edge_width == 1
     layer.current_edge_width = 3
-    assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2)
+    assert layer.edge_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = set()
     layer.current_edge_width = 4
     layer.add(new_shape)
-    assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2) + [4]
+    assert layer.edge_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2) + [4]
 
     # Instantiate with custom edge width
     layer = Shapes(data, edge_width=5)
@@ -2129,14 +2147,14 @@ def test_edge_width():
     # Add new shape and test its color
     layer.current_edge_width = 4
     layer.add(new_shape)
-    assert len(layer.edge_width) == shape[0] + 1
+    assert len(layer.edge_width) == SHAPE_DIM_0 + 1
     assert layer.edge_width == [*width_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
-    assert len(layer.edge_width) == shape[0] - 1
+    assert len(layer.data) == SHAPE_DIM_0 - 1
+    assert len(layer.edge_width) == SHAPE_DIM_0 - 1
     assert layer.edge_width == [width_list[1]] + width_list[3:] + [4]
 
     # Test setting edge width with number
@@ -2156,15 +2174,14 @@ def test_edge_width():
 
 def test_z_index():
     """Test setting z-index during instantiation."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
-    assert layer.z_index == [0] * shape[0]
+    assert layer.z_index == [0] * SHAPE_DIM_0
 
     # Instantiate with custom z-index
     layer = Shapes(data, z_index=4)
-    assert layer.z_index == [4] * shape[0]
+    assert layer.z_index == [4] * SHAPE_DIM_0
 
     # Instantiate with custom z-index list
     z_index_list = [2, 3] * 5
@@ -2174,14 +2191,14 @@ def test_z_index():
     # Add new shape and its z-index
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    assert len(layer.z_index) == shape[0] + 1
+    assert len(layer.z_index) == SHAPE_DIM_0 + 1
     assert layer.z_index == [*z_index_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
-    assert len(layer.z_index) == shape[0] - 1
+    assert len(layer.data) == SHAPE_DIM_0 - 1
+    assert len(layer.z_index) == SHAPE_DIM_0 - 1
     assert layer.z_index == [z_index_list[1]] + z_index_list[3:] + [4]
 
     # Test setting index with number
@@ -2201,9 +2218,8 @@ def test_z_index():
 
 def test_move_to_front():
     """Test moving shapes to front."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
     assert layer.z_index == z_index_list
@@ -2216,9 +2232,8 @@ def test_move_to_front():
 
 def test_move_to_back():
     """Test moving shapes to back."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
     assert layer.z_index == z_index_list
@@ -2231,17 +2246,16 @@ def test_move_to_back():
 
 def test_interaction_box():
     """Test the creation of the interaction box."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     assert layer._selected_box is None
 
     layer.selected_data = {0}
-    assert len(layer._selected_box) == 10
+    assert len(layer._selected_box) == SHAPE_DIM_0
 
     layer.selected_data = {0, 1}
-    assert len(layer._selected_box) == 10
+    assert len(layer._selected_box) == SHAPE_DIM_0
 
     layer.selected_data = set()
     assert layer._selected_box is None
@@ -2249,16 +2263,15 @@ def test_interaction_box():
 
 def test_copy_and_paste():
     """Test copying and pasting selected shapes."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     # Clipboard starts empty
     assert layer._clipboard == {}
 
     # Pasting empty clipboard doesn't change data
     layer._paste_data()
-    assert len(layer.data) == 10
+    assert len(layer.data) == SHAPE_DIM_0
 
     # Copying with nothing selected leave clipboard empty
     layer._copy_data()
@@ -2269,7 +2282,7 @@ def test_copy_and_paste():
     layer._copy_data()
     layer._paste_data()
     assert len(layer._clipboard) > 0
-    assert len(layer.data) == shape[0] + 2
+    assert len(layer.data) == SHAPE_DIM_0 + 2
     assert np.all(
         [
             np.array_equal(a, b)
@@ -2279,7 +2292,7 @@ def test_copy_and_paste():
 
     # Pasting again adds two more shapes to data
     layer._paste_data()
-    assert len(layer.data) == shape[0] + 4
+    assert len(layer.data) == SHAPE_DIM_0 + 4
     assert np.all(
         [
             np.array_equal(a, b)
@@ -2293,14 +2306,13 @@ def test_copy_and_paste():
     layer._copy_data()
     layer._paste_data()
     assert layer._clipboard == {}
-    assert len(layer.data) == shape[0] + 4
+    assert len(layer.data) == SHAPE_DIM_0 + 4
 
 
 def test_value():
     """Test getting the value of the data at the current coordinates."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     assert Shapes([]).get_value((0,) * 2) == (None, None)
     layer = Shapes(data)
@@ -2379,9 +2391,8 @@ def test_value_3d(
 
 def test_message():
     """Test converting values and coords to message."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     msg = layer.get_status((0,) * 2)
     assert isinstance(msg, dict)
@@ -2401,9 +2412,8 @@ def test_message_3d():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     data[-1, :] = [[0, 0], [0, 20], [20, 0], [20, 20]]
     layer = Shapes(data)
     layer._update_thumbnail()
@@ -2437,16 +2447,15 @@ def test_thumbnail_z_order():
 
 def test_to_masks():
     """Test the mask generation."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     masks = layer.to_masks()
     assert masks.ndim == 3
-    assert len(masks) == shape[0]
+    assert len(masks) == SHAPE_DIM_0
 
     masks = layer.to_masks(mask_shape=[20, 20])
-    assert masks.shape == (shape[0], 20, 20)
+    assert masks.shape == (SHAPE_DIM_0, 20, 20)
 
 
 def test_to_masks_default_shape():
@@ -2454,9 +2463,8 @@ def test_to_masks_default_shape():
 
     See https://github.com/napari/napari/issues/3401
     """
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape) + [50, 100]
+    data = 20 * np.random.random(SHAPE_DIMS) + [50, 100]
     layer = Shapes(data)
     masks = layer.to_masks()
     assert len(masks) == 10
@@ -2466,9 +2474,8 @@ def test_to_masks_default_shape():
 
 def test_to_labels():
     """Test the labels generation."""
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
     labels = layer.to_labels()
     assert labels.ndim == 2
@@ -2484,9 +2491,8 @@ def test_to_labels_default_shape():
 
     See https://github.com/napari/napari/issues/3401
     """
-    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape) + [50, 100]
+    data = 20 * np.random.random(SHAPE_DIMS) + [50, 100]
     layer = Shapes(data)
     labels = layer.to_labels()
     assert labels.ndim == 2
@@ -2760,3 +2766,44 @@ def test_remove_shape_that_is_value(remove: list[int]):
 
     assert len(layer.data) > 0
     assert layer._value == (None, None)
+
+
+def test_default_features_not_changed_when_selected_data_changes():
+    """Test that the default features are not changed when selected_data changes.
+
+    Reproducer of https://github.com/napari/napari/issues/8564
+    """
+    two_rectangles = [
+        np.array([[10, 10], [10, 50], [50, 50], [50, 10]]),
+        np.array([[60, 60], [60, 100], [100, 100], [100, 60]]),
+    ]
+    features = pd.DataFrame({'number': [100.0, 200], 'feature1': ['A', 'B']})
+    feature_defaults = pd.DataFrame(
+        {
+            'number': [None],
+            'feature1': [None],
+        }
+    )
+    shape = Shapes(
+        two_rectangles,
+        shape_type='rectangle',
+        features=features,
+        feature_defaults=feature_defaults,
+    )
+
+    origin_values = shape.feature_defaults.values.copy()
+    np.testing.assert_equal(
+        shape.feature_defaults.values[0][0], origin_values[0][0]
+    )
+    np.testing.assert_equal(
+        shape.feature_defaults.values[0][1], origin_values[0][1]
+    )
+
+    shape.selected_data = {0}
+
+    np.testing.assert_equal(
+        shape.feature_defaults.values[0][0], origin_values[0][0]
+    )
+    np.testing.assert_equal(
+        shape.feature_defaults.values[0][1], origin_values[0][1]
+    )

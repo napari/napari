@@ -424,6 +424,11 @@ authors:
 - given-names: James
   family-names: Ryan
   alias: jamesyan-git
+- given-names: Matthias Christian
+  family-names: Schabel
+  affiliation: Oregon Health & Science University
+  orcid: https://orcid.org/0000-0002-3183-7212
+  alias: matthiasschabel
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
@@ -557,6 +562,10 @@ authors:
   affiliation: European Spallation Source
   orcid: https://orcid.org/0000-0002-0969-0437
   alias: mriduls
+- given-names: Sébastien
+  family-names: Morais
+  affiliation: Synopsys, Inc.
+  alias: SMoraisAnsys
 - given-names: Bas
   family-names: Bloemsaat
   affiliation: QStarsIT
