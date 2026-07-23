@@ -11,7 +11,7 @@ import os
 import re
 import sys
 import warnings
-from enum import Enum, EnumMeta, StrEnum
+from enum import Enum, StrEnum
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -91,26 +91,6 @@ def in_python_repl() -> bool:
         and shell.__class__.__name__ == 'NoneType'
         and hasattr(sys, 'ps1')
     )
-
-
-def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-
-    .. deprecated:: 0.7.1
-        `str_to_rgb` is deprecated and will be removed in a future release.
-        Please migrate away from this utility. The function currently
-        retains its behavior but will warn on use.
-    """
-    warnings.warn(
-        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
-    if match is None:
-        raise ValueError("arg not in format 'rgb(x,y,z)'")
-    return list(map(int, match.groups()))
 
 
 def ensure_iterable(
@@ -243,13 +223,7 @@ def formatdoc(obj):
     return obj
 
 
-class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
-        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        return super().__getitem__(item.upper())
-
-
-class StringEnum(StrEnum, metaclass=StringEnumMeta):
+class StringEnum(StrEnum):
     @staticmethod
     def _generate_next_value_(
         name: str, start: int, count: int, last_values: list[str]
