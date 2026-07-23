@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-from pydantic import field_validator
+from pydantic import Field, PrivateAttr, field_validator
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -19,6 +20,29 @@ from napari.utils.misc import ensure_n_tuple
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+
+_SYNCED_CAMERA_DESCRIPTION = (
+    'Controls how camera state is managed when switching between\n'
+    '2D and 3D views. When checked, camera center and zoom are\n'
+    'shared between views, with the depth (Z) component synced via\n'
+    'the dims slider. When unchecked, each mode remembers\n'
+    'its own camera state independently.'
+)
+
+
+@dataclass(frozen=True)
+class _CameraState:
+    """Captured camera state for a single ndisplay mode.
+
+    This is a lightweight private data container used internally by
+    :class:`Camera` to preserve per-mode center, zoom, and angles when
+    switching between 2D and 3D views.
+    """
+
+    center: tuple[float, float, float] | tuple[float, float]
+    zoom: float
+    angles: tuple[float, float, float]
 
 
 class Camera(EventedModel):
@@ -62,6 +86,33 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
+    synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
+
+    # Per-mode camera state cache for the "separate" (synced=False) mode.
+    _cached_2d_state: _CameraState | None = PrivateAttr(None)
+    _cached_3d_state: _CameraState | None = PrivateAttr(None)
+
+    def _cache_state(self, ndisplay_mode: int) -> None:
+        """Save current camera state for a given ndisplay mode."""
+        state = _CameraState(
+            center=self.center,
+            zoom=self.zoom,
+            angles=self.angles,
+        )
+        if ndisplay_mode == 2:
+            self._cached_2d_state = state
+        else:
+            self._cached_3d_state = state
+
+    def _pop_cached_state(self, ndisplay_mode: int) -> _CameraState | None:
+        """Retrieve and remove cached state for a given ndisplay mode."""
+        if ndisplay_mode == 2:
+            state = self._cached_2d_state
+            self._cached_2d_state = None
+        else:
+            state = self._cached_3d_state
+            self._cached_3d_state = None
+        return state
 
     @field_validator('center', 'angles', mode='before')
     @classmethod
@@ -228,36 +279,3 @@ class Camera(EventedModel):
         if sum(diffs) % 2 != 0:
             return Handedness.LEFT
         return Handedness.RIGHT
-
-    def _vispy_flipped_axes(
-        self, ndisplay: Literal[2, 3] = 2
-    ) -> tuple[int, int, int]:
-        # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
-        # while the napari axis order is zyx / plane-row-column, or depth, vertical,
-        # horizontal — i.e. it is exactly inverted. This switch happens when data
-        # is passed from napari to Vispy, usually with a transposition. In the camera
-        # models, this means that the order of these orientations appear in the
-        # opposite order to that in napari.components.Camera.
-        #
-        # Note that the default Vispy camera orientations come from Vispy, not from us.
-        vispy_default_orientation = (
-            ('right', 'up', 'towards')
-            if ndisplay == 2
-            else ('right', 'down', 'away')
-        )
-
-        # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-        # start by inverting the order of coordinates coming from the napari
-        # camera model:
-        orientation_xyz = self.orientation[::-1]
-        # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
-        # whether they are flipped relative to the Vispy default.
-        return cast(
-            tuple[int, int, int],
-            tuple(
-                int(ori != default_ori)
-                for ori, default_ori in zip(
-                    orientation_xyz, vispy_default_orientation, strict=True
-                )
-            ),
-        )
