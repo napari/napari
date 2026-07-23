@@ -37,11 +37,7 @@ def _format_level_label(
     return f'{index}: {shape_str} ({size_str})'
 
 
-# MetaWidgetControlsBase merges type(QObject) and type(ABC) at runtime,
-# but mypy cannot verify this is safe.
-class QtMultiscaleLevelControl(  # type: ignore[metaclass]
-    QtWidgetControlsBase,
-):
+class QtMultiscaleLevelControl(QtWidgetControlsBase):
     """Widget to manually select which multiscale level to render.
 
     Shows a combobox with "Auto" plus one entry per resolution level.
@@ -79,6 +75,7 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 self._on_locked_data_level_change
             )
             self._layer.events.data.connect(self._update_level_labels)
+            self._layer.events.set_data.connect(self._update_auto_label)
             self.level_combobox.show()
             self.level_label.show()
         else:
@@ -108,6 +105,14 @@ class QtMultiscaleLevelControl(  # type: ignore[metaclass]
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
+
+            self._update_auto_label()
+
+    def _update_auto_label(self) -> None:
+        """Update the 'Auto' entry to show the currently rendered level."""
+        label = trans._('Auto ({level})', level=self._layer.data_level)
+        if self.level_combobox.itemText(0) != label:
+            self.level_combobox.setItemText(0, label)
 
     def _on_combobox_changed(self, index: int) -> None:
         """Update the layer's locked data level from the combobox selection.

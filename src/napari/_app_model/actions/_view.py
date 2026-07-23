@@ -1,5 +1,10 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
+from app_model.types import (
+    KeyBindingRule,
+    StandardKeyBinding,
+    SubmenuItem,
+    ToggleRule,
+)
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
@@ -154,6 +159,16 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
         viewer.dims.ndisplay = 2
 
 
+def _toggle_synced_camera(viewer: ViewerModel) -> None:
+    """Toggle the camera synced mode between synced and separate."""
+    viewer.camera.synced = not viewer.camera.synced
+
+
+def _get_current_synced_camera(viewer: ViewerModel) -> bool:
+    """Return the current synced state of the camera."""
+    return viewer.camera.synced
+
+
 VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.fit_to_view',
@@ -207,6 +222,22 @@ VIEW_ACTIONS: list[Action] = [
             }
         ],
         callback=_toggle_canvas_ndim,
+    ),
+    Action(
+        id='napari.viewer.toggle_synced_camera',
+        title=trans._('Toggle Synced Camera'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+        callback=_toggle_synced_camera,
+        toggled=ToggleRule(get_current=_get_current_synced_camera),
+        keybindings=[
+            KeyBindingRule(primary='Ctrl+U', mac='Cmd+U'),
+        ],
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
