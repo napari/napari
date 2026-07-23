@@ -3066,7 +3066,9 @@ def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
     chunk_bytes = int(np.prod(cshape)) * itemsize
     coverage = [c / s for c, s in zip(cshape, shape) if s > 0]
     full_axes = [
-        i for i, (c, s) in enumerate(zip(cshape, shape)) if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
+        i
+        for i, (c, s) in enumerate(zip(cshape, shape))
+        if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
     ]
 
     issues = []
@@ -3075,9 +3077,7 @@ def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
         issues.append(f'each chunk is {mb:.0f} MB')
     if full_axes:
         axes_str = ', '.join(str(a) for a in full_axes)
-        issues.append(
-            f'chunks span >50% of axis {axes_str}'
-        )
+        issues.append(f'chunks span >50% of axis {axes_str}')
 
     if issues:
         msg = (
@@ -3087,6 +3087,7 @@ def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
             f'(e.g. 64³ or 128³) for best results.'
         )
         import warnings
+
         warnings.warn(msg, stacklevel=2)
 
 
