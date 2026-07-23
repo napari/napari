@@ -3,13 +3,14 @@ from __future__ import annotations
 from collections.abc import MutableSequence, Sequence, Sized
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt
+from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from napari.utils.events import disconnect_events
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from qtpy.QtCore import QObject
     from qtpy.QtWidgets import QWidget
 
     from napari.utils.events import Event
