@@ -783,3 +783,37 @@ def test_focus_noop_when_all_axes_locked():
     assert dims.last_used == 1
     dims._focus_down()
     assert dims.last_used == 1
+
+
+def test_locking_inactive_axis_leaves_active_axis_alone():
+    # Locking a slider you are not on must not steal focus.
+    dims = _nav_dims()  # not_displayed == (0, 1)
+    dims.last_used = 0
+    dims.lock_axis(1)
+    assert dims.last_used == 0
+
+
+def test_locking_active_axis_moves_active_to_a_movable_one():
+    # The active slider should always be one you can actually move.
+    dims = _nav_dims()
+    dims.last_used = 0
+    dims.lock_axis(0)
+    assert dims.last_used == 1
+
+
+def test_unlocking_makes_axis_active_when_none_are_movable():
+    # With every slider locked, last_used still names a real slider; unlocking
+    # one makes it the only candidate, so it becomes active.
+    dims = _nav_dims()
+    dims.lock_all_axes()
+    assert dims.last_used in (0, 1)  # still a real slider, not None
+    dims.unlock_axis(1)
+    assert dims.last_used == 1
+
+
+def test_unlocking_does_not_steal_active_axis_when_one_is_movable():
+    dims = _nav_dims()
+    dims.lock_axis(1)
+    dims.last_used = 0
+    dims.unlock_axis(1)
+    assert dims.last_used == 0  # axis 0 was already movable and active

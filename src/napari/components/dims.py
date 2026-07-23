@@ -271,7 +271,11 @@ class Dims(EventedModel):
             # tuples so a lock tracks its axis across ndim changes.
             self.axis_locked = ensure_len(self.axis_locked, ndim, False)
 
-        # If the last used slider is no longer visible, use the first.
+        # If the last used slider is no longer visible -- or can no longer be
+        # moved, since marking a locked slider as active is pointless -- move to
+        # another one. Falls back to the visible sliders when every one of them
+        # is locked, so last_used always names a real slider; unlocking one then
+        # makes it active, because it becomes the only candidate.
         last_used = self.last_used
         ndisplay = self.ndisplay
         dims_range = self.range
@@ -279,8 +283,10 @@ class Dims(EventedModel):
         not_displayed = [
             d for d in order[:-ndisplay] if len(nsteps) > d and nsteps[d] > 1
         ]
-        if len(not_displayed) > 0 and last_used not in not_displayed:
-            self.last_used = not_displayed[0]
+        movable = [d for d in not_displayed if self._axis_movable(d)]
+        candidates = movable or not_displayed
+        if len(candidates) > 0 and last_used not in candidates:
+            self.last_used = candidates[0]
 
         return self
 
