@@ -220,9 +220,19 @@ QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
 }
 
 /* Greyed-out handle when the slider is disabled (e.g. while a navigation lock
-   is engaged), so the frozen state reads as disabled rather than unresponsive. */
-QtDimSliderWidget > QScrollBar::handle:disabled {
-    background: {{ opacity(foreground, 90) }};
+   is engaged), so the frozen state reads as disabled rather than unresponsive.
+
+   Must not be `foreground`: that is the groove's own background, so the handle
+   would vanish into the track rather than read as greyed out. `primary` sits
+   between the groove and the normal `secondary` handle in both light and dark
+   themes, giving a muted but visible thumb.
+
+   The last_used rule above is an attribute selector and so outranks a bare
+   `:disabled`; repeating it here keeps a locked *active* slider greying out
+   instead of staying marked as current. */
+QtDimSliderWidget > QScrollBar::handle:disabled,
+QtDimSliderWidget > QScrollBar::handle[last_used=true]:disabled {
+    background: {{ primary }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {

@@ -105,6 +105,24 @@ which disables *each control that moves the slice* (`slider`, `play_button`,
 an axis whose navigation is frozen. `axis_label` stays enabled: it renames the
 axis, it does not navigate.
 
+### The active slider must be one you can move
+
+`last_used` marks the active slider (its handle is drawn in the theme's
+`current` colour). `_check_dims` already moved it when it stopped being
+*visible*; it now also moves it when it stops being *movable*, so locking the
+active axis hands focus to a movable one and locking an inactive axis does not
+steal focus. When every slider is locked it falls back to the visible sliders,
+so `last_used` always names a real slider — and unlocking one then makes it
+active, because it becomes the only candidate. `_focus_up`/`_focus_down` skip
+non-movable axes on the same reasoning.
+
+The disabled-handle colour must not be `foreground`: that is the groove's own
+background, so the thumb would vanish into the track instead of reading as
+greyed out. It is `primary`, which sits between the groove and the normal
+`secondary` handle in both themes. The `last_used` rule is an attribute
+selector and outranks a bare `:disabled`, so the disabled rule repeats it to
+keep a locked *active* slider greying out rather than staying marked current.
+
 ### Locking an axis must stop its playback
 
 Disabling the play button is not enough. `QtDims._set_frame` clears
