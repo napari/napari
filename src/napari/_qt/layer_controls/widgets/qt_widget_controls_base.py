@@ -1,10 +1,24 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
 from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    _QtABCMeta = ABCMeta
+
+else:
+
+    class _QtABCMeta(type(QObject), ABCMeta):
+        pass
 
 
 class QtWrappedLabel(QLabel):
@@ -13,21 +27,15 @@ class QtWrappedLabel(QLabel):
     to the right and vertically centered by default.
     """
 
-    def __init__(
-        self, text: str | None = None, parent: QWidget | None = None
-    ) -> None:
-        super().__init__(text, parent)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self.setWordWrap(True)
         self.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
 
 
-class MetaWidgetControlsBase(ABCMeta, type(QObject)):  # type: ignore[misc]
-    pass
-
-
-class QtWidgetControlsBase(QObject, metaclass=MetaWidgetControlsBase):
+class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
     """
     Base class that defines base methods for wrapper classes that do the
     connection of events/signals between layer attributes and Qt widgets.
@@ -47,8 +55,9 @@ class QtWidgetControlsBase(QObject, metaclass=MetaWidgetControlsBase):
         # Setup layer
         self._layer = layer
         # Track registered callbacks (defined via `attr_to_settr` for example)
-        # so it is possible to disconnect them when the widget is being closed/deleted
-        self._callbacks: list[object] = []
+        # so it is possible to disconnect them when the widget is being closed/deleted.
+        # Arguments of callbacks are hard to track; Any is the best we can do here.
+        self._callbacks: list[Callable[[Any], None]] = []
 
     @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
