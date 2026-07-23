@@ -11,7 +11,7 @@ from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
-class QtBorderColorControl(QtWidgetControlsBase):  # type: ignore[metaclass]
+class QtBorderColorControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current border
     color layer attribute and Qt widgets.
