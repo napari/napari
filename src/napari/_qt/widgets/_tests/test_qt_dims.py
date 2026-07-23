@@ -392,23 +392,159 @@ def test_loop_mode_model_update_emits_once(qtbot):
     assert observed == ['once']
 
 
+def _nav_enabled(widget):
+    """Whether every control that moves this axis's slice is enabled.
+
+    Enablement is applied per child rather than to the whole row, so that the
+    padlock stays usable on an axis whose navigation controls are disabled.
+    """
+    children = (widget.slider, widget.play_button, widget.curslice_label)
+    states = {c.isEnabled() for c in children}
+    assert len(states) == 1, 'navigation controls disagree on enabled state'
+    return states.pop()
+
+
 def test_navigation_lock_disables_sliders(qtbot):
-    """While Dims navigation is locked, non-exempt slider widgets are disabled."""
+    """While Dims navigation is locked, non-exempt navigation controls are disabled."""
     dims = Dims(ndim=4, ndisplay=2)
     dims.range = ((0, 4, 1),) * 4
     view = QtDims(dims)
     qtbot.addWidget(view)
 
-    assert all(w.isEnabled() for w in view.slider_widgets)
+    assert all(_nav_enabled(w) for w in view.slider_widgets)
 
     owner = object()
     dims.lock_navigation(owner)  # lock all
-    assert all(not w.isEnabled() for w in view.slider_widgets)
+    assert all(not _nav_enabled(w) for w in view.slider_widgets)
 
     dims.unlock_navigation(owner)
-    assert all(w.isEnabled() for w in view.slider_widgets)
+    assert all(_nav_enabled(w) for w in view.slider_widgets)
 
     dims.lock_navigation(owner, exempt=(0,))  # axis 0 stays navigable
-    enabled = {w.axis: w.isEnabled() for w in view.slider_widgets}
+    enabled = {w.axis: _nav_enabled(w) for w in view.slider_widgets}
     assert enabled[0] is True
     assert all(not enabled[a] for a in (1, 2, 3))
+
+
+def _lock_dims_view(qtbot):
+    dims = Dims(ndim=4, ndisplay=2)
+    dims.range = ((0, 4, 1),) * 4
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    return dims, view
+
+
+def _widget_for(view, axis):
+    return next(w for w in view.slider_widgets if w.axis == axis)
+
+
+def test_padlock_toggles_axis_lock(qtbot):
+    """Clicking the padlock toggles that axis's persistent lock."""
+    dims, view = _lock_dims_view(qtbot)
+    widget = _widget_for(view, 1)
+
+    assert dims.axis_locked[1] is False
+    widget.lock_button.click()
+    assert dims.axis_locked[1] is True
+    # ...and the axis's navigation controls disable, while the padlock stays live
+    assert _nav_enabled(widget) is False
+    assert widget.lock_button.isEnabled() is True
+
+    widget.lock_button.click()
+    assert dims.axis_locked[1] is False
+    assert _nav_enabled(widget) is True
+
+
+def test_padlock_reflects_programmatic_lock(qtbot):
+    """A lock set through the model updates the padlock without a click."""
+    dims, view = _lock_dims_view(qtbot)
+    widget = _widget_for(view, 2)
+
+    dims.lock_axis(2)
+    assert widget.lock_button.property('locked') is True
+    assert _nav_enabled(widget) is False
+
+    dims.unlock_axis(2)
+    assert widget.lock_button.property('locked') is False
+    assert _nav_enabled(widget) is True
+
+
+def test_padlock_only_affects_its_own_axis(qtbot):
+    dims, view = _lock_dims_view(qtbot)
+    _widget_for(view, 0).lock_button.click()
+    assert dims.axis_locked == (True, False, False, False)
+    assert _nav_enabled(_widget_for(view, 0)) is False
+    assert all(_nav_enabled(_widget_for(view, a)) for a in (1, 2, 3))
+
+
+def test_padlock_inert_when_not_interactive(qtbot):
+    """axis_lock_interactive=False leaves the padlock as a status indicator."""
+    dims, view = _lock_dims_view(qtbot)
+    dims.axis_lock_interactive = False
+    widget = _widget_for(view, 1)
+
+    assert widget.lock_button.isEnabled() is False
+
+    # A programmatic lock still applies and still shows on the padlock.
+    dims.lock_axis(1)
+    assert widget.lock_button.property('locked') is True
+    assert _nav_enabled(widget) is False
+
+    dims.axis_lock_interactive = True
+    assert widget.lock_button.isEnabled() is True
+
+
+def test_padlock_disabled_during_owner_lock(qtbot):
+    """An owner lock freezes the per-axis configuration, so padlocks go inert."""
+    dims, view = _lock_dims_view(qtbot)
+    owner = object()
+
+    dims.lock_navigation(owner, exempt=(0,))
+    assert all(not w.lock_button.isEnabled() for w in view.slider_widgets)
+
+    dims.unlock_navigation(owner)
+    assert all(w.lock_button.isEnabled() for w in view.slider_widgets)
+
+
+def test_padlock_survives_ndim_change(qtbot):
+    """Sliders are rebuilt on ndim change; the padlock must re-sync to the model."""
+    dims, view = _lock_dims_view(qtbot)
+    dims.lock_axis(3)
+    dims.ndim = 5  # new axis prepended, lock tracks its axis to index 4
+    assert dims.axis_locked == (False, False, False, False, True)
+    assert _widget_for(view, 4).lock_button.property('locked') is True
+    assert _nav_enabled(_widget_for(view, 4)) is False
+
+
+def test_padlock_stops_active_playback(qt_dims, qtbot):
+    """Locking the axis being played must stop playback, not strand it.
+
+    The play button disables with the axis's other navigation controls, so if the
+    animation thread kept running the user would have no way to stop it. Worse,
+    a blocked ``set_current_step`` emits nothing, so the canvas never draws and
+    ``Dims._play_ready`` is never restored -- playback would hang unrecoverably.
+    """
+    dims = qt_dims.dims
+    dims.ndim = 4
+    dims.range = ((0, 4, 1),) * 4
+    widget = _widget_for(qt_dims, 0)
+
+    qt_dims.play(0, fps=20)
+    qtbot.waitUntil(lambda: qt_dims.is_playing, timeout=2000)
+
+    widget.lock_button.click()
+    assert dims.axis_locked[0] is True
+    qtbot.waitUntil(lambda: not qt_dims.is_playing, timeout=2000)
+
+
+def test_owner_lock_stops_active_playback(qt_dims, qtbot):
+    """An owner lock (e.g. a draw starting) must stop playback for the same reason."""
+    dims = qt_dims.dims
+    dims.ndim = 4
+    dims.range = ((0, 4, 1),) * 4
+
+    qt_dims.play(0, fps=20)
+    qtbot.waitUntil(lambda: qt_dims.is_playing, timeout=2000)
+
+    dims.lock_navigation(object())  # axis 0 not exempt
+    qtbot.waitUntil(lambda: not qt_dims.is_playing, timeout=2000)

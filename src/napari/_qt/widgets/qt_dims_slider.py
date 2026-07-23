@@ -115,8 +115,10 @@ class QtDimSliderWidget(QWidget):
         self.axis_label = self._create_axis_label_widget()
         self.slider = self._create_range_slider_widget()
         self.play_button = self._create_play_button_widget()
+        self.lock_button = self._create_lock_button_widget()
 
         layout.addWidget(self.axis_label)
+        layout.addWidget(self.lock_button)
         layout.addWidget(self.play_button)
         layout.addWidget(self.slider, stretch=2)
         layout.addWidget(self.curslice_label)
@@ -127,6 +129,7 @@ class QtDimSliderWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
+        self._update_lock_state()
 
     def _set_slice_from_label(self) -> None:
         """Update the dims point based on the curslice_label."""
@@ -220,6 +223,62 @@ class QtDimSliderWidget(QWidget):
         self.play_stopped.connect(play_button._handle_stop)
         self.play_started.connect(play_button._handle_start)
         return play_button
+
+    def _create_lock_button_widget(self) -> QPushButton:
+        """Create the padlock button that toggles this axis's per-axis lock."""
+        button = QPushButton(self)
+        button.setObjectName('axis_lock_button')
+        button.setProperty('locked', False)  # for styling
+        button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button.clicked.connect(self._on_lock_button_clicked)
+        return button
+
+    def _on_lock_button_clicked(self) -> None:
+        """Toggle this axis's persistent lock from the padlock button.
+
+        Only reachable while the button is enabled, i.e. when the user is
+        allowed to toggle locks and no owner lock is held (which would make
+        ``lock_axis``/``unlock_axis`` raise).
+        """
+        if self.dims.axis_locked[self.axis]:
+            self.dims.unlock_axis(self.axis)
+        else:
+            self.dims.lock_axis(self.axis)
+
+    def _update_lock_state(self) -> None:
+        """Sync the padlock and this axis's navigation controls to the model.
+
+        Enablement is per child rather than on the whole row: every control that
+        *changes the slice* is disabled when the axis cannot move, so the freeze
+        reads as disabled rather than unresponsive, while the padlock itself
+        stays enabled so the user can unlock again. The axis label is left alone
+        — it renames the axis, it does not navigate.
+        """
+        # Guard against a stale widget briefly outliving an ndim reduction; the
+        # sliders are rebuilt on ndim change, but dims events can arrive first.
+        if self.axis >= self.dims.ndim:
+            return
+
+        locked = self.dims.axis_locked[self.axis]
+        movable = self.dims.is_axis_movable(self.axis)
+
+        for widget in (self.slider, self.play_button, self.curslice_label):
+            widget.setEnabled(movable)
+
+        # The padlock is a status indicator always; it is clickable only when the
+        # user may toggle locks and no owner lock has frozen the configuration.
+        self.lock_button.setEnabled(
+            self.dims.axis_lock_interactive and not self.dims.navigation_locked
+        )
+        self.lock_button.setToolTip(
+            trans._('Unlock axis {axis}', axis=self.axis)
+            if locked
+            else trans._('Lock axis {axis}', axis=self.axis)
+        )
+        if self.lock_button.property('locked') != locked:
+            self.lock_button.setProperty('locked', locked)
+            self.lock_button.style().unpolish(self.lock_button)
+            self.lock_button.style().polish(self.lock_button)
 
     def _fps_listener(self, *_) -> None:
         fps = self.play_button.fpsspin.value()
