@@ -588,3 +588,198 @@ def test_navigation_lock_nested_context_manager():
         assert dims.navigation_lock_exempt == (0,)
     # outermost exit releases
     assert dims.navigation_locked is False
+
+
+# --- per-axis (persistent, user-facing) navigation locks ---------------------
+
+
+def test_lock_axis_blocks_nav_without_events():
+    dims = _nav_dims()
+    events = []
+    dims.events.point.connect(lambda e=None: events.append(1))
+
+    dims.lock_axis(1)  # z
+    assert dims.axis_locked == (False, True, False, False)
+
+    dims.set_current_step(1, 4)
+    dims.set_point(1, 3.0)
+    assert dims.current_step == (0, 2, 0, 0)  # unchanged
+    assert events == []  # a blocked write emits nothing
+
+
+def test_lock_axis_leaves_other_axes_movable():
+    dims = _nav_dims()
+    dims.lock_axis(1)
+    dims.set_current_step(0, 1)  # unlocked -> moves
+    dims.set_current_step(1, 4)  # locked -> blocked
+    assert dims.current_step == (1, 2, 0, 0)
+
+
+def test_lock_axis_by_name():
+    dims = _nav_dims()
+    dims.axis_labels = ('time', 'z', 'y', 'x')
+    dims.lock_axis('time')
+    assert dims.axis_locked == (True, False, False, False)
+    dims.set_current_step(0, 1)
+    assert dims.current_step[0] == 0  # blocked
+    dims.unlock_axis('time')
+    dims.set_current_step(0, 1)
+    assert dims.current_step[0] == 1
+
+
+def test_lock_axis_unknown_name_raises():
+    dims = _nav_dims()
+    dims.axis_labels = ('time', 'z', 'y', 'x')
+    with pytest.raises(ValueError, match='No axis named'):
+        dims.lock_axis('channel')
+
+
+def test_lock_axis_ambiguous_name_raises():
+    # axis_labels are not unique, so a duplicated name has no single answer.
+    dims = Dims(ndim=2, axis_labels=('y', 'y'))
+    with pytest.raises(ValueError, match='ambiguous'):
+        dims.lock_axis('y')
+
+
+def test_lock_axis_negative_index_normalized():
+    dims = _nav_dims()  # ndim=4
+    dims.lock_axis(-1)
+    assert dims.axis_locked == (False, False, False, True)
+    dims.set_current_step(3, 5)
+    assert dims.current_step[3] == 0  # blocked
+
+
+def test_lock_axis_out_of_range_raises():
+    dims = _nav_dims()  # ndim=4
+    with pytest.raises(ValueError, match='not defined for dimensionality'):
+        dims.lock_axis(99)
+    assert dims.axis_locked == (False,) * 4  # rejected, no partial state
+
+
+def test_lock_axis_force_bypasses():
+    dims = _nav_dims()
+    dims.lock_axis(1)
+    dims.set_current_step(1, 4, force=True)
+    assert dims.current_step == (0, 4, 0, 0)
+
+
+def test_lock_all_and_unlock_all_axes():
+    dims = _nav_dims()
+    dims.lock_all_axes()
+    assert dims.axis_locked == (True,) * 4
+    dims.set_current_step(1, 4)
+    assert dims.current_step == (0, 2, 0, 0)  # every axis blocked
+    dims.unlock_all_axes()
+    assert dims.axis_locked == (False,) * 4
+    dims.set_current_step(1, 4)
+    assert dims.current_step == (0, 4, 0, 0)
+
+
+def test_axis_locked_emits_event():
+    dims = _nav_dims()
+    fired = []
+    dims.events.axis_locked.connect(lambda e=None: fired.append(1))
+    dims.lock_axis(0)
+    dims.unlock_axis(0)
+    assert len(fired) == 2
+
+
+def test_owner_lock_governs_and_suspends_per_axis_locks():
+    # While an owner lock is held its exempt set alone decides movability; the
+    # sticky per-axis pin is suspended for the duration and resumes on release.
+    dims = _nav_dims()
+    dims.lock_axis(0)  # user pins axis 0
+    owner = object()
+
+    dims.lock_navigation(owner, exempt=(0,))
+    dims.set_current_step(0, 1)  # exempt -> moves despite the user pin
+    assert dims.current_step[0] == 1
+    dims.set_current_step(1, 4)  # not exempt -> blocked
+    assert dims.current_step[1] == 2
+
+    dims.unlock_navigation(owner)
+    dims.set_current_step(0, 2)  # user pin back in force -> blocked
+    assert dims.current_step[0] == 1
+
+
+def test_per_axis_lock_mutation_during_owner_lock_raises():
+    # The per-axis configuration is frozen while an operation owns navigation.
+    dims = _nav_dims()
+    owner = object()
+    dims.lock_navigation(owner)
+    for call in (
+        lambda: dims.lock_axis(0),
+        lambda: dims.unlock_axis(0),
+        dims.lock_all_axes,
+        dims.unlock_all_axes,
+    ):
+        with pytest.raises(RuntimeError, match='while navigation is locked'):
+            call()
+    assert dims.axis_locked == (False,) * 4  # unchanged
+
+
+def test_axis_locked_left_pads_on_ndim_change():
+    # New axes are prepended, so a lock must track its axis, not its index.
+    dims = _nav_dims()  # ndim=4
+    dims.lock_axis(3)
+    assert dims.axis_locked == (False, False, False, True)
+    dims.ndim = 5
+    assert dims.axis_locked == (False, False, False, False, True)
+    dims.ndim = 4
+    assert dims.axis_locked == (False, False, False, True)
+
+
+def test_per_axis_lock_does_not_guard_direct_assignment():
+    # Documented v1 escape hatch: the per-axis lock inherits the owner lock's
+    # method-only contract, so direct field/property assignment bypasses it.
+    # This test pins that contract.
+    dims = _nav_dims()
+    dims.lock_axis(1)
+    dims.current_step = (1, 3, 0, 0)  # property assignment -> not guarded
+    assert dims.current_step == (1, 3, 0, 0)
+    dims.point = (0.0, 1.0, 0.0, 0.0)  # field assignment -> not guarded
+    assert dims.point == (0.0, 1.0, 0.0, 0.0)
+
+
+def test_per_axis_lock_does_not_block_order_changes():
+    # Scope: the per-axis lock governs slice position only. Axis-order changes
+    # stay governed by the owner lock's lock_order.
+    dims = _nav_dims()
+    dims.lock_all_axes()
+    dims.roll()
+    assert tuple(dims.order) == (3, 0, 1, 2)
+    dims.order = (0, 1, 2, 3)
+    dims.transpose()
+    assert tuple(dims.order) == (0, 1, 3, 2)
+
+
+def test_axis_lock_interactive_does_not_gate_programmatic_locking():
+    # The switch gates only the UI click path; methods are always allowed.
+    dims = _nav_dims()
+    dims.axis_lock_interactive = False
+    dims.lock_axis(1)
+    assert dims.axis_locked == (False, True, False, False)
+    dims.set_current_step(1, 4)
+    assert dims.current_step[1] == 2  # still enforced
+
+
+def test_focus_skips_locked_axes():
+    dims = _nav_dims()  # not_displayed == (0, 1), both have nsteps > 1
+    dims.lock_axis(0)
+    dims.last_used = 0  # focused axis is the locked one
+    dims._focus_up()
+    assert dims.last_used == 1  # skipped the locked axis
+    dims._focus_up()
+    assert dims.last_used == 1  # only one candidate left
+    dims._focus_down()
+    assert dims.last_used == 1
+
+
+def test_focus_noop_when_all_axes_locked():
+    dims = _nav_dims()
+    dims.lock_all_axes()
+    dims.last_used = 1
+    dims._focus_up()
+    assert dims.last_used == 1
+    dims._focus_down()
+    assert dims.last_used == 1

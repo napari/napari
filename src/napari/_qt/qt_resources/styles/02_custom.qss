@@ -237,6 +237,36 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
+/* Padlock toggling an axis's persistent navigation lock. Sized to match
+   QtPlayButton so the slider row stays visually even. */
+#axis_lock_button {
+  border-radius: 2px;
+  height: 13px;
+  width: 13px;
+  margin: 0px 2px;
+  padding: 1px;
+  border: 0px;
+  image: url("theme_{{ id }}:/lock_open.svg");
+}
+
+#axis_lock_button[locked=true] {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+#axis_lock_button:hover {
+  background: {{ highlight }};
+}
+
+/* Non-interactive padlock (axis_lock_interactive off, or an owner lock has
+   frozen the configuration): still readable as status, but visibly inert. */
+#axis_lock_button:disabled {
+  image: url("theme_{{ id }}:/lock_open_50.svg");
+}
+
+#axis_lock_button[locked=true]:disabled {
+  image: url("theme_{{ id }}:/lock_50.svg");
+}
+
 /* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */
 
 #QtModalPopup {

@@ -65,19 +65,33 @@ class QtDims(QWidget):
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
         self.dims.events.navigation_lock.connect(self._on_navigation_lock)
+        self.dims.events.axis_locked.connect(self._on_navigation_lock)
+        self.dims.events.axis_lock_interactive.connect(
+            self._on_navigation_lock
+        )
 
     def _on_navigation_lock(self, event=None):
-        """Disable slider widgets while navigation is locked.
+        """Sync every slider row to the current lock state.
 
         Locked axes cannot move the plane anyway (``Dims.set_current_step`` is a
-        no-op), but leaving the widget enabled lets the thumb drag with no effect,
-        which reads as a broken slider. Disabling it makes the freeze legible.
-        Exempt axes (``Dims.navigation_lock_exempt``) stay enabled.
+        no-op), but leaving the controls enabled lets the thumb drag with no
+        effect, which reads as a broken slider. Disabling them makes the freeze
+        legible. Both lock tiers land here: the transient
+        ``lock_navigation`` owner lock and the persistent per-axis locks.
+
+        Delegated per row so enablement can be applied per child — the padlock
+        must stay usable on an axis whose navigation controls are disabled.
         """
-        locked = self.dims.navigation_locked
-        exempt = set(self.dims.navigation_lock_exempt) if locked else set()
         for widget in self.slider_widgets:
-            widget.setEnabled(not locked or widget.axis in exempt)
+            widget._update_lock_state()
+
+        # Locking the axis being animated would strand playback: its play button
+        # has just been disabled, so the user could no longer stop it, and every
+        # further frame would be a blocked (event-less) write. Stop it here.
+        if self.is_playing:
+            axis = self._animation_thread.axis
+            if axis is not None and not self.dims.is_axis_movable(axis):
+                self.stop()
 
     @property
     def nsliders(self):
@@ -374,6 +388,12 @@ class QtDims(QWidget):
         the canvas can draw, this will drop the intermediate frames, keeping
         the effective frame rate constant even if the canvas cannot keep up.
         """
+        if not self.dims.is_axis_movable(axis):
+            # A locked axis's write is dropped *and* emits no event, so no draw
+            # would ever restore `_play_ready` and playback would hang
+            # unrecoverably. Stop instead of issuing a dead write.
+            self.stop()
+            return
         if self.dims._play_ready:
             # disable additional point advance requests until this one draws
             self.dims._play_ready = False
