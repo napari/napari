@@ -808,9 +808,7 @@ class Dims(EventedModel):
             ]
             if not matches:
                 raise ValueError(
-                    trans._(
-                        'No axis named {name}.', deferred=True, name=axis
-                    )
+                    trans._('No axis named {name}.', deferred=True, name=axis)
                 )
             if len(matches) > 1:
                 raise ValueError(
