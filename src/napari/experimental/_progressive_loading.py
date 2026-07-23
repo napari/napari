@@ -44,6 +44,7 @@ import threading
 import time
 import weakref
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from functools import partial
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -58,6 +59,7 @@ from napari.experimental._virtual_data import (
     MultiScaleVirtualData,
     VirtualData,
     chunk_boundaries,
+    chunk_shape_for,
 )
 from napari.utils import progress
 
@@ -342,6 +344,14 @@ def chunk_priority_3D(
 def _chunk_id(chunk_key: tuple[slice, ...]) -> tuple[tuple[int, int], ...]:
     """Hashable identifier for a chunk key."""
     return tuple((int(sl.start), int(sl.stop)) for sl in chunk_key)
+
+
+def _apply_chunk(vdata: VirtualData, chunk_key, chunk) -> None:
+    """Write a fetched chunk into *vdata* and record its provenance."""
+    vdata.set_offset(chunk_key, chunk)
+    cid = _chunk_id(chunk_key)
+    vdata.loaded_chunks.add(cid)
+    vdata.chunk_source[cid] = vdata.scale_level
 
 
 def _pack_upload_block(vdata: VirtualData, keys) -> tuple | None:
@@ -793,6 +803,7 @@ class ProgressiveLoader:
         # follow-up over the (possibly moved) region when it finishes
         self._repair_again = False
         self._debug_overlay = None
+        self._chunk_warned = False
         self._resident_level = len(data) - 1
         self._resident_max_bytes = resident_max_bytes
         self._resident_disabled = False
@@ -1313,49 +1324,13 @@ class ProgressiveLoader:
         layer._data_level = target
         # Mirror the corner_pixels update of the locked_data_level setter,
         # centering any sub-volume tile on the camera.
-        corners_fn = getattr(layer, '_corners_for_locked_level', None)
-        if corners_fn is not None:
-            view_dir = getattr(layer, '_view_direction_data', lambda _: None)(
-                displayed_axes
-            )
-            layer.corner_pixels = corners_fn(
-                target,
-                displayed_axes,
-                camera_bbox,
-                view_dir,
-            )
-        else:
-            shape_at_level = np.take(
-                np.asarray(layer.level_shapes[target]), displayed_axes
-            )
-            tile_cap = getattr(layer, '_max_tile_extent_3d', None)
-            if tile_cap is not None:
-                tile_extent = np.minimum(shape_at_level, tile_cap)
-            else:
-                tile_extent = shape_at_level
-            corners = np.zeros((2, layer.ndim), dtype=int)
-            if camera_bbox is not None and np.all(np.isfinite(camera_bbox)):
-                downsample = np.take(
-                    np.asarray(layer.downsample_factors[target]),
-                    displayed_axes,
-                )
-                center = camera_bbox.mean(axis=0).astype(float) / downsample
-                center = np.clip(center, 0, shape_at_level - 1)
-                low = np.clip(
-                    (center - tile_extent / 2).astype(int),
-                    0,
-                    shape_at_level - tile_extent,
-                )
-            else:
-                low = np.clip(
-                    ((shape_at_level - tile_extent) // 2).astype(int),
-                    0,
-                    shape_at_level - tile_extent,
-                )
-            high = low + tile_extent
-            corners[0, displayed_axes] = low
-            corners[1, displayed_axes] = high - 1
-            layer.corner_pixels = corners
+        view_dir = layer._view_direction_data(displayed_axes)
+        layer.corner_pixels = layer._corners_for_locked_level(
+            target,
+            displayed_axes,
+            camera_bbox,
+            view_dir,
+        )
         # Prepare the new level's interval with a backdrop from the level
         # that was just displayed BEFORE napari re-slices, so the previous
         # resolution stays on screen until new chunks replace it.
@@ -1972,6 +1947,9 @@ class ProgressiveLoader:
         self._refresh(force=True)
 
     def _start_fetch(self, level: int, min_coord, max_coord) -> None:
+        if not self._chunk_warned:
+            self._chunk_warned = True
+            _warn_if_chunks_suboptimal(self._data)
         self._cancel_active()
         vdata = self._data[level]
 
@@ -2200,12 +2178,7 @@ class ProgressiveLoader:
         vdata = self._data[level]
         final_stage = index == len(self._stages) - 1
 
-        def apply(chunk_key, chunk, vdata=vdata):
-            # worker thread: lock-guarded numpy writes; the main thread
-            # only handles GPU patching and bookkeeping per batch
-            vdata.set_offset(chunk_key, chunk)
-            vdata.loaded_chunks.add(_chunk_id(chunk_key))
-            vdata.chunk_source[_chunk_id(chunk_key)] = vdata.scale_level
+        apply = partial(_apply_chunk, vdata)
 
         def pack(keys, vdata=vdata):
             # worker thread: precompute the contiguous union-region block
@@ -2910,10 +2883,7 @@ class ProgressiveLoader:
             f'{self._layer.name}: loading overview',
         )
 
-        def apply(chunk_key, chunk, vdata=vdata):
-            vdata.set_offset(chunk_key, chunk)
-            vdata.loaded_chunks.add(_chunk_id(chunk_key))
-            vdata.chunk_source[_chunk_id(chunk_key)] = vdata.scale_level
+        apply = partial(_apply_chunk, vdata)
 
         self._resident_limiter = self._make_limiter()
         worker = _fetch_chunks(
@@ -3080,6 +3050,44 @@ def _attach_progressive_loader(
         # stop all background work when the window goes away
         viewer.window._qt_window.destroyed.connect(loader.close)
     return loader
+
+
+_CHUNK_WARN_BYTES = 50 * 1024 * 1024  # 50 MB
+_CHUNK_AXIS_COVERAGE = 0.5  # chunk covers >50% of array axis
+
+
+def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
+    """Emit a napari notification when chunk shapes are too large."""
+    level0 = data.arrays[0]
+    cshape = chunk_shape_for(level0)
+    shape = level0.shape
+    itemsize = np.dtype(level0.dtype).itemsize
+
+    chunk_bytes = int(np.prod(cshape)) * itemsize
+    coverage = [c / s for c, s in zip(cshape, shape) if s > 0]
+    full_axes = [
+        i for i, (c, s) in enumerate(zip(cshape, shape)) if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
+    ]
+
+    issues = []
+    if chunk_bytes > _CHUNK_WARN_BYTES:
+        mb = chunk_bytes / (1024 * 1024)
+        issues.append(f'each chunk is {mb:.0f} MB')
+    if full_axes:
+        axes_str = ', '.join(str(a) for a in full_axes)
+        issues.append(
+            f'chunks span >50% of axis {axes_str}'
+        )
+
+    if issues:
+        msg = (
+            f'Progressive loading: chunk shape {cshape} may cause '
+            f'slow or flickery streaming ({"; ".join(issues)}). '
+            f'Consider rechunking to smaller tiles '
+            f'(e.g. 64³ or 128³) for best results.'
+        )
+        import warnings
+        warnings.warn(msg, stacklevel=2)
 
 
 def add_progressive_loading_image(

@@ -30,8 +30,9 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 # Guards against re-entry while add_progressive_loading_* inserts the
-# replacement layer (which fires ``inserted`` again).
-_attaching = False
+# replacement layer (which fires ``inserted`` again).  Per-viewer so
+# concurrent viewers cannot bleed the guard into each other.
+_attaching: set[int] = set()
 
 
 def connect_viewer(viewer: napari.components.ViewerModel) -> None:
@@ -69,7 +70,10 @@ def _eligible(layer: Layer) -> bool:
 
 
 def _on_inserted(viewer_ref: weakref.ref, event: Event) -> None:
-    if _attaching or not _enabled():
+    viewer = viewer_ref()
+    if viewer is None:
+        return
+    if id(viewer) in _attaching or not _enabled():
         return
     layer = event.value
     if not _eligible(layer):
@@ -111,7 +115,6 @@ def _layer_kwargs(layer: Layer) -> dict:
 
 
 def _replace_with_progressive(viewer_ref: weakref.ref, layer: Layer) -> None:
-    global _attaching
     viewer = viewer_ref()
     if viewer is None or layer not in viewer.layers:
         return
@@ -127,7 +130,8 @@ def _replace_with_progressive(viewer_ref: weakref.ref, layer: Layer) -> None:
     data = list(layer.data)
     kwargs = _layer_kwargs(layer)
     index = viewer.layers.index(layer)
-    _attaching = True
+    vid = id(viewer)
+    _attaching.add(vid)
     try:
         viewer.layers.remove(layer)
         try:
@@ -146,4 +150,4 @@ def _replace_with_progressive(viewer_ref: weakref.ref, layer: Layer) -> None:
         # the replacement was appended at the end; restore the position
         viewer.layers.move(len(viewer.layers) - 1, index)
     finally:
-        _attaching = False
+        _attaching.discard(vid)

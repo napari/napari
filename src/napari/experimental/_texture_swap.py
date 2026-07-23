@@ -165,6 +165,27 @@ class _DoubleBufferedTexture(_TransformHoldMixin):
     #: number of leading spatial axes (a channel/dtype axis may follow)
     _spatial_ndim: int = 3
 
+    def _init_common(self, node, pool: list | None = None):
+        """Shared bookkeeping for both 2D and 3D double-buffer pairs."""
+        self._node = node
+        self._front = node._texture
+        self._shape = tuple(self._front.shape[: self._spatial_ndim])
+        self._pool: list[tuple] = pool if pool is not None else []
+        self._pool_max = DEFAULT_TEXTURE_POOL_SIZE
+        self._back = self._acquire(
+            tuple(self._front.shape),
+            getattr(self._front, '_data_dtype', None) or np.float32,
+            lambda: self._make_sibling(node, self._front),
+        )
+        self._log: list[tuple] = []
+        self._applied = {id(self._front): 0, id(self._back): 0}
+        self._wrapped_set_data = None
+        self._suppress_full = False
+        self._reshape_pending = False
+        self._held_matrix = None
+        self._pending_matrix = None
+        self._present_hold_until = 0.0
+
     def _sync_aux_state(self, tex):
         front = self._front
         if front.clim is not None:
@@ -294,54 +315,9 @@ class DoubleBufferedVolumeTexture(_DoubleBufferedTexture):
     _spatial_ndim = 3
 
     def __init__(self, node, pool: list | None = None):
-        self._node = node
-        self._front = node._texture
-        # the shape the pair was built for: a later in-place resize of
-        # the front (vispy reuses the texture object) must invalidate
-        # the pair, so don't read front.shape live
-        self._shape = tuple(self._front.shape[:3])
-        # retired-texture pool: list of (key, texture), most recent
-        # last; reused by _acquire instead of delete + reallocate.
-        # Accepted from a predecessor pair so rebuilds reuse textures.
-        self._pool: list[tuple] = pool if pool is not None else []
-        self._pool_max = DEFAULT_TEXTURE_POOL_SIZE
-        self._back = self._acquire(
-            self._front.shape,
-            getattr(self._front, '_data_dtype', None) or np.float32,
-            lambda: self._make_sibling(node, self._front),
-        )
-        # patch log: list of (offset, data) staged since creation; each
-        # texture tracks how much of the log it has applied. 'full'
-        # entries reset the log (older patches are superseded).
-        self._log: list[tuple] = []
-        self._applied = {id(self._front): 0, id(self._back): 0}
-        self._wrapped_set_data = None
-        self._suppress_full = False
-        # a staged shape change: the back texture already has the new
-        # shape/content while the old-shape front keeps rendering until
-        # the new texture's uploads have drained (or the deadline hits)
-        self._reshape_pending = False
+        self._init_common(node, pool)
         self._reshape_deadline = 0.0
-        # transform coordination: while a full rewrite/reshape is
-        # staged, the node matrix matching the still-rendered FRONT
-        # content is held; the matrix napari applies for the staged
-        # tile (its origin/scale change in the same set_data emission)
-        # is captured by the loader and applied at the swap, so texture
-        # content and tile transform always change in the same frame.
-        self._held_matrix = None
-        self._pending_matrix = None
-        # rolling drain deadline: EVERY staged write (patch, full,
-        # reshape, and the sibling replay after a reshape swap) is
-        # metered, so a swap before the drain renders whatever the back
-        # held before — stale/partial content for a frame or two. Every
-        # present waits for the meter to empty (deadline-bounded); the
-        # loader retries presents from the drain callback, so swaps
-        # naturally land the moment uploads settle.
         self._stage_deadline = 0.0
-        # loader veto: presents held while the staged interval has no
-        # real content yet (zeros + carry-over ahead of the repair
-        # worker); deadline-bounded so presents can never starve
-        self._present_hold_until = 0.0
 
     # -- construction helpers --
 
@@ -775,34 +751,14 @@ class DoubleBufferedImageTexture(_DoubleBufferedTexture):
     _spatial_ndim = 2
 
     def __init__(self, node, pool: list | None = None):
-        self._node = node
-        self._front = node._texture
-        self._shape = tuple(self._front.shape[:2])
-        self._pool: list[tuple] = pool if pool is not None else []
-        self._pool_max = DEFAULT_TEXTURE_POOL_SIZE
-        self._back = self._acquire(
-            tuple(self._front.shape),  # full shape: keep channels in the key
-            getattr(self._front, '_data_dtype', None) or np.float32,
-            lambda: self._make_sibling(node, self._front),
-        )
-        self._log: list[tuple] = []
-        self._applied = {id(self._front): 0, id(self._back): 0}
-        self._wrapped_set_data = None
-        self._suppress_full = False
+        self._init_common(node, pool)
+        self._pending_geometry = None
         # exempt the pair from upload metering: every write here targets
         # an unbound texture and becomes visible only through an atomic
         # swap — a deferred (carried) upload would present a partially
         # written texture as a black flash. The pair is stable (reshape
         # resizes in place), so the ids never change.
         self._exempt_ids = set()
-        self._present_hold_until = 0.0
-        # a shape change staged while presents were held: the back
-        # already has the new shape/content, the old-shape front keeps
-        # rendering (with its held matrix) until present() swaps
-        self._reshape_pending = False
-        self._pending_geometry = None
-        self._held_matrix = None
-        self._pending_matrix = None
         from napari.experimental import _glir_metering
 
         for tex in (self._front, self._back):

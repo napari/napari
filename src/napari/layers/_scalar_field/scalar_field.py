@@ -342,6 +342,11 @@ class ScalarFieldBase(Layer, ABC):
         # data-space view direction without reaching up to current_viewer().
         self._camera_view_direction: np.ndarray | None = None
 
+        # Viewport margin for 2D multiscale rendering. A factor > 1
+        # renders data beyond the visible viewport so pans/zoom-outs
+        # stay inside already-sliced content. Set by progressive loading.
+        self._render_margin_2d: float = 1.0
+
         # Set data
         self._data = data
         if isinstance(data, MultiScaleData):
@@ -574,7 +579,7 @@ class ScalarFieldBase(Layer, ABC):
                 shape_threshold,
                 self.downsample_factors[:, displayed_axes],
             )
-            margin = getattr(self, '_render_margin_2d', 1.0)
+            margin = self._render_margin_2d
             if margin > 1.0:
                 # Render a margin around the viewport so pans and
                 # zoom-outs stay inside already-sliced content instead

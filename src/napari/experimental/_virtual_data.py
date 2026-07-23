@@ -577,6 +577,9 @@ class MultiScaleVirtualData:
     def __getitem__(self, level: int) -> VirtualData:
         return self._data[level]
 
+    def __iter__(self):
+        return iter(self._data)
+
     @property
     def levels(self) -> int:
         return len(self._data)
