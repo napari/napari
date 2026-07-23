@@ -337,6 +337,11 @@ class ScalarFieldBase(Layer, ABC):
         # whole level is rendered.  Set by the progressive loader.
         self._interval_max_bytes_3d: int | None = None
 
+        # Camera view direction in world coordinates, set by _update_draw
+        # from the vispy canvas.  Used by _view_direction_data to compute
+        # data-space view direction without reaching up to current_viewer().
+        self._camera_view_direction: np.ndarray | None = None
+
         # Set data
         self._data = data
         if isinstance(data, MultiScaleData):
@@ -634,23 +639,19 @@ class ScalarFieldBase(Layer, ABC):
     ) -> np.ndarray | None:
         """View direction in level-0 data coords for displayed axes.
 
-        Returns None when no viewer is available or the direction
-        cannot be computed (e.g. in 2D).
+        Returns None when the direction is unavailable or the layer is
+        in 2D mode.  The world-space view direction is set each frame
+        by ``_update_draw`` (via the vispy canvas) rather than reaching
+        up to the viewer through ``current_viewer()``.
         """
         if self._slice_input.ndisplay != 3:
             return None
-        try:
-            from napari import current_viewer
-
-            viewer = current_viewer()
-            if viewer is None:
-                return None
-            world_dir = np.asarray(viewer.camera.view_direction, dtype=float)
-        except Exception:  # noqa: BLE001
+        world_dir = self._camera_view_direction
+        if world_dir is None:
             return None
+        world_dir = np.asarray(world_dir, dtype=float)
         if not np.all(np.isfinite(world_dir)):
             return None
-        # world_dir has ndisplay components; pad to full ndim
         full_dir = np.zeros(self.ndim, dtype=float)
         full_dir[list(displayed_axes)] = world_dir[-len(displayed_axes) :]
         try:

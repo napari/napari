@@ -1773,11 +1773,18 @@ class Shapes(Layer):
             self.mode = Mode.PAN_ZOOM
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
+        self,
+        scale_factor,
+        corner_pixels_displayed,
+        shape_threshold,
+        view_direction=None,
     ):
         prev_scale = self.scale_factor
         super()._update_draw(
-            scale_factor, corner_pixels_displayed, shape_threshold
+            scale_factor,
+            corner_pixels_displayed,
+            shape_threshold,
+            view_direction=view_direction,
         )
         if prev_scale != self.scale_factor and self.selected_data:
             self._set_highlight(force=True)

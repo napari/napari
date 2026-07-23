@@ -37,9 +37,6 @@ from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
-from napari.experimental._auto_progressive import (
-    connect_viewer as _connect_progressive_loading,
-)
 from napari.layers.base.base import Layer
 from napari.plugins import _npe2
 from napari.settings import get_settings
@@ -212,6 +209,10 @@ class QtViewer(QSplitter):
 
         # experimental: stream new multiscale layers progressively when
         # the setting is enabled (Preferences > Experimental)
+        from napari.experimental._auto_progressive import (
+            connect_viewer as _connect_progressive_loading,
+        )
+
         _connect_progressive_loading(self.viewer)
 
         self.setAcceptDrops(True)
