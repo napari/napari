@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          allowed_labels="bugfix feature documentation performance enhancement maintenance"
+          allowed_labels="bugfix feature documentation performance enhancement maintenance example"
 
           labels="$(gh api "/repos/${REPO}/pulls/${PR_NUMBER}" --jq '.labels[].name' || true)"
 

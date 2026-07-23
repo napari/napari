@@ -1313,16 +1313,6 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_edge_width = unique_edge_width
 
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(
-                    v[selected_data_indices]
-                )
-
-            if all(p is not None for p in unique_properties.values()):
-                with self.block_update_properties():
-                    self.current_properties = unique_properties
-
         self._set_highlight()
 
     @property
@@ -2832,6 +2822,8 @@ class Shapes(Layer):
                 vertex_indices=((),),
             )
             self._data_view.remove_multiple(to_remove)
+
+            self._value = (None, None)
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()

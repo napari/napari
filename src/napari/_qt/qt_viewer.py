@@ -180,7 +180,9 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        self._welcome_widget = QtWelcomeWidget(self.canvas.native, tips=tips)
+        self._welcome_widget = QtWelcomeWidget(
+            self.canvas.native, viewer=self.viewer, tips=tips
+        )
         self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
         self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
@@ -672,7 +674,9 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_layer(layer)
+        vispy_layer = create_vispy_layer(
+            layer, font_info=self.canvas.font_info()
+        )
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
@@ -1451,14 +1455,6 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
-
-    def font_manager(self) -> QtFontManager:
-        """Return the font manager for this viewer."""
-        return self._font_manager
-
-    def overlay_font(self) -> str:
-        """Return the font used for overlays."""
-        return self._overlay_font
 
 
 if TYPE_CHECKING:

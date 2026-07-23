@@ -61,6 +61,10 @@ class ApplicationSettings(EventedModel):
         self.events.brush_size_on_mouse_move_modifiers(
             value=self.brush_size_on_mouse_move_modifiers
         )
+        self.events.float_display_precision.connect(
+            float_display_precision_callback
+        )
+        self.events.float_display_precision(value=self.float_display_precision)
 
     first_time: bool = Field(
         True,
@@ -206,6 +210,17 @@ class ApplicationSettings(EventedModel):
             'Default is "Right".'
         ),
     )
+    synced_camera: bool = Field(
+        default=True,
+        title='Synced Camera',
+        description=trans._(
+            'Controls how camera state is managed when switching between\n'
+            '2D and 3D views. When checked, camera center and zoom are\n'
+            'shared between views, with the depth (Z) component synced via\n'
+            'the dims slider. When unchecked, each mode remembers\n'
+            'its own camera state independently.'
+        ),
+    )
 
     grid_stride: GridStride = Field(
         default=1,
@@ -236,6 +251,16 @@ class ApplicationSettings(EventedModel):
             'The amount of spacing inbetween grid viewboxes.\n'
             'If between 0 and 1, it is interpreted as a proportion of the size of the viewboxes.\n'
             'If equal or greater than 1, it is interpreted as screen pixels.'
+        ),
+    )
+
+    float_display_precision: int = Field(
+        3,
+        ge=1,
+        le=10,
+        title=trans._('Float display precision'),
+        description=trans._(
+            'Number of significant digits when displaying float values in the status bar and layer tooltips.'
         ),
     )
 
@@ -351,3 +376,9 @@ def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
     )
 
     change_brush_size_on_mouse_move_modifiers(event.value.split('+'))
+
+
+def float_display_precision_callback(event: Event) -> None:
+    from napari.utils import status_messages
+
+    status_messages.PRECISION_COUNT = event.value

@@ -118,19 +118,8 @@ class NapariQtNotification(QDialog):
         from napari.utils.theme import get_theme
 
         settings = get_settings()
-        theme = settings.appearance.theme
-        default_color = get_theme(theme).icon.as_hex()
-
-        # FIXME: Should these be defined at the theme level?
-        # Currently there is a warning one
-        colors = {
-            'error': '#D85E38',
-            'warning': '#E3B617',
-            'info': default_color,
-            'debug': default_color,
-            'none': default_color,
-        }
-        color = colors.get(severity, default_color)
+        theme = get_theme(settings.appearance.theme)
+        color = getattr(theme, severity, theme.icon).as_hex()
         icon = QColoredSVGIcon.from_resources(severity)
         self.severity_icon.setPixmap(icon.colored(color=color).pixmap(15, 15))
 
@@ -316,6 +305,7 @@ class NapariQtNotification(QDialog):
         )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
+        self.row2_widget.setObjectName('notification_actions')
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
@@ -326,12 +316,6 @@ class NapariQtNotification(QDialog):
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
-        self.row2_widget.setStyleSheet(
-            'QPushButton{'
-            'padding: 4px 12px 4px 12px; '
-            'font-size: 11px;'
-            'min-height: 18px; border-radius: 0;}'
-        )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
         self.resize(self.MIN_WIDTH, 40)
