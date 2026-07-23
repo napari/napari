@@ -5,6 +5,8 @@ import pytest
 
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
+from napari.layers.shapes import _shapes_key_bindings as key_bindings
+from napari.layers.shapes._shapes_constants import Box
 from napari.layers.shapes.shapes import Mode
 from napari.settings import get_settings
 from napari.utils._test_utils import read_only_mouse_event
@@ -217,6 +219,62 @@ def test_add_fixed_aspect_shape_in_drag_direction(
     # the bounding box must be square (equal width and height)
     bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
     assert np.isclose(bbox_size[0], bbox_size[1], rtol=1e-3)
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+def test_add_fixed_aspect_shape_preserves_ratio_when_locked_during_drag(
+    shape_type,
+    create_known_shapes_layer,
+):
+    """Pressing Shift during a drag should lock the current aspect ratio."""
+    layer, n_shapes, _ = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+
+    press_pos = [20, 20]
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=press_pos,
+    )
+    mouse_press_callbacks(layer, event)
+
+    # First drag to create a non-square shape (e.g. 100x50 = 2:1)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[120, 70],
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate Shift pressed at this point
+    box = layer._selected_box
+    size = box[Box.BOTTOM_RIGHT] - box[Box.TOP_LEFT]
+    expected_ratio = size[1] / size[0]
+    gen = key_bindings.hold_to_lock_aspect_ratio(layer)
+    next(gen)
+
+    # Second drag in a more vertical direction
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[120, 180],
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[120, 180],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+
+    new_shape = layer.data[-1]
+    bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
+    actual_ratio = bbox_size[1] / bbox_size[0]
+
+    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-4)
 
 
 def test_path_tablet(create_known_shapes_layer):
