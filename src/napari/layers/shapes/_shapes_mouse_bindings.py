@@ -870,6 +870,12 @@ def _add_rectangle_ellipse_line(
                 direction[direction == 0] = nonzero_direction[0]
             elif len(nonzero_direction) == 0:
                 direction = box[vertex] - box_center
+
+            # Scale by the aspect ratio
+            direction = np.array(
+                [direction[0], direction[1] * layer._aspect_ratio]
+            )
+
             new = (
                 direction
                 / np.linalg.norm(direction)

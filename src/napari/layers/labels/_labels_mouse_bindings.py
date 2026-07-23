@@ -36,6 +36,13 @@ def draw(layer, event):
     if layer.cursor == 'circle_frozen':
         return
 
+    # In PAINT mode the right button (and any click during an active stroke) is
+    # reserved for the encircle-and-fill brush stroke handled by the
+    # brush_stroke overlay.
+    brush_stroke = layer._overlays['brush_stroke']
+    if brush_stroke.active or (brush_stroke.enabled and event.button == 2):
+        return
+
     coordinates = mouse_event_to_labels_coordinate(layer, event)
     if layer._mode == Mode.ERASE:
         new_label = layer.colormap.background_value
