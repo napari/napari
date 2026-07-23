@@ -190,6 +190,10 @@ QtColorBox {
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   color: {{ text }};
 }
+QPushButton#newLabelButton {
+  min-height: 12px;
+  max-height: 12px;
+}
 
 SliderLabel {
   background-color: {{ darken(background, 15) }};
@@ -227,7 +231,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
-/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
+/* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */

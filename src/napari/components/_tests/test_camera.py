@@ -111,14 +111,25 @@ def test_calculate_view_direction_nd():
 
 @pytest.mark.parametrize(
     ('orientation', 'expected_handedness'),
-    zip(
-        # Could do this but the order is not locally visible, so we explicitly
-        # order the strings so we can think about handedness locally.
-        # product(DepthAxisOrientation, VerticalAxisOrientation, HorizontalAxisOrientation),
-        product(['towards', 'away'], ['down', 'up'], ['right', 'left']),
-        # hardcoded after running once
-        ['right', 'left', 'left', 'right', 'left', 'right', 'right', 'left'],
-        strict=False,
+    list(
+        zip(
+            # Could do this but the order is not locally visible, so we explicitly
+            # order the strings so we can think about handedness locally.
+            # product(DepthAxisOrientation, VerticalAxisOrientation, HorizontalAxisOrientation),
+            product(['towards', 'away'], ['down', 'up'], ['right', 'left']),
+            # hardcoded after running once
+            [
+                'right',
+                'left',
+                'left',
+                'right',
+                'left',
+                'right',
+                'right',
+                'left',
+            ],
+            strict=False,
+        )
     ),
 )
 def test_handedness(orientation, expected_handedness):
