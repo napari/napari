@@ -274,6 +274,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         settings.application.events.horizontal_axis_orientation.connect(
             self._update_camera_orientation
         )
+        self._update_synced_camera()
+        settings.application.events.synced_camera.connect(
+            self._update_synced_camera
+        )
 
         self._update_viewer_grid()
         settings.application.events.grid_stride.connect(
@@ -296,7 +300,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.fit_to_view)
+        self.dims.events.ndisplay.connect(
+            self._save_camera_state, position='first'
+        )
+        self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
@@ -308,6 +315,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+
+        # Track previous ndisplay for per-mode camera state caching.
+        self._previous_ndisplay: int = self.dims.ndisplay
+
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(self.update_status_from_cursor)
@@ -363,6 +374,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             settings.application.horizontal_axis_orientation,
         )
 
+    def _update_synced_camera(self):
+        """Update camera synced mode based on settings."""
+        settings = get_settings()
+        self.camera.synced = settings.application.synced_camera
+
     def _update_viewer_grid(self):
         """Keep viewer grid settings up to date with settings values."""
 
@@ -409,15 +425,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
         return super().model_dump(exclude=exclude, **kwargs)
-
-    def dict(self, **kwargs):
-        """Convert to a dictionary.
-
-        .. deprecated:: 0.7.0
-             `dict` will be removed in napari 0.8.0 it is replaced by
-             `model_dump` following pydantic 1 to 2 changes.
-        """
-        self.model_dump(**kwargs)
 
     def __hash__(self):
         return id(self)
@@ -507,6 +514,53 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             zoom=self.camera.zoom,
             angles=self.camera.angles,
         )
+
+    def _save_camera_state(self) -> None:
+        """Save camera state for the mode we're leaving (runs at 'first').
+
+        Always caches the current camera state so that the "separate"
+        (synced=False) mode can restore it when returning to this
+        ndisplay mode. Caching is harmless in synced mode since
+        ``_on_ndisplay_changed`` does not use the cached values there.
+        """
+        self.camera._cache_state(self._previous_ndisplay)
+
+    def _on_ndisplay_changed(self) -> None:
+        """Handle ndisplay changes based on the current camera synced mode.
+
+        * ``synced=True`` — center and zoom persist between modes.
+          The depth (z) component is set from the dims slider on 2D→3D
+          and the dims slider tracks the camera z on 3D→2D.
+        * ``synced=False`` — each mode remembers its own center, zoom,
+          and angles independently (per-mode caching).
+        """
+        if self.camera.synced:
+            center = list(self.camera.center)
+            if len(self.dims.order) >= 3:
+                new_display_dim = self.dims.order[-3]
+                if self.dims.ndisplay == 3:
+                    center[0] = float(self.dims.point[new_display_dim])
+                else:
+                    self.dims.set_point(new_display_dim, center[0])
+                    center[0] = 0.0
+            elif self.dims.ndisplay == 2:
+                center[0] = 0.0
+            self.camera.center = center[0], center[1], center[2]
+            self._previous_ndisplay = self.dims.ndisplay
+            return
+
+        # Separate (synced=False) — per-mode caching
+        new_mode = self.dims.ndisplay
+        cached = self.camera._pop_cached_state(new_mode)
+        if cached is not None:
+            self.camera.center = cached.center
+            self.camera.zoom = cached.zoom
+            self.camera.angles = cached.angles
+        else:
+            # First time in this mode — use fit_to_view defaults
+            self.fit_to_view()
+            self.camera._cache_state(new_mode)
+        self._previous_ndisplay = new_mode
 
     def _get_scene_parameters(
         self,
