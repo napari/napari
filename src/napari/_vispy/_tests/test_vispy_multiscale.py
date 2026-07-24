@@ -263,3 +263,30 @@ def test_multiscale_rotated_image(qt_viewer, viewer_model):
     assert np.any(
         screenshot_rgb
     )  # make sure there is at least one white pixel
+
+
+def test_canvas_draw_sets_camera_view_direction(make_napari_viewer):
+    """The canvas hands the camera direction to scalar field layers.
+
+    Progressive loading uses it to bias 3D sub-volume tiles toward the
+    camera-facing side of the volume; layers that do not track it must be
+    left untouched.
+    """
+    viewer = make_napari_viewer()
+    shapes = [(64, 64, 64), (32, 32, 32)]
+    image = viewer.add_image(
+        [np.zeros(s, dtype=np.uint8) for s in shapes], multiscale=True
+    )
+    points = viewer.add_points([[0, 0, 0]])
+    viewer.dims.ndisplay = 3
+
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
+    np.testing.assert_allclose(
+        image._camera_view_direction, viewer.camera.view_direction
+    )
+    assert not hasattr(points, '_camera_view_direction')
+    # the direction is usable in data space for the displayed axes
+    data_dir = image._view_direction_data([0, 1, 2])
+    assert data_dir is not None
+    np.testing.assert_allclose(np.linalg.norm(data_dir), 1.0)

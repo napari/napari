@@ -758,13 +758,17 @@ class VispyCanvas:
                 displayed_axes = displayed_sorted
             else:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
+            # Layers that use the camera direction for multiscale corner
+            # computations (see ScalarFieldBase._view_direction_data) read
+            # it from here rather than reaching up to the viewer.
+            if hasattr(layer, '_camera_view_direction'):
+                layer._camera_view_direction = view_dir
             layer._update_draw(
                 scale_factor=1 / camera.zoom,
                 corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
                 shape_threshold=self._current_viewbox_size[::-1],
-                view_direction=view_dir,
             )
 
     def on_resize(self, event: ResizeEvent) -> None:

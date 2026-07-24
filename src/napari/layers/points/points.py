@@ -1662,18 +1662,11 @@ class Points(Layer):
             self.mode = Mode.PAN_ZOOM
 
     def _update_draw(
-        self,
-        scale_factor,
-        corner_pixels_displayed,
-        shape_threshold,
-        view_direction=None,
+        self, scale_factor, corner_pixels_displayed, shape_threshold
     ):
         prev_scale = self.scale_factor
         super()._update_draw(
-            scale_factor,
-            corner_pixels_displayed,
-            shape_threshold,
-            view_direction=view_direction,
+            scale_factor, corner_pixels_displayed, shape_threshold
         )
         # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))

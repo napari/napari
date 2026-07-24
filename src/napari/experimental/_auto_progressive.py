@@ -23,6 +23,8 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     import napari
     from napari.layers import Layer
     from napari.utils.events import Event
@@ -112,6 +114,46 @@ def _layer_kwargs(layer: Layer) -> dict:
         # ``rendering`` is intentionally not carried over: the
         # progressive default (attenuated_mip) is tuned for streaming.
     return kwargs
+
+
+def add_progressive_labels_like(
+    base_layer: Layer,
+    viewer: napari.components.ViewerModel,
+    dtype: npt.DTypeLike,
+) -> None:
+    """Add an empty progressive Labels layer matching *base_layer*.
+
+    Called by ``ViewerModel._new_labels`` when the selected layer is
+    progressively loaded: the new Labels layer needs the same multiscale
+    pyramid (and a chunked, writable store per level) so that painting
+    and streaming work at every level.
+    """
+    import zarr
+
+    from napari.experimental._progressive_loading import (
+        add_progressive_loading_labels,
+    )
+    from napari.experimental._virtual_data import chunk_shape_for
+
+    loader = base_layer.metadata['progressive_loader']
+    ndim = base_layer.ndim
+    label_arrays = []
+    for src in loader._data.arrays:
+        lvl_shape = tuple(int(s) for s in src.shape[:ndim])
+        chunks = tuple(
+            min(c, s)
+            for c, s in zip(
+                chunk_shape_for(src)[:ndim], lvl_shape, strict=False
+            )
+        )
+        label_arrays.append(zarr.zeros(lvl_shape, chunks=chunks, dtype=dtype))
+    add_progressive_loading_labels(
+        label_arrays,
+        viewer=viewer,  # type: ignore[arg-type]
+        name=base_layer.name + ' - Labels',
+        scale=tuple(base_layer.scale),
+        translate=tuple(base_layer.translate),
+    )
 
 
 def _replace_with_progressive(viewer_ref: weakref.ref, layer: Layer) -> None:

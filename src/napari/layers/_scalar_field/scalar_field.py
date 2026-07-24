@@ -1249,6 +1249,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             thumbnail_level=thumbnail_level,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
+            crop_to_corners_3d=self.layer._max_tile_extent_3d is not None,
         )
 
     def _update_slice_response(
