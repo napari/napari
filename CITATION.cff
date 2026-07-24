@@ -209,6 +209,9 @@ authors:
   affiliation: Imaging Methods Core Facility at Biocev, Charles University
   orcid: https://orcid.org/0000-0002-7623-5848
   alias: cockovaz
+- given-names: Sara
+  family-names: Czasak
+  alias: sara-czasak
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -228,6 +231,10 @@ authors:
   affiliation: Pioneering Research Institute, RIKEN
   orcid: https://orcid.org/0000-0002-8860-7178
   alias: yfukai
+- given-names: Arbor
+  family-names: Garnett
+  affiliation: University of Minnesota
+  alias: arbormoss
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
@@ -424,6 +431,10 @@ authors:
 - given-names: James
   family-names: Ryan
   alias: jamesyan-git
+- given-names: Tom
+  family-names: Saveur
+  orcid: https://orcid.org/0009-0002-6410-4063
+  alias: Tommaati
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
