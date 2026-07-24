@@ -178,6 +178,11 @@ class QtViewer(QSplitter):
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            config={
+                'samples': 4
+                if get_settings().experimental.multisampling
+                else 0
+            },
         )
 
         self._welcome_widget = QtWelcomeWidget(
