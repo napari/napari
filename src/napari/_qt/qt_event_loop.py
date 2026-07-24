@@ -25,7 +25,6 @@ from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
 from napari.utils import config, perf
-from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils.logo import get_logo_path
 from napari.utils.notifications import (
     notification_manager,
@@ -465,6 +464,5 @@ def run(
     with (
         notification_manager,
         _maybe_allow_interrupt(app),
-        register_logger_to_napari_handler(''),
     ):
         app.exec_()
