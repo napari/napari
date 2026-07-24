@@ -649,7 +649,6 @@ module = [
     'napari._qt.layer_controls.widgets._labels.qt_preserve_labels_checkbox',
     'napari._qt.layer_controls.widgets._labels.qt_render_control',
     'napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox',
-    'napari._qt.layer_controls.widgets._points.qt_current_size_slider',
     'napari._qt.layer_controls.widgets._points.qt_symbol_combobox',
     'napari._qt.layer_controls.widgets._points.qt_border_color',
     'napari._qt.layer_controls.widgets.qt_colormap_control',
