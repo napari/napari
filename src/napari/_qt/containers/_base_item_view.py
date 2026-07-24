@@ -7,7 +7,6 @@ from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 
 from napari._qt.containers._base_item_model import (
     ItemRole,
-    _BaseEventedItemModel,
 )
 from napari._qt.containers._factory import create_model
 
@@ -18,12 +17,15 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent
     from qtpy.QtWidgets import QAbstractItemView
 
+    from napari._qt.containers._base_item_model import _BaseEventedItemModel
     from napari.utils.events import Event
     from napari.utils.events.containers import SelectableEventedList
 
     _ViewBase = QAbstractItemView
 else:
-    _ViewBase = object
+
+    class _ViewBase:
+        pass
 
 
 class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
