@@ -988,7 +988,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if hasattr(layer.events, 'drawing_started') and hasattr(
             layer.events, 'drawing_finished'
         ):
-            layer.events.drawing_started.connect(self._on_layer_drawing_started)
+            layer.events.drawing_started.connect(
+                self._on_layer_drawing_started
+            )
             layer.events.drawing_finished.connect(
                 self._on_layer_drawing_finished
             )

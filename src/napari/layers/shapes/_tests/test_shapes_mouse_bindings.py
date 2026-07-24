@@ -162,10 +162,7 @@ def _slice_stepping_positions(scale_z):
     zs = [5, 9, 2, 7]
     ys = [10, 40, 60, 30]
     xs = [20, 60, 40, 80]
-    return [
-        [z * scale_z, y, x]
-        for z, y, x in zip(zs, ys, xs, strict=True)
-    ]
+    return [[z * scale_z, y, x] for z, y, x in zip(zs, ys, xs, strict=True)]
 
 
 def _press(layer, pos, *, drag=False):
