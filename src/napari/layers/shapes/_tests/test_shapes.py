@@ -2741,3 +2741,45 @@ def test_default_features_not_changed_when_selected_data_changes():
     np.testing.assert_equal(
         shape.feature_defaults.values[0][1], origin_values[0][1]
     )
+
+
+def test_outline_not_drawn_off_slice():
+    """Highlight outline of a shape is only drawn on the shape's own slice.
+
+    Regression: ``_outline_shapes`` used the shape's in-plane vertices without
+    checking the viewed slice, so a selected or hovered shape drew a thin
+    highlight outline on adjacent slices even though its face mesh (correctly
+    slice-gated) was hidden there. Both the selection path and the hover-only
+    path are exercised, on and off the shape's slice.
+    """
+    on_slice = Dims(
+        ndim=3, ndisplay=2, range=((0, 5, 1),) * 3, point=(0, 0, 0)
+    )
+    off_slice = Dims(
+        ndim=3, ndisplay=2, range=((0, 5, 1),) * 3, point=(1, 0, 0)
+    )
+    # A single polygon living entirely on slice z=0 of a 3-D layer.
+    layer = Shapes(
+        [[(0, 0, 0), (0, 0, 10), (0, 10, 10), (0, 10, 0)]],
+        shape_type='polygon',
+    )
+
+    # On the shape's own slice, both an active selection and a bare hover
+    # (no selection) draw the outline.
+    layer._slice_dims(on_slice)
+    layer.selected_data = {0}
+    layer._value = (None, None)
+    assert layer._outline_shapes()[0] is not None  # selection path
+    layer.selected_data = set()
+    layer._value = (0, None)
+    assert layer._outline_shapes()[0] is not None  # hover-only path
+
+    # Stepping to an adjacent slice hides the face; neither path may outline.
+    layer._slice_dims(off_slice)
+    assert not layer._data_view._displayed[0]
+    layer.selected_data = {0}
+    layer._value = (None, None)
+    assert layer._outline_shapes() == (None, None)  # selection path
+    layer.selected_data = set()
+    layer._value = (0, None)
+    assert layer._outline_shapes() == (None, None)  # hover-only path
