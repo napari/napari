@@ -562,6 +562,14 @@ authors:
   affiliation: European Spallation Source
   orcid: https://orcid.org/0000-0002-0969-0437
   alias: mriduls
+- given-names: Job
+  family-names: Becht
+  affiliation: Netherlands Forensic Institute
+  alias: job-b
+- given-names: Christophe
+  family-names: Creeten
+  affiliation: Netherlands Forensic Institute
+  alias: ccreeten
 - given-names: Sébastien
   family-names: Morais
   affiliation: Synopsys, Inc.

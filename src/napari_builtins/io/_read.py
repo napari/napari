@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import csv
-import itertools
 import os
 import re
 import tokenize
 from contextlib import suppress
 from glob import glob
+from itertools import chain, pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 import imageio.v3 as iio
 import numpy as np
+import numpy.typing as npt
 from dask import delayed
 
 from napari.utils.io import execute_python_code
@@ -19,9 +20,14 @@ from napari.utils.misc import abspath_or_url
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
-    from napari.types import FullLayerData, LayerData, ReaderFunction
+    from napari.types import (
+        FullLayerData,
+        LayerData,
+        PathOrPaths,
+        ReaderFunction,
+    )
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -411,7 +417,7 @@ def _shapes_csv_to_layerdata(
 
     data = []
     shape_type = []
-    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
+    for ind_a, ind_b in pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
@@ -568,6 +574,84 @@ def _csv_reader(path: str | Sequence[str]) -> list[LayerData]:
 
 def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
+
+
+def _read_wavefront_obj_lines(
+    lines: Iterable[str],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
+    vertices = []
+    faces = []
+
+    for line in lines:
+        parts = line.strip().split()
+        # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
+        if len(parts) > 1:
+            element_type, *values = parts
+            match element_type:
+                # we are currently only interested in vertices and faces, no other features
+                case 'v':
+                    vertices.append([float(value) for value in values])
+                case 'f':
+                    # we only take the first part of the split, which is the vertex index
+                    # (because we ignore normals and texture coordinates)
+                    indices = [value.split('/')[0] for value in values]
+                    # we only support triangles (for now)
+                    if len(indices) != 3:
+                        raise ValueError('Only triangular faces are supported')
+                    # subtract one for each index, since OBJ uses 1-based indexing
+                    faces.append([int(index) - 1 for index in indices])
+
+    return (
+        np.array(vertices, dtype=np.float64),
+        np.array(faces, dtype=np.int32),
+    )
+
+
+def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
+    # if it is a sequence of paths, we process each file separately and return all results
+    if not isinstance(path_or_paths, (str, Path)):
+        return list(
+            chain.from_iterable(
+                _read_wavefront_obj(path) for path in path_or_paths
+            )
+        )
+
+    with open(path_or_paths, encoding='utf-8') as obj_file:
+        vertices, faces = _read_wavefront_obj_lines(obj_file)
+        surface = (vertices, faces)
+
+        add_kwargs = {
+            'blending': 'opaque',
+            # we default to smooth shading for now (in the future we could process the 's' type if necessary)
+            'shading': 'smooth',
+        }
+
+        return [(surface, add_kwargs, 'surface')]
+
+
+def napari_get_obj_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Wavefront OBJ files.
+
+    It is used to read the mesh data contained in the OBJ file and
+    convert it to a Surface for internal use.
+
+    Parameters
+    ----------
+    path : str
+        Path to the OBJ file to be read.
+
+    Returns
+    -------
+    callable
+        A function parses the OBJ file and converts it to a Surface.
+    """
+    if not os.path.exists(path):
+        return None
+
+    if os.path.splitext(path)[1] != '.obj':
+        return None
+
+    return _read_wavefront_obj
 
 
 def napari_get_reader(
