@@ -730,7 +730,6 @@ module = [
     'napari.utils.events.event',
     'napari.utils.events.evented_model',
     'napari.utils.interactions',
-    'napari.utils.key_bindings',
     'napari.utils.mouse_bindings',
     'napari.utils.stubgen',
     'napari.utils.transforms.transforms',
