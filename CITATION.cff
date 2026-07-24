@@ -539,6 +539,11 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Giliane
+  family-names: Rochat
+  affiliation: Institute of Neuropathology, University Hospital of Zürich
+  orcid: https://orcid.org/0009-0003-6017-1418
+  alias: girochat
 - given-names: Filippo Maria
   family-names: Castelli
   affiliation: Delta Tribe SRL
