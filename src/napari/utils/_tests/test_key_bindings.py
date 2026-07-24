@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from vispy.util import keys
 
 from napari.utils import key_bindings
 from napari.utils.key_bindings import (
@@ -417,3 +418,117 @@ def test_key_release_callback(monkeypatch):
     monkeypatch.setattr(time, 'time', lambda: 2)
     handler.release_key('K')
     assert called2
+
+
+class _FakeNativeEvent:
+    """Stands in for the Qt event behind a vispy key event."""
+
+    def __init__(self, auto_repeat: bool) -> None:
+        self._auto_repeat = auto_repeat
+
+    def isAutoRepeat(self) -> bool:
+        return self._auto_repeat
+
+
+class _FakeKey:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class _FakeKeyEvent:
+    """Minimal stand-in for the vispy event `on_key_press` consumes."""
+
+    def __init__(self, name: str, *, auto_repeat: bool, modifiers=()) -> None:
+        self.key = _FakeKey(name)
+        self.modifiers = list(modifiers)
+        self.native = _FakeNativeEvent(auto_repeat)
+        self.handled = False
+
+
+def _press(handler, name, *, held_for=0, modifiers=()):
+    """Send one real press followed by `held_for` auto-repeats."""
+    handler.on_key_press(
+        _FakeKeyEvent(name, auto_repeat=False, modifiers=modifiers)
+    )
+    for _ in range(held_for):
+        handler.on_key_press(
+            _FakeKeyEvent(name, auto_repeat=True, modifiers=modifiers)
+        )
+
+
+@pytest.mark.parametrize('key', ['Up', 'Down', 'Left', 'Right'])
+def test_navigation_keys_autorepeat_however_they_are_bound(key):
+    """Held navigation keys repeat even when bound through `bind_key`.
+
+    Regression for #9203: ``repeatables`` mixed ``KeyBinding`` objects with the
+    string literals ``'Up'``/``'Down'``/``'Left'``/``'Right'``. The set is tested
+    against a ``KeyBinding``, which never compares equal to a ``str``, so those
+    literals never matched -- and a navigation key bound through the public
+    ``bind_key`` API fired once no matter how long it was held.
+    """
+
+    class Foo(KeymapProvider): ...
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [Foo()]
+
+    presses = []
+
+    @Foo.bind_key(key)
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, key, held_for=4)
+    assert len(presses) == 5  # the initial press plus every auto-repeat
+
+
+def test_non_navigation_keys_still_do_not_autorepeat():
+    """The exemption is scoped: an ordinary bound key still fires once.
+
+    Guards the other direction of #9203 -- the fix must not make *every* held
+    key repeat, only the navigation keys and registered repeatable shortcuts.
+    """
+
+    class Foo(KeymapProvider): ...
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [Foo()]
+
+    presses = []
+
+    @Foo.bind_key('K')
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'K', held_for=4)
+    assert len(presses) == 1  # auto-repeats filtered out
+
+
+def test_modified_navigation_keys_still_do_not_autorepeat():
+    """The exemption is an exact match: a modified arrow is not the bare arrow.
+
+    `_vispy2appmodel` folds held modifiers into the binding, so a modified arrow
+    produces a different KeyBinding than the bare one placed in `repeatables`.
+    Pins that the #9203 fix widened the set by exactly the four bare navigation
+    keys and nothing more.
+
+    Uses Alt rather than Control deliberately: vispy's CONTROL maps to
+    ``KeyMod.CtrlCmd``, which renders as ``Meta+`` on macOS but is spelled
+    ``Ctrl+`` by ``bind_key``, so a Control-based test would fail to match the
+    binding for reasons unrelated to auto-repeat. Alt is spelled the same on
+    both sides everywhere.
+    """
+
+    class Foo(KeymapProvider): ...
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [Foo()]
+
+    presses = []
+
+    @Foo.bind_key('Alt+Up')
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'Up', held_for=4, modifiers=[keys.ALT])
+    assert len(presses) == 1  # bound and fired, but auto-repeats filtered out
