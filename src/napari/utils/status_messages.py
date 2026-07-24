@@ -3,12 +3,12 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
-PRECISION_COUNT = 3
+DEFAULT_PRECISION = 3
 
 
-def format_float(value):
+def format_float(value, precision=DEFAULT_PRECISION):
     """Nice float formatting into strings."""
-    return f'{value:0.{PRECISION_COUNT}g}'
+    return f'{value:0.{precision}g}'
 
 
 def format_feature_value(value):
