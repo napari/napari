@@ -106,7 +106,9 @@ class EventedList(TypedMutableSequence[_T]):
         else:
             # otherwise create a new one
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **_events
+                source=self,
+                auto_connect=False,
+                **_events,  # type: ignore[arg-type]
             )
         super().__init__(data, basetype=basetype, lookup=lookup)
 
@@ -117,7 +119,7 @@ class EventedList(TypedMutableSequence[_T]):
     # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
-    def __setitem__(self, key, value: _T) -> None:
+    def __setitem__(self, key: Index, value: _T | Iterable[_T]) -> None:
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
@@ -127,34 +129,36 @@ class EventedList(TypedMutableSequence[_T]):
                         deferred=True,
                     )
                 )
-            value = list(
+            new_values: list[_T] = list(
                 value
             )  # make sure we don't empty generators and reuse them
-            if value == old:
+            if new_values == old:
                 return
-            [self._type_check(v) for v in value]  # before we mutate the list
+            [
+                self._type_check(v) for v in new_values
+            ]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
-                if not len(value) == len(indices):
+                if not len(new_values) == len(indices):
                     raise ValueError(
                         trans._(
                             'attempt to assign sequence of size {size} to extended slice of size {slice_size}',
                             deferred=True,
-                            size=len(value),
+                            size=len(new_values),
                             slice_size=len(indices),
                         )
                     )
-                for i, v in zip(indices, value, strict=False):
+                for i, v in zip(indices, new_values, strict=False):
                     self.__setitem__(i, v)
             else:
                 del self[key]
                 start = key.start or 0
-                for i, v in enumerate(value):
+                for i, v in enumerate(new_values):
                     self.insert(start + i, v)
         else:
             if value is old:
                 return
-            super().__setitem__(key, value)
+            super().__setitem__(key, value)  # type: ignore[assignment]
             self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
@@ -201,7 +205,7 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)
+                event.index = self.index(event.source)  # type: ignore[attr-defined]
 
         # reemit with this object's EventEmitter
         self.events(event)
