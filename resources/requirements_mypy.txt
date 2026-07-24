@@ -12,7 +12,7 @@ build==1.5.0
     # via npe2
 certifi==2026.6.17
     # via requests
-charset-normalizer==3.4.7
+charset-normalizer==3.4.9
     # via requests
 docstring-parser==0.18.0
     # via magicgui
@@ -20,7 +20,7 @@ idna==3.18
     # via requests
 in-n-out==0.2.1
     # via app-model
-librt==0.12.0
+librt==0.13.0
     # via mypy
 magicgui==0.10.2
     # via -r resources/requirements_mypy.in
@@ -28,7 +28,7 @@ markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-mypy==2.1.0
+mypy==2.3.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
@@ -42,7 +42,7 @@ packaging==26.2
     #   qtpy
 pathspec==1.1.1
     # via mypy
-platformdirs==4.10.0
+platformdirs==4.10.1
     # via npe2
 psygnal==0.15.1
     # via
@@ -92,13 +92,13 @@ superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
     # via npe2
-typer==0.26.8
+typer==0.27.0
     # via npe2
 types-pyyaml==6.0.12.20260518
     # via -r resources/requirements_mypy.in
-types-requests==2.33.0.20260518
+types-requests==2.33.0.20260712
     # via -r resources/requirements_mypy.in
-types-setuptools==83.0.0.20260706
+types-setuptools==83.0.0.20260716
     # via -r resources/requirements_mypy.in
 typing-extensions==4.16.0
     # via
