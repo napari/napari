@@ -12,7 +12,7 @@ import numpy as np
 import numpy.typing as npt
 
 from napari import layers
-from napari.layers import Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, Points
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
@@ -253,6 +253,51 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     new._transforms = layer._transforms.set_slice(
         [ax for ax in range(layer.ndim) if ax != axis]
     )
+
+    ll.append(new)
+
+
+def _project_points(ll: LayerList, axis: int = 0) -> None:
+    """Project a points layer onto a single plane by dropping one axis.
+
+    No reduction is applied: every point is kept and its coordinate along
+    ``axis`` is removed, so a 3D layer becomes 2D. Per-point state (size,
+    colors, symbol, features) is preserved. See napari/napari#9195.
+    """
+    layer = ll.selection.active
+    if not layer:
+        return
+    if not isinstance(layer, Points):
+        raise NotImplementedError(
+            trans._(
+                'Single plane projection is only implemented for points',
+                deferred=True,
+            )
+        )
+
+    kept_axes = [ax for ax in range(layer.ndim) if ax != axis]
+    new_data = np.asarray(layer.data)[:, kept_axes]
+
+    # Point count is unchanged, so per-point state round-trips as-is. Drop the
+    # transform keys (re-derived below via `set_slice`) and `ndim` (inferred
+    # from new_data, which now has one fewer column).
+    _, meta, _ = layer.as_layer_data_tuple()
+    for key in (
+        'scale',
+        'translate',
+        'rotate',
+        'shear',
+        'affine',
+        'axis_labels',
+        'units',
+        'ndim',
+    ):
+        meta.pop(key, None)
+    meta['name'] = trans._('{name} projected', name=layer.name)
+
+    new = Layer.create(new_data, meta, layer._type_string)
+    # keep the original transforms, dropping the projected axis
+    new._transforms = layer._transforms.set_slice(kept_axes)
 
     ll.append(new)
 

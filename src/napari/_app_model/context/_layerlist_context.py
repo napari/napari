@@ -165,12 +165,22 @@ def _same_type(s: LayerSel) -> bool:
     return len({x._type_string for x in s}) == 1
 
 
-def _active_is_image_3d(s: LayerSel) -> bool:
+def _active_is_image_nd(s: LayerSel) -> bool:
     _activ_ndim = _active_ndim(s)
     return (
         _active_type(s) == 'image'
         and _activ_ndim is not None
         and (_activ_ndim > 3 or ((_activ_ndim) > 2 and not _is_rgb(s)))
+    )
+
+
+def _active_is_points_nd(s: LayerSel) -> bool:
+    # Use `layer.ndim` (coordinate count): points keep data in an (N, D) array,
+    # so `data.ndim` is always 2.
+    return (
+        _active_type(s) == 'points'
+        and s.active is not None
+        and s.active.ndim > 2
     )
 
 
@@ -313,10 +323,20 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         trans._('Shape of the active layer, or `None` if nothing is active.'),
         _active_shape,
     )
-    active_layer_is_image_3d = ContextKey(
+    active_layer_is_image_nd = ContextKey(
         False,
-        trans._('True when the active layer is a 3D image.'),
-        _active_is_image_3d,
+        trans._(
+            'True when the active layer is an image with more than 2 dimensions.'
+        ),
+        _active_is_image_nd,
+    )
+    active_layer_is_points_nd = ContextKey(
+        False,
+        trans._(
+            'True when the active layer is a points layer with more than 2 '
+            'dimensions.'
+        ),
+        _active_is_points_nd,
     )
     active_layer_dtype = ContextKey(
         None,
