@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import warnings
+from enum import StrEnum
 from functools import wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -19,9 +21,11 @@ from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._app_model.actions._file import new_points, new_shapes
 from napari._qt.dialogs.qt_modal import QtPopup
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
@@ -32,7 +36,6 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
-from napari.utils.compat import StrEnum
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 from napari.utils.translations import trans
 
@@ -179,8 +182,10 @@ class QtLayerButtons(QFrame):
                 LayerCreationState.NONE
             )
 
-        self.newLabelsButton.setEnabled(
-            not self._layers_present_and_none_selected()
+        set_widgets_enabled_with_opacity(
+            parent=self,
+            widgets=[self.newLabelsButton],
+            enabled=not self._layers_present_and_none_selected(),
         )
 
     def _layers_present_and_none_selected(self) -> bool:
@@ -269,8 +274,13 @@ class QtViewerButtons(QFrame):
             'console', action='napari:toggle_console_visibility'
         )
         self.consoleButton.setProperty('expanded', False)
-        if in_ipython() or in_jupyter() or in_python_repl():
-            self.consoleButton.setEnabled(False)
+
+        kernel_is_running = in_ipython() or in_jupyter() or in_python_repl()
+        set_widgets_enabled_with_opacity(
+            parent=self,
+            widgets=[self.consoleButton],
+            enabled=not kernel_is_running,
+        )
 
         rdb = QtViewerPushButton('roll', action='napari:roll_axes')
         self.rollDimsButton = rdb
@@ -547,6 +557,27 @@ class QtViewerButtons(QFrame):
             self.orientation_help_symbol
         )
 
+    def _add_camera_synced_controls(
+        self,
+        popup: QtPopup,
+        grid_layout: QGridLayout,
+    ) -> None:
+        """Add synced camera toggle to the popup."""
+        row = grid_layout.rowCount()
+        self.camera_synced_checkbox = QCheckBox('Sync 2D/3D camera', popup)
+        self.camera_synced_checkbox.setChecked(self.viewer.camera.synced)
+        self.camera_synced_checkbox.stateChanged.connect(
+            lambda checked: setattr(
+                self.viewer.camera, 'synced', bool(checked)
+            )
+        )
+        synced_help_symbol = help_tooltip(
+            parent=popup,
+            text=_SYNCED_CAMERA_DESCRIPTION,
+        )
+        grid_layout.addWidget(self.camera_synced_checkbox, row, 0, 1, 2)
+        grid_layout.addWidget(synced_help_symbol, row, 2)
+
     def open_ndisplay_camera_popup(self) -> None:
         """Show controls for camera settings based on ndisplay mode."""
         popup = QtPopup(self)
@@ -561,6 +592,9 @@ class QtViewerButtons(QFrame):
         # Add 3D camera controls if in 3D mode
         if self.viewer.dims.ndisplay == 3:
             self._add_3d_camera_controls(popup, grid_layout)
+
+        # Add synced camera toggle
+        self._add_camera_synced_controls(popup, grid_layout)
 
         popup.frame.setLayout(grid_layout)
 
@@ -689,6 +723,9 @@ class QtViewerButtons(QFrame):
 
         grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Magic number to allow for negative strides, but not too large to be unreasonable.
+        # 1000 is arbitrary.
+        grid_stride.setMinimum(-1000)
         grid_stride.setProhibitValue(0)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)

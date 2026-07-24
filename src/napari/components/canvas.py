@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Any
 
 import numpy as np
@@ -8,13 +9,13 @@ from napari.components.overlays import (
     BrushCircleOverlay,
     CanvasOverlay,
     CurrentSliceOverlay,
+    FloatingAxesOverlay,
     ScaleBarOverlay,
     TextOverlay,
     ZoomOverlay,
 )
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
-from napari.utils.compat import StrEnum
 from napari.utils.events import Event, EventedDict, EventedModel
 from napari.utils.theme import get_theme
 
@@ -24,6 +25,7 @@ DEFAULT_CANVAS_OVERLAYS = {
     'brush_circle': BrushCircleOverlay,
     'zoom': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
+    'floating_axes': FloatingAxesOverlay,
 }
 
 
@@ -126,6 +128,10 @@ class Canvas(EventedModel):
     @property
     def _brush_circle_overlay(self) -> BrushCircleOverlay:
         return self._overlays['brush_circle']  # type: ignore[return-value]
+
+    @property
+    def floating_axes(self) -> FloatingAxesOverlay:
+        return self._overlays['floating_axes']  # type: ignore[return-value]
 
     def _update_viewer_grid(self) -> None:
         """Keep viewer grid settings up to date with settings values."""
