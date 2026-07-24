@@ -35,6 +35,8 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         Label for the brush size chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
