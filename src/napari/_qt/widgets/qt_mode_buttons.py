@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtWidgets import QPushButton, QRadioButton
 
 if TYPE_CHECKING:
-    import enum
     from collections.abc import Callable
 
     import napari.layers
+    from napari.utils.misc import StringEnum
 
 
 class QtModeRadioButton(QRadioButton):
@@ -41,7 +41,7 @@ class QtModeRadioButton(QRadioButton):
         self,
         layer: napari.layers.Layer,
         button_name: str,
-        mode: enum.Enum | None,
+        mode: StringEnum | None,
         *,
         tooltip: str | None = None,
         checked: bool = False,
@@ -70,10 +70,8 @@ class QtModeRadioButton(QRadioButton):
         if layer is None:
             return
 
-        with layer.events.mode.blocker(self._set_mode):  # type: ignore[arg-type]
-            if mode_selected:
-                assert self.mode is not None
-                layer.mode = self.mode.value
+        if mode_selected and self.mode is not None:
+            layer.mode = self.mode
 
 
 class QtModePushButton(QPushButton):
