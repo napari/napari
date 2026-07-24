@@ -3054,6 +3054,9 @@ def _attach_progressive_loader(
 
 _CHUNK_WARN_BYTES = 50 * 1024 * 1024  # 50 MB
 _CHUNK_AXIS_COVERAGE = 0.5  # chunk covers >50% of array axis
+# An axis shorter than one tile cannot be split usefully, so a chunk
+# spanning it is not a problem (e.g. the channel axis of an RGB image).
+_CHUNK_MIN_SPLIT_AXIS = 64
 
 
 def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
@@ -3067,7 +3070,7 @@ def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
     full_axes = [
         i
         for i, (c, s) in enumerate(zip(cshape, shape, strict=False))
-        if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
+        if s > _CHUNK_MIN_SPLIT_AXIS and c / s > _CHUNK_AXIS_COVERAGE
     ]
 
     issues = []
