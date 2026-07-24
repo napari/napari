@@ -553,6 +553,7 @@ markers = [
     "slow: mark a test as slow",
     "key_bindings: Test of keybindings",
     "show_qt_viewer: Show the QtViewer in this Test",
+    "workflow: End to end testing using packages from the napari ecosystem",
 ]
 
 [tool.mypy]
