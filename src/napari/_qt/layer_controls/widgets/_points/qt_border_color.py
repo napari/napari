@@ -31,6 +31,8 @@ class QtBorderColorControl(QtWidgetControlsBase):
         Label for the current egde color chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup widgets
