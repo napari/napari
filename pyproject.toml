@@ -185,6 +185,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
@@ -282,6 +284,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
