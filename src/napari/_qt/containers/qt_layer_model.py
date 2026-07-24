@@ -1,4 +1,6 @@
-import typing
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
@@ -10,18 +12,24 @@ from napari.layers.base import LayerLock
 from napari.settings import get_settings
 from napari.utils.translations import trans
 
-ThumbnailRole = Qt.UserRole + 2
-LoadedRole = Qt.UserRole + 3
-LockedRole = Qt.UserRole + 4
+ThumbnailRole = Qt.ItemDataRole.UserRole + 2
+LoadedRole = Qt.ItemDataRole.UserRole + 3
+LockedRole = Qt.ItemDataRole.UserRole + 4
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from napari.utils.events import Event
 
 
 class QtLayerListModel(QtListModel[Layer]):
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole):
+    def data(
+        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
         """Return data stored under ``role`` for the item at ``index``."""
         if not index.isValid():
             return None
         layer = self.getItem(index)
-        viewer = current_viewer()
         layer_loaded = layer._slicing_state.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
@@ -32,7 +40,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.ItemDataRole.DisplayRole:  # used for item text
             return layer.name
         if role == Qt.ItemDataRole.TextAlignmentRole:  # alignment of the text
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         if role == Qt.ItemDataRole.EditRole:
             # used to populate line edit when editing
             return layer.name
@@ -54,10 +62,10 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
-                thumbnail,
+                thumbnail.tobytes(),
                 thumbnail.shape[1],
                 thumbnail.shape[0],
-                QImage.Format_RGBA8888,
+                QImage.Format.Format_RGBA8888,
             )
         if role == LoadedRole:
             return layer_loaded
@@ -67,12 +75,12 @@ class QtLayerListModel(QtListModel[Layer]):
         # # LayerDelegate which is aware of the theme.
         # if role == Qt.ItemDataRole.DecorationRole:  # icon to show
         #     pass
-        return super().data(index, role)
+        return super().data(index, Qt.ItemDataRole(role))
 
     def setData(
         self,
         index: QModelIndex,
-        value: typing.Any,
+        value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
         if role == Qt.ItemDataRole.CheckStateRole:
@@ -98,14 +106,14 @@ class QtLayerListModel(QtListModel[Layer]):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def all_loaded(self):
+    def all_loaded(self) -> bool:
         """Return if all the layers are loaded."""
         return all(
             self.index(row, 0).data(LoadedRole)
             for row in range(self.rowCount())
         )
 
-    def _process_event(self, event):
+    def _process_event(self, event: Event) -> None:
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.
