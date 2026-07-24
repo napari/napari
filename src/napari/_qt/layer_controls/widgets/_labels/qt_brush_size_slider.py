@@ -35,6 +35,8 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         Label for the brush size chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -55,7 +57,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""
         with qt_signals_blocked(self.brush_size_slider):
-            value = self._layer.brush_size  # type: ignore[attr-defined]
+            value = self._layer.brush_size
             value = np.maximum(1, int(value))
             if value > self.brush_size_slider.maximum():
                 self.brush_size_slider.setMaximum(int(value))
