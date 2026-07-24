@@ -20,25 +20,48 @@ def _nvidia_driver_loaded() -> bool:
     return os.path.exists('/proc/driver/nvidia/version')
 
 
-def _native_wayland_plugin_available() -> bool:
-    """Return True if Qt ships a native Wayland platform plugin.
+def _qt_plugins_path() -> str | None:
+    """Return Qt's plugin directory, or None if it cannot be determined.
 
-    Without it, Qt silently falls back to XCB (X11 via XWayland) while PyOpenGL
-    still defaults to its EGL backend, and the EGL/GLX context mismatch crashes
-    napari on startup. Detection goes through Qt's own plugin search path so it
-    tracks whichever binding qtpy selected. Any failure is treated as
-    "available" so the workaround is never forced on an unknown setup.
+    Goes through Qt's own plugin search path so it tracks whichever binding
+    qtpy selected.
     """
     try:
         from qtpy.QtCore import QLibraryInfo
 
         try:
-            plugins = QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
+            return QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
         except AttributeError:  # PyQt5/PySide2 spelling
-            plugins = QLibraryInfo.location(QLibraryInfo.PluginsPath)  # type: ignore[attr-defined]
-        return bool(glob.glob(os.path.join(plugins, 'platforms', '*wayland*')))
+            return QLibraryInfo.location(QLibraryInfo.PluginsPath)  # type: ignore[attr-defined]
     except (ImportError, AttributeError, OSError):
+        return None
+
+
+def _native_wayland_plugin_available() -> bool:
+    """Return True if Qt ships a native Wayland platform plugin.
+
+    Without it, Qt silently falls back to XCB (X11 via XWayland) while PyOpenGL
+    still defaults to its EGL backend, and the EGL/GLX context mismatch crashes
+    napari on startup. Any failure is treated as "available" so the workaround
+    is never forced on an unknown setup.
+    """
+    plugins = _qt_plugins_path()
+    if plugins is None:
         return True
+    return bool(glob.glob(os.path.join(plugins, 'platforms', '*wayland*')))
+
+
+def _qt_from_conda() -> bool:
+    """Return True if the active Qt binding uses Qt installed by conda.
+
+    Conda's Qt packages keep their plugins under the environment prefix
+    (outside ``site-packages``), while pip wheels bundle them inside the
+    binding's own package directory.
+    """
+    if not os.path.isdir(os.path.join(sys.prefix, 'conda-meta')):
+        return False
+    plugins = _qt_plugins_path()
+    return plugins is not None and 'site-packages' not in plugins
 
 
 def _fix_wayland_opengl() -> None:
@@ -59,7 +82,10 @@ def _fix_wayland_opengl() -> None:
       installed (Qt falls back to XCB, so PyOpenGL must match it with GLX).
     - ``DISPLAY`` is set only when an X server is reachable, i.e. XWayland is
       running. Without it, forcing XCB would just abort instead of falling back
-      to the native Wayland session.
+      to the native Wayland session. If on top of that Qt comes from conda
+      without its Wayland plugin, no platform plugin can load at all, so an
+      actionable hint is printed instead of leaving only Qt's cryptic abort
+      message (see https://github.com/napari/napari/issues/9166).
     """
     if sys.platform != 'linux':
         return
@@ -69,6 +95,11 @@ def _fix_wayland_opengl() -> None:
     if not wayland_active:
         return
     if not os.environ.get('DISPLAY'):
+        if not _native_wayland_plugin_available() and _qt_from_conda():
+            sys.stderr.write(
+                'You use Qt from conda and need qt6-wayland installed to '
+                'start napari: conda install -c conda-forge qt6-wayland\n'
+            )
         return
     if not _nvidia_driver_loaded() and _native_wayland_plugin_available():
         return
