@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
 from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
 
 email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 url_pattern = re.compile(
@@ -45,7 +51,7 @@ class QtDictTable(QTableWidget):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         source: list[dict] | None = None,
         *,
         headers: list[str] | None = None,
@@ -53,16 +59,21 @@ class QtDictTable(QTableWidget):
         max_section_width: int = 480,
     ) -> None:
         super().__init__(parent=parent)
+        header = self.horizontalHeader()
+        if header is None:  # pragma: no cover
+            raise RuntimeError('Header is empty.')
         if min_section_width:
-            self.horizontalHeader().setMinimumSectionSize(min_section_width)
-        self.horizontalHeader().setMaximumSectionSize(max_section_width)
-        self.horizontalHeader().setStretchLastSection(True)
+            header.setMinimumSectionSize(min_section_width)
+        header.setMaximumSectionSize(max_section_width)
+        header.setStretchLastSection(True)
         if source:
             self.set_data(source, headers)
         self.cellClicked.connect(self._go_to_links)
         self.setMouseTracking(True)
 
-    def set_data(self, data: list[dict], headers: list[str] | None = None):
+    def set_data(
+        self, data: list[dict], headers: list[str] | None = None
+    ) -> None:
         """Set the data in the table, given a list of dicts.
 
         Parameters
@@ -119,11 +130,13 @@ class QtDictTable(QTableWidget):
         self.resize_to_fit()
 
     @Slot(int, int)
-    def _go_to_links(self, row, col):
+    def _go_to_links(self, row: int, col: int) -> None:
         """if a cell is clicked and it contains an email or url, go to link."""
         import webbrowser
 
         item = self.item(row, col)
+        if item is None:
+            return
         text = item.text().strip()
         if email_pattern.match(text):
             webbrowser.open(f'mailto:{text}', new=1)
@@ -131,11 +144,11 @@ class QtDictTable(QTableWidget):
         if url_pattern.match(text):
             webbrowser.open(text, new=1)
 
-    def resize_to_fit(self):
+    def resize_to_fit(self) -> None:
         self.resizeColumnsToContents()
         self.resize(self.sizeHint())
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """Return (width, height) of the table"""
         width = sum(map(self.columnWidth, range(self.columnCount()))) + 25
         height = self.rowHeight(0) * (self.rowCount() + 1)
