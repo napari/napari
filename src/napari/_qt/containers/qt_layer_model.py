@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 
 from qtpy.QtCore import QModelIndex, QSize, Qt
@@ -8,18 +10,22 @@ from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
 from napari.layers.base import LayerLock
 from napari.settings import get_settings
-from napari.utils.events import Event
 from napari.utils.translations import trans
 
 ThumbnailRole = Qt.ItemDataRole.UserRole + 2
 LoadedRole = Qt.ItemDataRole.UserRole + 3
 LockedRole = Qt.ItemDataRole.UserRole + 4
 
+if typing.TYPE_CHECKING:
+    from typing import Any
+
+    from napari.utils.events import Event
+
 
 class QtLayerListModel(QtListModel[Layer]):
     def data(
         self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
-    ) -> typing.Any:
+    ) -> Any:
         """Return data stored under ``role`` for the item at ``index``."""
         if not index.isValid():
             return None
