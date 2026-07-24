@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import pickle
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
