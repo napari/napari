@@ -500,3 +500,13 @@ def test_modified_navigation_keys_still_do_not_autorepeat():
 
     _press(handler, 'Up', held_for=4, modifiers=[keys.ALT])
     assert len(presses) == 1  # bound and fired, but auto-repeats filtered out
+
+
+def test_nav_key_autorepeat_capability_marker():
+    """The #9203 fix advertises itself so downstream code can feature-detect it.
+
+    Apps that bind the arrows with bind_key rely on the auto-repeat behavior; the
+    marker lets them warn/degrade on a napari that lacks it instead of silently
+    losing held-key repeat. Same contract-version shape as Dims.NAVIGATION_LOCK_VERSION.
+    """
+    assert getattr(KeymapHandler, 'NAV_KEY_AUTOREPEAT_VERSION', 0) >= 1

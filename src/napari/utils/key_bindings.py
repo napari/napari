@@ -37,7 +37,7 @@ import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping
 from types import EllipsisType, MethodType
-from typing import Union
+from typing import ClassVar, Union
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
@@ -346,6 +346,16 @@ class KeymapHandler:
     keymap_providers : list of KeymapProvider
         Classes that provide the keymaps for this class to handle.
     """
+
+    # Capability marker for the nav-key auto-repeat fix (see on_key_press and #9203).
+    # Downstream code should feature-detect the *contract version*, not behavior:
+    #   getattr(type(handler), 'NAV_KEY_AUTOREPEAT_VERSION', 0) >= 1
+    # Version 1 means a held navigation key (Up/Down/Left/Right) delivers every
+    # auto-repeat to the keymap *however it is bound* — including via bind_key() —
+    # rather than only when bound through action_manager. A napari without this marker
+    # drops auto-repeat for keys bound outside action_manager, so an app that binds the
+    # arrows with bind_key gets one step per physical press, not per repeat.
+    NAV_KEY_AUTOREPEAT_VERSION: ClassVar[int] = 1
 
     def __init__(self) -> None:
         super().__init__()
