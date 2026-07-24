@@ -43,6 +43,34 @@ def hold_to_lock_aspect_ratio(layer: Shapes) -> Generator[None, None, None]:
 
     # on key release
     layer._fixed_aspect = False
+    if layer._is_moving and not layer._is_creating:
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
+
+
+@Shapes.bind_key(KeyCode.Alt, overwrite=True)
+def hold_to_draw_shape_from_center(
+    layer: Shapes,
+) -> Generator[None, None, None]:
+    """Hold to draw or resize shapes from center."""
+    # on key press
+    layer._draw_from_center = True
+    if layer._is_moving:
+        # force the resize pivot to be recomputed (center instead of the
+        # opposite vertex) when toggling center-drawing during a SELECT resize
+        layer._fixed_vertex = None
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
+
+    yield
+
+    # on key release
+    layer._draw_from_center = False
+    if layer._is_moving and not layer._is_creating:
+        # force the resize pivot back to the opposite vertex
+        layer._fixed_vertex = None
+        assert layer._moving_coordinates is not None, layer
+        _move_active_element_under_cursor(layer, layer._moving_coordinates)
 
 
 def register_shapes_action(

@@ -316,6 +316,11 @@ class Shapes(Layer):
     _fixed_aspect : bool
         Bool indicating if aspect ratio of shapes should be preserved on
         resizing.
+    _draw_from_center : bool
+        Bool indicating if new shapes should be drawn from their center while
+        they are being created.
+    _creation_start : None | np.ndarray
+        Coordinates where interactive creation of the current shape started.
     _aspect_ratio : float
         Value of aspect ratio to be preserved if `_fixed_aspect` is `True`.
     _fixed_vertex : None | np.ndarray
@@ -568,6 +573,8 @@ class Shapes(Layer):
         self._drag_start = None
         self._fixed_vertex = None
         self._fixed_aspect = False
+        self._draw_from_center = False
+        self._creation_start = None
         self._aspect_ratio = 1
         self._is_moving = False
 
@@ -2699,6 +2706,8 @@ class Shapes(Layer):
         self._drag_box = None
         self._is_selecting = False
         self._fixed_vertex = None
+        self._creation_start = None
+        self._draw_from_center = False
         self._value = (None, None)
         self._moving_value = (None, None)
         self._last_cursor_position = None
