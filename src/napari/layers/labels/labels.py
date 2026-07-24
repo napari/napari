@@ -18,7 +18,6 @@ import numpy.typing as npt
 from PIL import Image, ImageDraw
 
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
     ScalarFieldSlicingState,
@@ -47,6 +46,7 @@ from napari.layers.labels._labels_utils import (
     interpolate_coordinates,
 )
 from napari.layers.labels._slice import _LabelsSliceRequest
+from napari.layers.multiscale_data import MultiScaleData
 from napari.layers.utils.layer_utils import _FeatureTable
 from napari.types import LayerDataType
 from napari.utils._dtype import (
