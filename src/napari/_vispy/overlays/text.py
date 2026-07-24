@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from napari._vispy.overlays.base import (
     LayerOverlayMixin,
     ViewerOverlayMixin,
-    VispyCanvasOverlay,
+    VispyTiledCanvasOverlay,
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from napari.components.overlays import TextOverlay
 
 
-class _VispyBaseTextOverlay(VispyCanvasOverlay):
+class _VispyBaseTextOverlay(VispyTiledCanvasOverlay):
     """Base class for vispy text overlays."""
 
     overlay: TextOverlay

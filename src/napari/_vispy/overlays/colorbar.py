@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    LayerOverlayMixin,
+    VispyTiledCanvasOverlay,
+)
 from napari._vispy.visuals.colorbar import ColorBar
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
@@ -65,7 +68,7 @@ class ColorManagerWrapper:
         return self.color_manager.continuous_colormap
 
 
-class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
+class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
     overlay: ColorBarOverlay
 
     def __init__(
