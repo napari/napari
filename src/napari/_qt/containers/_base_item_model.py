@@ -91,14 +91,16 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     def parent(self) -> QObject | None: ...
 
     def parent(
-        self, child: QModelIndex = _NULL_INDEX
+        self, child: QModelIndex = None
     ) -> QModelIndex | QObject | None:
-        """Return the parent of the model item with the given ``index``.
+"""Return the parent of the model item with the given ``index``.
 
-        (The parent in a basic list is always the root, Tree models will need
-        to reimplement)
-        """
-        return QModelIndex()
+       (The parent in a basic list is always the root, Tree models will need
+       to reimplement)
+       """
+       if child is None:
+           return super().parent()
+       return QModelIndex()
 
     def data(
         self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
