@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
@@ -42,7 +41,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.out_of_slice_checkbox = QCheckBox()
-        self.out_of_slice_checkbox.setToolTip(trans._('Out of slice display'))
+        self.out_of_slice_checkbox.setToolTip('Out of slice display')
         self.out_of_slice_checkbox.setChecked(self._layer.out_of_slice_display)
         connect_setattr(
             self.out_of_slice_checkbox.stateChanged,
@@ -51,9 +50,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
             convert_fun=checked_to_bool,
         )
 
-        self.out_of_slice_checkbox_label = QtWrappedLabel(
-            trans._('out of slice:')
-        )
+        self.out_of_slice_checkbox_label = QtWrappedLabel('out of slice:')
 
     def _on_out_of_slice_display_change(self) -> None:
         """Receive layer model out_of_slice_display change event and update checkbox."""

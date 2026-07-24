@@ -8,7 +8,6 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -18,16 +17,16 @@ class ViewerStatusBar(QStatusBar):
     def __init__(self, parent: '_QtMainWindow') -> None:
         super().__init__(parent=parent)
 
-        self._status = QLabel(trans._('Ready'))
+        self._status = QLabel('Ready')
         self._status.setContentsMargins(0, 0, 0, 0)
 
-        self._layer_base = QElidingLabel(trans._(''))
+        self._layer_base = QElidingLabel('')
         self._layer_base.setObjectName('layer_base status')
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._layer_base.setMinimumSize(100, 16)
         self._layer_base.setContentsMargins(0, 0, 0, 0)
 
-        self._plugin_reader = QElidingLabel(trans._(''))
+        self._plugin_reader = QElidingLabel('')
         self._plugin_reader.setObjectName('plugin-reader status')
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)

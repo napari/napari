@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Generator
 
@@ -114,9 +112,5 @@ class Node:
             self.parent.remove(self)
             return self
         raise IndexError(
-            trans._(
-                'Cannot unparent orphaned Node: {node!r}',
-                deferred=True,
-                node=self,
-            ),
+            f'Cannot unparent orphaned Node: {self!r}',
         )

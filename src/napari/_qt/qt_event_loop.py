@@ -33,7 +33,6 @@ from napari.utils.notifications import (
 )
 from napari.utils.perf import perf_config
 from napari.utils.theme import _themes, get_system_theme
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -180,19 +179,12 @@ def get_qapp(
         set_values.discard('ipy_interactive')
         if set_values:
             warn(
-                trans._(
-                    "QApplication already existed, these arguments to to 'get_qapp' were ignored: {args}",
-                    deferred=True,
-                    args=set_values,
-                ),
+                f"QApplication already existed, these arguments to to 'get_qapp' were ignored: {set_values}",
                 stacklevel=2,
             )
         if perf_config and perf_config.trace_qt_events:
             warn(
-                trans._(
-                    'Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.',
-                    deferred=True,
-                ),
+                'Using NAPARI_PERFMON with an already-running QtApp (--gui qt?) is not supported.',
                 stacklevel=2,
             )
         if (
@@ -205,15 +197,12 @@ def get_qapp(
             # before napari's _wayland_fix.py  workaround can run. Gated on
             # Nvidia since that's the only setup the workaround helps.
             warn(
-                trans._(
-                    'A Qt application was already running on the Wayland '
-                    'platform before napari was imported, so napari could not '
-                    'automatically apply its Wayland startup workaround. If napari '
-                    'fails to launch or throws repeated rendering errors, see '
-                    'https://napari.org/stable/troubleshooting.html#wayland-and-nvidia '
-                    'for the workaround.',
-                    deferred=True,
-                ),
+                'A Qt application was already running on the Wayland '
+                'platform before napari was imported, so napari could not '
+                'automatically apply its Wayland startup workaround. If napari '
+                'fails to launch or throws repeated rendering errors, see '
+                'https://napari.org/stable/troubleshooting.html#wayland-and-nvidia '
+                'for the workaround.',
                 stacklevel=2,
             )
 
@@ -432,18 +421,11 @@ def run(
 
     if not app:
         raise RuntimeError(
-            trans._(
-                'No Qt app has been created. One can be created by calling `get_qapp()` or `qtpy.QtWidgets.QApplication([])`',
-                deferred=True,
-            )
+            'No Qt app has been created. One can be created by calling `get_qapp()` or `qtpy.QtWidgets.QApplication([])`'
         )
     if not app.topLevelWidgets() and not force:
         warn(
-            trans._(
-                'Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`',
-                deferred=True,
-                _func_name=_func_name,
-            ),
+            f'Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`',
             stacklevel=2,
         )
         return
@@ -451,14 +433,7 @@ def run(
     if app.thread().loopLevel() >= max_loop_level:
         loops = app.thread().loopLevel()
         warn(
-            trans._n(
-                'A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
-                'A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`',
-                n=loops,
-                deferred=True,
-                _func_name=_func_name,
-                max_loop_level=loops + 1,
-            ),
+            f'A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={loops + 1})`',
             stacklevel=2,
         )
         return

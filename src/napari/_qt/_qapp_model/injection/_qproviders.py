@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from napari import components, layers, viewer
 from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
-from napari.utils.translations import trans
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
@@ -42,13 +41,7 @@ def _provide_viewer_or_raise(
         return viewer
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `Viewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `Viewer` found.{msg}')
 
 
 def _provide_qt_viewer() -> QtViewer | None:
@@ -65,13 +58,7 @@ def _provide_qt_viewer_or_raise(msg: str = '') -> QtViewer:
         return qt_viewer
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `QtViewer` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `QtViewer` found.{msg}')
 
 
 def _provide_window() -> Window | None:
@@ -88,13 +75,7 @@ def _provide_window_or_raise(msg: str = '') -> Window:
         return window
     if msg:
         msg = ' ' + msg
-    raise RuntimeError(
-        trans._(
-            'No current `Window` found.{msg}',
-            deferred=True,
-            msg=msg,
-        )
-    )
+    raise RuntimeError(f'No current `Window` found.{msg}')
 
 
 def _provide_active_layer() -> layers.Layer | None:

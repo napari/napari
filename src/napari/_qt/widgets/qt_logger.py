@@ -14,7 +14,6 @@ from qtpy.QtWidgets import (
 
 from napari._qt.dialogs.qt_about import QtCopyToClipboardButton
 from napari.utils._logging import LOG_STREAM, get_log_level_value
-from napari.utils.translations import trans
 
 
 class LogWidget(QWidget):
@@ -31,7 +30,7 @@ class LogWidget(QWidget):
         self.layout = QVBoxLayout()
 
         # Description
-        title_label = QLabel(trans._('logger'))
+        title_label = QLabel('logger')
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )

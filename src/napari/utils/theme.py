@@ -19,7 +19,6 @@ from napari.resources._icons import (
 )
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
-from napari.utils.translations import trans
 
 
 class Theme(EventedModel):
@@ -87,23 +86,18 @@ class Theme(EventedModel):
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, trans._(
-            'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
-            deferred=True,
-            syntax_style=f' {", ".join(STYLE_MAP)}',
-            value=value,
+        valid_styles = ', '.join(STYLE_MAP)
+        assert value in STYLE_MAP, (
+            f'Incorrect `syntax_style` value: {value} provided. '
+            f'Please use one of the following: {valid_styles}'
         )
         return value
 
     @field_validator('font_size', mode='before')
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('pt'), trans._(
-            'Font size must be in points (pt).', deferred=True
-        )
-        assert int(value[:-2]) > 0, trans._(
-            'Font size must be greater than 0.', deferred=True
-        )
+        assert value.endswith('pt'), 'Font size must be in points (pt).'
+        assert int(value[:-2]) > 0, 'Font size must be greater than 0.'
         return value
 
     def to_rgb_dict(self) -> dict[str, Any]:
@@ -307,11 +301,8 @@ def get_system_theme() -> str:
     if not QT6:
         # can remove this check once pyqt5 support is dropped
         warn(
-            trans._(
-                'System theme detection requires a Qt6 backend. '
-                'Please switch to PyQt6 or PySide6 to use it.',
-                deferred=True,
-            ),
+            'System theme detection requires a Qt6 backend. '
+            'Please switch to PyQt6 or PySide6 to use it.',
             stacklevel=2,
         )
         return 'dark'
@@ -354,12 +345,7 @@ def get_theme(theme_id: str):
 
     if theme_id not in _themes:
         raise ValueError(
-            trans._(
-                'Unrecognized theme {id}. Available themes are {themes}',
-                deferred=True,
-                id=theme_id,
-                themes=available_themes(),
-            )
+            f'Unrecognized theme {theme_id}. Available themes are {available_themes()}'
         )
     theme = _themes[theme_id].model_copy()
     return theme

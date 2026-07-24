@@ -13,7 +13,6 @@ from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari._qt.widgets.qt_logger import LogWidget
 from napari._qt.widgets.qt_tips import TipsWidget
-from napari.utils.translations import trans
 
 
 def _show_about(window: Window):
@@ -48,15 +47,15 @@ HELP_URLS: dict[str, str] = {
 Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.info',
-        title=trans._('‎napari Info'),
+        title='‎napari Info',
         callback=_show_about,
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
-        status_tip=trans._('About napari'),
+        status_tip='About napari',
         keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
     ),
     Action(
         id='napari.window.help.about_macos',
-        title=trans._('About napari'),
+        title='About napari',
         callback=_show_about,
         menus=[
             {
@@ -65,48 +64,48 @@ Q_HELP_ACTIONS: list[Action] = [
                 'when': sys.platform == 'darwin',
             }
         ],
-        status_tip=trans._('About napari'),
+        status_tip='About napari',
     ),
     Action(
         id='napari.window.help.getting_started',
-        title=trans._('Getting started'),
+        title='Getting started',
         callback=partial(web_open, url=HELP_URLS['getting_started']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tutorials',
-        title=trans._('Tutorials'),
+        title='Tutorials',
         callback=partial(web_open, url=HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tips',
-        title=trans._('Tips and Tricks'),
+        title='Tips and Tricks',
         callback=_show_tips,
         menus=[{'id': MenuId.MENUBAR_HELP}],
-        status_tip=trans._('Show some quick napari tips and tricks'),
+        status_tip='Show some quick napari tips and tricks',
     ),
     Action(
         id='napari.window.help.layers_guide',
-        title=trans._('Using Layers Guides'),
+        title='Using Layers Guides',
         callback=partial(web_open, url=HELP_URLS['layers_guide']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.examples',
-        title=trans._('Examples Gallery'),
+        title='Examples Gallery',
         callback=partial(web_open, url=HELP_URLS['examples_gallery']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.plugins',
-        title=trans._('Extend with Plugins'),
+        title='Extend with Plugins',
         callback=partial(web_open, url=HELP_URLS['plugins']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.release_notes',
-        title=trans._('Release Notes'),
+        title='Release Notes',
         callback=partial(web_open, url=HELP_URLS['release_notes']),
         menus=[
             {
@@ -118,7 +117,7 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.github_issue',
-        title=trans._('Report an issue on GitHub'),
+        title='Report an issue on GitHub',
         callback=partial(web_open, url=HELP_URLS['github_issue']),
         menus=[
             {
@@ -130,21 +129,21 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.contribute',
-        title=trans._('Contribute to napari'),
+        title='Contribute to napari',
         callback=partial(web_open, url=HELP_URLS['contribute']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
         id='napari.window.help.homepage',
-        title=trans._('napari homepage'),
+        title='napari homepage',
         callback=partial(web_open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
         id='napari.window.help.show_logs',
-        title=trans._('Show logs'),
+        title='Show logs',
         callback=_show_logs,
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
-        status_tip=trans._('View and filter logs'),
+        status_tip='View and filter logs',
     ),
 ]

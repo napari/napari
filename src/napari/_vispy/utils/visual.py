@@ -60,7 +60,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from vispy.scene.widgets.viewbox import ViewBox
@@ -115,11 +114,7 @@ def create_vispy_layer(
             return layer_to_visual[cls](layer, *args, **kwargs)
 
     raise TypeError(
-        trans._(
-            'Could not find VispyLayer for layer of type {dtype}',
-            deferred=True,
-            dtype=type(layer),
-        )
+        f'Could not find VispyLayer for layer of type {type(layer)}'
     )
 
 
@@ -142,11 +137,7 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
             return overlay_to_visual[cls](overlay=overlay, **kwargs)
 
     raise TypeError(
-        trans._(
-            'Could not find VispyOverlay for overlay of type {dtype}',
-            deferred=True,
-            dtype=type(overlay),
-        )
+        f'Could not find VispyOverlay for overlay of type {type(overlay)}'
     )
 
 

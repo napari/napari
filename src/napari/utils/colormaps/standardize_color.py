@@ -29,8 +29,6 @@ import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -92,12 +90,7 @@ def _handle_str(color: str) -> np.ndarray:
 
     """
     if len(color) == 0:
-        warnings.warn(
-            trans._(
-                'Empty string detected. Returning black instead.',
-                deferred=True,
-            )
-        )
+        warnings.warn('Empty string detected. Returning black instead.')
         return np.zeros((1, 4), dtype=np.float32)
 
     colorarray = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
@@ -140,10 +133,7 @@ def _handle_list_like(colors: Sequence) -> np.ndarray | None:
         color_array = np.atleast_2d(np.asarray(colors, dtype=dtype))
     except ValueError:
         warnings.warn(
-            trans._(
-                "Couldn't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array.",
-                deferred=True,
-            )
+            "Couldn't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array."
         )
         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
@@ -179,10 +169,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     # Object arrays aren't handled by napari
     if kind == 'O':
         warnings.warn(
-            trans._(
-                'An object array was passed as the color input. Please convert its datatype before sending it to napari. Converting input to a white color array.',
-                deferred=True,
-            )
+            'An object array was passed as the color input. Please convert its datatype before sending it to napari. Converting input to a white color array.'
         )
         return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
@@ -192,10 +179,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
             return _handle_str_list_like(colors)
 
         warnings.warn(
-            trans._(
-                'String color arrays should be one-dimensional. Converting input to a white color array.',
-                deferred=True,
-            )
+            'String color arrays should be one-dimensional. Converting input to a white color array.'
         )
         return np.ones((len(colors), 4), dtype=np.float32)
 
@@ -206,10 +190,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     # a single white color.
     if colors.shape[-1] == 0:
         warnings.warn(
-            trans._(
-                'Given color input is empty. Converting input to a white color array.',
-                deferred=True,
-            )
+            'Given color input is empty. Converting input to a white color array.'
         )
         return np.ones((1, 4), dtype=np.float32)
 
@@ -219,11 +200,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     # conversion method to a color array and thus raise an error.
     if colors.ndim > 2:
         raise ValueError(
-            trans._(
-                'Given colors input should contain one or two dimensions. Received array with {ndim} dimensions.',
-                deferred=True,
-                ndim=colors.ndim,
-            )
+            f'Given colors input should contain one or two dimensions. Received array with {colors.ndim} dimensions.'
         )
 
     # User provided a list of numbers as color input. This input
@@ -231,11 +208,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     # will return an error.
     if colors.shape[0] == 1 and colors.shape[1] not in {3, 4}:
         raise ValueError(
-            trans._(
-                'Given color array has an unsupported format. Received the following array:\n{colors}\nA proper color array should have 3-4 columns with a row per data entry.',
-                deferred=True,
-                colors=colors,
-            )
+            f'Given color array has an unsupported format. Received the following array:\n{colors}\nA proper color array should have 3-4 columns with a row per data entry.'
         )
 
     # The user gave a list of colors, but it contains a wrong number
@@ -247,11 +220,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     # rendering the data in white, which better than crashing.
     if not 3 <= colors.shape[1] <= 4:
         warnings.warn(
-            trans._(
-                'Given colors input should contain three or four columns. Received array with {shape} columns. Converting input to a white color array.',
-                deferred=True,
-                shape=colors.shape[1],
-            )
+            f'Given colors input should contain three or four columns. Received array with {colors.shape[1]} columns. Converting input to a white color array.'
         )
         return np.ones((len(colors), 4), dtype=np.float32)
 
@@ -259,13 +228,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     if kind in ['f', 'i', 'u']:
         return _convert_array_to_correct_format(colors)
 
-    raise ValueError(
-        trans._(
-            'Data type of array ({color_dtype}) not supported.',
-            deferred=True,
-            color_dtype=colors.dtype,
-        )
-    )
+    raise ValueError(f'Data type of array ({colors.dtype}) not supported.')
 
 
 def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
@@ -293,19 +256,11 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
         )
 
     if colors.min() < 0:
-        raise ValueError(
-            trans._(
-                'Colors input had negative values.',
-                deferred=True,
-            )
-        )
+        raise ValueError('Colors input had negative values.')
 
     if colors.max() > 1:
         warnings.warn(
-            trans._(
-                "Colors with values larger than one detected. napari will normalize these colors for you. If you'd like to convert these yourself, please use the proper method from skimage.color.",
-                deferred=True,
-            )
+            "Colors with values larger than one detected. napari will normalize these colors for you. If you'd like to convert these yourself, please use the proper method from skimage.color."
         )
         colors = _normalize_color_array(colors)
     return np.atleast_2d(np.asarray(colors, dtype=np.float32))
@@ -331,12 +286,7 @@ def _handle_str_list_like(colors: Sequence | np.ndarray) -> np.ndarray:
             color_array[idx, :] = _color_switch[type(c)](c)
         except (ValueError, TypeError, KeyError) as e:
             raise ValueError(
-                trans._(
-                    'Invalid color found: {color} at index {idx}.',
-                    deferred=True,
-                    color=c,
-                    idx=idx,
-                )
+                f'Invalid color found: {c} at index {idx}.'
             ) from e
     return color_array
 
@@ -443,12 +393,7 @@ def _check_color_dim(val):
         if len(strval) > 100:
             strval = strval[:97] + '...'
         raise RuntimeError(
-            trans._(
-                'Value must have second dimension of size 3 or 4. Got `{val}`, shape={shape}',
-                deferred=True,
-                shape=val.shape,
-                val=strval,
-            )
+            f'Value must have second dimension of size 3 or 4. Got `{strval}`, shape={val.shape}'
         )
 
     if val.shape[1] == 3:

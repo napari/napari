@@ -9,8 +9,6 @@ from app_model.expressions import (
     get_context as _get_context,
 )
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
@@ -99,13 +97,7 @@ class SettingsAwareContext(Context):
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
-            raise ValueError(
-                trans._(
-                    'Cannot set key starting with {prefix!r}',
-                    deferred=True,
-                    prefix=self._PREFIX,
-                )
-            )
+            raise ValueError(f'Cannot set key starting with {self._PREFIX!r}')
 
         return super().__setitem__(k, v)
 
