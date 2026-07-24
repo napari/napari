@@ -606,7 +606,7 @@ class QtViewer(QSplitter):
         """When active layer changes change keymap handler."""
         self._key_map_handler.keymap_providers = (
             [self.viewer]
-            if self.viewer.layers.selection.active is None
+            if not self.viewer.layers.selection
             else [self.viewer.layers.selection.active, self.viewer]
         )
 
