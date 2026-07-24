@@ -2147,8 +2147,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = corners
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
+        self,
+        scale_factor: float,
+        corner_pixels_displayed: npt.NDArray[Any],
+        shape_threshold: tuple[int, ...],
+    ) -> None:
         """Update canvas scale and corner values on draw.
 
         For layer multiscale determining if a new resolution level or tile is
@@ -2161,7 +2164,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[int, ...]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor

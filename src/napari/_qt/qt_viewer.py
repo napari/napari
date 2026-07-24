@@ -360,12 +360,12 @@ class QtViewer(QSplitter):
         """Mapping of Napari layer to Vispy layer. Added for backward compatibility"""
         return self.canvas.layer_to_visual
 
-    def _leave_canvas(self):
+    def _leave_canvas(self) -> None:
         """disable status on canvas leave"""
         self.viewer.status = ''
         self.viewer.mouse_over_canvas = False
 
-    def _enter_canvas(self):
+    def _enter_canvas(self) -> None:
         """enable status on canvas enter"""
         self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True

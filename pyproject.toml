@@ -700,7 +700,6 @@ module = [
     'napari._qt.widgets.qt_viewer_dock_widget',
     'napari._qt.widgets.qt_viewer_status_bar',
     'napari._qt.widgets.qt_welcome',
-    'napari._vispy.canvas',
     'napari._vispy.experimental.texture_atlas',
     'napari._vispy.experimental.tile_set',
     'napari._vispy.experimental.tiled_image_visual',
