@@ -71,18 +71,18 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events = EmitterGroup(
                 source=self,
                 auto_connect=False,
-                **_events,
+                **_events,  # type: ignore[arg-type]
             )
         super().__init__(data, basetype)
 
-    def first_callback_connect(self):
+    def first_callback_connect(self) -> None:
         """When the first callback is connected to `self.events`,
         connect to all child emitters.
         """
         for item in self._dict.values():
             self._connect_child_emitters(item)
 
-    def last_callback_disconnect(self):
+    def last_callback_disconnect(self) -> None:
         """When the last callback is disconnected from `self.events`, disconnect
         from all child emitters.
         """
@@ -118,13 +118,14 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, 'key'):
-            event.key = self.key(event.source)
+            event.key = self.key(event.source)  # type: ignore[attr-defined]
 
         # re-emit with this object's EventEmitter
         self.events(event)
 
     def _reemit_child_event_psygnal(self, event: EmissionInfo) -> None:
         source = event.signal.instance
+        key: _K | str | None
         if event.path:
             key = f'{self.key(source)}.{event.path}'
         else:
@@ -144,7 +145,9 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, PsygnalModel):
-            child.events.connect(self._reemit_child_event_psygnal, unique=True)
+            child.events.all.connect(
+                self._reemit_child_event_psygnal, unique=True
+            )
         elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
