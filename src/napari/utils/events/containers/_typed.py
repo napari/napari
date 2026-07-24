@@ -2,13 +2,11 @@ import logging
 from collections.abc import Callable, Iterable, MutableSequence, Sequence
 from typing import (
     Any,
+    Self,
     TypeVar,
     Union,
     overload,
 )
-
-# change on import from typing when drop python 3.10 support
-from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 

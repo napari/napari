@@ -190,20 +190,20 @@ class QtShapesControls(QtLayerControls):
         self.button_grid.setSpacing(4)
 
         # Setup widgets controls
-        self._edge_width_slider_control = QtEdgeWidthSliderControl(self, layer)
-        self._add_widget_controls(self._edge_width_slider_control)
-        self._edge_color_control = QtEdgeColorControl(
-            self,
-            layer,
-            tooltip='Click to set the edge color of currently selected shapes and any added afterwards',
-        )
-        self._add_widget_controls(self._edge_color_control)
         self._face_color_control = QtFaceColorControl(
             self,
             layer,
             tooltip='Click to set the face color of currently selected shapes and any added afterwards.',
         )
+        self._edge_width_slider_control = QtEdgeWidthSliderControl(self, layer)
+        self._edge_color_control = QtEdgeColorControl(
+            self,
+            layer,
+            tooltip='Click to set the edge color of currently selected shapes and any added afterwards',
+        )
         self._add_widget_controls(self._face_color_control)
+        self._add_widget_controls(self._edge_color_control)
+        self._add_widget_controls(self._edge_width_slider_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)
         self._add_widget_controls(self._text_visibility_control)
 

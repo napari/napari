@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import struct
-import warnings
+import sys
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # or the Python file reader. It maps the script path to the
 # namespace. This global dict should only be modified; overwriting
 # it may break other scripts that are already running.
-_SCRIPT_NAMESPACES: dict[str | Path, dict[str, Any]] = {}
+_SCRIPT_NAMESPACES: dict[str, dict[str, Any]] = {}
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -135,26 +135,6 @@ def imsave_tiff(filename, data):
             )
 
 
-def __getattr__(name: str):
-    if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
-    }:
-        warnings.warn(
-            f'{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
-            FutureWarning,
-            stacklevel=2,
-        )
-        import napari_builtins.io
-
-        return getattr(napari_builtins.io, name)
-
-    raise AttributeError(f'module {__name__} has no attribute {name}')
-
-
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
     """Execute Python code in the current viewer's context.
 
@@ -173,7 +153,19 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
     with _patched_viewer_new(), _noop_napari_run():
         try:
             patched_viewer = current_viewer()
-            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
+            script_key = str(script_path)
+            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_key, {})
+            main_module = sys.modules['__main__']
+
+            if script_path:
+                # When launched with multiprocessing, a script executed via
+                # `multiprocessing.spawn` (e.g. Windows) either re-imports the
+                # parent __main__ module by name or re-executes its file path.
+                # Point __main__ at the executed script path so child workers
+                # can import functions/classes defined in the script.
+                main_module.__spec__ = None
+                main_module.__file__ = script_key
+                script_namespace['__file__'] = script_key
 
             # The `__name__` variable stores the module name.
             # If a module is imported, set `__name__` to the module name.
@@ -185,8 +177,9 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
             script_namespace['__name__'] = '__main__'
             code_obj = compile(code, script_path, 'exec', dont_inherit=True)
             exec(code_obj, script_namespace)
+            main_module.__dict__.update(script_namespace)
             _add_variables_to_viewer_console(
-                _SCRIPT_NAMESPACES[script_path], patched_viewer
+                _SCRIPT_NAMESPACES[script_key], patched_viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)

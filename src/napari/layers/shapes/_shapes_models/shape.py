@@ -139,15 +139,15 @@ class Shape(ABC):
         self._face_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._edge_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
         self._edge_offsets: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
-        self._box: BoxArray = np.empty((9, 2), dtype=np.float32)  # type: ignore[assignment]
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._box: BoxArray = np.empty((9, 2), dtype=np.float32)
 
         self._closed = False
         self._filled = True
@@ -309,11 +309,11 @@ class Shape(ABC):
     def _set_empty_edge(self) -> None:
         self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_empty_face(self) -> None:
         self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes_compiled_3d(
         self,

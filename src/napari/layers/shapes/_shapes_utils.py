@@ -68,7 +68,7 @@ def find_planar_axis(
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
             return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
+    return np.empty((0, 2), dtype=points.dtype), None, None
 
 
 @typing.overload

@@ -20,8 +20,9 @@ from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from npe2.manifest.io import WriterContribution
-    from typing_extensions import Self
 
 __all__ = ('LayerList',)
 

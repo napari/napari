@@ -374,8 +374,12 @@ def _try_enable_ipython_gui(gui='qt'):
 
 
 def run(
-    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
-):
+    *,
+    force: bool = False,
+    gui_exceptions: bool = False,
+    max_loop_level: int = 1,
+    _func_name: str = 'run',
+) -> None:
     """Start the Qt Event Loop
 
     Parameters

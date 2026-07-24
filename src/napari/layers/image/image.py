@@ -36,6 +36,7 @@ if typing.TYPE_CHECKING:
     import numpy.typing as npt
     import pint
 
+    from napari.components.histogram import HistogramModel
     from napari.types import ArrayLike
     from napari.utils.transforms import Affine
 
@@ -417,6 +418,26 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer, created lazily on first access.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+        The model is not created until the ``histogram`` property is first
+        accessed.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+        """
+        if not hasattr(self, '_histogram'):
+            from napari.components.histogram import HistogramModel
+
+            self._histogram = HistogramModel(self)
+        return self._histogram
 
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:

@@ -1,4 +1,4 @@
-from enum import EnumMeta
+from enum import EnumMeta, StrEnum
 from typing import TYPE_CHECKING, ClassVar, get_origin
 
 from pydantic import BaseModel
@@ -17,7 +17,6 @@ from qtpy.QtWidgets import (
 )
 
 from napari._pydantic_util import get_inner_type
-from napari.utils.compat import StrEnum
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QCloseEvent, QKeyEvent, QResizeEvent

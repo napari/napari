@@ -68,7 +68,7 @@ def read_data_with_plugins(
 
 
 def save_layers(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     *,
     plugin: str | None = None,
@@ -82,7 +82,7 @@ def save_layers(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         A filepath, directory, or URL to write.
     layers : List[layers.Layer]
         Non-empty List of layers to be saved. Warns when the list
@@ -148,7 +148,7 @@ def _is_null_layer_sentinel(layer_data: Any) -> bool:
 
 
 def _write_layers_with_plugins(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     *,
     plugin_name: str | None = None,
@@ -162,7 +162,7 @@ def _write_layers_with_plugins(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.

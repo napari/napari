@@ -1,7 +1,3 @@
-# StrEnum is only available in Python 3.11+; a vendored version
-# from backports.strenum is used for older versions.
-# Source: https://github.com/ethanfurman/backports.strenum
-# License: https://docs.python.org/3/license.html
 """Miscellaneous utility functions."""
 
 from __future__ import annotations
@@ -15,7 +11,7 @@ import os
 import re
 import sys
 import warnings
-from enum import Enum, EnumMeta
+from enum import Enum, StrEnum
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -31,7 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
     import packaging.version
-    from typing_extensions import Self
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
@@ -94,26 +89,6 @@ def in_python_repl() -> bool:
         and shell.__class__.__name__ == 'NoneType'
         and hasattr(sys, 'ps1')
     )
-
-
-def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-
-    .. deprecated:: 0.7.1
-        `str_to_rgb` is deprecated and will be removed in a future release.
-        Please migrate away from this utility. The function currently
-        retains its behavior but will warn on use.
-    """
-    warnings.warn(
-        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
-    if match is None:
-        raise ValueError("arg not in format 'rgb(x,y,z)'")
-    return list(map(int, match.groups()))
 
 
 def ensure_iterable(
@@ -239,46 +214,7 @@ def formatdoc(obj):
     return obj
 
 
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        """Enum where members are also (and must be) strings."""
-
-        def __new__(cls, *values: str) -> Self:
-            if len(values) > 3:
-                raise TypeError(f'too many arguments for str(): {values!r}')
-            if len(values) == 1 and not isinstance(values[0], str):
-                raise TypeError(f'{values[0]!r} is not a string')
-            if len(values) >= 2 and not isinstance(values[1], str):
-                raise TypeError(
-                    f'encoding must be a string, not {values[1]!r}'
-                )
-            if len(values) == 3 and not isinstance(values[2], str):
-                raise TypeError(f'errors must be a string, not {values[2]!r}')
-            value = str(*values)
-            member = str.__new__(cls, value)
-            member._value_ = value
-            return member
-
-        __str__ = str.__str__
-
-        @staticmethod
-        def _generate_next_value_(
-            name: str, start: int, count: int, last_values: list[str]
-        ) -> str:
-            """Return the lower-cased version of the member name."""
-            return name.lower()
-
-
-class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
-        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        return super().__getitem__(item.upper())
-
-
-class StringEnum(StrEnum, metaclass=StringEnumMeta):
+class StringEnum(StrEnum):
     @staticmethod
     def _generate_next_value_(
         name: str, start: int, count: int, last_values: list[str]

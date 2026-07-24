@@ -866,8 +866,8 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-            'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
-            'not part of the napari viewer model. If your use case\n'
+            'no earlier than v0.9.0. It is considered an "implementation detail" '
+            'of the napari\napplication, not part of the napari viewer model. If your use case\n'
             'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
             stacklevel=2,

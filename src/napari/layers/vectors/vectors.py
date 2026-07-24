@@ -783,7 +783,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         # Data containing vectors in the currently viewed slice
         self._view_data: np.ndarray[
             tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
-        ] = np.empty((0, 2, 2))  # type: ignore[assignment]
+        ] = np.empty((0, 2, 2))
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 

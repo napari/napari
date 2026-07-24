@@ -96,6 +96,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.active.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
+        viewer.events.theme.connect(self._on_viewer_theme_changed)
 
     def _on_ndisplay_changed(self, event):
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -108,6 +109,23 @@ class QtLayerControlsContainer(QStackedWidget):
         for widget in self.widgets.values():
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
+
+    def _on_viewer_theme_changed(self, event=None):
+        """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).
+
+        The ``toggle_theme`` keybinding sets ``viewer.theme`` directly
+        without updating ``settings.appearance.theme``, so widgets that
+        listen only to settings events miss the change. This bridges
+        the gap by forwarding ``event.value`` (the new theme) to any
+        histogram widgets that have been lazily created.
+        """
+        for widget in self.widgets.values():
+            histogram_control = getattr(widget, '_histogram_control', None)
+            if histogram_control is None:
+                continue
+            hist_widget = getattr(histogram_control, 'histogram_widget', None)
+            if hist_widget is not None:
+                hist_widget._on_theme_change(event)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
