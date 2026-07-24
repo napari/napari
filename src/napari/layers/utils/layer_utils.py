@@ -563,10 +563,12 @@ def compute_multiscale_level(
     """Computed desired level of the multiscale given requested field of view.
 
     The level of the multiscale should be the lowest resolution such that
-    the requested shape is above the shape threshold. By passing a shape
-    threshold corresponding to the shape of the canvas on the screen this
+    the requested shape exceeds the shape threshold in the dimensions that
+    contribute to level selection. Dimensions that already fit within the
+    canvas or are not downsampled across pyramid levels are ignored. By
+    passing a shape threshold corresponding to the size of the canvas, this
     ensures that we have at least one data pixel per screen pixel, but no
-    more than we need.
+    more than necessary.
 
     Parameters
     ----------
@@ -583,13 +585,26 @@ def compute_multiscale_level(
     level : int
         Level of the multiscale to be viewing.
     """
+
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest level (lowest resolution) allowed
-    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    level = locations[-1][0] if len(locations) > 0 else 0
-    return level
+    # Find the highest level (lowest resolution) allowed, ignoring dimensions
+    # that already fit within the canvas or are not downsampled.
+    exceeds_threshold = requested_shape > shape_threshold
+    is_downsampled = np.any(downsample_factors > 1, axis=0)
+    active_dims = exceeds_threshold & is_downsampled
+
+    if not np.any(active_dims):
+        return 0
+
+    locations = np.flatnonzero(
+        np.all(
+            (scaled_shape > shape_threshold)[:, active_dims],
+            axis=1,
+        )
+    )
+    return int(locations[-1]) if locations.size else 0
 
 
 def compute_multiscale_level_and_corners(
