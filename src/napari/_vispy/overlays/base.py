@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.canvas import Canvas
     from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
@@ -30,7 +29,6 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    canvas: Canvas
 
     def __init__(
         self,
@@ -38,7 +36,6 @@ class VispyBaseOverlay:
         overlay: Overlay,
         font_info: FontInfo,
         viewer: ViewerModel,
-        canvas: Canvas,
         node: Node,
         parent: ViewBox | None = None,
     ) -> None:
@@ -46,7 +43,6 @@ class VispyBaseOverlay:
         self.overlay = overlay
         self._font_info = font_info
         self.viewer = viewer
-        self.canvas = canvas
 
         self.node = node
         self.node.order = self.overlay.order
@@ -109,8 +105,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
 
-        self.canvas.events.background_color.connect(self._on_box_change)
-        self.canvas.overlay_tiling.events.padding.connect(self._on_box_change)
+        self.viewer.canvas.events.background_color.connect(self._on_box_change)
+        self.viewer.canvas.overlay_tiling.events.padding.connect(
+            self._on_box_change
+        )
 
         self.box = Rectangle(center=(0, 0), border_width=0)
 
@@ -125,13 +123,15 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         self.box.parent = self.node.parent
 
-        pad_x, pad_y = np.array(self.canvas.overlay_tiling.padding) * 0.8
+        pad_x, pad_y = (
+            np.array(self.viewer.canvas.overlay_tiling.padding) * 0.8
+        )
         self.box.width = self.x_size + pad_x
         self.box.height = self.y_size + pad_y
         self.box.center = self.x_size / 2, self.y_size / 2
 
         if self.overlay.box_color is None:
-            bgcolor = self.canvas.background_color
+            bgcolor = self.viewer.canvas.background_color
             # make the color a bit transparent
             bgcolor[-1] *= 0.8
         else:
@@ -144,7 +144,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     def _get_fgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.canvas.background_color
+            bgcolor = self.viewer.canvas.background_color
         else:
             bgcolor = self.overlay.box_color
         return self._contrasting_color(bgcolor)
@@ -166,7 +166,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
         self._on_box_change()
-        self.canvas.events._overlay_positions_changed()
+        self.viewer.canvas.events._overlay_positions_changed()
 
     def reset(self) -> None:
         super().reset()

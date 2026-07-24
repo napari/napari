@@ -32,7 +32,9 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_color_change)
         self.overlay.events.font_size.connect(self._on_position_change)
 
-        self.canvas.events.background_color.connect(self._on_color_change)
+        self.viewer.canvas.events.background_color.connect(
+            self._on_color_change
+        )
 
     def _connect_events(self):
         pass

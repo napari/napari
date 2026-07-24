@@ -812,7 +812,7 @@ class VispyCanvas:
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
         for overlay in self._viewer_overlay_to_visual.get(
-            self.viewer.scale_bar, []
+            self.viewer.canvas.scale_bar, []
         ):
             overlay._on_unit_change()
 
@@ -937,7 +937,6 @@ class VispyCanvas:
                 overlay=overlay,
                 font_info=self._font_info,
                 viewer=self.viewer,
-                canvas=self.viewer.canvas,
                 parent=parent,
                 **kwargs,
             )
@@ -954,7 +953,8 @@ class VispyCanvas:
         )
         # delete outdated overlays
         for overlay in set(self._viewer_overlay_to_visual) - set(all_overlays):
-            self._disconnect_canvas_overlay_events(overlay)
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
             vispy_overlays = self._viewer_overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()

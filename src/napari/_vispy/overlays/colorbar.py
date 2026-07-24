@@ -106,7 +106,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
-        self.canvas.events.background_color.connect(self._on_data_change)
+        self.viewer.canvas.events.background_color.connect(
+            self._on_data_change
+        )
 
         self.reset()
 

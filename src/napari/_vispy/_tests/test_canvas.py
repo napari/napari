@@ -16,28 +16,31 @@ def test_scene_overlays(qt_viewer):
         # vispy overlays only exist if they are visible at least once
         overlay.visible = True
         assert (
-            vispy_canvas._scene_overlay_to_visual[overlay].node
+            vispy_canvas._viewer_overlay_to_visual[overlay][0].node
             in vispy_canvas.view.scene.children
         )
 
     old_vispy_scene_overlays = dict(
-        vispy_canvas._scene_overlay_to_visual.items()
+        vispy_canvas._viewer_overlay_to_visual.items()
     )
 
     new_overlay = AxesOverlay(visible=True)
     viewer._overlays['test'] = new_overlay
 
-    assert new_overlay in vispy_canvas._scene_overlay_to_visual
-    new_overlay_node = vispy_canvas._scene_overlay_to_visual[new_overlay].node
+    assert new_overlay in vispy_canvas._viewer_overlay_to_visual
+    new_overlay_node = vispy_canvas._viewer_overlay_to_visual[new_overlay][
+        0
+    ].node
     assert new_overlay_node in vispy_canvas.view.scene.children
     assert new_overlay_node not in vispy_canvas.view.children
 
     # old visuals should still be there, as they are reused when possible
-    for _, vispy_overlay in old_vispy_scene_overlays.items():
-        assert vispy_overlay.node in vispy_canvas.view.scene.children
+    for _, vispy_overlays in old_vispy_scene_overlays.items():
+        for vispy_overlay in vispy_overlays:
+            assert vispy_overlay.node in vispy_canvas.view.scene.children
 
     viewer._overlays.pop('test')
-    assert new_overlay not in vispy_canvas._scene_overlay_to_visual
+    assert new_overlay not in vispy_canvas._viewer_overlay_to_visual
     assert new_overlay_node not in vispy_canvas.view.children
 
 
@@ -50,18 +53,18 @@ def test_canvas_overlays(qt_viewer):
         overlay.visible = True
         assert all(
             visual.node in vispy_canvas.view.children
-            for visual in vispy_canvas._canvas_overlay_to_visual[overlay]
+            for visual in vispy_canvas._viewer_overlay_to_visual[overlay]
         )
 
     old_vispy_canvas_overlays = {
-        k: list(v) for k, v in vispy_canvas._canvas_overlay_to_visual.items()
+        k: list(v) for k, v in vispy_canvas._viewer_overlay_to_visual.items()
     }
 
     new_overlay = ScaleBarOverlay(visible=True)
     canvas._overlays['test'] = new_overlay
 
-    assert new_overlay in vispy_canvas._canvas_overlay_to_visual
-    new_overlay_node = vispy_canvas._canvas_overlay_to_visual[new_overlay][
+    assert new_overlay in vispy_canvas._viewer_overlay_to_visual
+    new_overlay_node = vispy_canvas._viewer_overlay_to_visual[new_overlay][
         0
     ].node
     assert new_overlay_node not in vispy_canvas.view.scene.children
@@ -73,10 +76,8 @@ def test_canvas_overlays(qt_viewer):
             assert vispy_overlay.node in vispy_canvas.view.children
 
     canvas._overlays.pop('test')
-    assert new_overlay not in vispy_canvas._canvas_overlay_to_visual
+    assert new_overlay not in vispy_canvas._viewer_overlay_to_visual
     assert new_overlay_node not in vispy_canvas.view.children
-
-    assert new_overlay_node not in canvas.view.children
 
 
 def test_layer_overlays(qt_viewer):
@@ -180,10 +181,10 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer.canvas.scale_bar.position = 'bottom_left'
     viewer.canvas.text.position = 'bottom_left'
 
-    vispy_scale_bar = canvas._canvas_overlay_to_visual[
+    vispy_scale_bar = canvas._viewer_overlay_to_visual[
         viewer.canvas.scale_bar
     ][0]
-    vispy_text = canvas._canvas_overlay_to_visual[viewer.canvas.text][0]
+    vispy_text = canvas._viewer_overlay_to_visual[viewer.canvas.text][0]
 
     padding = 10.0  # currently hardcoded
     y_max, x_max = canvas.size
