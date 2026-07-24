@@ -513,7 +513,9 @@ class VispyCanvas:
 
         # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
-            self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+            self.viewer.grid.iter_viewboxes(
+                len(self.viewer.layers), self.viewer.layers
+            ),
             self.grid_views,
             strict=False,
         ):
@@ -798,6 +800,7 @@ class VispyCanvas:
         self._layer_overlay_to_visual[napari_layer] = {}
 
         napari_layer.events.visible.connect(self._reorder_layers)
+        napari_layer.events.visible.connect(self._update_scenegraph)
         overlay_callback = partial(self._update_layer_overlays, napari_layer)
         napari_layer.events.visible.connect(overlay_callback)
         napari_layer._overlays.events.added.connect(overlay_callback)
@@ -890,7 +893,7 @@ class VispyCanvas:
         """When the list is reordered, propagate changes to draw order."""
         if self.viewer.grid.enabled:
             for _, layer_indices in self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers)
+                len(self.viewer.layers), self.viewer.layers
             ):
                 if not layer_indices:
                     continue
@@ -1015,7 +1018,9 @@ class VispyCanvas:
             # create, or update parent if existing
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
-                    self.viewer.grid.iter_viewboxes(len(self.viewer.layers)),
+                    self.viewer.grid.iter_viewboxes(
+                        len(self.viewer.layers), self.viewer.layers
+                    ),
                     list(vispy_overlays),
                 ):
                     if not layer_indices:
@@ -1049,9 +1054,15 @@ class VispyCanvas:
         their class (canvas vs scene overlays).
         """
         overlay_to_visual = self._layer_overlay_to_visual.setdefault(layer, {})
+        # if strid is 1, layer is anabled and if layer not visible
+        should_remove = (
+            self.viewer.grid.enabled
+            and abs(self.viewer.grid.stride) == 1
+            and not layer.visible
+        )
 
         # delete outdated overlays
-        if layer not in self.viewer.layers:
+        if layer not in self.viewer.layers and should_remove:
             to_remove = set(layer._overlays.values())
         else:
             to_remove = set(overlay_to_visual.keys()) - set(
@@ -1064,7 +1075,7 @@ class VispyCanvas:
             if vispy_overlay := overlay_to_visual.pop(overlay, None):
                 vispy_overlay.close()
 
-        if layer not in self.viewer.layers:
+        if layer not in self.viewer.layers and should_remove:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
@@ -1087,7 +1098,13 @@ class VispyCanvas:
                     row, col = self.viewer.grid.position(
                         self.viewer.layers.index(layer),
                         len(self.viewer.layers),
+                        layers=self.viewer.layers,
                     )
+                    if row == -1:
+                        # layer is hidden/excluded from grid — detach any existing overlay
+                        if vispy_overlay is not None:
+                            vispy_overlay.node.parent = None
+                        continue
                     parent = self.grid[row, col]
                 else:
                     parent = self.view
@@ -1154,7 +1171,9 @@ class VispyCanvas:
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
-            self.viewer.grid.iter_viewboxes(len(self.viewer.layers))
+            self.viewer.grid.iter_viewboxes(
+                len(self.viewer.layers), self.viewer.layers
+            ),
         ):
             if not layer_indices:
                 # last empty boxes of the grid
@@ -1323,7 +1342,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
         if self.grid.grid_size == self.viewer.grid.actual_shape(
-            len(self.viewer.layers)
+            len(self.viewer.layers), self.viewer.layers
         ):
             return
 
@@ -1338,7 +1357,8 @@ class VispyCanvas:
         self.grid = self.central_widget.add_grid(border_width=0)
 
         for (row, col), _ in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers)
+            len(self.viewer.layers),
+            self.viewer.layers,
         ):
             view = self.grid[row, col]
             # any border_color != None will add a padding of +1
@@ -1374,7 +1394,8 @@ class VispyCanvas:
 
     def _setup_layer_views_in_grid(self):
         for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers)
+            len(self.viewer.layers),
+            self.viewer.layers,
         ):
             view = self.grid[row, col]
 

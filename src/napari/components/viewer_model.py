@@ -611,16 +611,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             )
         )
 
-    def _get_viewbox_size(self):
+    def _get_viewbox_size(self) -> np.ndarray:
         """Get the size of a single viewbox (whether grid is enabled or not).
 
         If grid.border_width > 0, that's accounted for too.
         """
         viewbox_size = np.array(self._canvas_size)
         if self.grid.enabled:
-            grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
+            grid_shape = np.array(
+                self.grid.actual_shape(len(self.layers), self.layers),
+                dtype=int,
+            )
             spacing_pixels = self.grid._compute_canvas_spacing(
-                self._canvas_size, len(self.layers)
+                self._canvas_size,
+                len(self.layers),
+                self.layers,
             )
             # Now calculate actual available space
             total_gap_space = spacing_pixels * (grid_shape - 1)
