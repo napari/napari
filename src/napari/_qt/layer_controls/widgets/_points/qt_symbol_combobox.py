@@ -13,7 +13,7 @@ from napari.layers.points._points_constants import (
 from napari.utils.translations import trans
 
 
-class QtSymbolComboBoxControl(QtWidgetControlsBase):
+class QtSymbolComboBoxControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     """
     Class that wraps the connection of events/signals between the current symbol
     layer attribute and Qt widgets.
@@ -33,6 +33,8 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         Label for the current symbol chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -49,13 +51,12 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
             )
         )
         current_index = 0
-        for index, (symbol_string, text) in enumerate(
+        for index, (symbol_enum, text) in enumerate(
             SYMBOL_TRANSLATION.items()
         ):
-            symbol_string = symbol_string.value
-            sym_cb.addItem(text, symbol_string)
+            sym_cb.addItem(text, symbol_enum.value)
 
-            if symbol_string == self._layer.current_symbol:
+            if symbol_enum == self._layer.current_symbol:
                 current_index = index
 
         sym_cb.setCurrentIndex(current_index)

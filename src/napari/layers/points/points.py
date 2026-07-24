@@ -26,6 +26,7 @@ from napari.layers.points._points_constants import (
     Mode,
     PointsProjectionMode,
     Shading,
+    Symbol,
 )
 from napari.layers.points._points_mouse_bindings import add, highlight, select
 from napari.layers.points._points_utils import (
@@ -914,12 +915,12 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def current_symbol(self) -> int | float:
-        """float: symbol of marker for the next added point."""
+    def current_symbol(self) -> Symbol:
+        """Symbol: symbol of marker for the next added point."""
         return self._current_symbol
 
     @current_symbol.setter
-    def current_symbol(self, symbol: None | float) -> None:
+    def current_symbol(self, symbol: str | Symbol) -> None:
         symbol = coerce_symbols(np.array([symbol]))[0]
         self._current_symbol = symbol
         if self._update_properties and len(self.selected_data) > 0:
