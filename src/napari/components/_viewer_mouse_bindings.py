@@ -103,36 +103,36 @@ def drag_to_zoom(viewer, event):
         return
 
     # on mouse press
-    viewer._zoom_box.visible = True
+    viewer.canvas._zoom_box.visible = True
     press_pos = event.pos[::-1]
     press_position = event.position
     move_pos = press_pos
     move_position = press_position
-    viewer._zoom_box.position = (press_pos, press_pos)
+    viewer.canvas._zoom_box.position = (press_pos, press_pos)
     yield
     event.handled = True
 
     # on mouse move
     while event.type == 'mouse_move':
         if 'Alt' not in event.modifiers:
-            viewer._zoom_box.visible = False
+            viewer.canvas._zoom_box.visible = False
             yield
             return
 
         move_pos = event.pos[::-1]
-        viewer._zoom_box.position = (press_pos, move_pos)
+        viewer.canvas._zoom_box.position = (press_pos, move_pos)
         move_position = event.position
         yield
 
     # on mouse release
-    viewer._zoom_box.visible = False
+    viewer.canvas._zoom_box.visible = False
 
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > MIN_ZOOMBOX_SIZE:
         # Slice to the last two coordinates (displayed axes) for cases where
         # ndim>2 and ndisplay=2
-        viewer._zoom_box.zoom_area = (
+        viewer.canvas._zoom_box.zoom_area = (
             press_position[-2:],
             move_position[-2:],
         )

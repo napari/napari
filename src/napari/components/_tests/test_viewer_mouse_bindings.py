@@ -189,4 +189,4 @@ def test_drag_to_zoom_only_in_pan_zoom_mode():
     with pytest.raises(StopIteration):
         next(generator)
 
-    assert viewer._zoom_box.visible is False
+    assert viewer.canvas._zoom_box.visible is False

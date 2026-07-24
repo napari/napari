@@ -15,8 +15,7 @@ def test_viewer_toggler():
     action = ViewerModelToggleAction(
         id='some.command.id',
         title='Toggle Axis Visibility',
-        viewer_attribute='axes',
-        sub_attribute='visible',
+        attribute_path='axes.visible',
     )
     app = get_app_model()
     app.register_action(action)

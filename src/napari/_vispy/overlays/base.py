@@ -7,10 +7,8 @@ from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.settings import get_settings
 from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
-from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
@@ -78,7 +76,6 @@ class VispyBaseOverlay:
         self.overlay.events.visible.disconnect(self._on_visible_change)
         self.overlay.events.opacity.disconnect(self._on_opacity_change)
         self.overlay.events.blending.disconnect(self._on_blending_change)
-        disconnect_events(self.viewer.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -94,9 +91,6 @@ class VispyCanvasOverlay(VispyBaseOverlay):
       *not* supposed to be tiled
     - ensure that the napari Overlay model uses the `position` field correctly
       (must be a CanvasPosition enum if tileable, or anything else if "free")
-
-    canvas_position_callback is set by the VispyCanvas object, and is responsible
-    to update the position of all canvas overlays whenever necessary
     """
 
     overlay: CanvasOverlay
@@ -110,9 +104,11 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
-        get_settings().appearance.events.theme.connect(self._on_box_change)
-        self.viewer.events.theme.connect(self._on_box_change)
-        self.canvas_position_callback = lambda: None
+
+        self.viewer.canvas.events.background_color.connect(self._on_box_change)
+        self.viewer.canvas.overlay_tiling.events.padding.connect(
+            self._on_box_change
+        )
 
         self.box = Rectangle(center=(0, 0), border_width=0)
 
@@ -127,14 +123,15 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
         self.box.parent = self.node.parent
 
-        # TODO: this should be related to tiling padding
-        padding = 8
-        self.box.width = self.x_size + padding
-        self.box.height = self.y_size + padding
+        pad_x, pad_y = (
+            np.array(self.viewer.canvas.overlay_tiling.padding) * 0.8
+        )
+        self.box.width = self.x_size + pad_x
+        self.box.height = self.y_size + pad_y
         self.box.center = self.x_size / 2, self.y_size / 2
 
         if self.overlay.box_color is None:
-            bgcolor = self._get_canvas_bgcolor()
+            bgcolor = self.viewer.canvas.background_color
             # make the color a bit transparent
             bgcolor[-1] *= 0.8
         else:
@@ -145,17 +142,9 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_canvas_bgcolor(self) -> ColorValue:
-        if self.node.parent is not None and self.node.parent.canvas.bgcolor:
-            return ColorValue(self.node.parent.canvas.bgcolor.rgba)
-
-        return ColorValue(
-            get_theme(get_settings().appearance.theme).canvas.as_rgb_tuple()
-        )
-
     def _get_fgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self._get_canvas_bgcolor()
+            bgcolor = self.viewer.canvas.background_color
         else:
             bgcolor = self.overlay.box_color
         return self._contrasting_color(bgcolor)
@@ -177,7 +166,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
         self._on_box_change()
-        self.canvas_position_callback()
+        self.viewer.canvas.events._overlay_positions_changed()
 
     def reset(self) -> None:
         super().reset()
@@ -186,7 +175,6 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     def close(self) -> None:
         super().close()
         self.box.parent = None
-        self.canvas_position_callback = lambda: None
 
 
 class VispySceneOverlay(VispyBaseOverlay):
@@ -206,10 +194,10 @@ class LayerOverlayMixin:
     overlay: Overlay
 
     def __init__(self, *, layer: Layer, **kwargs) -> None:
+        self.layer = layer
         super().__init__(
             **kwargs,
         )
-        self.layer = layer
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
         self.layer.events.visible.connect(self._on_visible_change)
