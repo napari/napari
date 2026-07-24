@@ -473,8 +473,7 @@ def dataframe_to_properties(
 
     dataframe = nw.from_native(dataframe, eager_only=True)
     return {
-        column: dataframe[column].to_numpy()
-        for column in dataframe.columns
+        column: dataframe[column].to_numpy() for column in dataframe.columns
     }
 
 

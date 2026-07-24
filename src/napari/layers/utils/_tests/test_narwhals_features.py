@@ -62,6 +62,7 @@ class TestBackendAgnostic:
 # Non-backend inputs (dict, None)
 # ---------------------------------------------------------------------------
 
+
 def test_validate_features_dict():
     result = _validate_features({'a': [1, 2, 3]})
     assert isinstance(result, pd.DataFrame)
@@ -86,6 +87,7 @@ def test_features_to_properties():
 # ---------------------------------------------------------------------------
 # Polars-specific — code paths that only activate with non-pandas input
 # ---------------------------------------------------------------------------
+
 
 def test_validate_feature_defaults_polars():
     """Non-dict defaults trigger the _to_pandas conversion branch."""
@@ -132,22 +134,51 @@ def test_to_pandas_without_pyarrow(monkeypatch):
 # ---------------------------------------------------------------------------
 
 _LAYER_CASES = [
-    pytest.param(Points, np.array([[0, 0], [1, 1]]), {'category': ['a', 'b']}, id='Points'),
-    pytest.param(Labels, np.array([[0, 1], [1, 0]]), {'category': ['a', 'b']}, id='Labels'),
+    pytest.param(
+        Points,
+        np.array([[0, 0], [1, 1]]),
+        {'category': ['a', 'b']},
+        id='Points',
+    ),
+    pytest.param(
+        Labels,
+        np.array([[0, 1], [1, 0]]),
+        {'category': ['a', 'b']},
+        id='Labels',
+    ),
     pytest.param(
         Shapes,
-        np.array([[[0, 0], [1, 0], [1, 1], [0, 1]], [[2, 2], [3, 2], [3, 3], [2, 3]]]),
+        np.array(
+            [
+                [[0, 0], [1, 0], [1, 1], [0, 1]],
+                [[2, 2], [3, 2], [3, 3], [2, 3]],
+            ]
+        ),
         {'category': ['a', 'b']},
         id='Shapes',
     ),
     pytest.param(
         Surface,
-        (np.array([[0, 0], [1, 0], [0, 1]]), np.array([[0, 1, 2]]), np.array([1, 2, 3])),
+        (
+            np.array([[0, 0], [1, 0], [0, 1]]),
+            np.array([[0, 1, 2]]),
+            np.array([1, 2, 3]),
+        ),
         {'category': ['a', 'b', 'c']},
         id='Surface',
     ),
-    pytest.param(Tracks, np.array([[0, 0, 0, 0], [0, 1, 1, 1]]), {'category': ['a', 'b']}, id='Tracks'),
-    pytest.param(Vectors, np.array([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), {'category': ['a', 'b']}, id='Vectors'),
+    pytest.param(
+        Tracks,
+        np.array([[0, 0, 0, 0], [0, 1, 1, 1]]),
+        {'category': ['a', 'b']},
+        id='Tracks',
+    ),
+    pytest.param(
+        Vectors,
+        np.array([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]),
+        {'category': ['a', 'b']},
+        id='Vectors',
+    ),
 ]
 
 
