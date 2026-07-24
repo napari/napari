@@ -38,12 +38,8 @@ if TYPE_CHECKING:
     from napari._qt.widgets.qt_dims import QtDims
 
 
-# Minimum width for a dimension slider's groove, in pixels. Without one the
-# row's minimum width is whatever its labels need and the slider absorbs the
-# rest, so at the main window's minimum size the groove collapses to ~58 px --
-# of which the style's minimum handle (26 px on macOS) leaves ~32 px of travel
-# for the whole axis. QtDims already constrains the row's minimum *height*
-# (SLIDERHEIGHT); this is the matching width constraint.
+# Width companion to QtDims.SLIDERHEIGHT: keeps a narrow window from collapsing
+# the groove until the handle covers it and dragging becomes impossible.
 SLIDER_MINIMUM_WIDTH = 150
 
 
