@@ -60,7 +60,7 @@ class QtDictTable(QTableWidget):
     ) -> None:
         super().__init__(parent=parent)
         header = self.horizontalHeader()
-        if header is None:
+        if header is None:  # pragma: no cover
             raise RuntimeError('Header is empty.')
         if min_section_width:
             header.setMinimumSectionSize(min_section_width)
