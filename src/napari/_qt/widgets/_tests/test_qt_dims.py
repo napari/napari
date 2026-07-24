@@ -338,6 +338,27 @@ def test_slider_press_updates_last_used(qtbot):
             assert view.dims.last_used == 0
 
 
+def test_last_used_style_property_set_at_creation(qtbot):
+    """The active slider is marked from the start, not only after a change.
+
+    The ``last_used`` event only fires on a change, so with the default
+    ``last_used == 0`` freshly created sliders never got the style property
+    and the active slider opened unhighlighted.
+    """
+    view = QtDims(Dims(ndim=4))
+    qtbot.addWidget(view)
+
+    assert view.dims.last_used == 0
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [True, False, False, False]
+
+    view.dims.last_used = 1
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [False, True, False, False]
+
+
 @pytest.mark.skipif(
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',
