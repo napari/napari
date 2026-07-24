@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
@@ -16,7 +16,7 @@ ThumbnailRole = Qt.ItemDataRole.UserRole + 2
 LoadedRole = Qt.ItemDataRole.UserRole + 3
 LockedRole = Qt.ItemDataRole.UserRole + 4
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from typing import Any
 
     from napari.utils.events import Event
@@ -30,7 +30,6 @@ class QtLayerListModel(QtListModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
-        viewer = current_viewer()
         layer_loaded = layer._slicing_state.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
@@ -81,7 +80,7 @@ class QtLayerListModel(QtListModel[Layer]):
     def setData(
         self,
         index: QModelIndex,
-        value: typing.Any,
+        value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
         if role == Qt.ItemDataRole.CheckStateRole:
