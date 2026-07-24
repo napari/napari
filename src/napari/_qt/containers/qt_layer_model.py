@@ -57,7 +57,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
-                thumbnail,  # type: ignore[call-overload]
+                thumbnail.tobytes(),
                 thumbnail.shape[1],
                 thumbnail.shape[0],
                 QImage.Format.Format_RGBA8888,
