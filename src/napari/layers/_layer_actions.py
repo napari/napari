@@ -220,7 +220,32 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
+
+    if layer.multiscale:
+        # This evaluates if the pyramid structure is kept after removing
+        # the projected axis and assigns multiscale data if structure is
+        # conserved.
+        resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
+        resulting_sizes = np.prod(resulting_shapes, axis=1)
+        if np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
+            data = tuple(
+                getattr(np, mode)(level_data, axis=axis, keepdims=False)
+                for level_data in layer.data
+            )
+        # If the pyramid is broken, then project current level
+        else:
+            data = (
+                getattr(
+                    np,
+                    mode,
+                )(
+                    layer.data[layer.data_level],
+                    axis=axis,
+                    keepdims=False,
+                ),
+            )
+    else:
+        data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
     # Get the meta-data of the layer, but without transforms,
     # the transforms are updated bellow as projection of transforms
