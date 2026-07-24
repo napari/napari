@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     import pandas as pd
     import pint
+    from narwhals.typing import IntoDataFrame
 
     from napari.layers._data_protocols import LayerDataProtocol
 else:
@@ -455,7 +456,7 @@ def get_current_properties(
 
 
 def dataframe_to_properties(
-    dataframe: pd.DataFrame,
+    dataframe: IntoDataFrame,
 ) -> dict[str, np.ndarray]:
     """Convert a dataframe to a properties dictionary.
     Parameters
@@ -468,11 +469,17 @@ def dataframe_to_properties(
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
     """
-    return {col: np.asarray(dataframe[col]) for col in dataframe}
+    import narwhals as nw
+
+    dataframe = nw.from_native(dataframe, eager_only=True)
+    return {
+        column: dataframe[column].to_numpy()
+        for column in dataframe.columns
+    }
 
 
 def validate_properties(
-    properties: dict[str, Array] | pd.DataFrame | None,
+    properties: dict[str, Array] | IntoDataFrame | None,
     expected_len: int | None = None,
 ) -> dict[str, np.ndarray]:
     """Validate the type and size of properties and coerce values to numpy arrays.
@@ -1021,8 +1028,31 @@ def _get_default_column(column: pd.Series) -> pd.Series:
     return pd.Series(data=[value], dtype=column.dtype, index=range(1))
 
 
+def _to_pandas(features: IntoDataFrame) -> pd.DataFrame:
+    """Convert a Narwhals-supported eager DataFrame to pandas.
+
+    The column-wise fallback avoids requiring pyarrow for conversions such as
+    Polars to pandas while napari's internal feature storage is pandas-based.
+    """
+    if isinstance(features, pd.DataFrame):
+        return features
+
+    import narwhals as nw
+
+    dataframe = nw.from_native(features, eager_only=True)
+    try:
+        return dataframe.to_pandas()
+    except ImportError:
+        return pd.DataFrame(
+            {
+                column: dataframe[column].to_list()
+                for column in dataframe.columns
+            }
+        )
+
+
 def _validate_features(
-    features: dict[str, np.ndarray] | pd.DataFrame | None,
+    features: dict[str, np.ndarray] | IntoDataFrame | None,
     *,
     num_data: int | None = None,
 ) -> pd.DataFrame:
@@ -1032,21 +1062,21 @@ def _validate_features(
     --------
     :class:`_FeatureTable` : See initialization for parameter descriptions.
     """
-    if isinstance(features, pd.DataFrame):
-        features = features.reset_index(drop=True)
-    elif isinstance(features, dict):
+    if isinstance(features, dict):
         # Convert all array-like objects into a numpy array.
         # This section was introduced due to an unexpected behavior when using
         # a pandas Series with mixed indices as input.
         # This way should handle all array-like objects correctly.
         # See https://github.com/napari/napari/pull/4755 for more details.
         features = {key: np.asarray(value) for key, value in features.items()}
+    elif features is not None:
+        features = _to_pandas(features).reset_index(drop=True)
     index = None if num_data is None else range(num_data)
     return pd.DataFrame(data=features, index=index)
 
 
 def _validate_feature_defaults(
-    defaults: dict[str, Any] | pd.DataFrame | None,
+    defaults: dict[str, Any] | IntoDataFrame | None,
     values: pd.DataFrame,
 ) -> pd.DataFrame:
     """Validates and coerces feature default values into a pandas DataFrame.
@@ -1058,6 +1088,8 @@ def _validate_feature_defaults(
     if defaults is None:
         defaults = {c: _get_default_column(values[c]) for c in values.columns}
     else:
+        if not isinstance(defaults, dict):
+            defaults = _to_pandas(defaults)
         default_columns = set(defaults.keys())
         value_columns = set(values.keys())
         extra_defaults = default_columns - value_columns
@@ -1094,7 +1126,7 @@ def _validate_feature_defaults(
 
 def _features_from_properties(
     *,
-    properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
+    properties: dict[str, np.ndarray] | IntoDataFrame | None = None,
     property_choices: dict[str, np.ndarray] | None = None,
     num_data: int | None = None,
 ) -> pd.DataFrame:
@@ -1106,6 +1138,8 @@ def _features_from_properties(
     """
     # Create categorical series for any choices provided.
     if property_choices is not None:
+        if properties is not None and not isinstance(properties, dict):
+            properties = _to_pandas(properties)
         properties_df = pd.DataFrame(data=properties)
         for name, choices in property_choices.items():
             dtype = pd.CategoricalDtype(categories=choices)
