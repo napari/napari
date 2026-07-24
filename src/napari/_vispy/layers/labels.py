@@ -67,6 +67,9 @@ uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
+    if (($use_selection) && ($selection != int(t + 0.5))) {
+        return vec4(0);
+    }
     return texture2D(
         texture2D_values,
         vec2(0.0, (t + 0.5) / $color_map_size)
@@ -81,6 +84,9 @@ uniform vec2 LUT_shape;
 
 vec4 sample_label_color(float t) {
     t = t * $scale;
+    if (($use_selection) && ($selection != int(t + 0.5))) {
+        return vec4(0);
+    }
     float row = mod(t, LUT_shape.x);
     float col = int(t / LUT_shape.x);
     return texture2D(
@@ -97,6 +103,8 @@ class LabelVispyColormap(VispyColormap):
         colormap: CyclicLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
+        use_selection: bool = False,
+        selection: int = 0,
     ):
         super().__init__(
             colors=['w', 'w'], controls=None, interpolation='zero'
@@ -116,12 +124,14 @@ class LabelVispyColormap(VispyColormap):
                 f'Cannot use dtype {view_dtype} with LabelVispyColormap'
             )
 
-        selection = colormap._selection_as_minimum_dtype(raw_dtype)
+        selection_texture = colormap._selection_as_minimum_dtype(
+            selection, raw_dtype
+        )
 
         self.glsl_map = (
             shader.replace('$color_map_size', str(len(colormap.colors)))
-            .replace('$use_selection', str(colormap.use_selection).lower())
-            .replace('$selection', str(selection))
+            .replace('$use_selection', str(use_selection).lower())
+            .replace('$selection', str(selection_texture))
         )
 
 
@@ -258,7 +268,11 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 colormap, view_dtype, raw_dtype
             )
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
+                colormap,
+                view_dtype=view_dtype,
+                raw_dtype=raw_dtype,
+                use_selection=self.layer.show_selected_label,
+                selection=self.layer.selected_label,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 color_texture,
@@ -268,22 +282,35 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.texture_data = color_texture
 
         elif not auto_mode:  # only for raw_dtype.itemsize > 2
-            color_dict = colormap._values_mapping_to_minimum_values_set()[1]
+            use_selection = self.layer.show_selected_label
+            selected_label = self.layer.selected_label
+            selection = selected_label if use_selection else None
+            color_dict = colormap._values_mapping_to_minimum_values_set(
+                selection=selection
+            )[1]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
-            dtype = _texture_dtype(
-                self.layer._direct_colormap._num_unique_colors + 2,
-                raw_dtype,
+            num_colors = (
+                2
+                if use_selection
+                else self.layer._direct_colormap._num_unique_colors + 2
             )
+            dtype = _texture_dtype(num_colors, raw_dtype)
             if issubclass(dtype.type, np.integer):
                 scale = np.iinfo(dtype).max
             else:  # float32 texture
                 scale = 1.0
 
+            # The shader only reads $selection when $use_selection is true.
+            selection_texture = (
+                colormap._selection_as_minimum_dtype(selected_label, raw_dtype)
+                if use_selection
+                else 0
+            )
             self.node.cmap = DirectLabelVispyColormap(
-                use_selection=colormap.use_selection,
-                selection=colormap.selection,
+                use_selection=use_selection,
+                selection=selection_texture,
                 scale=scale,
                 color_map_size=val_texture.shape[0],
                 multi=val_texture.shape[1] > 1,

@@ -254,19 +254,29 @@ def test_direct_label_colormap_deepcopy_after_map(direct_label_colormap):
     assert cmap_copy._cache_mapping is not direct_label_colormap._cache_mapping
 
 
-def test_direct_label_colormap_selection(direct_label_colormap):
-    direct_label_colormap.selection = 2
-    direct_label_colormap.use_selection = True
+def test_selection_fields_deprecation_shim(direct_label_colormap):
+    """Reading the removed selection fields warns and returns the old
+    defaults; writing raises with a pointer to the layer API."""
+    with pytest.warns(FutureWarning, match='show_selected_label'):
+        assert direct_label_colormap.use_selection is False
+    with pytest.warns(FutureWarning, match='selected_label'):
+        assert direct_label_colormap.selection == 0
 
-    np.testing.assert_array_equal(
-        direct_label_colormap.map([0, 2, 7]),
-        np.array([[0, 0, 0, 0], [0, 1, 0, 1], [0, 0, 0, 0]]),
-    )
+    with pytest.raises(AttributeError, match='show_selected_label'):
+        direct_label_colormap.use_selection = True
+    with pytest.raises(AttributeError, match='selected_label'):
+        direct_label_colormap.selection = 2
 
+
+def test_values_mapping_selection_shortcut(direct_label_colormap):
+    """With a selection, the minimum-values-set mapping collapses to
+    the 2-entry {background, selection} shortcut."""
     (
         label_mapping,
         color_dict,
-    ) = direct_label_colormap._values_mapping_to_minimum_values_set()
+    ) = direct_label_colormap._values_mapping_to_minimum_values_set(
+        selection=2
+    )
 
     assert len(label_mapping) == 2
     assert len(color_dict) == 2
@@ -362,21 +372,6 @@ def test_label_colormap_map_with_uint8_values(dtype):
     npt.assert_array_equal(cmap.map(values), expected)
 
 
-@pytest.mark.parametrize('selection', [1, -1])
-@pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int32, np.int64])
-def test_label_colormap_map_with_selection(selection, dtype):
-    cmap = colormap.CyclicLabelColormap(
-        colors=ColorArray(
-            np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 1, 0, 1]])
-        ),
-        use_selection=True,
-        selection=selection,
-    )
-    values = np.array([0, selection, 2], dtype=np.int8)
-    expected = np.array([[0, 0, 0, 0], [1, 0, 0, 1], [0, 0, 0, 0]])
-    npt.assert_array_equal(cmap.map(values), expected)
-
-
 @pytest.mark.parametrize('background', [1, -1])
 @pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int32, np.int64])
 def test_label_colormap_map_with_background(background, dtype):
@@ -449,26 +444,6 @@ def test_direct_colormap_with_no_selection():
     # Map multiple values
     mapped = cmap.map(np.array([1, 2]))
     npt.assert_array_equal(mapped, np.array([[1, 0, 0, 1], [0, 1, 0, 1]]))
-
-
-def test_direct_colormap_with_selection():
-    # Create a DirectLabelColormap with a simple color_dict and a selection
-    color_dict = {
-        1: np.array([1, 0, 0, 1]),
-        2: np.array([0, 1, 0, 1]),
-        None: np.array([0, 0, 0, 0]),
-    }
-    cmap = DirectLabelColormap(
-        color_dict=color_dict, use_selection=True, selection=1
-    )
-
-    # Map a single value
-    mapped = cmap.map(1)
-    npt.assert_array_equal(mapped, np.array([1, 0, 0, 1]))
-
-    # Map a value that is not the selection
-    mapped = cmap.map(2)
-    npt.assert_array_equal(mapped, np.array([0, 0, 0, 0]))
 
 
 def test_direct_colormap_with_invalid_values():
@@ -569,14 +544,6 @@ def test_direct_colormap_negative_values_numpy():
         np.array([-1, -2, 5], dtype=np.int8), cmap
     )
     npt.assert_array_equal(res, [1, 2, 0])
-
-    cmap.selection = -2
-    cmap.use_selection = True
-
-    res = _accelerated_cmap._labels_raw_to_texture_direct_numpy(
-        np.array([-1, -2, 5], dtype=np.int8), cmap
-    )
-    npt.assert_array_equal(res, [0, 1, 0])
 
 
 @pytest.mark.parametrize(
