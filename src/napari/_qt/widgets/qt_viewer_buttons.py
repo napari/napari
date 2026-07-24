@@ -721,6 +721,9 @@ class QtViewerButtons(QFrame):
 
         grid_stride.setObjectName('gridStrideBox')
         grid_stride.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Magic number to allow for negative strides, but not too large to be unreasonable.
+        # 1000 is arbitrary.
+        grid_stride.setMinimum(-1000)
         grid_stride.setProhibitValue(0)
         grid_stride.setValue(self.viewer.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
