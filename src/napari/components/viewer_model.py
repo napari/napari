@@ -700,13 +700,51 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if isinstance(
             base_layer := self.layers.selection.active, ScalarFieldBase
         ):
+            dtype = get_settings().application.new_labels_dtype
+
+            if 'progressive_loader' in base_layer.metadata:
+                import zarr
+
+                from napari.experimental._progressive_loading import (
+                    add_progressive_loading_labels,
+                )
+                from napari.experimental._virtual_data import (
+                    chunk_shape_for,
+                )
+
+                loader = base_layer.metadata['progressive_loader']
+                ms_data = loader._data
+                ndim = base_layer.ndim
+                label_arrays = []
+                for src in ms_data.arrays:
+                    lvl_shape = tuple(int(s) for s in src.shape[:ndim])
+                    chunks = tuple(
+                        min(c, s)
+                        for c, s in zip(
+                            chunk_shape_for(src)[:ndim],
+                            lvl_shape,
+                            strict=False,
+                        )
+                    )
+                    label_arrays.append(
+                        zarr.zeros(lvl_shape, chunks=chunks, dtype=dtype)
+                    )
+                add_progressive_loading_labels(
+                    label_arrays,
+                    viewer=self,  # type: ignore[arg-type]
+                    name=base_layer.name + ' - Labels',
+                    scale=tuple(base_layer.scale),
+                    translate=tuple(base_layer.translate),
+                )
+                return
+
+            # use :base_layer.ndim to cut channels from rgb images
+            data = np.zeros(
+                base_layer.data.shape[: base_layer.ndim], dtype=dtype
+            )
+
             layer = Labels(
-                data=np.zeros(
-                    base_layer.data.shape[
-                        : base_layer.ndim
-                    ],  # use :base_layer.ndim to cut channels from rgb images
-                    dtype=get_settings().application.new_labels_dtype,
-                ),
+                data=data,
                 scale=base_layer.scale,
                 translate=base_layer.translate,
                 rotate=base_layer.rotate,

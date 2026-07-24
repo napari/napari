@@ -207,6 +207,14 @@ class QtViewer(QSplitter):
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
 
+        # experimental: stream new multiscale layers progressively when
+        # the setting is enabled (Preferences > Experimental)
+        from napari.experimental._auto_progressive import (
+            connect_viewer as _connect_progressive_loading,
+        )
+
+        _connect_progressive_loading(self.viewer)
+
         self.setAcceptDrops(True)
 
         # Create the experimental QtPool for the monitor.

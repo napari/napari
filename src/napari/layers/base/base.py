@@ -2147,7 +2147,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.corner_pixels = corners
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
+        self,
+        scale_factor,
+        corner_pixels_displayed,
+        shape_threshold,
+        view_direction=None,
     ):
         """Update canvas scale and corner values on draw.
 
@@ -2163,8 +2167,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             world coordinates.
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
+        view_direction : numpy.ndarray or None
+            Unit vector giving the camera view direction in world
+            coordinates. Stored on the layer so that multiscale corner
+            computations can transform it to data space without reaching
+            up to the viewer.
         """
         self.scale_factor = scale_factor
+        if hasattr(self, '_camera_view_direction'):
+            self._camera_view_direction = view_direction
 
         displayed_axes = self._slice_input.displayed
 

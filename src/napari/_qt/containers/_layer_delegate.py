@@ -171,12 +171,15 @@ class LayerDelegate(QStyledItemDelegate):
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = option.rect.translated(-2, 2)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
-            thumb_rect.setWidth(h)
-            thumb_rect.setHeight(h)
-            image = index.data(ThumbnailRole)
-            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+        # Always paint the thumbnail so that fast loaded→unloaded transitions
+        # (e.g. progressive loading) keep the previous thumbnail visible
+        # instead of flickering to the loading animation and back.
+        thumb_rect = option.rect.translated(-2, 2)
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
+        thumb_rect.setWidth(h)
+        thumb_rect.setHeight(h)
+        image = index.data(ThumbnailRole)
+        painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def _paint_lock_icon(self, painter, option, index):
         """Paint a lock icon when the layer is locked. No icon when unlocked."""
