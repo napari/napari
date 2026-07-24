@@ -13,6 +13,7 @@ from napari.utils.interactions import (
 
 @pytest.mark.usefixtures('qapp')
 def test_vispy_labels_polygon_overlay(make_napari_viewer):
+    # see #9262 for why we need make_napari_viewer
     viewer = make_napari_viewer()
 
     labels_polygon = LabelsPolygonOverlay()
