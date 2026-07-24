@@ -9,6 +9,7 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
+    from narwhals.typing import IntoDataFrame
     from scipy.spatial import cKDTree
 
 
@@ -188,7 +189,7 @@ class TrackManager:
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: 'dict[str, np.ndarray] | IntoDataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._feature_table.reorder(self._order)  # type: ignore[arg-type]
