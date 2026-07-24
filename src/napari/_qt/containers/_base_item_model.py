@@ -91,7 +91,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     def parent(self) -> QObject | None: ...
 
     def parent(
-        self, child: QModelIndex = None
+        self, child: QModelIndex | None = None
     ) -> QModelIndex | QObject | None:
         """Return the parent of the model item with the given ``index``.
 
