@@ -4,7 +4,6 @@ from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
-from qtpy.QtWidgets import QAbstractItemView
 
 from napari._qt.containers._base_item_model import (
     ItemRole,
@@ -17,12 +16,17 @@ ItemType = TypeVar('ItemType')
 if TYPE_CHECKING:
     from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
+    from qtpy.QtWidgets import QAbstractItemView
 
     from napari.utils.events import Event
     from napari.utils.events.containers import SelectableEventedList
 
+    _ViewBase = QAbstractItemView
+else:
+    _ViewBase = object
 
-class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
+
+class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
     """A QAbstractItemView mixin desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python
