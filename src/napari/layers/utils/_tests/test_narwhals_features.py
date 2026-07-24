@@ -1,5 +1,8 @@
-"""Tests for the new narwhals/polars feature paths not already covered
-in test_layer_utils.py (which tests dict, None, and pandas paths)."""
+"""Tests verifying the narwhals ``IntoDataFrame`` contract.
+
+Every feature/property boundary function that accepts ``IntoDataFrame`` is
+tested with both pandas and polars to ensure compatibility stays in place.
+"""
 
 import numpy as np
 import pandas as pd
@@ -9,6 +12,7 @@ import pytest
 from napari.layers import Labels, Points, Shapes, Surface, Tracks, Vectors
 from napari.layers.utils.layer_utils import (
     _features_from_properties,
+    _features_to_properties,
     _FeatureTable,
     _to_pandas,
     _validate_feature_defaults,
@@ -17,35 +21,71 @@ from napari.layers.utils.layer_utils import (
     validate_properties,
 )
 
+# ---------------------------------------------------------------------------
+# Parametrized fixture — each test runs once per backend
+# ---------------------------------------------------------------------------
 
-class TestPolarsInput:
-    """Functions that accept ``IntoDataFrame`` work with Polars input."""
+_BACKENDS = [
+    pytest.param(pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), id='pandas'),
+    pytest.param(pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]}), id='polars'),
+]
 
-    def test_validate_features(self):
-        result = _validate_features(
-            pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-        )
+
+@pytest.fixture(params=_BACKENDS)
+def any_df(request):
+    return request.param
+
+
+class TestBackendAgnostic:
+    """Boundary functions that must accept any eager DataFrame."""
+
+    def test_validate_features(self, any_df):
+        result = _validate_features(any_df)
         assert isinstance(result, pd.DataFrame)
         assert list(result.columns) == ['a', 'b']
 
-    def test_feature_table(self):
-        ft = _FeatureTable(
-            pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-        )
+    def test_feature_table(self, any_df):
+        ft = _FeatureTable(any_df)
         assert isinstance(ft.values, pd.DataFrame)
 
-    def test_dataframe_to_properties(self):
-        result = dataframe_to_properties(
-            pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-        )
+    def test_dataframe_to_properties(self, any_df):
+        result = dataframe_to_properties(any_df)
+        assert isinstance(result, dict)
+        assert 'a' in result
+
+    def test_validate_properties(self, any_df):
+        result = validate_properties(any_df)
         assert isinstance(result, dict)
 
-    def test_validate_properties(self):
-        result = validate_properties(
-            pl.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
-        )
-        assert isinstance(result, dict)
 
+# ---------------------------------------------------------------------------
+# Non-backend inputs (dict, None)
+# ---------------------------------------------------------------------------
+
+def test_validate_features_dict():
+    result = _validate_features({'a': [1, 2, 3]})
+    assert isinstance(result, pd.DataFrame)
+
+
+def test_validate_features_none():
+    result = _validate_features(None)
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 0
+
+
+def test_feature_table_dict():
+    ft = _FeatureTable({'a': [1, 2, 3]})
+    assert isinstance(ft.values, pd.DataFrame)
+
+
+def test_features_to_properties():
+    result = _features_to_properties(pd.DataFrame({'a': [1, 2, 3]}))
+    assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Polars-specific — code paths that only activate with non-pandas input
+# ---------------------------------------------------------------------------
 
 def test_validate_feature_defaults_polars():
     """Non-dict defaults trigger the _to_pandas conversion branch."""
@@ -87,28 +127,32 @@ def test_to_pandas_without_pyarrow(monkeypatch):
     )
 
 
-class TestLayerIntegration:
-    """Each concrete layer accepts Polars features."""
+# ---------------------------------------------------------------------------
+# Layer integration — each concrete layer accepts Polars features
+# ---------------------------------------------------------------------------
 
-    @pytest.mark.parametrize(('layer_cls', 'data', 'feat'), [
-        pytest.param(Points, np.array([[0, 0], [1, 1]]), {'category': ['a', 'b']}, id='Points'),
-        pytest.param(Labels, np.array([[0, 1], [1, 0]]), {'category': ['a', 'b']}, id='Labels'),
-        pytest.param(
-            Shapes,
-            np.array([[[0, 0], [1, 0], [1, 1], [0, 1]], [[2, 2], [3, 2], [3, 3], [2, 3]]]),
-            {'category': ['a', 'b']},
-            id='Shapes',
-        ),
-        pytest.param(
-            Surface,
-            (np.array([[0, 0], [1, 0], [0, 1]]), np.array([[0, 1, 2]]), np.array([1, 2, 3])),
-            {'category': ['a', 'b', 'c']},
-            id='Surface',
-        ),
-        pytest.param(Tracks, np.array([[0, 0, 0, 0], [0, 1, 1, 1]]), {'category': ['a', 'b']}, id='Tracks'),
-        pytest.param(Vectors, np.array([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), {'category': ['a', 'b']}, id='Vectors'),
-    ])
-    def test_features_polars(self, layer_cls, data, feat):
-        features = pl.DataFrame(feat)
-        layer = layer_cls(data, features=features)
-        pd.testing.assert_frame_equal(layer.features, pd.DataFrame(feat))
+_LAYER_CASES = [
+    pytest.param(Points, np.array([[0, 0], [1, 1]]), {'category': ['a', 'b']}, id='Points'),
+    pytest.param(Labels, np.array([[0, 1], [1, 0]]), {'category': ['a', 'b']}, id='Labels'),
+    pytest.param(
+        Shapes,
+        np.array([[[0, 0], [1, 0], [1, 1], [0, 1]], [[2, 2], [3, 2], [3, 3], [2, 3]]]),
+        {'category': ['a', 'b']},
+        id='Shapes',
+    ),
+    pytest.param(
+        Surface,
+        (np.array([[0, 0], [1, 0], [0, 1]]), np.array([[0, 1, 2]]), np.array([1, 2, 3])),
+        {'category': ['a', 'b', 'c']},
+        id='Surface',
+    ),
+    pytest.param(Tracks, np.array([[0, 0, 0, 0], [0, 1, 1, 1]]), {'category': ['a', 'b']}, id='Tracks'),
+    pytest.param(Vectors, np.array([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), {'category': ['a', 'b']}, id='Vectors'),
+]
+
+
+@pytest.mark.parametrize(('layer_cls', 'data', 'feat'), _LAYER_CASES)
+def test_layer_features_polars(layer_cls, data, feat):
+    features = pl.DataFrame(feat)
+    layer = layer_cls(data, features=features)
+    pd.testing.assert_frame_equal(layer.features, pd.DataFrame(feat))
