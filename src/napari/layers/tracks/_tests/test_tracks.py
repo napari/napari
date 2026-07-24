@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 
 from napari.components.dims import Dims
 from napari.layers import Tracks
-from napari.layers.tracks._track_utils import TrackManager
+from napari.layers.tracks._track_utils import TrackManager, prepare_tracks_data
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
@@ -416,3 +417,103 @@ def test_hide_completed_tracks() -> None:
 def test_docstring():
     validate_all_params_in_docstring(Tracks)
     validate_kwargs_sorted(Tracks)
+
+
+def test_prepare_tracks_data_without_z():
+    df = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [10],
+            'y': [100],
+            'x': [300],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data=df,
+        track_id=0,
+        t=1,
+        y=2,
+        x=3,
+    )
+
+    expected = np.array(
+        [
+            [1, 10, 100, 300],
+        ]
+    )
+
+    assert_array_equal(result, expected)
+
+
+def test_prepare_tracks_data_with_z():
+    df = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [10],
+            'z': [5],
+            'y': [100],
+            'x': [300],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data=df,
+        track_id=0,
+        t=1,
+        z=2,
+        y=3,
+        x=4,
+    )
+
+    expected = np.array(
+        [
+            [1, 10, 5, 100, 300],
+        ]
+    )
+
+    assert_array_equal(result, expected)
+
+
+def test_prepare_tracks_data_shape_without_z():
+    data = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [10],
+            'y': [100],
+            'x': [300],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data,
+        track_id=0,
+        t=1,
+        y=2,
+        x=3,
+    )
+
+    assert result.shape == (1, 4)
+
+
+def test_prepare_tracks_data_shape_with_z():
+    data = pd.DataFrame(
+        {
+            'track_id': [1],
+            't': [0],
+            'z': [5],
+            'y': [10],
+            'x': [30],
+        }
+    )
+
+    result = prepare_tracks_data(
+        data,
+        track_id=0,
+        t=1,
+        y=3,
+        x=4,
+        z=2,
+    )
+
+    assert result.shape == (1, 5)

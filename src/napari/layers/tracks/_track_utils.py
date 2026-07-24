@@ -509,3 +509,58 @@ class TrackManager:
             lbl = [f'ID:{i}' for i in self._points_id[lookup]]
 
         return lbl, pos
+
+
+def prepare_tracks_data(
+    data: 'pd.DataFrame',
+    track_id: int | str = 'track_id',
+    t: int | str = 't',
+    y: int | str = 'y',
+    x: int | str = 'x',
+    z: int | str | None = None,
+) -> np.ndarray:
+    """Extract and reorder track coordinate columns as a NumPy array.
+
+    The returned array always contains the columns in the order
+    ``[track_id, t, y, x]`` or ``[track_id, t, z, y, x]`` when ``z`` is
+    provided.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input dataframe containing track data.
+    track_id : int | str
+        Column index or name for the track identifier.
+    t : int | str
+        Column index or name for the time coordinate.
+    y : int | str
+        Column index or name for the y coordinate.
+    x : int | str
+        Column index or name for the x coordinate.
+    z : int | str | None, optional
+        Column index or name for the z coordinate. If ``None``, no z coordinate is
+        included.
+
+    Returns
+    -------
+    np.ndarray
+        A NumPy array containing the selected columns in the expected order.
+    """
+    order = [track_id, t]
+
+    if z is not None:
+        order.append(z)
+
+    order.extend([y, x])
+
+    columns = []
+
+    # convert column index to column name if necessary
+    for col in order:
+        if isinstance(col, int):
+            columns.append(data.columns[col])
+        else:
+            columns.append(col)
+
+    # convert to numpy
+    return data[columns].to_numpy()
