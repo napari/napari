@@ -13,7 +13,7 @@ from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
-class QtEdgeColorControl(QtWidgetControlsBase):
+class QtEdgeColorControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     """
     Class that wraps the connection of events/signals between the current edge
     color layer attribute and Qt widgets.
@@ -41,7 +41,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         super().__init__(parent, layer)
         # Setup widgets
         self.edge_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.current_edge_color,
+            initial_color=self._layer.current_edge_color,  # type: ignore[attr-defined]
             tooltip=tooltip,
         )
         connect_setattr(
