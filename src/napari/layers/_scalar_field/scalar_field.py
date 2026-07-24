@@ -28,6 +28,7 @@ from napari.layers.utils._slice_input import (
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
+    expand_corners_to_chunk_boundaries,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
@@ -516,6 +517,9 @@ class ScalarFieldBase(Layer, ABC):
             )
             if any(s == 0 for s in display_shape):
                 return
+            corners = expand_corners_to_chunk_boundaries(
+                corners, self.data[level], displayed_axes
+            )
             # Only update when level changes or
             # when new view is outside current corner_pixels
             if (

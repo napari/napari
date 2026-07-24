@@ -1,4 +1,5 @@
 import time
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from napari.layers.utils.layer_utils import (
     compute_multiscale_level,
     dataframe_to_properties,
     dims_displayed_world_to_layer,
+    expand_corners_to_chunk_boundaries,
     get_current_properties,
     register_layer_attr_action,
     segment_normal,
@@ -31,6 +33,80 @@ data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
 data_dask_plane = da.random.random(
     size=(100_000, 100_000), chunks=(1000, 1000)
 )
+
+
+def _make_chunked(shape, chunks):
+    """Build a minimal array-like exposing ``shape`` and ``chunks``."""
+    return SimpleNamespace(shape=shape, chunks=chunks)
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected'),
+    [
+        # dask-style: explicit per-axis chunk sizes.
+        (_make_chunked((10, 10), ((4, 4, 2), (3, 3, 3, 1))), [[0, 3], [7, 8]]),
+        # zarr-style: a single regular chunk size per axis.
+        (_make_chunked((10, 10), (4, 3)), [[0, 3], [7, 8]]),
+        # numpy: no chunk metadata, corners returned unchanged.
+        (np.zeros((10, 10)), [[2, 4], [5, 7]]),
+    ],
+    ids=['dask', 'zarr', 'numpy'],
+)
+def test_expand_corners_to_chunk_boundaries(data, expected):
+    corners = np.array([[2, 4], [5, 7]])
+
+    np.testing.assert_array_equal(
+        expand_corners_to_chunk_boundaries(corners, data, range(2)),
+        expected,
+    )
+    np.testing.assert_array_equal(corners, [[2, 4], [5, 7]])
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        _make_chunked((6, 10, 10), ((2, 2, 2), (4, 4, 2), (3, 3, 3, 1))),
+        _make_chunked((6, 10, 10), (2, 4, 3)),
+    ],
+    ids=['dask', 'zarr'],
+)
+def test_expand_corners_to_chunk_boundaries_leaves_sliced_axis(data):
+    # A 3D array displayed in 2D: axis 0 is sliced and must not be expanded,
+    # only the displayed axes (1, 2) snap out to chunk boundaries.
+    corners = np.array([[3, 2, 4], [3, 5, 7]])
+
+    np.testing.assert_array_equal(
+        expand_corners_to_chunk_boundaries(corners, data, [1, 2]),
+        [[3, 0, 3], [3, 7, 8]],
+    )
+
+
+def test_expand_corners_to_chunk_boundaries_tensorstore():
+    # tensorstore exposes chunking via chunk_layout.read_chunk, not `chunks`,
+    # but the per-axis read-chunk shape matches the zarr form and expands the
+    # same way.
+    ts = pytest.importorskip('tensorstore')
+    data = ts.open(
+        {
+            'driver': 'zarr3',
+            'kvstore': {'driver': 'memory'},
+            'metadata': {
+                'shape': [10, 10],
+                'chunk_grid': {
+                    'name': 'regular',
+                    'configuration': {'chunk_shape': [4, 3]},
+                },
+                'data_type': 'uint8',
+            },
+            'create': True,
+        }
+    ).result()
+    corners = np.array([[2, 4], [5, 7]])
+
+    np.testing.assert_array_equal(
+        expand_corners_to_chunk_boundaries(corners, data, range(2)),
+        [[0, 3], [7, 8]],
+    )
 
 
 def test_calc_data_range():
