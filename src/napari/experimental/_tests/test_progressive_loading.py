@@ -2134,3 +2134,6 @@ def test_progressive_loading_rgb(
     vdata = loader._data[loader._resident_level]
     assert vdata.interval is not None
     loader.close()
+    # Allow deferred singleShot(0) callbacks to fire (they guard on
+    # _closed and no-op) so the conftest dangling-timer check passes.
+    qtbot.wait(100)

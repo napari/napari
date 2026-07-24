@@ -3064,9 +3064,10 @@ def _warn_if_chunks_suboptimal(data: MultiScaleVirtualData) -> None:
     itemsize = np.dtype(level0.dtype).itemsize
 
     chunk_bytes = int(np.prod(cshape)) * itemsize
-    coverage = [c / s for c, s in zip(cshape, shape) if s > 0]
     full_axes = [
-        i for i, (c, s) in enumerate(zip(cshape, shape)) if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
+        i
+        for i, (c, s) in enumerate(zip(cshape, shape, strict=False))
+        if s > 0 and c / s > _CHUNK_AXIS_COVERAGE
     ]
 
     issues = []
