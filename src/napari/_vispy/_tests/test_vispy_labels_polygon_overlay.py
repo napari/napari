@@ -14,7 +14,9 @@ from napari.utils.interactions import (
 
 @pytest.fixture
 def patch_gloo_set_state(monkeypatch):
-    monkeypatch.setattr('vispy.visuals.polygon.set_state', lambda *args: None)
+    monkeypatch.setattr(
+        'vispy.visuals.polygon.set_state', lambda *args, **kwargs: None
+    )
 
 
 # see https://github.com/napari/napari/pull/9262
