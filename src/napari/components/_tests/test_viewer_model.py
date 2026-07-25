@@ -707,7 +707,8 @@ def test_camera():
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.center == (4.5, 7, 9.5)
+    # Synced mode: z from dims slider, x/y and zoom persist from 2D
+    assert viewer.camera.center == (4.0, 7.0, 9.5)
     assert viewer.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 2
@@ -1140,6 +1141,118 @@ def test_fit_to_view_2d_data_in_3d_view():
 
     np.testing.assert_allclose(viewer.camera.center, (0, 4.5, 9.5))
     assert viewer.camera.angles == (45, 30, 60)
+
+
+def test_synced_camera():
+    """Test synced mode center/zoom persistence and dims slider sync."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((11, 11, 11)))
+    viewer.dims.current_step = (2, 0, 0)
+
+    # synced=True by default
+    viewer.camera.center = (0, 3, 7)
+    viewer.camera.zoom = 2.5
+
+    # 2D→3D: z from dims slider, x/y and zoom persist
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (2.0, 3.0, 7.0))
+    assert viewer.camera.zoom == 2.5
+
+    # Pan in 3D
+    viewer.camera.center = (5, 8, 12)
+    viewer.camera.zoom = 3.0
+
+    # 3D→2D: dims slider follows camera z
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 8, 12))
+    assert viewer.camera.zoom == 3.0
+    assert viewer.dims.point[0] == 5.0
+
+    # 2D→3D again: z from updated dims point
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+    assert viewer.camera.zoom == 3.0
+
+    # Multiple round trips
+    for _ in range(3):
+        viewer.dims.ndisplay = 2
+        viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+
+
+def test_separate_camera_cache_round_trip():
+    """Test that separate mode (synced=False) preserves independent state for 2D and 3D."""
+    viewer = ViewerModel()
+    viewer.camera.synced = False
+    np.random.seed(0)
+    viewer.add_image(np.random.random((11, 11, 11)))
+
+    # Customize 2D view
+    viewer.camera.center = (0, 2, 3)
+    viewer.camera.zoom = 2.5
+
+    # First entry into 3D gets fit_to_view defaults
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5.0, 5.0, 5.0))
+
+    # Customize 3D view
+    viewer.camera.center = (7, 8, 9)
+    viewer.camera.zoom = 1.5
+    viewer.camera.angles = (24, 12, -19)
+
+    # Switch back to 2D — should restore the 2D state
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(viewer.camera.center, (0, 2, 3))
+    assert viewer.camera.zoom == 2.5
+
+    # Switch back to 3D — should restore the 3D state
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
+    assert viewer.camera.zoom == 1.5
+    assert viewer.camera.angles == (24, 12, -19)
+
+    # Multiple round trips: states survive
+    for _ in range(3):
+        viewer.dims.ndisplay = 2
+        viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
+
+
+def test_separate_camera_toggle_off_after_synced_navigation():
+    """Regression test: toggle sync off after navigating in synced mode.
+
+    Previously, ``_previous_ndisplay`` was not updated in the synced path
+    of ``_on_ndisplay_changed``, so the cache would associate the wrong
+    ndisplay mode with the captured state when sync was later turned off.
+    """
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((11, 11, 11)))
+
+    # Navigate in synced mode — go to 3D
+    viewer.camera.center = (0, 3, 7)
+    viewer.camera.zoom = 2.5
+    viewer.dims.ndisplay = 3
+
+    # Customize the 3D view
+    viewer.camera.center = (5, 8, 12)
+    viewer.camera.zoom = 3.0
+
+    # Now toggle sync OFF while in 3D
+    viewer.camera.synced = False
+
+    # Go back to 2D — should NOT use fit_to_view; should cache the 2D state
+    viewer.dims.ndisplay = 2
+    # The 2D state cached during synced navigation was saved under
+    # _previous_ndisplay=2, so it should restore correctly
+    np.testing.assert_allclose(viewer.camera.center, (0, 3, 7))
+    assert viewer.camera.zoom == 2.5
+
+    # Go back to 3D — should restore the 3D state from after synced navigation
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(viewer.camera.center, (5, 8, 12))
+    assert viewer.camera.zoom == 3.0
 
 
 def test_fit_to_view_handles_no_layers():

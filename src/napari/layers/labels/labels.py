@@ -70,7 +70,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import format_feature_value
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -444,11 +443,19 @@ class Labels(ScalarFieldBase):
             show_selected_label=Event,
         )
 
+        from napari.components.overlays.labels_brush_stroke import (
+            LabelsBrushStrokeOverlay,
+        )
         from napari.components.overlays.labels_polygon import (
             LabelsPolygonOverlay,
         )
 
-        self._overlays.update({'polygon': LabelsPolygonOverlay(visible=True)})
+        self._overlays.update(
+            {
+                'polygon': LabelsPolygonOverlay(visible=True),
+                'brush_stroke': LabelsBrushStrokeOverlay(visible=True),
+            }
+        )
 
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
@@ -730,10 +737,7 @@ class Labels(ScalarFieldBase):
             # numpy dtypes
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
-                    trans._(
-                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
-                        data_level_type=data_level.dtype,
-                    )
+                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'
                 )
             if data_level.dtype == bool:
                 int_data.append(data_level.view(np.uint8))
@@ -884,6 +888,7 @@ class Labels(ScalarFieldBase):
             return mode
 
         self._overlays['polygon'].enabled = mode == Mode.POLYGON
+        self._overlays['brush_stroke'].enabled = mode == Mode.PAINT
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()
 
@@ -977,12 +982,7 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return None
         if labels.ndim > 2:
-            warnings.warn(
-                trans._(
-                    'Contours are not displayed during 3D rendering',
-                    deferred=True,
-                )
-            )
+            warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
         contour_offset = max(1, int(self.contour))
@@ -1114,6 +1114,31 @@ class Labels(ScalarFieldBase):
         if self._staged_history:
             self._append_to_undo_history(self._staged_history)
             self._staged_history = []
+
+    def _begin_stroke(self):
+        """Start grouping edits that span multiple events into one undo item.
+
+        Unlike `block_history`, a stroke spans discrete mouse events and so
+        cannot be expressed as a single `with` block.
+        """
+        self._block_history = True
+
+    def _commit_stroke(self):
+        """Commit a stroke started with `_begin_stroke` as one undo item."""
+        self._block_history = False
+        self._commit_staged_history()
+
+    def _abort_stroke(self) -> None:
+        """Discard the staged (uncommitted) edits of an in-progress stroke."""
+        for atom in reversed(self._staged_history):
+            if isinstance(atom, _MaskedPaintAtom):
+                self._replay_masked_atom(atom, undoing=True)
+                continue
+            indices, prev_values, _ = atom
+            self.data[indices] = prev_values
+        self._staged_history = []
+        self._block_history = False
+        self.refresh()
 
     def _append_to_undo_history(self, item):
         """Append item to history and emit paint event.
@@ -2313,7 +2338,7 @@ class Labels(ScalarFieldBase):
             int, value[1] if self.multiscale else value
         )
         if label_value not in self._label_index:
-            return [trans._('[No Properties]')]
+            return ['[No Properties]']
 
         idx = self._label_index[label_value]
         return [
