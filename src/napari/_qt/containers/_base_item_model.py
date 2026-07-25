@@ -294,6 +294,15 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return self._root[index.row()] if index.isValid() else self._root
 
+    def getItemStrict(self, index: QModelIndex) -> ItemType:
+        """Return python object for a given `QModelIndex`.
+
+        An invalid `QModelIndex` will raise an IndexError.
+        """
+        if not index.isValid():
+            raise IndexError('Invalid index')
+        return self._root[index.row()]
+
     def _process_event(self, event: Any) -> None:
         # for subclasses to handle ItemType-specific data
         pass
