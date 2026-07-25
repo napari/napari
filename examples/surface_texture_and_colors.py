@@ -74,6 +74,8 @@ viewer.add_layer(rainbow_spot)
 
 viewer.camera.angles = (10, 50, 180)
 viewer.fit_to_view()
+# to show slicing through mesh in spatial dims, set thickness
+viewer.dims.thickness_step = (1, 1, 100, 100, 100)
 
 
 if __name__ == '__main__':
