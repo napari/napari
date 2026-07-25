@@ -1108,9 +1108,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
         auto_contrast : bool
-            Wether to automatically set contrast limits to the min and max of the 
-            currently viewed slice. If True, contrast limits will be updated 
-            whenever the slice changes. 
+            Wether to automatically set contrast limits to the min and max of the
+            currently viewed slice. If True, contrast limits will be updated
+            whenever the slice changes.
         axis_labels : tuple of str
             Dimension names of the layer data.
             If not provided, axis_labels will be set to (..., '-2', '-1').
