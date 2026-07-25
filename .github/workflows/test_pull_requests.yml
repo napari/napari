@@ -61,25 +61,6 @@ jobs:
         run: |
           make check-manifest
 
-  localization_syntax:
-    # make sure all necessary files will be bundled in the release
-    name: Check l18n syntax
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.x"
-      - name: Check localization formatting
-        run: |
-          pip install --upgrade pip semgrep
-          # f"..." and f'...' are the same for semgrep
-          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
-          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
-
   build_wheel:
     name: Build wheel
     uses: ./.github/workflows/reusable_build_wheel.yml

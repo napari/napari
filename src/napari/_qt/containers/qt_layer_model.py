@@ -8,7 +8,6 @@ from napari._qt.containers.qt_list_model import QtListModel
 from napari.layers import Layer
 from napari.layers.base import LayerLock
 from napari.settings import get_settings
-from napari.utils.translations import trans
 
 ThumbnailRole = Qt.UserRole + 2
 LoadedRole = Qt.UserRole + 3
@@ -40,7 +39,7 @@ class QtLayerListModel(QtListModel[Layer]):
             layer_source_info = layer.get_source_str()
             if layer_loaded:
                 return layer_source_info
-            return trans._('{source} (loading)', source=layer_source_info)
+            return f'{layer_source_info} (loading)'
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
