@@ -326,7 +326,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def floating_axes(self) -> FloatingAxesOverlay:
         logger.info(
             'viewer.floating_axes is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.floating_axes instead.',
-            DeprecationWarning,
             stacklevel=2,
         )
         return self.canvas.floating_axes  # type: ignore[return-value]
@@ -335,7 +334,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def scale_bar(self) -> ScaleBarOverlay:
         logger.info(
             'viewer.scale_bar is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.scale_bar instead.',
-            DeprecationWarning,
             stacklevel=2,
         )
         return self.canvas.scale_bar
