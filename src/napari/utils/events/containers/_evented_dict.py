@@ -159,7 +159,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         return None
 
 
-class EventedDictNamespace(EventedDict):
+class EventedDictNamespace(EventedDict[_K, _T]):
     """An evented dict that also exposes its elements as a simple namespace."""
 
     def __getattr__(self, name):
