@@ -10,7 +10,6 @@ import numpy as np
 
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -55,9 +54,7 @@ def imsave(filename: str, data: np.ndarray):
         '.stk',
     ] and np.issubdtype(data.dtype, np.floating):
         show_warning(
-            trans._(
-                'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
-            )
+            'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
         )
         return
     # Save screenshot image data to output file
