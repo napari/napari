@@ -6,6 +6,7 @@ import sys
 from ast import literal_eval
 from contextlib import suppress
 from typing import Any, Literal
+from warnings import warn
 
 import npe2
 from pydantic import field_validator
@@ -18,7 +19,6 @@ from napari.resources._icons import (
 )
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
-from napari.utils.translations import trans
 
 
 class Theme(EventedModel):
@@ -86,23 +86,18 @@ class Theme(EventedModel):
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, trans._(
-            'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
-            deferred=True,
-            syntax_style=f' {", ".join(STYLE_MAP)}',
-            value=value,
+        valid_styles = ', '.join(STYLE_MAP)
+        assert value in STYLE_MAP, (
+            f'Incorrect `syntax_style` value: {value} provided. '
+            f'Please use one of the following: {valid_styles}'
         )
         return value
 
     @field_validator('font_size', mode='before')
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('pt'), trans._(
-            'Font size must be in points (pt).', deferred=True
-        )
-        assert int(value[:-2]) > 0, trans._(
-            'Font size must be greater than 0.', deferred=True
-        )
+        assert value.endswith('pt'), 'Font size must be in points (pt).'
+        assert int(value[:-2]) > 0, 'Font size must be greater than 0.'
         return value
 
     def to_rgb_dict(self) -> dict[str, Any]:
@@ -292,17 +287,38 @@ def template(css: str, **theme):
 
 
 def get_system_theme() -> str:
-    """Return the system default theme, either 'dark', or 'light'."""
-    try:
-        from napari._vendor import darkdetect
-    except ImportError:
-        return 'dark'
-    try:
-        id_ = darkdetect.theme().lower()
-    except AttributeError:
-        id_ = 'dark'
+    """Return the system default theme, either 'dark', or 'light'.
 
-    return id_
+    Note: uses Qt6 (version >6.5) property colorScheme
+    """
+    try:
+        from qtpy import QT6
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QGuiApplication
+    except (ImportError, RuntimeError):
+        return 'dark'
+
+    if not QT6:
+        # can remove this check once pyqt5 support is dropped
+        warn(
+            'System theme detection requires a Qt6 backend. '
+            'Please switch to PyQt6 or PySide6 to use it.',
+            stacklevel=2,
+        )
+        return 'dark'
+
+    style_hints = QGuiApplication.styleHints()
+    if style_hints is None:
+        return 'dark'
+
+    scheme = style_hints.colorScheme()
+    match scheme:
+        case Qt.ColorScheme.Dark:
+            return 'dark'
+        case Qt.ColorScheme.Light:
+            return 'light'
+        case _:
+            return 'dark'
 
 
 def get_theme(theme_id: str):
@@ -329,12 +345,7 @@ def get_theme(theme_id: str):
 
     if theme_id not in _themes:
         raise ValueError(
-            trans._(
-                'Unrecognized theme {id}. Available themes are {themes}',
-                deferred=True,
-                id=theme_id,
-                themes=available_themes(),
-            )
+            f'Unrecognized theme {theme_id}. Available themes are {available_themes()}'
         )
     theme = _themes[theme_id].model_copy()
     return theme
@@ -429,16 +440,16 @@ DARK = Theme(
     id='dark',
     type='dark',
     label='Default Dark',
-    background='rgb(38, 41, 48)',
-    foreground='rgb(50, 55, 65)',
-    primary='rgb(70, 78, 88)',
+    background='rgb(35, 36, 43)',
+    foreground='rgb(46, 51, 62)',
+    primary='rgb(66, 74, 84)',
     secondary='rgb(86, 95, 108)',
     highlight='rgb(97, 105, 110)',
     text='rgb(240, 241, 242)',
     icon='rgb(209, 210, 212)',
     warning='rgb(227, 182, 23)',
     error='rgb(153, 18, 31)',
-    current='rgb(57, 102, 204)',
+    current='rgb(69, 96, 196)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
@@ -453,11 +464,11 @@ LIGHT = Theme(
     primary='rgb(197, 195, 193)',
     secondary='rgb(180, 178, 175)',
     highlight='rgb(175, 172, 170)',
-    text='rgb(52, 52, 55)',
-    icon='rgb(92, 93, 95)',
+    text='rgb(30, 30, 33)',
+    icon='rgb(62, 63, 65)',
     warning='rgb(227, 182, 23)',
     error='rgb(255, 18, 31)',
-    current='rgb(253, 240, 148)',
+    current='rgb(160, 184, 255)',
     syntax_style='default',
     console='white',
     canvas='white',

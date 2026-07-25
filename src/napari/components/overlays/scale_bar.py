@@ -2,7 +2,7 @@
 
 import warnings
 
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -50,24 +50,27 @@ class ScaleBarOverlay(CanvasOverlay):
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
-    _unit: str | None = PrivateAttr(default=None)
     length: float | None = None
 
     @property
-    def unit(self) -> str | None:
-        return self._unit
+    def unit(self) -> None:
+        warnings.warn(
+            'ScaleBar.unit is deprecated and now always returns None. '
+            'This attribute will be removed in 0.9.0.\n'
+            'Units are instead computed from the layers in the layerlist. '
+            'Use `Layer.units` to set units for each layer.',
+            category=FutureWarning,
+            stacklevel=4,
+        )
+        return None
 
     @unit.setter
     def unit(self, value: str | None) -> None:
-        if value is not None:
-            warnings.warn(
-                'Setting unit on the ScaleBar model is deprecated. Units will instead be computed from '
-                'the layers in the layerlist. To silence this warning, leave scale_bar unit as `None`, '
-                'and use `Layer.units` to set units for each layer. Starting in v0.8.0, setting '
-                'ScaleBar.unit will no longer have an effect. Starting from v0.9.0, it will be '
-                'removed and raise an exception.',
-                category=FutureWarning,
-                stacklevel=4,
-            )
-        self._unit = value
-        self.events.unit(self._unit)
+        warnings.warn(
+            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
+            'This attribute will be removed in 0.9.0.\n'
+            'Units are instead computed from the layers in the layerlist. '
+            'Use `Layer.units` to set units for each layer.',
+            category=FutureWarning,
+            stacklevel=4,
+        )

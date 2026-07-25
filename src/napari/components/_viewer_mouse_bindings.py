@@ -21,10 +21,11 @@ def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:
         return
-    if event.native.inverted():
-        viewer.dims._scroll_progress += event.delta[1]
-    else:
-        viewer.dims._scroll_progress -= event.delta[1]
+    # always scroll by 1 at most, even if scroll wheel is set to
+    # scroll many lines at once.
+    delta = np.clip(event.delta[1], -1, 1)
+    forward = 1 if event.native.inverted() else -1
+    viewer.dims._scroll_progress += delta * forward
     while abs(viewer.dims._scroll_progress) >= 1:
         if viewer.dims._scroll_progress < 0:
             viewer.dims._increment_dims_left()
@@ -32,6 +33,33 @@ def dims_scroll(viewer, event):
         else:
             viewer.dims._increment_dims_right()
             viewer.dims._scroll_progress -= 1
+
+
+def layers_scroll(viewer, event):
+    """Scroll through the layer list."""
+    if 'Alt' not in event.modifiers:
+        return
+
+    # Use the sum of both axes to handle axis flipping
+    delta = np.sum(event.delta)
+
+    # Clip delta to +/- 1.0 to prevent skipping layers
+    delta = np.clip(delta, -1, 1)
+
+    if event.native.inverted():
+        viewer._layer_list_scroll_progress -= delta
+    else:
+        viewer._layer_list_scroll_progress += delta
+
+    while abs(viewer._layer_list_scroll_progress) >= 1:
+        if viewer._layer_list_scroll_progress < 0:
+            # previous is down the list
+            viewer.layers.select_previous()
+            viewer._layer_list_scroll_progress += 1
+        else:
+            # next is up the list
+            viewer.layers.select_next()
+            viewer._layer_list_scroll_progress -= 1
 
 
 def double_click_to_zoom(viewer, event):
