@@ -181,6 +181,7 @@ class IntensityVisualizationMixin:
 
     @property
     def auto_contrast(self):
+        """bool: Whether to automatically set contrast limits to the data range of each slice."""
         return self._auto_contrast
 
     @auto_contrast.setter
