@@ -624,12 +624,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,
         ):
-            prev = self.auto_contrast
-            self.auto_contrast = False
+            # we use the private attribute here to avoid triggering the setter again
+            prev = self._auto_contrast
+            self._auto_contrast = False
             try:
                 self.refresh(highlight=False, extent=False)
             finally:
-                self.auto_contrast = prev
+                self._auto_contrast = prev
 
     def _calculate_value_from_ray(self, values: npt.NDArray) -> None | float:
         # translucent is special: just return the first value, no matter what
