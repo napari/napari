@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari._vispy.layers.points import VispyPointsLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari.components import Dims
 from napari.layers import Points
 
@@ -10,7 +11,7 @@ from napari.layers import Points
 def test_VispyPointsLayer(opacity):
     points = np.array([[100, 100], [200, 200], [300, 100]])
     layer = Points(points, size=30, opacity=opacity)
-    visual = VispyPointsLayer(layer)
+    visual = VispyPointsLayer(layer, font_info=FontInfo())
     assert visual.node.opacity == opacity
 
 
@@ -19,7 +20,7 @@ def test_remove_selected_with_derived_text():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, text='class', properties=properties)
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.selected_data = {1}
@@ -35,7 +36,7 @@ def test_change_text_updates_node_string():
         'name': np.array(['D', 'E', 'F']),
     }
     layer = Points(points, text='class', properties=properties)
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     np.testing.assert_array_equal(
         vispy_layer.node.text.text, properties['class']
     )
@@ -52,7 +53,7 @@ def test_change_text_color_updates_node_color():
     properties = {'class': np.array(['A', 'B', 'C'])}
     text = {'string': 'class', 'color': [1, 0, 0]}
     layer = Points(points, text=text, properties=properties)
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     np.testing.assert_array_equal(vispy_layer.node.text.color.rgb, [[1, 0, 0]])
 
     layer.text.color = [0, 0, 1]
@@ -64,7 +65,7 @@ def test_change_properties_updates_node_strings():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.properties = {'class': np.array(['D', 'E', 'F'])}
@@ -76,7 +77,7 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
     points = np.random.rand(3, 2)
     properties = {'class': np.array(['A', 'B', 'C'])}
     layer = Points(points, properties=properties, text='class')
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     np.testing.assert_array_equal(vispy_layer.node.text.text, ['A', 'B', 'C'])
 
     layer.properties['class'][1] = 'D'
@@ -88,7 +89,7 @@ def test_update_property_value_then_refresh_text_updates_node_strings():
 def test_change_canvas_size_limits():
     points = np.random.rand(3, 2)
     layer = Points(points, canvas_size_limits=(0, 10000))
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     node = vispy_layer.node
 
     assert node.canvas_size_limits == (0, 10000)
@@ -100,7 +101,7 @@ def test_text_with_non_empty_constant_string():
     points = np.random.rand(3, 2)
     layer = Points(points, text={'string': {'constant': 'a'}})
 
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
 
     # Vispy cannot broadcast a constant string and assert_array_equal
     # automatically broadcasts, so explicitly check length.
@@ -118,7 +119,7 @@ def test_change_antialiasing():
     """Changing antialiasing on the layer should change it on the vispy node."""
     points = np.random.rand(3, 2)
     layer = Points(points)
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
     layer.antialiasing = 5
     assert vispy_layer.node.antialias == layer.antialiasing
 
@@ -138,7 +139,7 @@ def test_highlight_with_out_of_slice_display():
         dtype=float,
     )
     layer = Points(data, size=200)
-    vispy_layer = VispyPointsLayer(layer)
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
 
     # Select point 0 BEFORE slicing so update_selected_view populates
     # _selected_view and _set_highlight populates _highlight_index.

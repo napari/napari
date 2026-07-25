@@ -7,6 +7,7 @@ Two layers are added with different scales, however by specifying the units,
 napari is able to render them in the same physical space using the unit-aware
 library Pint [1]_. The first layer is in nanometers and the second layer is
 in micrometers, but they are rendered in the same physical space because 1 μm = 1000 nm.
+Units also affect the scale bar, which will display the correct physical unit automatically.
 
 .. [1] https://pint.readthedocs.io/en/stable/
 
@@ -23,6 +24,7 @@ membrane = data[:, 0]
 nuclei = data[:, 1]
 
 viewer = napari.Viewer()
+viewer.scale_bar.visible = True
 viewer.add_image(
     membrane,
     name='membrane-nm',

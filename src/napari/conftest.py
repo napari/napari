@@ -1139,6 +1139,16 @@ def _fix_magic_name(monkeypatch, request):
     )
 
 
+@pytest.fixture(autouse=True)
+def _reset_colormaps(monkeypatch):
+    from napari.utils.colormaps import colormap_utils
+
+    prev = dict(colormap_utils.AVAILABLE_COLORMAPS)
+    yield
+    colormap_utils.AVAILABLE_COLORMAPS.clear()
+    colormap_utils.AVAILABLE_COLORMAPS.update(prev)
+
+
 def pytest_runtest_setup(item):
     """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 

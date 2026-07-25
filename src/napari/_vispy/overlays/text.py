@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from napari._vispy.overlays.base import (
     LayerOverlayMixin,
     ViewerOverlayMixin,
@@ -5,16 +9,20 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import TextOverlay
 from napari.settings import get_settings
+
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import TextOverlay
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
     """Base class for vispy text overlays."""
 
     overlay: TextOverlay
+    node: Text
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self.node.font_size = self.overlay.font_size
@@ -97,27 +105,25 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
 
 class _VispyViewerTextOverlay(ViewerOverlayMixin, _VispyBaseTextOverlay):
-    def __init__(self, **kwargs):
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
+    def __init__(self, font_info: FontInfo, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            node=Text(pos=(0, 0), font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
-
         self._connect_events()
         self.reset()
 
 
 class _VispyLayerTextOverlay(LayerOverlayMixin, _VispyBaseTextOverlay):
-    def __init__(self, **kwargs):
-        font_manager = kwargs.get('font_manager')
-        font_family = kwargs.get('font_family', 'OpenSans')
+    overlay: TextOverlay
+
+    def __init__(self, font_info: FontInfo, **kwargs):
         super().__init__(
-            node=Text(pos=(0, 0), font_manager=font_manager, face=font_family),
+            node=Text(pos=(0, 0), font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
-
         self._connect_events()
         self.reset()
 

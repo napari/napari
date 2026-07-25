@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.layers.utils.color_manager import ColorManager
 from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
@@ -15,12 +14,11 @@ from napari.utils.colormaps.colormap_utils import (
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
-    from vispy.scene import Node
-    from vispy.visuals.text.text import FontManager
 
-    from napari.components import ViewerModel
-    from napari.components.overlays import ColorBarOverlay, Overlay
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import ColorBarOverlay
     from napari.layers import Image, Layer, Surface
+    from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
 
@@ -73,21 +71,15 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def __init__(
         self,
         *,
-        layer: Layer,
-        viewer: ViewerModel,
-        overlay: Overlay,
-        parent: Node | None = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        layer: Image | Surface,
+        font_info: FontInfo,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            node=ColorBar(font_manager=font_manager, font_family=font_family),
+            node=ColorBar(font_info=font_info),
             layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-            font_manager=font_manager,
-            font_family=font_family,
+            font_info=font_info,
+            **kwargs,
         )
         self.layer: Layer
         self.x_size = 50
@@ -173,7 +165,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
-        text_width, text_height = self.node.set_ticks_and_get_text_size(
+        text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
             font_size=self.overlay.font_size,
             clim=_coerce_contrast_limits(
@@ -188,7 +180,7 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             + self.overlay.tick_length  # Tick marks length
             + text_width  # Text width with margins
         )
-        self.y_size = self.overlay.size[1] + text_height / 2
+        self.y_size = self.overlay.size[1] + line_height / 2
 
         self._on_position_change()
 

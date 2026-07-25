@@ -384,7 +384,7 @@ def test_labels_painting(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):
-    """Test that something visible on launch."""
+    """Test that the welcome widget is visible in canvas screenshots."""
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
 
     # Check something is visible
@@ -403,16 +403,12 @@ def test_welcome(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert len(viewer.layers) == 0
     assert screenshot[..., :-1].max() > 0
-    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
-    """Test that Welcome overlay covers scale_bar and axes when no layers.
-
-    Regression test for https://github.com/napari/napari/issues/8642
-    """
+    """Test that the welcome widget covers scale bar and axes when no layers."""
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
@@ -422,7 +418,6 @@ def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
     screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
 
     np.testing.assert_array_equal(launch_screenshot, screenshot_with_overlays)
-    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci
@@ -476,7 +471,7 @@ def test_scale_bar_visible(make_napari_viewer):
 def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
-    image_data = np.ones((60, 80))
+    image_data = np.ones((60, 80), dtype=np.float32)
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
     viewer.camera.zoom = 1000

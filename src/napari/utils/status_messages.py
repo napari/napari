@@ -3,10 +3,19 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
+PRECISION_COUNT = 3
+
 
 def format_float(value):
     """Nice float formatting into strings."""
-    return f'{value:0.3g}'
+    return f'{value:0.{PRECISION_COUNT}g}'
+
+
+def format_feature_value(value):
+    """Format a single feature value for display in the status bar."""
+    if isinstance(value, float) or np.issubdtype(type(value), np.floating):
+        return format_float(value)
+    return str(value)
 
 
 def status_format(value):

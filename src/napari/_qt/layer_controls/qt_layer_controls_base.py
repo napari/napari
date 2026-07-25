@@ -14,21 +14,10 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
-from napari.layers.base._base_constants import (
-    Blending,
-    Mode,
-)
+from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
-
-# opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
-NO_OPACITY_BLENDING_MODES = {
-    str(Blending.MINIMUM),
-    str(Blending.OPAQUE),
-    str(Blending.MULTIPLICATIVE),
-}
 
 
 class LayerFormLayout(QFormLayout):
@@ -104,10 +93,8 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\n(or hold Space)\n(hold Shift to pan in 3D)'
-                '\n(hold Alt to zoom via ROI selection)',
-            ),
+            extra_tooltip_text='\n(or hold Space)\n(hold Shift to pan in 3D)'
+            '\n(hold Alt to zoom via ROI selection)',
             checked=True,
         )
         self.transform_button = self._radio_button(
@@ -116,9 +103,7 @@ class QtLayerControls(QFrame):
             self.MODE.TRANSFORM,
             True,
             self.TRANSFORM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\nAlt + Left mouse click over this button to reset'
-            ),
+            extra_tooltip_text='\nAlt + Left mouse click over this button to reset',
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
@@ -235,9 +220,7 @@ class QtLayerControls(QFrame):
         if event.mode in self._MODE_BUTTONS:
             self._MODE_BUTTONS[event.mode].setChecked(True)
         else:
-            raise ValueError(
-                trans._("Mode '{mode}' not recognized", mode=event.mode)
-            )
+            raise ValueError(f"Mode '{event.mode}' not recognized")
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
@@ -300,8 +283,8 @@ class QtLayerControls(QFrame):
         ):
             result = QMessageBox.warning(
                 self,
-                trans._('Reset transform'),
-                trans._('Are you sure you want to reset transforms?'),
+                'Reset transform',
+                'Are you sure you want to reset transforms?',
                 QMessageBox.Yes | QMessageBox.No,
             )
             if result == QMessageBox.Yes:

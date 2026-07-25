@@ -32,6 +32,7 @@ from napari._qt.widgets.qt_viewer_buttons import (
     QtViewerButtons,
 )
 from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
 from napari._vispy.utils.qt_font import QtFontManager
 from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
@@ -54,7 +55,6 @@ from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
 from napari.utils.notifications import show_info
-from napari.utils.translations import trans
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
@@ -98,12 +98,15 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    canvas_class : napari._vispy.canvas.VispyCanvas
-        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
-        have a custom canvas here.
     show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
         canvas. Default is `False`.
+    canvas_class : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
+    tips : Sequence[str] | None, optional
+        Custom welcome-screen tips. By default, the built-in napari tips are
+        used.
 
     Attributes
     ----------
@@ -131,7 +134,7 @@ class QtViewer(QSplitter):
         viewer: ViewerModel,
         show_welcome_screen: bool = False,
         canvas_class: type[VispyCanvas] = VispyCanvas,
-        tips: Sequence | None = None,
+        tips: Sequence[str] | None = None,
     ) -> None:
         super().__init__()
         self._instances.add(self)
@@ -160,10 +163,15 @@ class QtViewer(QSplitter):
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
 
+        main_widget = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.setSpacing(0)
+
         # This dictionary holds the corresponding vispy visual for each layer
         self.canvas = canvas_class(
             viewer=viewer,
-            parent=self,
+            parent=main_widget,
             font_manager=self._font_manager,
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
@@ -171,11 +179,14 @@ class QtViewer(QSplitter):
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
         )
 
-        main_widget = QWidget()
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 2, 0, 2)
+        self._welcome_widget = QtWelcomeWidget(
+            self.canvas.native, viewer=self.viewer, tips=tips
+        )
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)
+
+        main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)
-        main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Orientation.Vertical)
@@ -187,6 +198,8 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
         self.viewer.layers.events.removed.connect(self._update_camera_depth)
         self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
         self.viewer.layers.selection.events.active.connect(
             self._on_active_change
         )
@@ -218,17 +231,12 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-        # set up welcome screen
-        viewer.welcome_screen.visible = False
-        if tips is not None:
-            viewer.welcome_screen.tips = tips
-
     def showEvent(self, event):
         super().showEvent(event)
-        self.viewer.welcome_screen.visible = self._show_welcome_screen
+        self._update_welcome_screen()
 
     def hideEvent(self, event):
-        self.viewer.welcome_screen.visible = False
+        super().hideEvent(event)
 
     @property
     def show_welcome_screen(self) -> bool:
@@ -238,7 +246,7 @@ class QtViewer(QSplitter):
     @show_welcome_screen.setter
     def show_welcome_screen(self, value: bool):
         self._show_welcome_screen = value
-        self.viewer.welcome_screen.visible = value and self.isVisible()
+        self._update_welcome_screen()
 
     @staticmethod
     def _update_dask_cache_settings(
@@ -300,7 +308,7 @@ class QtViewer(QSplitter):
             self._dockLayerList = QtViewerDockWidget(
                 self,
                 layerList,
-                name=trans._('layer list'),
+                name='layer list',
                 area='left',
                 allowed_areas=['left', 'right'],
                 object_name='layer list',
@@ -315,7 +323,7 @@ class QtViewer(QSplitter):
             self._dockLayerControls = QtViewerDockWidget(
                 self,
                 self.controls,
-                name=trans._('layer controls'),
+                name='layer controls',
                 area='left',
                 allowed_areas=['left', 'right'],
                 object_name='layer controls',
@@ -330,7 +338,7 @@ class QtViewer(QSplitter):
             self._dockConsole = QtViewerDockWidget(
                 self,
                 QWidget(),
-                name=trans._('console'),
+                name='console',
                 area='bottom',
                 allowed_areas=['top', 'bottom'],
                 object_name='console',
@@ -361,6 +369,15 @@ class QtViewer(QSplitter):
         self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
 
+    def _update_welcome_screen(self):
+        """Update welcome screen display based on layer count."""
+        show_welcome = (
+            self._show_welcome_screen
+            and self.isVisible()
+            and not self.viewer.layers
+        )
+        self._set_welcome_visible(show_welcome)
+
     def _ensure_connect(self):
         # lazy load console
         id(self.console)
@@ -378,7 +395,7 @@ class QtViewer(QSplitter):
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
-                name=trans._('performance'),
+                name='performance',
                 area='bottom',
             )
         return None
@@ -520,19 +537,15 @@ class QtViewer(QSplitter):
                 return console
         except ModuleNotFoundError:
             warnings.warn(
-                trans._(
-                    'napari-console not found. It can be installed with'
-                    ' "pip install napari_console"'
-                ),
+                'napari-console not found. It can be installed with'
+                ' "pip install napari_console"',
                 stacklevel=1,
             )
             return None
         except ImportError:
             traceback.print_exc()
             warnings.warn(
-                trans._(
-                    'error importing napari-console. See console for full error.'
-                ),
+                'error importing napari-console. See console for full error.',
                 stacklevel=1,
             )
             return None
@@ -636,8 +649,17 @@ class QtViewer(QSplitter):
         # clipping in perspective projection, while still preserving enough
         # bit depth in the depth buffer to avoid artifacts. See discussion at:
         # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
+        #
+        # If depth_value becomes too large, the projection matrix entry
+        # M[2,2] = -(f+n)/(f-n) rounds to exactly -1.0 in float32
+        # (vispy builds the frustum in float32), making the far-plane
+        # inverse singular and breaking volume raycasting (renders black).
+        # Vispy sets far/near = depth_value * 10, so we cap at
+        # depth_value < 2 / (10 * float32_eps). See
+        # https://github.com/vispy/vispy/blob/0a6da357/vispy/scene/cameras/perspective.py#L322
+        max_depth = 2.0 / (10.0 * np.finfo(np.float32).eps)
         for camera in [self.canvas.camera] + self.canvas.grid_cameras:
-            camera._3D_camera.depth_value = 128 * diameter
+            camera._3D_camera.depth_value = min(128 * diameter, max_depth)
 
     def _add_layer(self, layer):
         """When a layer is added, set its parent and order.
@@ -647,7 +669,9 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_layer(layer)
+        vispy_layer = create_vispy_layer(
+            layer, font_info=self.canvas.font_info()
+        )
 
         # QtPoll is experimental.
         if self._qt_poll is not None:
@@ -728,14 +752,14 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = trans._('There are no layers in the viewer to save')
+            msg = 'There are no layers in the viewer to save'
         elif selected and not len(self.viewer.layers.selection):
-            msg = trans._(
+            msg = (
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError(trans._('Nothing to save'))
+            raise OSError('Nothing to save')
 
         # prepare list of extensions for drop down menu.
         ext_str, writers = _npe2.file_extensions_string_for_layers(
@@ -744,7 +768,7 @@ class QtViewer(QSplitter):
             else self.viewer.layers
         )
 
-        msg = trans._('selected') if selected else trans._('all')
+        msg = 'selected' if selected else 'all'
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
@@ -757,7 +781,7 @@ class QtViewer(QSplitter):
             )
         filename, selected_filter = dlg.getSaveFileName(
             self,  # parent
-            trans._('Save {msg} layers', msg=msg),  # caption
+            f'Save {msg} layers',  # caption
             # home dir by default if selected all, home dir and file name if only 1 layer
             str(
                 Path(hist[0]) / selected_layer_name
@@ -770,12 +794,9 @@ class QtViewer(QSplitter):
             ),
         )
         logging.getLogger('napari').debug(
-            trans._(
-                'QFileDialog - filename: {filename} '
-                'selected_filter: {selected_filter}',
-                filename=filename or None,
-                selected_filter=selected_filter or None,
-            )
+            'QFileDialog - filename: %s selected_filter: %s',
+            filename or None,
+            selected_filter or None,
         )
 
         if filename:
@@ -791,12 +812,7 @@ class QtViewer(QSplitter):
 
             if not saved:
                 raise OSError(
-                    trans._(
-                        'File {filename} save failed.\n{error_messages}',
-                        deferred=True,
-                        filename=filename,
-                        error_messages=error_messages,
-                    )
+                    f'File {filename} save failed.\n{error_messages}'
                 )
 
             update_save_history(saved[0])
@@ -880,11 +896,7 @@ class QtViewer(QSplitter):
 
         if size is not None and len(size) != 2:
             raise ValueError(
-                trans._(
-                    'screenshot size must be 2 values, got {len_size}',
-                    deferred=True,
-                    len_size=len(size),
-                )
+                f'screenshot size must be 2 values, got {len(size)}'
             )
 
         try:
@@ -915,7 +927,10 @@ class QtViewer(QSplitter):
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
                 self.viewer.fit_to_view(margin=0)
-            img = self.canvas.screenshot()
+            if self._welcome_widget.isVisible():
+                img = self.canvas.native.grab().toImage()
+            else:
+                img = self.canvas.screenshot()
             if flash:
                 from napari._qt.utils import add_flash_animation
 
@@ -997,7 +1012,7 @@ class QtViewer(QSplitter):
 
     def _open_files_dialog(self, choose_plugin=False, stack=False):
         """Add files from the menubar."""
-        filenames = self._open_file_dialog_uni(trans._('Select file(s)...'))
+        filenames = self._open_file_dialog_uni('Select file(s)...')
 
         if filenames:
             self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
@@ -1015,7 +1030,7 @@ class QtViewer(QSplitter):
 
         folder = dlg.getExistingDirectory(
             self,
-            trans._('Select folder...'),
+            'Select folder...',
             hist[0],  # home dir by default
             (
                 QFileDialog.DontUseNativeDialog
@@ -1114,6 +1129,19 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
+    def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
+        """Replace the welcome screen tip pool."""
+        self._welcome_widget.set_tips(tips)
+
+    def _set_welcome_visible(self, visible: bool) -> None:
+        """Directly show or hide the welcome screen widget.
+
+        Unlike the ``show_welcome_screen`` property setter, this method does
+        not modify the ``_show_welcome_screen`` preference and bypasses the
+        layer-count / visibility guards in ``_update_welcome_screen``.
+        """
+        self._welcome_widget.set_welcome_visible(visible)
+
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
 
@@ -1160,9 +1188,7 @@ class QtViewer(QSplitter):
 
     def _set_drag_status(self):
         """Set dedicated status message when dragging files into viewer"""
-        self.viewer.status = trans._(
-            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
-        )
+        self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
 
     def _image_from_clipboard(self):
         """Insert image from clipboard as a new layer if clipboard contains an image or link."""
@@ -1318,10 +1344,7 @@ class QtViewer(QSplitter):
             and len(paths) != len(rois)
         ):
             raise ValueError(
-                trans._(
-                    'The number of file paths does not match the number of ROI shapes',
-                    deferred=True,
-                )
+                'The number of file paths does not match the number of ROI shapes'
             )
 
         if isinstance(paths, str | Path):
@@ -1393,12 +1416,7 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         if not isinstance(scale, float | int):
-            raise TypeError(
-                trans._(
-                    'Scale must be a float or an int.',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Scale must be a float or an int.')
 
         img = QImg2array(
             self._screenshot(
@@ -1410,14 +1428,6 @@ class QtViewer(QSplitter):
         if path is not None:
             imsave(path, img)
         return img
-
-    def font_manager(self) -> QtFontManager:
-        """Return the font manager for this viewer."""
-        return self._font_manager
-
-    def overlay_font(self) -> str:
-        """Return the font used for overlays."""
-        return self._overlay_font
 
 
 if TYPE_CHECKING:

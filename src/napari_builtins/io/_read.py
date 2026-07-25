@@ -4,6 +4,7 @@ import csv
 import itertools
 import os
 import re
+import tokenize
 from contextlib import suppress
 from glob import glob
 from pathlib import Path
@@ -15,7 +16,6 @@ from dask import delayed
 
 from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -147,12 +147,7 @@ def read_zarr_dataset(path: str):
         store = zarr.open(path, mode='r')
     except Exception as e:
         raise ValueError(
-            trans._(
-                'Failed to open zarr store at {path}. Error: {error_message}',
-                deferred=True,
-                path=path,
-                error_message=str(e),
-            )
+            f'Failed to open zarr store at {path}. Error: {e!s}'
         ) from e
 
     # Arrays can be opened directly, local and remote
@@ -162,21 +157,12 @@ def read_zarr_dataset(path: str):
 
     # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
     if not isinstance(store, zarr.Group):
-        raise TypeError(
-            trans._(
-                'Unexpected zarr type: {type_}',
-                deferred=True,
-                type_=type(store).__name__,
-            )
-        )
+        raise TypeError(f'Unexpected zarr type: {type(store).__name__}')
 
     # Remote zarr Groups cannot be traversed over HTTP
     if _is_url(path):
         raise ValueError(
-            trans._(
-                'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.',
-                deferred=True,
-            )
+            'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.'
         )
 
     group_keys = sorted(store.group_keys())
@@ -189,13 +175,7 @@ def read_zarr_dataset(path: str):
             # if there are multiple groups, inform the user
             other_groups = group_keys[1:]
             show_info(
-                trans._(
-                    'Multiple zarr Groups found in {path}. Opening group "{group}". Other groups: {other_groups}',
-                    deferred=True,
-                    path=path,
-                    group=group_keys[0],
-                    other_groups=', '.join(other_groups),
-                )
+                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {", ".join(other_groups)}'
             )
     else:
         # the store consists of a single group, so open it
@@ -203,13 +183,7 @@ def read_zarr_dataset(path: str):
 
     array_keys = sorted(group.array_keys())
     if not array_keys:
-        raise ValueError(
-            trans._(
-                'No arrays found in zarr group: {path}',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'No arrays found in zarr group: {path}')
 
     # Build list of arrays from arrays in the group
     image = [da.from_zarr(group[k]) for k in array_keys]
@@ -278,11 +252,7 @@ def magic_imread(
 
     if not filenames_expanded:
         raise ValueError(
-            trans._(
-                'No files found in {filenames} after removing subdirectories',
-                deferred=True,
-                filenames=filenames,
-            )
+            f'No files found in {filenames} after removing subdirectories'
         )
 
     # then, read in images
@@ -326,10 +296,7 @@ def magic_imread(
                 image = np.stack(images)
             except ValueError as e:
                 if 'input arrays must have the same shape' in str(e):
-                    msg = trans._(
-                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
-                        deferred=True,
-                    )
+                    msg = 'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.'
                     raise ValueError(msg) from e
                 raise  # pragma: no cover
     else:
@@ -404,9 +371,7 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError(
-            trans._('Expected number of shapes not found', deferred=True)
-        )
+        raise ValueError('Expected number of shapes not found')
 
     data = []
     shape_type = []
@@ -485,20 +450,11 @@ def read_csv(
         if require_type:
             if not layer_type:
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as valid Layer data',
-                        deferred=True,
-                        filename=filename,
-                    )
+                    f'File "{filename}" not recognized as valid Layer data'
                 )
             if layer_type != require_type and require_type.lower() != 'any':
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as {require_type} data',
-                        deferred=True,
-                        filename=filename,
-                        require_type=require_type,
-                    )
+                    f'File "{filename}" not recognized as {require_type} data'
                 )
 
         data = np.array(list(reader))
@@ -593,6 +549,12 @@ def napari_get_reader(
     return _magic_imreader
 
 
+def _read_python_source(script_path: str | Path) -> str:
+    """Read Python source from script."""
+    with tokenize.open(script_path) as file:
+        return file.read()
+
+
 def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     """Load and execute Python code from a file.
 
@@ -611,7 +573,7 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
             encoding = response.headers.get_content_charset() or 'utf-8'
             code = response.read().decode(encoding)
     else:
-        code = Path(script_path).read_text()
+        code = _read_python_source(script_path)
     execute_python_code(code, script_path)
     return [(None,)]
 

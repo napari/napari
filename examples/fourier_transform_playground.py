@@ -169,6 +169,7 @@ wdg()
 
 # wait for the layers to be added before running the viewer
 wait_for_layers(viewer, ['wave 0'])
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

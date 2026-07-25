@@ -49,8 +49,6 @@ def test_viewer_overlays(qt_viewer):
     assert new_overlay not in canvas._overlay_to_visual
     assert new_overlay_node not in canvas.view.children
 
-    viewer.welcome_screen.visible = False  # just for proper test cleanup
-
 
 def test_layer_overlays(qt_viewer):
     viewer = qt_viewer.viewer

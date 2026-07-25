@@ -59,6 +59,7 @@ viewer, sst_layer = napari.imshow(
         **get_scale_translate(sst, 'sst'),
         colormap='magma',
         )
+viewer.scale_bar.visible = True
 viewer.dims.axis_labels = sst.sst.dims
 
 air_layer = viewer.add_image(

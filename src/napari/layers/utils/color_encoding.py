@@ -21,7 +21,6 @@ from napari.utils import Colormap
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.translations import trans
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = ColorValue.validate('cyan')
@@ -84,10 +83,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             color_array = ColorArray.validate(value)
         except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
-                trans._(
-                    'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
-                    deferred=True,
-                )
+                'value should be a ColorEncoding, a dict, a color, or a sequence of colors'
             ) from e
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
@@ -222,10 +218,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             contrast_limits[0] >= contrast_limits[1]
         ):
             raise ValueError(
-                trans._(
-                    'contrast_limits must be a strictly increasing pair of values',
-                    deferred=True,
-                )
+                'contrast_limits must be a strictly increasing pair of values'
             )
         return contrast_limits
 

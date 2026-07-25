@@ -20,6 +20,7 @@ from npe2 import plugin_manager as pm
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
+    LayerLock,
     Mode,
 )
 from napari.layers.base._base_mouse_bindings import (
@@ -37,7 +38,6 @@ from napari.layers.utils.interactivity_utils import (
 from napari.layers.utils.layer_utils import (
     Extent,
     coerce_affine,
-    compute_multiscale_level_and_corners,
     convert_to_uint8,
     dims_displayed_world_to_layer,
     get_extent_world,
@@ -65,7 +65,6 @@ from napari.utils.status_messages import (
     generate_layer_status_strings,
 )
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -489,8 +488,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         of a viewer.
     visible : bool
         Whether the layer visual is currently being displayed.
-    units: tuple of pint.Unit
+    units : tuple of pint.Unit
         Units of the layer data in world coordinates.
+        If not explicitly set, these default to pixel.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
 
@@ -529,7 +529,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data,
         ndim,
@@ -551,7 +551,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         translate=None,
         units=None,
         visible=True,
-    ):
+        locked: bool | LayerLock = False,
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -559,26 +560,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                trans._(
-                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
-                    deferred=True,
-                    name=repr(name),
-                    scale=repr(scale),
-                )
+                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
             )
 
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id = None
+        self._unique_id: None | uuid.UUID = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode = None
+        self._visible_mode: None | str = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -634,6 +630,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._locked = self._coerce_lock(locked)
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -662,6 +659,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            locked=Event,
             extent=Event,
             help=Event,
             loaded=Event,
@@ -748,11 +746,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return mode
 
         if mode not in self._modeclass:
-            raise ValueError(
-                trans._(
-                    'Mode not recognized: {mode}', deferred=True, mode=mode
-                )
-            )
+            raise ValueError(f'Mode not recognized: {mode}')
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -773,9 +767,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._overlays['transform_box'].visible = mode == TRANSFORM
 
         if mode == TRANSFORM:
-            self.help = trans._(
-                'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-            )
+            self.help = 'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
         elif mode == PAN_ZOOM:
             self.help = ''
 
@@ -904,11 +896,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def opacity(self, opacity: float) -> None:
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                trans._(
-                    'opacity must be between 0.0 and 1.0; got {opacity}',
-                    deferred=True,
-                    opacity=opacity,
-                )
+                f'opacity must be between 0.0 and 1.0; got {opacity}'
             )
 
         self._opacity = float(opacity)
@@ -987,6 +975,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._editable = editable
         self._on_editable_changed()
         self.events.editable()
+
+    @property
+    def locked(self) -> LayerLock:
+        """LayerLock: which UI operations are locked on this layer.
+
+        ``bool(layer.locked)`` is truthy when any lock flag is set. Setting
+        ``True``/``False`` is equivalent to ``LayerLock.ALL``/``LayerLock.NONE``.
+        """
+        return self._locked
+
+    @locked.setter
+    def locked(self, locked: bool | LayerLock) -> None:
+        new_lock = self._coerce_lock(locked)
+        if self._locked == new_lock:
+            return
+        self._locked = new_lock
+        self.events.locked()
+
+    @staticmethod
+    def _coerce_lock(value: bool | LayerLock) -> LayerLock:
+        if isinstance(value, LayerLock):
+            return value
+        return LayerLock.ALL if value else LayerLock.NONE
 
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""
@@ -2059,8 +2070,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bounding_box, view_dir
         )
-        if front_face_normal is None and back_face_normal is None:
+        if front_face_normal is None or back_face_normal is None:
             # click does not intersect the data bounding box
+            # we use "or" above instead of "and" because is some literal
+            # edge cases one face might be found but not the other
             return None, None
 
         # Calculate ray-bounding box face intersections
@@ -2082,6 +2095,40 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         end_point[dims_displayed] = end_point_displayed_dimensions
 
         return start_point, end_point
+
+    def _update_level_and_corners(
+        self, data_bbox_int, shape_threshold, displayed_axes
+    ):
+        """Update the data level and corner pixels for the current viewport.
+
+        Sets ``self.corner_pixels`` (and ``self._data_level`` for multiscale
+        layers) based on the viewport bounding box, and calls
+        ``self.refresh()`` when the level or visible region changes.
+
+        For non-multiscale layers this clips the viewport bounding box to the
+        data extent. Overridden in ScalarFieldBase for multiscale logic.
+
+        Parameters
+        ----------
+        data_bbox_int : numpy.ndarray, shape (2, ndisplay)
+            Integer bounding box of the viewport in data coordinates.
+        shape_threshold : tuple
+            Maximum displayed tile size in pixels (canvas shape).
+        displayed_axes : list of int
+            Indices of the currently displayed dimensions.
+        """
+        # The stored corner_pixels attribute must contain valid indices.
+        corners = np.zeros((2, self.ndim), dtype=int)
+        # Some empty layers (e.g. Points) may have a data extent that only
+        # contains nans, in which case the integer valued corner pixels
+        # cannot be meaningfully set.
+        displayed_extent = self.extent.data[:, displayed_axes]
+        if not np.all(np.isnan(displayed_extent)):
+            data_bbox_clipped = np.clip(
+                data_bbox_int, displayed_extent[0], displayed_extent[1]
+            )
+            corners[:, displayed_axes] = data_bbox_clipped
+        self.corner_pixels = corners
 
     def _update_draw(
         self, scale_factor, corner_pixels_displayed, shape_threshold
@@ -2125,57 +2172,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             [np.floor(data_bbox[0]), np.ceil(data_bbox[1])]
         ).astype(int)
 
-        if self._slice_input.ndisplay == 2 and self.multiscale:
-            level, scaled_corners = compute_multiscale_level_and_corners(
-                data_bbox_int,
-                shape_threshold,
-                self.downsample_factors[:, displayed_axes],
-            )
-            corners = np.zeros((2, self.ndim), dtype=int)
-            # The corner_pixels attribute stores corners in the data
-            # space of the selected level. Using the level's data
-            # shape only works for images, but that's the only case we
-            # handle now and downsample_factors is also only on image layers.
-            max_coords = np.take(self.data[level].shape, displayed_axes) - 1
-            corners[:, displayed_axes] = np.clip(scaled_corners, 0, max_coords)
-            display_shape = tuple(
-                corners[1, displayed_axes] - corners[0, displayed_axes]
-            )
-            if any(s == 0 for s in display_shape):
-                return
-            # only update when level changes or
-            # when new view is outside current corner_pixels
-            if (
-                self.data_level != level
-                or np.any(
-                    corners[0, displayed_axes]
-                    < self.corner_pixels[0, displayed_axes]
-                )
-                or np.any(
-                    corners[1, displayed_axes]
-                    > self.corner_pixels[1, displayed_axes]
-                )
-            ):
-                self._data_level = level
-                self.corner_pixels = corners
-                self.refresh(extent=False, thumbnail=False)
-        else:
-            # set the data_level so that it is the lowest resolution in 3d view
-            if self.multiscale is True:
-                self._data_level = len(self.level_shapes) - 1
-
-            # The stored corner_pixels attribute must contain valid indices.
-            corners = np.zeros((2, self.ndim), dtype=int)
-            # Some empty layers (e.g. Points) may have a data extent that only
-            # contains nans, in which case the integer valued corner pixels
-            # cannot be meaningfully set.
-            displayed_extent = self.extent.data[:, displayed_axes]
-            if not np.all(np.isnan(displayed_extent)):
-                data_bbox_clipped = np.clip(
-                    data_bbox_int, displayed_extent[0], displayed_extent[1]
-                )
-                corners[:, displayed_axes] = data_bbox_clipped
-            self.corner_pixels = corners
+        self._update_level_and_corners(
+            data_bbox_int, shape_threshold, displayed_axes
+        )
 
     def _get_source_info(self) -> dict:
         components = {}
@@ -2423,12 +2422,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if layer_type is None or layer_type not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
-                    deferred=True,
-                    layer_type=layer_type,
-                    layer_names=layers.NAMES,
-                )
+                f"Unrecognized layer_type: '{layer_type}'. Must be one of: {layers.NAMES}."
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -2441,12 +2435,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                trans._(
-                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
-                    deferred=True,
-                    bad_key=bad_key,
-                    layer_type=layer_type,
-                )
+                f'_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}'
             ) from exc
 
     @abstractmethod

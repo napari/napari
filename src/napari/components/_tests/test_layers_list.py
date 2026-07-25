@@ -432,10 +432,6 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 
 
 # the layers fixture is defined in napari/conftest.py
-# TODO: this warning filter can be removed when a new version
-# of napari-svg includes the following PR:
-# https://github.com/napari/napari-svg/pull/38
-@pytest.mark.filterwarnings('ignore:edge_:FutureWarning')
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
     pm = npe2.PluginManager.instance()
@@ -758,3 +754,28 @@ def test_unlink_on_delete():
     assert not layer_is_linked(layer1)
     assert not layer_is_linked(layer2)
     assert not layer_is_linked(layer3)
+
+
+def test_remove_selected_skips_locked():
+    """Locked layers should not be removed by remove_selected."""
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)), name='a')
+    layer_b = Image(np.random.random((10, 10)), name='b')
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layer_a.locked = True
+    layers.selection = {layer_a, layer_b}
+    layers.remove_selected()
+    assert len(layers) == 1
+    assert layers[0] is layer_a
+
+
+def test_remove_selected_all_locked():
+    """When all selected layers are locked, none should be removed."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)), name='a')
+    layers.append(layer)
+    layer.locked = True
+    layers.selection = {layer}
+    layers.remove_selected()
+    assert len(layers) == 1
