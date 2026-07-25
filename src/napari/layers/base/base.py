@@ -2266,6 +2266,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         status_dict = self._get_source_info().copy()
 
         if position is not None:
+            precision = int(
+                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            )
             position = np.asarray(position)
             value = self.get_value(
                 position,
@@ -2276,6 +2279,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             coords_str, value_str = generate_layer_status_strings(
                 position[-self.ndim :],
                 value,
+                precision=precision,
             )
         else:
             coords_str, value_str = '', ''

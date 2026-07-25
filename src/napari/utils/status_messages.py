@@ -8,7 +8,7 @@ DEFAULT_PRECISION = 3
 
 def format_float(value, precision=DEFAULT_PRECISION):
     """Nice float formatting into strings."""
-    return f'{value:0.{precision}g}'
+    return f'{value:0.{precision}f}'
 
 
 def format_feature_value(value):
@@ -18,7 +18,7 @@ def format_feature_value(value):
     return str(value)
 
 
-def status_format(value):
+def status_format(value, precision=DEFAULT_PRECISION):
     """Return a "nice" string representation of a value.
 
     Parameters
@@ -42,21 +42,26 @@ def status_format(value):
         return value
     if isinstance(value, Iterable):
         # FIMXE: use an f-string?
-        return '[' + str.join(', ', [status_format(v) for v in value]) + ']'
+        return (
+            '['
+            + str.join(
+                ', ', [status_format(v, precision=precision) for v in value]
+            )
+            + ']'
+        )
     if value is None:
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
-        return format_float(value)
+        return format_float(value, precision=precision)
 
     return str(value)
 
 
 def generate_layer_status_strings(
-    position: npt.ArrayLike | None, value: tuple | None
+    position: npt.ArrayLike | None, value: tuple | None, precision: float
 ) -> tuple[str, str]:
     if position is not None:
-        full_coord = map(str, np.round(np.array(position)).astype(int))
-        pos_str = f' [{" ".join(full_coord)}]'
+        pos_str = status_format(position, precision=precision)
     else:
         pos_str = ''
 
