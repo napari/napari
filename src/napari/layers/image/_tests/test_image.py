@@ -999,6 +999,20 @@ def test_adjust_contrast_limits_range_set_data():
     )
 
 
+def test_ndisplay_3_auto_contrast():
+    """Ensure toggle to 3D display with with continuous contrast.
+
+    Regression test for https://github.com/napari/napari/issues/7152
+    """
+    data = np.ones((10, 20, 20))
+    layer = Image(data)
+    layer._keep_auto_contrast = True
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=2))
+    # switch to ndisplay=3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+
+
 def test_thick_slice_multiscale():
     data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
     data_zoom = data.repeat(2, 0).repeat(2, 1).repeat(2, 2)

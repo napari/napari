@@ -185,6 +185,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
@@ -282,6 +284,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
@@ -604,12 +608,9 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     'napari._qt.code_syntax_highlight',
-    'napari._qt.containers._base_item_model',
-    'napari._qt.containers._base_item_view',
     'napari._qt.containers._layer_delegate',
-    'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
-    'napari._qt.containers.qt_list_model',
+    'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
     'napari._qt.dialogs.confirm_close_dialog',
     'napari._qt.dialogs.preferences_dialog',
@@ -632,7 +633,6 @@ module = [
     'napari._qt.layer_controls.qt_surface_controls',
     'napari._qt.layer_controls.qt_tracks_controls',
     'napari._qt.layer_controls.qt_vectors_controls',
-    'napari._qt.layer_controls.widgets.qt_face_color',
     'napari._qt.layer_controls.widgets.qt_opacity_blending_controls',
     'napari._qt.layer_controls.widgets.qt_text_visibility',
     'napari._qt.layer_controls.widgets.qt_out_slice_checkbox',
@@ -640,7 +640,6 @@ module = [
     'napari._qt.layer_controls.widgets._shapes.qt_edge_color',
     'napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider',
     'napari._qt.layer_controls.widgets._labels.qt_label_color',
-    'napari._qt.layer_controls.widgets._labels.qt_brush_size_slider',
     'napari._qt.layer_controls.widgets._labels.qt_color_mode_combobox',
     'napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox',
     'napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox',
@@ -650,7 +649,6 @@ module = [
     'napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox',
     'napari._qt.layer_controls.widgets._points.qt_current_size_slider',
     'napari._qt.layer_controls.widgets._points.qt_symbol_combobox',
-    'napari._qt.layer_controls.widgets._points.qt_border_color',
     'napari._qt.layer_controls.widgets.qt_colormap_control',
     'napari._qt.layer_controls.widgets.qt_contrast_limits',
     'napari._qt.layer_controls.widgets.qt_autoscale_control',
@@ -689,7 +687,6 @@ module = [
     'napari._qt.widgets.qt_highlight_preview',
     'napari._qt.widgets.qt_keyboard_settings',
     'napari._qt.widgets.qt_logger',
-    'napari._qt.widgets.qt_mode_buttons',
     'napari._qt.widgets.qt_plugin_sorter',
     'napari._qt.widgets.qt_progress_bar',
     'napari._qt.widgets.qt_scrollbar',
@@ -818,7 +815,6 @@ module = [
     "napari.utils.io",
     "napari.utils.notebook_display",
     "napari.utils.transforms.transform_utils",
-    "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
     "napari.layers.shapes._shape_list",
