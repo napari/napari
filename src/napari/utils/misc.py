@@ -23,8 +23,6 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
@@ -196,14 +194,7 @@ def ensure_sequence_of_iterables(
     ):
         if length is not None and len(obj) != length:
             # sequence of iterables of wrong length
-            raise ValueError(
-                trans._(
-                    'length of {obj} must equal {length}',
-                    deferred=True,
-                    obj=obj,
-                    length=length,
-                )
-            )
+            raise ValueError(f'length of {obj} must equal {length}')
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -242,12 +233,7 @@ class StringEnum(StrEnum):
             # but tests expect ValueError,
             # so tests win here
             raise ValueError(  # noqa: TRY004
-                trans._(
-                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                    deferred=True,
-                    class_name=cls,
-                    dtype=builtins.type(value),
-                )
+                f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
             )
         if isinstance(value, str):
             for member in cls:
@@ -255,12 +241,7 @@ class StringEnum(StrEnum):
                     return member
             return None
         raise ValueError(
-            trans._(
-                '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                deferred=True,
-                class_name=cls,
-                dtype=builtins.type(value),
-            )
+            f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
         )
 
     def __eq__(self, other: object) -> bool:
@@ -323,9 +304,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     from urllib.parse import urlparse
 
     if not isinstance(relpath, str | Path):
-        raise TypeError(
-            trans._('Argument must be a string or Path', deferred=True)
-        )
+        raise TypeError('Argument must be a string or Path')
     OriginType = type(relpath)
 
     relpath_str = fspath(relpath)
@@ -335,13 +314,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
-        raise ValueError(
-            trans._(
-                'Requested path {path!r} does not exist.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'Requested path {path!r} does not exist.')
     return OriginType(path)
 
 
@@ -390,11 +363,7 @@ def ensure_n_tuple(
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:
-    msg = trans._(
-        'Not a valid layer data tuple: {value!r}',
-        deferred=True,
-        value=val,
-    )
+    msg = f'Not a valid layer data tuple: {val!r}'
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
@@ -410,9 +379,7 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-    raise TypeError(
-        trans._('Not a valid list of layer data tuples!', deferred=True)
-    )
+    raise TypeError('Not a valid list of layer data tuples!')
 
 
 def _quiet_array_equal(*a, **k) -> bool:
@@ -520,13 +487,7 @@ def dir_hash(
     import hashlib
 
     if not Path(path).is_dir():
-        raise TypeError(
-            trans._(
-                '{path} is not a directory.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise TypeError(f'{path} is not a directory.')
 
     hash_func = hashlib.md5
     _hash = hash_func()

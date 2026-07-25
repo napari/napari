@@ -466,6 +466,9 @@ authors:
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
+- given-names: Michal
+  family-names: Steuer
+  alias: michalslabs
 - given-names: Wulin
   family-names: Teo
   affiliation: Houston Methodist Research Institute
@@ -539,6 +542,11 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Giliane
+  family-names: Rochat
+  affiliation: Institute of Neuropathology, University Hospital of Zürich
+  orcid: https://orcid.org/0009-0003-6017-1418
+  alias: girochat
 - given-names: Filippo Maria
   family-names: Castelli
   affiliation: Delta Tribe SRL
@@ -573,5 +581,14 @@ authors:
   family-names: Bloemsaat
   affiliation: QStarsIT
   alias: basbloemsaat
+- given-names: Kamil
+  family-names: Kania
+  alias: Grzyb33k
+  orcid: https://orcid.org/0009-0008-1188-1081
+- given-names: Ioannis
+  family-names: Liaskas
+  alias: BadPrograms
+  affiliation: Aix Marseille University, IBDM, Turing Centre for Living systems
+  orcid: https://orcid.org/0000-0002-8715-084X
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
