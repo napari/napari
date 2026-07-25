@@ -70,6 +70,9 @@ KEY_SUBS: dict[str, str] = {
 }
 
 
+# this class is meant as an equivalent for the Sentinel class type,
+# which is introduced via PEP 661; mypy has yet to support it,
+# so for now we use this workaround
 class _Undefined:
     """Sentinel for undefined values."""
 
