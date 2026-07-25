@@ -185,6 +185,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
@@ -282,6 +284,8 @@ gallery = [
     "meshio",
     "trackastra>=0.4.2",
     "gdown", # to download some large example data files
+    "geopandas",
+    "contextily",
 ]
 # needed to build docs
 docs = [
@@ -605,7 +609,6 @@ ignore_errors = true
 module = [
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._base_item_model',
-    'napari._qt.containers._base_item_view',
     'napari._qt.containers._layer_delegate',
     'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_layer_model',
@@ -818,7 +821,6 @@ module = [
     "napari.utils.io",
     "napari.utils.notebook_display",
     "napari.utils.transforms.transform_utils",
-    "napari.utils.translations",
     "napari.utils.tree.node",
     "napari.viewer",
     "napari.layers.shapes._shape_list",
