@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import itertools
+import logging
 import os
 import warnings
 from collections.abc import (
@@ -42,6 +43,7 @@ from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
+    FloatingAxesOverlay,
     SceneOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -100,6 +102,7 @@ from napari.utils.theme import available_themes, is_theme_available
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
 
+    from napari.components.grid import GridCanvas
     from napari.components.overlays import ScaleBarOverlay, TextOverlay
 
 
@@ -117,6 +120,9 @@ EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
+logger = logging.getLogger(__name__)
 
 
 def _current_theme() -> str:
@@ -314,22 +320,38 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._overlays['axes']  # type: ignore[return-value]
 
     @property
-    def scale_bar(self) -> ScaleBarOverlay:
-        warnings.warn(
-            'viewer.scale_bar is a deprecated attribute since 0.7.1. Use viewer.canvas.scale_bar instead.',
+    def floating_axes(self) -> FloatingAxesOverlay:
+        logger.info(
+            'viewer.floating_axes is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.floating_axes instead.',
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.canvas._overlays['scale_bar']  # type: ignore[return-value]
+        return self.canvas.floating_axes  # type: ignore[return-value]
+
+    @property
+    def scale_bar(self) -> ScaleBarOverlay:
+        logger.info(
+            'viewer.scale_bar is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.scale_bar instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.canvas.scale_bar
 
     @property
     def text_overlay(self) -> TextOverlay:
-        warnings.warn(
-            'viewer.text_overlay is a deprecated attribute since 0.7.1. Use viewer.canvas.text instead.',
-            DeprecationWarning,
+        logger.info(
+            'viewer.text_overlay is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.text instead.',
             stacklevel=2,
         )
-        return self.canvas._overlays['text']  # type: ignore[return-value]
+        return self.canvas.text  # type: ignore[return-value]
+
+    @property
+    def grid(self) -> GridCanvas:
+        logger.info(
+            'viewer.grid is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
+            stacklevel=2,
+        )
+        return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
