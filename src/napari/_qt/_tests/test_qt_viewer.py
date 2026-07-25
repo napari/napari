@@ -883,7 +883,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]
-    axes_visual = qt_viewer.canvas._scene_overlay_to_visual[
+    axes_visual = qt_viewer.canvas._viewer_overlay_to_visual[
         viewer_model._overlays['axes']
     ]
 
@@ -1138,7 +1138,7 @@ def test_more_than_uint16_colors(
 def test_scale_bar_colored(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.scale_bar
+    scale_bar = viewer_model.canvas.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))
@@ -1190,7 +1190,7 @@ def test_scale_bar_colored(
 def test_scale_bar_ticks(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.scale_bar
+    scale_bar = viewer_model.canvas.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))
@@ -1394,7 +1394,7 @@ def test_viewer_drag_to_zoom_3d_data(
     canvas = qt_viewer.canvas
 
     zoom_area_mock = mock.Mock()
-    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
+    viewer_model.canvas._zoom_box.events.zoom_area.connect(zoom_area_mock)
 
     # 3D data so that event.position will have 3 components
     data = np.random.default_rng(0).random((10, 20, 20))
@@ -1407,7 +1407,7 @@ def test_viewer_drag_to_zoom_3d_data(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is True
+    assert viewer_model.canvas._zoom_box.visible is True
 
     canvas._scene_canvas.events.mouse_move(
         pos=(100, 100),
@@ -1425,7 +1425,7 @@ def test_viewer_drag_to_zoom_3d_data(
     )
     qtbot.wait(10)
 
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas._zoom_box.visible is False, (
         'Zoom box should be hidden after release'
     )
     # zoom_area should have been set with 2-tuples (last 2 world coords)
