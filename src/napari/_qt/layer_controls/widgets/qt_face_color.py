@@ -34,6 +34,8 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
+    _layer: Shapes | Points
+
     def __init__(
         self,
         parent: QWidget,
