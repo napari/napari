@@ -65,6 +65,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         provided scale, rotate, and shear values.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the 
+        currently viewed slice. If True, contrast limits will be updated 
+        whenever the slice changes.
     axis_labels : tuple of str
         Dimension names of the layer data.
         If not provided, axis_labels will be set to (..., '-2', '-1').
@@ -205,6 +209,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the 
+        currently viewed slice. If True, contrast limits will be updated 
+        whenever the slice changes.
     gamma : float
         Gamma correction for determining colormap linearity.
     interpolation2d : str
@@ -249,6 +257,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         *,
         affine: npt.ArrayLike | Affine | None = None,
         attenuation: float = 0.05,
+        auto_contrast: bool = False,
         axis_labels: Sequence[str] | None = None,
         blending: str = 'translucent',
         cache: bool = True,
@@ -335,6 +344,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.contrast_limits_range = contrast_limits
         self._contrast_limits: tuple[float, float] = self.contrast_limits_range
         self.contrast_limits = self._contrast_limits
+        self.auto_contrast = auto_contrast
 
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
@@ -392,6 +402,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
+                'auto_contrast': self.auto_contrast,
                 'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
