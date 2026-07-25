@@ -11,7 +11,6 @@ import numpy as np
 from skimage import data
 
 import napari
-from napari.utils.translations import trans
 
 viewer = napari.Viewer(ndisplay=3)
 
@@ -43,13 +42,11 @@ plane_layer = viewer.add_image(
 viewer.axes.visible = True
 viewer.camera.angles = (0, -30, 35)
 viewer.fit_to_view()
-viewer.text_overlay.text = trans._(
-"""shift + click and drag to move the plane
+viewer.text_overlay.text = """shift + click and drag to move the plane
 press 'x', 'y' or 'z' to orient the plane along that axis around the cursor
 press 'o' to orient the plane normal along the camera view direction
 press and hold 'o' then click and drag to make the plane normal follow the camera
 """
-)
 viewer.text_overlay.visible = True
 if __name__ == '__main__':
     napari.run()
