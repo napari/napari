@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QScrollArea,
     QStackedWidget,
     QVBoxLayout,
+    QAbstractItemView
 )
 
 from napari._pydantic_util import get_inner_type
@@ -47,7 +48,7 @@ class PreferencesDialog(QDialog):
         self._list = QListWidget(self)
         self._list.setObjectName('Preferences')
         self._list.currentRowChanged.connect(self._stack.setCurrentIndex)
-
+        self._list.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         # Set up buttons
         self._button_cancel = QPushButton('Cancel')
         self._button_cancel.clicked.connect(self.reject)
