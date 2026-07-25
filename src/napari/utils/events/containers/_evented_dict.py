@@ -71,7 +71,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events = EmitterGroup(
                 source=self,
                 auto_connect=False,
-                **_events,  # type: ignore[arg-type]
+                _connect_children=True,
+                **_events,
             )
         super().__init__(data, basetype)
 
