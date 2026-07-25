@@ -698,6 +698,7 @@ class _ImageSlicingState(ScalarFieldSlicingState):
         WARNING: This is a hack.
         Will be removed as we want to go into multi canvas mode.
         """
+        super()._update_slice_response(response)
         if self.layer.auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data
@@ -706,7 +707,6 @@ class _ImageSlicingState(ScalarFieldSlicingState):
                 rgb=self.layer.rgb,
                 dtype=self.layer.dtype,
             )
-        super()._update_slice_response(response)
         if self.layer._should_calc_clims:
             self.layer.reset_contrast_limits_range()
             self.layer.reset_contrast_limits()

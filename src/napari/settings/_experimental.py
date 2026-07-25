@@ -29,8 +29,8 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
-        title='Render Images Asynchronously',
-        description='Asynchronous loading of image data. \nThis setting partially loads data while viewing.',
+        title='Render Layers Asynchronously',
+        description='Asynchronous loading of layers. \nThis setting partially loads data while viewing.',
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
