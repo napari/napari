@@ -28,7 +28,7 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
-        title=trans._("Render Images Asynchronously"),
+        title=trans._("Render Layers Asynchronously"),
         description=trans._(
             "Asynchronous loading of layers (Image & Points). \nThis setting partially loads data while viewing."
         ),
