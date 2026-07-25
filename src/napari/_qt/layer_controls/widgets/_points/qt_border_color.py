@@ -8,7 +8,6 @@ from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtBorderColorControl(QtWidgetControlsBase):
@@ -36,9 +35,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
         # Setup widgets
         self.border_color_edit = QColorSwatchEdit(
             initial_color=self._layer.current_border_color,
-            tooltip=trans._(
-                'Click to set the border color of currently selected points and any added afterwards.'
-            ),
+            tooltip='Click to set the border color of currently selected points and any added afterwards.',
         )
         connect_setattr(
             self.border_color_edit.color_changed,
@@ -62,7 +59,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
             )
         )
 
-        self.border_color_edit_label = QtWrappedLabel(trans._('border color:'))
+        self.border_color_edit_label = QtWrappedLabel('border color:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.border_color_edit_label, self.border_color_edit)]
