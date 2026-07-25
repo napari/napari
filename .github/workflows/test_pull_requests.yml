@@ -65,6 +65,30 @@ jobs:
     name: Build wheel
     uses: ./.github/workflows/reusable_build_wheel.yml
 
+  changes:
+    name: Detect source changes
+    runs-on: ubuntu-latest
+    outputs:
+      napari: ${{ steps.diff.outputs.napari }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: diff
+        name: Check src/napari changes
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- src/napari; then
+            echo "napari=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "napari=true" >> "$GITHUB_OUTPUT"
+          fi
+
   test_initial:
     name: Initial test
     uses: ./.github/workflows/reusable_run_tox_test.yml
@@ -77,24 +101,31 @@ jobs:
             platform: ubuntu-latest
             backend: pyqt5
             coverage: no_cov
-            min_req: ""
           - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: no_cov
-            min_req: ""
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: builtins
+            coverage: cov
+          - python: "3.14"
+            platform: windows-latest
+            backend: builtins
+            coverage: cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
-      min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
+      pytest_posargs: ${{ matrix.pytest_posargs }}
 
   test:
     name: ${{ matrix.platform }}
+    if: ${{ needs.changes.outputs.napari == 'true' }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: test_initial
+    needs: [test_initial, changes]
     strategy:
       fail-fast: false
       matrix:
