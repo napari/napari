@@ -3,6 +3,7 @@ from typing import Optional
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+    MetaWidgetControlsBase,
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
@@ -13,7 +14,9 @@ from napari.utils.events.event_utils import connect_setattr
 from napari.utils.translations import trans
 
 
-class QtEdgeColorControl(QtWidgetControlsBase):  # type: ignore[metaclass]
+class QtEdgeColorControl(
+    QtWidgetControlsBase, metaclass=MetaWidgetControlsBase
+):
     """
     Class that wraps the connection of events/signals between the current edge
     color layer attribute and Qt widgets.
@@ -35,13 +38,15 @@ class QtEdgeColorControl(QtWidgetControlsBase):  # type: ignore[metaclass]
         Label for the current edge color chooser widget.
     """
 
+    _layer: Shapes
+
     def __init__(
         self, parent: QWidget, layer: Shapes, tooltip: Optional[str] = None
     ) -> None:
         super().__init__(parent, layer)
         # Setup widgets
         self.edge_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.current_edge_color,  # type: ignore[attr-defined]
+            initial_color=self._layer.current_edge_color,
             tooltip=tooltip,
         )
         connect_setattr(
