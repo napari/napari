@@ -157,3 +157,27 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             if v is value or v == value:
                 return k
         return None
+
+
+class EventedDictNamespace(EventedDict):
+    """An evented dict that also exposes its elements as a simple namespace."""
+
+    def __getattr__(self, name):
+        if name == 'events':
+            raise AttributeError(name)
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    def __setattr__(self, name, value):
+        if (
+            name in ('events', '_dict', '_basetypes')
+            or name in super().__dir__()
+        ):
+            super().__setattr__(name, value)
+        else:
+            self[name] = value
+
+    def __dir__(self):
+        return sorted(set(super().__dir__() | self.keys()))

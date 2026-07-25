@@ -292,13 +292,13 @@ class VispyCanvas:
         self.viewer._overlays.events.changed.connect(
             self._update_viewer_overlays
         )
-        self.viewer.canvas._overlays.events.added.connect(
+        self.viewer.canvas.overlays.events.added.connect(
             self._update_viewer_overlays
         )
-        self.viewer.canvas._overlays.events.removed.connect(
+        self.viewer.canvas.overlays.events.removed.connect(
             self._update_viewer_overlays
         )
-        self.viewer.canvas._overlays.events.changed.connect(
+        self.viewer.canvas.overlays.events.changed.connect(
             self._update_viewer_overlays
         )
 
@@ -947,7 +947,7 @@ class VispyCanvas:
     def _update_viewer_overlays(self):
         """Update the viewer's overlay visuals."""
         all_overlays = set(self.viewer._overlays.values()) | set(
-            self.viewer.canvas._overlays.values()
+            self.viewer.canvas.overlays.values()
         )
         # delete outdated overlays
         for overlay in set(self._viewer_overlay_to_visual) - set(all_overlays):

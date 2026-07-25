@@ -2,7 +2,7 @@ from enum import StrEnum
 from typing import Any
 
 import numpy as np
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
@@ -16,7 +16,7 @@ from napari.components.overlays import (
 )
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
-from napari.utils.events import Event, EventedDict, EventedModel
+from napari.utils.events import Event, EventedDictNamespace, EventedModel
 from napari.utils.theme import get_theme
 
 DEFAULT_CANVAS_OVERLAYS = {
@@ -65,8 +65,8 @@ class Canvas(EventedModel):
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, frozen=True
     )
-    _overlays: EventedDict[str, CanvasOverlay] = PrivateAttr(
-        default_factory=EventedDict
+    overlays: EventedDictNamespace[str, CanvasOverlay] = Field(
+        default_factory=EventedDictNamespace
     )
     size: tuple[int, int] = (800, 600)
 
@@ -92,7 +92,7 @@ class Canvas(EventedModel):
 
         settings.appearance.events.theme.connect(self.events.background_color)
 
-        self._overlays.update(
+        self.overlays.update(
             {k: v() for k, v in DEFAULT_CANVAS_OVERLAYS.items()}
         )
 
@@ -115,23 +115,23 @@ class Canvas(EventedModel):
 
     @property
     def scale_bar(self) -> ScaleBarOverlay:
-        return self._overlays['scale_bar']  # type: ignore[return-value]
+        return self.overlays.scale_bar  # type: ignore[return-value]
 
     @property
     def text(self) -> TextOverlay:
-        return self._overlays['text']  # type: ignore[return-value]
+        return self.overlays.text  # type: ignore[return-value]
 
     @property
     def _zoom_box(self) -> ZoomOverlay:
-        return self._overlays['zoom']  # type: ignore[return-value]
+        return self.overlays.zoom  # type: ignore[return-value]
 
     @property
     def _brush_circle_overlay(self) -> BrushCircleOverlay:
-        return self._overlays['brush_circle']  # type: ignore[return-value]
+        return self.overlays.brush_circle  # type: ignore[return-value]
 
     @property
     def floating_axes(self) -> FloatingAxesOverlay:
-        return self._overlays['floating_axes']  # type: ignore[return-value]
+        return self.overlays.floating_axes  # type: ignore[return-value]
 
     def _update_viewer_grid(self) -> None:
         """Keep viewer grid settings up to date with settings values."""
