@@ -20,29 +20,26 @@ class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
 
-        self.events.triangulation_backend.connect(_update_triangulation_backend)
+        self.events.triangulation_backend.connect(
+            _update_triangulation_backend
+        )
         self.events.triangulation_backend(value=self.triangulation_backend)
         self.events.colormap_backend.connect(_update_colormap_backend)
         self.events.colormap_backend(value=self.colormap_backend)
 
     async_: bool = Field(
         False,
-        title=trans._('Render Layers Asynchronously'),
-        description=trans._(
-            'Asynchronous loading of layers (Image & Points). \nThis setting partially loads data while viewing.'
-        ),
-        validation_alias=AliasChoices("async_", "async", "napari_async"),
-        json_schema_extra={"requires_restart": False},
+        title='Render Layers Asynchronously',
+        description='Asynchronous loading of Laywers (Images & Points). \nThis setting partially loads data while viewing.',
+        validation_alias=AliasChoices('async_', 'async', 'napari_async'),
+        json_schema_extra={'requires_restart': False},
     )
     autoswap_buffers: bool = Field(
         False,
-        title=trans._('Enable autoswapping rendering buffers.'),
-        description=trans._(
-            'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
-        ),
-        validation_alias=AliasChoices("autoswap_buffers", "napari_autoswap"),
-        json_schema_extra={"requires_restart": True},
-
+        title='Enable autoswapping rendering buffers.',
+        description='Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.',
+        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
+        json_schema_extra={'requires_restart': True},
     )
 
     rdp_epsilon: float = Field(
@@ -79,7 +76,7 @@ class ExperimentalSettings(EventedSettings):
         "The 'pure python' backend uses the default Python triangulation from vispy.\n"
         "The 'fastest available' backend will select the fastest available backend.\n",
         validation_alias=AliasChoices(
-            "triangulation_backend", "napari_triangulation_backend"
+            'triangulation_backend', 'napari_triangulation_backend'
         ),
     )
     colormap_backend: ColormapBackend = Field(
@@ -97,16 +94,14 @@ class ExperimentalSettings(EventedSettings):
 
     compiled_triangulation: bool = Field(
         default=False,
-        title=trans._('Unused option. Use "triangulation backend" instead.'),
-        description=trans._(
-            "This option was removed in napari 0.6.0. Use \n"
-            '"triangulation backend" instead.'
-        ),
-
+        title='Unused option. Use "triangulation backend" instead.',
+        description='This option was removed in napari 0.6.0. Use \n'
+        '"triangulation backend" instead.',
+    )
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ("schema_version", "compiled_triangulation")
+        preferences_exclude = ('schema_version', 'compiled_triangulation')
 
 
 def _update_triangulation_backend(event: Event) -> None:
