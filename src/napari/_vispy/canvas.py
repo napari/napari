@@ -1062,7 +1062,7 @@ class VispyCanvas:
         )
 
         # delete outdated overlays
-        if layer not in self.viewer.layers and should_remove:
+        if layer not in self.viewer.layers or should_remove:
             to_remove = set(layer._overlays.values())
         else:
             to_remove = set(overlay_to_visual.keys()) - set(
@@ -1075,7 +1075,7 @@ class VispyCanvas:
             if vispy_overlay := overlay_to_visual.pop(overlay, None):
                 vispy_overlay.close()
 
-        if layer not in self.viewer.layers and should_remove:
+        if layer not in self.viewer.layers or should_remove:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
