@@ -163,6 +163,7 @@ class EventedDictNamespace(EventedDict):
     """An evented dict that also exposes its elements as a simple namespace."""
 
     def __getattr__(self, name):
+        # we need some special cases cause they are accessed before full initialization
         if name == 'events':
             raise AttributeError(name)
         try:
@@ -171,6 +172,7 @@ class EventedDictNamespace(EventedDict):
             raise AttributeError(name) from e
 
     def __setattr__(self, name, value):
+        # we need some special cases cause they are accessed before full initialization
         if (
             name in ('events', '_dict', '_basetypes')
             or name in super().__dir__()
@@ -180,4 +182,9 @@ class EventedDictNamespace(EventedDict):
             self[name] = value
 
     def __dir__(self):
-        return sorted(set(super().__dir__() | self.keys()))
+        # provides autocompletion including the magical attributes computed from keys
+        # unless they are private
+        return sorted(
+            set(super().__dir__())
+            | {k for k in self.keys() if not k.startswith('_')}
+        )

@@ -48,7 +48,7 @@ def test_canvas_overlays(qt_viewer):
     canvas = qt_viewer.viewer.canvas
     vispy_canvas = qt_viewer.canvas
 
-    for overlay in canvas._overlays.values():
+    for overlay in canvas.overlays.values():
         # vispy overlays only exist if they are visible at least once
         overlay.visible = True
         assert all(
@@ -61,7 +61,7 @@ def test_canvas_overlays(qt_viewer):
     }
 
     new_overlay = ScaleBarOverlay(visible=True)
-    canvas._overlays['test'] = new_overlay
+    canvas.overlays['test'] = new_overlay
 
     assert new_overlay in vispy_canvas._viewer_overlay_to_visual
     new_overlay_node = vispy_canvas._viewer_overlay_to_visual[new_overlay][
@@ -75,7 +75,7 @@ def test_canvas_overlays(qt_viewer):
         for vispy_overlay in vispy_overlays:
             assert vispy_overlay.node in vispy_canvas.view.children
 
-    canvas._overlays.pop('test')
+    canvas.overlays.pop('test')
     assert new_overlay not in vispy_canvas._viewer_overlay_to_visual
     assert new_overlay_node not in vispy_canvas.view.children
 
@@ -175,16 +175,18 @@ def test_tiling_canvas_overlays(qt_viewer):
     viewer = qt_viewer.viewer
     canvas = qt_viewer.canvas
 
-    viewer.canvas.scale_bar.visible = True
-    viewer.canvas.text.visible = True
-    viewer.canvas.text.text = 'test'
-    viewer.canvas.scale_bar.position = 'bottom_left'
-    viewer.canvas.text.position = 'bottom_left'
+    viewer.canvas.overlays.scale_bar.visible = True
+    viewer.canvas.overlays.text.visible = True
+    viewer.canvas.overlays.text.text = 'test'
+    viewer.canvas.overlays.scale_bar.position = 'bottom_left'
+    viewer.canvas.overlays.text.position = 'bottom_left'
 
     vispy_scale_bar = canvas._viewer_overlay_to_visual[
-        viewer.canvas.scale_bar
+        viewer.canvas.overlays.scale_bar
     ][0]
-    vispy_text = canvas._viewer_overlay_to_visual[viewer.canvas.text][0]
+    vispy_text = canvas._viewer_overlay_to_visual[viewer.canvas.overlays.text][
+        0
+    ]
 
     padding = 10.0  # currently hardcoded
     y_max, x_max = canvas.size
@@ -196,8 +198,8 @@ def test_tiling_canvas_overlays(qt_viewer):
     text_x_size = vispy_text.x_size + padding
 
     # check vertical tiling works on the bottom right
-    viewer.canvas.scale_bar.position = 'bottom_right'
-    viewer.canvas.text.position = 'bottom_right'
+    viewer.canvas.overlays.scale_bar.position = 'bottom_right'
+    viewer.canvas.overlays.text.position = 'bottom_right'
     canvas._update_overlay_canvas_positions()
 
     np.testing.assert_almost_equal(
@@ -212,7 +214,7 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
     # move scale bar out of the way and check tiling is updated
-    viewer.canvas.scale_bar.position = 'top_right'
+    viewer.canvas.overlays.scale_bar.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
         vispy_text.node.transform.translate[0],
@@ -226,7 +228,7 @@ def test_tiling_canvas_overlays(qt_viewer):
     )
 
     # check horizontal tiling works on the top right
-    viewer.canvas.text.position = 'top_right'
+    viewer.canvas.overlays.text.position = 'top_right'
     canvas._update_overlay_canvas_positions()
     np.testing.assert_almost_equal(
         vispy_text.node.transform.translate[0],

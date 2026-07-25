@@ -22,8 +22,8 @@ from napari.utils.theme import get_theme
 DEFAULT_CANVAS_OVERLAYS = {
     'scale_bar': ScaleBarOverlay,
     'text': TextOverlay,
-    'brush_circle': BrushCircleOverlay,
-    'zoom': ZoomOverlay,
+    '_brush_circle': BrushCircleOverlay,
+    '_zoom_box': ZoomOverlay,
     'current_slice': CurrentSliceOverlay,
     'floating_axes': FloatingAxesOverlay,
 }
@@ -35,6 +35,12 @@ class Orientation(StrEnum):
 
 
 class OverlayTiling(EventedModel):
+    """Overlay tiling controls.
+
+    For each canvas position, tiling direction can be set to vertical or horizontal.
+    Padding between tiles can also be changed as a (vertical, horizontal) tuple.
+    """
+
     padding: tuple[float, float] = (10.0, 10.0)
     top_left: Orientation = Orientation.VERTICAL
     top_center: Orientation = Orientation.VERTICAL
@@ -52,21 +58,27 @@ class Canvas(EventedModel):
 
     Attributes
     ----------
-    background_color :
-        ...
-    grid :
-        ...
-    _canvas_size: Tuple[int, int]
+    background_color_override : ColorValue or None
+        Override the theme background color with a custom one.
+    grid : GridCanvas
+        A model that controls the enabling and settings of the grid mode.
+    overlays : EventedDictNamespace
+        A dictionary/namespace containing canvas overlays. By default, it exposes
+        publicly 'scale_bar', 'text', 'current_slice' and 'floating_axes'
+    overlay_tiling : OverlayTiling
+        Controls for the overlay tiling direction and padding.
+        a
+    size : tuple[int, int]
         The canvas size following the Numpy convention of height x width
     """
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
-    overlay_tiling: OverlayTiling = Field(
-        default_factory=OverlayTiling, frozen=True
-    )
     overlays: EventedDictNamespace[str, CanvasOverlay] = Field(
         default_factory=EventedDictNamespace
+    )
+    overlay_tiling: OverlayTiling = Field(
+        default_factory=OverlayTiling, frozen=True
     )
     size: tuple[int, int] = (800, 600)
 
@@ -112,29 +124,6 @@ class Canvas(EventedModel):
             available_space = self.size - total_gap_space
             viewbox_size = available_space / grid_shape
         return tuple(viewbox_size)
-
-    # NOTE: all the ignore[return-value] below are becase the overlays dict
-    #       actually contains a bunch of different types. We annotate with
-    #       more specific types so the users know what they get!
-    @property
-    def scale_bar(self) -> ScaleBarOverlay:
-        return self.overlays.scale_bar  # type: ignore[return-value]
-
-    @property
-    def text(self) -> TextOverlay:
-        return self.overlays.text  # type: ignore[return-value]
-
-    @property
-    def _zoom_box(self) -> ZoomOverlay:
-        return self.overlays.zoom  # type: ignore[return-value]
-
-    @property
-    def _brush_circle_overlay(self) -> BrushCircleOverlay:
-        return self.overlays.brush_circle  # type: ignore[return-value]
-
-    @property
-    def floating_axes(self) -> FloatingAxesOverlay:
-        return self.overlays.floating_axes  # type: ignore[return-value]
 
     def _update_viewer_grid(self) -> None:
         """Keep viewer grid settings up to date with settings values."""

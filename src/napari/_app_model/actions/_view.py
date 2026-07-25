@@ -56,52 +56,52 @@ toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_floating_axes',
         'Floating Axes Visible',
-        'canvas.floating_axes.visible',
+        'canvas.overlays.floating_axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_box',
         'Floating Axes Box',
-        'canvas.floating_axes.box',
+        'canvas.overlays.floating_axes.box',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_colored',
         'Floating Axes Colored',
-        'canvas.floating_axes.colored',
+        'canvas.overlays.floating_axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_labels',
         'Floating Axes Labels',
-        'canvas.floating_axes.labels',
+        'canvas.overlays.floating_axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_dashed',
         'Floating Axes Dashed',
-        'canvas.floating_axes.dashed',
+        'canvas.overlays.floating_axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_arrows',
         'Floating Axes Arrows',
-        'canvas.floating_axes.arrows',
+        'canvas.overlays.floating_axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar',
         'Scale Bar Visible',
-        'canvas.scale_bar.visible',
+        'canvas.overlays.scale_bar.visible',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_box',
         'Scale Bar Box',
-        'canvas.scale_bar.box',
+        'canvas.overlays.scale_bar.box',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_colored',
         'Scale Bar Colored',
-        'canvas.scale_bar.colored',
+        'canvas.overlays.scale_bar.colored',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_ticks',
         'Scale Bar Ticks',
-        'canvas.scale_bar.ticks',
+        'canvas.overlays.scale_bar.ticks',
     ),
 ]
 
