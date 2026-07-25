@@ -86,7 +86,7 @@ jobs:
         env:
           PIP_CONSTRAINT: resources/constraints/benchmark.txt
 
-      - uses: octokit/request-action@b66ca9cd744693e9c29b490fc08831ab66c4a970 # v2.x
+      - uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         id: latest_release
         with:
           route: GET /repos/{owner}/{repo}/releases/latest
