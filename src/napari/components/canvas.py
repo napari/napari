@@ -39,6 +39,11 @@ class OverlayTiling(EventedModel):
 
     For each canvas position, tiling direction can be set to vertical or horizontal.
     Padding between tiles can also be changed as a (vertical, horizontal) tuple.
+    
+    Examples
+    --------
+    >>> canvas = Canvas()
+    >>> canvas.overlay_tiling.top_right = 'vertical'
     """
 
     padding: tuple[float, float] = (10.0, 10.0)
