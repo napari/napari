@@ -29,7 +29,6 @@ from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.translations import trans
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -281,9 +280,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         if rgb and not guess_rgb(data_shape, min_side_len=0):
             raise ValueError(
-                trans._(
-                    "'rgb' was set to True but data does not have suitable dimensions."
-                )
+                "'rgb' was set to True but data does not have suitable dimensions."
             )
         if rgb is None:
             rgb = guess_rgb(data_shape)
@@ -456,14 +453,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'bilinear':
             raise ValueError(
-                trans._(
-                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
-                ),
+                "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
             )
         if value == 'bicubic':
             value = 'cubic'
             warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                "'bicubic' is deprecated. Please use 'cubic' instead",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -484,7 +479,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if value == 'bicubic':
             value = 'cubic'
             warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                "'bicubic' is deprecated. Please use 'cubic' instead",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -589,11 +584,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             input_data = self._slice.image.raw  # ugh
         else:
             raise ValueError(
-                trans._(
-                    "mode must be either 'data' or 'slice', got {mode!r}",
-                    deferred=True,
-                    mode=mode,
-                )
+                f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
             cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
@@ -707,6 +698,7 @@ class _ImageSlicingState(ScalarFieldSlicingState):
         WARNING: This is a hack.
         Will be removed as we want to go into multi canvas mode.
         """
+        super()._update_slice_response(response)
         if self.layer._keep_auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data
@@ -715,7 +707,6 @@ class _ImageSlicingState(ScalarFieldSlicingState):
                 rgb=self.layer.rgb,
                 dtype=self.layer.dtype,
             )
-        super()._update_slice_response(response)
         if self.layer._should_calc_clims:
             self.layer.reset_contrast_limits_range()
             self.layer.reset_contrast_limits()

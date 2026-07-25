@@ -18,7 +18,6 @@ from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from typing import Self
@@ -237,11 +236,7 @@ class LayerList(SelectableEventedList[Layer]):
         for v in values:
             if v in bad:
                 raise ValueError(
-                    trans._(
-                        "Layer '{v}' is already present in layer list",
-                        deferred=True,
-                        v=v,
-                    )
+                    f"Layer '{v}' is already present in layer list"
                 )
         return values
 
@@ -290,11 +285,7 @@ class LayerList(SelectableEventedList[Layer]):
                 repr(lay.name) for lay in sorted(locked, key=lambda x: x.name)
             )
             show_info(
-                trans._(
-                    'Layer(s) {names} are locked and cannot be deleted.',
-                    deferred=False,
-                    names=names,
-                )
+                f'Layer(s) {names} are locked and cannot be deleted.',
             )
         if not deletable:
             return
@@ -362,9 +353,7 @@ class LayerList(SelectableEventedList[Layer]):
             # warning
             warnings.filterwarnings(
                 'ignore',
-                message=str(
-                    trans._('All-NaN axis encountered', deferred=True)
-                ),
+                message='All-NaN axis encountered',
             )
             min_v = np.nanmin(
                 list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),
@@ -741,10 +730,7 @@ class LayerList(SelectableEventedList[Layer]):
             else list(self)
         )
 
-        if selected:
-            msg = trans._('No layers selected', deferred=True)
-        else:
-            msg = trans._('No layers to save', deferred=True)
+        msg = 'No layers selected' if selected else 'No layers to save'
 
         if not layers:
             warnings.warn(msg)
