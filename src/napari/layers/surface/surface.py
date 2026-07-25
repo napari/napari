@@ -374,7 +374,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -748,7 +748,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return _SurfaceSlicingState(layer=self, data=data, cache=cache)
 
     def _maybe_reset_contrast_limits(self) -> None:
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
 

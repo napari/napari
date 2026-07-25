@@ -36,6 +36,7 @@ class IntensityVisualizationMixin:
             contrast_limits_range=Event,
             gamma=Event,
             colormap=Event,
+            auto_contrast=Event,
         )
         self._gamma = 1.0
         self._colormap_name = ''
@@ -49,7 +50,7 @@ class IntensityVisualizationMixin:
             None,
         )
         self._auto_contrast_source = 'slice'
-        self._keep_auto_contrast = False
+        self._auto_contrast = False
 
         # circular import
         from napari.components.overlays import ColorBarOverlay
@@ -177,3 +178,14 @@ class IntensityVisualizationMixin:
         self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()
+
+    @property
+    def auto_contrast(self):
+        return self._auto_contrast
+
+    @auto_contrast.setter
+    def auto_contrast(self, value):
+        self._auto_contrast = bool(value)
+        self.events.auto_contrast()
+        if self._auto_contrast:
+            self.reset_contrast_limits()

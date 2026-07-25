@@ -442,7 +442,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -624,12 +624,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,
         ):
-            prev = self._keep_auto_contrast
-            self._keep_auto_contrast = False
+            prev = self.auto_contrast
+            self.auto_contrast = False
             try:
                 self.refresh(highlight=False, extent=False)
             finally:
-                self._keep_auto_contrast = prev
+                self.auto_contrast = prev
 
     def _calculate_value_from_ray(self, values: npt.NDArray) -> None | float:
         # translucent is special: just return the first value, no matter what
@@ -698,7 +698,7 @@ class _ImageSlicingState(ScalarFieldSlicingState):
         WARNING: This is a hack.
         Will be removed as we want to go into multi canvas mode.
         """
-        if self.layer._keep_auto_contrast:
+        if self.layer.auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data
             self.layer.contrast_limits = calc_data_range(
@@ -711,5 +711,5 @@ class _ImageSlicingState(ScalarFieldSlicingState):
             self.layer.reset_contrast_limits_range()
             self.layer.reset_contrast_limits()
             self.layer._should_calc_clims = False
-        elif self.layer._keep_auto_contrast:
+        elif self.layer.auto_contrast:
             self.layer.reset_contrast_limits()

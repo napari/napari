@@ -991,7 +991,7 @@ def test_adjust_contrast_out_of_range():
 def test_adjust_contrast_limits_range_set_data():
     arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
     img_lay = Image(arr)
-    img_lay._keep_auto_contrast = True
+    img_lay.auto_contrast = True
     npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
     img_lay.data = arr * 1e39
     assert not np.array_equal(
