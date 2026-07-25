@@ -846,20 +846,28 @@ class VispyCanvas:
         """
         layer = event.value
         disconnect_events(layer.events, self)
+        layer.events.units.disconnect(self._deferred_world_units_update)
+
+        vispy_layer = self.layer_to_visual[layer]
+        disconnect_events(self.viewer.camera.events, vispy_layer)
+
+        # Close all overlay visuals for the layer being removed
+        overlay_to_visual = self._layer_overlay_to_visual.get(layer, {})
+        for overlay, vispy_overlay in list(overlay_to_visual.items()):
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
+            vispy_overlay.close()
+        self._layer_overlay_to_visual.pop(layer, None)
+
+        vispy_layer.close()
+        del vispy_layer
+        self.layer_to_visual.pop(layer)
+
         disconnect_events(layer.events, self._overlay_callbacks[layer])
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
-        layer.events.units.disconnect(self._deferred_world_units_update)
         del self._overlay_callbacks[layer]
-
-        vispy_layer = self.layer_to_visual.pop(layer)
-        disconnect_events(self.viewer.camera.events, vispy_layer)
-        vispy_layer.close()
-        del vispy_layer
-
-        self._update_layer_overlays(layer)
-        del self._layer_overlay_to_visual[layer]
         self._deferred_world_units_update()
         if self._pause_scene_graph:
             return
@@ -1054,7 +1062,7 @@ class VispyCanvas:
         their class (canvas vs scene overlays).
         """
         overlay_to_visual = self._layer_overlay_to_visual.setdefault(layer, {})
-        # if strid is 1, layer is anabled and if layer not visible
+        # if strid is 1, layer is enabled and if layer not visible
         should_remove = (
             self.viewer.grid.enabled
             and abs(self.viewer.grid.stride) == 1
@@ -1079,15 +1087,22 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
+        callback = self._overlay_callbacks.get(layer)    
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(
-                    self._overlay_callbacks[layer], unique=True
-                )
+                if callback is not None:
+                    overlay.events.visible.connect(callback, unique=True)
+                
                 continue
-            overlay.events.visible.disconnect(self._overlay_callbacks[layer])
+            
+
+            if callback is not None:
+                try:
+                    overlay.events.visible.disconnect(callback)
+                except (KeyError, RuntimeError, TypeError):
+                    pass
 
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
