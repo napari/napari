@@ -57,28 +57,13 @@ pytestmark = pytest.mark.skipif(
     reason='Progressive loading tests hang on macOS CI (no real display)',
 )
 
-from napari.experimental import _progressive_loading  # noqa: E402
 from napari.experimental._progressive_loading import (  # noqa: E402
     _chunk_id,
     add_progressive_loading_image,
     chunk_slices,
 )
 
-
-@pytest.fixture(autouse=True)
-def _no_progress_bars(monkeypatch):
-    """Suppress napari's Qt progress bars for these tests.
-
-    The activity-dock progress bar runs ``processEvents()`` on updates;
-    that nested event processing intermittently wedges Qt timer
-    dispatch in headless macOS pytest runs. Progress-bar cosmetics are
-    not what these invariants test.
-    """
-    monkeypatch.setattr(
-        _progressive_loading.ProgressiveLoader,
-        '_make_progress',
-        lambda self, total, description: None,
-    )
+# progress bars are suppressed for the whole directory in conftest.py
 
 
 @pytest.fixture
