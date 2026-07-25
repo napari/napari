@@ -61,9 +61,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_unit_change(self):
         # NOTE: this is also called by VispyCanvas when layer units are updated
         #       so it doesn't need to be connected to events for that
-        if self.overlay.unit is not None:
-            unit = pint.get_application_registry()(self.overlay.unit)
-        elif self.viewer.layers.units is not None:
+        if self.viewer.layers.units is not None:
             units = np.array(self.viewer.layers.units)[
                 list(self.viewer.dims.displayed)
             ]

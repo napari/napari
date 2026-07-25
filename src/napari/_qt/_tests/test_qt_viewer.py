@@ -720,7 +720,7 @@ def test_qt_viewer_accepts_custom_welcome_tips(
     ):
         viewer._set_welcome_visible(True)
         assert viewer._welcome_widget._tip_label.text() == (
-            'Did you know?\nsecond tip'
+            'Did you know?<br>second tip'
         )
 
 

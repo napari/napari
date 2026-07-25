@@ -3,13 +3,11 @@ import sys
 
 import pytest
 
+from napari import _wayland_fix
 from napari._wayland_fix import _fix_wayland_opengl
 
-# Should only exist on Linux with the proprietary Nvidia driver loaded
-NVIDIA_PATH = '/proc/driver/nvidia/version'
-
-# Env that satisfies every gate: Linux + Wayland + Nvidia + reachable X server.
-WAYLAND_NVIDIA_ENV = {'WAYLAND_DISPLAY': 'wayland-0', 'DISPLAY': ':0'}
+# Env that satisfies the platform gates: Linux + Wayland + reachable X server.
+WAYLAND_ENV = {'WAYLAND_DISPLAY': 'wayland-0', 'DISPLAY': ':0'}
 
 
 def _apply_env(monkeypatch, env):
@@ -23,33 +21,35 @@ def _apply_env(monkeypatch, env):
     monkeypatch.delenv('PYOPENGL_PLATFORM', raising=False)
 
 
-def _patch_nvidia(monkeypatch, present):
-    """Make ``os.path.exists`` report the Nvidia driver file as present (or not)."""
-    real_exists = os.path.exists
+def _patch_gpu(monkeypatch, nvidia, wayland_plugin):
+    """Stub the Nvidia-driver and native-Wayland-plugin probes."""
+    monkeypatch.setattr(_wayland_fix, '_nvidia_driver_loaded', lambda: nvidia)
     monkeypatch.setattr(
-        os.path,
-        'exists',
-        lambda p: present if p == NVIDIA_PATH else real_exists(p),
+        _wayland_fix,
+        '_native_wayland_plugin_available',
+        lambda: wayland_plugin,
     )
 
 
 @pytest.mark.parametrize(
-    ('platform', 'env', 'nvidia'),
+    ('platform', 'env', 'nvidia', 'wayland_plugin'),
     [
         # Not Linux.
-        ('darwin', WAYLAND_NVIDIA_ENV, True),
+        ('darwin', WAYLAND_ENV, True, False),
         # Linux but not Wayland.
-        ('linux', {'XDG_SESSION_TYPE': 'x11', 'DISPLAY': ':0'}, True),
-        # Linux + Wayland but no Nvidia proprietary driver.
-        ('linux', WAYLAND_NVIDIA_ENV, False),
-        # Linux + Wayland + Nvidia but no reachable X server (no XWayland).
-        ('linux', {'WAYLAND_DISPLAY': 'wayland-0'}, True),
+        ('linux', {'XDG_SESSION_TYPE': 'x11', 'DISPLAY': ':0'}, True, False),
+        # Linux + Wayland but no reachable X server (no XWayland).
+        ('linux', {'WAYLAND_DISPLAY': 'wayland-0'}, True, False),
+        # Healthy native Wayland: no Nvidia and the plugin is present.
+        ('linux', WAYLAND_ENV, False, True),
     ],
 )
-def test_fix_wayland_opengl_no_op(monkeypatch, platform, env, nvidia):
-    """Does not set env vars unless Linux+Wayland+Nvidia+X server all hold."""
+def test_fix_wayland_opengl_no_op(
+    monkeypatch, platform, env, nvidia, wayland_plugin
+):
+    """Leaves env untouched unless the workaround can actually help."""
     monkeypatch.setattr(sys, 'platform', platform)
-    _patch_nvidia(monkeypatch, nvidia)
+    _patch_gpu(monkeypatch, nvidia, wayland_plugin)
     _apply_env(monkeypatch, env)
     _fix_wayland_opengl()
     assert 'QT_QPA_PLATFORM' not in os.environ
@@ -57,17 +57,18 @@ def test_fix_wayland_opengl_no_op(monkeypatch, platform, env, nvidia):
 
 
 @pytest.mark.parametrize(
-    'wayland_env',
+    ('nvidia', 'wayland_plugin'),
     [
-        {'WAYLAND_DISPLAY': 'wayland-0', 'DISPLAY': ':0'},
-        {'XDG_SESSION_TYPE': 'wayland', 'DISPLAY': ':0'},
+        (True, True),  # Nvidia: native Wayland is broken even with the plugin
+        (True, False),  # Nvidia, no plugin
+        (False, False),  # integrated GPU, no plugin -> Qt falls back to XCB
     ],
 )
-def test_fix_wayland_opengl_sets_vars(monkeypatch, wayland_env):
-    """Sets xcb+glx on Linux+Wayland+Nvidia with a reachable X server."""
+def test_fix_wayland_opengl_sets_vars(monkeypatch, nvidia, wayland_plugin):
+    """Sets xcb+glx on Nvidia or when no native Wayland plugin is present."""
     monkeypatch.setattr(sys, 'platform', 'linux')
-    _patch_nvidia(monkeypatch, True)
-    _apply_env(monkeypatch, wayland_env)
+    _patch_gpu(monkeypatch, nvidia, wayland_plugin)
+    _apply_env(monkeypatch, WAYLAND_ENV)
     _fix_wayland_opengl()
     assert os.environ['QT_QPA_PLATFORM'] == 'xcb'
     assert os.environ['PYOPENGL_PLATFORM'] == 'glx'
@@ -76,8 +77,8 @@ def test_fix_wayland_opengl_sets_vars(monkeypatch, wayland_env):
 def test_fix_wayland_opengl_does_not_override(monkeypatch):
     """Does not override env vars already set by the user."""
     monkeypatch.setattr(sys, 'platform', 'linux')
-    _patch_nvidia(monkeypatch, True)
-    _apply_env(monkeypatch, WAYLAND_NVIDIA_ENV)
+    _patch_gpu(monkeypatch, nvidia=False, wayland_plugin=False)
+    _apply_env(monkeypatch, WAYLAND_ENV)
     monkeypatch.setenv('QT_QPA_PLATFORM', 'wayland')
     monkeypatch.setenv('PYOPENGL_PLATFORM', 'egl')
     _fix_wayland_opengl()

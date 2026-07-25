@@ -202,6 +202,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_matrix_change(self):
         dims_displayed = self.layer._slice_input.displayed
+        # If the layer's dimensionality changed (e.g., data swapped from 2D
+        # to 3D), _world_to_layer_units_scale reflects the old ndim
+        # and cannot be indexed with the new dims_displayed values.  Refresh
+        # both cached unit tracking fields to match the current layer.
+        if len(self._world_to_layer_units_scale) != self.layer.ndim:
+            self._world_units = self.layer.units
+            self._world_to_layer_units_scale = (1,) * self.layer.ndim
+
         # mypy: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
@@ -244,6 +252,20 @@ class VispyBaseLayer(ABC, Generic[_L]):
         affine_matrix[-1, : len(translate)] = translate
 
         child_offset = np.zeros(len(dims_displayed))
+
+        if (
+            self._array_like
+            and self.layer._slice_input.ndisplay == 3
+            and self.layer.multiscale
+        ):
+            # In 3D, sub-volume tiles have nonzero corner_pixels[0].
+            # The volume node transform positions the tile correctly,
+            # but child nodes (bounding box overlay) should not inherit
+            # this offset — undo it so overlays stay at the full data
+            # extent.
+            cp0 = self.layer.corner_pixels[0][dims_displayed][::-1]
+            if np.any(cp0 != 0):
+                child_offset = -cp0.astype(float)
 
         if self._array_like and self.layer._slice_input.ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner

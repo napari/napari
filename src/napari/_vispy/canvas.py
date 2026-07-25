@@ -57,8 +57,6 @@ if TYPE_CHECKING:
 
 import warnings
 
-from napari.utils.translations import trans
-
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
@@ -1310,7 +1308,7 @@ class VispyCanvas:
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
         # ensure on_draw is run to bring everything up to date
-        # needed for some Ubuntu py3.10 pyqt5 tests, but likely inconsistent behavior for other OS.
+        # needed for some Ubuntu py3.11 pyqt5 tests, but likely inconsistent behavior for other OS.
         # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
         self.on_draw(None)
         return self.native.grabFramebuffer()
@@ -1419,15 +1417,10 @@ class VispyCanvas:
 
         if raw_spacing > safe_spacing:
             warnings.warn(
-                trans._(
-                    'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                    'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
-                    'becoming too small. Consider using a smaller spacing value or '
-                    'increasing the canvas size.',
-                    deferred=True,
-                    raw_spacing=raw_spacing,
-                    safe_spacing=safe_spacing,
-                ),
+                f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
+                'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                'becoming too small. Consider using a smaller spacing value or '
+                'increasing the canvas size.',
                 UserWarning,
                 stacklevel=2,
             )

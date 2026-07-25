@@ -1,8 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QHBoxLayout
 from superqt import QLabeledDoubleRangeSlider
 
 from napari._qt.dialogs.qt_modal import QtPopup
+
+if TYPE_CHECKING:
+    from qtpy.QtGui import QKeyEvent
+    from qtpy.QtWidgets import QWidget
 
 
 class QRangeSliderPopup(QtPopup):
@@ -20,7 +28,7 @@ class QRangeSliderPopup(QtPopup):
         Slider widget.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # create slider
@@ -39,7 +47,7 @@ class QRangeSliderPopup(QtPopup):
         QApplication.processEvents()
         self.slider._reposition_labels()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:
         """On key press lose focus of the lineEdits.
 
         Parameters
@@ -49,7 +57,10 @@ class QRangeSliderPopup(QtPopup):
         """
         # we override the parent keyPressEvent so that hitting enter does not
         # hide the window... but we do want to lose focus on the lineEdits
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+        if event is not None and event.key() in (
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
             self.slider.setFocus()
             return
-        super().keyPressEvent(event)
+        super().keyPressEvent(event)  # type: ignore[no-untyped-call]
