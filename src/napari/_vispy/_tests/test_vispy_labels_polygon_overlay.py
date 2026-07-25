@@ -12,6 +12,12 @@ from napari.utils.interactions import (
 )
 
 
+@pytest.fixture
+def patch_gloo_set_state(monkeypatch):
+    monkeypatch.setattr('vispy.visuals.polygon.set_state', lambda *args: None)
+
+
+@pytest.mark.usefixtures('patch_gloo_set_state')
 @pytest.mark.usefixtures('qapp')
 def test_vispy_labels_polygon_overlay():
     viewer = ViewerModel()
