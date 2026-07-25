@@ -7,8 +7,6 @@ from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
