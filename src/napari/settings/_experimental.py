@@ -21,50 +21,46 @@ class ExperimentalSettings(EventedSettings):
     def __init__(self, **data: dict[str, Any]):
         super().__init__(**data)
 
-        self.events.triangulation_backend.connect(
-            _update_triangulation_backend
-        )
+        self.events.triangulation_backend.connect(_update_triangulation_backend)
         self.events.triangulation_backend(value=self.triangulation_backend)
         self.events.colormap_backend.connect(_update_colormap_backend)
         self.events.colormap_backend(value=self.colormap_backend)
 
     async_: bool = Field(
         False,
-        title=trans._('Render Images Asynchronously'),
+        title=trans._("Render Images Asynchronously"),
         description=trans._(
-            'Asynchronous loading of image data. \nThis setting partially loads data while viewing.'
+            "Asynchronous loading of layers (Image & Points). \nThis setting partially loads data while viewing."
         ),
-        validation_alias=AliasChoices('async_', 'async', 'napari_async'),
-        json_schema_extra={'requires_restart': False},
+        validation_alias=AliasChoices("async_", "async", "napari_async"),
+        json_schema_extra={"requires_restart": False},
     )
     autoswap_buffers: bool = Field(
         False,
-        title=trans._('Enable autoswapping rendering buffers.'),
+        title=trans._("Enable autoswapping rendering buffers."),
         description=trans._(
-            'Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.'
+            "Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance."
         ),
-        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
-        json_schema_extra={'requires_restart': True},
+        validation_alias=AliasChoices("autoswap_buffers", "napari_autoswap"),
+        json_schema_extra={"requires_restart": True},
     )
 
     rdp_epsilon: float = Field(
         0.5,
-        title=trans._('Shapes polygon lasso and path RDP epsilon'),
+        title=trans._("Shapes polygon lasso and path RDP epsilon"),
         description=trans._(
-            'Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of '
-            'a given polygon or path.'
+            "Setting this higher removes more points from polygons or paths. \nSetting this to 0 keeps all vertices of "
+            "a given polygon or path."
         ),
         ge=0,
     )
 
     lasso_vertex_distance: int = Field(
         10,
-        title=trans._(
-            'Minimum distance threshold of shapes lasso and path tool'
-        ),
+        title=trans._("Minimum distance threshold of shapes lasso and path tool"),
         description=trans._(
-            'Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-            'or path.'
+            "Value determines how many screen pixels one has to move before another vertex can be added to the polygon"
+            "or path."
         ),
         gt=0,
         lt=50,
@@ -73,18 +69,18 @@ class ExperimentalSettings(EventedSettings):
     completion_radius: int = Field(
         default=-1,
         title=trans._(
-            'Double-click Labels polygon completion radius (-1 to always complete)'
+            "Double-click Labels polygon completion radius (-1 to always complete)"
         ),
         description=trans._(
-            'Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.'
+            "Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete."
         ),
     )
 
     triangulation_backend: TriangulationBackend = Field(
         TriangulationBackend.fastest_available,
-        title=trans._('Triangulation backend to use for Shapes layer'),
+        title=trans._("Triangulation backend to use for Shapes layer"),
         description=trans._(
-            'Triangulation backend to use for Shapes layer.\n'
+            "Triangulation backend to use for Shapes layer.\n"
             "The 'bermuda' requires the optional 'bermuda' package.\n"
             "The 'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
             "The 'triangle' requires the optional 'triangle' package.\n"
@@ -93,36 +89,34 @@ class ExperimentalSettings(EventedSettings):
             "The 'fastest available' backend will select the fastest available backend.\n"
         ),
         validation_alias=AliasChoices(
-            'triangulation_backend', 'napari_triangulation_backend'
+            "triangulation_backend", "napari_triangulation_backend"
         ),
     )
     colormap_backend: ColormapBackend = Field(
         ColormapBackend.fastest_available,
-        title=trans._('Colormap backend to use for Labels layer'),
+        title=trans._("Colormap backend to use for Labels layer"),
         description=trans._(
-            'Color mapping backend to use for Labels layer.\n'
+            "Color mapping backend to use for Labels layer.\n"
             "'partsegcore' requires the optional 'partsegcore-compiled-backend' package.\n"
             "'numba' requires the optional 'numba' package.\n"
             "'pure python' uses only NumPy and Python.\n"
             "The 'fastest available' backend will select the fastest installed backend.\n"
         ),
-        validation_alias=AliasChoices(
-            'colormap_backend', 'napari_colormap_backend'
-        ),
+        validation_alias=AliasChoices("colormap_backend", "napari_colormap_backend"),
     )
 
     compiled_triangulation: bool = Field(
         default=False,
         title=trans._('Unused option. Use "triangulation backend" instead.'),
         description=trans._(
-            'This option was removed in napari 0.6.0. Use \n'
+            "This option was removed in napari 0.6.0. Use \n"
             '"triangulation backend" instead.'
         ),
     )
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version', 'compiled_triangulation')
+        preferences_exclude = ("schema_version", "compiled_triangulation")
 
 
 def _update_triangulation_backend(event: Event) -> None:
