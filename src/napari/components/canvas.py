@@ -113,6 +113,9 @@ class Canvas(EventedModel):
             viewbox_size = available_space / grid_shape
         return tuple(viewbox_size)
 
+    # NOTE: all the ignore[return-value] below are becase the overlays dict
+    #       actually contains a bunch of different types. We annotate with
+    #       more specific types so the users know what they get!
     @property
     def scale_bar(self) -> ScaleBarOverlay:
         return self.overlays.scale_bar  # type: ignore[return-value]

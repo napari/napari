@@ -315,6 +315,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         )
 
     # simple properties exposing overlays for backward compatibility
+    # NOTE: all the ignore[return-value] below are becase the overlays dict
+    #       actually contains a bunch of different types. We annotate with
+    #       more specific types so the users know what they get!
     @property
     def axes(self) -> AxesOverlay:
         return self._overlays['axes']  # type: ignore[return-value]
