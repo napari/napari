@@ -390,9 +390,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self._layer.events.contrast_limits_range.connect(
             self._on_contrast_limits_range_change
         )
-        self._layer.events.auto_contrast.connect(
-            self._on_auto_contrast_change
-        )
+        self._layer.events.auto_contrast.connect(self._on_auto_contrast_change)
 
         # Setup widgets
         self.auto_scale_buttons = AutoScaleButtons(layer, parent)
