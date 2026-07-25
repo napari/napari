@@ -514,7 +514,7 @@ class VispyCanvas:
         # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
             self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ),
             self.grid_views,
             strict=False,
@@ -901,7 +901,7 @@ class VispyCanvas:
         """When the list is reordered, propagate changes to draw order."""
         if self.viewer.grid.enabled:
             for _, layer_indices in self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ):
                 if not layer_indices:
                     continue
@@ -1027,7 +1027,7 @@ class VispyCanvas:
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
                     self.viewer.grid.iter_viewboxes(
-                        len(self.viewer.layers), self.viewer.layers
+                        self.viewer.layers
                     ),
                     list(vispy_overlays),
                 ):
@@ -1112,7 +1112,6 @@ class VispyCanvas:
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
                         self.viewer.layers.index(layer),
-                        len(self.viewer.layers),
                         layers=self.viewer.layers,
                     )
                     if row == -1:
@@ -1187,7 +1186,7 @@ class VispyCanvas:
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
             self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ),
         ):
             if not layer_indices:
@@ -1357,7 +1356,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
         if self.grid.grid_size == self.viewer.grid.actual_shape(
-            len(self.viewer.layers), self.viewer.layers
+             self.viewer.layers
         ):
             return
 
@@ -1372,7 +1371,6 @@ class VispyCanvas:
         self.grid = self.central_widget.add_grid(border_width=0)
 
         for (row, col), _ in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers),
             self.viewer.layers,
         ):
             view = self.grid[row, col]
@@ -1409,7 +1407,6 @@ class VispyCanvas:
 
     def _setup_layer_views_in_grid(self):
         for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers),
             self.viewer.layers,
         ):
             view = self.grid[row, col]
@@ -1447,10 +1444,10 @@ class VispyCanvas:
         """
         # TODO: this should be all handled on the grid model ideally, using validators
         raw_spacing = self.viewer.grid._compute_canvas_spacing_raw(
-            self._scene_canvas.size, len(self.viewer.layers)
+            self._scene_canvas.size
         )
         safe_spacing = self.viewer.grid._compute_canvas_spacing(
-            self._scene_canvas.size, len(self.viewer.layers)
+            self._scene_canvas.size
         )
 
         if raw_spacing > safe_spacing:
