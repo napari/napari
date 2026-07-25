@@ -121,7 +121,6 @@ jobs:
       qt_backend: ${{ matrix.backend }}
       coverage: ${{ matrix.coverage }}
       artifacts_suffix: "initial"
-      pytest_posargs: ${{ matrix.pytest_posargs }}
 
   test:
     name: ${{ matrix.platform }}

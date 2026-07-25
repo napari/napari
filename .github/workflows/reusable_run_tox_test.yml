@@ -166,7 +166,7 @@ jobs:
           echo "${MAIN}"
           tox --version
           read -ra POSARGS <<< "${PYTEST_POSARGS}"
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp ${POSARGS[@]}
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp "${POSARGS[@]}"
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
