@@ -832,6 +832,10 @@ class ProgressiveLoader:
             (viewer.dims.events.current_step, self._on_dims_step_change),
             (viewer.camera.events, self._debounced_check),
             (viewer.dims.events.current_step, self._debounced_check),
+            # fast path first: cap the crop to the driver's 3D texture
+            # limit before anything re-slices for the new display mode,
+            # so no oversized volume upload is ever attempted
+            (viewer.dims.events.ndisplay, self._on_ndisplay_change),
             (viewer.dims.events.ndisplay, self._debounced_check),
             (layer.events.locked_data_level, self._debounced_check),
             # the locked_data_level event only fires for user/API writes
@@ -1600,13 +1604,24 @@ class ProgressiveLoader:
         if corners_fn is None or tile_bytes is None:
             return
         displayed = list(layer._slice_input.displayed)
-        if len(displayed) != 3:
+        if len(displayed) not in (2, 3):
             return
         span = (
             layer.corner_pixels[1, displayed]
             - layer.corner_pixels[0, displayed]
             + 1
         )
+        # Per-axis limit first, whatever the total byte count. A layer
+        # with fewer than three dimensions is displayed in 3D as a
+        # single-plane volume, so a wide 2D level ends up as a
+        # (1, H, W) texture: napari refuses to downsample multiscale
+        # data and raises out of the set_data callback, leaving the
+        # volume node on its placeholder texture. Every later draw then
+        # uploads that empty texture and floods the log with GL errors.
+        if self._clamp_corners_to_axis_limit(level, displayed, span):
+            return
+        if len(displayed) != 3:
+            return
         # napari uploads non-uint8 data as float32
         tex_itemsize = 1 if self._data.dtype == np.uint8 else 4
         crop_bytes = int(np.prod(span, dtype=np.int64)) * tex_itemsize
@@ -1632,6 +1647,76 @@ class ProgressiveLoader:
                     tile_bytes / 1e6,
                 )
                 layer.corner_pixels = corners
+
+    def _on_ndisplay_change(self, event=None) -> None:
+        """Keep the crop loadable across a 2D/3D switch.
+
+        Runs on the event itself rather than the debounced check: the
+        re-slice for the new display mode happens immediately, and an
+        oversized volume upload raises out of napari's ``set_data``
+        callback (multiscale data is never downsampled), which leaves
+        the volume node on an empty placeholder texture.
+        """
+        if self._closed or self._viewer.dims.ndisplay != 3:
+            return
+        layer = self._layer
+        displayed = list(layer._slice_input.displayed)
+        if len(displayed) not in (2, 3):
+            return
+        with contextlib.suppress(Exception):
+            span = (
+                layer.corner_pixels[1, displayed]
+                - layer.corner_pixels[0, displayed]
+                + 1
+            )
+            self._clamp_corners_to_axis_limit(
+                int(layer.data_level), displayed, span
+            )
+
+    def _clamp_corners_to_axis_limit(
+        self, level: int, displayed: list[int], span: np.ndarray
+    ) -> bool:
+        """Shrink corner pixels exceeding the driver's 3D texture limit.
+
+        Returns True when the corners were rewritten (or could not be
+        checked), meaning the caller should not apply its own byte-budget
+        retiling on top.
+
+        The tile-byte budget alone does not catch this: a 2976 x 7200
+        uint8 level is only 21 MB, comfortably inside the budget, yet
+        no driver will load it as a 3D texture.
+        """
+        try:
+            from napari._vispy.utils.gl import get_max_texture_sizes
+
+            _, gl_max_3d = get_max_texture_sizes()
+        except Exception:  # noqa: BLE001
+            return False
+        if gl_max_3d is None or not np.any(span > gl_max_3d):
+            return False
+        layer = self._layer
+        level_shape = np.take(np.asarray(layer.level_shapes[level]), displayed)
+        extent = np.minimum(np.minimum(span, gl_max_3d), level_shape)
+        lo = layer.corner_pixels[0, displayed]
+        center = lo + span / 2.0
+        new_lo = np.clip(
+            (center - extent / 2).astype(int),
+            0,
+            np.maximum(level_shape - extent, 0),
+        )
+        corners = layer.corner_pixels.copy()
+        corners[0, displayed] = new_lo
+        corners[1, displayed] = new_lo + extent - 1
+        if not np.array_equal(corners, layer.corner_pixels):
+            LOGGER.warning(
+                'progressive loading: %s crop exceeds the 3D texture '
+                'limit of %d; rendering a %s region instead',
+                tuple(int(s) for s in span),
+                int(gl_max_3d),
+                tuple(int(e) for e in extent),
+            )
+            layer.corner_pixels = corners
+        return True
 
     def _backdrop_level(self, level: int, min_coord, max_coord) -> int | None:
         """Pick the best level to initialize newly exposed regions from.

@@ -2137,3 +2137,62 @@ def test_progressive_loading_rgb(
     # Allow deferred singleShot(0) callbacks to fire (they guard on
     # _closed and no-op) so the conftest dangling-timer check passes.
     qtbot.wait(100)
+
+
+def test_2d_level_clamped_to_3d_texture_limit(
+    qtbot,
+    make_napari_viewer,
+    monkeypatch,
+):
+    """A wide 2D level must not be cropped beyond the 3D texture limit.
+
+    A layer with fewer than three dimensions renders in 3D as a
+    single-plane volume, so a level wider than GL_MAX_TEXTURE_SIZE_3D
+    would be uploaded as a (1, H, W) texture. napari refuses to
+    downsample multiscale data and raises out of its set_data callback,
+    which leaves the volume node on an empty placeholder texture and
+    every later draw floods the log with GL errors.
+    """
+    viewer = make_napari_viewer()
+    base = np.zeros((2976, 7200), dtype=np.uint8)
+    levels = [
+        da.from_array(base, chunks=(1024, 1024)),
+        da.from_array(base[::2, ::2], chunks=(1024, 1024)),
+    ]
+    layer = add_progressive_loading_image(levels, viewer=viewer)
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+
+    monkeypatch.setattr(
+        'napari._vispy.utils.gl.get_max_texture_sizes',
+        lambda: (16384, 2048),
+    )
+    level = int(layer.data_level)
+    level_shape = np.take(
+        np.asarray(layer.level_shapes[level]),
+        list(layer._slice_input.displayed),
+    )
+    displayed = list(layer._slice_input.displayed)
+    full = np.zeros((2, layer.ndim), dtype=int)
+    full[1, displayed] = level_shape - 1
+    layer.corner_pixels = full
+
+    clamped = loader._clamp_corners_to_axis_limit(
+        level, displayed, level_shape
+    )
+
+    assert clamped
+    span = (
+        layer.corner_pixels[1, displayed]
+        - layer.corner_pixels[0, displayed]
+        + 1
+    )
+    assert span.max() <= 2048, span
+    # axes already within the limit keep their full extent
+    assert span[0] == min(level_shape[0], 2048)
+    # and the crop stays inside the level
+    assert np.all(layer.corner_pixels[0, displayed] >= 0)
+    assert np.all(layer.corner_pixels[1, displayed] < level_shape)
+
+    loader.close()
+    qtbot.wait(100)
