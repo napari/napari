@@ -499,4 +499,34 @@ def test_axis_labels_after_data(make_napari_viewer, qtbot):
     data_labels = ('i', 'j')
     assert data_labels != original_labels
     _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
-    assert viewer.dims.axis_labels == original_labels
+    assert viewer.dims.axis_labels == ('z', 'i', 'j')
+
+
+def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
+    """
+    Check viewer.dims.axis_labels reflect layers.axis_labels."""
+    viewer = make_napari_viewer()
+
+    # Default indices on empty viewer
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-2', '-1')
+
+    # Annotated layer propagates to dims
+    viewer.add_image(np.random.random((3, 4, 5)), axis_labels=('z', 'y', 'x'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Lower-dim, annotated layer doesn't override the longer labels
+    # This is different from test_axis_labels_after_data because in that
+    # case we are overwriting result of
+    # `viewer.dims.axis_labels = ('z', 'y', 'x')`, whereas in this case
+    # `viewer.dims.axis_labels` is only ever set dynamically from the layer
+    # list.
+    viewer.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Higher-dim, unannotated layer doesn't override the annotated labels
+    viewer.add_image(np.random.random((2, 3, 4, 5)))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')

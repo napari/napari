@@ -1019,6 +1019,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
 
+    def _has_default_axis_labels(self) -> bool:
+        """Return True if axis labels are the default indices."""
+        default_labels = tuple(str(i) for i in range(-self.ndim, 0))
+        return self.axis_labels == default_labels
+
     @property
     def units(self) -> tuple[pint.Unit, ...]:
         """List of units for the layer."""
