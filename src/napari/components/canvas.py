@@ -19,15 +19,6 @@ from napari.utils.color import ColorValue
 from napari.utils.events import Event, EventedDictNamespace, EventedModel
 from napari.utils.theme import get_theme
 
-DEFAULT_CANVAS_OVERLAYS = {
-    'scale_bar': ScaleBarOverlay,
-    'text': TextOverlay,
-    '_brush_circle': BrushCircleOverlay,
-    '_zoom_box': ZoomOverlay,
-    'current_slice': CurrentSliceOverlay,
-    'floating_axes': FloatingAxesOverlay,
-}
-
 
 class Orientation(StrEnum):
     HORIZONTAL = 'horizontal'
@@ -79,8 +70,17 @@ class Canvas(EventedModel):
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
-    overlays: EventedDictNamespace[str, CanvasOverlay] = Field(
-        default_factory=EventedDictNamespace
+    overlays: EventedDictNamespace[CanvasOverlay] = Field(
+        default_factory=lambda: EventedDictNamespace(
+            {
+                'scale_bar': ScaleBarOverlay(),
+                'text': TextOverlay(),
+                '_brush_circle': BrushCircleOverlay(),
+                '_zoom_box': ZoomOverlay(),
+                'current_slice': CurrentSliceOverlay(),
+                'floating_axes': FloatingAxesOverlay(),
+            }
+        )
     )
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, frozen=True
@@ -108,10 +108,6 @@ class Canvas(EventedModel):
         )
 
         settings.appearance.events.theme.connect(self.events.background_color)
-
-        self.overlays.update(
-            {k: v() for k, v in DEFAULT_CANVAS_OVERLAYS.items()}
-        )
 
     def viewbox_size(self, n_layers: int) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).

@@ -884,8 +884,8 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
 
     layer_visual = qt_viewer.layer_to_visual[layer]
     axes_visual = qt_viewer.canvas._viewer_overlay_to_visual[
-        viewer_model._overlays['axes']
-    ]
+        viewer_model._overlays.axes
+    ][0]
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
     assert tuple(layer_visual_size) == (8, 4, 2)
@@ -1138,7 +1138,7 @@ def test_more_than_uint16_colors(
 def test_scale_bar_colored(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.canvas.scale_bar
+    scale_bar = viewer_model.canvas.overlays.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))
@@ -1190,7 +1190,7 @@ def test_scale_bar_colored(
 def test_scale_bar_ticks(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.canvas.scale_bar
+    scale_bar = viewer_model.canvas.overlays.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))

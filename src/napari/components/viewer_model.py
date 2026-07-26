@@ -89,7 +89,7 @@ from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
-    EventedDict,
+    EventedDictNamespace,
     EventedModel,
     disconnect_events,
 )
@@ -127,11 +127,6 @@ logger = logging.getLogger(__name__)
 
 def _current_theme() -> str:
     return get_settings().appearance.theme
-
-
-DEFAULT_SCENE_OVERLAYS = {
-    'axes': AxesOverlay,
-}
 
 
 def _validate_paths_exist(paths: list[PathLike]) -> None:
@@ -187,8 +182,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
-    _overlays: napari.utils.events.containers._evented_dict.EventedDict[str, SceneOverlay]
-        An EventedDict with as keys the string names of different napari overlays and as values
+    _overlays: napari.utils.events.containers._evented_dict.EventedDictNamespace[SceneOverlay]
+        An EventedDictNamespace with as keys the string names of different napari overlays and as values
         the napari.SceneOverlay objects.
     """
 
@@ -207,8 +202,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
-    _overlays: EventedDict[str, SceneOverlay] = PrivateAttr(
-        default_factory=EventedDict
+    _overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
+        default_factory=lambda: EventedDictNamespace({'axes': AxesOverlay()})
     )
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
@@ -310,17 +305,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.canvas._viewer = self
         self.events.theme.connect(self.canvas.events.background_color)
 
-        self._overlays.update(
-            {k: v() for k, v in DEFAULT_SCENE_OVERLAYS.items()}
-        )
-
     # simple properties exposing overlays for backward compatibility
     # NOTE: all the ignore[return-value] below are because the overlays dict
     #       actually contains a bunch of different types. We annotate with
     #       more specific types so the users know what they get!
     @property
     def axes(self) -> AxesOverlay:
-        return self._overlays['axes']  # type: ignore[return-value]
+        return self._overlays.axes
 
     @property
     def floating_axes(self) -> FloatingAxesOverlay:
