@@ -145,7 +145,8 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.cmap = cmap
 
     def _on_contrast_limits_change(self):
-        self.node.clim = self.layer.contrast_limits
+        if self.layer.contrast_limits is not None:
+            self.node.clim = self.layer.contrast_limits
 
     def _on_gamma_change(self):
         self._on_colormap_change()
