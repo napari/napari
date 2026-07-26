@@ -20,7 +20,7 @@ from napari.utils.translations import trans
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qtpy.QtGui import QMouseEvent, QPaintEvent
+    from qtpy.QtGui import QPaintEvent
 
     from napari._qt.qt_main_window import _QtMainWindow
 
@@ -167,16 +167,13 @@ class _TourTooltip(QFrame):
 class _TourOverlay(QWidget):
     def __init__(self, parent: QWidget, *, accent_color: str) -> None:
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._spotlight: QRect | None = None
         self._accent_color = accent_color
 
     def set_spotlight(self, rect: QRect | None) -> None:
         self._spotlight = rect
         self.update()
-
-    def mousePressEvent(self, event: QMouseEvent | None) -> None:
-        if event is not None:
-            event.accept()
 
     def paintEvent(self, _event: QPaintEvent | None) -> None:
         painter = QPainter(self)
