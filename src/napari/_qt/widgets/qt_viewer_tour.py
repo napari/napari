@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
-from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPainterPath, QPen
+from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -187,11 +187,22 @@ class _TourOverlay(QWidget):
             return
 
         rect = self._spotlight.adjusted(-6, -6, 6, 6)
-        path = QPainterPath()
-        path.setFillRule(Qt.FillRule.OddEvenFill)
-        path.addRect(self.rect())
-        path.addRect(rect)
-        painter.fillPath(path, overlay)
+        painter.fillRect(0, 0, self.width(), rect.top(), overlay)
+        painter.fillRect(
+            0,
+            rect.bottom() + 1,
+            self.width(),
+            self.height() - rect.bottom() - 1,
+            overlay,
+        )
+        painter.fillRect(0, rect.top(), rect.left(), rect.height(), overlay)
+        painter.fillRect(
+            rect.right() + 1,
+            rect.top(),
+            self.width() - rect.right() - 1,
+            rect.height(),
+            overlay,
+        )
         pen = QPen(QColor(self._accent_color), 2)
         painter.setPen(pen)
         painter.drawRect(rect)
