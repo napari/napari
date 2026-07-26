@@ -842,10 +842,10 @@ class VispyCanvas:
         """
         layer = event.value
         disconnect_events(layer.events, self)
-        disconnect_events(layer.events,
-                          self._overlay_callbacks[layer])
-        disconnect_events(layer._overlays.events,
-                          self._overlay_callbacks[layer])
+        disconnect_events(layer.events, self._overlay_callbacks[layer])
+        disconnect_events(
+            layer._overlays.events, self._overlay_callbacks[layer]
+        )
 
         layer.events.units.disconnect(self._deferred_world_units_update)
         del self._overlay_callbacks[layer]
