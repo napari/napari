@@ -62,8 +62,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
     auto_contrast : bool
-        Wether to automatically set contrast limits to the min and max of the 
-        currently viewed slice. If True, contrast limits will be updated 
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
@@ -163,8 +163,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
     auto_contrast : bool
-        Wether to automatically set contrast limits to the min and max of the 
-        currently viewed slice. If True, contrast limits will be updated 
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
     axis_labels : tuple of str
         Dimension names of the layer data.

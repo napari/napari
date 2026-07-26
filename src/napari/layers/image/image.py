@@ -66,8 +66,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
     auto_contrast : bool
-        Wether to automatically set contrast limits to the min and max of the 
-        currently viewed slice. If True, contrast limits will be updated 
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
     axis_labels : tuple of str
         Dimension names of the layer data.
@@ -210,8 +210,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
     auto_contrast : bool
-        Wether to automatically set contrast limits to the min and max of the 
-        currently viewed slice. If True, contrast limits will be updated 
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
     gamma : float
         Gamma correction for determining colormap linearity.
