@@ -2808,3 +2808,49 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_is_creating_tracks_draw_window_and_is_edge_triggered():
+    """is_creating mirrors the draw window; events fire only on a transition."""
+    layer = Shapes()
+    started, finished = Mock(), Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    assert layer.is_creating is False
+    layer._is_creating = False  # same value: no event
+    started.assert_not_called()
+
+    layer._is_creating = True
+    assert layer.is_creating is True
+    started.assert_called_once()
+    layer._is_creating = True  # repeat: still once
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    layer._is_creating = False
+    assert layer.is_creating is False
+    finished.assert_called_once()
+    layer._is_creating = False  # repeat: still once
+    finished.assert_called_once()
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_path'])
+def test_drawing_events_multivertex_lifecycle(mode):
+    """A multi-vertex draw starts on the first vertex and finishes once."""
+    from napari.layers.shapes import _shapes_mouse_bindings as mb
+
+    layer = Shapes()
+    layer.mode = mode
+    started, finished = Mock(), Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    mb.initiate_polygon_draw(layer, np.array([10.0, 10.0]))
+    assert layer.is_creating is True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    layer._finish_drawing()
+    assert layer.is_creating is False
+    finished.assert_called_once()
