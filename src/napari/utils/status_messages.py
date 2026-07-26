@@ -6,9 +6,11 @@ import numpy.typing as npt
 DEFAULT_PRECISION = 3
 
 
-def format_float(value, precision=DEFAULT_PRECISION):
+def format_float(value, precision=None, format_mode='g'):
     """Nice float formatting into strings."""
-    return f'{value:0.{precision}f}'
+    if precision is None:
+        precision = DEFAULT_PRECISION
+    return f'{value:0.{precision}{format_mode}}'
 
 
 def format_feature_value(value):
@@ -18,7 +20,7 @@ def format_feature_value(value):
     return str(value)
 
 
-def status_format(value, precision=DEFAULT_PRECISION):
+def status_format(value, precision=None, format_mode='g'):
     """Return a "nice" string representation of a value.
 
     Parameters
@@ -38,6 +40,8 @@ def status_format(value, precision=DEFAULT_PRECISION):
     >>> status_format(values)
     '[1, 10, 100, 1e+03, 1e+06, 6.28, 124, 1.12e+03, 6.28, 2.72]'
     """
+    if precision is None:
+        precision = DEFAULT_PRECISION
     if isinstance(value, str):
         return value
     if isinstance(value, Iterable):
@@ -45,14 +49,22 @@ def status_format(value, precision=DEFAULT_PRECISION):
         return (
             '['
             + str.join(
-                ', ', [status_format(v, precision=precision) for v in value]
+                ', ',
+                [
+                    status_format(
+                        v, precision=precision, format_mode=format_mode
+                    )
+                    for v in value
+                ],
             )
             + ']'
         )
     if value is None:
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
-        return format_float(value, precision=precision)
+        return format_float(
+            value, precision=precision, format_mode=format_mode
+        )
 
     return str(value)
 
@@ -61,7 +73,7 @@ def generate_layer_status_strings(
     position: npt.ArrayLike | None, value: tuple | None, precision: float
 ) -> tuple[str, str]:
     if position is not None:
-        pos_str = status_format(position, precision=precision)
+        pos_str = status_format(position, precision=precision, format_mode='f')
     else:
         pos_str = ''
 
