@@ -1085,22 +1085,20 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
-        callback = self._overlay_callbacks.get(layer)    
+        callback = self._overlay_callbacks.get(layer)
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
                 if callback is not None:
                     overlay.events.visible.connect(callback, unique=True)
-                
+
                 continue
-            
+
 
             if callback is not None:
-                try:
+                with contextlib.suppress(KeyError, RuntimeError, TypeError):
                     overlay.events.visible.disconnect(callback)
-                except (KeyError, RuntimeError, TypeError):
-                    pass
 
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
