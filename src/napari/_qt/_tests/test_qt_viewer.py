@@ -434,7 +434,7 @@ def test_screenshot_dialog(
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
-    expected_data = qt_viewer.screenshot(flash=False, size = [400, 400])
+    expected_data = qt_viewer.screenshot(flash=False, size=[400, 400])
     assert np.allclose(output_data, expected_data)
 
 
