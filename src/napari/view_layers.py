@@ -227,8 +227,8 @@ def imshow(
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
     auto_contrast : bool
-        Wether to automatically set contrast limits to the min and max of the 
-        currently viewed slice. If True, contrast limits will be updated 
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
     blending : str or list of str
         One of a list of preset blending modes that determines how RGB and
