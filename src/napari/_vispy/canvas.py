@@ -1088,6 +1088,7 @@ class VispyCanvas:
             if not overlay.visible:
                 if callback is not None:
                     overlay.events.visible.connect(callback, unique=True)
+
                 continue
 
             if callback is not None:
