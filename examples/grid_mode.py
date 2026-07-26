@@ -28,10 +28,10 @@ viewer.canvas.grid.stride = 2
 # results in a padding of that exact number of pixels instead.
 viewer.canvas.grid.spacing = 0.1
 
-viewer.canvas.scale_bar.visible = True
-viewer.canvas.scale_bar.box = True
+viewer.canvas.overlays.scale_bar.visible = True
+viewer.canvas.overlays.scale_bar.box = True
 # show scalebar in each grid instead of just once
-viewer.canvas.scale_bar.gridded = True
+viewer.canvas.overlays.scale_bar.gridded = True
 viewer.fit_to_view()
 
 if __name__ == '__main__':

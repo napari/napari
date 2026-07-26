@@ -49,9 +49,9 @@ layer_outside = viewer.add_shapes(
 )
 
 # add scale_bar with background box
-viewer.canvas.scale_bar.visible = True
-viewer.canvas.scale_bar.box = True
-# viewer.canvas.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
+viewer.canvas.overlays.scale_bar.visible = True
+viewer.canvas.overlays.scale_bar.box = True
+# viewer.canvas.overlays.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 
 # Take screenshots and export figures in 'light' theme, to show the canvas

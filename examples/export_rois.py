@@ -57,9 +57,9 @@ roi_layer = viewer.add_shapes(
 )
 
 # add scale_bar with background box
-viewer.canvas.scale_bar.visible = True
-viewer.canvas.scale_bar.box = True
-# viewer.canvas.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
+viewer.canvas.overlays.scale_bar.visible = True
+viewer.canvas.overlays.scale_bar.box = True
+# viewer.canvas.overlays.scale_bar.length = 150  # prevent dynamic adjustment of scale bar length
 
 # Take screenshots of the rois.
 screenshot_rois = viewer.export_rois(rois)

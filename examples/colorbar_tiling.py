@@ -22,9 +22,9 @@ for layer in layers:
 
 # set the scale bar to gridded mode so it appears in each grid box
 # have the position overlap with the default colorbar position
-viewer.canvas.scale_bar.visible = True
-viewer.canvas.scale_bar.position = 'top_right'
-viewer.canvas.scale_bar.gridded = True
+viewer.canvas.overlays.scale_bar.visible = True
+viewer.canvas.overlays.scale_bar.position = 'top_right'
+viewer.canvas.overlays.scale_bar.gridded = True
 
 # enable grid with stride 2 to get layers split two-by-two
 viewer.canvas.grid.enabled = True

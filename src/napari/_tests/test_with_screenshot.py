@@ -451,18 +451,18 @@ def test_scale_bar_visible(make_napari_viewer):
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.canvas.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible and check something is seen
-    viewer.canvas.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.canvas.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make scale bar not visible and check it is gone
-    viewer.canvas.scale_bar.visible = False
+    viewer.canvas.overlays.scale_bar.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.canvas.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
