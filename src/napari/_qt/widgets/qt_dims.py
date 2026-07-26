@@ -132,6 +132,9 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        # Freshly created sliders have no `last_used` style property yet, and
+        # the `last_used` event only fires on a change
+        self._on_last_used_changed()
         self.stop()
 
     def _resize_axis_labels(self):
