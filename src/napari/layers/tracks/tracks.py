@@ -15,6 +15,7 @@ from napari.utils.events import Event
 
 if TYPE_CHECKING:
     import pandas as pd
+    from narwhals.typing import IntoDataFrame
 
 
 class Tracks(Layer):
@@ -420,7 +421,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: 'dict[str, np.ndarray] | IntoDataFrame',
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()

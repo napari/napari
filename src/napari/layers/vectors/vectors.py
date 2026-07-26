@@ -28,7 +28,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from narwhals.typing import IntoDataFrame
 
     from napari.components.dims import Dims
 
@@ -381,7 +381,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: 'dict[str, np.ndarray] | IntoDataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -422,7 +422,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: 'dict[str, Any] | IntoDataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()

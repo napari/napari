@@ -72,7 +72,7 @@ from napari.utils.naming import magic_name
 from napari.utils.status_messages import format_feature_value
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from narwhals.typing import IntoDataFrame
 
 __all__ = ('Labels',)
 
@@ -677,7 +677,7 @@ class Labels(ScalarFieldBase):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: dict[str, np.ndarray] | IntoDataFrame,
     ) -> None:
         self._feature_table.set_values(features)
         self._label_index = self._make_label_index()

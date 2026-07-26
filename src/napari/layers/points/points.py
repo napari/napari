@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from itertools import cycle
 
     import pandas as pd
+    from narwhals.typing import IntoDataFrame
 
     from napari.components.dims import Dims
 
@@ -711,7 +712,7 @@ class Points(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: dict[str, np.ndarray] | IntoDataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         self._update_color_manager(
@@ -734,7 +735,7 @@ class Points(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: dict[str, Any] | IntoDataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         current_properties = self.current_properties
@@ -782,7 +783,7 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: dict[str, Array] | pd.DataFrame | None
+        self, properties: dict[str, Array] | IntoDataFrame | None
     ) -> None:
         self.features = properties
 

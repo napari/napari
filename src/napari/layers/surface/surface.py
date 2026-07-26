@@ -25,6 +25,7 @@ from napari.utils.geometry import find_nearest_triangle_intersection
 
 if TYPE_CHECKING:
     import pandas as pd
+    from narwhals.typing import IntoDataFrame
 
 
 # Mixin must come before Layer
@@ -499,7 +500,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: 'dict[str, np.ndarray] | IntoDataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data[0]))
         self.events.features()
@@ -514,7 +515,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: 'dict[str, Any] | IntoDataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
