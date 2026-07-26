@@ -781,6 +781,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
+    def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
+        """Combine layerlist axis labels onto the current dims labels.
+
+        Replaces dims axis label at indices where layers axis labels exist.
+        """
+        updated_axis_labels = list(self.dims.axis_labels)
+        for pos, label in enumerate(self.layers.axis_labels):
+            if label != str(pos - self.dims.ndim):
+                updated_axis_labels[pos] = label
+        return tuple(updated_axis_labels)
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -791,6 +802,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
+            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels()
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -953,6 +965,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
+        layer.events.axis_labels.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
@@ -1050,8 +1063,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         *,
         channel_axis=None,
         affine=None,
-        axis_labels=None,
         attenuation=0.05,
+        auto_contrast=False,
+        axis_labels=None,
         blending=None,
         cache=True,
         colormap=None,
@@ -1104,11 +1118,15 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
+        attenuation : float or list of float
+            Attenuation rate for attenuated maximum intensity projection.
+        auto_contrast : bool
+            Wether to automatically set contrast limits to the min and max of the
+            currently viewed slice. If True, contrast limits will be updated
+            whenever the slice changes.
         axis_labels : tuple of str
             Dimension names of the layer data.
             If not provided, axis_labels will be set to (..., '-2', '-1').
-        attenuation : float or list of float
-            Attenuation rate for attenuated maximum intensity projection.
         blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
@@ -1228,6 +1246,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             'depiction': depiction,
             'iso_threshold': iso_threshold,
             'attenuation': attenuation,
+            'auto_contrast': auto_contrast,
             'name': name,
             'metadata': metadata,
             'scale': scale,
