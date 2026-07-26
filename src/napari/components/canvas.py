@@ -63,7 +63,6 @@ class Canvas(EventedModel):
         publicly 'scale_bar', 'text', 'current_slice' and 'floating_axes'
     overlay_tiling : OverlayTiling
         Controls for the overlay tiling direction and padding.
-        a
     size : tuple[int, int]
         The canvas size following the Numpy convention of height x width
     """
