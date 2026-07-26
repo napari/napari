@@ -86,7 +86,7 @@ class _TourTooltip(QFrame):
         border = theme['foreground']
         btn_bg = theme['secondary']
         self.setStyleSheet(
-            f'''
+            f"""
             QFrame#qt_viewer_tour_tooltip {{
                 background: {bg};
                 border: 1px solid {border};
@@ -107,12 +107,14 @@ class _TourTooltip(QFrame):
             QFrame#qt_viewer_tour_tooltip QPushButton:hover {{
                 background: {accent};
             }}
-            '''
+            """
         )
         self._title.setStyleSheet('color: #ffffff;')
 
     def _update_size(self) -> None:
-        window_width = self.parentWidget().width() if self.parentWidget() else 900
+        window_width = (
+            self.parentWidget().width() if self.parentWidget() else 900
+        )
         width = min(_TOOLTIP_MAX_WIDTH, max(280, window_width // 3))
         self.setFixedWidth(width)
         layout = self.layout()
@@ -127,7 +129,9 @@ class _TourTooltip(QFrame):
         layout.activate()
         self.setFixedHeight(layout.sizeHint().height())
 
-    def set_content(self, title: str, body: str, step: int, total: int) -> None:
+    def set_content(
+        self, title: str, body: str, step: int, total: int
+    ) -> None:
         self._title.setText(title)
         self._body.setText(body)
         self._counter.setText(f'{step}/{total}')
@@ -146,9 +150,15 @@ class _TourTooltip(QFrame):
         if anchor == 'left':
             x, y = target_rect.left() - w - gap, target_rect.top()
         elif anchor == 'above':
-            x, y = target_rect.center().x() - w // 2, target_rect.top() - h - gap
+            x, y = (
+                target_rect.center().x() - w // 2,
+                target_rect.top() - h - gap,
+            )
         elif anchor == 'below':
-            x, y = target_rect.center().x() - w // 2, target_rect.bottom() + gap
+            x, y = (
+                target_rect.center().x() - w // 2,
+                target_rect.bottom() + gap,
+            )
         else:
             x, y = target_rect.right() + gap, target_rect.top()
         x = max(bounds.left() + 8, min(x, bounds.right() - w - 8))
@@ -180,9 +190,21 @@ class _TourOverlay(QWidget):
 
         rect = self._spotlight.adjusted(-6, -6, 6, 6)
         painter.fillRect(0, 0, self.width(), rect.top(), overlay)
-        painter.fillRect(0, rect.bottom() + 1, self.width(), self.height() - rect.bottom() - 1, overlay)
+        painter.fillRect(
+            0,
+            rect.bottom() + 1,
+            self.width(),
+            self.height() - rect.bottom() - 1,
+            overlay,
+        )
         painter.fillRect(0, rect.top(), rect.left(), rect.height(), overlay)
-        painter.fillRect(rect.right() + 1, rect.top(), self.width() - rect.right() - 1, rect.height(), overlay)
+        painter.fillRect(
+            rect.right() + 1,
+            rect.top(),
+            self.width() - rect.right() - 1,
+            rect.height(),
+            overlay,
+        )
         pen = QPen(QColor(self._accent_color), 2)
         painter.setPen(pen)
         painter.drawRect(rect)
@@ -196,11 +218,13 @@ class GuidedTour(QObject):
     ) -> None:
         super().__init__(parent_window)
         self._steps = steps
-        self._window = parent_window
+        self._window: QWidget | None = parent_window
         self._current = 0
         self._active = False
         theme = get_theme(theme_name).to_rgb_dict()
-        self._overlay = _TourOverlay(parent_window, accent_color=theme['primary'])
+        self._overlay = _TourOverlay(
+            parent_window, accent_color=theme['primary']
+        )
         self._tooltip = _TourTooltip(parent_window)
         self._tooltip.apply_theme(theme_name)
         self._tooltip.next_clicked.connect(self._on_next)
@@ -208,7 +232,7 @@ class GuidedTour(QObject):
         self._tooltip.skip_clicked.connect(self.close_tour)
 
     def start(self) -> None:
-        if self._active:
+        if self._active or self._window is None:
             return
         self._active = True
         self._overlay.setGeometry(self._window.rect())
@@ -220,18 +244,28 @@ class GuidedTour(QObject):
         QTimer.singleShot(0, lambda: self._show_step(0))
 
     def close_tour(self) -> None:
-        if not self._active:
+        if not self._active or self._window is None:
             return
         self._active = False
-        self._window.removeEventFilter(self)
+        window = self._window
+        window.removeEventFilter(self)
+        self._tooltip.next_clicked.disconnect(self._on_next)
+        self._tooltip.back_clicked.disconnect(self._on_back)
+        self._tooltip.skip_clicked.disconnect(self.close_tour)
         self._overlay.hide()
         self._tooltip.hide()
+        self._overlay.setParent(None)
+        self._tooltip.setParent(None)
         self._overlay.deleteLater()
         self._tooltip.deleteLater()
         self.finished.emit()
+        self.setParent(None)
+        self._window = None
         self.deleteLater()
 
-    def eventFilter(self, watched: QObject | None, event: QEvent | None) -> bool:  # type: ignore[override]
+    def eventFilter(
+        self, watched: QObject | None, event: QEvent | None
+    ) -> bool:  # type: ignore[override]
         if watched is not self._window or event is None:
             return super().eventFilter(watched, event)
         if event.type() == QEvent.Type.Resize:
@@ -240,10 +274,19 @@ class GuidedTour(QObject):
             key_event = event
             if not isinstance(key_event, QKeyEvent):
                 return super().eventFilter(watched, event)
-            if key_event.key() in (Qt.Key.Key_N, Qt.Key.Key_Right, Qt.Key.Key_Enter, Qt.Key.Key_Return):
+            if key_event.key() in (
+                Qt.Key.Key_N,
+                Qt.Key.Key_Right,
+                Qt.Key.Key_Enter,
+                Qt.Key.Key_Return,
+            ):
                 self._on_next()
                 return True
-            if key_event.key() in (Qt.Key.Key_P, Qt.Key.Key_Left, Qt.Key.Key_Backspace):
+            if key_event.key() in (
+                Qt.Key.Key_P,
+                Qt.Key.Key_Left,
+                Qt.Key.Key_Backspace,
+            ):
                 self._on_back()
                 return True
             if key_event.key() == Qt.Key.Key_Escape:
@@ -262,6 +305,8 @@ class GuidedTour(QObject):
             self._show_step(self._current - 1)
 
     def _show_step(self, index: int) -> None:
+        if self._window is None:
+            return
         self._current = index
         step = self._steps[index]
         target = step.target()
@@ -271,7 +316,9 @@ class GuidedTour(QObject):
         rect = QRect(top_left, target.size())
         self._overlay.setGeometry(self._window.rect())
         self._overlay.set_spotlight(rect)
-        self._tooltip.set_content(step.title, step.body, index + 1, len(self._steps))
+        self._tooltip.set_content(
+            step.title, step.body, index + 1, len(self._steps)
+        )
         self._tooltip.place(rect, step.anchor, self._window.rect())
         self._tooltip.raise_()
 
