@@ -76,7 +76,7 @@ class GridCanvas(EventedModel):
         if not self.enabled:
             return (1, 1)
 
-        if layers == None:
+        if not layers:
             return (1, 1)
 
         n_row, n_column = self.shape
@@ -147,7 +147,7 @@ class GridCanvas(EventedModel):
     def contents_at(
         self,
         position: tuple[int, int],
-        layers: Sequence | None = None,
+        layers: Sequence | None = None
     ) -> tuple[int, ...]:
         """Return the indices contained in the viewbox at the given position.
 
@@ -191,7 +191,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence | None = None
     ) -> int:
         """Compute the spacing between viewboxes in canvas pixels.
 
@@ -230,7 +230,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing_raw(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence | None = None
     ) -> int:
         """Compute the raw spacing between viewboxes in canvas pixels.
 
