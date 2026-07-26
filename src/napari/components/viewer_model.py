@@ -104,6 +104,7 @@ from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.notifications import show_info
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
