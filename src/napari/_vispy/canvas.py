@@ -842,28 +842,22 @@ class VispyCanvas:
         """
         layer = event.value
         disconnect_events(layer.events, self)
+        disconnect_events(layer.events,
+                          self._overlay_callbacks[layer])
+        disconnect_events(layer._overlays.events,
+                          self._overlay_callbacks[layer])
+
         layer.events.units.disconnect(self._deferred_world_units_update)
+        del self._overlay_callbacks[layer]
 
-        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer = self.layer_to_visual.pop(layer)
         disconnect_events(self.viewer.camera.events, vispy_layer)
-
-        # Close all overlay visuals for the layer being removed
-        overlay_to_visual = self._layer_overlay_to_visual.get(layer, {})
-        for overlay, vispy_overlay in list(overlay_to_visual.items()):
-            if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
-            vispy_overlay.close()
-        self._layer_overlay_to_visual.pop(layer, None)
-
         vispy_layer.close()
         del vispy_layer
-        self.layer_to_visual.pop(layer)
 
-        disconnect_events(layer.events, self._overlay_callbacks[layer])
-        disconnect_events(
-            layer._overlays.events, self._overlay_callbacks[layer]
-        )
-        del self._overlay_callbacks[layer]
+        self._update_layer_overlays(layer)
+        del self._layer_overlay_to_visual[layer]
+
         self._deferred_world_units_update()
         if self._pause_scene_graph:
             return
