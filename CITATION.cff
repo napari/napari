@@ -598,5 +598,9 @@ authors:
   alias: BadPrograms
   affiliation: Aix Marseille University, IBDM, Turing Centre for Living systems
   orcid: https://orcid.org/0000-0002-8715-084X
+- given-names: Aroj
+  family-names: Hada
+  affiliation: University Hospital Heidelberg
+  orcid: https://orcid.org/0000-0002-0691-1214
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
