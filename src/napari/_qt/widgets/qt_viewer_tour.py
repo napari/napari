@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
 from qtpy.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -235,15 +236,18 @@ class GuidedTour(QObject):
         self._overlay.raise_()
         self._tooltip.show()
         self._tooltip.raise_()
-        self._window.installEventFilter(self)
+        app = QApplication.instance()
+        if app is not None:
+            app.installEventFilter(self)
         QTimer.singleShot(0, lambda: self._show_step(0))
 
     def close_tour(self) -> None:
         if not self._active or self._window is None:
             return
         self._active = False
-        window = self._window
-        window.removeEventFilter(self)
+        app = QApplication.instance()
+        if app is not None:
+            app.removeEventFilter(self)
         self._tooltip.next_clicked.disconnect(self._on_next)
         self._tooltip.back_clicked.disconnect(self._on_back)
         self._tooltip.skip_clicked.disconnect(self.close_tour)
@@ -261,9 +265,9 @@ class GuidedTour(QObject):
     def eventFilter(
         self, watched: QObject | None, event: QEvent | None
     ) -> bool:
-        if watched is not self._window or event is None:
+        if event is None:
             return super().eventFilter(watched, event)
-        if event.type() == QEvent.Type.Resize:
+        if watched is self._window and event.type() == QEvent.Type.Resize:
             self._show_step(self._current)
         elif event.type() == QEvent.Type.KeyPress:
             key_event = event
