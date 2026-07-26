@@ -511,9 +511,7 @@ class VispyCanvas:
 
         # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
-            self.viewer.grid.iter_viewboxes(
-                self.viewer.layers
-            ),
+            self.viewer.grid.iter_viewboxes(self.viewer.layers),
             self.grid_views,
             strict=False,
         ):
@@ -1024,9 +1022,7 @@ class VispyCanvas:
             # create, or update parent if existing
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
-                    self.viewer.grid.iter_viewboxes(
-                        self.viewer.layers
-                    ),
+                    self.viewer.grid.iter_viewboxes(self.viewer.layers),
                     list(vispy_overlays),
                 ):
                     if not layer_indices:
@@ -1085,16 +1081,15 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
-        callback = self._overlay_callbacks.get(layer)    
+        callback = self._overlay_callbacks.get(layer)
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
                 if callback is not None:
                     overlay.events.visible.connect(callback, unique=True)
-                
+
                 continue
-            
 
             if callback is not None:
                 try:
@@ -1183,9 +1178,7 @@ class VispyCanvas:
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
-            self.viewer.grid.iter_viewboxes(
-                self.viewer.layers
-            ),
+            self.viewer.grid.iter_viewboxes(self.viewer.layers),
         ):
             if not layer_indices:
                 # last empty boxes of the grid
@@ -1354,7 +1347,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
         if self.grid.grid_size == self.viewer.grid.actual_shape(
-             self.viewer.layers
+            self.viewer.layers
         ):
             return
 

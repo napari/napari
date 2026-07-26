@@ -422,7 +422,7 @@ def test_grid():
     "Test grid_view"
     viewer = ViewerModel()
 
-    #create mock layers with visible attribute
+    # create mock layers with visible attribute
     class mock_layer:
         def __init__(self, visible=True):
             self.visible = visible
