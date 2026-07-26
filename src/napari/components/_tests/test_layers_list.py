@@ -805,6 +805,7 @@ def test_remove_selected_all_locked():
     ],
 )
 def test_layerlist_axis_labels(
+    # layer specs: list of (shape, axis_labels) tuples for image layers
     layer_specs: list[tuple[tuple[int, ...], tuple[str, ...] | None]],
     expected_labels: tuple[str, ...],
     expected_ndim: int,

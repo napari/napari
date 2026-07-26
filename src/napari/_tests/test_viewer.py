@@ -517,6 +517,11 @@ def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
     assert viewer.dims.axis_labels == ('z', 'y', 'x')
 
     # Lower-dim, annotated layer doesn't override the longer labels
+    # This is different from test_axis_labels_after_data because in that
+    # case we are overwriting result of
+    # `viewer.dims.axis_labels = ('z', 'y', 'x')`, whereas in this case
+    # `viewer.dims.axis_labels` is only ever set dynamically from the layer
+    # list.
     viewer.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
     assert viewer.dims.axis_labels == viewer.layers.axis_labels
     assert viewer.dims.axis_labels == ('z', 'y', 'x')
