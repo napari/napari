@@ -1006,7 +1006,7 @@ def test_ndisplay_3_auto_contrast():
     """
     data = np.ones((10, 20, 20))
     layer = Image(data)
-    layer._keep_auto_contrast = True
+    layer.auto_contrast = True
 
     layer._slice_dims(Dims(ndim=3, ndisplay=2))
     # switch to ndisplay=3
