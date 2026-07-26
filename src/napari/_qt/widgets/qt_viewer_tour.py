@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
-from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
+from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPainterPath, QPen
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -109,7 +109,6 @@ class _TourTooltip(QFrame):
             }}
             """
         )
-        self._title.setStyleSheet('color: #ffffff;')
 
     def _update_size(self) -> None:
         window_width = (
@@ -176,11 +175,10 @@ class _TourOverlay(QWidget):
         self._spotlight = rect
         self.update()
 
-    def mousePressEvent(self, event: QMouseEvent | None) -> None:  # type: ignore[override]
-        if event is not None:
-            event.accept()
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        event.accept()
 
-    def paintEvent(self, _event: QPaintEvent | None) -> None:
+    def paintEvent(self, _event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         overlay = QColor(0, 0, 0, 150)
@@ -189,22 +187,11 @@ class _TourOverlay(QWidget):
             return
 
         rect = self._spotlight.adjusted(-6, -6, 6, 6)
-        painter.fillRect(0, 0, self.width(), rect.top(), overlay)
-        painter.fillRect(
-            0,
-            rect.bottom() + 1,
-            self.width(),
-            self.height() - rect.bottom() - 1,
-            overlay,
-        )
-        painter.fillRect(0, rect.top(), rect.left(), rect.height(), overlay)
-        painter.fillRect(
-            rect.right() + 1,
-            rect.top(),
-            self.width() - rect.right() - 1,
-            rect.height(),
-            overlay,
-        )
+        path = QPainterPath()
+        path.setFillRule(Qt.FillRule.OddEvenFill)
+        path.addRect(self.rect())
+        path.addRect(rect)
+        painter.fillPath(path, overlay)
         pen = QPen(QColor(self._accent_color), 2)
         painter.setPen(pen)
         painter.drawRect(rect)
@@ -333,8 +320,8 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 target=lambda: qt_viewer.canvas.native,
                 title=trans._('Welcome to the viewer'),
                 body=trans._(
-                    'This PoC loads the built-in Balls (3D) sample so the tour has something to show. '
-                    'Drag to pan, scroll to zoom, and reopen this tour from Help any time.'
+                    'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
+                    'and reopen this tour from Help any time.'
                 ),
                 anchor='below',
             ),

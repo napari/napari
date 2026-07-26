@@ -52,11 +52,15 @@ def test_start_viewer_tour():
     with mock.patch(
         'napari._qt._qapp_model.qactions._help.build_viewer_tour',
         return_value=tour,
-    ):
+    ) as mock_build_tour:
         _start_viewer_tour(window)
         _start_viewer_tour(window)
 
     viewer.open_sample.assert_called_once_with('napari', 'balls_3d')
+    mock_build_tour.assert_called_once_with(qt_window)
     tour.finished.connect.assert_called_once()
     tour.start.assert_called_once()
     assert qt_window._viewer_tour is tour
+
+    tour.finished.connect.call_args.args[0]()
+    assert qt_window._viewer_tour is None
