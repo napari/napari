@@ -104,7 +104,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
     ) -> Any:
         if not index.isValid():
             return None
-        axis = self.getItem(index)
+        axis = self.getItemStrict(index)
         if role == Qt.ItemDataRole.DisplayRole:
             return str(axis)
         if role == Qt.ItemDataRole.TextAlignmentRole:
@@ -123,7 +123,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
-        axis = self.getItem(index)
+        axis = self.getItemStrict(index)
         if role == Qt.ItemDataRole.CheckStateRole:
             axis.rollable = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == Qt.ItemDataRole.EditRole:
