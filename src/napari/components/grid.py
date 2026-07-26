@@ -114,7 +114,7 @@ class GridCanvas(EventedModel):
         position : 2-tuple of int
             Row and column position of current index in the grid, or (-1, -1) if the layer is hidden/excluded.
         """
-        if not self.enabled:
+        if not self.enabled or not layers:
             return (0, 0)
 
         if index < 0 or index >= len(layers):
@@ -158,6 +158,8 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
+        if not layers:
+            return ()
         return tuple(
             i
             for i in range(len(layers))
@@ -252,8 +254,10 @@ class GridCanvas(EventedModel):
 
     def _effective_indices(self, layers: Sequence | None = None) -> list[int]:
         """Return a list of original layer indices that are "active" in the grid."""
-        if layers is None or abs(self.stride) >= 2:
+        if layers is None:
+            return []
+        if abs(self.stride) >= 2:
             return list(range(len(layers)))
-        if abs(self.stride) == 1 and layers is not None:
+        if abs(self.stride) == 1:
             return [i for i, layer in enumerate(layers) if layer.visible]
         return list(range(len(layers)))
