@@ -2682,6 +2682,72 @@ def test_finish_drawing_called_when_is_creating():
     assert not layer._is_creating
 
 
+def test_is_creating_and_drawing_events():
+    """is_creating tracks the draw window and emits started/finished events."""
+    layer = Shapes()
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    # Freshly constructed: not creating. Construction initializes the backing
+    # field directly (not via the setter), so a same-value write must not emit.
+    assert layer.is_creating is False
+    layer._is_creating = False
+    started.assert_not_called()
+    finished.assert_not_called()
+
+    # False -> True fires drawing_started exactly once.
+    layer._is_creating = True
+    assert layer.is_creating is True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    # Repeated True is a no-op.
+    layer._is_creating = True
+    started.assert_called_once()
+
+    # True -> False fires drawing_finished exactly once.
+    layer._is_creating = False
+    assert layer.is_creating is False
+    finished.assert_called_once()
+
+    # Repeated False is a no-op.
+    layer._is_creating = False
+    finished.assert_called_once()
+
+
+def test_is_creating_is_read_only():
+    """is_creating is a read-only public view of the private flag."""
+    layer = Shapes()
+    with pytest.raises(AttributeError):
+        layer.is_creating = True
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_path'])
+def test_drawing_events_via_multivertex_lifecycle(mode):
+    """A multi-vertex draw emits drawing_started on the first vertex and
+    exactly one drawing_finished when the draw ends."""
+    from napari.layers.shapes import _shapes_mouse_bindings as mb
+
+    layer = Shapes()
+    layer.mode = mode
+    started = Mock()
+    finished = Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
+    mb.initiate_polygon_draw(layer, np.array([10.0, 10.0]))
+    assert layer.is_creating is True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    layer._finish_drawing()
+    assert layer.is_creating is False
+    started.assert_called_once()
+    finished.assert_called_once()
+
+
 @pytest.mark.parametrize('remove', [[0], [1], [2], [1, 2]])
 def test_remove_shape_that_is_value(remove: list[int]):
     layer = Shapes(
@@ -2741,3 +2807,45 @@ def test_default_features_not_changed_when_selected_data_changes():
     np.testing.assert_equal(
         shape.feature_defaults.values[0][1], origin_values[0][1]
     )
+
+
+def test_outline_not_drawn_off_slice():
+    """Highlight outline of a shape is only drawn on the shape's own slice.
+
+    Regression: ``_outline_shapes`` used the shape's in-plane vertices without
+    checking the viewed slice, so a selected or hovered shape drew a thin
+    highlight outline on adjacent slices even though its face mesh (correctly
+    slice-gated) was hidden there. Both the selection path and the hover-only
+    path are exercised, on and off the shape's slice.
+    """
+    on_slice = Dims(
+        ndim=3, ndisplay=2, range=((0, 5, 1),) * 3, point=(0, 0, 0)
+    )
+    off_slice = Dims(
+        ndim=3, ndisplay=2, range=((0, 5, 1),) * 3, point=(1, 0, 0)
+    )
+    # A single polygon living entirely on slice z=0 of a 3-D layer.
+    layer = Shapes(
+        [[(0, 0, 0), (0, 0, 10), (0, 10, 10), (0, 10, 0)]],
+        shape_type='polygon',
+    )
+
+    # On the shape's own slice, both an active selection and a bare hover
+    # (no selection) draw the outline.
+    layer._slice_dims(on_slice)
+    layer.selected_data = {0}
+    layer._value = (None, None)
+    assert layer._outline_shapes()[0] is not None  # selection path
+    layer.selected_data = set()
+    layer._value = (0, None)
+    assert layer._outline_shapes()[0] is not None  # hover-only path
+
+    # Stepping to an adjacent slice hides the face; neither path may outline.
+    layer._slice_dims(off_slice)
+    assert not layer._data_view._displayed[0]
+    layer.selected_data = {0}
+    layer._value = (None, None)
+    assert layer._outline_shapes() == (None, None)  # selection path
+    layer.selected_data = set()
+    layer._value = (0, None)
+    assert layer._outline_shapes() == (None, None)  # hover-only path

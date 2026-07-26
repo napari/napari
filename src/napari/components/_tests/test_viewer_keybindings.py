@@ -12,6 +12,7 @@ from napari.components._viewer_key_bindings import (
     select_layer_below,
     show_only_layer_above,
     show_only_layer_below,
+    toggle_ndisplay,
     toggle_selected_visibility,
     toggle_theme,
     toggle_unselected_visibility,
@@ -20,6 +21,25 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers.points import Points
 from napari.settings import get_settings
 from napari.utils.theme import available_themes, get_system_theme
+
+
+@pytest.mark.key_bindings
+def test_toggle_ndisplay_blocked_while_navigation_locked():
+    """Toggling 2D/3D changes the displayed axes, which the navigation lock
+    cannot guard (it is a direct ``ndisplay`` assignment). The action refuses
+    while navigation is locked and works again once unlocked."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((4, 5, 6)))
+    assert viewer.dims.ndisplay == 2
+
+    token = object()
+    viewer.dims.lock_navigation(token)
+    toggle_ndisplay(viewer)
+    assert viewer.dims.ndisplay == 2  # blocked while locked
+
+    viewer.dims.unlock_navigation(token)
+    toggle_ndisplay(viewer)
+    assert viewer.dims.ndisplay == 3  # allowed once unlocked
 
 
 @pytest.mark.key_bindings

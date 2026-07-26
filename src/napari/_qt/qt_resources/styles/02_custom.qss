@@ -216,7 +216,23 @@ PlaneNormalButtons QPushButton {
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ highlight }};
+    background: {{ current }};
+}
+
+/* Greyed-out handle when the slider is disabled (e.g. while a navigation lock
+   is engaged), so the frozen state reads as disabled rather than unresponsive.
+
+   Must not be `foreground`: that is the groove's own background, so the handle
+   would vanish into the track rather than read as greyed out. `primary` sits
+   between the groove and the normal `secondary` handle in both light and dark
+   themes, giving a muted but visible thumb.
+
+   The last_used rule above is an attribute selector and so outranks a bare
+   `:disabled`; repeating it here keeps a locked *active* slider greying out
+   instead of staying marked as current. */
+QtDimSliderWidget > QScrollBar::handle:disabled,
+QtDimSliderWidget > QScrollBar::handle[last_used=true]:disabled {
+    background: {{ primary }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -229,6 +245,42 @@ QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
 
 QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
+}
+
+/* Padlock toggling an axis's persistent navigation lock. Sized to match
+   QtPlayButton so the slider row stays visually even. */
+#axis_lock_button {
+  border-radius: 2px;
+  height: 13px;
+  width: 13px;
+  margin: 0px 2px;
+  padding: 1px;
+  border: 0px;
+  image: url("theme_{{ id }}:/lock_open.svg");
+}
+
+#axis_lock_button[locked=true] {
+  image: url("theme_{{ id }}:/lock.svg");
+}
+
+/* Transient amber tint reminding the user this axis is locked, shown when a
+   navigation attempt on the frozen axis is rejected (see _flash_lock). */
+#axis_lock_button[flash=true] {
+  background: {{ warning }};
+}
+
+#axis_lock_button:hover {
+  background: {{ highlight }};
+}
+
+/* Non-interactive padlock (axis_lock_interactive off, or an owner lock has
+   frozen the configuration): still readable as status, but visibly inert. */
+#axis_lock_button:disabled {
+  image: url("theme_{{ id }}:/lock_open_50.svg");
+}
+
+#axis_lock_button[locked=true]:disabled {
+  image: url("theme_{{ id }}:/lock_50.svg");
 }
 
 /* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */

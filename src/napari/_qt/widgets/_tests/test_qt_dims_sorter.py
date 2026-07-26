@@ -25,6 +25,34 @@ def test_dims_sorter(qtbot):
     assert tuple(dims.order) == (1, 0)
 
 
+def test_dims_sorter_disabled_while_navigation_locked(qtbot):
+    """The sorter reorders axes via a direct ``dims.order`` assignment the
+    navigation lock cannot guard, so the view is disabled while locked (and
+    re-enabled on unlock), mirroring QtDims disabling the slice sliders."""
+    dims = Dims(ndim=3)
+    parent = QWidget()
+    dim_sorter = QtDimsSorter(dims, parent)
+    qtbot.addWidget(dim_sorter)
+    assert dim_sorter.view.isEnabled()
+
+    token = object()
+    dims.lock_navigation(token)
+    assert not dim_sorter.view.isEnabled()
+
+    dims.unlock_navigation(token)
+    assert dim_sorter.view.isEnabled()
+
+
+def test_dims_sorter_disabled_when_created_under_lock(qtbot):
+    """A sorter created while navigation is already locked starts disabled."""
+    dims = Dims(ndim=3)
+    dims.lock_navigation(object())
+    parent = QWidget()
+    dim_sorter = QtDimsSorter(dims, parent)
+    qtbot.addWidget(dim_sorter)
+    assert not dim_sorter.view.isEnabled()
+
+
 def test_dims_sorter_callback_management(qtbot):
     dims = Dims()
     parent = QWidget()

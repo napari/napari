@@ -1264,3 +1264,93 @@ def test_fit_to_view_handles_no_layers():
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
     np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
+
+
+def _shapes_layer_in_viewer():
+    """A ViewerModel with a 3D-capable Shapes layer, wired to the nav lock."""
+    from napari.layers import Shapes
+
+    viewer = ViewerModel()
+    layer = viewer.add_layer(Shapes(ndim=3))
+    return viewer, layer
+
+
+def test_shapes_drawing_engages_navigation_lock():
+    """Starting a draw locks slice navigation with the layer as owner; finishing
+    releases it (napari #9207: vertices cannot span slices mid-draw)."""
+    viewer, layer = _shapes_layer_in_viewer()
+    assert viewer.dims.navigation_locked is False
+
+    layer._is_creating = True  # fires drawing_started
+    assert viewer.dims.navigation_locked is True
+    assert viewer.dims.navigation_lock_owner is layer
+
+    layer._is_creating = False  # fires drawing_finished
+    assert viewer.dims.navigation_locked is False
+    assert viewer.dims.navigation_lock_owner is None
+
+
+def test_shapes_locked_draw_blocks_ndisplay_toggle():
+    """While a shape is being drawn, the 2D/3D toggle is refused so the displayed
+    axes cannot change under the in-progress shape."""
+    viewer, layer = _shapes_layer_in_viewer()
+    assert viewer.dims.ndisplay == 2
+
+    layer._is_creating = True
+    viewer._toggle_ndisplay()
+    assert viewer.dims.ndisplay == 2  # blocked mid-draw
+
+    layer._is_creating = False
+    viewer._toggle_ndisplay()
+    assert viewer.dims.ndisplay == 3  # allowed once the draw finishes
+
+
+def test_shapes_removed_mid_draw_releases_lock():
+    """A layer removed while drawing never fires drawing_finished, so the viewer
+    must release its lock on removal rather than stranding dims locked."""
+    viewer, layer = _shapes_layer_in_viewer()
+    layer._is_creating = True
+    assert viewer.dims.navigation_lock_owner is layer
+
+    viewer.layers.remove(layer)
+    assert viewer.dims.navigation_locked is False
+
+
+def test_other_layer_removed_leaves_active_draw_lock():
+    """Removing an unrelated layer must not disturb a lock held by a different
+    layer that is mid-draw."""
+    viewer, layer = _shapes_layer_in_viewer()
+    other = viewer.add_image(np.zeros((4, 5, 6)))
+    layer._is_creating = True
+    assert viewer.dims.navigation_lock_owner is layer
+
+    viewer.layers.remove(other)
+    assert viewer.dims.navigation_lock_owner is layer  # untouched
+
+
+def test_second_shapes_draw_does_not_raise_and_transfers_lock():
+    """A draw starting on a second Shapes layer while the first is still open
+    (e.g. the active layer was switched mid-draw, which does not finish the
+    prior draw) must not raise the single-owner RuntimeError from the input
+    callback. The stale draw is finished and the lock transfers cleanly."""
+    from napari.layers import Shapes
+
+    viewer = ViewerModel()
+    a = viewer.add_layer(Shapes(ndim=3))
+    b = viewer.add_layer(Shapes(ndim=3))
+
+    a._is_creating = True
+    assert viewer.dims.navigation_lock_owner is a
+
+    # Switching active does not finish a's draw; a still owns the lock.
+    viewer.layers.selection.active = b
+    assert a._is_creating is True
+    assert viewer.dims.navigation_lock_owner is a
+
+    # Starting b's draw must finish a's stale draw and take the lock, not raise.
+    b._is_creating = True
+    assert a._is_creating is False  # prior draw finished
+    assert viewer.dims.navigation_lock_owner is b
+
+    b._is_creating = False
+    assert viewer.dims.navigation_locked is False

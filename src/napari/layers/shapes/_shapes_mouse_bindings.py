@@ -28,6 +28,63 @@ if TYPE_CHECKING:
     from napari.layers.shapes.shapes import Shapes
 
 
+def _creation_coordinates(
+    layer: Shapes, event: NapariMouseEvent
+) -> npt.NDArray:
+    """Data coordinates for an in-progress vertex, pinned to the draw's origin slice.
+
+    While a shape is being created, the in-plane (displayed) axes track the
+    cursor as usual, but the out-of-plane (not-displayed) axes are held at the
+    values captured when the first vertex was placed. This keeps every vertex on
+    the shape's origin slice as the *slice point* of a not-displayed axis moves
+    (e.g. stepping a navigable/exempt axis mid-draw), so a shape cannot acquire
+    vertices on different slice indices (napari #9207).
+
+    Scope: this guards slice-*point* changes only. It does not make anchoring
+    valid across a *partition* change -- reordering axes (``Dims.order``) or
+    toggling 2D/3D (``Dims.ndisplay``) mid-draw changes *which* axes are
+    displayed, leaving the captured anchor keyed to the old axes. In a viewer
+    those routes are blocked while a shape is being created, because the layer
+    takes the Dims navigation lock (with ``lock_order=True``) for the duration
+    of the draw (see ``ViewerModel._on_layer_drawing_started``). The anchor is
+    the geometry-level backstop for the slice-point case and for standalone
+    layers not wired to a Dims lock; it does not by itself cover partitions.
+
+    The anchor is captured on the first call of a new draw -- ``_is_creating`` is
+    still ``False`` at the first vertex of every shape type and flips ``True``
+    immediately after -- and applied on every subsequent call.
+
+    This fixes the *geometry* (vertices never span slices). The *interaction* of
+    navigating an exempt axis mid-draw is fully smooth only for click-based
+    drawing: a real slice change clears ``selected_data``, which stalls the
+    drag-follow of a held-button draw until napari preserves the in-progress
+    selection across a reslice (gh #9059). Geometry stays pinned in both cases.
+    """
+    coordinates = layer.world_to_data(event.position)
+    not_displayed = layer._slice_input.not_displayed
+    if not layer._is_creating:
+        # First vertex of a new shape: capture the origin-slice anchor.
+        layer._creation_anchor = {
+            axis: float(coordinates[axis]) for axis in not_displayed
+        }
+        return coordinates
+    if layer._creation_anchor:
+        if set(layer._creation_anchor) == set(not_displayed):
+            coordinates = np.array(coordinates, dtype=float)
+            for axis, value in layer._creation_anchor.items():
+                coordinates[axis] = value
+        else:
+            # A partition change (order/ndisplay) reshaped which axes are
+            # displayed, so the anchor is keyed to the old axes; applying it
+            # would overwrite a now-displayed axis. Invalidate it -- correctness
+            # degrades to pre-anchor behavior rather than corrupting geometry.
+            # In a viewer the draw holds the navigation lock (lock_order=True),
+            # so this branch is only reached when nothing engages that lock
+            # (e.g. a standalone layer driven directly in a test).
+            layer._creation_anchor = {}
+    return coordinates
+
+
 def highlight(layer: Shapes, event: MouseEvent) -> None:
     """Render highlights of shapes.
 
@@ -174,7 +231,7 @@ def add_line(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     for i in layer._slice_input.displayed:
         full_size[i] = size
 
-    coordinates = layer.world_to_data(event.position)
+    coordinates = _creation_coordinates(layer, event)
     layer._moving_coordinates = coordinates
 
     # corner is first datapoint defining the line
@@ -206,7 +263,7 @@ def add_ellipse(
     size_v = np.zeros(layer.ndim, dtype=float)
     size_v[layer._slice_input.displayed[1]] = size
 
-    coordinates = layer.world_to_data(event.position)
+    coordinates = _creation_coordinates(layer, event)
     corner = np.array(coordinates)
     data = np.array(
         [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
@@ -234,7 +291,7 @@ def add_rectangle(
     size_v = np.zeros(layer.ndim, dtype=float)
     size_v[layer._slice_input.displayed[1]] = size
 
-    coordinates = layer.world_to_data(event.position)
+    coordinates = _creation_coordinates(layer, event)
     corner = np.array(coordinates)
     data = np.array(
         [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
@@ -276,7 +333,7 @@ def _add_line_rectangle_ellipse(
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        coordinates = layer.world_to_data(event.position)
+        coordinates = _creation_coordinates(layer, event)
         layer._moving_coordinates = coordinates
         _move_active_element_under_cursor(layer, coordinates)
         yield
@@ -341,7 +398,7 @@ def add_path_polygon_lasso(
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
-    coordinates = layer.world_to_data(event.position)
+    coordinates = _creation_coordinates(layer, event)
     if layer._is_creating is False:
         # Set last cursor position to initial position of the mouse when starting to draw the shape
         layer._last_cursor_position = np.array(event.pos)
@@ -415,7 +472,7 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
         A proxy read only wrapper around a vispy mouse event.
     """
     if layer._is_creating:
-        coordinates = layer.world_to_data(event.position)
+        coordinates = _creation_coordinates(layer, event)
         move_active_vertex_under_cursor(layer, coordinates)
 
         if layer._mode in [Mode.ADD_POLYGON_LASSO, Mode.ADD_PATH]:
@@ -445,7 +502,7 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
-    coordinates = layer.world_to_data(event.position)
+    coordinates = _creation_coordinates(layer, event)
     if layer._is_creating is False:
         # Set last cursor position to initial position of the mouse when starting to draw the shape
         layer._last_cursor_position = np.array(event.pos)
