@@ -70,7 +70,9 @@ def status_format(value, precision=None, format_mode='g'):
 
 
 def generate_layer_status_strings(
-    position: npt.ArrayLike | None, value: tuple | None, precision: float
+    position: npt.ArrayLike | None,
+    value: tuple | None,
+    precision: int | None = None,
 ) -> tuple[str, str]:
     if position is not None:
         pos_str = status_format(position, precision=precision, format_mode='f')
