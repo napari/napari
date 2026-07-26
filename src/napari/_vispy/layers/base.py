@@ -202,6 +202,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_matrix_change(self):
         dims_displayed = self.layer._slice_input.displayed
+        # If the layer's dimensionality changed (e.g., data swapped from 2D
+        # to 3D), _world_to_layer_units_scale reflects the old ndim
+        # and cannot be indexed with the new dims_displayed values.  Refresh
+        # both cached unit tracking fields to match the current layer.
+        if len(self._world_to_layer_units_scale) != self.layer.ndim:
+            self._world_units = self.layer.units
+            self._world_to_layer_units_scale = (1,) * self.layer.ndim
+
         # mypy: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering

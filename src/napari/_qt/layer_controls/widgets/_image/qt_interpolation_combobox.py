@@ -10,7 +10,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image
 from napari.layers.image._image_constants import Interpolation
-from napari.utils.translations import trans
 
 
 class QtInterpolationComboBoxControl(QtWidgetControlsBase):
@@ -49,14 +48,10 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             self.change_interpolation
         )
         self.interpolation_combobox.setToolTip(
-            trans._(
-                'Texture interpolation for display.\nnearest and linear are most performant.'
-            )
+            'Texture interpolation for display.\nnearest and linear are most performant.'
         )
 
-        self.interpolation_combobox_label = QtWrappedLabel(
-            trans._('interpolation:')
-        )
+        self.interpolation_combobox_label = QtWrappedLabel('interpolation:')
 
     def change_interpolation(self, text: str) -> None:
         """Change interpolation mode for image display.
