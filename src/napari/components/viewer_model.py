@@ -5,6 +5,7 @@ import itertools
 import logging
 import os
 import warnings
+import weakref
 from collections.abc import (
     Iterator,
     Mapping,
@@ -203,7 +204,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     title: str = 'napari'
     # private track of overlays, only expose the old ones for backward compatibility
     _overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
-        default_factory=lambda: EventedDictNamespace({'axes': AxesOverlay()})
+        default_factory=lambda: (  # type: ignore
+            EventedDictNamespace({'axes': AxesOverlay()})
+        )
     )
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
@@ -299,10 +302,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
-        # need to give the canvas access to the viewer for bgcolor
+        # need to give the canvas access to the viewer for bgcolor. It needs to
+        # be a weakref to avoid keeping around qt objects references forever
         # TODO: how do we do this but not ugly?
         #       Do we get rid of this theme override on viewermodel?
-        self.canvas._viewer = self
+        self.canvas._viewer_ref = weakref.ref(self)
         self.events.theme.connect(self.canvas.events.background_color)
 
     # simple properties exposing overlays for backward compatibility
