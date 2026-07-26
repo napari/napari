@@ -111,9 +111,8 @@ class _TourTooltip(QFrame):
         )
 
     def _update_size(self) -> None:
-        window_width = (
-            self.parentWidget().width() if self.parentWidget() else 900
-        )
+        parent = self.parentWidget()
+        window_width = parent.width() if parent is not None else 900
         width = min(_TOOLTIP_MAX_WIDTH, max(280, window_width // 3))
         self.setFixedWidth(width)
         layout = self.layout()
@@ -175,10 +174,11 @@ class _TourOverlay(QWidget):
         self._spotlight = rect
         self.update()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        event.accept()
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        if event is not None:
+            event.accept()
 
-    def paintEvent(self, _event: QPaintEvent) -> None:
+    def paintEvent(self, _event: QPaintEvent | None) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         overlay = QColor(0, 0, 0, 150)
@@ -263,7 +263,7 @@ class GuidedTour(QObject):
 
     def eventFilter(
         self, watched: QObject | None, event: QEvent | None
-    ) -> bool:  # type: ignore[override]
+    ) -> bool:
         if watched is not self._window or event is None:
             return super().eventFilter(watched, event)
         if event.type() == QEvent.Type.Resize:
