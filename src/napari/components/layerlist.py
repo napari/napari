@@ -654,14 +654,6 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return max((layer.ndim for layer in self), default=2)
 
-    def _is_axis_annotated(self, axis_labels: tuple[str, ...]) -> bool:
-        """Return True if axis labels for given layer are annotated.
-
-        Axis labels are annotated when they do not match the default indices.
-        """
-        not_annotated = tuple(str(i) for i in range(-len(axis_labels), 0))
-        return axis_labels != not_annotated
-
     def _find_longest_annotated(self) -> tuple[str, ...]:
         """Return the annotated axis labels spanning the most dimensions.
 
@@ -671,7 +663,7 @@ class LayerList(SelectableEventedList[Layer]):
         annotated_list = [
             layer.axis_labels
             for layer in self
-            if self._is_axis_annotated(layer.axis_labels)
+            if not layer._has_default_axis_labels()
         ][::-1]
         return max(annotated_list, key=len, default=())
 
