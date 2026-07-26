@@ -310,9 +310,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.events.theme.connect(self.canvas.events.background_color)
 
     # simple properties exposing overlays for backward compatibility
-    # NOTE: all the ignore[return-value] below are because the overlays dict
-    #       actually contains a bunch of different types. We annotate with
-    #       more specific types so the users know what they get!
     @property
     def axes(self) -> AxesOverlay:
         return self._overlays.axes
