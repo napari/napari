@@ -57,8 +57,6 @@ if TYPE_CHECKING:
 
 import warnings
 
-from napari.utils.translations import trans
-
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
@@ -514,7 +512,7 @@ class VispyCanvas:
         # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
             self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ),
             self.grid_views,
             strict=False,
@@ -846,20 +844,28 @@ class VispyCanvas:
         """
         layer = event.value
         disconnect_events(layer.events, self)
+        layer.events.units.disconnect(self._deferred_world_units_update)
+
+        vispy_layer = self.layer_to_visual[layer]
+        disconnect_events(self.viewer.camera.events, vispy_layer)
+
+        # Close all overlay visuals for the layer being removed
+        overlay_to_visual = self._layer_overlay_to_visual.get(layer, {})
+        for overlay, vispy_overlay in list(overlay_to_visual.items()):
+            if isinstance(overlay, CanvasOverlay):
+                self._disconnect_canvas_overlay_events(overlay)
+            vispy_overlay.close()
+        self._layer_overlay_to_visual.pop(layer, None)
+
+        vispy_layer.close()
+        del vispy_layer
+        self.layer_to_visual.pop(layer)
+
         disconnect_events(layer.events, self._overlay_callbacks[layer])
         disconnect_events(
             layer._overlays.events, self._overlay_callbacks[layer]
         )
-        layer.events.units.disconnect(self._deferred_world_units_update)
         del self._overlay_callbacks[layer]
-
-        vispy_layer = self.layer_to_visual.pop(layer)
-        disconnect_events(self.viewer.camera.events, vispy_layer)
-        vispy_layer.close()
-        del vispy_layer
-
-        self._update_layer_overlays(layer)
-        del self._layer_overlay_to_visual[layer]
         self._deferred_world_units_update()
         if self._pause_scene_graph:
             return
@@ -893,7 +899,7 @@ class VispyCanvas:
         """When the list is reordered, propagate changes to draw order."""
         if self.viewer.grid.enabled:
             for _, layer_indices in self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ):
                 if not layer_indices:
                     continue
@@ -1019,7 +1025,7 @@ class VispyCanvas:
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
                     self.viewer.grid.iter_viewboxes(
-                        len(self.viewer.layers), self.viewer.layers
+                        self.viewer.layers
                     ),
                     list(vispy_overlays),
                 ):
@@ -1054,7 +1060,7 @@ class VispyCanvas:
         their class (canvas vs scene overlays).
         """
         overlay_to_visual = self._layer_overlay_to_visual.setdefault(layer, {})
-        # if strid is 1, layer is anabled and if layer not visible
+        # if strid is 1, layer is enabled and if layer not visible
         should_remove = (
             self.viewer.grid.enabled
             and abs(self.viewer.grid.stride) == 1
@@ -1079,15 +1085,22 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
+        callback = self._overlay_callbacks.get(layer)    
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                overlay.events.visible.connect(
-                    self._overlay_callbacks[layer], unique=True
-                )
+                if callback is not None:
+                    overlay.events.visible.connect(callback, unique=True)
+                
                 continue
-            overlay.events.visible.disconnect(self._overlay_callbacks[layer])
+            
+
+            if callback is not None:
+                try:
+                    overlay.events.visible.disconnect(callback)
+                except (KeyError, RuntimeError, TypeError):
+                    pass
 
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
@@ -1097,7 +1110,6 @@ class VispyCanvas:
                 if self.viewer.grid.enabled:
                     row, col = self.viewer.grid.position(
                         self.viewer.layers.index(layer),
-                        len(self.viewer.layers),
                         layers=self.viewer.layers,
                     )
                     if row == -1:
@@ -1172,7 +1184,7 @@ class VispyCanvas:
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
             self.viewer.grid.iter_viewboxes(
-                len(self.viewer.layers), self.viewer.layers
+                self.viewer.layers
             ),
         ):
             if not layer_indices:
@@ -1342,7 +1354,7 @@ class VispyCanvas:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
         if self.grid.grid_size == self.viewer.grid.actual_shape(
-            len(self.viewer.layers), self.viewer.layers
+             self.viewer.layers
         ):
             return
 
@@ -1357,7 +1369,6 @@ class VispyCanvas:
         self.grid = self.central_widget.add_grid(border_width=0)
 
         for (row, col), _ in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers),
             self.viewer.layers,
         ):
             view = self.grid[row, col]
@@ -1394,7 +1405,6 @@ class VispyCanvas:
 
     def _setup_layer_views_in_grid(self):
         for (row, col), layer_indices in self.viewer.grid.iter_viewboxes(
-            len(self.viewer.layers),
             self.viewer.layers,
         ):
             view = self.grid[row, col]
@@ -1432,23 +1442,18 @@ class VispyCanvas:
         """
         # TODO: this should be all handled on the grid model ideally, using validators
         raw_spacing = self.viewer.grid._compute_canvas_spacing_raw(
-            self._scene_canvas.size, len(self.viewer.layers)
+            self._scene_canvas.size
         )
         safe_spacing = self.viewer.grid._compute_canvas_spacing(
-            self._scene_canvas.size, len(self.viewer.layers)
+            self._scene_canvas.size
         )
 
         if raw_spacing > safe_spacing:
             warnings.warn(
-                trans._(
-                    'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                    'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
-                    'becoming too small. Consider using a smaller spacing value or '
-                    'increasing the canvas size.',
-                    deferred=True,
-                    raw_spacing=raw_spacing,
-                    safe_spacing=safe_spacing,
-                ),
+                f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
+                'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                'becoming too small. Consider using a smaller spacing value or '
+                'increasing the canvas size.',
                 UserWarning,
                 stacklevel=2,
             )
