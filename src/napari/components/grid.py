@@ -51,9 +51,7 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     spacing: GridSpacing = 0.0
 
-    def actual_shape(
-        self, layers: Sequence | None = None
-    ) -> tuple[int, int]:
+    def actual_shape(self, layers: Sequence | None = None) -> tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -145,9 +143,7 @@ class GridCanvas(EventedModel):
         return (int(i_row), int(i_column))
 
     def contents_at(
-        self,
-        position: tuple[int, int],
-        layers: Sequence | None = None
+        self, position: tuple[int, int], layers: Sequence | None = None
     ) -> tuple[int, ...]:
         """Return the indices contained in the viewbox at the given position.
 
@@ -191,7 +187,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None
+        layers: Sequence | None = None,
     ) -> int:
         """Compute the spacing between viewboxes in canvas pixels.
 
@@ -230,7 +226,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing_raw(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None
+        layers: Sequence | None = None,
     ) -> int:
         """Compute the raw spacing between viewboxes in canvas pixels.
 
@@ -254,9 +250,7 @@ class GridCanvas(EventedModel):
 
         return spacing
 
-    def _effective_indices(
-        self, layers: Sequence | None = None
-    ) -> list[int]:
+    def _effective_indices(self, layers: Sequence | None = None) -> list[int]:
         """Return a list of original layer indices that are "active" in the grid."""
         if layers is None or abs(self.stride) >= 2:
             return list(range(len(layers)))

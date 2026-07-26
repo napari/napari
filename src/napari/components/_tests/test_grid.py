@@ -1,9 +1,11 @@
 from napari.components.grid import GridCanvas
 
+
 # build mock layers with visible attribute
 class mock_layer:
     def __init__(self, visible=True):
         self.visible = visible
+
 
 layers_9 = [mock_layer() for _ in range(9)]
 layers_5 = [mock_layer() for _ in range(5)]
@@ -17,6 +19,7 @@ layers_5_invisible = [mock_layer(visible=False) for _ in range(5)]
 layers_7_invisible = [mock_layer(visible=False) for _ in range(7)]
 layers_3_invisible = [mock_layer(visible=False) for _ in range(3)]
 layers_10_invisible = [mock_layer(visible=False) for _ in range(10)]
+
 
 def test_grid_creation():
     """Test creating grid object"""
@@ -100,5 +103,3 @@ def test_actual_shape_grid_disabled():
     assert not grid.enabled
     assert grid.actual_shape(layers_9) == (1, 1)
     assert grid.position(3, layers_9) == (0, 0)
-
-
