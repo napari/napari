@@ -213,6 +213,9 @@ authors:
   family-names: Defauw
   affiliation: Flemish Institute for Biotechnology
   alias: ArneDefauw
+- given-names: Sara
+  family-names: Czasak
+  alias: sara-czasak
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -232,6 +235,10 @@ authors:
   affiliation: Pioneering Research Institute, RIKEN
   orcid: https://orcid.org/0000-0002-8860-7178
   alias: yfukai
+- given-names: Arbor
+  family-names: Garnett
+  affiliation: University of Minnesota
+  alias: arbormoss
 - given-names: Christoph
   family-names: Gohlke
   affiliation: University of California, Irvine
@@ -428,6 +435,10 @@ authors:
 - given-names: James
   family-names: Ryan
   alias: jamesyan-git
+- given-names: Tom
+  family-names: Saveur
+  orcid: https://orcid.org/0009-0002-6410-4063
+  alias: Tommaati
 - given-names: Gabriel
   family-names: Selzer
   affiliation: University of Wisconsin-Madison
@@ -470,6 +481,9 @@ authors:
   affiliation: University College London
   orcid: https://orcid.org/0000-0002-1365-1908
   alias: dstansby
+- given-names: Michal
+  family-names: Steuer
+  alias: michalslabs
 - given-names: Wulin
   family-names: Teo
   affiliation: Houston Methodist Research Institute
@@ -543,5 +557,45 @@ authors:
   affiliation: University of Bonn
   orcid: https://orcid.org/0000-0002-9998-0058
   alias: roaldarbol
+- given-names: Giliane
+  family-names: Rochat
+  affiliation: Institute of Neuropathology, University Hospital of Zürich
+  orcid: https://orcid.org/0009-0003-6017-1418
+  alias: girochat
+- given-names: Filippo Maria
+  family-names: Castelli
+  affiliation: Delta Tribe SRL
+  orcid: https://orcid.org/0000-0001-8170-8905
+  alias: filippocastelli
+- given-names: Revathy
+  family-names: Venugopal
+  affiliation: Synopsys, Inc.
+  alias: revathyvenugopal162
+- given-names: Edouard
+  family-names: Coussoux
+  affiliation: Synopsys, Inc.
+  alias: ecoussoux-ansys
+- given-names: Mridul
+  family-names: Seth
+  affiliation: European Spallation Source
+  orcid: https://orcid.org/0000-0002-0969-0437
+  alias: mriduls
+- given-names: Sébastien
+  family-names: Morais
+  affiliation: Synopsys, Inc.
+  alias: SMoraisAnsys
+- given-names: Bas
+  family-names: Bloemsaat
+  affiliation: QStarsIT
+  alias: basbloemsaat
+- given-names: Kamil
+  family-names: Kania
+  alias: Grzyb33k
+  orcid: https://orcid.org/0009-0008-1188-1081
+- given-names: Ioannis
+  family-names: Liaskas
+  alias: BadPrograms
+  affiliation: Aix Marseille University, IBDM, Turing Centre for Living systems
+  orcid: https://orcid.org/0000-0002-8715-084X
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
