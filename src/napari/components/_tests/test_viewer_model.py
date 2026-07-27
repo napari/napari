@@ -422,27 +422,20 @@ def test_grid():
     "Test grid_view"
     viewer = ViewerModel()
 
-    # create mock layers with visible attribute
-    class mock_layer:
-        def __init__(self, visible=True):
-            self.visible = visible
-
-    layers_6 = [mock_layer() for _ in range(6)]
-
     np.random.seed(0)
     # Add image
     for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(layers_6) == (1, 1)
+    assert viewer.grid.actual_shape(viewer.layers) == (1, 1)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
 
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(layers_6) == (2, 3)
+    assert viewer.grid.actual_shape(viewer.layers) == (2, 3)
     assert viewer.grid.stride == 1
     assert viewer.grid.spacing == 0
 
@@ -450,7 +443,7 @@ def test_grid():
     viewer.grid.stride = -2
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(layers_6) == (2, 2)
+    assert viewer.grid.actual_shape(viewer.layers) == (2, 2)
     assert viewer.grid.stride == -2
     assert viewer.grid.spacing == 0
 
