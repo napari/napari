@@ -140,6 +140,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     rgb : bool, optional
         Whether the image is RGB or RGBA if rgb. If not
         specified by user, but the last dimension of the data has length 3 or 4,
@@ -270,6 +275,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         interpolation2d: InterpolationStr = 'nearest',
         interpolation3d: InterpolationStr = 'linear',
         iso_threshold: float | None = None,
+        locked_data_level: int | None = None,
         metadata: dict | None = None,
         multiscale: bool | None = None,
         name: str | None = None,
@@ -351,6 +357,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._iso_threshold = cmin + (cmax - cmin) / 2
         else:
             self._iso_threshold = iso_threshold
+
+        if locked_data_level is not None:
+            self.locked_data_level = locked_data_level
 
     @property
     def rendering(self) -> str:
