@@ -6,9 +6,11 @@ from unittest import mock
 
 import pytest
 import requests
+from qtpy.QtWidgets import QLineEdit, QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
+from napari._qt.widgets.qt_viewer_tour import _focus_accepts_text
 
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
@@ -38,6 +40,20 @@ def test_about_action(make_napari_viewer, action_id):
     ) as mock_about:
         app.commands.execute_command(action_id)
     mock_about.assert_called_once_with(viewer.window._qt_window)
+
+
+def test_tour_shortcuts_ignore_text_focus():
+    with mock.patch(
+        'napari._qt.widgets.qt_viewer_tour.QApplication.focusWidget',
+        return_value=QLineEdit(),
+    ):
+        assert _focus_accepts_text()
+
+    with mock.patch(
+        'napari._qt.widgets.qt_viewer_tour.QApplication.focusWidget',
+        return_value=QWidget(),
+    ):
+        assert not _focus_accepts_text()
 
 
 def test_start_viewer_tour():

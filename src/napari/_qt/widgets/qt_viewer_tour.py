@@ -6,11 +6,15 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
 from qtpy.QtWidgets import (
+    QAbstractSpinBox,
     QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
+    QPlainTextEdit,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -206,6 +210,13 @@ class _TourOverlay(QWidget):
         painter.drawRect(rect)
 
 
+def _focus_accepts_text() -> bool:
+    focus = QApplication.focusWidget()
+    return isinstance(
+        focus, (QAbstractSpinBox, QLineEdit, QPlainTextEdit, QTextEdit)
+    )
+
+
 class GuidedTour(QObject):
     finished = Signal()
 
@@ -273,6 +284,11 @@ class GuidedTour(QObject):
             key_event = event
             if not isinstance(key_event, QKeyEvent):
                 return super().eventFilter(watched, event)
+            if key_event.key() == Qt.Key.Key_Escape:
+                self.close_tour()
+                return True
+            if _focus_accepts_text():
+                return super().eventFilter(watched, event)
             if key_event.key() in (
                 Qt.Key.Key_N,
                 Qt.Key.Key_Right,
@@ -287,9 +303,6 @@ class GuidedTour(QObject):
                 Qt.Key.Key_Backspace,
             ):
                 self._on_back()
-                return True
-            if key_event.key() == Qt.Key.Key_Escape:
-                self.close_tour()
                 return True
         return super().eventFilter(watched, event)
 
