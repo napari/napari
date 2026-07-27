@@ -1,6 +1,6 @@
 """MutableMapping that emits events when altered."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from psygnal import EmissionInfo, EventedModel as PsygnalModel
 
@@ -169,7 +169,7 @@ class EventedDictNamespace(EventedDict[str, _T]):
     Needs keys to be str.
     """
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> _T:
         # we need some special cases cause they are accessed before full initialization
         if name == 'events':
             raise AttributeError(name)
@@ -178,7 +178,7 @@ class EventedDictNamespace(EventedDict[str, _T]):
         except KeyError as e:
             raise AttributeError(name) from e
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: _T) -> None:
         # we need some special cases cause they are accessed before full initialization
         if (
             name in ('events', '_dict', '_basetypes')
