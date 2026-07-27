@@ -411,6 +411,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
+                'locked_data_level': self.locked_data_level,
                 'auto_contrast': self.auto_contrast,
                 'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
@@ -422,7 +423,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
-                'locked_data_level': self.locked_data_level,
                 'data': self.data,
                 'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }
