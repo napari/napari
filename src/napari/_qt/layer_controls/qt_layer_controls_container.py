@@ -94,7 +94,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        viewer.layers.selection.events.active.connect(self._display)
+        viewer.layers.selection.events.changed.connect(self._display)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         viewer.events.theme.connect(self._on_viewer_theme_changed)
 
@@ -135,12 +135,16 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
-        layer = event.value
-        if layer is None:
+        layers = self.viewer.layers.selection
+        if not layers:
             self.setCurrentWidget(self.empty_widget)
-        else:
+        elif all (isinstance(layer, type(list(layers)[0])) for layer in layers):
+            layer = list(layers)[0]
             controls = self.widgets[layer]
+            controls._layers = layers
             self.setCurrentWidget(controls)
+        else:
+            self.setCurrentWidget(self.empty_widget)
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.

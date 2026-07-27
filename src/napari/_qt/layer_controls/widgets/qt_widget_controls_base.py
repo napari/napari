@@ -54,6 +54,7 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         super().__init__(parent)
         # Setup layer
         self._layer = layer
+        self._layers = set()
         # Track registered callbacks (defined via `attr_to_settr` for example)
         # so it is possible to disconnect them when the widget is being closed/deleted.
         # Arguments of callbacks are hard to track; Any is the best we can do here.
@@ -79,6 +80,10 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         disconnect_events(self._layer.events, self)
         for callback in self._callbacks:
             disconnect_events(self._layer.events, callback)
+        for layer in self._layers:
+            disconnect_events(layer.events, self)
+            for callback in self._callbacks:
+                disconnect_events(layer.events, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()
