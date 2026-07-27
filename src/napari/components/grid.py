@@ -71,10 +71,11 @@ class GridCanvas(EventedModel):
         shape : 2-tuple of int
             Number of rows and columns in the grid.
         """
-        if not self.enabled:
-            return (1, 1)
-
-        if not layers:
+        if (
+            not self.enabled  # grid is off
+            or not layers  # empty layer list
+            or not self._effective_indices(layers)  # all layers are hidden
+        ):
             return (1, 1)
 
         n_row, n_column = self.shape
