@@ -75,6 +75,7 @@ def generate_layer_status_strings(
     precision: int | None = None,
 ) -> tuple[str, str]:
     if position is not None:
+        position = np.asarray(position)
         format_mode = 'i' if np.issubdtype(position.dtype, np.integer) else 'f'
         pos_str = status_format(
             position, precision=precision, format_mode=format_mode

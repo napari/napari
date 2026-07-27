@@ -2239,7 +2239,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         See https://github.com/napari/napari/pull/9287 for further discussion.
         """
-        return (
+        return bool(
             np.all(np.asarray(self.scale) == 1)
             and np.all(np.asarray(self.translate) == 0)
             and all(
