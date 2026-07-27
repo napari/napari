@@ -76,7 +76,10 @@ def generate_layer_status_strings(
 ) -> tuple[str, str]:
     if position is not None:
         position = np.asarray(position)
-        format_mode = 'i' if np.issubdtype(position.dtype, np.integer) else 'f'
+        # format mode 'd' is for decimal integers, 'f' is for fixed point
+        # (specific number of decimals). See:
+        # https://docs.python.org/3/library/string.html#:~:text=The%20available%20integer%20presentation%20types%20are
+        format_mode = 'd' if np.issubdtype(position.dtype, np.integer) else 'f'
         pos_str = status_format(
             position, precision=precision, format_mode=format_mode
         )
