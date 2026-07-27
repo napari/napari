@@ -795,7 +795,6 @@ class VispyCanvas:
         self.layer_to_visual[napari_layer] = vispy_layer
         self._layer_overlay_to_visual[napari_layer] = {}
 
-        napari_layer.events.visible.connect(self._reorder_layers)
         napari_layer.events.visible.connect(self._update_scenegraph)
         overlay_callback = partial(self._update_layer_overlays, napari_layer)
         napari_layer.events.visible.connect(overlay_callback)
@@ -1080,14 +1079,11 @@ class VispyCanvas:
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
             if not overlay.visible:
-                if callback is not None:
-                    overlay.events.visible.connect(callback, unique=True)
+                overlay.events.visible.connect(callback, unique=True)
 
                 continue
 
-            if callback is not None:
-                with contextlib.suppress(KeyError, RuntimeError, TypeError):
-                    overlay.events.visible.disconnect(callback)
+            overlay.events.visible.disconnect(callback)
 
             vispy_overlay = overlay_to_visual.get(overlay, None)
 
