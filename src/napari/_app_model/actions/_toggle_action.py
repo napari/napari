@@ -4,6 +4,7 @@ from typing import Any
 
 from app_model import Action
 from app_model.types import ToggleRule
+from pydantic import PrivateAttr
 
 from napari.components import ViewerModel
 
@@ -31,6 +32,8 @@ class ViewerModelToggleAction(Action):
     ... )
     """
 
+    _attribute_path_parts: list[str] = PrivateAttr(default_factory=list)
+
     def __init__(
         self,
         *,
@@ -39,25 +42,26 @@ class ViewerModelToggleAction(Action):
         attribute_path: str,
         **kwargs: Any,
     ) -> None:
-        def get_current(viewer: ViewerModel) -> bool:
-            """return the current value of the viewer attribute"""
-            attr = viewer
-            for part in attribute_path.split('.'):
-                attr = getattr(attr, part)
-            return attr  # type: ignore[return-value]
-
-        def toggle(viewer: ViewerModel) -> None:
-            """toggle the viewer attribute"""
-            attr = viewer
-            parts = attribute_path.split('.')
-            for part in parts[:-1]:
-                attr = getattr(attr, part)
-            setattr(attr, parts[-1], not getattr(attr, parts[-1]))
-
         super().__init__(
             id=id,
             title=title,
-            toggled=ToggleRule(get_current=get_current),
-            callback=toggle,
+            toggled=ToggleRule(get_current=self.get_current),
+            callback=self.toggle,
             **kwargs,
         )
+        self._attribute_path_parts.extend(attribute_path.split('.'))
+
+    def get_current(self, viewer: ViewerModel) -> bool:
+        """return the current value of the viewer attribute"""
+        attr = viewer
+        for part in self._attribute_path_parts:
+            attr = getattr(attr, part)
+        return attr  # type: ignore[return-value]
+
+    def toggle(self, viewer: ViewerModel) -> None:
+        """toggle the viewer attribute"""
+        attr = viewer
+        parts = self._attribute_path_parts
+        for part in parts[:-1]:
+            attr = getattr(attr, part)
+        setattr(attr, parts[-1], not getattr(attr, parts[-1]))
