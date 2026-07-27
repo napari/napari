@@ -718,7 +718,7 @@ class QtViewerButtons(QFrame):
         # 1000 is arbitrary.
         grid_stride.setMinimum(-1000)
         grid_stride.setProhibitValue(0)
-        grid_stride.setValue(self.viewer.grid.stride)
+        grid_stride.setValue(self.viewer.canvas.grid.stride)
         grid_stride.valueChanged.connect(self._update_grid_stride)
         self.grid_stride_box = grid_stride
 
@@ -726,7 +726,7 @@ class QtViewerButtons(QFrame):
         grid_width.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_width.setMinimum(-1)
         grid_width.setProhibitValue(0)
-        grid_width.setValue(self.viewer.grid.shape[1])
+        grid_width.setValue(self.viewer.canvas.grid.shape[1])
         grid_width.valueChanged.connect(self._update_grid_width)
         self.grid_width_box = grid_width
 
@@ -734,7 +734,7 @@ class QtViewerButtons(QFrame):
         grid_height.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_height.setMinimum(-1)
         grid_height.setProhibitValue(0)
-        grid_height.setValue(self.viewer.grid.shape[0])
+        grid_height.setValue(self.viewer.canvas.grid.shape[0])
         grid_height.valueChanged.connect(self._update_grid_height)
         self.grid_height_box = grid_height
 
@@ -745,7 +745,7 @@ class QtViewerButtons(QFrame):
         grid_spacing.setAlignment(Qt.AlignmentFlag.AlignCenter)
         grid_spacing.setMinimum(0)
         grid_spacing.setMaximum(MAX_GRID_SPACING)
-        grid_spacing.setValue(self.viewer.grid.spacing)
+        grid_spacing.setValue(self.viewer.canvas.grid.spacing)
         grid_spacing.setDecimals(2)
         grid_spacing.setSingleStep(5)
         grid_spacing.valueChanged.connect(self._update_grid_spacing)
