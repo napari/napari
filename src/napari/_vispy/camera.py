@@ -257,7 +257,7 @@ class VispyCamera:
         with self._camera.events.angles.blocker():
             self.angles = self._camera.angles
 
-    def on_draw(self, _event):
+    def on_draw(self, _event) -> None:
         """Called whenever the canvas is drawn.
 
         Update camera model angles, center, and zoom.

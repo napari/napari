@@ -13,6 +13,8 @@ from napari.utils.events import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
@@ -31,6 +33,9 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
+    x_size: float = 0.0
+    y_size: float = 0.0
+    canvas_position_callback: Callable[[], None] | None = None
 
     def __init__(
         self,
@@ -68,6 +73,12 @@ class VispyBaseOverlay:
     def _on_blending_change(self) -> None:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
+
+    def _on_box_change(self) -> None:
+        """Base no-op; overridden by subclasses that support boxes (VispyCanvasOverlay)."""
+
+    def _on_unit_change(self) -> None:
+        """Base no-op; overridden by subclasses that support units (e.g. scale bar)."""
 
     def reset(self) -> None:
         self._on_visible_change()
