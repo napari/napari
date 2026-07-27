@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._tests.utils import (
     count_warning_events,
     good_layer_data,
@@ -1264,3 +1265,38 @@ def test_fit_to_view_handles_no_layers():
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
     np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
+
+
+def test_new_layer_from_active_layer_inherits_axis_labels():
+    """new layer on a selected layer inherits its axis labels"""
+    viewer = ViewerModel()
+    # test from selected image layer
+    image_layer = viewer.add_image(
+        np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c')
+    )
+    viewer.layers.selection.active = image_layer
+    viewer._new_labels()  # image→labels
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    new_shapes(viewer)  # image→shapes
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    new_points(viewer)  # image→points
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    # test from selected shapes layer
+    shape_layer = viewer.add_shapes(ndim=3, axis_labels=('z', 'y', 'x'))
+    viewer.layers.selection.active = shape_layer
+    viewer._new_labels()  # shapes→labels
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shape_layer.axis_labels
+    new_shapes(viewer)  # shapes→shapes
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shape_layer.axis_labels
+    new_points(viewer)  # # shapes→points
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shape_layer.axis_labels
+    # test from unselected
+    viewer.layers.selection.active = None
+    new_shapes(viewer)  # unselected→shapes
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
