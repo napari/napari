@@ -154,7 +154,7 @@ class Canvas(EventedModel):
             np.array(get_theme(theme).canvas.as_rgb_tuple()) / 255
         )
 
-    def _update_bgcolor_from_viewer(self, theme: Event):
+    def _update_bgcolor_from_viewer(self, theme: Event) -> None:
         changed = theme.value != self._viewer_theme
         self._viewer_theme = theme.value
         if changed and self.background_color_override is None:
