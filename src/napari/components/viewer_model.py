@@ -303,10 +303,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
-    # simple properties exposing overlays for backward compatibility
+    # simple properties exposing overlays for backward compatibility and easy access
+    # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
+    #       know that specific elements match specific types
     @property
     def axes(self) -> AxesOverlay:
-        return self._scene_overlays.axes
+        return self._scene_overlays.axes  # type: ignore[return-value]
 
     @property
     @deprecated(
@@ -314,7 +316,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> FloatingAxesOverlay:
-        return self.canvas.overlays.floating_axes
+        return self.canvas.overlays.floating_axes  # type: ignore[return-value]
 
     @property
     @deprecated(
@@ -322,7 +324,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
-        return self.canvas.overlays.scale_bar
+        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
     @property
     @deprecated(
@@ -330,7 +332,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
-        return self.canvas.overlays.text
+        return self.canvas.overlays.text  # type: ignore[return-value]
 
     @property
     @deprecated(
