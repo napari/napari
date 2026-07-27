@@ -76,6 +76,8 @@ class VispyBaseOverlay:
         self.overlay.events.visible.disconnect(self._on_visible_change)
         self.overlay.events.opacity.disconnect(self._on_opacity_change)
         self.overlay.events.blending.disconnect(self._on_blending_change)
+        disconnect_events(self.viewer.events, self)
+        disconnect_events(self.viewer.canvas.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
