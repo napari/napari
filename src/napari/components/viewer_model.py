@@ -201,8 +201,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # private track of overlays, only expose the old ones for backward compatibility
-    _overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
+    _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
         default_factory=lambda: (  # type: ignore
             EventedDictNamespace({'axes': AxesOverlay()})
         )
@@ -306,7 +305,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # simple properties exposing overlays for backward compatibility
     @property
     def axes(self) -> AxesOverlay:
-        return self._overlays.axes
+        return self._scene_overlays.axes
 
     @property
     def floating_axes(self) -> FloatingAxesOverlay:
