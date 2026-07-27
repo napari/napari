@@ -422,6 +422,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
                 'gamma': self.gamma,
+                'locked_data_level': self.locked_data_level,
                 'data': self.data,
                 'custom_interpolation_kernel_2d': self.custom_interpolation_kernel_2d,
             }
