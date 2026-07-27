@@ -68,7 +68,7 @@ air_layer = viewer.add_image(
         **get_scale_translate(airtemp, 'air'),
         colormap='viridis',
         blending='additive',
-        contrast_limits=(-23 + 273, 32 + 273),  # data are in degrees Kelvin,
+        contrast_limits=(-23 + 273, 32 + 273),  # data are in degrees Kelvin
         axis_labels=sst.sst.dims
         )
 
