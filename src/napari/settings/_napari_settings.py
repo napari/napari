@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from npe2 import PluginManager
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
@@ -11,6 +12,7 @@ from napari.settings._base import (
     _NOT_SET,
     EventedConfigFileSettings,
     _remove_empty_dicts,
+    build_config_model,
 )
 from napari.settings._experimental import ExperimentalSettings
 from napari.settings._fields import Version
@@ -23,7 +25,44 @@ _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
 
 
-class NapariSettings(EventedConfigFileSettings):
+def plugin_configuration_generator() -> dict[
+    str, type[EventedConfigFileSettings]
+]:
+    pm = PluginManager.instance()
+    pm.discover()
+    plugins = sorted(
+        pm.iter_manifests(),
+        key=lambda x: x.name,
+    )
+    plugin_contr = {
+        plug.name: plug.contributions for plug in plugins if plug.contributions
+    }
+    configurations = {
+        plug: conf.configuration
+        for plug, conf in plugin_contr.items()
+        if conf.configuration
+    }
+    configurations = {
+        name: build_config_model(conf, name)
+        for name, conf in configurations.items()
+    }
+    # for name, conf in configurations.items():
+    #     Model = build_config_model(conf, name)
+
+    #     print("MODEL:", Model)
+    #     print("FIELDS:", Model.model_fields)
+
+    #     instance = Model()
+
+    #     print("INSTANCE:", instance)
+    #     print("INSTANCE TYPE:", type(instance))
+
+    #     configurations[name] = instance
+
+    return configurations
+
+
+class NapariSettings(type[EventedConfigFileSettings]):
     """Schema for napari settings."""
 
     # 1. If you want to *change* the default value of a current option, you need to
@@ -72,6 +111,11 @@ class NapariSettings(EventedConfigFileSettings):
         Path(_CFG_PATH) if _CFG_PATH else None, exclude=True
     )
 
+    plugin_preferences: dict[str, type[EventedConfigFileSettings]] = Field(
+        default_factory=plugin_configuration_generator,
+        title='Plugin Preferences',
+    )
+
     model_config = SettingsConfigDict(
         env_prefix='napari_',
         nested_model_default_partial_update=True,
@@ -108,6 +152,9 @@ class NapariSettings(EventedConfigFileSettings):
             from napari.settings._migrations import do_migrations
 
             do_migrations(self)
+
+
+class template(EventedConfigFileSettings): ...
 
 
 if __name__ == '__main__':

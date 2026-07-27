@@ -4,11 +4,12 @@ import contextlib
 import json
 import logging
 import os
+import re
 from collections.abc import Mapping
 from enum import StrEnum
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
 
 from pydantic import (
@@ -18,6 +19,7 @@ from pydantic import (
     PrivateAttr,
     TypeAdapter,
     ValidationError,
+    create_model,
 )
 from pydantic_settings import (
     BaseSettings,
@@ -275,6 +277,99 @@ class NapariEnvSettingsSource(EnvSettingsSource):
                     )
                     continue
                 sub_dkt[field_name] = value
+
+
+def _field_name(key: str, plugin_name: str) -> str:
+    """
+    Convert:
+        my_plugin.someSetting -> some_setting
+    """
+    key = key.removeprefix(f'{plugin_name}.')
+
+    key = re.sub(
+        r'(?<!^)(?=[A-Z])',
+        '_',
+        key,
+    )
+
+    key = re.sub(
+        r'[.\-\s]+',
+        '_',
+        key,
+    )
+
+    return key.lower()
+
+
+VALUE_TRANSLATOR = {
+    'maximum': 'le',
+    'minimum': 'ge',
+    'exclusive_maximum': 'lt',
+    'exclusive_minimum': 'gt',
+}
+_TYPE_MAP: dict[str, type] = {
+    'boolean': bool,
+    'string': str,
+    'integer': int,
+    'number': float,
+    'array': list,
+    'int': int,
+    'float': float,
+    'str': str,
+    'bool': bool,
+    'list': list,
+}
+
+
+def _build_single_config_model(
+    configuration,
+    plugin_name: str,
+) -> type[EventedModel]:
+
+    fields = {}
+
+    for key, props in configuration.properties.items():
+        if props.type is None:
+            continue
+
+        data = {k: getattr(props, k) for k in props.model_fields_set}
+
+        type_name = data.pop('type')
+        field_type = _TYPE_MAP.get(type_name)
+
+        field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
+
+        field_name = _field_name(key, plugin_name)
+
+        fields[field_name] = (
+            field_type,
+            Field(**field_kwargs),
+        )
+    model_name = re.sub(r'\W+', '', configuration.title.title()) + 'Settings'
+    return create_model(
+        model_name,
+        __base__=EventedModel,
+        **fields,
+    )
+
+
+def build_config_model(
+    configuration,
+    plugin_name: str,
+) -> EventedConfigFileSettings:
+
+    fields = {}
+    models = [
+        _build_single_config_model(conf, plugin_name) for conf in configuration
+    ]
+
+    for model in models:
+        fields[model.__name__] = (EventedModel, Field(default=model))
+
+    model_name = plugin_name + 'Settings'
+    return create_model(
+        model_name, __base__=EventedConfigFileSettings, **fields
+    )
 
 
 class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):

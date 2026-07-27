@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QDialog,
     QHBoxLayout,
@@ -14,7 +15,6 @@ from qtpy.QtWidgets import (
     QScrollArea,
     QStackedWidget,
     QVBoxLayout,
-    QAbstractItemView
 )
 
 from napari._pydantic_util import get_inner_type
@@ -94,7 +94,7 @@ class PreferencesDialog(QDialog):
             exclude={'schema_version'}
         )
 
-        self._list.clear()
+        self._list.clear()  # Why recreate the list now? Why create it in the init?
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
@@ -102,6 +102,16 @@ class PreferencesDialog(QDialog):
             field_name,
             field_info,
         ) in self._settings.__class__.model_fields.items():
+            if field_name != 'plugin_preferences':
+                field_type = get_inner_type(field_info.annotation)
+                if get_origin(field_type) is None and issubclass(
+                    field_type, BaseModel
+                ):
+                    self._add_page(field_name, field_info)
+
+        for field_name, field_info in self._settings[
+            'plugin_preferences'
+        ].__class__.model_fields.items():
             field_type = get_inner_type(field_info.annotation)
             if get_origin(field_type) is None and issubclass(
                 field_type, BaseModel
