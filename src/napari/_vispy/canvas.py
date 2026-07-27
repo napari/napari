@@ -253,7 +253,7 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
-        self._scene_canvas.events.resize.connect(self._on_vispy_resize)
+        self._scene_canvas.events.resize.connect(self._on_vispy_size_change)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -312,7 +312,7 @@ class VispyCanvas:
             self._defer_canvas_overlay_position_update
         )
 
-        self.viewer.canvas.events.size.connect(self._on_size_change)
+        self.viewer.canvas.events.size.connect(self._on_model_size_change)
         self.destroyed.connect(self._disconnect_events)
 
     @property
@@ -743,7 +743,7 @@ class VispyCanvas:
                 shape_threshold=self._current_viewbox_size[::-1],
             )
 
-    def _on_vispy_resize(self, event: ResizeEvent) -> None:
+    def _on_vispy_size_change(self, event: ResizeEvent) -> None:
         """Called whenever canvas is resized on the vispy/gui side.
 
         Parameters
@@ -755,12 +755,16 @@ class VispyCanvas:
         -------
         None
         """
-        with self.viewer.canvas.events.size.blocker(self._on_vispy_resize):
+        with self.viewer.canvas.events.size.blocker(
+            self._on_vispy_size_change
+        ):
             self.viewer.canvas.size = self.size
 
-    def _on_size_change(self) -> None:
+    def _on_model_size_change(self) -> None:
         """Called whenever the canvas model size is set to a new value."""
-        with self._scene_canvas.events.resize.blocker(self._on_size_change):
+        with self._scene_canvas.events.resize.blocker(
+            self._on_model_size_change
+        ):
             self.size = self.viewer.canvas.size
 
     def add_layer_visual_mapping(
