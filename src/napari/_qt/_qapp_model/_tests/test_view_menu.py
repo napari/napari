@@ -68,17 +68,17 @@ def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    initial_value = viewer
-    for part in attribute_path.split('.'):
-        initial_value = getattr(initial_value, part)
+    *parent_path, attr_name = attribute_path.split('.')
+    parent = viewer
+    for part in parent_path:
+        parent = getattr(parent, part)
+    initial_value = getattr(parent, attr_name)
 
     # Change sub-attribute via action command execution and check value
     with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
 
-    changed_value = viewer
-    for part in attribute_path.split('.'):
-        changed_value = getattr(changed_value, part)
+    changed_value = getattr(parent, attr_name)
 
     assert initial_value is not changed_value
 
