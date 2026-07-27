@@ -715,12 +715,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             dtype_str = get_settings().application.new_labels_dtype
             empty_labels = np.zeros(shape, dtype=dtype_str)
             active = self.layers.selection.active
+            axis_labels = active.axis_labels if active is not None else None
             layer = Labels(
                 data=empty_labels,
                 translate=np.array(corner),
                 scale=scale,
                 units=units,
-                axis_labels=active.axis_labels if active is not None else None,
+                axis_labels=axis_labels,
             )
         else:
             layer = Labels(
