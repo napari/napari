@@ -27,6 +27,7 @@ from app_model.expressions import Context
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
 from pydantic import Field, PrivateAttr, field_validator
+from typing_extensions import deprecated
 
 from napari import layers
 from napari.components._layer_slicer import _LayerSlicer
@@ -308,35 +309,35 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._scene_overlays.axes
 
     @property
+    @deprecated(
+        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
+        stacklevel=2,
+    )
     def floating_axes(self) -> FloatingAxesOverlay:
-        logger.info(
-            'viewer.floating_axes is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
-            stacklevel=2,
-        )
         return self.canvas.overlays.floating_axes
 
     @property
+    @deprecated(
+        'viewer.scale_bar is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.scale_bar instead.',
+        stacklevel=2,
+    )
     def scale_bar(self) -> ScaleBarOverlay:
-        logger.info(
-            'viewer.scale_bar is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.overlays.scale_bar instead.',
-            stacklevel=2,
-        )
         return self.canvas.overlays.scale_bar
 
     @property
+    @deprecated(
+        'viewer.text_overlay is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.text instead.',
+        stacklevel=2,
+    )
     def text_overlay(self) -> TextOverlay:
-        logger.info(
-            'viewer.text_overlay is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.overlays.text instead.',
-            stacklevel=2,
-        )
         return self.canvas.overlays.text
 
     @property
+    @deprecated(
+        'viewer.grid is a deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
+        stacklevel=2,
+    )
     def grid(self) -> GridCanvas:
-        logger.info(
-            'viewer.grid is a soft-deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
-            stacklevel=2,
-        )
         return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
