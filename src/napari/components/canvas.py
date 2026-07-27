@@ -89,6 +89,7 @@ class Canvas(EventedModel):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.events.add(_overlay_positions_changed=Event)
+        self._viewer_theme = None
 
         self._update_viewer_grid()
 
@@ -142,13 +143,19 @@ class Canvas(EventedModel):
         if self.background_color_override is not None:
             return self.background_color_override.copy()
 
-        # TODO: ugly workaround to get access to viewer theme override.
-        #       This should probably be removed or implemented differently higher up
-        if hasattr(self, '_viewer_ref'):
-            theme = self._viewer_ref().theme
-        else:
-            theme = get_settings().appearance.theme
+        # viewer theme can be different than the global settings theme
+        theme = (
+            get_settings().appearance.theme
+            if self._viewer_theme is None
+            else self._viewer_theme
+        )
 
         return ColorValue(
             np.array(get_theme(theme).canvas.as_rgb_tuple()) / 255
         )
+
+    def _update_bgcolor_from_viewer(self, theme: Event):
+        changed = theme.value != self._viewer_theme
+        self._viewer_theme = theme.value
+        if changed and self.background_color_override is None:
+            self.events.background_color()
