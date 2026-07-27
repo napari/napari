@@ -72,7 +72,7 @@ class GridCanvas(EventedModel):
             Number of rows and columns in the grid.
         """
         if (
-            not self.enabled # grid is off
+            not self.enabled  # grid is off
             or not self._effective_indices(layers)  # no visible layers
         ):
             return (1, 1)
