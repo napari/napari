@@ -657,6 +657,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 rotate=base_layer.rotate,
                 shear=base_layer.shear,
                 units=base_layer.units,
+                axis_labels=base_layer.axis_labels,
                 affine=base_layer.affine,
                 name=base_layer.name + ' - Labels',
             )
@@ -674,11 +675,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ]
             dtype_str = get_settings().application.new_labels_dtype
             empty_labels = np.zeros(shape, dtype=dtype_str)
+            active = self.layers.selection.active
+            axis_labels = active.axis_labels if active is not None else None
             layer = Labels(
                 data=empty_labels,
                 translate=np.array(corner),
                 scale=scale,
                 units=units,
+                axis_labels=axis_labels,
             )
         else:
             layer = Labels(
