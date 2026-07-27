@@ -567,14 +567,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id: None | uuid.UUID = None
+        self._unique_id: uuid.UUID | None = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode: None | str = None
+        self._visible_mode: str | None = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -1586,7 +1586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> float | int | None | tuple[float | int | None, int | None]:
+    ) -> float | int | tuple[float | int | None, int | None] | None:
         """Get the layer data value along a ray
 
         Parameters
