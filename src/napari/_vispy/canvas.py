@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import contextlib
 import gc
+import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from weakref import WeakSet
 
 import numpy as np
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
     from vispy.scene import Node
+    from vispy.scene.subscene import SubScene
 
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.overlays.base import (
@@ -54,9 +56,6 @@ if TYPE_CHECKING:
     from napari.components.overlays import Overlay
     from napari.layers import Layer
     from napari.utils.key_bindings import KeymapHandler
-
-
-import warnings
 
 
 class NapariSceneCanvas(SceneCanvas_):
@@ -815,10 +814,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
-        for overlay in self._viewer_overlay_to_visual.get(
+        for vispy_scale_bar_overlay in self._viewer_overlay_to_visual.get(
             self.viewer.canvas.overlays.scale_bar, []
         ):
-            overlay._on_unit_change()
+            vispy_scale_bar_overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -934,7 +933,11 @@ class VispyCanvas:
         overlay.events.gridded.disconnect(self._update_viewer_overlays)
 
     def _create_or_update_vispy_overlay(
-        self, overlay, vispy_overlay, parent, **kwargs
+        self,
+        overlay: Overlay,
+        vispy_overlay: VispyBaseOverlay | None,
+        parent: ViewBox | SubScene,
+        **kwargs: Any,
     ) -> VispyBaseOverlay:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
@@ -950,7 +953,7 @@ class VispyCanvas:
                 vispy_overlay._on_box_change()
         return vispy_overlay
 
-    def _update_viewer_overlays(self):
+    def _update_viewer_overlays(self) -> None:
         """Update the viewer's overlay visuals."""
         all_overlays = set(self.viewer._scene_overlays.values()) | set(
             self.viewer.canvas.overlays.values()
@@ -1011,25 +1014,21 @@ class VispyCanvas:
                         # no overlays should be displayed in empty viewboxes
                         continue
 
-                    parent = self.grid[row, col]
-                    if not canvas_overlay:
-                        parent = parent.scene
+                    viewbox: ViewBox = self.grid[row, col]
                     vispy_overlay = self._create_or_update_vispy_overlay(
                         overlay=overlay,
                         vispy_overlay=vispy_overlay,
-                        parent=parent,
+                        parent=viewbox if canvas_overlay else viewbox.scene,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
             else:
-                parent = self.view
-                if not canvas_overlay:
-                    parent = parent.scene
+                viewbox = self.view
                 vispy_overlay = vispy_overlays[0] if vispy_overlays else None
                 vispy_overlay = self._create_or_update_vispy_overlay(
                     overlay=overlay,
                     vispy_overlay=vispy_overlay,
-                    parent=parent,
+                    parent=viewbox if canvas_overlay else viewbox.scene,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
@@ -1113,15 +1112,15 @@ class VispyCanvas:
         free-floating (such as the cursor overlay), so those are skipped
         """
 
-        def is_visible_tileable(overlay):
-            return (
+        def is_visible_tileable(overlay: Overlay) -> bool:
+            return bool(
                 isinstance(overlay, CanvasOverlay)
                 and overlay.visible
                 and overlay.position in list(CanvasPosition)
             )
 
-        def is_gridded(overlay):
-            return (
+        def is_gridded(overlay: CanvasOverlay) -> bool:
+            return bool(
                 overlay.gridded
                 and self.viewer.canvas.grid.enabled
                 and len(self.viewer.layers)
