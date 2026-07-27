@@ -2284,6 +2284,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         status_dict = self._get_source_info().copy()
 
         if position is not None:
+            # We need to display the position in world coordinates with a
+            # specific precision. Here is how it is computed:
+            # - scale can be negative, so we take the abs
+            # - then, you take the -log10. For example, if the scale is 0.01,
+            #   you need 2 decimal places of precision to display the
+            #   coordinates so that you get at least 1 distinct coordinate
+            #   value per pixel.
+            # - the number of digits has to be an int, and we need to go higher
+            #   for "fractional" precision. That is, for 0.009, we need three
+            #   digits of precision. So we take the ceil.
+            # - we take the max over all the axes. [potential future
+            #   enhancement: each axis is displayed with its own precision]
+            # - Finally, this is all for the *minimum* precision to display
+            #   coordinates accurately. You want a bit of margin to prevent the
+            #   coordinates from changing abruptly in the middle of a pixel
+            #   whenever -log10(s) is not an integer. Therefore, we add 2
+            #   levels of precision.
+            # - we take a max because we don't want to go below 0 precision.
+            # - we convert to int because it needs to be int to be used in a
+            #   format string.
             precision = int(
                 max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
             )
