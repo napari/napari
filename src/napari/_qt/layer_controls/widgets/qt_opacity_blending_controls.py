@@ -48,7 +48,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
     def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
         # Setup layer
-        #self._layer.events.blending.connect(self._on_blending_change)
+        # self._layer.events.blending.connect(self._on_blending_change)
         for layer in self._layers:
             layer.events.blending.connect(self._on_blending_change)
         self.first_layer = next(iter(self._layers))
@@ -59,16 +59,14 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         sld.setMinimum(0)
         sld.setMaximum(1)
         sld.setSingleStep(0.01)
-        #sld.setValue(self._layer.opacity)
+        # sld.setValue(self._layer.opacity)
         sld.setValue(self.first_layer.opacity)
         self.opacity_slider = sld
         # connect_setattr(
         #     self.opacity_slider.valueChanged, self._layer, 'opacity'
         # )
         for layer in self._layers:
-            connect_setattr(
-                self.opacity_slider.valueChanged, layer, 'opacity'
-            )
+            connect_setattr(self.opacity_slider.valueChanged, layer, 'opacity')
         # self._callbacks.append(
         #     attr_to_settr(
         #         self._layer, 'opacity', self.opacity_slider, 'setValue'
@@ -76,7 +74,9 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         # )
         for layer in self._layers:
             self._callbacks.append(
-                attr_to_settr(layer, 'opacity', self.opacity_slider, 'setValue')
+                attr_to_settr(
+                    layer, 'opacity', self.opacity_slider, 'setValue'
+                )
             )
         self.opacity_label = QtWrappedLabel('opacity:')
 
@@ -118,14 +118,16 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         if self.first_layer.blending == Blending.MINIMUM:
             blending_tooltip = '`minimum` blending mode works best with inverted colormaps with a white background.'
         self.blend_combobox.setToolTip(blending_tooltip)
-        #self._layer.help = blending_tooltip
+        # self._layer.help = blending_tooltip
         for layer in self._layers:
             layer.help = blending_tooltip
 
     def _on_blending_change(self) -> None:
         """Receive layer model blending mode change event and update slider."""
         with self.first_layer.events.blending.blocker():
-            self.blend_combobox.setCurrentEnum(Blending(self.first_layer.blending))
+            self.blend_combobox.setCurrentEnum(
+                Blending(self.first_layer.blending)
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

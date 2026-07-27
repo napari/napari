@@ -138,7 +138,7 @@ class QtLayerControlsContainer(QStackedWidget):
         layers = self.viewer.layers.selection
         if not layers:
             self.setCurrentWidget(self.empty_widget)
-        elif all (isinstance(layer, type(list(layers)[0])) for layer in layers):
+        elif all(isinstance(layer, type(list(layers)[0])) for layer in layers):
             layer = list(layers)[0]
             controls = self.widgets[layer]
             controls._layers = layers
