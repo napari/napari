@@ -31,8 +31,8 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Label for the gamma chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
 
         # Setup gamma slider - exactly like opacity slider
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
@@ -40,11 +40,12 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
-        sld.setValue(self._layer.gamma)
-        connect_setattr(sld.valueChanged, self._layer, 'gamma')
-        self._callbacks.append(
-            attr_to_settr(self._layer, 'gamma', sld, 'setValue')
-        )
+        sld.setValue(self._layers[0].gamma)
+        for layer in self._layers:
+            connect_setattr(sld.valueChanged, layer, 'gamma')
+            self._callbacks.append(
+                attr_to_settr(layer, 'gamma', sld, 'setValue')
+            )
         self.gamma_slider = sld
 
         self.gamma_slider_label = QtWrappedLabel('gamma:')

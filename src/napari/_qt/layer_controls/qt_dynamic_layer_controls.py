@@ -46,12 +46,12 @@ layer_to_controls = {
 
 controls_dict = {
     'opacity': QtOpacityBlendingControls,
-    'clim': QtContrastLimitsControl,
+    'contrast_limits': QtContrastLimitsControl,
     'histogram': QtHistogramControl,
     'gamma': QtGammaSliderControl,
-    'colormap': QtColormapControl,
-    'projection_mode': QtProjectionModeControl,
-    'interpolation': QtInterpolationComboBoxControl,
+    #'colormap': QtColormapControl,
+    #'projection_mode': QtProjectionModeControl,
+    #'interpolation': QtInterpolationComboBoxControl,
 }
 buttons_dict = {
 #comes in later for buttons at the top
@@ -114,7 +114,7 @@ class QtDynamicLayerControls(QFrame):
         # add the controls_dict anywhere
         for attr, control in controls_dict.items():
             if all(hasattr(layer, attr) for layer in self._layers):
-                self._add_widget_controls(control(layers))
+                self._add_widget_controls(control(parent=self, layers=layers))
 
 
     def _add_widget_controls(

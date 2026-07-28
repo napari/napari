@@ -28,10 +28,13 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
-from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 
 def range_to_decimals(range_, dtype):
@@ -94,12 +97,12 @@ class QContrastLimitsPopup(QtPopup):
 
     def __init__(
         self,
-        layer: Image | Surface,
+        layers: list[Layer],
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
 
-        self._layer = layer
+        self._layers = layers
         self._cleaned_up = False
         self._histogram_enabled_checkbox = None
 
@@ -116,11 +119,11 @@ class QContrastLimitsPopup(QtPopup):
         self.slider.label_shift_y = 2
         self.slider.setFocus()
 
-        decimals = range_to_decimals(layer.contrast_limits_range, layer.dtype)
-        self.slider.setRange(*layer.contrast_limits_range)
+        decimals = range_to_decimals(self._layers[0].contrast_limits_range, self._layers[0].dtype)
+        self.slider.setRange(*self._layers[0].contrast_limits_range)
         self.slider.setDecimals(decimals)
         self.slider.setSingleStep(10**-decimals)
-        self.slider.setValue(layer.contrast_limits)
+        self.slider.setValue(self._layers[0].contrast_limits)
 
         clim_row = QHBoxLayout()
         clim_row.setContentsMargins(0, 0, 0, 0)
@@ -131,10 +134,11 @@ class QContrastLimitsPopup(QtPopup):
         QApplication.processEvents()
         self.slider._reposition_labels()
 
-        connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
-        connect_setattr(
-            self.slider.rangeChanged, layer, 'contrast_limits_range'
-        )
+        for layer in self._layers:
+            connect_setattr(self.slider.valueChanged, layer, 'contrast_limits')
+            connect_setattr(
+                self.slider.rangeChanged, layer, 'contrast_limits_range'
+            )
 
         # 2. Gamma slider
         self.gamma_slider = QLabeledDoubleSlider(Qt.Orientation.Horizontal)
@@ -142,10 +146,11 @@ class QContrastLimitsPopup(QtPopup):
         self.gamma_slider.setMinimum(0.2)
         self.gamma_slider.setMaximum(2.0)
         self.gamma_slider.setSingleStep(0.02)
-        self.gamma_slider.setValue(layer.gamma)
+        self.gamma_slider.setValue(self._layers[0].gamma)
         self.gamma_slider.setToolTip('Adjust gamma correction (0.2 - 2.0)')
-        connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
-        connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
+        for layer in self._layers:
+            connect_setattr(self.gamma_slider.valueChanged, layer, 'gamma')
+            connect_setattr(layer.events.gamma, self.gamma_slider, 'setValue')
 
         gamma_row = QHBoxLayout()
         gamma_row.setContentsMargins(0, 0, 0, 0)
@@ -159,13 +164,14 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.setSpacing(5)
 
         def reset():
-            layer.reset_contrast_limits()
-            layer.contrast_limits_range = layer.contrast_limits
-            decimals_ = range_to_decimals(
-                layer.contrast_limits_range, layer.dtype
-            )
-            self.slider.setDecimals(decimals_)
-            self.slider.setSingleStep(10**-decimals_)
+            for layer in self._layers:
+                layer.reset_contrast_limits()
+                layer.contrast_limits_range = layer.contrast_limits
+                decimals_ = range_to_decimals(
+                    layer.contrast_limits_range, layer.dtype
+                )
+                self.slider.setDecimals(decimals_)
+                self.slider.setSingleStep(10**-decimals_)
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
@@ -177,13 +183,14 @@ class QContrastLimitsPopup(QtPopup):
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
-        if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
-            range_btn = QPushButton('full range')
-            range_btn.setObjectName('full_clim_range_button')
-            range_btn.setToolTip('Set contrast range to full bit-depth')
-            range_btn.setFixedWidth(75)
-            range_btn.clicked.connect(layer.reset_contrast_limits_range)
-            button_layout.addWidget(range_btn)
+        for layer in self._layers: #@Lorenzo is it right to loop? copilot lorenzo says yes :)
+            if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
+                range_btn = QPushButton('full range')
+                range_btn.setObjectName('full_clim_range_button')
+                range_btn.setToolTip('Set contrast range to full bit-depth')
+                range_btn.setFixedWidth(75)
+                range_btn.clicked.connect(layer.reset_contrast_limits_range)
+                button_layout.addWidget(range_btn)
 
         # Histogram toggle checkbox (Image layers only).  The checkbox
         # itself is always created (simple Qt widget, safe), but the
@@ -193,24 +200,24 @@ class QContrastLimitsPopup(QtPopup):
         self._histogram_enabled_checkbox = None
         self.histogram_content = None
         self._frame_base_height: int = 0
-        if isinstance(layer, Image):
-            self._histogram_enabled_checkbox = QCheckBox('histogram')
-            self._histogram_enabled_checkbox.setChecked(
-                layer.histogram.enabled
-            )
-            self._histogram_enabled_checkbox.setToolTip(
-                'Show histogram in this popup'
-            )
-            self._histogram_enabled_checkbox.toggled.connect(
-                self._on_popup_histogram_toggled
-            )
-            button_layout.addWidget(self._histogram_enabled_checkbox)
-            # If histogram was already enabled, create content lazily
-            # when the popup is shown (showEvent), not during __init__.
-            if layer.histogram.enabled:
-                self._needs_content_on_show = True
-            else:
-                self._needs_content_on_show = False
+
+        self._histogram_enabled_checkbox = QCheckBox('histogram')
+        self._histogram_enabled_checkbox.setChecked(
+            self._layers[0].histogram.enabled
+        )
+        self._histogram_enabled_checkbox.setToolTip(
+            'Show histogram in this popup'
+        )
+        self._histogram_enabled_checkbox.toggled.connect(
+            self._on_popup_histogram_toggled
+        )
+        button_layout.addWidget(self._histogram_enabled_checkbox)
+        # If histogram was already enabled, create content lazily
+        # when the popup is shown (showEvent), not during __init__.
+        if self._layers[0].histogram.enabled:
+            self._needs_content_on_show = True
+        else:
+            self._needs_content_on_show = False
 
         button_layout.addStretch()
 
@@ -251,8 +258,8 @@ class QContrastLimitsPopup(QtPopup):
             return
         self._cleaned_up = True
 
-        if isinstance(self._layer, Image):
-            self._layer.histogram.events.enabled.disconnect(
+        for layer in self._layers:
+            layer.histogram.events.enabled.disconnect(
                 self._on_external_histogram_enabled
             )
         if self.histogram_content is not None:
@@ -271,9 +278,7 @@ class QContrastLimitsPopup(QtPopup):
         the popup was opened) or from _set_histogram_visible (if the user
         checks the checkbox after the popup is already visible).
         """
-        if self.histogram_content is not None or not isinstance(
-            self._layer, Image
-        ):
+        if self.histogram_content is not None:
             return
 
         from napari._qt.widgets.qt_histogram_content import (
@@ -281,34 +286,35 @@ class QContrastLimitsPopup(QtPopup):
         )
 
         self.histogram_content = QtHistogramContentWidget(
-            self._layer,
+            self._layers[0],
             parent=self,
         )
         self._layout.insertWidget(1, self.histogram_content)
-        if not self._layer.histogram.enabled:
+        if not all(layer.histogram.enabled for layer in self._layers):
             self.histogram_content.hide()
-        self._layer.histogram.events.enabled.connect(
-            self._on_external_histogram_enabled
-        )
+        for layer in self._layers:
+            layer.histogram.events.enabled.connect(
+                self._on_external_histogram_enabled
+            )
 
     def _set_histogram_visible(self, visible: bool) -> None:
         """Show or hide the histogram content and resize the popup."""
-        if not isinstance(self._layer, Image):
-            return
         if visible:
             self._ensure_histogram_content()
             if self.histogram_content is None:
                 return
             h = self.histogram_content.sizeHint().height()
             self.histogram_content.show()
-            self._layer.histogram.enabled = True
+            for layer in self._layers:
+                layer.histogram.enabled = True
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
         else:
             if self.histogram_content is not None:
                 self.histogram_content.hide()
-            self._layer.histogram.enabled = False
+            for layer in self._layers:
+                layer.histogram.enabled = False
             self.setFixedHeight(self._base_height())
 
     def _on_popup_histogram_toggled(self, visible: bool) -> None:
@@ -318,12 +324,12 @@ class QContrastLimitsPopup(QtPopup):
     def _on_external_histogram_enabled(self) -> None:
         """Sync checkbox when ``layer.histogram.enabled`` changes from outside."""
         if self._histogram_enabled_checkbox is not None:
-            with qt_signals_blocked(self._histogram_enabled_checkbox):
+            with qt_signals_blocked(self._histogram_enabled_checkbox): #@lorenzo do I loop?
                 self._histogram_enabled_checkbox.setChecked(
-                    self._layer.histogram.enabled
+                    self._layers[0].histogram.enabled
                 )
             if self.histogram_content is not None:
-                self._set_histogram_visible(self._layer.histogram.enabled)
+                self._set_histogram_visible(self._layers[0].histogram.enabled)
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
@@ -334,7 +340,7 @@ class QContrastLimitsPopup(QtPopup):
 
 class AutoScaleButtons(QWidget):
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self, layer: Layer, parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent=parent)
 
@@ -364,8 +370,8 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Image | napari.layers.Surface
-        An instance of a napari layer.
+    layers : list[Layer]
+        A list of napari layers.
 
     Attributes
     ----------
@@ -381,50 +387,53 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Image | Surface) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
         # Setup layer
-        self._layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
-        self._layer.events.contrast_limits_range.connect(
-            self._on_contrast_limits_range_change
-        )
-        self._layer.events.auto_contrast.connect(self._on_auto_contrast_change)
-
+        for layer in self._layers:
+            layer.events.contrast_limits.connect(self._on_contrast_limits_change)
+            layer.events.contrast_limits_range.connect(
+                self._on_contrast_limits_range_change
+            )
+            layer.events.auto_contrast.connect(self._on_auto_contrast_change)
+        print('hi lorenzo')
         # Setup widgets
-        self.auto_scale_buttons = AutoScaleButtons(layer, parent)
+        for layer in self._layers:
+            self.auto_scale_buttons = AutoScaleButtons(layer, parent) 
         self.auto_scale_buttons_label = QtWrappedLabel('auto-contrast:')
         self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,
         )
         self.contrast_limits_slider.show_clim_popup.connect(
             self.show_clim_popup
-        )
+        ) 
+        # set widget range and step size based on first layer since this is only display
         decimals = range_to_decimals(
-            self._layer.contrast_limits_range, self._layer.dtype
+            self._layers[0].contrast_limits_range, self._layers[0].dtype
         )
         self.contrast_limits_slider.setRange(
-            *self._layer.contrast_limits_range
+            *self._layers[0].contrast_limits_range
         )
         self.contrast_limits_slider.setSingleStep(10**-decimals)
-        self.contrast_limits_slider.setValue(self._layer.contrast_limits)
+        #set value of slider based on first layer until we implement a way to handle multiple layers
+        self.contrast_limits_slider.setValue(self._layers[0].contrast_limits)
         self.contrast_limits_slider.setToolTip(
             'Right click for detailed slider popup.'
         )
 
         self.clim_popup = None
 
-        connect_setattr(
-            self.contrast_limits_slider.valueChanged,
-            self._layer,
-            'contrast_limits',
-        )
-        connect_setattr(
-            self.contrast_limits_slider.rangeChanged,
-            self._layer,
-            'contrast_limits_range',
-        )
+        for layer in self._layers: 
+            connect_setattr(
+                self.contrast_limits_slider.valueChanged,
+                layer,
+                'contrast_limits',
+            )
+            connect_setattr(
+                self.contrast_limits_slider.rangeChanged,
+                layer,
+                'contrast_limits_range',
+            )
 
         self.contrast_limits_slider_label = QtWrappedLabel('contrast limits:')
 
@@ -445,31 +454,32 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         # Histogram toggle button — added alongside the slider via a
         # wrapper widget in get_widget_controls().
         self.histogram_button = None
-        if isinstance(layer, Image):
-            self.histogram_button = QtModePushButton(
-                self._layer,
-                'histogram',
-                tooltip=(
-                    'Left click to toggle histogram in layer controls.\n'
-                    'Right click to open histogram popup.'
-                ),
-            )
-            self.histogram_button.setCheckable(True)
-            self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self.histogram_button.toggled.connect(
-                self._on_histogram_button_toggled
-            )
-            self.histogram_button.installEventFilter(self)
-            self._clim_layout.addWidget(self.histogram_button)
 
-            # Sync button checked state when ``enabled`` changes via the API
+        self.histogram_button = QtModePushButton(
+            self._layers,
+            'histogram',
+            tooltip=(
+                'Left click to toggle histogram in layer controls.\n'
+                'Right click to open histogram popup.'
+            ),
+        )
+        self.histogram_button.setCheckable(True)
+        self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.histogram_button.toggled.connect(
+            self._on_histogram_button_toggled
+        )
+        self.histogram_button.installEventFilter(self)
+        self._clim_layout.addWidget(self.histogram_button)
+
+        # Sync button checked state when ``enabled`` changes via the API
+        for layer in self._layers:
             layer.histogram.events.enabled.connect(
                 self._on_histogram_model_enabled
             )
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
-            self._layer,
+            self._layers,
             self.parent(),
         )
         self.clim_popup.setParent(self.parent())
@@ -479,34 +489,34 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
         with qt_signals_blocked(self.contrast_limits_slider):
-            self.contrast_limits_slider.setValue(self._layer.contrast_limits)
+            self.contrast_limits_slider.setValue(self._layers[0].contrast_limits)
 
         if self.clim_popup:
             with qt_signals_blocked(self.clim_popup.slider):
-                self.clim_popup.slider.setValue(self._layer.contrast_limits)
+                self.clim_popup.slider.setValue(self._layers[0].contrast_limits)
 
     def _on_auto_contrast_change(self):
         """Receive layer model auto_contrast change event and update buttons."""
         with qt_signals_blocked(self.auto_scale_buttons.auto_btn):
             self.auto_scale_buttons.auto_btn.setChecked(
-                self._layer.auto_contrast
+                self._layers[0].auto_contrast
             )
 
     def _on_contrast_limits_range_change(self):
         """Receive layer model contrast limits change event and update slider."""
         with qt_signals_blocked(self.contrast_limits_slider):
             decimals = range_to_decimals(
-                self._layer.contrast_limits_range, self._layer.dtype
+                self._layers[0].contrast_limits_range, self._layers[0].dtype
             )
             self.contrast_limits_slider.setRange(
-                *self._layer.contrast_limits_range
+                *self._layers[0].contrast_limits_range
             )
             self.contrast_limits_slider.setSingleStep(10**-decimals)
 
         if self.clim_popup:
             with qt_signals_blocked(self.clim_popup.slider):
                 self.clim_popup.slider.setRange(
-                    *self._layer.contrast_limits_range
+                    *self._layers[0].contrast_limits_range
                 )
 
     def eventFilter(self, obj, event):
@@ -518,15 +528,12 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             and event.button() == Qt.MouseButton.RightButton
         ):
             self.histogram_button.setDown(False)
-            self.show_histogram_popup()
+            self.show_clim_popup()
             return True
         return super().eventFilter(obj, event)
 
     def _on_histogram_button_toggled(self, visible: bool) -> None:
         """Handle left-click on histogram button to toggle histogram widget."""
-        if not isinstance(self._layer, Image):
-            return
-
         parent = self.parent()
         histogram_control = getattr(parent, '_histogram_control', None)
         if histogram_control is None:
@@ -546,7 +553,8 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             )
             # Enable histogram computation; _on_enabled_change triggers
             # an immediate compute if there is pending dirty data.
-            self._layer.histogram.enabled = True
+            # TODO: currently histogram is only computed for the first layer. Will change in the future when we implement multi-layer histogram computation.
+            self._layers[0].histogram.enabled = True
         else:
             # Set size policy to Ignored so the form layout collapses the
             # column and doesn't reserve space for the hidden widget
@@ -556,13 +564,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             )
             histogram_control.content_widget.hide()
             # Disable histogram computation
-            self._layer.histogram.enabled = False
-
-    def show_histogram_popup(self):
-        """Show the histogram popup widget."""
-        if not isinstance(self._layer, Image):
-            return
-        self.show_clim_popup()
+            self._layers[0].histogram.enabled = False
 
     def _on_histogram_model_enabled(self) -> None:
         """Sync button checked state when ``layer.histogram.enabled`` changes via the API.
@@ -571,15 +573,16 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         preventing recursion into ``_on_histogram_button_toggled`` (which would
         re-set ``layer.histogram.enabled`` and re-dispatch the event).
         """
-        if self.histogram_button is None or not isinstance(self._layer, Image):
+        if self.histogram_button is None:
             return
         with qt_signals_blocked(self.histogram_button):
-            self.histogram_button.setChecked(self._layer.histogram.enabled)
+            self.histogram_button.setChecked(self._layers[0].histogram.enabled)
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect histogram model events and base controls."""
-        if isinstance(self._layer, Image):
-            disconnect_events(self._layer.histogram.events, self)
+ #@Lorenzo: not sure if this is right. super().disconnect_widget_controls() can take layerS already 
+        for layer in self._layers:
+            disconnect_events(layer.histogram.events, self)
         super().disconnect_widget_controls()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
