@@ -650,15 +650,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             self.refresh(extent=False)
         self.events.texcoords(value=self._texcoords)
 
-    @property
-    def _has_texture(self) -> bool:
-        """Whether the layer has sufficient data for texturing"""
-        return bool(
-            self.texture is not None
-            and self.texcoords is not None
-            and len(self.texcoords)
-        )
-
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
 
