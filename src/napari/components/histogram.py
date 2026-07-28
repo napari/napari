@@ -297,7 +297,7 @@ class HistogramModel(EventedModel):
                 return
             try:
                 block = self._load_chunk(data, ci)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Chunk load failure (e.g. remote zarr read error) is
                 # non-fatal. Stop the generator instead of letting the
                 # exception propagate through the GeneratorWorker's Qt

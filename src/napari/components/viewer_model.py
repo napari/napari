@@ -1309,7 +1309,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             If `plugin` does not provide a sample named `sample`.
         """
         plugin_spec_reader = None
-        data: None | SampleDataCreator | SampleData
+        data: SampleDataCreator | SampleData | None
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 

@@ -690,7 +690,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, int | None]:
+    ) -> tuple[float | int | None, int | None]:
         """Get the layer data value along a ray
 
         Parameters
