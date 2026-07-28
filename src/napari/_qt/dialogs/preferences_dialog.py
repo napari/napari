@@ -147,6 +147,7 @@ class PreferencesDialog(QDialog):
                 schema, values = self._get_page_dict(
                     field_name, field_info, self._plugin_settings[plugin_name]
                 )
+                name = field_info.title or field_name
                 form = self._widget_builder(
                     schema, values, name, self._plugin_settings[plugin_name]
                 )
