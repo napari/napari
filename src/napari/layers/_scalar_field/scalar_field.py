@@ -6,7 +6,6 @@ from contextlib import nullcontext
 from functools import lru_cache
 from typing import TYPE_CHECKING, NamedTuple, cast
 
-from napari.components import dims
 import numpy as np
 from numpy import typing as npt
 
@@ -45,6 +44,9 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    import xarray as xr
+    from numpy.typing import ArrayLike
+
     from napari.components import Dims
 
 
@@ -66,7 +68,7 @@ class _XarrayProps(NamedTuple):
     has_coords: bool = False
 
 
-def _check_xarray(data) -> _XarrayProps:
+def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
 
     Returns a named tuple with ``has_dims`` (True for NamedArray and all
@@ -86,12 +88,12 @@ def _check_xarray(data) -> _XarrayProps:
     return _XarrayProps()
 
 
-def _get_xr_axis_labels(data) -> tuple[str, ...]:
+def _get_xr_axis_labels(data: xr.DataArray | xr.Variable) -> tuple[str, ...]:
     """Infer axis labels from xarray dims."""
     return tuple(str(d) for d in data.dims)
 
 
-def _get_xr_scale(data) -> list[float]:
+def _get_xr_scale(data: xr.DataArray) -> list[float]:
     """Infer scale from first coordinate values spacing.
 
     Assumes coordinates are linearly spaced. Falls back to 1.0 for
@@ -103,6 +105,15 @@ def _get_xr_scale(data) -> list[float]:
         else 1.0
         for d in data.dims
     ]
+
+
+def _get_xr_translate(data: xr.DataArray) -> list[float]:
+    """Infer translate (offset) from the first coordinate value.
+
+    Returns ``coord.values[0]`` for each dimension, which is the
+    physical offset of the first pixel along that axis.
+    """
+    return [float(data.coords[d].values[0]) for d in data.dims]
 
 
 def _get_xr_units(data: xr.DataArray) -> list[str | None]:
@@ -338,6 +349,9 @@ class ScalarFieldBase(Layer, ABC):
 
         if scale is None and xrprops.has_coords:
             scale = _get_xr_scale(data)
+
+        if translate is None and xrprops.has_coords:
+            translate = _get_xr_translate(data)
 
         if units is None and xrprops.has_coords:
             units = _get_xr_units(data)
