@@ -57,7 +57,6 @@ if TYPE_CHECKING:
 __all__ = ('ScalarFieldBase',)
 
 
-
 def _make_level_materializer(
     data: MultiScaleData,
 ) -> Callable[[int], np.ndarray]:

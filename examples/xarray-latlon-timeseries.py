@@ -14,7 +14,6 @@ before displaying it in napari.
 
 .. tags:: visualization-advanced, layers, xarray
 """
-import numpy as np
 import xarray as xr
 
 import napari

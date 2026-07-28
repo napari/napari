@@ -434,47 +434,45 @@ class TestXarrayMetadataInit:
         """Image inherits axis_labels, scale, translate, units from DataArray."""
         data = xr.DataArray(
             np.random.random((3, 10, 15)),
-            dims=["z", "y", "x"],
+            dims=['z', 'y', 'x'],
             coords={
-                "z": ("z", [10, 15, 20], {"units": "microns"}),
-                "y": ("y", np.arange(100, 110).astype(float), {"units": "mm"}),
-                "x": ("x", np.arange(200, 215).astype(float)),
+                'z': ('z', [10, 15, 20], {'units': 'microns'}),
+                'y': ('y', np.arange(100, 110).astype(float), {'units': 'mm'}),
+                'x': ('x', np.arange(200, 215).astype(float)),
             },
         )
         layer = Image(data)
-        assert layer.axis_labels == ("z", "y", "x")
+        assert layer.axis_labels == ('z', 'y', 'x')
         np.testing.assert_allclose(layer.scale, [5.0, 1.0, 1.0])
         np.testing.assert_allclose(layer.translate, [10.0, 100.0, 200.0])
-        assert str(layer.units[0]) == "micron"
-        assert str(layer.units[1]) == "millimeter"
-        assert str(layer.units[2]) == "pixel"
-
+        assert str(layer.units[0]) == 'micron'
+        assert str(layer.units[1]) == 'millimeter'
+        assert str(layer.units[2]) == 'pixel'
 
     def test_xarray_labels_gets_metadata(self):
         """Labels inherits axis_labels from DataArray dims (no coords)."""
         data = xr.DataArray(
-            np.random.randint(0, 5, (5, 10, 15)), dims=["z", "y", "x"]
+            np.random.randint(0, 5, (5, 10, 15)), dims=['z', 'y', 'x']
         )
         layer = Labels(data)
-        assert layer.axis_labels == ("z", "y", "x")
-
+        assert layer.axis_labels == ('z', 'y', 'x')
 
     def test_xarray_explicit_overrides(self):
         """Explicit axis_labels, scale, units override auto-inheritance."""
         data = xr.DataArray(
             np.random.random((10, 15)),
-            dims=["y", "x"],
+            dims=['y', 'x'],
             coords={
-                "y": [0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
-                "x": list(range(15))
+                'y': [0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
+                'x': list(range(15)),
             },
         )
         layer = Image(
             data,
-            axis_labels=("row", "col"),
+            axis_labels=('row', 'col'),
             scale=(3.0, 3.0),
-            units=("mm", "mm")
+            units=('mm', 'mm'),
         )
-        assert layer.axis_labels == ("row", "col")
+        assert layer.axis_labels == ('row', 'col')
         np.testing.assert_allclose(layer.scale, [3.0, 3.0])
-        assert str(layer.units[0]) == "millimeter"
+        assert str(layer.units[0]) == 'millimeter'
