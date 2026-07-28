@@ -105,14 +105,26 @@ def _get_xr_scale(data) -> list[float]:
     ]
 
 
-def _get_xr_units(data) -> list[str | None]:
-    """Read units from coordinate attrs.
+def _get_xr_units(data: xr.DataArray) -> list[str | None]:
+    """Read units from coordinate attrs, validating against pint.
 
-    Uses the CF convention (``coord.attrs['units']``).  Individual
-    ``None`` values mean napari will use its default (pixel) for that
-    axis.
+    Uses the CF convention (``coord.attrs['units']``).  Invalid unit
+    strings (e.g. ``'degrees_north'``, which is CF-compliant but not a
+    valid pint unit) are silently dropped and replaced with ``None``,
+    so napari will use its default (pixel) for that axis.
     """
-    return [data.coords[d].attrs.get('units') for d in data.dims]
+    from napari.utils.transforms._units import get_unit_from_name
+
+    units: list[str | None] = []
+    for d in data.dims:
+        u = data.coords[d].attrs.get('units')
+        if u is not None:
+            try:
+                get_unit_from_name(u)
+            except ValueError:
+                u = None
+        units.append(u)
+    return units
 
 
 def _make_level_materializer(
