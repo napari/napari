@@ -13,12 +13,9 @@ from pydantic import PrivateAttr
 
 from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import Event, EventedModel
-
+from napari.layers.surface.surface import Surface
+from napari.layers.image.image import Image 
 logger = logging.getLogger('napari.components.histogram')
-
-if TYPE_CHECKING:
-    from napari.layers.image.image import Image  # noqa: TC004
-    from napari.layers.surface.surface import Surface  # noqa: TC004
 
 __all__ = ('HistogramModel',)
 
@@ -225,7 +222,7 @@ class HistogramModel(EventedModel):
             # represents perceived brightness.
             # Sample pixel positions BEFORE conversion to avoid
             # materializing the full float32 intermediate for large arrays.
-            if self._layer.rgb:
+            if isinstance(self._layer, Image) and self._layer.rgb:
                 data = self._sample_rgb_and_luminance(data)
                 if data.size == 0:
                     self._set_empty_data()
@@ -451,8 +448,8 @@ class HistogramModel(EventedModel):
     def _get_slice_raw_data(self) -> np.ndarray | None:
         """Get the currently sliced raw image data if available."""
         if isinstance(self._layer, Surface):
-            data = self._layer._get_layer_slicing_state()._view_vertex_values
-            return np.asarray(data) if data else None
+            data = self._layer._slicing_state._view_vertex_values
+            return np.asarray(data) if data is not None else None
         
         layer_slice = self._layer._slice
         if layer_slice is None:
