@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
     QScrollArea,
     QStackedWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from napari._pydantic_util import get_inner_type
@@ -107,53 +108,110 @@ class PreferencesDialog(QDialog):
             if get_origin(field_type) is None and issubclass(
                 field_type, BaseModel
             ):
-                self._add_page(field_name, field_info, self._settings)
+                self._add_page(field_name, field_info)
 
         for plugin_name, plugin in self._plugin_settings.items():
-            for (
-                field_name,
-                field_info,
-            ) in plugin.__class__.model_fields.items():
-                field_type = get_inner_type(field_info.annotation)
-                if get_origin(field_type) is None and issubclass(
-                    field_type, BaseModel
-                ):
-                    self._add_page(
-                        field_name,
-                        field_info,
-                        self._plugin_settings[plugin_name],
-                    )
+            self._add_plugin(plugin_name, plugin)
+            # for (
+            #     field_name,
+            #     field_info,
+            # ) in plugin.__class__.model_fields.items():
+            #     field_type = get_inner_type(field_info.annotation)
+            #     if get_origin(field_type) is None and issubclass(field_type, BaseModel):
+            #         self._add_page(
+            #             field_name,
+            #             field_info,
+            #             self._plugin_settings[plugin_name],
+            #         )
 
         self._list.setCurrentRow(0)
 
-    def _add_page(
-        self, field_name: str, field_info: FieldInfo, settings_object
-    ) -> None:
+    def _add_plugin(
+        self,
+        plugin_name: str,
+        plugin,
+    ):
+        """ "Builds the Plugin preferences widgets using the json schema builder.
+        Similar to _add_page.
+        This function only exists because it is possible to have multiple plugin configuration sets in one plugin.
+        And they should all appear in the same place.
+
+         Parameters
+        ----------
+        plugin_name : str
+            the name of the plugin
+        plugin : PluginPreferences
+            the schemas containing multiple widgets for each plugin.
+        """
+
+        full = QWidget()
+        layout = QVBoxLayout()
+        name = plugin_name
+        plugin_list = []
+        for (
+            field_name,
+            field_info,
+        ) in plugin.__class__.model_fields.items():
+            field_type = get_inner_type(field_info.annotation)
+            if get_origin(field_type) is None and issubclass(
+                field_type, BaseModel
+            ):
+                schema, values = self._get_page_dict(
+                    field_name, field_info, self._plugin_settings[plugin_name]
+                )
+                name = field_info.title or field_name
+                form = self._widget_builder(
+                    schema, values, name, self._plugin_settings[plugin_name]
+                )
+                plugin_list.append(form)
+        full.setLayout(layout)
+        [full.layout().addWidget(pl) for pl in plugin_list]
+        page_scrollarea = QScrollArea()
+        page_scrollarea.setWidgetResizable(True)
+        page_scrollarea.setWidget(full)
+
+        self._list.addItem(plugin_name)
+        self._stack.addWidget(page_scrollarea)
+
+    def _add_page(self, field_name: str, field_info: FieldInfo) -> None:
         """Builds the preferences widget using the json schema builder.
 
         Parameters
         ----------
-        field : FieldInfo
-            subfield for which to create a page.
+        field_name : str
+            the name of the plugin
+        field_info : FieldInfo
+            the schema to create the widget.
         """
+
+        schema, values = self._get_page_dict(
+            field_name, field_info, self._settings
+        )
+        name = field_info.title or field_name
+
+        form = self._widget_builder(schema, values, name, self._settings)
+
+        page_scrollarea = QScrollArea()
+        page_scrollarea.setWidgetResizable(True)
+        page_scrollarea.setWidget(form)
+
+        self._list.addItem(name)
+        self._stack.addWidget(page_scrollarea)
+
+    def _widget_builder(self, schema, values, name, schema_object):
         from napari._vendor.qt_json_builder.qt_jsonschema_form import (
             WidgetBuilder,
         )
-
-        schema, values = self._get_page_dict(
-            field_name, field_info, settings_object
-        )
-        name = field_info.title or field_name
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
         # make settings follow state of the form widget
         form.widget.on_changed.connect(
-            lambda d: getattr(settings_object, name.lower()).update(d)
+            lambda d: getattr(schema_object, name.lower()).update(d)
         )
         # make widgets follow values of the settings
-        settings_category = getattr(settings_object, name.lower())
+        settings_category = getattr(schema_object, name.lower())
         excluded = set(
             getattr(
                 getattr(settings_category, 'NapariConfig', None),
@@ -175,13 +233,7 @@ class PreferencesDialog(QDialog):
                             subname_, form.widget.widgets[name_]
                         )
                     )
-
-        page_scrollarea = QScrollArea()
-        page_scrollarea.setWidgetResizable(True)
-        page_scrollarea.setWidget(form)
-
-        self._list.addItem(name)
-        self._stack.addWidget(page_scrollarea)
+        return form
 
     def _get_page_dict(
         self, field_name: str, field_info: FieldInfo, settings_object: dict
