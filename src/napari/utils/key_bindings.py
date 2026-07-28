@@ -164,7 +164,7 @@ def bind_key(
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: KeymapFunction | None | EllipsisType,
+    func: KeymapFunction | EllipsisType | None,
     *,
     overwrite: bool = ...,
 ) -> KeymapFunction | EllipsisType | None: ...
@@ -173,7 +173,7 @@ def bind_key(
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: Callable | None | EllipsisType | _Undefined = _UNDEFINED,
+    func: Callable | EllipsisType | _Undefined | None = _UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
@@ -288,7 +288,7 @@ def _bind_user_key(
 @overload
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: KeymapFunction | None | EllipsisType,
+    func: KeymapFunction | EllipsisType | None,
     *,
     overwrite: bool = ...,
 ) -> KeymapFunction | EllipsisType | None: ...
@@ -296,7 +296,7 @@ def _bind_user_key(
 
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: KeymapFunction | None | EllipsisType | _Undefined = _UNDEFINED,
+    func: KeymapFunction | EllipsisType | _Undefined | None = _UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
