@@ -4,8 +4,9 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
+from napari.components import dims
 import numpy as np
 from numpy import typing as npt
 
@@ -48,6 +49,43 @@ if TYPE_CHECKING:
 
 
 __all__ = ('ScalarFieldBase',)
+
+
+class _XarrayProps(NamedTuple):
+    """Properties of an xarray-like data object.
+
+    Attributes
+    ----------
+    has_dims : bool
+        True if data exposes ``.dims`` (NamedArray / Variable / DataArray).
+    has_coords : bool
+        True if data exposes ``.coords`` (DataArray only).
+    """
+
+    has_dims: bool = False
+    has_coords: bool = False
+
+
+def _check_xarray(data) -> _XarrayProps:
+    """Check what xarray properties *data* exposes.
+
+    Returns a named tuple with ``has_dims`` (True for NamedArray and all
+    subclasses) and ``has_coords`` (True for DataArray only).
+    """
+    try:
+        import xarray as xr
+        from xarray.namedarray.core import NamedArray
+    except ImportError:
+        return _XarrayProps()
+
+    # DataArray has both dims and coords
+    if isinstance(data, xr.DataArray):
+        return _XarrayProps(has_dims=True, has_coords=True)
+    # Variable / NamedArray have dims only
+    if isinstance(data, (xr.Variable, NamedArray)):
+        return _XarrayProps(has_dims=True)
+
+    return _XarrayProps()
 
 
 def _make_level_materializer(
@@ -255,17 +293,22 @@ class ScalarFieldBase(Layer, ABC):
             ndim = len(data.shape)
         self._data = data
 
-        # Auto-inherit axis labels from data with named dimensions
-        # (e.g., xarray.DataArray, or any array type that exposes .dims).
-        if axis_labels is None:
-            dims = getattr(data, 'dims', None)
-            if dims is not None:
-                try:
-                    candidate = tuple(str(d) for d in dims)
-                    if len(candidate) == ndim:
-                        axis_labels = candidate
-                except (TypeError, ValueError):
-                    pass
+        xrprops = _check_xarray(data)
+        if xrprops.has_dims and axis_labels is None:
+            axis_labels = tuple(str(d) for d in data.dims)
+
+        if xrprops.has_coords:
+            if scale is None:
+                scale = [
+                    float(data.coords[d].values[1] - data.coords[d].values[0])
+                    if data.coords[d].size >= 2
+                    else 1.0
+                    for d in data.dims
+                ]
+            if units is None:
+                units = [
+                    data.coords[d].attrs.get('units') for d in data.dims
+                ]
 
         super().__init__(
             data,
