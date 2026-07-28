@@ -78,10 +78,8 @@ def _check_xarray(data) -> _XarrayProps:
     except ImportError:
         return _XarrayProps()
 
-    # DataArray has both dims and coords
     if isinstance(data, xr.DataArray):
         return _XarrayProps(has_dims=True, has_coords=True)
-    # Variable / NamedArray have dims only
     if isinstance(data, (xr.Variable, NamedArray)):
         return _XarrayProps(has_dims=True)
 
@@ -298,17 +296,16 @@ class ScalarFieldBase(Layer, ABC):
             axis_labels = tuple(str(d) for d in data.dims)
 
         if xrprops.has_coords:
+            coords = data.coords
             if scale is None:
                 scale = [
-                    float(data.coords[d].values[1] - data.coords[d].values[0])
-                    if data.coords[d].size >= 2
+                    float(coords[d].values[1] - coords[d].values[0])
+                    if coords[d].size >= 2
                     else 1.0
                     for d in data.dims
                 ]
             if units is None:
-                units = [
-                    data.coords[d].attrs.get('units') for d in data.dims
-                ]
+                units = [coords[d].attrs.get('units') for d in data.dims]
 
         super().__init__(
             data,
