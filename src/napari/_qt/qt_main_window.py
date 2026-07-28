@@ -241,6 +241,26 @@ class _QtMainWindow(QMainWindow):
             )
         )
 
+    def _get_expanded_size(self, dock, property_name):
+        area = self.dockWidgetArea(dock)
+        same_side_docks = [
+            d for d in self.sliding_docks if self.dockWidgetArea(d) == area
+        ]
+
+        def natural_size(d):
+            inner = d.widget()
+            hint = inner.sizeHint() if inner is not None else d.sizeHint()
+            return (
+                hint.width()
+                if property_name == b'maximumWidth'
+                else hint.height()
+            )
+
+        sizes = [natural_size(d) for d in same_side_docks]
+        sizes = [s for s in sizes if s > 0]
+
+        return max(sizes) if sizes else self.expanded_size
+
     def _on_dock_floating_changed(self, dock, floating):
         if floating:
             self._deregister_sliding_dock(dock)
@@ -340,9 +360,8 @@ class _QtMainWindow(QMainWindow):
         if show:
             dock.setVisible(True)
             anim.setStartValue(0)
-            anim.setEndValue(self.expanded_size)
+            anim.setEndValue(self._get_expanded_size(dock, property_name))
         else:
-            # release the floor so it can actually shrink instead of clamping
             if property_name == b'maximumWidth':
                 dock.setMinimumWidth(0)
             else:
