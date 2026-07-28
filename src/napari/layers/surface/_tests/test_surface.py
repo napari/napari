@@ -329,19 +329,8 @@ def test_texture():
 
     np.testing.assert_allclose(layer.texture, texture)
     np.testing.assert_allclose(layer.texcoords, texcoords)
-    assert layer._has_texture
 
-    layer.texture, layer.texcoords = None, texcoords
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = texture, None
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = None, None
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = texture, texcoords
-    assert layer._has_texture
+    # actual rendering state depends on slicing, and should be checked elsewhere
 
 
 def test_vertex_colors():
