@@ -511,7 +511,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _projectionclass: type[StringEnum] = BaseProjectionMode
 
     ModeCallable = Callable[
-        ['Layer', Event], None | Generator[None, None, None]
+        ['Layer', Event], Generator[None, None, None] | None
     ]
 
     _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
@@ -567,14 +567,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id: None | uuid.UUID = None
+        self._unique_id: uuid.UUID | None = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode: None | str = None
+        self._visible_mode: str | None = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -1018,6 +1018,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
+
+    def _has_default_axis_labels(self) -> bool:
+        """Return True if axis labels are the default indices."""
+        default_labels = tuple(str(i) for i in range(-self.ndim, 0))
+        return self.axis_labels == default_labels
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:
@@ -1581,7 +1586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> float | int | None | tuple[float | int | None, int | None]:
+    ) -> float | int | tuple[float | int | None, int | None] | None:
         """Get the layer data value along a ray
 
         Parameters

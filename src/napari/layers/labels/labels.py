@@ -318,7 +318,7 @@ class Labels(ScalarFieldBase):
     _modeclass = Mode
 
     _drag_modes: ClassVar[
-        dict[Mode, Callable[[Labels, Event], None | Generator]]
+        dict[Mode, Callable[[Labels, Event], Generator | None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,

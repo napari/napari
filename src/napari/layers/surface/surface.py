@@ -61,6 +61,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         the final column is a length N translation vector and a 1 or a napari
         `Affine` transform object. Applied as an extra transform on top of the
         provided scale, rotate, and shear values.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     axis_labels : tuple of str, optional
         Dimension names of the layer data.
         If not provided, axis_labels will be set to (..., '-2', '-1').
@@ -158,6 +162,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     axis_labels : tuple of str
         Dimension names of the layer data.
     vertices : (N, D) array
@@ -218,6 +226,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         data,
         *,
         affine=None,
+        auto_contrast=False,
         axis_labels=None,
         blending='translucent',
         cache=True,
@@ -310,6 +319,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
+        self.auto_contrast = auto_contrast
 
         # Trigger generation of view slice and thumbnail.
         # Use _update_dims instead of refresh here because _get_ndim is
@@ -374,7 +384,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
         self.events.data(value=self.data)
         self._reset_editable()
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -612,6 +622,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
+                'auto_contrast': self.auto_contrast,
                 'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
@@ -655,7 +666,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, int | None]:
+    ) -> tuple[float | int | None, int | None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -748,7 +759,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return _SurfaceSlicingState(layer=self, data=data, cache=cache)
 
     def _maybe_reset_contrast_limits(self) -> None:
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
 
