@@ -643,7 +643,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._auto_contrast = prev
 
-    def _calculate_value_from_ray(self, values: npt.NDArray) -> None | float:
+    def _calculate_value_from_ray(self, values: npt.NDArray) -> float | None:
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
             return np.ravel(values)[0]
