@@ -39,7 +39,7 @@ boundsWgsMap = gpd.GeoSeries(gpd.GeoDataFrame(geometry=gpd.points_from_xy([bg_ex
 # display the background map in napari
 viewer = napari.Viewer()
 viewer.camera.orientation2d=('up','right')
-viewer.floating_axes.visible=True
+viewer.canvas.overlays.floating_axes.visible=True
 viewer.window.add_plugin_dock_widget('napari', 'Features table widget')
 
 # add the downloaded background map as an image layer, with the correct translation and scale to match the lat/lon coordinates
