@@ -578,7 +578,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
         return scale_factor * np.min(
-            self.canvas.viewbox_size(len(self.layers)) / scale
+            self.canvas.viewbox_size(self.layers) / scale
         )
 
     def _get_3d_camera_zoom(
@@ -591,7 +591,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             up_direction=self.camera.up_direction,
         )
         return scale_factor * np.min(
-            self.canvas.viewbox_size(len(self.layers)) / bounding_box
+            self.canvas.viewbox_size(self.layers) / bounding_box
         )
 
     @staticmethod

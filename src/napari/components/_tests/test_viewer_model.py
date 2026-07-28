@@ -429,14 +429,14 @@ def test_grid():
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.canvas.grid.enabled
-    assert viewer.canvas.grid.actual_shape(6) == (1, 1)
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
     assert viewer.canvas.grid.stride == 1
     assert viewer.canvas.grid.spacing == 0
 
     # enter grid view
     viewer.canvas.grid.enabled = True
     assert viewer.canvas.grid.enabled
-    assert viewer.canvas.grid.actual_shape(6) == (2, 3)
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
     assert viewer.canvas.grid.stride == 1
     assert viewer.canvas.grid.spacing == 0
 
@@ -444,7 +444,7 @@ def test_grid():
     viewer.canvas.grid.stride = -2
     viewer.canvas.grid.enabled = True
     assert viewer.canvas.grid.enabled
-    assert viewer.canvas.grid.actual_shape(6) == (2, 2)
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 2)
     assert viewer.canvas.grid.stride == -2
     assert viewer.canvas.grid.spacing == 0
 

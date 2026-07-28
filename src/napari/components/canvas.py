@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pydantic import Field
@@ -18,6 +20,9 @@ from napari.settings import get_settings
 from napari.utils.color import ColorValue
 from napari.utils.events import Event, EventedDictNamespace, EventedModel
 from napari.utils.theme import get_theme
+
+if TYPE_CHECKING:
+    from napari.components import LayerList
 
 
 class Orientation(StrEnum):
@@ -109,16 +114,16 @@ class Canvas(EventedModel):
 
         settings.appearance.events.theme.connect(self.events.background_color)
 
-    def viewbox_size(self, n_layers: int) -> tuple[int, int]:
+    def viewbox_size(self, layers: LayerList) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).
 
         If grid.border_width > 0, that's accounted for too.
         """
         viewbox_size = np.array(self.size)
         if self.grid.enabled:
-            grid_shape = np.array(self.grid.actual_shape(n_layers))
+            grid_shape = np.array(self.grid.actual_shape(layers))
             spacing_pixels = self.grid._compute_canvas_spacing(
-                self.size, n_layers
+                self.size, layers
             )
             # Now calculate actual available space
             total_gap_space = spacing_pixels * (grid_shape - 1)
