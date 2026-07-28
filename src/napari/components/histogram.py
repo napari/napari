@@ -461,7 +461,7 @@ class HistogramModel(EventedModel):
     def _get_full_data(self) -> np.ndarray | None:
         """Get full volume data, using coarsest level for multiscale."""
         if isinstance(self._layer, Surface):
-            # Surface layers contain vertex values in the third element of the tuple. 
+            # Surface layers contain vertex values in the third element of the tuple.
             # Check if the surface has vortex values, if yes return them, otherwise return None.
             if len(self._layer.data) == 2:
                 return None
