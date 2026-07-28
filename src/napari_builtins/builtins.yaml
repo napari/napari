@@ -10,6 +10,9 @@ contributions:
     - id: napari.get_py_reader
       python_name: napari_builtins.io:napari_get_py_reader
       title: Builtin Python Reader
+    - id: napari.get_obj_reader
+      python_name: napari_builtins.io:napari_get_obj_reader
+      title: Builtin Wavefront OBJ Reader
 
     # writers
     - id: napari.write_image
@@ -131,6 +134,9 @@ contributions:
     - id: napari.data.balls_3d
       title: Generate 3d_balls sample
       python_name: napari_builtins._ndims_balls:labeled_particles3d
+    - id: napari.data.diffusion_4d
+      title: Generate heat diffusion sample
+      python_name: napari_builtins._diffusion_4d:cylinder_diffusion
 
     # widgets
     - id: napari.widgets.features_table
@@ -144,6 +150,9 @@ contributions:
       enablement: active_layer_type == 'shapes'
 
   readers:
+    - command: napari.get_obj_reader
+      accepts_directories: false
+      filename_patterns: ['*.obj']
     - command: napari.get_reader
       accepts_directories: true
       filename_patterns:
@@ -280,6 +289,9 @@ contributions:
     - display_name: Gravel
       key: gravel
       command: napari.data.gravel
+    - display_name: Heat diffusion (4D)
+      key: diffusion_4d
+      command: napari.data.diffusion_4d
     - display_name: Horse
       key: horse
       command: napari.data.horse
