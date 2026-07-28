@@ -29,6 +29,7 @@ from pydantic_settings import (
 )
 
 from napari._pydantic_util import get_inner_type, get_origin
+from napari.settings._fields import Version
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
@@ -279,99 +280,6 @@ class NapariEnvSettingsSource(EnvSettingsSource):
                 sub_dkt[field_name] = value
 
 
-def _field_name(key: str, plugin_name: str) -> str:
-    """
-    Convert:
-        my_plugin.someSetting -> some_setting
-    """
-    key = key.removeprefix(f'{plugin_name}.')
-
-    key = re.sub(
-        r'(?<!^)(?=[A-Z])',
-        '_',
-        key,
-    )
-
-    key = re.sub(
-        r'[.\-\s]+',
-        '_',
-        key,
-    )
-
-    return key.lower()
-
-
-VALUE_TRANSLATOR = {
-    'maximum': 'le',
-    'minimum': 'ge',
-    'exclusive_maximum': 'lt',
-    'exclusive_minimum': 'gt',
-}
-_TYPE_MAP: dict[str, type] = {
-    'boolean': bool,
-    'string': str,
-    'integer': int,
-    'number': float,
-    'array': list,
-    'int': int,
-    'float': float,
-    'str': str,
-    'bool': bool,
-    'list': list,
-}
-
-
-def _build_single_config_model(
-    configuration,
-    plugin_name: str,
-) -> type[EventedModel]:
-
-    fields = {}
-
-    for key, props in configuration.properties.items():
-        if props.type is None:
-            continue
-
-        data = {k: getattr(props, k) for k in props.model_fields_set}
-
-        type_name = data.pop('type')
-        field_type = _TYPE_MAP.get(type_name)
-
-        field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
-
-        field_name = _field_name(key, plugin_name)
-
-        fields[field_name] = (
-            field_type,
-            Field(**field_kwargs),
-        )
-    model_name = re.sub(r'\W+', '', configuration.title.title()) + 'Settings'
-    return create_model(
-        model_name,
-        __base__=EventedModel,
-        **fields,
-    )
-
-
-def build_config_model(
-    configuration,
-    plugin_name: str,
-) -> EventedConfigFileSettings:
-
-    fields = {}
-    models = [
-        _build_single_config_model(conf, plugin_name) for conf in configuration
-    ]
-
-    for model in models:
-        fields[model.__name__] = (EventedModel, Field(default=model))
-
-    model_name = plugin_name + 'Settings'
-    return create_model(
-        model_name, __base__=EventedConfigFileSettings, **fields
-    )
-
-
 class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     """This adds config read/write and yaml support to EventedSettings.
 
@@ -599,3 +507,163 @@ def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
         if v == {}:
             del dct[k]
     return dct
+
+
+CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
+
+
+class PluginPreferences(
+    EventedConfigFileSettings
+):  # Should become parent class of NapariSettings and this class should become empty class
+    schema_version: Version = Field(
+        CURRENT_SCHEMA_VERSION,
+        description='Napari settings schema version.',
+    )
+    model_config = SettingsConfigDict(
+        env_prefix='napari_',
+        nested_model_default_partial_update=True,
+        env_nested_delimiter='_',
+        env_nested_max_split=1,
+        use_enum_values=False,
+        extra='ignore',
+        populate_by_name=True,
+    )
+
+    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+        super().__init__(config_path, **values)
+        self._maybe_migrate()
+
+    def _save_dict(self, **kwargs):
+        # we always want schema_version written to the settings.yaml
+        # TODO: is there a better way to always include schema version?
+        return {
+            'schema_version': self.schema_version,
+            **super()._save_dict(**kwargs),
+        }
+
+    def __str__(self):
+        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        data = self.model_dump(exclude_defaults=True)
+        out += self._yaml_dump(_remove_empty_dicts(data))
+        return out
+
+    def __repr__(self):
+        return str(self)
+
+    def _maybe_migrate(self):
+        if self.schema_version < CURRENT_SCHEMA_VERSION:
+            from napari.settings._migrations import do_migrations
+
+            do_migrations(self)
+
+
+def _field_name(key: str, plugin_name: str) -> str:
+    """
+    Convert:
+        my_plugin.someSetting -> some_setting
+    """
+    key = key.removeprefix(f'{plugin_name}.')
+
+    key = re.sub(
+        r'(?<!^)(?=[A-Z])',
+        '_',
+        key,
+    )
+
+    key = re.sub(
+        r'[.\-\s]+',
+        '_',
+        key,
+    )
+
+    return key.lower()
+
+
+VALUE_TRANSLATOR = {
+    'maximum': 'le',
+    'minimum': 'ge',
+    'exclusive_maximum': 'lt',
+    'exclusive_minimum': 'gt',
+}
+_TYPE_MAP: dict[str, type] = {
+    'boolean': bool,
+    'string': str,
+    'integer': int,
+    'number': float,
+    'array': list,
+    'int': int,
+    'float': float,
+    'str': str,
+    'bool': bool,
+    'list': list,
+}
+
+
+def _build_single_config_model(
+    configuration,
+    plugin_name: str,
+) -> type[EventedModel]:
+
+    fields = {}
+
+    for key, props in configuration.properties.items():
+        if props.type is None:
+            continue
+
+        data = {k: getattr(props, k) for k in props.model_fields_set}
+
+        type_name = data.pop('type')
+        field_type = _TYPE_MAP.get(type_name)
+
+        field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
+
+        field_name = _field_name(key, plugin_name)
+
+        fields[field_name] = (
+            field_type,
+            Field(**field_kwargs),
+        )
+    model_name = re.sub(r'\W+', '', configuration.title.title()) + 'Settings'
+    return create_model(
+        model_name,
+        __base__=EventedModel,
+        **fields,
+    )
+
+
+def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
+    from npe2 import PluginManager
+
+    pm = PluginManager.instance()
+    pm.discover()
+    plugins = sorted(
+        pm.iter_manifests(),
+        key=lambda x: x.name,
+    )
+    plugin_contr = {
+        plug.name: plug.contributions for plug in plugins if plug.contributions
+    }
+    configurations = {
+        plug: conf.configuration
+        for plug, conf in plugin_contr.items()
+        if conf.configuration
+    }
+    plugin_settings = {}
+    for plugin_name, configuration in configurations.items():
+        models = [
+            _build_single_config_model(conf, plugin_name)
+            for conf in configuration
+        ]
+        fields = {}
+
+        for model in models:
+            fields[model.__name__] = (
+                model,
+                Field(default_factory=model),
+            )
+        plugin_settings[plugin_name] = create_model(
+            f'{plugin_name} Preferences',
+            __base__=PluginPreferences,
+            **fields,
+        )
+    return plugin_settings  # these should be i

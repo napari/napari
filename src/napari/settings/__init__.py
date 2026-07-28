@@ -59,3 +59,6 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         )
 
     return _SETTINGS
+
+
+# def get_plugin_preferences(path):
