@@ -235,6 +235,36 @@ class _QtMainWindow(QMainWindow):
             'animation': None,
         }
 
+        dock_widget.topLevelChanged.connect(
+            lambda floating, dock=dock_widget: self._on_dock_floating_changed(
+                dock, floating
+            )
+        )
+
+    def _on_dock_floating_changed(self, dock, floating):
+        if floating:
+            self._deregister_sliding_dock(dock)
+        elif dock not in self.sliding_docks:
+            self.register_sliding_dock(dock)
+
+    def _deregister_sliding_dock(self, dock):
+        state = self.sliding_docks.pop(dock, None)
+        if state is None:
+            return
+
+        anim = state.get('animation')
+        if (
+            anim is not None
+            and anim.state() == QPropertyAnimation.State.Running
+        ):
+            anim.stop()
+
+        dock.setMaximumWidth(16777215)
+        dock.setMaximumHeight(16777215)
+        dock.setMinimumWidth(0)
+        dock.setMinimumHeight(0)
+        dock.setTitleBarWidget(None)
+
     def handle_multi_dock_hover(self, pos):
         edge_threshold = 20
         win_width = self.width()
@@ -253,7 +283,9 @@ class _QtMainWindow(QMainWindow):
             Qt.DockWidgetArea.LeftDockWidgetArea: {
                 'property_name': b'maximumWidth',
                 'should_show': lambda dock: pos.x() <= edge_threshold,
-                'should_hide': lambda dock: pos.x() > dock.width() * 2,
+                'should_hide': lambda dock: (
+                    pos.x() > dock.width() + dock.width() * 0.05
+                ),
             },
             Qt.DockWidgetArea.BottomDockWidgetArea: {
                 'property_name': b'maximumHeight',
@@ -261,7 +293,8 @@ class _QtMainWindow(QMainWindow):
                     pos.y() >= (win_height - edge_threshold)
                 ),
                 'should_hide': lambda dock: (
-                    pos.y() < (win_height - dock.height())
+                    pos.y()
+                    < (win_height - dock.height() + dock.height() * 0.05)
                 ),
             },
         }
