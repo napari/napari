@@ -207,14 +207,8 @@ class _RebuildableCache(dict):
 def _warn_removed_selection_field(name: str, layer_attr: str) -> None:
     """Warn about reading a selection field removed from label colormaps."""
     warn(
-        trans._(
-            'LabelColormapBase.{name} was removed; label colormaps no'
-            ' longer carry selection state. Read layer.{layer_attr}'
-            ' instead.',
-            deferred=True,
-            name=name,
-            layer_attr=layer_attr,
-        ),
+        f'LabelColormapBase.{name} was removed; label colormaps no '
+        f'longer carry selection state. Read layer.{layer_attr} instead.',
         FutureWarning,
         stacklevel=3,
     )
@@ -223,13 +217,8 @@ def _warn_removed_selection_field(name: str, layer_attr: str) -> None:
 def _raise_removed_selection_field(name: str, layer_attr: str) -> NoReturn:
     """Raise for writing a selection field removed from label colormaps."""
     raise AttributeError(
-        trans._(
-            'LabelColormapBase.{name} was removed; label colormaps are'
-            ' immutable value objects. Set layer.{layer_attr} instead.',
-            deferred=True,
-            name=name,
-            layer_attr=layer_attr,
-        )
+        f'LabelColormapBase.{name} was removed; label colormaps are '
+        f'immutable value objects. Set layer.{layer_attr} instead.'
     )
 
 
