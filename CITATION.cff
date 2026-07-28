@@ -600,6 +600,7 @@ authors:
   orcid: https://orcid.org/0000-0002-8715-084X
 - given-names: Aroj
   family-names: Hada
+  alias: ArozHada
   affiliation: University Hospital Heidelberg
   orcid: https://orcid.org/0000-0002-0691-1214
 repository-code: https://github.com/napari/napari
