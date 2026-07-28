@@ -232,12 +232,12 @@ def test_grid_mode(make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
 
-    # Add images
+    # Add 6 image layers
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
+    assert viewer.grid.actual_shape(viewer.layers) == (1, 1)
     assert viewer.grid.stride == 1
 
     # check screenshot
@@ -248,7 +248,7 @@ def test_grid_mode(make_napari_viewer):
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
+    assert viewer.grid.actual_shape(viewer.layers) == (2, 3)
     assert viewer.grid.stride == 1
 
     # check screenshot
@@ -285,7 +285,7 @@ def test_grid_mode(make_napari_viewer):
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
+    assert viewer.grid.actual_shape(viewer.layers) == (1, 1)
     assert viewer.grid.stride == 1
 
 
