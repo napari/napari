@@ -33,7 +33,7 @@ class _XarrayProps(NamedTuple):
     has_dims: bool = False
     has_coords: bool = False
 
-
+# TODO: list of xarrays because of multiscale
 def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
 
