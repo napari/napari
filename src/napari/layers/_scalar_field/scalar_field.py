@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, NamedTuple, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -33,6 +33,13 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
+from napari.utils._xarray_utils import (
+    _check_xarray,
+    _get_xr_axis_labels,
+    _get_xr_scale,
+    _get_xr_translate,
+    _get_xr_units,
+)
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -44,98 +51,11 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    import xarray as xr
-    from numpy.typing import ArrayLike
-
     from napari.components import Dims
 
 
 __all__ = ('ScalarFieldBase',)
 
-
-class _XarrayProps(NamedTuple):
-    """Properties of an xarray-like data object.
-
-    Attributes
-    ----------
-    has_dims : bool
-        True if data exposes ``.dims`` (NamedArray / Variable / DataArray).
-    has_coords : bool
-        True if data exposes ``.coords`` (DataArray only).
-    """
-
-    has_dims: bool = False
-    has_coords: bool = False
-
-
-def _check_xarray(data: ArrayLike) -> _XarrayProps:
-    """Check what xarray properties *data* exposes.
-
-    Returns a named tuple with ``has_dims`` (True for NamedArray and all
-    subclasses) and ``has_coords`` (True for DataArray only).
-    """
-    try:
-        import xarray as xr
-        from xarray.namedarray.core import NamedArray
-    except ImportError:
-        return _XarrayProps()
-
-    if isinstance(data, xr.DataArray):
-        return _XarrayProps(has_dims=True, has_coords=True)
-    if isinstance(data, (xr.Variable, NamedArray)):
-        return _XarrayProps(has_dims=True)
-
-    return _XarrayProps()
-
-
-def _get_xr_axis_labels(data: xr.DataArray | xr.Variable) -> tuple[str, ...]:
-    """Infer axis labels from xarray dims."""
-    return tuple(str(d) for d in data.dims)
-
-
-def _get_xr_scale(data: xr.DataArray) -> list[float]:
-    """Infer scale from first coordinate values spacing.
-
-    Assumes coordinates are linearly spaced. Falls back to 1.0 for
-    single-element dimensions (size < 2), where spacing is undefined.
-    """
-    return [
-        float(data.coords[d].values[1] - data.coords[d].values[0])
-        if data.coords[d].size >= 2
-        else 1.0
-        for d in data.dims
-    ]
-
-
-def _get_xr_translate(data: xr.DataArray) -> list[float]:
-    """Infer translate (offset) from the first coordinate value.
-
-    Returns ``coord.values[0]`` for each dimension, which is the
-    physical offset of the first pixel along that axis.
-    """
-    return [float(data.coords[d].values[0]) for d in data.dims]
-
-
-def _get_xr_units(data: xr.DataArray) -> list[str | None]:
-    """Read units from coordinate attrs, validating against pint.
-
-    Uses the CF convention (``coord.attrs['units']``).  Invalid unit
-    strings (e.g. ``'degrees_north'``, which is CF-compliant but not a
-    valid pint unit) are silently dropped and replaced with ``None``,
-    so napari will use its default (pixel) for that axis.
-    """
-    from napari.utils.transforms._units import get_unit_from_name
-
-    units: list[str | None] = []
-    for d in data.dims:
-        u = data.coords[d].attrs.get('units')
-        if u is not None:
-            try:
-                get_unit_from_name(u)
-            except ValueError:
-                u = None
-        units.append(u)
-    return units
 
 
 def _make_level_materializer(
