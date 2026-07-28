@@ -800,7 +800,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | None | tuple[int, int | None]:
+    ) -> int | tuple[int, int | None] | None:
         """Get the first non-background value encountered along a ray.
 
         Parameters

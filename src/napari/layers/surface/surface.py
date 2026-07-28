@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import warnings
 from typing import TYPE_CHECKING, Any
@@ -25,6 +27,8 @@ from napari.utils.geometry import find_nearest_triangle_intersection
 
 if TYPE_CHECKING:
     import pandas as pd
+
+    from napari.components.histogram import HistogramModel
 
 
 # Mixin must come before Layer
@@ -219,7 +223,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _slicing_state: '_SurfaceSlicingState'
+    _slicing_state: _SurfaceSlicingState
 
     def __init__(
         self,
@@ -340,6 +344,26 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._slicing_state.slice_done.connect(
             self._maybe_reset_contrast_limits
         )
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer, created lazily on first access.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+        The model is not created until the ``histogram`` property is first
+        accessed.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+        """
+        if not hasattr(self, '_histogram'):
+            from napari.components.histogram import HistogramModel
+
+            self._histogram = HistogramModel(self)
+        return self._histogram
 
     @property
     def _view_vertex_colors(self) -> list[Any] | np.ndarray:
@@ -489,7 +513,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return extrema
 
     @property
-    def features(self) -> 'pd.DataFrame':
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -509,13 +533,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data[0]))
         self.events.features()
 
     @property
-    def feature_defaults(self) -> 'pd.DataFrame':
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -524,7 +548,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: dict[str, Any] | pd.DataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -666,7 +690,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, int | None]:
+    ) -> tuple[float | int | None, int | None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -755,7 +779,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_SurfaceSlicingState':
+    ) -> _SurfaceSlicingState:
         return _SurfaceSlicingState(layer=self, data=data, cache=cache)
 
     def _maybe_reset_contrast_limits(self) -> None:

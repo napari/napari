@@ -31,7 +31,9 @@ viewer, sst_layer = napari.imshow(
         name='sea surface temp',
         units=('ns', 'degrees', 'degrees'),
         colormap='magma',
+        axis_labels=sst.sst.dims,
         )
+viewer.scale_bar.visible = True
 
 air_layer = viewer.add_image(
         airtemp.air,
@@ -40,6 +42,7 @@ air_layer = viewer.add_image(
         colormap='viridis',
         blending='additive',
         contrast_limits=(-23 + 273, 32 + 273),  # data are in degrees Kelvin
+        axis_labels=sst.sst.dims
         )
 
 

@@ -428,25 +428,25 @@ def test_grid():
     for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # reenter grid view with new stride
-    viewer.grid.stride = -2
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 2)
-    assert viewer.grid.stride == -2
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.stride = -2
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 2)
+    assert viewer.canvas.grid.stride == -2
+    assert viewer.canvas.grid.spacing == 0
 
 
 def test_add_remove_layer_dims_change():
@@ -806,7 +806,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
+    'field', ['camera', 'cursor', 'dims', 'canvas', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -1037,41 +1037,44 @@ def test_get_status_text():
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        },
-        '',
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
+        sorted(
+            {
+                'coordinates': '[1, 2]: 0; a: 1',
+                'coords': '[1, 2]',
+                'layer_base': 'Labels',
+                'layer_name': 'Labels',
+                'plugin': '',
+                'source_type': '',
+                'value': '0; a: 1',
+            }.items()
+        )
     )
     viewer.tooltip.visible = True
-    assert viewer._calc_status_from_cursor() == (
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
         {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
             'value': '0; a: 1',
-        },
-        '0\na: 1',
+        }.items()
     )
+    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
     viewer.update_status_from_cursor()
-    assert viewer.status == {
-        'coordinates': ' [1 2]: 0; a: 1',
-        'coords': ' [1 2]',
-        'layer_base': 'Labels',
-        'layer_name': 'Labels',
-        'plugin': '',
-        'source_type': '',
-        'value': '0; a: 1',
-    }
+    assert sorted(viewer.status.items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
+    )
     assert viewer.tooltip.text == '0\na: 1'
 
 
