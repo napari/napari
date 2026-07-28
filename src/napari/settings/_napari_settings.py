@@ -110,9 +110,6 @@ class NapariSettings(EventedConfigFileSettings):
             do_migrations(self)
 
 
-class template(EventedConfigFileSettings): ...
-
-
 if __name__ == '__main__':
     import json
     import sys
