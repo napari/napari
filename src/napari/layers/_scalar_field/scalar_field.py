@@ -86,6 +86,35 @@ def _check_xarray(data) -> _XarrayProps:
     return _XarrayProps()
 
 
+def _get_xr_axis_labels(data) -> tuple[str, ...]:
+    """Infer axis labels from xarray dims."""
+    return tuple(str(d) for d in data.dims)
+
+
+def _get_xr_scale(data) -> list[float]:
+    """Infer scale from first coordinate values spacing.
+
+    Assumes coordinates are linearly spaced. Falls back to 1.0 for
+    single-element dimensions (size < 2), where spacing is undefined.
+    """
+    return [
+        float(data.coords[d].values[1] - data.coords[d].values[0])
+        if data.coords[d].size >= 2
+        else 1.0
+        for d in data.dims
+    ]
+
+
+def _get_xr_units(data) -> list[str | None]:
+    """Read units from coordinate attrs.
+
+    Uses the CF convention (``coord.attrs['units']``).  Individual
+    ``None`` values mean napari will use its default (pixel) for that
+    axis.
+    """
+    return [data.coords[d].attrs.get('units') for d in data.dims]
+
+
 def _make_level_materializer(
     data: MultiScaleData,
 ) -> Callable[[int], np.ndarray]:
@@ -292,20 +321,14 @@ class ScalarFieldBase(Layer, ABC):
         self._data = data
 
         xrprops = _check_xarray(data)
-        if xrprops.has_dims and axis_labels is None:
-            axis_labels = tuple(str(d) for d in data.dims)
+        if axis_labels is None and xrprops.has_dims:
+            axis_labels = _get_xr_axis_labels(data)
 
-        if xrprops.has_coords:
-            coords = data.coords
-            if scale is None:
-                scale = [
-                    float(coords[d].values[1] - coords[d].values[0])
-                    if coords[d].size >= 2
-                    else 1.0
-                    for d in data.dims
-                ]
-            if units is None:
-                units = [coords[d].attrs.get('units') for d in data.dims]
+        if scale is None and xrprops.has_coords:
+            scale = _get_xr_scale(data)
+
+        if units is None and xrprops.has_coords:
+            units = _get_xr_units(data)
 
         super().__init__(
             data,
