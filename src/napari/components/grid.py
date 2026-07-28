@@ -137,13 +137,17 @@ class GridCanvas(EventedModel):
         # Compute viewbox index based on stride and effective indices
         viewbox = index // abs(self.stride)
         # build a sorted list of occupied stride groups
-        occupied_groups = sorted({i // abs(self.stride) for i in effective_indices})
+        occupied_groups = sorted(
+            {i // abs(self.stride) for i in effective_indices}
+        )
 
         # Map the viewbox to a linear position in the grid, depending on the stride direction
         if self.stride > 0:
             linear_pos = occupied_groups.index(viewbox)
         else:
-            linear_pos = len(occupied_groups) - 1 - occupied_groups.index(viewbox)
+            linear_pos = (
+                len(occupied_groups) - 1 - occupied_groups.index(viewbox)
+            )
 
         adj_i = linear_pos % (n_row * n_column)
         i_row = adj_i // n_column

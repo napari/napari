@@ -238,9 +238,10 @@ def test_effective_indices():
     # None → empty list
     assert grid._effective_indices() == []
 
+
 def test_hidden_layers_with_stride_equal_visible_count():
     """Test stride=n with n visible + invisible layers ->  shape (1, 1).
-    
+
     Regression test: stride=n with exactly n visible layers and
     one or more invisible layers should produce a single viewbox.
     """
@@ -267,7 +268,7 @@ def test_hidden_layers_with_stride_equal_visible_count():
         mock_layer(visible=True),
         mock_layer(visible=False),
     ]
-  
+
     assert grid.actual_shape(layers_alt) == (2, 2)
     assert grid.position(0, layers_alt) == (0, 0)
     assert grid.position(1, layers_alt) == (-1, -1)
