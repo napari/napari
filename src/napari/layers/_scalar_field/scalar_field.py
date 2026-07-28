@@ -263,18 +263,19 @@ class ScalarFieldBase(Layer, ABC):
             ndim = len(data.shape)
         self._data = data
 
-        xrprops = _check_xarray(data)
+        xr_source = data[0] if isinstance(data, (list, tuple, MultiScaleData)) else data
+        xrprops = _check_xarray(xr_source)
         if axis_labels is None and xrprops.has_dims:
-            axis_labels = _get_xr_axis_labels(data)
+            axis_labels = _get_xr_axis_labels(xr_source)
 
         if scale is None and xrprops.has_coords:
-            scale = _get_xr_scale(data)
+            scale = _get_xr_scale(xr_source)
 
         if translate is None and xrprops.has_coords:
-            translate = _get_xr_translate(data)
+            translate = _get_xr_translate(xr_source)
 
         if units is None and xrprops.has_coords:
-            units = _get_xr_units(data)
+            units = _get_xr_units(xr_source)
 
         super().__init__(
             data,

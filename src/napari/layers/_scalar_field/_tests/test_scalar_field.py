@@ -478,3 +478,20 @@ class TestXarrayMetadataInit:
         assert layer.axis_labels == ("row", "col")
         np.testing.assert_allclose(layer.scale, [3.0, 3.0])
         assert str(layer.units[0]) == "millimeter"
+
+    def test_xarray_multiscale_list(self):
+        """List of xarrays (multiscale) inherits metadata from first level."""
+        da_full = xr.DataArray(
+            np.random.random((10, 20)),
+            dims=["y", "x"],
+            coords={
+                "y": ("y", np.arange(100, 110).astype(float), {"units": "microns"}),
+                "x": ("x", np.arange(200, 220).astype(float)),
+            },
+        )
+        da_half = xr.DataArray(np.random.random((5, 10)), dims=["y", "x"])
+        layer = Image([da_full, da_half], multiscale=True)
+        assert layer.axis_labels == ("y", "x")
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [100.0, 200.0])
+        assert str(layer.units[0]) == "micron"
