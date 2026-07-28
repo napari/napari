@@ -628,6 +628,10 @@ class Surface(IntensityVisualizationMixin, Layer):
             msg = f'texture should be None or ndarray; got {type(texture)}'
             raise ValueError(msg)
         self._texture = texture
+        if self.texcoords is not None:
+            # trigger a reslice (to slice the texture) but only if both texcoords and
+            # texture are set
+            self.refresh(extent=False)
         self.events.texture(value=self._texture)
 
     @property
@@ -640,6 +644,10 @@ class Surface(IntensityVisualizationMixin, Layer):
             msg = f'texcoords should be None or ndarray; got {type(texcoords)}'
             raise ValueError(msg)
         self._texcoords = texcoords
+        if self.texture is not None:
+            # trigger a reslice (to slice the texture) but only if both texcoords and
+            # texture are set
+            self.refresh(extent=False)
         self.events.texcoords(value=self._texcoords)
 
     @property
@@ -649,7 +657,6 @@ class Surface(IntensityVisualizationMixin, Layer):
             self.texture is not None
             and self.texcoords is not None
             and len(self.texcoords)
-            and self._view_texcoords is not None
         )
 
     def _get_state(self) -> dict[str, Any]:
