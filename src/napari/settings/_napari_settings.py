@@ -23,7 +23,7 @@ _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
 
 
-class NapariSettings(type[EventedConfigFileSettings]):
+class NapariSettings(EventedConfigFileSettings):
     """Schema for napari settings."""
 
     # 1. If you want to *change* the default value of a current option, you need to

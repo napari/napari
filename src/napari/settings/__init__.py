@@ -1,11 +1,16 @@
 from pathlib import Path
 from typing import Any
 
-from napari.settings._base import _NOT_SET
+from napari.settings._base import (
+    _NOT_SET,
+    PluginPreferences,
+    plugin_configuration_generator,
+)
 from napari.settings._napari_settings import (
     CURRENT_SCHEMA_VERSION,
     NapariSettings,
 )
+from napari.utils._platformdirs import user_config_dir
 
 __all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
 
@@ -25,7 +30,7 @@ SETTINGS = _SettingsProxy()
 _SETTINGS: NapariSettings | None = None
 
 
-def get_settings(path=_NOT_SET) -> NapariSettings:
+def get_settings(path=_NOT_SET, plugin=None) -> NapariSettings:
     """
     Get settings for a given path.
 
@@ -61,4 +66,41 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
     return _SETTINGS
 
 
-# def get_plugin_preferences(path):
+_PLUGIN_PREFRERENCES: dict[str, PluginPreferences] | None = {}
+
+
+def get_plugin_settings(
+    plugin: str | None = None,
+    path_dir=_NOT_SET,
+):
+    global _PLUGIN_PREFRERENCES
+
+    if not _PLUGIN_PREFRERENCES:
+        if path_dir is _NOT_SET:
+            path_dir = Path(user_config_dir())
+        elif path_dir is not None:
+            path_dir = Path(path_dir).resolve()
+
+        for key, model in plugin_configuration_generator().items():
+            config_path = (
+                None if path_dir is None else path_dir / f'{key}.yaml'
+            )
+            _PLUGIN_PREFRERENCES[key] = model(config_path=config_path)
+
+    elif path_dir is not _NOT_SET:
+        import inspect
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        raise RuntimeError(
+            f'The path can only be set once per session. '
+            f'Settings called from {calframe[1][3]}'
+        )
+
+    if plugin is not None:
+        try:
+            return _PLUGIN_PREFRERENCES[plugin]
+        except KeyError as err:
+            raise KeyError(f"Plugin named '{plugin}' does not exist.") from err
+
+    return _PLUGIN_PREFRERENCES

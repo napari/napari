@@ -31,6 +31,7 @@ from pydantic_settings import (
 from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._fields import Version
 from napari.settings._yaml import PydanticYamlMixin
+from napari.utils._platformdirs import user_config_dir
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
 
@@ -511,6 +512,8 @@ def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
 
 CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
 
+_PL_CFG_PATH = os.getenv('NAPARI_CONFIG', user_config_dir())
+
 
 class PluginPreferences(
     EventedConfigFileSettings
@@ -527,6 +530,10 @@ class PluginPreferences(
         use_enum_values=False,
         extra='ignore',
         populate_by_name=True,
+    )
+    # private attributes and ClassVars will not appear in the schema
+    config_path: Path | None = Field(
+        Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True
     )
 
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
@@ -623,7 +630,9 @@ def _build_single_config_model(
             field_type,
             Field(**field_kwargs),
         )
-    model_name = re.sub(r'\W+', '', configuration.title.title()) + 'Settings'
+    model_name = (
+        (configuration.title.title().lower()) + '-settings'
+    )  # for some reason when creating the preferences only lowercase letters are used.
     return create_model(
         model_name,
         __base__=EventedModel,
@@ -631,7 +640,7 @@ def _build_single_config_model(
     )
 
 
-def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
+def plugin_configuration_generator() -> dict[str, PluginPreferences]:
     from npe2 import PluginManager
 
     pm = PluginManager.instance()

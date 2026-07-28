@@ -37,13 +37,14 @@ class PreferencesDialog(QDialog):
     resized = Signal(QSize)
 
     def __init__(self, parent=None) -> None:
-        from napari.settings import get_settings
+        from napari.settings import get_plugin_settings, get_settings
 
         super().__init__(parent)
         self.setWindowTitle('Preferences')
         self.setMinimumSize(QSize(1065, 470))
 
         self._settings = get_settings()
+        self._plugin_settings = get_plugin_settings()
         self._stack = QStackedWidget(self)
         self._list = QListWidget(self)
         self._list.setObjectName('Preferences')
@@ -102,25 +103,32 @@ class PreferencesDialog(QDialog):
             field_name,
             field_info,
         ) in self._settings.__class__.model_fields.items():
-            if field_name != 'plugin_preferences':
-                field_type = get_inner_type(field_info.annotation)
-                if get_origin(field_type) is None and issubclass(
-                    field_type, BaseModel
-                ):
-                    self._add_page(field_name, field_info)
-
-        for field_name, field_info in self._settings[
-            'plugin_preferences'
-        ].__class__.model_fields.items():
             field_type = get_inner_type(field_info.annotation)
             if get_origin(field_type) is None and issubclass(
                 field_type, BaseModel
             ):
-                self._add_page(field_name, field_info)
+                self._add_page(field_name, field_info, self._settings)
+
+        for plugin_name, plugin in self._plugin_settings.items():
+            for (
+                field_name,
+                field_info,
+            ) in plugin.__class__.model_fields.items():
+                field_type = get_inner_type(field_info.annotation)
+                if get_origin(field_type) is None and issubclass(
+                    field_type, BaseModel
+                ):
+                    self._add_page(
+                        field_name,
+                        field_info,
+                        self._plugin_settings[plugin_name],
+                    )
 
         self._list.setCurrentRow(0)
 
-    def _add_page(self, field_name: str, field_info: FieldInfo) -> None:
+    def _add_page(
+        self, field_name: str, field_info: FieldInfo, settings_object
+    ) -> None:
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -132,7 +140,9 @@ class PreferencesDialog(QDialog):
             WidgetBuilder,
         )
 
-        schema, values = self._get_page_dict(field_name, field_info)
+        schema, values = self._get_page_dict(
+            field_name, field_info, settings_object
+        )
         name = field_info.title or field_name
 
         form = WidgetBuilder().create_form(schema, self.ui_schema)
@@ -140,10 +150,10 @@ class PreferencesDialog(QDialog):
         form.widget.state = values
         # make settings follow state of the form widget
         form.widget.on_changed.connect(
-            lambda d: getattr(self._settings, name.lower()).update(d)
+            lambda d: getattr(settings_object, name.lower()).update(d)
         )
         # make widgets follow values of the settings
-        settings_category = getattr(self._settings, name.lower())
+        settings_category = getattr(settings_object, name.lower())
         excluded = set(
             getattr(
                 getattr(settings_category, 'NapariConfig', None),
@@ -174,7 +184,7 @@ class PreferencesDialog(QDialog):
         self._stack.addWidget(page_scrollarea)
 
     def _get_page_dict(
-        self, field_name: str, field_info: FieldInfo
+        self, field_name: str, field_info: FieldInfo, settings_object: dict
     ) -> tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
@@ -222,7 +232,7 @@ class PreferencesDialog(QDialog):
                 )
 
         # Need to remove certain properties that will not be displayed on the GUI
-        setting = getattr(self._settings, field_name)
+        setting = getattr(settings_object, field_name)
         with setting.enums_as_values():
             values = setting.model_dump()
         napari_config = getattr(setting, 'NapariConfig', None)
@@ -255,6 +265,8 @@ class PreferencesDialog(QDialog):
         )
         if response == QMessageBox.RestoreDefaults:
             self._settings.reset()
+            for plugin_setting in self._plugin_settings.values():
+                plugin_setting.reset()
 
     def _restart_required_dialog(self):
         """Displays the dialog informing user a restart is required."""
@@ -270,6 +282,8 @@ class PreferencesDialog(QDialog):
 
     def accept(self):
         self._settings.save()
+        for plugin_setting in self._plugin_settings.values():
+            plugin_setting.save()
         super().accept()
 
     def reject(self):
