@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
@@ -33,7 +34,7 @@ class _XarrayProps(NamedTuple):
     has_dims: bool = False
     has_coords: bool = False
 
-# TODO: list of xarrays because of multiscale
+
 def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
 
@@ -96,10 +97,8 @@ def _get_xr_units(data: xr.DataArray) -> list[str | None]:
     # Optionally register CF conventions with pint so that strings
     # like 'degrees_north', 'degrees_east', 'days since ...' etc.
     # are recognised as valid pint units.
-    try:
+    with suppress(ImportError):
         import cf_xarray.units  # noqa: F401
-    except ImportError:
-        pass
 
     from napari.utils.transforms._units import get_unit_from_name
 

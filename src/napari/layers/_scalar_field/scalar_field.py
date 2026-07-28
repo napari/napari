@@ -57,7 +57,6 @@ if TYPE_CHECKING:
 __all__ = ('ScalarFieldBase',)
 
 
-
 def _make_level_materializer(
     data: MultiScaleData,
 ) -> Callable[[int], np.ndarray]:
@@ -263,7 +262,11 @@ class ScalarFieldBase(Layer, ABC):
             ndim = len(data.shape)
         self._data = data
 
-        xr_source = data[0] if isinstance(data, (list, tuple, MultiScaleData)) else data
+        xr_source = (
+            data[0]
+            if isinstance(data, (list, tuple, MultiScaleData))
+            else data
+        )
         xrprops = _check_xarray(xr_source)
         if axis_labels is None and xrprops.has_dims:
             axis_labels = _get_xr_axis_labels(xr_source)
