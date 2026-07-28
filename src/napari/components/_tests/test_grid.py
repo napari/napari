@@ -159,13 +159,13 @@ def test_hidden_layers_with_large_stride():
         mock_layer(visible=False),
     ]
     # stride=3 → ceil(4/3)=2 grid squares → (1, 2) shape
-    assert grid.actual_shape(layers_mixed) == (1, 2)
+    assert grid.actual_shape(layers_mixed) == (1, 1)
     # Every layer gets a grid position (visibility ignored for stride >= 2)
     # Stride=3 packs 3 layers in cell 0, then 1 layer in cell 1
     assert grid.position(0, layers_mixed) == (0, 0)
-    assert grid.position(1, layers_mixed) == (0, 0)
+    assert grid.position(1, layers_mixed) == (-1, -1)
     assert grid.position(2, layers_mixed) == (0, 0)
-    assert grid.position(3, layers_mixed) == (0, 1)
+    assert grid.position(3, layers_mixed) == (-1, -1)
 
 
 def test_contents_at_with_hidden_layers():
@@ -230,10 +230,48 @@ def test_effective_indices():
     assert grid._effective_indices(layers_mixed) == [0, 2]
     # stride >= 2 → all layers regardless of visibility
     grid.stride = 2
-    assert grid._effective_indices(layers_mixed) == [0, 1, 2]
+    assert grid._effective_indices(layers_mixed) == [0, 2]
     grid.stride = 3
-    assert grid._effective_indices(layers_mixed) == [0, 1, 2]
+    assert grid._effective_indices(layers_mixed) == [0, 2]
     # Empty layers → empty list
     assert grid._effective_indices([]) == []
     # None → empty list
     assert grid._effective_indices() == []
+
+def test_hidden_layers_with_stride_equal_visible_count():
+    """Test stride=n with n visible + invisible layers ->  shape (1, 1).
+    
+    Regression test: stride=n with exactly n visible layers and
+    one or more invisible layers should produce a single viewbox.
+    """
+    grid = GridCanvas(enabled=True, stride=2)
+    layers = [
+        mock_layer(visible=True),
+        mock_layer(visible=True),
+        mock_layer(visible=False),
+        mock_layer(visible=False),
+    ]
+    # Both visible layers are in group 0 (indices 0,1)
+    # Group 1 (index 2) is entirely invisible -> not counted
+    assert grid.actual_shape(layers) == (1, 1)
+    assert grid.position(0, layers) == (0, 0)
+    assert grid.position(1, layers) == (0, 0)
+    assert grid.position(2, layers) == (-1, -1)
+
+    # Alternate visibility test
+    layers_alt = [
+        mock_layer(visible=True),
+        mock_layer(visible=False),
+        mock_layer(visible=True),
+        mock_layer(visible=False),
+        mock_layer(visible=True),
+        mock_layer(visible=False),
+    ]
+  
+    assert grid.actual_shape(layers_alt) == (2, 2)
+    assert grid.position(0, layers_alt) == (0, 0)
+    assert grid.position(1, layers_alt) == (-1, -1)
+    assert grid.position(2, layers_alt) == (0, 1)
+    assert grid.position(3, layers_alt) == (-1, -1)
+    assert grid.position(4, layers_alt) == (1, 0)
+    assert grid.position(5, layers_alt) == (-1, -1)

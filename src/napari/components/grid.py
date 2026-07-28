@@ -78,17 +78,22 @@ class GridCanvas(EventedModel):
             return (1, 1)
 
         n_row, n_column = self.shape
-        n_grid_squares = np.ceil(
-            len(self._effective_indices(layers)) / abs(self.stride)
+
+        # Compute the number of occupied stride groups, which is the number of
+        # viewboxes that will be used to display the layers in the grid.
+        effective = self._effective_indices(layers)
+        stride = abs(self.stride)
+        occupied_groups = np.ceil(
+            len({i // stride for i in effective})
         ).astype(int)
 
         if n_row == -1 and n_column == -1:
-            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
+            n_column = np.ceil(np.sqrt(occupied_groups)).astype(int)
+            n_row = np.ceil(occupied_groups / n_column).astype(int)
         elif n_row == -1:
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
+            n_row = np.ceil(occupied_groups / n_column).astype(int)
         elif n_column == -1:
-            n_column = np.ceil(n_grid_squares / n_row).astype(int)
+            n_column = np.ceil(occupied_groups / n_row).astype(int)
 
         n_row = max(1, n_row)
         n_column = max(1, n_column)
@@ -129,16 +134,21 @@ class GridCanvas(EventedModel):
         n_row, n_column = self.actual_shape(layers)
 
         # Adjust for forward or reverse ordering
-        adj_i = (
-            effective_indices.index(index)
-            if self.stride > 0
-            else len(effective_indices) - effective_indices.index(index) - 1
-        )
+        # Compute viewbox index based on stride and effective indices
+        viewbox = index // abs(self.stride)
+        # build a sorted list of occupied stride groups
+        occupied_groups = sorted({i // abs(self.stride) for i in effective_indices})
 
-        adj_i = adj_i // abs(self.stride)
-        adj_i = adj_i % (n_row * n_column)
+        # Map the viewbox to a linear position in the grid, depending on the stride direction
+        if self.stride > 0:
+            linear_pos = occupied_groups.index(viewbox)
+        else:
+            linear_pos = len(occupied_groups) - 1 - occupied_groups.index(viewbox)
+
+        adj_i = linear_pos % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
+
         # convert to python int from np int
         return (int(i_row), int(i_column))
 
@@ -256,8 +266,4 @@ class GridCanvas(EventedModel):
         """Return a list of original layer indices that are "active" in the grid."""
         if layers is None:
             return []
-        if abs(self.stride) >= 2:
-            return list(range(len(layers)))
-        if abs(self.stride) == 1:
-            return [i for i, layer in enumerate(layers) if layer.visible]
-        return list(range(len(layers)))
+        return [i for i, layer in enumerate(layers) if layer.visible]
