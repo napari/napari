@@ -255,6 +255,18 @@ class ScalarFieldBase(Layer, ABC):
             ndim = len(data.shape)
         self._data = data
 
+        # Auto-inherit axis labels from data with named dimensions
+        # (e.g., xarray.DataArray, or any array type that exposes .dims).
+        if axis_labels is None:
+            dims = getattr(data, 'dims', None)
+            if dims is not None:
+                try:
+                    candidate = tuple(str(d) for d in dims)
+                    if len(candidate) == ndim:
+                        axis_labels = candidate
+                except (TypeError, ValueError):
+                    pass
+
         super().__init__(
             data,
             ndim,
