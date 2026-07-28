@@ -6,15 +6,16 @@ import logging
 import math
 import warnings
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import PrivateAttr
 
+from napari.layers.image.image import Image
+from napari.layers.surface.surface import Surface
 from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import Event, EventedModel
-from napari.layers.surface.surface import Surface
-from napari.layers.image.image import Image 
+
 logger = logging.getLogger('napari.components.histogram')
 
 __all__ = ('HistogramModel',)
@@ -450,7 +451,7 @@ class HistogramModel(EventedModel):
         if isinstance(self._layer, Surface):
             data = self._layer._slicing_state._view_vertex_values
             return np.asarray(data) if data is not None else None
-        
+
         layer_slice = self._layer._slice
         if layer_slice is None:
             return None
@@ -462,10 +463,9 @@ class HistogramModel(EventedModel):
         if isinstance(self._layer, Surface):
             if len(self._layer.data) == 2:
                 return None
-            else:
-                data = self._layer.data[2]
-                return np.asarray(data)
-        
+            data = self._layer.data[2]
+            return np.asarray(data)
+
         data = self._layer.data
 
         # Unpack multiscale to the coarsest level.

@@ -195,9 +195,7 @@ class QContrastLimitsPopup(QtPopup):
         self._frame_base_height: int = 0
 
         self._histogram_enabled_checkbox = QCheckBox('histogram')
-        self._histogram_enabled_checkbox.setChecked(
-            layer.histogram.enabled
-        )
+        self._histogram_enabled_checkbox.setChecked(layer.histogram.enabled)
         self._histogram_enabled_checkbox.setToolTip(
             'Show histogram in this popup'
         )
@@ -250,7 +248,6 @@ class QContrastLimitsPopup(QtPopup):
         if self._cleaned_up:
             return
         self._cleaned_up = True
-
 
         self._layer.histogram.events.enabled.disconnect(
             self._on_external_histogram_enabled
