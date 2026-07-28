@@ -33,7 +33,6 @@ viewer, sst_layer = napari.imshow(
         colormap='magma',
         axis_labels=sst.sst.dims,
         )
-viewer.scale_bar.visible = True
 
 air_layer = viewer.add_image(
         airtemp.air,
@@ -53,7 +52,7 @@ viewer.dims.set_point(0, 383322)  # in hours
 # latitude goes from -90 (south, down) to 90 (north, up),
 # so we make sure that the camera vertical axis points up.
 viewer.camera.orientation2d = ('up', 'right')
-viewer.scale_bar.visible = True
+viewer.canvas.overlays.scale_bar.visible = True
 
 # fill the frame
 viewer.fit_to_view()
