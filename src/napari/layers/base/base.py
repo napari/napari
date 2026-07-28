@@ -511,7 +511,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _projectionclass: type[StringEnum] = BaseProjectionMode
 
     ModeCallable = Callable[
-        ['Layer', Event], None | Generator[None, None, None]
+        ['Layer', Event], Generator[None, None, None] | None
     ]
 
     _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
