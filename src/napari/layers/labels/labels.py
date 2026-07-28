@@ -69,7 +69,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import format_feature_value
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -737,10 +736,7 @@ class Labels(ScalarFieldBase):
             # numpy dtypes
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
-                    trans._(
-                        'Only integer types are supported for Labels layers, but data contains {data_level_type}.',
-                        data_level_type=data_level.dtype,
-                    )
+                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'
                 )
             if data_level.dtype == bool:
                 int_data.append(data_level.view(np.uint8))
@@ -985,12 +981,7 @@ class Labels(ScalarFieldBase):
         if self.contour < 1:
             return None
         if labels.ndim > 2:
-            warnings.warn(
-                trans._(
-                    'Contours are not displayed during 3D rendering',
-                    deferred=True,
-                )
-            )
+            warnings.warn('Contours are not displayed during 3D rendering')
             return None
 
         contour_offset = max(1, int(self.contour))
@@ -2348,7 +2339,7 @@ class Labels(ScalarFieldBase):
             int, value[1] if self.multiscale else value
         )
         if label_value not in self._label_index:
-            return [trans._('[No Properties]')]
+            return ['[No Properties]']
 
         idx = self._label_index[label_value]
         return [
