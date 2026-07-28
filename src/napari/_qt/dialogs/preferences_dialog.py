@@ -9,7 +9,9 @@ from qtpy.QtWidgets import (
     QApplication,
     QDialog,
     QHBoxLayout,
+    QLabel,
     QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -109,10 +111,23 @@ class PreferencesDialog(QDialog):
                 field_type, BaseModel
             ):
                 self._add_page(field_name, field_info)
+        item = QListWidgetItem('----Plugin Preferences----')
+        item.setFlags(item.flags() & ~Qt.ItemIsSelectable & ~Qt.ItemIsEnabled)
+        self._list.addItem(item)
+        self._stack.addWidget(QLabel('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))
+        self.plugin_index = self._list.count()
 
         for plugin_name, plugin in self._plugin_settings.items():
             self._add_plugin(plugin_name, plugin)
         self._list.setCurrentRow(0)
+
+    # def skip_plugin_pref(self):
+    #     current = self._list.currentIndex().row()
+
+    #     if self.plugin_index - 1 == current:
+    #         next_index = current + 1
+    #         if next_index < self._list.model().rowCount():
+    #             self._list.setCurrentIndex(self._list.model().index(next_index, 0))
 
     def _add_plugin(
         self,

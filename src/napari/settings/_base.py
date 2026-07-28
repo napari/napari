@@ -631,11 +631,13 @@ def _build_single_config_model(
             Field(**field_kwargs),
         )
     model_name = configuration.title.title().lower()
-    return create_model(
+    model = create_model(
         model_name,
         __base__=EventedModel,
         **fields,
     )
+    model.display = configuration.title.title()
+    return model
 
 
 def plugin_configuration_generator() -> dict[str, PluginPreferences]:
