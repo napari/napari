@@ -12,6 +12,7 @@ Requires geopandas and contextily to be installed.
 import contextily as ctx
 import geopandas as gpd
 import pandas as pd
+import zarr
 
 import napari
 
@@ -26,11 +27,23 @@ df = pd.DataFrame([
 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs='EPSG:4326')
 
 
-# convert bounds to crs=3857 (web mercator), and get the background map from contextily
+# convert bounds to crs=3857 (web mercator)
 boundsWgs84 = gdf.total_bounds
 bounds = gpd.GeoSeries(gpd.GeoDataFrame(geometry=gpd.points_from_xy([boundsWgs84[0], boundsWgs84[2]],
                                               [boundsWgs84[1], boundsWgs84[3]], crs=4326)).to_crs(3857).geometry).total_bounds
-bg_map, bg_extent = ctx.bounds2img(bounds[0], bounds[1], bounds[2], bounds[3], zoom=13)
+
+# get the background map from contextily, OR, because sometimes OSM's API
+# sometimes fail, perhaps because CI is spamming the API, fall back on napari
+# test data.
+try:
+    bg_map, bg_extent = ctx.bounds2img(*bounds, zoom=13)
+except ConnectionError:
+    bg_map = zarr.open('https://data.napari.dev/prague-map.zarr')
+    bg_extent = (
+            1599674.1279521685, 1609458.067572671,
+            6452508.179721437, 6467184.089152193,
+            )
+
 
 # convert the true bounds of the downloaded map to WGS84 (crs=4326) coordinates
 boundsWgsMap = gpd.GeoSeries(gpd.GeoDataFrame(geometry=gpd.points_from_xy([bg_extent[0], bg_extent[1]],
