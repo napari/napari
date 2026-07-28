@@ -112,18 +112,6 @@ class PreferencesDialog(QDialog):
 
         for plugin_name, plugin in self._plugin_settings.items():
             self._add_plugin(plugin_name, plugin)
-            # for (
-            #     field_name,
-            #     field_info,
-            # ) in plugin.__class__.model_fields.items():
-            #     field_type = get_inner_type(field_info.annotation)
-            #     if get_origin(field_type) is None and issubclass(field_type, BaseModel):
-            #         self._add_page(
-            #             field_name,
-            #             field_info,
-            #             self._plugin_settings[plugin_name],
-            #         )
-
         self._list.setCurrentRow(0)
 
     def _add_plugin(
@@ -159,7 +147,6 @@ class PreferencesDialog(QDialog):
                 schema, values = self._get_page_dict(
                     field_name, field_info, self._plugin_settings[plugin_name]
                 )
-                name = field_info.title or field_name
                 form = self._widget_builder(
                     schema, values, name, self._plugin_settings[plugin_name]
                 )
@@ -170,7 +157,7 @@ class PreferencesDialog(QDialog):
         page_scrollarea.setWidgetResizable(True)
         page_scrollarea.setWidget(full)
 
-        self._list.addItem(plugin_name)
+        self._list.addItem(plugin.display_name)
         self._stack.addWidget(page_scrollarea)
 
     def _add_page(self, field_name: str, field_info: FieldInfo) -> None:
@@ -199,6 +186,7 @@ class PreferencesDialog(QDialog):
         self._stack.addWidget(page_scrollarea)
 
     def _widget_builder(self, schema, values, name, schema_object):
+        """Creates a widget using a widget based on the schema."""
         from napari._vendor.qt_json_builder.qt_jsonschema_form import (
             WidgetBuilder,
         )

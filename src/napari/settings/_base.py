@@ -630,9 +630,7 @@ def _build_single_config_model(
             field_type,
             Field(**field_kwargs),
         )
-    model_name = (
-        (configuration.title.title().lower()) + '-settings'
-    )  # for some reason when creating the preferences only lowercase letters are used.
+    model_name = configuration.title.title().lower()
     return create_model(
         model_name,
         __base__=EventedModel,
@@ -649,6 +647,7 @@ def plugin_configuration_generator() -> dict[str, PluginPreferences]:
         pm.iter_manifests(),
         key=lambda x: x.name,
     )
+    display_names = {plugin.name: plugin.display_name for plugin in plugins}
     plugin_contr = {
         plug.name: plug.contributions for plug in plugins if plug.contributions
     }
@@ -675,4 +674,5 @@ def plugin_configuration_generator() -> dict[str, PluginPreferences]:
             __base__=PluginPreferences,
             **fields,
         )
+        plugin_settings[plugin_name].display_name = display_names[plugin_name]
     return plugin_settings  # these should be i
