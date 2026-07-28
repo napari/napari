@@ -5,7 +5,7 @@ Displaying xarray data in napari
 This example shows how to view xarray datasets in napari.
 
 napari automatically inherits axis_labels, scale, and units (if valid Pint
-units), and translate from xarray DataArrays when available. 
+units), and translate from xarray DataArrays when available.
 
 Currently, napari cannot display irregularly-sampled data, so the code
 assumes that the data indices are regularly spaced. If your indices are
