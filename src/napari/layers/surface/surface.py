@@ -31,10 +31,9 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.misc import StringEnum
 
 if TYPE_CHECKING:
-    from enum import StrEnum
-
     import pandas as pd
 
     from napari.components.dims import Dims
@@ -232,7 +231,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         Colorbar for current colormap.
     """
 
-    _projectionclass: type[StrEnum] = SurfaceProjectionMode
+    _projectionclass: type[StringEnum] = SurfaceProjectionMode
 
     _colormaps = AVAILABLE_COLORMAPS
     _slicing_state: _SurfaceSlicingState
@@ -378,11 +377,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._histogram
 
     @property
-    def _view_vertex_colors(self) -> list[Any] | np.ndarray:
+    def _view_vertex_colors(self) -> list[Any] | np.ndarray | None:
         return self._slicing_state._view_vertex_colors
 
     @property
-    def _view_vertex_values(self) -> list[Any] | np.ndarray:
+    def _view_vertex_values(self) -> list[Any] | np.ndarray | None:
         return self._slicing_state._view_vertex_values
 
     @property
