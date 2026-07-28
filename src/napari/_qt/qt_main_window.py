@@ -24,10 +24,12 @@ from weakref import WeakValueDictionary
 
 from qtpy import QT5
 from qtpy.QtCore import (
+    QEasingCurve,
     QEvent,
     QEventLoop,
     QPoint,
     QProcess,
+    QPropertyAnimation,
     QRect,
     QSize,
     Qt,
@@ -216,6 +218,119 @@ class _QtMainWindow(QMainWindow):
 
         self._command_palette = QCommandPalette(self)
 
+        self.sliding_docks = {}
+        self.expanded_size = 250
+
+    def register_sliding_dock(self, dock_widget):
+        if not dock_widget:
+            return
+
+        if dock_widget.widget():
+            dock_widget.widget().setMouseTracking(True)
+
+        dock_widget.setVisible(False)
+
+        self.sliding_docks[dock_widget] = {
+            'visible_state': False,
+            'animation': None,
+        }
+
+    def handle_multi_dock_hover(self, pos):
+        edge_threshold = 20
+        win_width = self.width()
+        win_height = self.height()
+
+        for dock, state in self.sliding_docks.items():
+            dock_area = self.dockWidgetArea(dock)
+            is_visible = state['visible_state']
+
+            if dock_area == Qt.DockWidgetArea.RightDockWidgetArea:
+                if not is_visible and pos.x() >= (win_width - edge_threshold):
+                    self.slide_dock_generic(
+                        dock, show=True, property_name=b'maximumWidth'
+                    )
+                elif is_visible and pos.x() < (win_width - dock.width()):
+                    self.slide_dock_generic(
+                        dock, show=False, property_name=b'maximumWidth'
+                    )
+
+            elif dock_area == Qt.DockWidgetArea.LeftDockWidgetArea:
+                if not is_visible and pos.x() <= edge_threshold:
+                    self.slide_dock_generic(
+                        dock, show=True, property_name=b'maximumWidth'
+                    )
+                elif is_visible and pos.x() > dock.width() + dock.width():
+                    self.slide_dock_generic(
+                        dock, show=False, property_name=b'maximumWidth'
+                    )
+
+            elif dock_area == Qt.DockWidgetArea.BottomDockWidgetArea:
+                if not is_visible and pos.y() >= (win_height - edge_threshold):
+                    self.slide_dock_generic(
+                        dock, show=True, property_name=b'maximumHeight'
+                    )
+                elif is_visible and pos.y() < (win_height - dock.height()):
+                    self.slide_dock_generic(
+                        dock, show=False, property_name=b'maximumHeight'
+                    )
+
+    def slide_dock_generic(self, dock, show, property_name):
+        state = self.sliding_docks[dock]
+        if show == state['visible_state']:
+            return
+
+        old_anim = state.get('animation')
+        if (
+            old_anim is not None
+            and old_anim.state() == QPropertyAnimation.State.Running
+        ):
+            old_anim.stop()
+
+        state['visible_state'] = show
+
+        anim = QPropertyAnimation(dock, property_name, self)
+        anim.setDuration(300)
+        anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        anim.finished.connect(
+            lambda: self.on_generic_animation_finished(dock, property_name)
+        )
+        state['animation'] = anim
+
+        if show:
+            dock.setVisible(True)
+            anim.setStartValue(0)
+            anim.setEndValue(self.expanded_size)
+        else:
+            # release the floor so it can actually shrink instead of clamping
+            if property_name == b'maximumWidth':
+                dock.setMinimumWidth(0)
+            else:
+                dock.setMinimumHeight(0)
+
+            current_dimension = (
+                dock.width()
+                if property_name == b'maximumWidth'
+                else dock.height()
+            )
+            anim.setStartValue(current_dimension)
+            anim.setEndValue(0)
+
+        anim.start()
+
+    def on_generic_animation_finished(self, dock, property_name):
+        state = self.sliding_docks.get(dock)
+        if not state or not dock:
+            return
+
+        if state['visible_state']:
+            dock.setTitleBarWidget(None)
+            if property_name == b'maximumWidth':
+                dock.setMaximumWidth(16777215)
+            else:
+                dock.setMaximumHeight(16777215)
+        else:
+            dock.setVisible(False)
+
     def _get_window_icon(self) -> str:
         if hasattr(self, '_window_icon'):
             # This was added so that someone can patch
@@ -344,6 +459,9 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.MouseMove:
+            pos_in_main = self.mapFromGlobal(event.globalPosition().toPoint())
+            self.handle_multi_dock_hover(pos_in_main)
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
@@ -726,6 +844,8 @@ class Window:
         self._qt_window = _QtMainWindow(
             viewer, self, show_welcome_screen=show_welcome_screen
         )
+        # Required for slide out dockwidget with layer controls
+        self._qt_window.setMouseTracking(True)
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
@@ -772,6 +892,13 @@ class Window:
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
+
+        sliding_docks = [
+            self._qt_viewer.dockLayerControls,
+            self._qt_viewer.dockLayerList,
+        ]
+        for dock in sliding_docks:
+            self._qt_window.register_sliding_dock(dock)
 
         if show:
             self.show()
