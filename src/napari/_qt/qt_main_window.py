@@ -240,39 +240,47 @@ class _QtMainWindow(QMainWindow):
         win_width = self.width()
         win_height = self.height()
 
+        dock_slide_configs = {
+            Qt.DockWidgetArea.RightDockWidgetArea: {
+                'property_name': b'maximumWidth',
+                'should_show': lambda dock: (
+                    pos.x() >= (win_width - edge_threshold)
+                ),
+                'should_hide': lambda dock: (
+                    pos.x() < (win_width - dock.width())
+                ),
+            },
+            Qt.DockWidgetArea.LeftDockWidgetArea: {
+                'property_name': b'maximumWidth',
+                'should_show': lambda dock: pos.x() <= edge_threshold,
+                'should_hide': lambda dock: pos.x() > dock.width() * 2,
+            },
+            Qt.DockWidgetArea.BottomDockWidgetArea: {
+                'property_name': b'maximumHeight',
+                'should_show': lambda dock: (
+                    pos.y() >= (win_height - edge_threshold)
+                ),
+                'should_hide': lambda dock: (
+                    pos.y() < (win_height - dock.height())
+                ),
+            },
+        }
+
         for dock, state in self.sliding_docks.items():
-            dock_area = self.dockWidgetArea(dock)
+            rule = dock_slide_configs.get(self.dockWidgetArea(dock))
+            if rule is None:
+                continue
+
             is_visible = state['visible_state']
 
-            if dock_area == Qt.DockWidgetArea.RightDockWidgetArea:
-                if not is_visible and pos.x() >= (win_width - edge_threshold):
-                    self.slide_dock_generic(
-                        dock, show=True, property_name=b'maximumWidth'
-                    )
-                elif is_visible and pos.x() < (win_width - dock.width()):
-                    self.slide_dock_generic(
-                        dock, show=False, property_name=b'maximumWidth'
-                    )
-
-            elif dock_area == Qt.DockWidgetArea.LeftDockWidgetArea:
-                if not is_visible and pos.x() <= edge_threshold:
-                    self.slide_dock_generic(
-                        dock, show=True, property_name=b'maximumWidth'
-                    )
-                elif is_visible and pos.x() > dock.width() + dock.width():
-                    self.slide_dock_generic(
-                        dock, show=False, property_name=b'maximumWidth'
-                    )
-
-            elif dock_area == Qt.DockWidgetArea.BottomDockWidgetArea:
-                if not is_visible and pos.y() >= (win_height - edge_threshold):
-                    self.slide_dock_generic(
-                        dock, show=True, property_name=b'maximumHeight'
-                    )
-                elif is_visible and pos.y() < (win_height - dock.height()):
-                    self.slide_dock_generic(
-                        dock, show=False, property_name=b'maximumHeight'
-                    )
+            if not is_visible and rule['should_show'](dock):
+                self.slide_dock_generic(
+                    dock, show=True, property_name=rule['property_name']
+                )
+            elif is_visible and rule['should_hide'](dock):
+                self.slide_dock_generic(
+                    dock, show=False, property_name=rule['property_name']
+                )
 
     def slide_dock_generic(self, dock, show, property_name):
         state = self.sliding_docks[dock]
