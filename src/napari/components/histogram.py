@@ -18,6 +18,7 @@ logger = logging.getLogger('napari.components.histogram')
 
 if TYPE_CHECKING:
     from napari.layers.image.image import Image  # noqa: TC004
+    from napari.layers.surface.surface import Surface  # noqa: TC004
 
 __all__ = ('HistogramModel',)
 
@@ -82,7 +83,7 @@ class HistogramModel(EventedModel):
     # Private attributes — pydantic's PrivateAttr is not validated at
     # runtime, so the annotation here is only for documentation and
     # readability; the true type is ``Image`` (enforced by __init__).
-    _layer: Image = PrivateAttr()
+    _layer: Image | Surface = PrivateAttr()
     _bin_edges: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
@@ -100,7 +101,7 @@ class HistogramModel(EventedModel):
 
     def __init__(
         self,
-        layer: Image,
+        layer: Image | Surface,
         bins: int = DEFAULT_BINS,
         max_samples: int = DEFAULT_MAX_SAMPLES,
         mode: Literal['canvas', 'full'] = 'canvas',
@@ -111,7 +112,7 @@ class HistogramModel(EventedModel):
 
         Parameters
         ----------
-        layer : Image
+        layer : Image | Surface
             The layer to compute histogram for.
         bins : int, default: 256
             Number of histogram bins (matches ``np.histogram(data, bins=...)``).
@@ -449,6 +450,10 @@ class HistogramModel(EventedModel):
 
     def _get_slice_raw_data(self) -> np.ndarray | None:
         """Get the currently sliced raw image data if available."""
+        if isinstance(self._layer, Surface):
+            data = self._layer._get_layer_slicing_state()._view_vertex_values
+            return np.asarray(data) if data else None
+        
         layer_slice = self._layer._slice
         if layer_slice is None:
             return None
@@ -457,6 +462,13 @@ class HistogramModel(EventedModel):
 
     def _get_full_data(self) -> np.ndarray | None:
         """Get full volume data, using coarsest level for multiscale."""
+        if isinstance(self._layer, Surface):
+            if len(self._layer.data) == 2:
+                return None
+            else:
+                data = self._layer.data[2]
+                return np.asarray(data)
+        
         data = self._layer.data
 
         # Unpack multiscale to the coarsest level.
