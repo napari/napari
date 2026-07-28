@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from napari.components.dims import Dims
+    from napari.components.histogram import HistogramModel
 
 
 # Mixin must come before Layer
@@ -355,6 +356,26 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._slicing_state.slice_done.connect(
             self._maybe_reset_contrast_limits
         )
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer, created lazily on first access.
+
+        The histogram model computes and stores histogram data for the layer,
+        responding to changes in layer data, contrast limits, and gamma.
+        The model is not created until the ``histogram`` property is first
+        accessed.
+
+        Returns
+        -------
+        HistogramModel
+            Histogram model instance for this layer.
+        """
+        if not hasattr(self, '_histogram'):
+            from napari.components.histogram import HistogramModel
+
+            self._histogram = HistogramModel(self)
+        return self._histogram
 
     @property
     def _view_vertex_colors(self) -> list[Any] | np.ndarray:
@@ -686,7 +707,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, int | None]:
+    ) -> tuple[float | int | None, int | None]:
         """Get the layer data value along a ray
 
         Parameters
