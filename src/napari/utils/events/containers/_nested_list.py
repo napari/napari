@@ -20,7 +20,6 @@ from typing import (
 
 from napari.utils.events.containers._evented_list import EventedList, Index
 from napari.utils.events.event import Event
-from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -53,13 +52,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
     if isinstance(index, tuple):
         return index
 
-    raise TypeError(
-        trans._(
-            'Invalid nested index: {index}. Must be an int or tuple',
-            deferred=True,
-            index=index,
-        )
-    )
+    raise TypeError(f'Invalid nested index: {index}. Must be an int or tuple')
 
 
 def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
@@ -93,12 +86,7 @@ def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
     if index:
         *first, last = index
         if any(not isinstance(p, int) for p in first):
-            raise ValueError(
-                trans._(
-                    'The parent index must be a tuple of int',
-                    deferred=True,
-                )
-            )
+            raise ValueError('The parent index must be a tuple of int')
         return cast(ParentIndex, tuple(first)), last
     return ParentIndex(()), -1  # empty tuple appends to self
 
@@ -317,12 +305,7 @@ class NestableEventedList(EventedList[_T]):
 
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
-            raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Destination index may not be a slice')
         dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
 
         # need to update indices as we pop, so we keep track of the indices
@@ -335,12 +318,7 @@ class NestableEventedList(EventedList[_T]):
             if isinstance(idx, int | slice):
                 idx = (idx,)
             if idx == ():
-                raise IndexError(
-                    trans._(
-                        'Group cannot move itself',
-                        deferred=True,
-                    )
-                )
+                raise IndexError('Group cannot move itself')
 
             # i.e. we need to increase the (src_par, ...) by 1 for each time
             # we have previously inserted items in front of the (src_par, ...)
@@ -350,10 +328,7 @@ class NestableEventedList(EventedList[_T]):
                 _cur = _idx[_parlen]
                 if isinstance(_idx[_parlen], slice):
                     raise NotImplementedError(
-                        trans._(
-                            "Can't yet deal with slice source indices in multimove",
-                            deferred=True,
-                        )
+                        "Can't yet deal with slice source indices in multimove"
                     )
                 _cur_int = cast(int, _cur)
                 _idx[_parlen] = _cur_int + sum(x <= _cur_int for x in dumped)
@@ -361,12 +336,7 @@ class NestableEventedList(EventedList[_T]):
 
             src_par, src_i = split_nested_index(idx)
             if isinstance(src_i, slice):
-                raise TypeError(
-                    trans._(
-                        'Terminal source index may not be a slice',
-                        deferred=True,
-                    )
-                )
+                raise TypeError('Terminal source index may not be a slice')
 
             if src_i < 0:
                 src_i += len(self[src_par])
@@ -424,28 +394,13 @@ class NestableEventedList(EventedList[_T]):
         dest_index = (*dest_par_i, dest_i)
 
         if isinstance(src_i, slice):
-            raise TypeError(
-                trans._(
-                    'Terminal source index may not be a slice',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Terminal source index may not be a slice')
 
         if isinstance(dest_i, slice):
-            raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Destination index may not be a slice')
 
         if src_i == ():
-            raise ValueError(
-                trans._(
-                    'Group cannot move itself',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Group cannot move itself')
 
         if src_par_i == dest_par_i and isinstance(dest_i, int):
             if dest_i > src_i:
@@ -472,12 +427,7 @@ class NestableEventedList(EventedList[_T]):
             _types = self._basetypes + (NestableEventedList,)
             if not isinstance(e, _types):
                 raise TypeError(
-                    trans._(
-                        'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
-                        deferred=True,
-                        dtype=type(e),
-                        types_=_types,
-                    )
+                    f'Cannot add object with type {type(e)!r} to TypedList expecting type {_types!r}'
                 )
         return e
 
