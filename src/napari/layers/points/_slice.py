@@ -98,11 +98,7 @@ class _PointSliceRequest:
 
     def _get_slice_data(
         self, not_disp: list[int]
-    ) -> tuple[
-        npt.NDArray,
-        npt.NDArray,
-    ]:
-        data_not_disp = self.data[:, not_disp]
+    ) -> tuple[npt.NDArray, npt.NDArray]:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
@@ -119,35 +115,28 @@ class _PointSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
+        data_not_disp = self.data[:, not_disp]
         inside_slice = np.all(
             (data_not_disp >= low) & (data_not_disp <= high), axis=1
         )
+        visible = np.where(inside_slice & self.shown)[0].astype(int)
 
-        if self.projection_mode in ('all', 'none'):
-            valid_points = inside_slice
-            scale = 1
-        elif self.projection_mode == 'rescale':
-            sizes = self.size[:, np.newaxis] / 2
+        if not np.any(visible):
+            return (
+                np.empty(0, dtype=int),
+                np.empty(0, dtype=float),
+            )
 
-            # add out of slice points with progressively lower sizes
-            dist_from_low = np.abs(data_not_disp - low)
-            dist_from_high = np.abs(data_not_disp - high)
-            distances = np.minimum(dist_from_low, dist_from_high)
-            # anything inside the slice is at distance 0
-            distances[inside_slice] = 0
+        size = self.size[visible]
 
-            # display points that "spill" into the slice
-            valid_points = np.all(distances <= sizes, axis=1)
-            if not np.any(valid_points):
-                return (
-                    np.empty(0, dtype=int),
-                    np.empty(0, dtype=float),
-                )
+        if self.projection_mode == 'rescale':
+            # rescale size of points based on how far they are from the center
+            dist_from_slice = np.abs(data_not_disp[visible] - point).squeeze()
+            radius = size / 2
+            cap_radius_square = radius**2 - dist_from_slice**2
 
-            # rescale size of spilling points based on how much they do
-            scale_per_dim = (sizes - distances) / sizes
-            scale = np.prod(scale_per_dim, axis=1)
-
-        visible = np.where(valid_points & self.shown)[0].astype(int)
-        size = (self.size * scale)[visible]
+            # slice out ASAP to reduce computations
+            valid = cap_radius_square > 0
+            visible = visible[valid]
+            size = np.sqrt(cap_radius_square[valid]) * 2
         return visible, size
