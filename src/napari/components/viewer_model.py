@@ -37,7 +37,6 @@ from napari.components._viewer_mouse_bindings import (
     drag_to_zoom,
     layers_scroll,
 )
-from napari.components.camera import Camera
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
@@ -45,8 +44,8 @@ from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
     FloatingAxesOverlay,
-    SceneOverlay,
 )
+from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
     MultipleReaderError,
@@ -90,7 +89,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
-    EventedDictNamespace,
     EventedModel,
     disconnect_events,
 )
@@ -103,6 +101,7 @@ from napari.utils.theme import available_themes, is_theme_available
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
 
+    from napari.components.camera import Camera
     from napari.components.grid import GridCanvas
     from napari.components.overlays import ScaleBarOverlay, TextOverlay
 
@@ -159,8 +158,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
-    camera: napari.components.camera.Camera
-        The camera object modeling the position and view.
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -191,7 +188,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # Using frozen=True means these attributes aren't settable and don't
     # have an event emitter associated with them
     canvas: Canvas = Field(default_factory=Canvas, frozen=True)
-    camera: Camera = Field(default_factory=Camera, frozen=True)
+    scene: Scene = Field(default_factory=Scene, frozen=True)
     cursor: Cursor = Field(default_factory=Cursor, frozen=True)
     dims: Dims = Field(default_factory=Dims, frozen=True)
     layers: LayerList = Field(
@@ -202,11 +199,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
-        default_factory=lambda: (  # type: ignore
-            EventedDictNamespace({'axes': AxesOverlay()})
-        )
-    )
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
@@ -307,12 +299,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
     #       know that specific elements match specific types
     @property
-    def axes(self) -> AxesOverlay:
-        return self._scene_overlays.axes  # type: ignore[return-value]
+    @deprecated(
+        'viewer.camera is a deprecated attribute since 0.8.1. Use viewer.scene.camera instead.',
+        stacklevel=2,
+    )
+    def camera(self) -> Camera:
+        return self.scene.camera
 
     @property
     @deprecated(
-        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
+        'viewer.axes is a deprecated attribute since 0.8.1. use viewer.scene.floating_axes instead.',
+        stacklevel=2,
+    )
+    def axes(self) -> AxesOverlay:
+        return self.scene.overlays.axes  # type: ignore[return-value]
+
+    @property
+    @deprecated(
+        'viewer.floating_axes is a deprecated attribute since 0.8.1. use viewer.canvas.overlays.floating_axes instead.',
         stacklevel=2,
     )
     def floating_axes(self) -> FloatingAxesOverlay:
