@@ -183,14 +183,14 @@ class QContrastLimitsPopup(QtPopup):
         # the "full range" button doesn't do anything if it's not an
         # unsigned integer type (it's unclear what range should be set)
         # so we don't show create it at all.
-        for layer in self._layers: #@Lorenzo is it right to loop? copilot lorenzo says yes :)
-            if np.issubdtype(normalize_dtype(layer.dtype), np.integer):
-                range_btn = QPushButton('full range')
-                range_btn.setObjectName('full_clim_range_button')
-                range_btn.setToolTip('Set contrast range to full bit-depth')
-                range_btn.setFixedWidth(75)
+        if all(np.issubdtype(normalize_dtype(layer.dtype), np.integer) for layer in self._layers):
+            range_btn = QPushButton('full range')
+            range_btn.setObjectName('full_clim_range_button')
+            range_btn.setToolTip('Set contrast range to full bit-depth')
+            range_btn.setFixedWidth(75)
+            for layer in self._layers:
                 range_btn.clicked.connect(layer.reset_contrast_limits_range)
-                button_layout.addWidget(range_btn)
+            button_layout.addWidget(range_btn)
 
         # Histogram toggle checkbox (Image layers only).  The checkbox
         # itself is always created (simple Qt widget, safe), but the

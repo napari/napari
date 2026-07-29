@@ -1,4 +1,6 @@
 #TODO: sort through necessary imports
+from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
+from napari.layers.base.base import Layer
 from qtpy.QtWidgets import QFrame
 from napari.layers.base._base_constants import Mode
 from qtpy.QtWidgets import (
@@ -54,6 +56,14 @@ controls_dict = {
     #'interpolation': QtInterpolationComboBoxControl,
 }
 buttons_dict = {
+    Layer: QtLayerButtons,
+    #Labels: QtLabelsButtons,
+    #Image: QtImageButtons,
+    #Points: QtPointsButtons,
+    #Shapes: QtShapesButtons,
+    #Surface: QtSurfaceButtons,
+    #Vectors: QtVectorsButtons,
+    #Tracks: QtTracksButtons,
 #comes in later for buttons at the top
 }
 
@@ -109,6 +119,10 @@ class QtDynamicLayerControls(QFrame):
         self.setMouseTracking(True)
 
         self.setLayout(LayerFormLayout(self))
+
+        for layer_type, buttons in buttons_dict.items():
+                if len(layers) == 1 and isinstance(layers[0], layer_type):
+                    self.layout().addRow(buttons(layers[0]))
 
         #@lorenzo does this go into a seperate function or the init? Also do I need to 
         # add the controls_dict anywhere
