@@ -858,19 +858,19 @@ class Points(Layer):
     @property
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""
-        return self._projection_mode == PointsProjectionMode.RESCALE
+        return self._projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         if out_of_slice_display:
             warnings.warn(
                 'out_of_slice_display is deprecated. For a similar effect, set projection_mode to '
-                '"rescale" and increase the dims margins to project a thicker slice.',
+                '"rescale_spherical" and increase the dims margins to project a thicker slice.',
                 category=FutureWarning,
                 stacklevel=2,
             )
         self._projection_mode = (
-            PointsProjectionMode.RESCALE
+            PointsProjectionMode.RESCALE_SPHERICAL
             if out_of_slice_display
             else PointsProjectionMode.ALL
         )
@@ -1490,7 +1490,7 @@ class Points(Layer):
     ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         """Size of the points in view.
 
-        It is equal to size unless the projection mode is `rescale`,
+        It is equal to size unless the projection mode is rescaling,
         in which case sizes may get smaller as they disappear from
         the current thick slice.
         """

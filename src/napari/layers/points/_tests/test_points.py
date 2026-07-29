@@ -17,7 +17,7 @@ from napari._tests.utils import (
 from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
-from napari.layers.points._points_constants import Mode
+from napari.layers.points._points_constants import Mode, PointsProjectionMode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
@@ -1871,14 +1871,19 @@ def test_view_size():
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
-    layer.projection_mode = 'rescale'
-    # NOTE: since a dims slice of thickness 0 defaults back to 1,
-    # rescale projection actually compares the half-size with
-    # distance + 0.5, not just distance
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+    assert len(layer._view_size) == 1
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(1, 1, 1),
+            margin_right=(1, 1, 1),
+        )
+    )
     assert len(layer._view_size) == 3
 
     # test a slice with no points
-    layer.projection_mode = 'all'
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
