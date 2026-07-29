@@ -2356,6 +2356,11 @@ class Labels(ScalarFieldBase):
     ) -> _LabelsSlicingState:
         return _LabelsSlicingState(self, data, cache)
 
+    @property
+    def affine_slicing_sampling_order(self) -> int:
+        """Interpolation order for affine non-orthogonal sampling."""
+        return 0
+
 
 class _LabelsSlicingState(ScalarFieldSlicingState):
     layer: Labels

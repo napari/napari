@@ -509,6 +509,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.interpolation(value=self._interpolation3d)
 
     @property
+    def affine_slicing_sampling_order(self) -> int:
+        """Interpolation order for affine non-orthogonal sampling."""
+        return 0 if self._interpolation2d == Interpolation.NEAREST else 1
+
+    @property
     def iso_threshold(self) -> float:
         """float: threshold for isosurface."""
         return self._iso_threshold
