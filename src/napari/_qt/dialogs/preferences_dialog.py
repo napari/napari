@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
     QApplication,
     QDialog,
     QHBoxLayout,
-    QLabel,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -114,7 +113,7 @@ class PreferencesDialog(QDialog):
         item = QListWidgetItem('----Plugin Preferences----')
         item.setFlags(item.flags() & ~Qt.ItemIsSelectable & ~Qt.ItemIsEnabled)
         self._list.addItem(item)
-        self._stack.addWidget(QLabel('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'))
+        self._stack.addWidget(QWidget())
         self.plugin_index = self._list.count()
 
         for plugin_name, plugin in self._plugin_settings.items():

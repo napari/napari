@@ -630,13 +630,13 @@ def _build_single_config_model(
             field_type,
             Field(**field_kwargs),
         )
-    model_name = configuration.title.title().lower()
+    model_name = configuration.title.lower()
     model = create_model(
         model_name,
         __base__=EventedModel,
         **fields,
     )
-    model.display = configuration.title.title()
+    model.display = configuration.title
     return model
 
 
@@ -669,7 +669,7 @@ def plugin_configuration_generator() -> dict[str, PluginPreferences]:
         for model in models:
             fields[model.__name__] = (
                 model,
-                Field(default_factory=model),
+                Field(default_factory=model, title=model.display),
             )
         plugin_settings[plugin_name] = create_model(
             f'{plugin_name} Preferences',
@@ -677,4 +677,4 @@ def plugin_configuration_generator() -> dict[str, PluginPreferences]:
             **fields,
         )
         plugin_settings[plugin_name].display_name = display_names[plugin_name]
-    return plugin_settings  # these should be i
+    return plugin_settings
