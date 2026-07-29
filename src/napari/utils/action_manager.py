@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -85,7 +84,7 @@ class ActionManager:
         self._shortcuts: dict[str, list[str]] = defaultdict(list)
         self._stack: list[str] = []
         self._tooltip_include_action_name = False
-        self.events = EmitterGroup(source=self, shorcut_changed=None)
+        self.events = EmitterGroup(source=self, shortcut_changed=None)
 
     def _debug(self, val):
         self._tooltip_include_action_name = val
@@ -93,11 +92,7 @@ class ActionManager:
     def _validate_action_name(self, name):
         if len(name.split(':')) != 2:
             raise ValueError(
-                trans._(
-                    'Action names need to be in the form `package:name`, got {name!r}',
-                    name=name,
-                    deferred=True,
-                )
+                f'Action names need to be in the form `package:name`, got {name!r}'
             )
 
     def register_action(
@@ -220,10 +215,7 @@ class ActionManager:
             getattr(action, 'command', None)
         ):
             raise ValueError(
-                trans._(
-                    '`bind_button` cannot be used with generator functions',
-                    deferred=True,
-                )
+                '`bind_button` cannot be used with generator functions'
             )
 
         def _trigger():
@@ -241,7 +233,7 @@ class ActionManager:
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
-        self.events.shorcut_changed.connect(_update_tt, until=until)
+        self.events.shortcut_changed.connect(_update_tt, until=until)
 
     def bind_shortcut(self, name: str, shortcut: str) -> None:
         """
@@ -293,10 +285,7 @@ class ActionManager:
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(
-                trans._(
-                    'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
-                    name=name,
-                ),
+                f'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
                 UserWarning,
                 stacklevel=2,
             )
@@ -313,14 +302,14 @@ class ActionManager:
 
     def _emit_shortcut_change(self, name: str, shortcut=''):
         tt = self._build_tooltip(name) if name in self._actions else ''
-        self.events.shorcut_changed(name=name, shortcut=shortcut, tooltip=tt)
+        self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
     def _build_tooltip(self, name: str) -> str:
         """Build tooltip for action `name`."""
         ttip = self._actions[name].description
 
         if name in self._shortcuts:
-            jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
+            jstr = ' ' + 'or' + ' '
             shorts = jstr.join(f'{Shortcut(s)}' for s in self._shortcuts[name])
             ttip += f' ({shorts})'
 

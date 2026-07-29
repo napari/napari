@@ -4,6 +4,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
+from qtpy.QtCore import QRectF, Qt
 from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication
 
 from napari.layers import Points, Shapes
@@ -127,26 +128,23 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     by vispy.
     """
     if isinstance(text.text, str):
-        strings = [text.text]
+        string = text.text
     elif isinstance(text.text, list):
-        strings = text.text
+        string = '\n'.join(text.text)
     else:
         raise TypeError('Text should either be a string or a list of strings')
 
-    metrics = get_text_metrics(text)
-    font_height = metrics.height()
+    # Get font properties from the text visual
+    face = (
+        text.face if hasattr(text, 'face') else QGuiApplication.font().family()
+    )
+    bold = text.bold if hasattr(text, 'bold') else False
+    italic = text.italic if hasattr(text, 'italic') else False
 
-    height = 0.0
-    width = 0.0
+    metrics = _get_qt_font_metrics(face, int(text.font_size), bold, italic)
 
-    for string in strings:
-        if string == '':
-            continue
+    size = metrics.boundingRect(
+        QRectF(0, 0, 1000, 1000), Qt.AlignmentFlag.AlignLeft, string
+    ).size()
 
-        for lineno, line in enumerate(string.split('\n')):
-            width = max(width, metrics.horizontalAdvance(line))
-            height_lines = font_height * (lineno + 1)
-            height_line_spacing = font_height * (text.line_height - 1) * lineno
-            height = max(height, height_lines + height_line_spacing)
-
-    return width, height
+    return size.width(), size.height()

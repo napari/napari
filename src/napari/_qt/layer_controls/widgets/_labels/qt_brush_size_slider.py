@@ -12,7 +12,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtBrushSizeSliderControl(QtWidgetControlsBase):
@@ -35,6 +34,8 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         Label for the brush size chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -50,7 +51,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         self.brush_size_slider = sld
         self._on_brush_size_change()
 
-        self.brush_size_slider_label = QtWrappedLabel(trans._('brush size:'))
+        self.brush_size_slider_label = QtWrappedLabel('brush size:')
 
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""

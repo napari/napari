@@ -1,6 +1,9 @@
 import numpy as np
+import pytest
 
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
+from napari._vispy.utils.qt_font import FontInfo
+from napari.components import ViewerModel
 from napari.components.overlays import LabelsPolygonOverlay
 from napari.layers.labels._labels_key_bindings import complete_polygon
 from napari.utils.interactions import (
@@ -9,8 +12,18 @@ from napari.utils.interactions import (
 )
 
 
-def test_vispy_labels_polygon_overlay(make_napari_viewer):
-    viewer = make_napari_viewer()
+@pytest.fixture
+def patch_gloo_set_state(monkeypatch):
+    monkeypatch.setattr(
+        'vispy.visuals.polygon.set_state', lambda *args, **kwargs: None
+    )
+
+
+# see https://github.com/napari/napari/pull/9262
+@pytest.mark.usefixtures('patch_gloo_set_state')
+@pytest.mark.usefixtures('qapp')
+def test_vispy_labels_polygon_overlay():
+    viewer = ViewerModel()
 
     labels_polygon = LabelsPolygonOverlay()
 
@@ -18,7 +31,10 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     layer = viewer.add_labels(data, opacity=0.5)
 
     vispy_labels_polygon = VispyLabelsPolygonOverlay(
-        layer=layer, viewer=viewer, overlay=labels_polygon
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=labels_polygon,
     )
 
     assert vispy_labels_polygon._polygon.color.alpha == 0.5

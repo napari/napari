@@ -3,8 +3,10 @@ import sys
 
 import numpy as np
 import pytest
+from packaging.version import parse as parse_version
 from qtpy import QT_VERSION
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
+from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
@@ -43,12 +45,10 @@ def check_view_menu_visibility(viewer, qtbot):
 
 
 @pytest.mark.parametrize(
-    ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
+    ('action_id', 'action_title', 'attribute_path'),
     toggle_action_details,
 )
-def test_toggle_axes_scale_bar_attr(
-    action_id, action_title, viewer_attr, sub_attr
-):
+def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -68,21 +68,25 @@ def test_toggle_axes_scale_bar_attr(
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    axes_scale_bar = getattr(viewer, viewer_attr)
-
-    # Get initial sub-attribute value (for example `axes.visible`)
-    initial_value = getattr(axes_scale_bar, sub_attr)
+    *parent_path, attr_name = attribute_path.split('.')
+    parent = viewer
+    for part in parent_path:
+        parent = getattr(parent, part)
+    initial_value = getattr(parent, attr_name)
 
     # Change sub-attribute via action command execution and check value
     with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
-    changed_value = getattr(axes_scale_bar, sub_attr)
+
+    changed_value = getattr(parent, attr_name)
+
     assert initial_value is not changed_value
 
 
 @skip_local_popups
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0')
+    and sys.platform == 'win32',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.flaky(
@@ -135,7 +139,7 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
 )  # sometimes fails on macos CI
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0'),
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.qt_log_level_fail('WARNING')
@@ -185,6 +189,36 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     check_view_menu_visibility(viewer, qtbot)
 
 
+def _mouse_move_to(widget, pos):
+    """Send a synthetic MouseMove event to *widget* at local position *pos*.
+
+    Uses ``QApplication.sendEvent`` instead of ``QTest.mouseMove`` because
+    the latter bypasses QApplication event filters in Qt6, making it unreliable
+    for testing the event-filter-based menubar toggle behavior.
+    """
+    global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
+    if QT_VERSION.startswith('5'):
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            pos,
+            global_pos,
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    else:
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(pos),
+            QPointF(global_pos),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+
+    QApplication.sendEvent(widget, event)
+
+
 @skip_local_focus
 @pytest.mark.skipif(
     sys.platform == 'darwin',
@@ -212,13 +246,11 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     viewer.window._qt_window.move(0, 0)
     qtbot.waitUntil(viewer.window._qt_window.isVisible)
     # Check menubar gets visible via mouse hovering over the window top area
-    qtbot.mouseMove(viewer.window._qt_window)
-    qtbot.wait(50)
-    qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(15, 15))
+    _mouse_move_to(viewer.window._qt_window, QPoint(15, 15))
     qtbot.waitUntil(viewer.window._qt_window.menuBar().isVisible)
 
     # Check menubar hides when the mouse no longer is hovering over the window top area
-    qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(50, 50))
+    _mouse_move_to(viewer.window._qt_window, QPoint(200, 200))
     qtbot.waitUntil(lambda: not viewer.window._qt_window.menuBar().isVisible())
 
     # Check restore menubar visibility

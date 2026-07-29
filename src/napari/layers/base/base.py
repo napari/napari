@@ -15,11 +15,13 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
     Blending,
+    LayerLock,
     Mode,
 )
 from napari.layers.base._base_mouse_bindings import (
@@ -64,11 +66,9 @@ from napari.utils.status_messages import (
     generate_layer_status_strings,
 )
 from napari.utils.transforms import Affine, CompositeAffine, TransformChain
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    import pint
 
     from napari.components.dims import Dims
     from napari.components.overlays import BoundingBoxOverlay, Overlay
@@ -488,8 +488,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         of a viewer.
     visible : bool
         Whether the layer visual is currently being displayed.
-    units: tuple of pint.Unit
+    units : tuple of pint.Unit
         Units of the layer data in world coordinates.
+        If not explicitly set, these default to pixel.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
 
@@ -510,7 +511,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     _projectionclass: type[StringEnum] = BaseProjectionMode
 
     ModeCallable = Callable[
-        ['Layer', Event], None | Generator[None, None, None]
+        ['Layer', Event], Generator[None, None, None] | None
     ]
 
     _drag_modes: ClassVar[dict[StringEnum, ModeCallable]] = {
@@ -528,7 +529,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data,
         ndim,
@@ -550,7 +551,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         translate=None,
         units=None,
         visible=True,
-    ):
+        locked: bool | LayerLock = False,
+    ) -> None:
         super().__init__()
 
         if name is None and data is not None:
@@ -558,26 +560,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if scale is not None and not np.all(scale):
             raise ValueError(
-                trans._(
-                    "Layer {name} is invalid because it has scale values of 0. The layer's scale is currently {scale}",
-                    deferred=True,
-                    name=repr(name),
-                    scale=repr(scale),
-                )
+                f"Layer {name!r} is invalid because it has scale values of 0. The layer's scale is currently {scale!r}"
             )
 
         # Needs to be imported here to avoid circular import in _source
         from napari.layers._source import current_source
 
         self._highlight_visible = True
-        self._unique_id = None
+        self._unique_id: uuid.UUID | None = None
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._visible_mode = None
+        self._visible_mode: str | None = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -633,6 +630,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._locked = self._coerce_lock(locked)
         self._array_like = False
 
         self._thumbnail_shape = (32, 32, 4)
@@ -661,6 +659,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            locked=Event,
             extent=Event,
             help=Event,
             loaded=Event,
@@ -747,11 +746,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return mode
 
         if mode not in self._modeclass:
-            raise ValueError(
-                trans._(
-                    'Mode not recognized: {mode}', deferred=True, mode=mode
-                )
-            )
+            raise ValueError(f'Mode not recognized: {mode}')
 
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
@@ -772,9 +767,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._overlays['transform_box'].visible = mode == TRANSFORM
 
         if mode == TRANSFORM:
-            self.help = trans._(
-                'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-            )
+            self.help = 'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
         elif mode == PAN_ZOOM:
             self.help = ''
 
@@ -903,11 +896,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def opacity(self, opacity: float) -> None:
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                trans._(
-                    'opacity must be between 0.0 and 1.0; got {opacity}',
-                    deferred=True,
-                    opacity=opacity,
-                )
+                f'opacity must be between 0.0 and 1.0; got {opacity}'
             )
 
         self._opacity = float(opacity)
@@ -987,6 +976,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._on_editable_changed()
         self.events.editable()
 
+    @property
+    def locked(self) -> LayerLock:
+        """LayerLock: which UI operations are locked on this layer.
+
+        ``bool(layer.locked)`` is truthy when any lock flag is set. Setting
+        ``True``/``False`` is equivalent to ``LayerLock.ALL``/``LayerLock.NONE``.
+        """
+        return self._locked
+
+    @locked.setter
+    def locked(self, locked: bool | LayerLock) -> None:
+        new_lock = self._coerce_lock(locked)
+        if self._locked == new_lock:
+            return
+        self._locked = new_lock
+        self.events.locked()
+
+    @staticmethod
+    def _coerce_lock(value: bool | LayerLock) -> LayerLock:
+        if isinstance(value, LayerLock):
+            return value
+        return LayerLock.ALL if value else LayerLock.NONE
+
     def _reset_editable(self) -> None:
         """Reset this layer's editable state based on layer properties."""
         self.editable = True
@@ -1006,6 +1018,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
+
+    def _has_default_axis_labels(self) -> bool:
+        """Return True if axis labels are the default indices."""
+        default_labels = tuple(str(i) for i in range(-self.ndim, 0))
+        return self.axis_labels == default_labels
 
     @property
     def units(self) -> tuple[pint.Unit, ...]:
@@ -1569,7 +1586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> float | int | None | tuple[float | int | None, int | None]:
+    ) -> float | int | tuple[float | int | None, int | None] | None:
         """Get the layer data value along a ray
 
         Parameters
@@ -2218,6 +2235,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return source_str
 
+    def _use_integer_coords_in_status(self) -> bool:
+        """If scale, translation, and units are default, use int coords.
+
+        This matches the legacy behavior of the viewer status bar and is
+        probably close to what users want, especially for images, in the case
+        where metadata is absent.
+
+        See https://github.com/napari/napari/pull/9287 for further discussion.
+        """
+        return bool(
+            np.all(np.asarray(self.scale) == 1)
+            and np.all(np.asarray(self.translate) == 0)
+            and all(
+                unit == pint.get_application_registry().pixel
+                for unit in self.units
+            )
+        )
+
     def get_status(
         self,
         position: npt.ArrayLike | None = None,
@@ -2254,6 +2289,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         status_dict = self._get_source_info().copy()
 
         if position is not None:
+            # We need to display the position in world coordinates with a
+            # specific precision. Here is how it is computed:
+            # - scale can be negative, so we take the abs
+            # - then, you take the -log10. For example, if the scale is 0.01,
+            #   you need 2 decimal places of precision to display the
+            #   coordinates so that you get at least 1 distinct coordinate
+            #   value per pixel.
+            # - the number of digits has to be an int, and we need to go higher
+            #   for "fractional" precision. That is, for 0.009, we need three
+            #   digits of precision. So we take the ceil.
+            # - we take the max over all the axes. [potential future
+            #   enhancement: each axis is displayed with its own precision]
+            # - Finally, this is all for the *minimum* precision to display
+            #   coordinates accurately. You want a bit of margin to prevent the
+            #   coordinates from changing abruptly in the middle of a pixel
+            #   whenever -log10(s) is not an integer. Therefore, we add 2
+            #   levels of precision.
+            # - we take a max because we don't want to go below 0 precision.
+            # - we convert to int because it needs to be int to be used in a
+            #   format string.
+            precision = int(
+                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            )
             position = np.asarray(position)
             value = self.get_value(
                 position,
@@ -2261,9 +2319,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 dims_displayed=dims_displayed,
                 world=world,
             )
+            if self._use_integer_coords_in_status():
+                position = np.round(position).astype(int)
             coords_str, value_str = generate_layer_status_strings(
                 position[-self.ndim :],
                 value,
+                precision=precision,
             )
         else:
             coords_str, value_str = '', ''
@@ -2410,12 +2471,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         if layer_type is None or layer_type not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
-                    deferred=True,
-                    layer_type=layer_type,
-                    layer_names=layers.NAMES,
-                )
+                f"Unrecognized layer_type: '{layer_type}'. Must be one of: {layers.NAMES}."
             )
 
         Cls = getattr(layers, layer_type.title())
@@ -2428,12 +2484,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                trans._(
-                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
-                    deferred=True,
-                    bad_key=bad_key,
-                    layer_type=layer_type,
-                )
+                f'_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}'
             ) from exc
 
     @abstractmethod

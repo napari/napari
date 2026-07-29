@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -9,8 +9,7 @@ from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import AxesOverlay
 
 
@@ -23,9 +22,8 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def __init__(
         self,
         *,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-        **kwargs: Any,
+        font_info: FontInfo,
+        **kwargs,
     ) -> None:
         self._scale = 1.0
 
@@ -33,9 +31,8 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self._target_length = 80
 
         super().__init__(
-            node=Axes(font_manager=font_manager, font_family=font_family),
-            font_manager=font_manager,
-            font_family=font_family,
+            node=Axes(font_info=font_info),
+            font_info=font_info,
             **kwargs,
         )
         self.overlay.events.colored.connect(self._on_data_change)

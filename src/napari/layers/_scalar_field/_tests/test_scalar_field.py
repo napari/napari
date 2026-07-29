@@ -159,6 +159,21 @@ def test_data_setter_updates_transforms(Layer):
     assert len(layer.scale) == 3
 
 
+@pytest.mark.parametrize('Layer', [Image, Labels])
+def test_invisible_layer_keeps_placeholder_rank_in_3d(Layer):
+    """When ndisplay flips while the layer is invisible, the cached
+    placeholder must still match ndisplay's rank, otherwise vispy crashes
+    with "Volume visual needs a 3D array." when it later reads
+    layer._data_view.
+    """
+    layer = Layer(np.zeros((4, 5, 6), dtype=np.uint8), visible=False)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    assert layer._data_view.ndim == 3
+    layer.visible = True
+    layer.visible = False
+    assert layer._data_view.ndim == 3
+
+
 # ---------------------------------------------------------------------------
 # locked_data_level tests
 # ---------------------------------------------------------------------------
@@ -224,6 +239,17 @@ class TestLockedDataLevel:
 
         # The old locked level would be out of range; it must be reset
         assert layer.locked_data_level is None
+
+
+def test_locked_data_level_constructor():
+    """locked_data_level can be set via the Image constructor."""
+    data = _make_multiscale_3d()
+    layer = Image(data, multiscale=True, locked_data_level=2)
+    assert layer.locked_data_level == 2
+
+    # Default (None) should also be safe
+    layer2 = Image(data, multiscale=True)
+    assert layer2.locked_data_level is None
 
 
 def _draw_layer(layer, shape_threshold=(800, 600)):
@@ -374,3 +400,40 @@ class TestLockedDataLevelDraw:
                 f'Level {level_idx}: expected all {expected_value}, '
                 f'got unique values {np.unique(view)}'
             )
+
+
+def test_set_view_slice_3d_multiscale_corners_without_viewer():
+    """Switching a multiscale layer to ndisplay=3 without a viewer
+    (no _update_draw) must set corner_pixels and _data_level to the
+    coarsest level so slicing produces correct 3D data.
+
+    Regression test: without the fix, corner_pixels stayed at the 2D
+    extent and _data_level was not updated, leading to wrong or empty
+    slices.
+    """
+    data = [
+        np.full((8, 40, 20), 10, dtype=np.uint8),
+        np.full((4, 20, 10), 20, dtype=np.uint8),
+        np.full((2, 10, 5), 30, dtype=np.uint8),
+    ]
+    layer = Image(data, multiscale=True)
+
+    dims_3d = Dims(ndim=3, ndisplay=3)
+    layer._slice_dims(dims_3d)
+
+    coarsest = len(data) - 1
+    assert layer.data_level == coarsest, (
+        f'Expected data_level={coarsest}, got {layer.data_level}'
+    )
+
+    expected_shape = np.array(data[coarsest].shape)
+    corners = layer.corner_pixels
+    actual_extent = corners[1, :] - corners[0, :] + 1
+    np.testing.assert_array_equal(
+        actual_extent,
+        expected_shape,
+        err_msg=(
+            'corner_pixels should span the full coarsest level '
+            'when switching to 3D without a viewer'
+        ),
+    )
