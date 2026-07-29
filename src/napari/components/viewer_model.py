@@ -180,9 +180,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
-    _overlays: napari.utils.events.containers._evented_dict.EventedDictNamespace[SceneOverlay]
-        An EventedDictNamespace with as keys the string names of different napari overlays and as values
-        the napari.SceneOverlay objects.
     """
 
     # Using frozen=True means these attributes aren't settable and don't
