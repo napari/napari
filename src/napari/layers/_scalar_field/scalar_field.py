@@ -23,8 +23,10 @@ from napari.layers.image._image_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import (
+    _NDAffineSlice,
     _SliceInput,
     _ThickNDSlice,
+    apply_units_to_transform,
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
@@ -841,6 +843,11 @@ class ScalarFieldBase(Layer, ABC):
     ) -> ScalarFieldSlicingState:
         return ScalarFieldSlicingState(layer=self, data=data, cache=cache)
 
+    @property
+    def affine_slicing_sampling_order(self) -> int:
+        """Interpolation order for affine non-orthogonal sampling."""
+        return NotImplementedError("This property should be implemented in subclasses.")
+
 
 class ScalarFieldSlicingState(_LayerSlicingState):
     layer: ScalarFieldBase
@@ -874,9 +881,16 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             corners[1, displayed] = shape - 1
             self.layer._data_level = level
             self.layer.corner_pixels = corners
+        world_to_data = apply_units_to_transform(
+            self.layer._data_to_world.inverse, self._units
+        )
+        sampling_plan = self._make_sampling_plan(
+            slice_input=self._slice_input,
+            world_to_data=world_to_data,
+        )
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            data_slice=self.data_slice,
+            sampling_plan=sampling_plan,
             dask_indexer=nullcontext,
         )
         response = request()
@@ -909,18 +923,69 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        data_slice = self._slice_indices(slice_input, dims)
+        world_to_data = apply_units_to_transform(
+            self.layer._data_to_world.inverse, dims.units
+        )
+        sampling_plan = self._make_sampling_plan(
+            slice_input=slice_input,
+            world_to_data=world_to_data,
+        )
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            data_slice=data_slice,
+            sampling_plan=sampling_plan,
             dask_indexer=self.dask_optimized_slicing,
+        )
+
+    def _make_sampling_plan(
+        self,
+        *,
+        slice_input: _SliceInput,
+        world_to_data: Affine,
+    ) -> _ThickNDSlice | _NDAffineSlice:
+        # Multiscale affine slicing is not yet implemented 
+        if (
+            self.layer.multiscale
+            or slice_input.ndisplay != 2
+            or slice_input.is_orthogonal(world_to_data)
+        ):
+            return slice_input.data_slice(world_to_data)
+
+        plane_axes = tuple(slice_input.displayed)
+        # All the heavy lifting is actually done upstream by _extent_world_augmented
+        # as it directly gives us the size of the "bounding rectangle" containing the slice
+        # in world coordinates.
+        extent = self.layer._extent_world_augmented[:, plane_axes]
+        span = np.ceil(extent[1] - extent[0]).astype(int) + 1
+        shape = tuple(max(int(s), 1) for s in span)
+
+        # This is a little hack right now which allows the slice to be correctly
+        # displayed on screen by Vispy. tile_to_world is a translation that contains:
+        #   1. the top-left corner of the slice (not setting this not only makes the slice
+        #      be ill-centered, but some parts of it also do not display at all)  
+        origin = np.array(self.layer._extent_world_augmented[0], dtype=float)
+        #   2. the information that is normally contained in _ThickNDSlice.point, i.e
+        #      the position of the slider in the viewer (not setting this makes the sliders
+        #      unresponsive) 
+        for ax in slice_input.not_displayed:
+            origin[ax] = slice_input.world_slice.point[ax]
+
+        tile_to_world = Affine(
+            ndim=self.layer.ndim,
+            linear_matrix=np.eye(self.layer.ndim),
+            translate=origin,
+        )
+        tile_to_data = world_to_data.compose(tile_to_world)
+        return _NDAffineSlice(
+            tile_to_data=tile_to_data,
+            shape=shape,
+            plane_axes=plane_axes,
         )
 
     def _make_slice_request_internal(
         self,
         *,
         slice_input: _SliceInput,
-        data_slice: _ThickNDSlice,
+        sampling_plan: _ThickNDSlice | _NDAffineSlice,
         dask_indexer: DaskIndexer,
     ) -> _ScalarFieldSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
@@ -968,7 +1033,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             data_at_thumbnail_level=data_at_thumbnail_level,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
-            data_slice=data_slice,
+            data_slice=sampling_plan,
             projection_mode=self.layer.projection_mode,
             multiscale=self.layer.multiscale,
             corner_pixels=self.layer.corner_pixels,
@@ -977,6 +1042,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             thumbnail_level=thumbnail_level,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
+            affine_slicing_sampling_order=self.layer.affine_slicing_sampling_order,
         )
 
     def _update_slice_response(
