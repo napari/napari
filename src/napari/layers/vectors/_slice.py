@@ -95,12 +95,11 @@ class _VectorSliceRequest:
 
     def _get_slice_data(
         self, not_disp: list[int]
-    ) -> tuple[npt.NDArray, npt.NDArray]:
-        coords_not_disp = self.data[:, 0, not_disp]
+    ) -> tuple[npt.NDArray, npt.NDArray | int]:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
-        if self.projection_mode == 'none':
+        if self.projection_mode == VectorsProjectionMode.NONE:
             low = point.copy()
             high = point.copy()
         else:
@@ -113,37 +112,29 @@ class _VectorSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
+        coords_not_disp = self.data[:, 0, not_disp]
         inside_slice = np.all(
             (coords_not_disp >= low) & (coords_not_disp <= high), axis=1
         )
-        if self.projection_mode in ('all', 'none'):
-            valid_vectors = inside_slice
-            alphas = np.ones(len(valid_vectors))
-        elif self.projection_mode == 'fade':
-            projected_lengths = abs(self.data[:, 1, not_disp] * self.length)
+        visible = np.where(inside_slice)[0].astype(int)
 
-            # add out of slice vectors with progressively lower alphas
-            dist_from_low = np.abs(coords_not_disp - low)
-            dist_from_high = np.abs(coords_not_disp - high)
-            distances = np.minimum(dist_from_low, dist_from_high)
-            # anything inside the slice is at distance 0
-            distances[inside_slice] = 0
+        if not visible.size:
+            return (
+                np.empty(0, dtype=int),
+                np.empty(0, dtype=float),
+            )
 
-            # display vectors that "spill" into the slice
-            valid_vectors = np.all(distances <= projected_lengths, axis=1)
-            if not np.any(valid_vectors):
-                return (
-                    np.empty(0, dtype=int),
-                    np.empty(0, dtype=float),
-                )
+        alphas = np.ones(len(visible))
 
-            # rescale alphas of spilling vectors based on how much they do
-            alphas_per_dim = (
-                projected_lengths - distances
-            ) / projected_lengths
-            alphas = np.prod(alphas_per_dim, axis=1)
-
-        visible = np.where(valid_vectors)[0].astype(int)
-        alphas = alphas[visible]
+        match self.projection_mode:
+            case VectorsProjectionMode.NONE | VectorsProjectionMode.ALL:
+                pass
+            case VectorsProjectionMode.FADE:
+                # rescale alphas of vectors based on how far they are from the center
+                dist_from_slice = np.abs(
+                    coords_not_disp[visible] - point
+                ).squeeze()
+                max_dist = np.max([np.abs(low - point), np.abs(high - point)])
+                alphas = dist_from_slice / max_dist
 
         return visible, alphas
