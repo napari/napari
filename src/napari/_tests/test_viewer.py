@@ -282,19 +282,19 @@ def test_toggling_scale_bar(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # Check scale bar is not visible
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible
-    viewer.scale_bar.visible = True
-    assert viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = True
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Enter 3D rendering and check scale bar is still visible
     viewer.dims.ndisplay = 3
-    assert viewer.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar not visible
-    viewer.scale_bar.visible = False
-    assert not viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = False
+    assert not viewer.canvas.overlays.scale_bar.visible
 
 
 def test_removing_points_data(make_napari_viewer):
@@ -499,4 +499,34 @@ def test_axis_labels_after_data(make_napari_viewer, qtbot):
     data_labels = ('i', 'j')
     assert data_labels != original_labels
     _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
-    assert viewer.dims.axis_labels == original_labels
+    assert viewer.dims.axis_labels == ('z', 'i', 'j')
+
+
+def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
+    """
+    Check viewer.dims.axis_labels reflect layers.axis_labels."""
+    viewer = make_napari_viewer()
+
+    # Default indices on empty viewer
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-2', '-1')
+
+    # Annotated layer propagates to dims
+    viewer.add_image(np.random.random((3, 4, 5)), axis_labels=('z', 'y', 'x'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Lower-dim, annotated layer doesn't override the longer labels
+    # This is different from test_axis_labels_after_data because in that
+    # case we are overwriting result of
+    # `viewer.dims.axis_labels = ('z', 'y', 'x')`, whereas in this case
+    # `viewer.dims.axis_labels` is only ever set dynamically from the layer
+    # list.
+    viewer.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Higher-dim, unannotated layer doesn't override the annotated labels
+    viewer.add_image(np.random.random((2, 3, 4, 5)))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')

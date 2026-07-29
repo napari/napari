@@ -230,7 +230,7 @@ def test_label_button_adds_new_label(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     expected = int(layer.data.max()) + 1
     layer.selected_label = 1
-    qtctrl._label_control.new_label_button.click()
+    qtctrl._label_control._on_button_click()
     assert layer.selected_label == expected
 
 
@@ -239,5 +239,5 @@ def test_label_button_no_change_if_reached_at_max(make_labels_controls):
     layer, qtctrl = make_labels_controls()
     layer.selected_label = int(layer.data.max()) + 1
     before = layer.selected_label
-    qtctrl._label_control.new_label_button.click()
+    qtctrl._label_control._on_button_click()
     assert layer.selected_label == before

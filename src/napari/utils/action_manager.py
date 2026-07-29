@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -93,11 +92,7 @@ class ActionManager:
     def _validate_action_name(self, name):
         if len(name.split(':')) != 2:
             raise ValueError(
-                trans._(
-                    'Action names need to be in the form `package:name`, got {name!r}',
-                    name=name,
-                    deferred=True,
-                )
+                f'Action names need to be in the form `package:name`, got {name!r}'
             )
 
     def register_action(
@@ -220,10 +215,7 @@ class ActionManager:
             getattr(action, 'command', None)
         ):
             raise ValueError(
-                trans._(
-                    '`bind_button` cannot be used with generator functions',
-                    deferred=True,
-                )
+                '`bind_button` cannot be used with generator functions'
             )
 
         def _trigger():
@@ -293,10 +285,7 @@ class ActionManager:
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(
-                trans._(
-                    'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
-                    name=name,
-                ),
+                f'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
                 UserWarning,
                 stacklevel=2,
             )
@@ -320,7 +309,7 @@ class ActionManager:
         ttip = self._actions[name].description
 
         if name in self._shortcuts:
-            jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
+            jstr = ' ' + 'or' + ' '
             shorts = jstr.join(f'{Shortcut(s)}' for s in self._shortcuts[name])
             ttip += f' ({shorts})'
 
