@@ -102,7 +102,7 @@ class _PointSliceRequest:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
-        if self.projection_mode == 'none':
+        if self.projection_mode == PointsProjectionMode.NONE:
             low = point.copy()
             high = point.copy()
         else:
@@ -129,14 +129,20 @@ class _PointSliceRequest:
 
         size = self.size[visible]
 
-        if self.projection_mode == 'rescale':
-            # rescale size of points based on how far they are from the center
+        if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
+            # This follows a spherical decay, meaning that while a point's poisition
+            # may be in the slice, if the sphere centered on it does not intersect
+            # the center of the slice, it will be discarded
             dist_from_slice = np.abs(data_not_disp[visible] - point).squeeze()
-            radius = size / 2
-            cap_radius_square = radius**2 - dist_from_slice**2
+            cap_radius_square = (size / 2) ** 2 - dist_from_slice**2
 
             # slice out ASAP to reduce computations
             valid = cap_radius_square > 0
             visible = visible[valid]
             size = np.sqrt(cap_radius_square[valid]) * 2
+        if self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL:
+            # rescale size of points based on how far they are from the center
+            dist_from_slice = np.abs(data_not_disp[visible] - point).squeeze()
+            max_dist = np.max([np.abs(low - point), np.abs(high - point)])
+            size = size * dist_from_slice / max_dist
         return visible, size
