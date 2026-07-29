@@ -284,13 +284,13 @@ class VispyCanvas:
         self.viewer.canvas.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.enabled.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.spacing.connect(self._update_scenegraph)
-        self.viewer._scene_overlays.events.added.connect(
+        self.viewer.scene.overlays.events.added.connect(
             self._update_viewer_overlays
         )
-        self.viewer._scene_overlays.events.removed.connect(
+        self.viewer.scene.overlays.events.removed.connect(
             self._update_viewer_overlays
         )
-        self.viewer._scene_overlays.events.changed.connect(
+        self.viewer.scene.overlays.events.changed.connect(
             self._update_viewer_overlays
         )
         self.viewer.canvas.overlays.events.added.connect(
@@ -339,7 +339,7 @@ class VispyCanvas:
 
     def _disconnect_events(self) -> None:
         disconnect_events(self.viewer.events, self)
-        disconnect_events(self.viewer._scene_overlays.events, self)
+        disconnect_events(self.viewer.scene.overlays.events, self)
         disconnect_events(self.viewer.camera.events, self)
         disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.camera.events, self)
@@ -957,7 +957,7 @@ class VispyCanvas:
 
     def _update_viewer_overlays(self) -> None:
         """Update the viewer's overlay visuals."""
-        all_overlays = set(self.viewer._scene_overlays.values()) | set(
+        all_overlays = set(self.viewer.scene.overlays.values()) | set(
             self.viewer.canvas.overlays.values()
         )
         # delete outdated overlays

@@ -81,7 +81,7 @@ viewer.add_image(np.random.rand(10, 10))
 # suppress them for the purpose of this example
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
-    viewer._scene_overlays.dot = DotOverlay(visible=True)
+    viewer.scene.overlays.dot = DotOverlay(visible=True)
 
 
 # let's make a simple widget to control the overlay
@@ -90,7 +90,7 @@ with warnings.catch_warnings():
     color={'choices': ['red', 'blue', 'green', 'magenta']},
 )
 def control_dot(viewer: napari.Viewer, color='red', position: CanvasPosition = 'top_left'):
-    dot = viewer._scene_overlays.dot
+    dot = viewer.scene.overlays.dot
     dot.color = color
     dot.position = position
 
@@ -101,7 +101,7 @@ viewer.window.add_dock_widget(control_dot)
 # and let's also add a mouse callback to do something when dragging the mouse
 def change_size(viewer, event):
     pos = np.array(event.pos)
-    size = viewer._scene_overlays.dot.size
+    size = viewer.scene.overlays.dot.size
 
     # use event.handled to tell vispy to not drag the canvas
     event.handled = True
@@ -112,7 +112,7 @@ def change_size(viewer, event):
         new_pos = event.pos
         drag = new_pos[0] - pos[0]
 
-        viewer._scene_overlays.dot.size = size + drag
+        viewer.scene.overlays.dot.size = size + drag
         yield
 
 
