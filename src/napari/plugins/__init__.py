@@ -5,9 +5,38 @@ from npe2 import (
 )
 
 from napari.plugins import _npe2
+from napari.plugins.environments import (
+    PluginEnvironmentError,
+    PluginEnvironmentProvisioningError,
+    PluginEnvironmentUnavailableError,
+    PluginTask,
+    PluginTaskCanceledError,
+    PluginTaskPhase,
+    PluginTaskProgress,
+    PluginTaskState,
+    PluginWorkerError,
+    PluginWorkerFailure,
+    execute_worker_command,
+    prepare_plugin_environment,
+)
 from napari.settings import get_settings
 
-__all__ = ('menu_item_template', 'plugin_manager')
+__all__ = (
+    'PluginEnvironmentError',
+    'PluginEnvironmentProvisioningError',
+    'PluginEnvironmentUnavailableError',
+    'PluginTask',
+    'PluginTaskCanceledError',
+    'PluginTaskPhase',
+    'PluginTaskProgress',
+    'PluginTaskState',
+    'PluginWorkerError',
+    'PluginWorkerFailure',
+    'execute_worker_command',
+    'menu_item_template',
+    'plugin_manager',
+    'prepare_plugin_environment',
+)
 
 from napari.utils.theme import _install_npe2_themes
 

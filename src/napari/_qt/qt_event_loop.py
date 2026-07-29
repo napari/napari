@@ -280,6 +280,12 @@ def get_qapp(
         register_threadworker_processors()
         register_qt_types()
 
+        from napari._qt._plugin_environments import (
+            install_plugin_environment_qt_support,
+        )
+
+        install_plugin_environment_qt_support(app)
+
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
         )
@@ -299,6 +305,11 @@ def get_qapp(
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    from napari._qt._plugin_environments import (
+        _shutdown_with_notification,
+    )
+
+    _shutdown_with_notification()
     for v in list(Viewer._instances):
         v.close()
     QApplication.closeAllWindows()
