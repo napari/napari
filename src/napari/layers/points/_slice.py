@@ -130,7 +130,7 @@ class _PointSliceRequest:
         size = self.size[visible]
 
         match self.projection_mode:
-            case PointsProjectionMode.ALL:
+            case PointsProjectionMode.NONE | PointsProjectionMode.ALL:
                 pass
             case PointsProjectionMode.RESCALE_LINEAR:
                 # This follows a spherical decay, meaning that while a point's poisition
@@ -152,4 +152,5 @@ class _PointSliceRequest:
                 ).squeeze()
                 max_dist = np.max([np.abs(low - point), np.abs(high - point)])
                 size = size * dist_from_slice / max_dist
+
         return visible, size
