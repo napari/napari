@@ -102,7 +102,7 @@ class _PointSliceRequest:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
-        if self.projection_mode == PointsProjectionMode.NONE:
+        if self.projection_mode == 'none':
             low = point.copy()
             high = point.copy()
         else:
@@ -121,7 +121,7 @@ class _PointSliceRequest:
         )
         visible = np.where(inside_slice & self.shown)[0].astype(int)
 
-        if not visible.size:
+        if not np.any(visible):
             return (
                 np.empty(0, dtype=int),
                 np.empty(0, dtype=float),
@@ -129,42 +129,14 @@ class _PointSliceRequest:
 
         size = self.size[visible]
 
-        if self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
-        ):
-            # our rescaling is relative to the center of the slice, in each dimension
-            dist_from_point = data_not_disp[visible] - point
-            if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
-                # linear rescaling, closest to the old out_of_slice_display implementation
+        if self.projection_mode == 'rescale':
+            # rescale size of points based on how far they are from the center
+            dist_from_slice = np.abs(data_not_disp[visible] - point).squeeze()
+            radius = size / 2
+            cap_radius_square = radius**2 - dist_from_slice**2
 
-                # margins can be different, so we need to treat low/high distance independently
-                slice_end = np.where(
-                    dist_from_point < 0, low - point, high - point
-                )
-                # we multiply the scales from each dimension into a single one
-                scale = np.prod(1 - dist_from_point / slice_end, axis=1)
-                size = size * scale
-            elif (
-                self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
-            ):
-                # This follows a spherical decay, meaning that while a point's poisition
-                # may be in the slice, if the sphere centered on it does not intersect
-                # the center of the slice, it will be discarded
-
-                # the length of the radius segment cut by the intersection with the
-                # slice center (per dimension) is dist_from_point. When bigger than size
-                # in any dimension, then there is no intersection!
-                radius = size / 2
-                radius_segment = np.abs(dist_from_point)
-                valid = np.all(radius_segment < radius[:, None], axis=1)
-                # slice ASAP to reduce computations, discarding non-intersecting spheres
-                # TODO: getting average size for now, but what should I actually do?
-                radius_segment = np.mean(radius_segment[valid], axis=1)
-                radius = radius[valid]
-                # radius of the disc
-                disc_radius = np.sqrt(radius**2 - radius_segment**2)
-                size = disc_radius * 2
-                visible = visible[valid]
-
+            # slice out ASAP to reduce computations
+            valid = cap_radius_square > 0
+            visible = visible[valid]
+            size = np.sqrt(cap_radius_square[valid]) * 2
         return visible, size
