@@ -118,8 +118,6 @@ QtConsole > QTextEdit {
   color: {{ text }};
   selection-background-color: {{ highlight }};
   margin: 10px;
-  font-family: monospace, Menlo, Consolas, "Ubuntu Mono", "Roboto Mono", "DejaVu Sans Mono";
-  font-size: {{ font_size }};
   border: 1px solid {{ console }};
 }
 .inverted {

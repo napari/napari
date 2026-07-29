@@ -16,7 +16,7 @@ from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
-from qtpy.QtGui import QGuiApplication, QImage
+from qtpy.QtGui import QFontDatabase, QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
@@ -550,6 +550,17 @@ class QtViewer(QSplitter):
             )
             return None
 
+    def _set_console_font(self, console: QtConsole | None = None) -> None:
+        """Apply the system fixed-width font to the console."""
+        if console is None:
+            console = self._console
+        if console is None:
+            return
+
+        font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        font.setPointSize(get_settings().appearance.font_size)
+        console.font = font
+
     @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
@@ -564,6 +575,7 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
+            self._set_console_font()
 
     @ensure_main_thread
     def _on_slice_ready(self, event):
