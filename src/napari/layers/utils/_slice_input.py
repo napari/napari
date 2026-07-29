@@ -132,6 +132,25 @@ class _ThickNDSlice(Generic[_T]):
 
 
 @dataclass(frozen=True)
+class _NDAffineSlice:
+    """Sampling plan for a non-axis-aligned 2D slice through nD data."""
+
+    tile_to_data: Affine
+    # This is the shape of the rectangular array that contains the queried values from the raw data
+    # using the affine-transformed slice, which will be displayed in the canvas.
+    # Because it is a rectangular array, it has to contain NaNs values for the pixels linked to a query
+    # outside the data bounds.
+    shape: tuple[int, int]
+    # This is the pair of axis indices displayed in "world coordinates" i.e what the user
+    # sees on the 2D canvas. There might be a naming inaccuracy in the previous sentence (to be discussed).
+    plane_axes: tuple[int, int]
+
+    @property
+    def ndim(self) -> int:
+        return self.tile_to_data.ndim
+
+
+@dataclass(frozen=True)
 class _SliceInput:
     """Encapsulates the input needed for slicing a layer.
 
