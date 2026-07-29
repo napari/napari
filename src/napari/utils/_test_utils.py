@@ -3,6 +3,7 @@ File with things that are useful for testing, but not to be fixtures
 """
 
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -72,6 +73,47 @@ def validate_kwargs_sorted(func):
     ]
     assert kwargs_list == sorted(kwargs_list), (
         'Keyword arguments are not sorted in function signature'
+    )
+
+
+def validate_match_signature(
+    func: Callable,
+    other_func: Callable,
+    additional_params: set[str] | None = None,
+):
+    """
+    Check if the signature of other_func matches the signature of func,
+    allowing for additional parameters in other_func.
+
+    It raises an AssertionError if the signatures do not match.
+    with information abourt all mismatches.
+
+    Parameters
+    ----------
+    func : Callable
+        The function whose signature is to be matched.
+    other_func : Callable
+        The function whose signature is to be checked against func.
+    additional_params : set[str], optional
+        A set of parameter names that are allowed to be present in other_func but not in func.
+        If None, no additional parameters are allowed.
+    """
+    sig1 = inspect.signature(func)
+    sig2 = inspect.signature(other_func)
+
+    if additional_params is None:
+        additional_params = set()
+
+    desired_params = set(sig1.parameters.keys()) | additional_params
+    actual_params = set(sig2.parameters.keys())
+    missed_params = desired_params - actual_params
+    extra_params = actual_params - desired_params
+
+    assert not missed_params, (
+        f'Function {other_func.__name__} is missing parameters: {", ".join(missed_params)}'
+    )
+    assert not extra_params, (
+        f'Function {other_func.__name__} has extra parameters: {", ".join(extra_params)}'
     )
 
 
