@@ -5,9 +5,14 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+import scipy.ndimage as ndi
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _NDAffineSlice,
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
@@ -196,7 +201,7 @@ class _ScalarFieldSliceRequest:
         The pre-selected data source for the thumbnail.
     dtype : DTypeLike
         The dtype of the layer's data.
-    data_slice : _ThickNDSlice
+    data_slice : _ThickNDSlice | _NDAffineSlice
         The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
@@ -209,7 +214,7 @@ class _ScalarFieldSliceRequest:
     data_at_thumbnail_level: Any = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
-    data_slice: _ThickNDSlice
+    data_slice: _ThickNDSlice | _NDAffineSlice
     projection_mode: Any
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
@@ -218,6 +223,7 @@ class _ScalarFieldSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
+    affine_slicing_sampling_order: int = field(repr=False, default=1)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ScalarFieldSliceResponse:
@@ -237,17 +243,31 @@ class _ScalarFieldSliceRequest:
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(
-            self.data_at_data_level, self.data_slice
-        )
+        if isinstance(self.data_slice, _NDAffineSlice):
+            data = self._project_affine_slice(
+                self.data_at_data_level, self.data_slice
+            )
+            # Compared to what is done in the "else"-case below, this is a hack: 
+            # data_slice.tile_to_data is designed so that
+            # Vispy is given an affine transform with an identity linear matrix,
+            # so that it does not apply any additional rotation or shear to the 
+            # data pixels (our affine slicing procedure already accounts for the
+            # "deformations" coming from the affine slicing, we do not want Vispy
+            # to apply them again) when composing all of the layer's transforms
+            # (see function `on_matrix_change` in napari/_vispy/layers/base.py). 
+            tile_to_data = self.data_slice.tile_to_data
+        else:
+            data = self._project_thick_slice(
+                self.data_at_data_level, self.data_slice
+            )
+            # `Layer.multiscale` is mutable so we need to pass back the identity
+            # transform to ensure `tile2data` is properly set on the layer.
+            ndim = self.slice_input.ndim
+            tile_to_data = Affine(
+                name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+            )
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
-        # `Layer.multiscale` is mutable so we need to pass back the identity
-        # transform to ensure `tile2data` is properly set on the layer.
-        ndim = self.slice_input.ndim
-        tile_to_data = Affine(
-            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
-        )
         return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=image,
@@ -320,6 +340,71 @@ class _ScalarFieldSliceRequest:
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
         return _ThickNDSlice.from_array(slice_arr)
 
+    def _project_affine_slice(
+        self, data: ArrayLike, data_slice: _NDAffineSlice
+    ) -> np.ndarray:
+        """
+        Slice the given data with the given affine slice. Also projects the extra dims.
+        Note that as thick _NDAffineSlice are not implemented yet, this function
+        does not have the same structure as _project_thick_slice, and so it is directly
+        responsible for creating the affine-oriented slicing indices and also querying
+        the data with them.  
+
+        Note that if the sampling is done on a finer grid (with appropriate sampled_data
+        resizing), the result approximates what can be seen in Fiji's BigDataViewer, which
+        is able to do "actual" slicing of cubic voxels.
+        """
+
+        shape = data_slice.shape
+        rows = np.arange(shape[0], dtype=float)
+        cols = np.arange(shape[1], dtype=float)
+        rr, cc = np.meshgrid(rows, cols, indexing='ij')
+
+        coords = np.zeros((self.slice_input.ndim, *shape), dtype=float)
+        coords[data_slice.plane_axes[0]] = rr
+        coords[data_slice.plane_axes[1]] = cc
+        coords = coords.reshape(self.slice_input.ndim, -1)
+        data_coords = np.asarray(data_slice.tile_to_data(coords.T)).T
+        data_coords = data_coords.reshape((self.slice_input.ndim, *shape))
+
+        if self.rgb and data.ndim == self.slice_input.ndim + 1:
+            sampled_channels = []
+            for channel in range(data.shape[-1]):
+                sampled_channels.append(
+                    self._query_data_using_data_indices(
+                        data=data[..., channel],
+                        data_indices=data_coords,
+                        affine_slicing_sampling_order=self.affine_slicing_sampling_order,
+                    )
+                )
+            return np.stack(sampled_channels, axis=-1)
+
+        sampled_data = self._query_data_using_data_indices(
+            data=data,
+            data_indices=data_coords,
+            affine_slicing_sampling_order=self.affine_slicing_sampling_order,
+        )
+
+        return sampled_data
+
+    def _query_data_using_data_indices(
+        self,
+        data: ArrayLike,
+        data_indices: npt.NDArray,
+        affine_slicing_sampling_order: int,
+    ) -> np.ndarray:
+        """
+        Query the given data with the given data indices using scipy's map_coordinates.
+        """
+        return ndi.map_coordinates(
+            data,
+            data_indices,
+            order=affine_slicing_sampling_order,
+            mode='constant',
+            cval=np.nan,
+            prefilter=False,
+        )
+
     def _project_thick_slice(
         self, data: ArrayLike, data_slice: _ThickNDSlice
     ) -> np.ndarray:
@@ -363,6 +448,9 @@ class _ScalarFieldSliceRequest:
 
     def _slice_out_of_bounds(self) -> bool:
         """Check if the data slice is out of bounds for any dimension."""
+        if not isinstance(self.data_slice, _ThickNDSlice):
+            return False
+
         for d in self.slice_input.not_displayed:
             pt = self.data_slice.point[d]
             max_idx = self.level_shapes[0][d] - 1
