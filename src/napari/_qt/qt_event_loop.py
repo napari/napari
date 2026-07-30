@@ -249,10 +249,6 @@ def get_qapp(
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
-        # Give every widget fixed-width digits, so that live numeric readouts
-        # (cursor coordinates, slider values, ...) do not jitter as the digits
-        # change. Only done when napari created the QApplication, so that an
-        # application napari is embedded in keeps the font it chose.
         use_tabular_numerals(app)
 
     if app.windowIcon().isNull():
