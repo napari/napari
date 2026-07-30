@@ -31,92 +31,77 @@ toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
         'Axes Visible',
-        'axes',
-        'visible',
+        'axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_axes_colored',
         'Axes Colored',
-        'axes',
-        'colored',
+        'axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_axes_labels',
         'Axes Labels',
-        'axes',
-        'labels',
+        'axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_axes_dashed',
         'Axes Dashed',
-        'axes',
-        'dashed',
+        'axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_axes_arrows',
         'Axes Arrows',
-        'axes',
-        'arrows',
+        'axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes',
         'Floating Axes Visible',
-        'floating_axes',
-        'visible',
+        'canvas.overlays.floating_axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_box',
         'Floating Axes Box',
-        'floating_axes',
-        'box',
+        'canvas.overlays.floating_axes.box',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_colored',
         'Floating Axes Colored',
-        'floating_axes',
-        'colored',
+        'canvas.overlays.floating_axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_labels',
         'Floating Axes Labels',
-        'floating_axes',
-        'labels',
+        'canvas.overlays.floating_axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_dashed',
         'Floating Axes Dashed',
-        'floating_axes',
-        'dashed',
+        'canvas.overlays.floating_axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes_arrows',
         'Floating Axes Arrows',
-        'floating_axes',
-        'arrows',
+        'canvas.overlays.floating_axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar',
         'Scale Bar Visible',
-        'scale_bar',
-        'visible',
+        'canvas.overlays.scale_bar.visible',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_box',
         'Scale Bar Box',
-        'scale_bar',
-        'box',
+        'canvas.overlays.scale_bar.box',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_colored',
         'Scale Bar Colored',
-        'scale_bar',
-        'colored',
+        'canvas.overlays.scale_bar.colored',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_ticks',
         'Scale Bar Ticks',
-        'scale_bar',
-        'ticks',
+        'canvas.overlays.scale_bar.ticks',
     ),
 ]
 
@@ -252,13 +237,12 @@ VIEW_ACTIONS: list[Action] = [
     ),
 ]
 
-for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
+for cmd, cmd_title, attribute_path in toggle_action_details:
     VIEW_ACTIONS.append(
         ViewerModelToggleAction(
             id=cmd,
             title=cmd_title,
-            viewer_attribute=viewer_attr,
-            sub_attribute=sub_attr,
-            menus=[{'id': MENUID_DICT[viewer_attr]}],
+            attribute_path=attribute_path,
+            menus=[{'id': MENUID_DICT[attribute_path.split('.')[-2]]}],
         )
     )

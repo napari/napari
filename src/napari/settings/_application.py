@@ -331,4 +331,4 @@ def brush_size_on_mouse_move_modifiers_callback(event: Event) -> None:
 def float_display_precision_callback(event: Event) -> None:
     from napari.utils import status_messages
 
-    status_messages.PRECISION_COUNT = event.value
+    status_messages.DEFAULT_PRECISION = event.value
