@@ -1,4 +1,21 @@
-"""Public API for executing plugin commands in managed environments."""
+"""Public lifecycle API for isolated plugin worker environments.
+
+Plugin host code remains in napari's process and may use napari and Qt APIs.
+Dependency-heavy functions are declared as qualified command targets and run
+in persistent, per-plugin environments that napari prepares and owns.
+
+Environment requirements belong in the npe2 manifest.
+An embedded local worker package supplies importable worker code but must not
+repeat runtime dependencies in its ``pyproject.toml``.
+This contract keeps ordinary plugin installation lightweight and lets napari
+present provisioning, cancellation, failure, worker, and cleanup state without
+exposing the execution backend.
+
+napari can enforce this split only for installation flows it manages.
+Managed environments isolate dependencies from napari and other plugins, but
+they are not security sandboxes: worker code retains the user's operating
+system permissions.
+"""
 
 from __future__ import annotations
 
@@ -81,7 +98,11 @@ class PluginTaskProgress:
 
 @dataclass(frozen=True)
 class PluginEnvironmentInfo:
-    """Backend-neutral snapshot of one managed plugin environment."""
+    """Backend-neutral snapshot of one managed plugin environment.
+
+    ``state`` describes the persistent installation, while ``worker_state``
+    describes lazily started runtime processes.
+    """
 
     plugin: str
     environment_id: str
@@ -545,7 +566,12 @@ def prepare_plugin_environment(environment_id: str) -> PluginTask[None]:
 def list_plugin_environments(
     plugin: str | None = None,
 ) -> tuple[PluginEnvironmentInfo, ...]:
-    """Return declared and persistently owned plugin environments."""
+    """Return declared and persistently owned plugin environments.
+
+    Disabled plugins and environments retained after uninstallation remain
+    visible so an installation UI can prepare or clean them without importing
+    plugin host code.
+    """
 
     from napari.plugins._environment_manager import (
         get_plugin_environment_manager,
@@ -558,7 +584,11 @@ def stop_plugin_workers(
     plugin: str,
     environment_id: str | None = None,
 ) -> PluginTask[None]:
-    """Stop active workers without deleting their persistent environments."""
+    """Stop active workers without deleting their persistent environments.
+
+    Active work in the selected scope is canceled before worker resources are
+    closed.
+    """
 
     from napari.plugins._environment_manager import (
         get_plugin_environment_manager,
@@ -575,7 +605,12 @@ def remove_plugin_environments(
     plugin: str,
     environment_ids: Iterable[str] | None = None,
 ) -> PluginTask[None]:
-    """Stop workers and remove persistently owned plugin environments."""
+    """Stop workers and remove persistently owned plugin environments.
+
+    If ``environment_ids`` is omitted, all environments owned by ``plugin``
+    are removed.
+    Passing an empty iterable is a no-op.
+    """
 
     from napari.plugins._environment_manager import (
         get_plugin_environment_manager,
