@@ -9,6 +9,7 @@ import pytest
 
 from napari.plugins._environment_types import (
     BackendCanceled,
+    BackendFailure,
     BackendUnavailable,
     LocalPackageRecipe,
 )
@@ -25,6 +26,13 @@ if TYPE_CHECKING:
 
 class _OperationCanceled(RuntimeError):
     pass
+
+
+class _ExecutionFailure(SimpleNamespace):
+    @classmethod
+    def environment(cls, message: str) -> _ExecutionFailure:
+        """Match the Wetlands classmethod that collides with diagnostic data."""
+        return cls(message=message)
 
 
 @dataclass
@@ -134,7 +142,7 @@ def test_execution_failure_is_normalized_without_wetlands_types() -> None:
         message='bad input',
     )
     worker = SimpleNamespace(environment='plugin.worker', pid=44)
-    failure = SimpleNamespace(
+    failure = _ExecutionFailure(
         category=SimpleNamespace(value='remote_exception'),
         message='bad input',
         task_id='task-1',
@@ -155,6 +163,9 @@ def test_execution_failure_is_normalized_without_wetlands_types() -> None:
     normalized = _normalize_error(error)
 
     assert str(normalized) == 'RemoteError: bad input'
+    assert 'environment: <bound method' not in normalized.details
+    assert 'worker_environment: plugin.worker' in normalized.details
+    assert 'worker_pid: 44' in normalized.details
     assert normalized.diagnostics == {
         'category': 'remote_exception',
         'message': 'bad input',
@@ -170,3 +181,69 @@ def test_execution_failure_is_normalized_without_wetlands_types() -> None:
         'elapsed': 0.25,
         'serialization_context': None,
     }
+
+
+def test_pool_adds_missing_worker_diagnostics_from_registry() -> None:
+    remote = SimpleNamespace(
+        qualified_name='builtins.ModuleNotFoundError',
+        message="No module named 'dependency'",
+    )
+    failure = _ExecutionFailure(
+        category=SimpleNamespace(value='remote_exception'),
+        message="No module named 'dependency'",
+        task_id='task-1',
+        call_target='worker:call',
+        traceback='remote traceback',
+        remote_exception=remote,
+        worker=None,
+        exit_code=None,
+        signal=None,
+        timeout=None,
+        elapsed=None,
+        serialization_context=None,
+        summary=lambda: (
+            "Remote ModuleNotFoundError: No module named 'dependency'"
+        ),
+    )
+    execution_error = RuntimeError('worker failed')
+    execution_error.failure = failure
+    task = SimpleNamespace(
+        cancel=lambda: True,
+        listen=lambda callback: None,
+        wait_for=lambda: (_ for _ in ()).throw(execution_error),
+    )
+    worker_pool = SimpleNamespace(
+        submit_import=lambda *args, **kwargs: task,
+        close=lambda: None,
+    )
+    pool = WetlandsPool(
+        worker_pool,
+        _OperationCanceled,
+        environment_name='plugin-worker-a1b2',
+        running_workers=lambda environment: (
+            SimpleNamespace(
+                environment=environment,
+                process_id=1234,
+            ),
+        ),
+    )
+
+    with pytest.raises(BackendFailure) as exc_info:
+        pool.execute(
+            'worker:call',
+            (),
+            {},
+            accepts_context=False,
+            progress=lambda update: None,
+            set_cancel_callback=lambda callback: None,
+        )
+
+    assert exc_info.value.diagnostics is not None
+    assert (
+        exc_info.value.diagnostics['worker_environment']
+        == 'plugin-worker-a1b2'
+    )
+    assert exc_info.value.diagnostics['worker_pid'] == 1234
+    assert 'environment: <bound method' not in exc_info.value.details
+    assert 'worker_environment: plugin-worker-a1b2' in exc_info.value.details
+    assert 'worker_pid: 1234' in exc_info.value.details

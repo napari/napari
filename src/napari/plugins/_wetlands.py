@@ -17,6 +17,7 @@ from napari.plugins._environment_types import (
 from napari.plugins.environments import PluginTaskPhase
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from napari.plugins._environment_types import (
@@ -27,7 +28,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _failure_details(error: BaseException) -> str | None:
+def _diagnostic_value(value: Any, name: str) -> Any:
+    """Return a diagnostic data attribute without exposing API callables."""
+    result = getattr(value, name, None)
+    return None if callable(result) else result
+
+
+def _failure_details(
+    error: BaseException,
+    *,
+    worker_environment: str | None = None,
+    worker_pid: int | None = None,
+) -> str | None:
     failure = getattr(error, 'failure', None)
     if failure is None:
         return None
@@ -49,9 +61,26 @@ def _failure_details(error: BaseException) -> str | None:
         'serialization_context',
         'cleanup_error',
     ):
-        value = getattr(failure, name, None)
+        value = _diagnostic_value(failure, name)
         if value is not None:
             lines.append(f'{name}: {value}')
+    worker = _diagnostic_value(failure, 'worker')
+    failure_environment = (
+        _diagnostic_value(worker, 'environment')
+        if worker is not None
+        else None
+    )
+    failure_pid = (
+        _diagnostic_value(worker, 'pid') if worker is not None else None
+    )
+    if failure_environment is None:
+        failure_environment = worker_environment
+    if failure_pid is None:
+        failure_pid = worker_pid
+    if failure_environment is not None:
+        lines.append(f'worker_environment: {failure_environment}')
+    if failure_pid is not None:
+        lines.append(f'worker_pid: {failure_pid}')
     stdout = getattr(failure, 'stdout_tail', ())
     stderr = getattr(failure, 'stderr_tail', ())
     traceback = getattr(failure, 'traceback', None)
@@ -64,13 +93,26 @@ def _failure_details(error: BaseException) -> str | None:
     return '\n'.join(lines) or str(failure)
 
 
-def _execution_diagnostics(error: BaseException) -> dict[str, Any] | None:
+def _execution_diagnostics(
+    error: BaseException,
+    *,
+    worker_environment: str | None = None,
+    worker_pid: int | None = None,
+) -> dict[str, Any] | None:
     failure = getattr(error, 'failure', None)
     if failure is None or not hasattr(failure, 'category'):
         return None
     category = getattr(failure.category, 'value', failure.category)
     remote_exception = getattr(failure, 'remote_exception', None)
-    worker = getattr(failure, 'worker', None)
+    worker = _diagnostic_value(failure, 'worker')
+    failure_environment = (
+        _diagnostic_value(worker, 'environment')
+        if worker is not None
+        else None
+    )
+    failure_pid = (
+        _diagnostic_value(worker, 'pid') if worker is not None else None
+    )
     return {
         'category': None if category is None else str(category),
         'message': str(getattr(failure, 'message', error)),
@@ -80,8 +122,8 @@ def _execution_diagnostics(error: BaseException) -> dict[str, Any] | None:
             remote_exception, 'qualified_name', None
         ),
         'remote_exception_message': getattr(remote_exception, 'message', None),
-        'worker_environment': getattr(worker, 'environment', None),
-        'worker_pid': getattr(worker, 'pid', None),
+        'worker_environment': failure_environment or worker_environment,
+        'worker_pid': (failure_pid if failure_pid is not None else worker_pid),
         'exit_code': getattr(failure, 'exit_code', None),
         'signal': getattr(failure, 'signal', None),
         'timeout': getattr(failure, 'timeout', None),
@@ -92,22 +134,61 @@ def _execution_diagnostics(error: BaseException) -> dict[str, Any] | None:
     }
 
 
-def _normalize_error(error: BaseException) -> BackendFailure:
+def _normalize_error(
+    error: BaseException,
+    *,
+    worker_environment: str | None = None,
+    worker_pid: int | None = None,
+) -> BackendFailure:
     summary = getattr(getattr(error, 'failure', None), 'summary', None)
     message = str(summary()) if callable(summary) else str(error)
     return BackendFailure(
         message,
-        details=_failure_details(error),
-        diagnostics=_execution_diagnostics(error),
+        details=_failure_details(
+            error,
+            worker_environment=worker_environment,
+            worker_pid=worker_pid,
+        ),
+        diagnostics=_execution_diagnostics(
+            error,
+            worker_environment=worker_environment,
+            worker_pid=worker_pid,
+        ),
     )
 
 
 class WetlandsPool:
     """Adapter around a Wetlands worker pool."""
 
-    def __init__(self, pool: Any, operation_canceled: type[Exception]) -> None:
+    def __init__(
+        self,
+        pool: Any,
+        operation_canceled: type[Exception],
+        *,
+        environment_name: str | None = None,
+        running_workers: Callable[[str], tuple[Any, ...]] | None = None,
+    ) -> None:
         self._pool = pool
         self._operation_canceled = operation_canceled
+        self._environment_name = environment_name
+        self._running_workers = running_workers
+
+    def _worker_diagnostics(self) -> tuple[str | None, int | None]:
+        environment = self._environment_name
+        if environment is None or self._running_workers is None:
+            return environment, None
+        try:
+            workers = self._running_workers(environment)
+        except Exception:
+            logger.debug(
+                'Could not inspect Wetlands workers for %s',
+                environment,
+                exc_info=True,
+            )
+            return environment, None
+        if len(workers) != 1:
+            return environment, None
+        return environment, _diagnostic_value(workers[0], 'process_id')
 
     def execute(
         self,
@@ -149,7 +230,12 @@ class WetlandsPool:
         except Exception as error:
             if isinstance(error, self._operation_canceled):
                 raise BackendCanceled from error
-            raise _normalize_error(error) from error
+            environment, worker_pid = self._worker_diagnostics()
+            raise _normalize_error(
+                error,
+                worker_environment=environment,
+                worker_pid=worker_pid,
+            ) from error
 
     def close(self) -> None:
         self._pool.close()
@@ -288,6 +374,8 @@ class WetlandsBackend:
             return WetlandsPool(
                 environment.start(workers=1),
                 self._operation_canceled,
+                environment_name=environment.name,
+                running_workers=self._manager.running_workers,
             )
         except Exception as error:
             raise _normalize_error(error) from error
