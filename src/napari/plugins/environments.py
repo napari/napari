@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 from napari.utils.events import EmitterGroup, Event
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable, Generator, Iterable
 
 T = TypeVar('T')
 logger = logging.getLogger(__name__)
@@ -51,6 +51,24 @@ class PluginTaskPhase(Enum):
     CLEANING_UP = 'cleaning_up'
 
 
+class PluginEnvironmentState(Enum):
+    """Persistent state of a declared managed plugin environment."""
+
+    MISSING = 'missing'
+    PREPARING = 'preparing'
+    READY = 'ready'
+    STALE = 'stale'
+    FAILED = 'failed'
+
+
+class PluginWorkerState(Enum):
+    """Runtime worker state for a managed plugin environment."""
+
+    STOPPED = 'stopped'
+    RUNNING = 'running'
+    STOPPING = 'stopping'
+
+
 @dataclass(frozen=True)
 class PluginTaskProgress:
     """Progress update emitted by a managed plugin task."""
@@ -59,6 +77,20 @@ class PluginTaskProgress:
     message: str
     current: int | None = None
     total: int | None = None
+
+
+@dataclass(frozen=True)
+class PluginEnvironmentInfo:
+    """Backend-neutral snapshot of one managed plugin environment."""
+
+    plugin: str
+    environment_id: str
+    display_name: str
+    provision: str
+    recipe_fingerprint: str | None
+    state: PluginEnvironmentState
+    worker_state: PluginWorkerState
+    failure: str | None = None
 
 
 @dataclass(frozen=True)
@@ -510,6 +542,53 @@ def prepare_plugin_environment(environment_id: str) -> PluginTask[None]:
     return task
 
 
+def list_plugin_environments(
+    plugin: str | None = None,
+) -> tuple[PluginEnvironmentInfo, ...]:
+    """Return declared and persistently owned plugin environments."""
+
+    from napari.plugins._environment_manager import (
+        get_plugin_environment_manager,
+    )
+
+    return get_plugin_environment_manager().list_environments(plugin)
+
+
+def stop_plugin_workers(
+    plugin: str,
+    environment_id: str | None = None,
+) -> PluginTask[None]:
+    """Stop active workers without deleting their persistent environments."""
+
+    from napari.plugins._environment_manager import (
+        get_plugin_environment_manager,
+    )
+
+    task = get_plugin_environment_manager().stop_workers(
+        plugin, environment_id
+    )
+    _notify_task_created(task)
+    return task
+
+
+def remove_plugin_environments(
+    plugin: str,
+    environment_ids: Iterable[str] | None = None,
+) -> PluginTask[None]:
+    """Stop workers and remove persistently owned plugin environments."""
+
+    from napari.plugins._environment_manager import (
+        get_plugin_environment_manager,
+    )
+
+    task = get_plugin_environment_manager().remove_environments(
+        plugin,
+        None if environment_ids is None else tuple(environment_ids),
+    )
+    _notify_task_created(task)
+    return task
+
+
 def execute_worker_command(
     command_id: str,
     *args: Any,
@@ -545,7 +624,9 @@ def execute_worker_command(
 
 __all__ = (
     'PluginEnvironmentError',
+    'PluginEnvironmentInfo',
     'PluginEnvironmentProvisioningError',
+    'PluginEnvironmentState',
     'PluginEnvironmentUnavailableError',
     'PluginTask',
     'PluginTaskCanceledError',
@@ -554,6 +635,10 @@ __all__ = (
     'PluginTaskState',
     'PluginWorkerError',
     'PluginWorkerFailure',
+    'PluginWorkerState',
     'execute_worker_command',
+    'list_plugin_environments',
     'prepare_plugin_environment',
+    'remove_plugin_environments',
+    'stop_plugin_workers',
 )

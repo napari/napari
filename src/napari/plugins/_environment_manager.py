@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import atexit
 import hashlib
+import json
 import logging
+import os
 import re
+import tempfile
 import threading
+import tomllib
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -24,12 +29,16 @@ from napari.plugins._environment_types import (
 )
 from napari.plugins.environments import (
     PluginEnvironmentError,
+    PluginEnvironmentInfo,
     PluginEnvironmentProvisioningError,
+    PluginEnvironmentState,
     PluginEnvironmentUnavailableError,
     PluginTask,
     PluginTaskPhase,
+    PluginTaskState,
     PluginWorkerError,
     PluginWorkerFailure,
+    PluginWorkerState,
 )
 from napari.utils._platformdirs import user_data_dir
 
@@ -51,6 +60,13 @@ class _PoolEntry:
     pool: BackendPool
     active: int = 0
     retired: bool = False
+
+
+@dataclass(frozen=True)
+class _EnvironmentDeclaration:
+    recipe: EnvironmentRecipe
+    display_name: str
+    provision: str
 
 
 def _safe_relative_path(base: Path, value: str, label: str) -> Path:
@@ -93,12 +109,9 @@ def _environment_recipe(
     else:
         assert base is not None
         local_packages = tuple(
-            LocalPackageRecipe(
-                _safe_relative_path(
-                    base, str(package.path), 'Local package path'
-                ),
-                bool(package.editable),
-                tuple(package.extras),
+            _local_package_recipe(
+                base,
+                str(package.path),
             )
             for package in local_requirements
         )
@@ -119,6 +132,53 @@ def _environment_recipe(
         channels=tuple(environment.channels),
         local_packages=local_packages,
         lockfile=lockfile,
+    )
+
+
+def _local_package_recipe(base: Path, value: str) -> LocalPackageRecipe:
+    path = _safe_relative_path(base, value, 'Local package path')
+    if not path.is_dir():
+        raise ValueError(f'Local package path is not a directory: {path}')
+    pyproject = path / 'pyproject.toml'
+    if not pyproject.is_file():
+        raise ValueError(f'Local package must contain pyproject.toml: {path}')
+    try:
+        document = tomllib.loads(pyproject.read_text(encoding='utf-8'))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as error:
+        raise ValueError(
+            f'Invalid local package metadata: {pyproject}'
+        ) from error
+    project = document.get('project')
+    if not isinstance(project, dict) or not project.get('name'):
+        raise ValueError(
+            f'Local package must declare [project].name: {pyproject}'
+        )
+    dependencies = project.get('dependencies', ())
+    dynamic = project.get('dynamic', ())
+    if dependencies or (
+        isinstance(dynamic, list) and 'dependencies' in dynamic
+    ):
+        raise ValueError(
+            'Worker package runtime dependencies must be declared by the '
+            f'environment manifest, not {pyproject}'
+        )
+    return LocalPackageRecipe(path)
+
+
+def _environment_declaration(
+    manifest: PluginManifest,
+    environment: Any,
+) -> _EnvironmentDeclaration:
+    environment_id = str(environment.id)
+    display_name = getattr(environment, 'display_name', None)
+    if not display_name:
+        display_name = environment_id.rsplit('.', 1)[-1]
+    provision = getattr(environment, 'provision', 'on_demand')
+    provision = getattr(provision, 'value', provision)
+    return _EnvironmentDeclaration(
+        recipe=_environment_recipe(manifest, environment),
+        display_name=str(display_name),
+        provision=str(provision),
     )
 
 
@@ -160,10 +220,15 @@ def _worker_commands(manifest: PluginManifest) -> tuple[WorkerCommand, ...]:
     return tuple(commands)
 
 
-def _iter_manifests() -> tuple[PluginManifest, ...]:
+def _iter_manifests(
+    *,
+    enabled_only: bool = False,
+) -> tuple[PluginManifest, ...]:
     from npe2 import plugin_manager
 
-    return tuple(plugin_manager.iter_manifests(disabled=False))
+    return tuple(
+        plugin_manager.iter_manifests(disabled=False if enabled_only else None)
+    )
 
 
 def _owner_for_contribution(contribution_id: str) -> str | None:
@@ -176,7 +241,7 @@ def _owner_for_contribution(contribution_id: str) -> str | None:
 
 
 def _find_worker_command(command_id: str) -> WorkerCommand:
-    for manifest in _iter_manifests():
+    for manifest in _iter_manifests(enabled_only=True):
         try:
             commands = _worker_commands(manifest)
         except (OSError, ValueError) as error:
@@ -200,7 +265,9 @@ def _find_environment(environment_id: str) -> EnvironmentRecipe:
         ):
             if str(environment.id) == environment_id:
                 try:
-                    return _environment_recipe(manifest, environment)
+                    return _environment_declaration(
+                        manifest, environment
+                    ).recipe
                 except (OSError, ValueError) as error:
                     raise PluginEnvironmentProvisioningError(
                         f'Invalid managed environment declaration for '
@@ -232,24 +299,309 @@ class PluginEnvironmentManager:
         )
         self._pool_entries: dict[str, _PoolEntry] = {}
         self._environment_locks: dict[str, threading.Lock] = {}
+        self._plugin_lifecycle_locks: dict[str, threading.Lock] = {}
         self._tasks: set[PluginTask[Any]] = set()
         self._task_plugins: dict[PluginTask[Any], str] = {}
+        self._task_environments: dict[PluginTask[Any], str] = {}
+        self._control_tasks: set[PluginTask[Any]] = set()
+        self._preparing: dict[str, int] = {}
+        self._stopping_plugins: dict[str, int] = {}
+        self._stopping: dict[str, int] = {}
+        self._failures: dict[str, str] = {}
         self._closed = False
         self._lock = threading.RLock()
+
+    @property
+    def _ownership_path(self) -> Path:
+        return self.root / 'state' / 'ownership.json'
+
+    def _read_ownership(self) -> dict[str, dict[str, str]]:
+        path = self._ownership_path
+        try:
+            document = json.loads(path.read_text(encoding='utf-8'))
+        except FileNotFoundError:
+            return {}
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            logger.exception('Could not read plugin environment ownership')
+            return {}
+        if (
+            not isinstance(document, dict)
+            or document.get('schema_version') != 1
+            or not isinstance(document.get('environments'), dict)
+        ):
+            logger.error('Invalid plugin environment ownership document')
+            return {}
+        records: dict[str, dict[str, str]] = {}
+        for environment_id, record in document['environments'].items():
+            if not isinstance(environment_id, str) or not isinstance(
+                record, dict
+            ):
+                continue
+            required = {
+                'plugin',
+                'physical_name',
+                'fingerprint',
+                'plugin_version',
+                'display_name',
+                'provision',
+            }
+            if required <= record.keys() and all(
+                isinstance(record[key], str) for key in required
+            ):
+                records[environment_id] = {
+                    key: record[key] for key in required
+                }
+        return records
+
+    def _write_ownership(self, records: dict[str, dict[str, str]]) -> None:
+        path = self._ownership_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(
+            {'schema_version': 1, 'environments': records},
+            sort_keys=True,
+            indent=2,
+        )
+        file_descriptor, temporary_name = tempfile.mkstemp(
+            dir=path.parent,
+            prefix='.ownership-',
+            suffix='.json',
+        )
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(file_descriptor, 'w', encoding='utf-8') as stream:
+                stream.write(payload)
+                stream.write('\n')
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def _record_ownership(
+        self,
+        declaration: _EnvironmentDeclaration,
+        *,
+        physical_name: str,
+        fingerprint: str,
+    ) -> None:
+        recipe = declaration.recipe
+        with self._lock:
+            records = self._read_ownership()
+            records[recipe.environment_id] = {
+                'plugin': recipe.plugin,
+                'physical_name': physical_name,
+                'fingerprint': fingerprint,
+                'plugin_version': recipe.plugin_version,
+                'display_name': declaration.display_name,
+                'provision': declaration.provision,
+            }
+            self._write_ownership(records)
+
+    def list_environments(
+        self, plugin: str | None = None
+    ) -> tuple[PluginEnvironmentInfo, ...]:
+        declarations: dict[str, _EnvironmentDeclaration] = {}
+        invalid: dict[str, tuple[str, str, str, str]] = {}
+        for manifest in _iter_manifests():
+            if plugin is not None and manifest.name != plugin:
+                continue
+            for environment in (
+                getattr(manifest.contributions, 'environments', None) or ()
+            ):
+                environment_id = str(environment.id)
+                try:
+                    declaration = _environment_declaration(
+                        manifest, environment
+                    )
+                except (OSError, ValueError) as error:
+                    display_name = (
+                        getattr(environment, 'display_name', None)
+                        or environment_id.rsplit('.', 1)[-1]
+                    )
+                    provision = getattr(environment, 'provision', 'on_demand')
+                    provision = getattr(provision, 'value', provision)
+                    invalid[environment_id] = (
+                        manifest.name,
+                        str(display_name),
+                        str(provision),
+                        str(error),
+                    )
+                else:
+                    declarations[environment_id] = declaration
+
+        with self._lock:
+            ownership = self._read_ownership()
+            preparing = set(self._preparing)
+            stopping_plugins = set(self._stopping_plugins)
+            stopping = set(self._stopping)
+            failures = dict(self._failures)
+            pools = tuple(self._pool_entries.values())
+
+        relevant_ownership = {
+            environment_id: record
+            for environment_id, record in ownership.items()
+            if plugin is None or record['plugin'] == plugin
+        }
+        environment_ids = (
+            set(declarations) | set(invalid) | set(relevant_ownership)
+        )
+        known_names: set[str] | None = set()
+        inspection_failure: str | None = None
+        backend: EnvironmentBackend | None = None
+        if relevant_ownership:
+            try:
+                backend = self._get_backend()
+                known_names = set(backend.environment_names())
+            except Exception as error:
+                known_names = None
+                inspection_failure = str(error)
+                logger.exception(
+                    'Could not inspect persistent plugin environments'
+                )
+
+        infos: list[PluginEnvironmentInfo] = []
+        for environment_id in sorted(environment_ids):
+            declaration = declarations.get(environment_id)
+            record = relevant_ownership.get(environment_id)
+            invalid_declaration = invalid.get(environment_id)
+            fingerprint_failure: str | None = None
+            if declaration is not None:
+                recipe = declaration.recipe
+                plugin_name = recipe.plugin
+                display_name = declaration.display_name
+                provision = declaration.provision
+                if record is None:
+                    fingerprint = None
+                else:
+                    try:
+                        assert backend is not None
+                        fingerprint = backend.fingerprint(recipe)
+                    except Exception as error:
+                        fingerprint_failure = str(error)
+                        logger.exception(
+                            'Could not fingerprint plugin environment %s',
+                            environment_id,
+                        )
+                        fingerprint = None
+            elif invalid_declaration is not None:
+                recipe = None
+                (
+                    plugin_name,
+                    display_name,
+                    provision,
+                    _declaration_failure,
+                ) = invalid_declaration
+                fingerprint = None
+            else:
+                recipe = None
+                assert record is not None
+                plugin_name = record['plugin']
+                display_name = (
+                    record['display_name'] if record else environment_id
+                )
+                provision = record['provision'] if record else 'on_demand'
+                fingerprint = None
+
+            failure = failures.get(environment_id)
+            if invalid_declaration is not None:
+                state = PluginEnvironmentState.FAILED
+                failure = invalid_declaration[3]
+            elif environment_id in preparing:
+                state = PluginEnvironmentState.PREPARING
+            elif failure is not None:
+                state = PluginEnvironmentState.FAILED
+            elif record is not None and inspection_failure is not None:
+                state = PluginEnvironmentState.FAILED
+                failure = inspection_failure
+            elif fingerprint_failure is not None:
+                state = PluginEnvironmentState.FAILED
+                failure = fingerprint_failure
+            elif (
+                record is None
+                or known_names is None
+                or record['physical_name'] not in known_names
+            ):
+                state = PluginEnvironmentState.MISSING
+            elif (
+                fingerprint is not None
+                and record['fingerprint'] != fingerprint
+            ):
+                state = PluginEnvironmentState.STALE
+            else:
+                state = PluginEnvironmentState.READY
+
+            environment_pools = [
+                entry
+                for entry in pools
+                if entry.environment_id == environment_id and not entry.retired
+            ]
+            if plugin_name in stopping_plugins or environment_id in stopping:
+                worker_state = PluginWorkerState.STOPPING
+            elif environment_pools:
+                worker_state = PluginWorkerState.RUNNING
+            else:
+                worker_state = PluginWorkerState.STOPPED
+            infos.append(
+                PluginEnvironmentInfo(
+                    plugin=plugin_name,
+                    environment_id=environment_id,
+                    display_name=display_name,
+                    provision=provision,
+                    recipe_fingerprint=fingerprint,
+                    state=state,
+                    worker_state=worker_state,
+                    failure=failure,
+                )
+            )
+        return tuple(infos)
 
     def prepare(self, environment_id: str) -> PluginTask[None]:
         task: PluginTask[None] = PluginTask()
         if owner := _owner_for_contribution(environment_id):
-            self._associate_task(task, owner)
+            self._associate_task(task, owner, environment_id)
+            if self._is_stopping(owner, environment_id):
+                task.cancel()
 
         def run() -> None:
             recipe = _find_environment(environment_id)
-            self._associate_task(task, recipe.plugin)
-            self._prepare_recipe(task, recipe)
+            self._associate_task(task, recipe.plugin, recipe.environment_id)
+            environment, physical_name = self._prepare_recipe(task, recipe)
+            del environment
+            try:
+                declaration = self._find_declaration(environment_id)
+            except KeyError:
+                declaration = _EnvironmentDeclaration(
+                    recipe=recipe,
+                    display_name=environment_id.rsplit('.', 1)[-1],
+                    provision='on_demand',
+                )
+            backend = self._get_backend()
+            self._record_ownership(
+                declaration,
+                physical_name=physical_name,
+                fingerprint=backend.fingerprint(recipe),
+            )
+            self._finalize_preparation(
+                backend,
+                recipe,
+                keep=physical_name,
+            )
             task._set_result(None)
 
         self._submit(task, run)
         return task
+
+    @staticmethod
+    def _find_declaration(
+        environment_id: str,
+    ) -> _EnvironmentDeclaration:
+        for manifest in _iter_manifests():
+            for environment in (
+                getattr(manifest.contributions, 'environments', None) or ()
+            ):
+                if str(environment.id) == environment_id:
+                    return _environment_declaration(manifest, environment)
+        raise KeyError(f'No managed plugin environment {environment_id!r}')
 
     def execute(
         self,
@@ -258,12 +610,23 @@ class PluginEnvironmentManager:
         kwargs: dict[str, Any],
     ) -> PluginTask[Any]:
         task: PluginTask[Any] = PluginTask()
-        if owner := _owner_for_contribution(command_id):
+        command: WorkerCommand | None = None
+        command_error: Exception | None = None
+        try:
+            command = _find_worker_command(command_id)
+        except Exception as error:  # noqa: BLE001
+            command_error = error
+        if command is not None:
+            self._associate_task(task, command.plugin, command.environment_id)
+            if self._is_stopping(command.plugin, command.environment_id):
+                task.cancel()
+        elif owner := _owner_for_contribution(command_id):
             self._associate_task(task, owner)
 
         def run() -> None:
-            command = _find_worker_command(command_id)
-            self._associate_task(task, command.plugin)
+            if command_error is not None:
+                raise command_error
+            assert command is not None
             entry = self._pool_for(task, command.recipe)
             try:
                 if task.cancellation_requested:
@@ -330,15 +693,238 @@ class PluginEnvironmentManager:
         self._submit(task, run)
         return task
 
+    def stop_workers(
+        self,
+        plugin: str,
+        environment_id: str | None = None,
+    ) -> PluginTask[None]:
+        task: PluginTask[None] = PluginTask()
+        self._associate_task(task, plugin)
+        selected = None if environment_id is None else {environment_id}
+        with self._lock:
+            self._control_tasks.add(task)
+        self._mark_stopping(plugin, selected)
+        self._cancel_plugin_tasks(plugin, selected, owner_task=task)
+
+        def run() -> None:
+            try:
+                with self._plugin_lifecycle_lock(plugin):
+                    self._stop_workers(
+                        task,
+                        plugin,
+                        selected,
+                        owner_task=task,
+                    )
+                    task._set_result(None)
+            finally:
+                self._clear_stopping(plugin, selected)
+
+        submitted = self._submit(
+            task,
+            run,
+            initial_phase=PluginTaskPhase.CLEANING_UP,
+            initial_message=f'Stopping managed workers for {plugin}',
+        )
+        if not submitted:
+            self._clear_stopping(plugin, selected)
+        return task
+
+    def _cancel_plugin_tasks(
+        self,
+        plugin: str,
+        environment_ids: set[str] | None,
+        *,
+        owner_task: PluginTask[Any],
+    ) -> tuple[PluginTask[Any], ...]:
+        with self._lock:
+            tasks = tuple(
+                candidate
+                for candidate, task_plugin in self._task_plugins.items()
+                if candidate is not owner_task
+                and candidate not in self._control_tasks
+                and task_plugin == plugin
+                and (
+                    environment_ids is None
+                    or self._task_environments.get(candidate)
+                    in {None, *environment_ids}
+                )
+            )
+        for candidate in tasks:
+            candidate.cancel()
+        return tasks
+
+    def _stop_workers(
+        self,
+        progress_task: PluginTask[Any],
+        plugin: str,
+        environment_ids: set[str] | None,
+        *,
+        owner_task: PluginTask[Any],
+    ) -> None:
+        tasks = self._cancel_plugin_tasks(
+            plugin,
+            environment_ids,
+            owner_task=owner_task,
+        )
+        progress_task._report_progress(
+            PluginTaskPhase.CLEANING_UP,
+            f'Stopping managed workers for {plugin}',
+        )
+        for candidate in tasks:
+            if candidate.state is not PluginTaskState.PENDING:
+                with suppress(PluginEnvironmentError):
+                    candidate.result()
+        with self._lock:
+            entries = [
+                (name, entry)
+                for name, entry in self._pool_entries.items()
+                if entry.plugin == plugin
+                and (
+                    environment_ids is None
+                    or entry.environment_id in environment_ids
+                )
+            ]
+            active = [entry for _name, entry in entries if entry.active]
+            if active:
+                raise PluginEnvironmentError(
+                    'Managed worker is still active',
+                    plugin=plugin,
+                    environment=active[0].environment_id,
+                    phase=PluginTaskPhase.CLEANING_UP,
+                )
+            for name, _entry in entries:
+                self._pool_entries.pop(name, None)
+        errors: list[str] = []
+        for _name, entry in entries:
+            try:
+                entry.pool.close()
+            except Exception as error:  # noqa: BLE001
+                errors.append(f'{entry.environment_id}: {error}')
+        if errors:
+            raise PluginEnvironmentError(
+                'Could not stop every managed plugin worker',
+                plugin=plugin,
+                environment=(
+                    next(iter(environment_ids))
+                    if environment_ids and len(environment_ids) == 1
+                    else None
+                ),
+                phase=PluginTaskPhase.CLEANING_UP,
+                details='\n'.join(errors),
+            )
+
+    def remove_environments(
+        self,
+        plugin: str,
+        environment_ids: tuple[str, ...] | None = None,
+    ) -> PluginTask[None]:
+        task: PluginTask[None] = PluginTask()
+        self._associate_task(task, plugin)
+        selected = None if environment_ids is None else set(environment_ids)
+        with self._lock:
+            self._control_tasks.add(task)
+        self._mark_stopping(plugin, selected)
+        self._cancel_plugin_tasks(plugin, selected, owner_task=task)
+
+        def run() -> None:
+            try:
+                with self._plugin_lifecycle_lock(plugin):
+                    self._stop_workers(
+                        task,
+                        plugin,
+                        selected,
+                        owner_task=task,
+                    )
+                    with self._lock:
+                        records = self._read_ownership()
+                    owned = [
+                        (environment_id, record)
+                        for environment_id, record in records.items()
+                        if record['plugin'] == plugin
+                        and (selected is None or environment_id in selected)
+                    ]
+                    if not owned:
+                        task._set_result(None)
+                        return
+                    backend = self._get_backend()
+                    try:
+                        known_names = set(backend.environment_names())
+                    except BackendFailure as error:
+                        raise PluginEnvironmentProvisioningError(
+                            str(error),
+                            plugin=plugin,
+                            phase=PluginTaskPhase.CLEANING_UP,
+                            details=error.details,
+                        ) from error
+                    total = len(owned)
+                    for index, (environment_id, record) in enumerate(owned, 1):
+                        if task.cancellation_requested:
+                            raise BackendCanceled
+                        task._report_progress(
+                            PluginTaskPhase.CLEANING_UP,
+                            f'Removing {environment_id}',
+                            index - 1,
+                            total,
+                        )
+                        prefix = (
+                            record['physical_name'].rsplit('-', 1)[0] + '-'
+                        )
+                        targets = sorted(
+                            name
+                            for name in known_names
+                            if name.startswith(prefix)
+                        )
+                        for physical_name in targets:
+                            try:
+                                backend.remove_environment(
+                                    physical_name,
+                                    progress=lambda update: self._report(
+                                        task, update
+                                    ),
+                                    set_cancel_callback=(
+                                        task._set_cancel_callback
+                                    ),
+                                )
+                            except BackendFailure as error:
+                                raise PluginEnvironmentProvisioningError(
+                                    str(error),
+                                    plugin=plugin,
+                                    environment=environment_id,
+                                    phase=PluginTaskPhase.CLEANING_UP,
+                                    details=error.details,
+                                ) from error
+                            known_names.discard(physical_name)
+                        with self._lock:
+                            current = self._read_ownership()
+                            current.pop(environment_id, None)
+                            self._write_ownership(current)
+                            self._failures.pop(environment_id, None)
+                    task._set_result(None)
+            finally:
+                self._clear_stopping(plugin, selected)
+
+        submitted = self._submit(
+            task,
+            run,
+            initial_phase=PluginTaskPhase.CLEANING_UP,
+            initial_message=f'Removing managed environments for {plugin}',
+        )
+        if not submitted:
+            self._clear_stopping(plugin, selected)
+        return task
+
     def _submit(
         self,
         task: PluginTask[Any],
         runner: Callable[[], None],
-    ) -> None:
+        *,
+        initial_phase: PluginTaskPhase = PluginTaskPhase.PREPARING,
+        initial_message: str = 'Preparing managed plugin environment',
+    ) -> bool:
         def execute() -> None:
             task._set_running(
-                PluginTaskPhase.PREPARING,
-                'Preparing managed plugin environment',
+                initial_phase,
+                initial_message,
             )
             try:
                 runner()
@@ -373,32 +959,106 @@ class PluginEnvironmentManager:
                 with self._lock:
                     self._tasks.discard(task)
                     self._task_plugins.pop(task, None)
+                    self._task_environments.pop(task, None)
+                    self._control_tasks.discard(task)
 
         with self._lock:
             if self._closed:
                 self._task_plugins.pop(task, None)
+                self._task_environments.pop(task, None)
+                self._control_tasks.discard(task)
                 task._set_error(
                     PluginEnvironmentUnavailableError(
                         'Plugin environment manager is closed'
                     )
                 )
-                return
+                return False
             self._tasks.add(task)
             try:
                 self._executor.submit(execute)
             except RuntimeError as error:
                 self._tasks.discard(task)
                 self._task_plugins.pop(task, None)
+                self._task_environments.pop(task, None)
+                self._control_tasks.discard(task)
                 task._set_error(
                     PluginEnvironmentUnavailableError(
                         'Plugin environment manager could not submit the task',
                         details=str(error),
                     )
                 )
+                return False
+        return True
 
-    def _associate_task(self, task: PluginTask[Any], plugin: str) -> None:
+    def _associate_task(
+        self,
+        task: PluginTask[Any],
+        plugin: str,
+        environment_id: str | None = None,
+    ) -> None:
         with self._lock:
             self._task_plugins[task] = plugin
+            if environment_id is not None:
+                self._task_environments[task] = environment_id
+
+    def _plugin_lifecycle_lock(self, plugin: str) -> threading.Lock:
+        with self._lock:
+            return self._plugin_lifecycle_locks.setdefault(
+                plugin, threading.Lock()
+            )
+
+    def _mark_stopping(
+        self,
+        plugin: str,
+        environment_ids: set[str] | None,
+    ) -> None:
+        with self._lock:
+            if environment_ids is None:
+                self._stopping_plugins[plugin] = (
+                    self._stopping_plugins.get(plugin, 0) + 1
+                )
+            else:
+                for environment_id in environment_ids:
+                    self._stopping[environment_id] = (
+                        self._stopping.get(environment_id, 0) + 1
+                    )
+
+    def _clear_stopping(
+        self,
+        plugin: str,
+        environment_ids: set[str] | None,
+    ) -> None:
+        with self._lock:
+            if environment_ids is None:
+                remaining = self._stopping_plugins[plugin] - 1
+                if remaining:
+                    self._stopping_plugins[plugin] = remaining
+                else:
+                    self._stopping_plugins.pop(plugin, None)
+            else:
+                for environment_id in environment_ids:
+                    remaining = self._stopping[environment_id] - 1
+                    if remaining:
+                        self._stopping[environment_id] = remaining
+                    else:
+                        self._stopping.pop(environment_id, None)
+
+    def _is_stopping(self, plugin: str, environment_id: str) -> bool:
+        with self._lock:
+            return (
+                plugin in self._stopping_plugins
+                or environment_id in self._stopping
+            )
+
+    def _raise_if_stopping(
+        self,
+        task: PluginTask[Any],
+        recipe: EnvironmentRecipe,
+    ) -> None:
+        if task.cancellation_requested or self._is_stopping(
+            recipe.plugin, recipe.environment_id
+        ):
+            raise BackendCanceled
 
     def _get_backend(self) -> EnvironmentBackend:
         with self._lock:
@@ -511,51 +1171,88 @@ class PluginEnvironmentManager:
         backend: EnvironmentBackend | None = None,
         physical_name: str | None = None,
     ) -> tuple[Any, str]:
-        if backend is None or physical_name is None:
-            backend, physical_name = self._environment_identity(task, recipe)
         with self._lock:
-            environment_lock = self._environment_locks.setdefault(
-                recipe.environment_id, threading.Lock()
+            self._preparing[recipe.environment_id] = (
+                self._preparing.get(recipe.environment_id, 0) + 1
             )
-        with environment_lock:
-            if task.cancellation_requested:
-                raise BackendCanceled
-            try:
+            self._failures.pop(recipe.environment_id, None)
+        try:
+            if backend is None or physical_name is None:
+                backend, physical_name = self._environment_identity(
+                    task, recipe
+                )
+            with self._lock:
+                environment_lock = self._environment_locks.setdefault(
+                    recipe.environment_id, threading.Lock()
+                )
+            with environment_lock:
+                self._raise_if_stopping(task, recipe)
                 environment = backend.prepare_environment(
                     physical_name,
                     recipe,
                     progress=lambda update: self._report(task, update),
                     set_cancel_callback=task._set_cancel_callback,
                 )
-            except BackendUnavailable as error:
-                raise PluginEnvironmentUnavailableError(
-                    str(error),
-                    plugin=recipe.plugin,
-                    environment=recipe.environment_id,
-                    phase=task.phase,
-                    details=error.details,
-                ) from error
-            except BackendFailure as error:
-                raise PluginEnvironmentProvisioningError(
-                    str(error),
-                    plugin=recipe.plugin,
-                    environment=recipe.environment_id,
-                    phase=task.phase,
-                    details=error.details,
-                ) from error
-            self._retire_pool_generations(
-                backend,
-                recipe,
-                keep=physical_name,
+        except BackendCanceled:
+            raise
+        except BackendUnavailable as error:
+            failure = PluginEnvironmentUnavailableError(
+                str(error),
+                plugin=recipe.plugin,
+                environment=recipe.environment_id,
+                phase=task.phase,
+                details=error.details,
             )
-            self._remove_stale_generations(backend, recipe, keep=physical_name)
-        return environment, physical_name
+            with self._lock:
+                self._failures[recipe.environment_id] = str(failure)
+            raise failure from error
+        except BackendFailure as error:
+            failure = PluginEnvironmentProvisioningError(
+                str(error),
+                plugin=recipe.plugin,
+                environment=recipe.environment_id,
+                phase=task.phase,
+                details=error.details,
+            )
+            with self._lock:
+                self._failures[recipe.environment_id] = str(failure)
+            raise failure from error
+        except PluginEnvironmentError as error:
+            with self._lock:
+                self._failures[recipe.environment_id] = str(error)
+            raise
+        except Exception as error:
+            with self._lock:
+                self._failures[recipe.environment_id] = str(error)
+            raise
+        else:
+            with self._lock:
+                self._failures.pop(recipe.environment_id, None)
+            return environment, physical_name
+        finally:
+            with self._lock:
+                remaining = self._preparing[recipe.environment_id] - 1
+                if remaining:
+                    self._preparing[recipe.environment_id] = remaining
+                else:
+                    self._preparing.pop(recipe.environment_id, None)
+
+    def _finalize_preparation(
+        self,
+        backend: EnvironmentBackend,
+        recipe: EnvironmentRecipe,
+        *,
+        keep: str,
+    ) -> None:
+        self._retire_pool_generations(backend, recipe, keep=keep)
+        self._remove_stale_generations(backend, recipe, keep=keep)
 
     def _pool_for(
         self,
         task: PluginTask[Any],
         recipe: EnvironmentRecipe,
     ) -> _PoolEntry:
+        self._raise_if_stopping(task, recipe)
         backend, physical_name = self._environment_identity(task, recipe)
         with self._lock:
             entry = self._pool_entries.get(physical_name)
@@ -569,8 +1266,25 @@ class PluginEnvironmentManager:
             backend=backend,
             physical_name=physical_name,
         )
-        if task.cancellation_requested:
-            raise BackendCanceled
+        try:
+            declaration = self._find_declaration(recipe.environment_id)
+        except KeyError:
+            declaration = _EnvironmentDeclaration(
+                recipe=recipe,
+                display_name=recipe.environment_id.rsplit('.', 1)[-1],
+                provision='on_demand',
+            )
+        self._record_ownership(
+            declaration,
+            physical_name=physical_name,
+            fingerprint=backend.fingerprint(recipe),
+        )
+        self._finalize_preparation(
+            backend,
+            recipe,
+            keep=physical_name,
+        )
+        self._raise_if_stopping(task, recipe)
         with self._lock:
             entry = self._pool_entries.get(physical_name)
             if entry is not None and not entry.retired:
@@ -595,7 +1309,9 @@ class PluginEnvironmentManager:
             if existing is not None and not existing.retired:
                 existing.active += 1
                 canceled = False
-            elif task.cancellation_requested:
+            elif task.cancellation_requested or self._is_stopping(
+                recipe.plugin, recipe.environment_id
+            ):
                 canceled = True
             else:
                 canceled = False
@@ -669,7 +1385,13 @@ class PluginEnvironmentManager:
                 entry.physical_name,
             )
             return
-        backend.remove_environment(entry.physical_name)
+        try:
+            backend.remove_environment(entry.physical_name)
+        except Exception:
+            logger.exception(
+                'Failed to remove retired plugin environment %s',
+                entry.physical_name,
+            )
 
     def _remove_stale_generations(
         self,
@@ -691,35 +1413,38 @@ class PluginEnvironmentManager:
             return
         for name in names:
             if name.startswith(prefix) and name != keep and name not in active:
-                backend.remove_environment(name)
+                try:
+                    backend.remove_environment(name)
+                except Exception:
+                    logger.exception(
+                        'Failed to remove stale plugin environment %s',
+                        name,
+                    )
 
     def release_plugin(self, plugin: str) -> None:
         """Stop worker pools owned by a disabled or unregistered plugin."""
 
-        with self._lock:
-            tasks = [
-                task
-                for task, task_plugin in self._task_plugins.items()
-                if task_plugin == plugin
-            ]
-        for task in tasks:
-            task.cancel()
-        with self._lock:
-            entries = [
-                (name, entry)
-                for name, entry in self._pool_entries.items()
-                if entry.plugin == plugin
-            ]
-            for name, _entry in entries:
-                self._pool_entries.pop(name, None)
-        for _name, entry in entries:
-            try:
-                entry.pool.close()
-            except Exception:
-                logger.exception(
-                    'Failed to close plugin environment pool %s',
-                    entry.physical_name,
+        task: PluginTask[None] = PluginTask()
+        task._set_running(
+            PluginTaskPhase.CLEANING_UP,
+            f'Stopping managed workers for {plugin}',
+        )
+        self._mark_stopping(plugin, None)
+        try:
+            with self._plugin_lifecycle_lock(plugin):
+                self._stop_workers(
+                    task,
+                    plugin,
+                    None,
+                    owner_task=task,
                 )
+                task._set_result(None)
+        except PluginEnvironmentError:
+            logger.exception(
+                'Failed to stop workers for disabled plugin %s', plugin
+            )
+        finally:
+            self._clear_stopping(plugin, None)
 
     def close(self) -> None:
         """Cancel active work and release all owned runtime resources."""
@@ -750,6 +1475,10 @@ class PluginEnvironmentManager:
             self._pool_entries.clear()
             self._tasks.clear()
             self._task_plugins.clear()
+            self._task_environments.clear()
+            self._control_tasks.clear()
+            self._stopping.clear()
+            self._stopping_plugins.clear()
         if errors:
             raise PluginEnvironmentError(
                 'Plugin environment shutdown did not complete cleanly',

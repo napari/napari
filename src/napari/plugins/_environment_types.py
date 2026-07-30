@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class LocalPackageRecipe:
     path: Path
-    editable: bool = False
-    extras: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -111,7 +109,13 @@ class EnvironmentBackend(Protocol):
         progress: ProgressCallback,
     ) -> BackendPool: ...
 
-    def remove_environment(self, physical_name: str) -> None: ...
+    def remove_environment(
+        self,
+        physical_name: str,
+        *,
+        progress: ProgressCallback | None = None,
+        set_cancel_callback: CancelCallbackSetter | None = None,
+    ) -> None: ...
 
     def environment_names(self) -> tuple[str, ...]: ...
 

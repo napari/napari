@@ -7,7 +7,9 @@ from npe2 import (
 from napari.plugins import _npe2
 from napari.plugins.environments import (
     PluginEnvironmentError,
+    PluginEnvironmentInfo,
     PluginEnvironmentProvisioningError,
+    PluginEnvironmentState,
     PluginEnvironmentUnavailableError,
     PluginTask,
     PluginTaskCanceledError,
@@ -16,14 +18,20 @@ from napari.plugins.environments import (
     PluginTaskState,
     PluginWorkerError,
     PluginWorkerFailure,
+    PluginWorkerState,
     execute_worker_command,
+    list_plugin_environments,
     prepare_plugin_environment,
+    remove_plugin_environments,
+    stop_plugin_workers,
 )
 from napari.settings import get_settings
 
 __all__ = (
     'PluginEnvironmentError',
+    'PluginEnvironmentInfo',
     'PluginEnvironmentProvisioningError',
+    'PluginEnvironmentState',
     'PluginEnvironmentUnavailableError',
     'PluginTask',
     'PluginTaskCanceledError',
@@ -32,10 +40,14 @@ __all__ = (
     'PluginTaskState',
     'PluginWorkerError',
     'PluginWorkerFailure',
+    'PluginWorkerState',
     'execute_worker_command',
+    'list_plugin_environments',
     'menu_item_template',
     'plugin_manager',
     'prepare_plugin_environment',
+    'remove_plugin_environments',
+    'stop_plugin_workers',
 )
 
 from napari.utils.theme import _install_npe2_themes

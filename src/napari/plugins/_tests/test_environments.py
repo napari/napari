@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import threading
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -19,12 +20,15 @@ from napari.plugins._environment_types import (
     WorkerCommand,
 )
 from napari.plugins.environments import (
+    PluginEnvironmentError,
     PluginEnvironmentProvisioningError,
+    PluginEnvironmentState,
     PluginTask,
     PluginTaskCanceledError,
     PluginTaskPhase,
     PluginTaskState,
     PluginWorkerError,
+    PluginWorkerState,
 )
 
 if TYPE_CHECKING:
@@ -66,6 +70,30 @@ def _command(
         target=target,
         accepts_context=False,
         recipe=recipe,
+    )
+
+
+def _manifest_for_recipe(
+    recipe: EnvironmentRecipe,
+    *,
+    display_name: str = 'Example worker',
+    provision: str = 'on_demand',
+) -> SimpleNamespace:
+    environment = SimpleNamespace(
+        id=recipe.environment_id,
+        display_name=display_name,
+        provision=provision,
+        python=recipe.python,
+        conda=list(recipe.conda),
+        pypi=list(recipe.pypi),
+        channels=list(recipe.channels),
+        local_packages=[],
+        lockfile=None,
+    )
+    return SimpleNamespace(
+        name=recipe.plugin,
+        package_version=recipe.plugin_version,
+        contributions=SimpleNamespace(environments=[environment]),
     )
 
 
@@ -134,6 +162,8 @@ class _FakeBackend:
         self.removed: list[str] = []
         self.known: set[str] = set()
         self.fail_preparation = False
+        self.fail_removal = False
+        self.removal_failures = 0
         self.block_preparation = False
         self.preparation_started = threading.Event()
         self.preparation_canceled = threading.Event()
@@ -197,7 +227,26 @@ class _FakeBackend:
         self.started.append(pool)
         return pool
 
-    def remove_environment(self, physical_name: str) -> None:
+    def remove_environment(
+        self,
+        physical_name: str,
+        *,
+        progress: ProgressCallback | None = None,
+        set_cancel_callback: CancelCallbackSetter | None = None,
+    ) -> None:
+        if set_cancel_callback is not None:
+            set_cancel_callback(lambda: None)
+        if progress is not None:
+            progress(
+                BackendProgress(
+                    PluginTaskPhase.CLEANING_UP,
+                    f'Removing {physical_name}',
+                )
+            )
+        if self.fail_removal or self.removal_failures:
+            if self.removal_failures:
+                self.removal_failures -= 1
+            raise BackendFailure('removal failed', details='cleanup failed')
         self.removed.append(physical_name)
         self.known.discard(physical_name)
 
@@ -434,6 +483,377 @@ def test_release_plugin_and_shutdown_close_owned_resources(
     assert backend.closed
 
 
+def test_environment_inventory_tracks_persistent_and_worker_state(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    recipe = _recipe()
+    command = _command('example-plugin.compute', recipe)
+    manifest = _manifest_for_recipe(recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (manifest,),
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        lambda command_id: command,
+    )
+
+    [missing] = manager.list_environments(recipe.plugin)
+    assert missing.state is PluginEnvironmentState.MISSING
+    assert missing.worker_state is PluginWorkerState.STOPPED
+    assert missing.display_name == 'Example worker'
+    assert missing.provision == 'on_demand'
+
+    manager.prepare(recipe.environment_id).result()
+    [ready] = manager.list_environments(recipe.plugin)
+    assert ready.state is PluginEnvironmentState.READY
+    assert ready.worker_state is PluginWorkerState.STOPPED
+
+    manager.execute(command.command_id, (), {}).result()
+    [running] = manager.list_environments(recipe.plugin)
+    assert running.state is PluginEnvironmentState.READY
+    assert running.worker_state is PluginWorkerState.RUNNING
+
+    manager.stop_workers(recipe.plugin, recipe.environment_id).result()
+    [stopped] = manager.list_environments(recipe.plugin)
+    assert stopped.state is PluginEnvironmentState.READY
+    assert stopped.worker_state is PluginWorkerState.STOPPED
+    assert backend.started[-1].closed
+
+    manager.execute(command.command_id, (), {}).result()
+    assert len(backend.started) == 2
+
+
+def test_changed_recipe_is_reported_stale(
+    environment_manager, monkeypatch
+) -> None:
+    manager, _backend = environment_manager
+    recipe = _recipe()
+    selected_manifest = _manifest_for_recipe(recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (selected_manifest,),
+    )
+
+    manager.prepare(recipe.environment_id).result()
+    changed = _recipe(requirement='example-dependency==2')
+    selected_manifest = _manifest_for_recipe(changed)
+
+    [info] = manager.list_environments(recipe.plugin)
+    assert info.state is PluginEnvironmentState.STALE
+
+
+def test_ownership_survives_manager_restart_and_manifest_removal(
+    tmp_path: Path, monkeypatch
+) -> None:
+    recipe = _recipe()
+    manifest = _manifest_for_recipe(recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (manifest,),
+    )
+    first_backend = _FakeBackend(tmp_path)
+    first = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: first_backend,
+    )
+    first.prepare(recipe.environment_id).result()
+    known = set(first_backend.known)
+    first.close()
+
+    second_backend = _FakeBackend(tmp_path)
+    second_backend.known.update(known)
+    second = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: second_backend,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (),
+    )
+    try:
+        [owned] = second.list_environments(recipe.plugin)
+        assert owned.environment_id == recipe.environment_id
+        assert owned.state is PluginEnvironmentState.READY
+
+        second.remove_environments(recipe.plugin).result()
+        assert second_backend.removed == list(known)
+        assert second.list_environments(recipe.plugin) == ()
+    finally:
+        second.close()
+
+
+def test_explicit_removal_failure_is_reported_and_retains_ownership(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    recipe = _recipe()
+    manifest = _manifest_for_recipe(recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (manifest,),
+    )
+    manager.prepare(recipe.environment_id).result()
+    backend.fail_removal = True
+
+    with pytest.raises(
+        PluginEnvironmentProvisioningError, match='removal failed'
+    ) as error:
+        manager.remove_environments(recipe.plugin).result()
+
+    assert error.value.environment == recipe.environment_id
+    [info] = manager.list_environments(recipe.plugin)
+    assert info.state is PluginEnvironmentState.READY
+
+
+def test_lazy_preparation_is_visible_and_failure_is_retained(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    recipe = _recipe()
+    command = _command('example-plugin.compute', recipe)
+    manifest = _manifest_for_recipe(recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (manifest,),
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        lambda command_id: command,
+    )
+    backend.block_preparation = True
+
+    task = manager.execute(command.command_id, (), {})
+    assert backend.preparation_started.wait(2)
+    [preparing] = manager.list_environments(recipe.plugin)
+    assert preparing.state is PluginEnvironmentState.PREPARING
+    task.cancel()
+    with pytest.raises(PluginTaskCanceledError):
+        task.result(2)
+
+    backend.block_preparation = False
+    backend.fail_preparation = True
+    backend.preparation_started.clear()
+    failed_task = manager.execute(command.command_id, (), {})
+    with pytest.raises(
+        PluginEnvironmentProvisioningError, match='provisioning failed'
+    ):
+        failed_task.result(2)
+    [failed] = manager.list_environments(recipe.plugin)
+    assert failed.state is PluginEnvironmentState.FAILED
+    assert failed.failure == 'provisioning failed'
+
+
+def test_removing_one_environment_keeps_other_workers_running(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    first = _recipe(environment='example-plugin.first')
+    second = _recipe(
+        environment='example-plugin.second',
+        requirement='example-dependency==2',
+    )
+    manifests = (
+        _manifest_for_recipe(first, display_name='First'),
+        _manifest_for_recipe(second, display_name='Second'),
+    )
+    commands = {
+        'example-plugin.first': _command('example-plugin.first', first),
+        'example-plugin.second': _command('example-plugin.second', second),
+    }
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: manifests,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        commands.__getitem__,
+    )
+    manager.execute('example-plugin.first', (), {}).result()
+    manager.execute('example-plugin.second', (), {}).result()
+
+    manager.remove_environments(
+        'example-plugin',
+        (first.environment_id,),
+    ).result()
+
+    infos = {
+        info.environment_id: info
+        for info in manager.list_environments('example-plugin')
+    }
+    assert infos[first.environment_id].state is PluginEnvironmentState.MISSING
+    assert (
+        infos[first.environment_id].worker_state is PluginWorkerState.STOPPED
+    )
+    assert infos[second.environment_id].state is PluginEnvironmentState.READY
+    assert (
+        infos[second.environment_id].worker_state is PluginWorkerState.RUNNING
+    )
+    assert backend.started[0].closed
+    assert not backend.started[1].closed
+
+
+def test_invalid_worker_package_is_a_failed_inventory_item(
+    environment_manager, tmp_path: Path, monkeypatch
+) -> None:
+    manager, _backend = environment_manager
+    recipe = _recipe()
+    manifest = _manifest_for_recipe(recipe)
+    manifest._source_file = tmp_path / 'napari.yaml'
+    worker = tmp_path / 'worker'
+    worker.mkdir()
+    (worker / 'pyproject.toml').write_text(
+        '[project]\n'
+        'name = "example-worker"\n'
+        'version = "1.0"\n'
+        'dependencies = ["undeclared-dependency"]\n',
+        encoding='utf-8',
+    )
+    manifest.contributions.environments[0].local_packages = [
+        SimpleNamespace(path='worker')
+    ]
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (manifest,),
+    )
+
+    [info] = manager.list_environments(recipe.plugin)
+    assert info.state is PluginEnvironmentState.FAILED
+    assert info.failure is not None
+    assert 'runtime dependencies must be declared' in info.failure
+
+
+def test_explicit_remove_cleans_failed_stale_generation(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    selected = _recipe()
+    selected_manifest = _manifest_for_recipe(selected)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (selected_manifest,),
+    )
+    manager.prepare(selected.environment_id).result()
+    old_name = next(iter(backend.known))
+
+    selected = _recipe(requirement='example-dependency==2')
+    selected_manifest = _manifest_for_recipe(selected)
+    backend.removal_failures = 1
+    manager.prepare(selected.environment_id).result()
+    assert old_name in backend.known
+    assert len(backend.known) == 2
+
+    manager.remove_environments(selected.plugin).result()
+    assert backend.known == set()
+    assert manager.list_environments(selected.plugin)[0].state is (
+        PluginEnvironmentState.MISSING
+    )
+
+
+def test_ownership_is_updated_before_old_generation_cleanup(
+    environment_manager, monkeypatch
+) -> None:
+    manager, backend = environment_manager
+    selected = _recipe()
+    selected_manifest = _manifest_for_recipe(selected)
+    monkeypatch.setattr(
+        manager_module,
+        '_iter_manifests',
+        lambda *, enabled_only=False: (selected_manifest,),
+    )
+    manager.prepare(selected.environment_id).result()
+    old_name = next(iter(backend.known))
+    record_ownership = manager._record_ownership
+
+    selected = _recipe(requirement='example-dependency==2')
+    selected_manifest = _manifest_for_recipe(selected)
+
+    def fail_ownership(*args, **kwargs) -> None:
+        raise OSError('ownership write failed')
+
+    monkeypatch.setattr(manager, '_record_ownership', fail_ownership)
+    with pytest.raises(
+        PluginEnvironmentError,
+        match='ownership write failed',
+    ):
+        manager.prepare(selected.environment_id).result()
+
+    assert backend.removed == []
+    assert old_name in backend.known
+    assert len(backend.known) == 2
+
+    monkeypatch.setattr(manager, '_record_ownership', record_ownership)
+    manager.remove_environments(selected.plugin).result()
+    assert backend.known == set()
+
+
+def test_manifest_iteration_can_include_disabled_plugins(
+    monkeypatch,
+) -> None:
+    calls: list[bool | None] = []
+
+    def iter_manifests(*, disabled):
+        calls.append(disabled)
+        return ()
+
+    monkeypatch.setattr(
+        'npe2.plugin_manager.iter_manifests',
+        iter_manifests,
+    )
+
+    assert manager_module._iter_manifests() == ()
+    assert manager_module._iter_manifests(enabled_only=True) == ()
+    assert calls == [None, False]
+
+
+def test_embedded_worker_package_has_manifest_owned_dependencies(
+    tmp_path: Path,
+) -> None:
+    worker = tmp_path / 'worker'
+    worker.mkdir()
+    pyproject = worker / 'pyproject.toml'
+    pyproject.write_text(
+        '[project]\nname = "example-worker"\nversion = "1.0"\n',
+        encoding='utf-8',
+    )
+
+    recipe = manager_module._local_package_recipe(tmp_path, 'worker')
+    assert recipe.path == worker
+
+    pyproject.write_text(
+        '[project]\n'
+        'name = "example-worker"\n'
+        'version = "1.0"\n'
+        'dependencies = ["heavy-dependency"]\n',
+        encoding='utf-8',
+    )
+    with pytest.raises(
+        ValueError,
+        match='runtime dependencies must be declared by the environment',
+    ):
+        manager_module._local_package_recipe(tmp_path, 'worker')
+
+
+def test_embedded_worker_package_cannot_escape_plugin_package(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match='must remain inside'):
+        manager_module._local_package_recipe(tmp_path, '../worker')
+
+
 def test_worker_command_registry_uses_napari_proxy(
     npe2pm, monkeypatch
 ) -> None:
@@ -457,6 +877,7 @@ def test_worker_command_registry_uses_napari_proxy(
             'environments': [
                 {
                     'id': 'isolated-example.worker',
+                    'display_name': 'Worker',
                     'python': '3.12',
                     'pypi': ['heavy-dependency==1'],
                 }

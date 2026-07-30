@@ -233,3 +233,105 @@ def test_release_cancels_queued_plugin_task_before_pool_insertion(
     assert backend.started == []
     assert manager._pool_entries == {}
     manager.close()
+
+
+def test_stop_workers_preempts_blocked_executor_task(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = _FakeBackend(tmp_path)
+    backend.block_preparation = True
+    command = _command('plugin-a.compute', _recipe(plugin='plugin-a'))
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: backend,
+        max_parallel_tasks=1,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        lambda command_id: command,
+    )
+
+    running = manager.execute(command.command_id, (), {})
+    assert backend.preparation_started.wait(2)
+    stopped = manager.stop_workers(
+        command.plugin,
+        command.environment_id,
+    )
+
+    with pytest.raises(PluginTaskCanceledError):
+        running.result(2)
+    assert stopped.result(2) is None
+    assert backend.preparation_canceled.is_set()
+    assert manager._pool_entries == {}
+    manager.close()
+
+
+def test_concurrent_control_tasks_do_not_cancel_each_other(
+    tmp_path: Path,
+) -> None:
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: _FakeBackend(root),
+        max_parallel_tasks=1,
+    )
+    lifecycle_lock = manager._plugin_lifecycle_lock('plugin-a')
+    lifecycle_lock.acquire()
+    try:
+        first = manager.stop_workers('plugin-a')
+        second = manager.remove_environments('plugin-a')
+    finally:
+        lifecycle_lock.release()
+
+    assert first.result(2) is None
+    assert second.result(2) is None
+    assert first.state is PluginTaskState.COMPLETED
+    assert second.state is PluginTaskState.COMPLETED
+    manager.close()
+
+
+def test_execute_submitted_during_stop_is_canceled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = _FakeBackend(tmp_path)
+    command = _command('plugin-a.compute', _recipe(plugin='plugin-a'))
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: backend,
+        max_parallel_tasks=1,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        lambda command_id: command,
+    )
+    lifecycle_lock = manager._plugin_lifecycle_lock(command.plugin)
+    lifecycle_lock.acquire()
+    try:
+        stopping = manager.stop_workers(command.plugin)
+        execution = manager.execute(command.command_id, (), {})
+    finally:
+        lifecycle_lock.release()
+
+    assert stopping.result(2) is None
+    with pytest.raises(PluginTaskCanceledError):
+        execution.result(2)
+    assert backend.prepared == []
+    assert backend.started == []
+    manager.close()
+
+
+def test_control_task_starts_in_cleanup_phase(tmp_path: Path) -> None:
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: _FakeBackend(root),
+    )
+    progress = []
+
+    task = manager.stop_workers('plugin-a')
+    task.add_progress_callback(progress.append)
+
+    assert task.result(2) is None
+    assert progress
+    assert progress[0].phase is PluginTaskPhase.CLEANING_UP
+    manager.close()

@@ -249,12 +249,12 @@ def test_long_logical_ids_with_common_slug_prefix_do_not_share_cleanup(
         manager.close()
 
 
-def test_manifest_iteration_excludes_disabled_plugins(
+def test_manifest_iteration_includes_disabled_plugins(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[bool] = []
+    calls: list[bool | None] = []
 
-    def iter_manifests(*, disabled: bool):
+    def iter_manifests(*, disabled: bool | None):
         calls.append(disabled)
         return iter(())
 
@@ -264,4 +264,4 @@ def test_manifest_iteration_excludes_disabled_plugins(
     )
 
     assert manager_module._iter_manifests() == ()
-    assert calls == [False]
+    assert calls == [None]

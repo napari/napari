@@ -38,8 +38,6 @@ class _ExecutionFailure(SimpleNamespace):
 @dataclass
 class _LocalPackage:
     source: Path
-    editable: bool
-    extras: tuple[str, ...]
 
 
 class _EnvironmentSpec:
@@ -81,13 +79,7 @@ def test_spec_maps_local_packages_and_lockfile(
     recipe = recipe.__class__(
         **{
             **recipe.__dict__,
-            'local_packages': (
-                LocalPackageRecipe(
-                    tmp_path / 'worker',
-                    editable=True,
-                    extras=('gpu',),
-                ),
-            ),
+            'local_packages': (LocalPackageRecipe(tmp_path / 'worker'),),
             'lockfile': b'lock contents',
         }
     )
@@ -97,9 +89,7 @@ def test_spec_maps_local_packages_and_lockfile(
     assert spec.values['python'] == recipe.python
     assert spec.values['pypi'] == recipe.pypi
     assert spec.values['pixi_lock'] == b'lock contents'
-    assert spec.values['local'] == (
-        _LocalPackage(tmp_path / 'worker', True, ('gpu',)),
-    )
+    assert spec.values['local'] == (_LocalPackage(tmp_path / 'worker'),)
 
 
 def test_backend_version_participates_in_fingerprint(

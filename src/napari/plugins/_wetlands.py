@@ -274,11 +274,7 @@ class WetlandsBackend:
             pypi=recipe.pypi,
             channels=recipe.channels,
             local=tuple(
-                self._local_package(
-                    package.path,
-                    editable=package.editable,
-                    extras=package.extras,
-                )
+                self._local_package(package.path)
                 for package in recipe.local_packages
             ),
             pixi_lock=recipe.lockfile,
@@ -380,17 +376,28 @@ class WetlandsBackend:
         except Exception as error:
             raise _normalize_error(error) from error
 
-    def remove_environment(self, physical_name: str) -> None:
+    def remove_environment(
+        self,
+        physical_name: str,
+        *,
+        progress: ProgressCallback | None = None,
+        set_cancel_callback: CancelCallbackSetter | None = None,
+    ) -> None:
         try:
-            self._manager.remove(physical_name).wait_for()
-        except Exception:
-            # Stale environment cleanup is best-effort and must not turn a
-            # successful new generation into a failure.
-            logger.warning(
-                'Failed to remove stale managed environment %s',
-                physical_name,
-                exc_info=True,
-            )
+            operation = self._manager.remove(physical_name)
+            if set_cancel_callback is not None:
+                set_cancel_callback(operation.cancel)
+            if progress is not None:
+                self._listen_operation(
+                    operation,
+                    PluginTaskPhase.CLEANING_UP,
+                    progress,
+                )
+            operation.wait_for()
+        except Exception as error:
+            if isinstance(error, self._operation_canceled):
+                raise BackendCanceled from error
+            raise _normalize_error(error) from error
 
     def environment_names(self) -> tuple[str, ...]:
         return tuple(
