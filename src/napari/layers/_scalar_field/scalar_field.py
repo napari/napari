@@ -884,13 +884,13 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         world_to_data = apply_units_to_transform(
             self.layer._data_to_world.inverse, self._units
         )
-        sampling_plan = self._make_sampling_plan(
+        sampling_plane = self._make_sampling_plane(
             slice_input=self._slice_input,
             world_to_data=world_to_data,
         )
         request = self._make_slice_request_internal(
             slice_input=self._slice_input,
-            sampling_plan=sampling_plan,
+            sampling_plane=sampling_plane,
             dask_indexer=nullcontext,
         )
         response = request()
@@ -926,17 +926,17 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         world_to_data = apply_units_to_transform(
             self.layer._data_to_world.inverse, dims.units
         )
-        sampling_plan = self._make_sampling_plan(
+        sampling_plane = self._make_sampling_plane(
             slice_input=slice_input,
             world_to_data=world_to_data,
         )
         return self._make_slice_request_internal(
             slice_input=slice_input,
-            sampling_plan=sampling_plan,
+            sampling_plane=sampling_plane,
             dask_indexer=self.dask_optimized_slicing,
         )
 
-    def _make_sampling_plan(
+    def _make_sampling_plane(
         self,
         *,
         slice_input: _SliceInput,
@@ -958,8 +958,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         span = np.ceil(extent[1] - extent[0]).astype(int) + 1
         shape = tuple(max(int(s), 1) for s in span)
 
-        # This is a little hack right now which allows the slice to be correctly
-        # displayed on screen by Vispy. tile_to_world is a translation that contains:
+        # This is essential to allow the slice to be correctly displayed on screen by Vispy. 
+        # `tile_to_world` is a translation that contains:
         #   1. the top-left corner of the slice (not setting this not only makes the slice
         #      be ill-centered, but some parts of it also do not display at all)  
         origin = np.array(self.layer._extent_world_augmented[0], dtype=float)
@@ -974,6 +974,17 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             linear_matrix=np.eye(self.layer.ndim),
             translate=origin,
         )
+        # `tile_to_data` is carefully designed so that when Vispy tries to compose
+        # all transforms of a layer (see method `_on_matrix_change` of the VispyBaseLayer
+        # class), effectively computing
+        #       physical_to_world @ data_to_physical @ tile_to_data (by definition)
+        #           = data_to_world @ tile_to_data (by composition)
+        #           = data_to_world @ (world_to_data @ tile_to_world) (by definition)
+        #           = tile_to_world (by cancelling of matrix by its inverse),
+        # the resulting total affine transform has a linear part which is identity.
+        # This makes Vispy draw axis-aligned squares for pixels instead of them being 
+        # potentially sheared or rotated (as is the case if an orthogonal shear/rotation is 
+        # applied in the plane displayed on the canvas).
         tile_to_data = world_to_data.compose(tile_to_world)
         return _NDAffineSlice(
             tile_to_data=tile_to_data,
@@ -985,7 +996,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         self,
         *,
         slice_input: _SliceInput,
-        sampling_plan: _ThickNDSlice | _NDAffineSlice,
+        sampling_plane: _ThickNDSlice | _NDAffineSlice,
         dask_indexer: DaskIndexer,
     ) -> _ScalarFieldSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and
@@ -1033,7 +1044,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             data_at_thumbnail_level=data_at_thumbnail_level,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
-            data_slice=sampling_plan,
+            data_slice=sampling_plane,
             projection_mode=self.layer.projection_mode,
             multiscale=self.layer.multiscale,
             corner_pixels=self.layer.corner_pixels,
