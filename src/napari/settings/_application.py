@@ -12,6 +12,7 @@ from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
     LoopMode,
+    PlaybackUnit,
 )
 from napari.settings._fields import Language
 from napari.utils._base import _DEFAULT_LOCALE
@@ -184,6 +185,25 @@ class ApplicationSettings(EventedModel):
         LoopMode.LOOP,
         title=trans._('Playback loop mode'),
         description=trans._('Loop mode for playback.'),
+    )
+    playback_unit: PlaybackUnit = Field(
+        PlaybackUnit.FRAMES_PER_SECOND,
+        title=trans._('Playback speed unit'),
+        description=trans._(
+            'How default playback speed is expressed: as a fixed frame rate\n'
+            'for every axis, or as the time one full cycle through an axis\n'
+            'should take (each axis then derives its own frame rate from\n'
+            'its step count).'
+        ),
+    )
+    playback_cycle_seconds: float = Field(
+        2.0,
+        gt=0,
+        title=trans._('Playback seconds per cycle'),
+        description=trans._(
+            'Default duration of one full playback cycle, used when the\n'
+            'playback speed unit is "seconds_per_cycle".'
+        ),
     )
 
     depth_axis_orientation: DepthAxisOrientation = Field(
