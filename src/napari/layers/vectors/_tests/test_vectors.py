@@ -457,6 +457,25 @@ def test_edge_color_cycle():
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
+def test_edge_color_cycle_default():
+    """Cycle mode without an explicit cycle still distinguishes the categories.
+
+    The default used to be a single white, which made the mode a no-op: every category
+    mapped to the same color, and picking "cycle" in the layer controls turned the whole
+    layer white.
+    """
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(
+        data,
+        features={'vector_type': np.array(['A', 'B', 'C'] * 2)},
+        edge_color='vector_type',
+    )
+
+    assert layer.edge_color_mode == 'cycle'
+    assert len(np.unique(layer.edge_color, axis=0)) > 1
+
+
 def test_edge_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)

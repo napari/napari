@@ -41,7 +41,10 @@ from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
 )
-from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_manager import (
+    DEFAULT_COLOR_CYCLE,
+    ColorManager,
+)
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
     displayed_plane_from_nd_line_segment,
@@ -74,7 +77,8 @@ if TYPE_CHECKING:
 
     from napari.components.dims import Dims
 
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+# DEFAULT_COLOR_CYCLE moved to color_manager; kept importable from here for callers.
+__all__ = ['DEFAULT_COLOR_CYCLE', 'Points']
 
 
 class Points(Layer):
