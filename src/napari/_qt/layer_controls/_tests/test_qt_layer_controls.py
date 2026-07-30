@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QRadioButton,
 )
-from superqt.sliders import QRangeSlider
+from superqt.sliders import QLabeledRangeSlider, QRangeSlider
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_image_controls_base import (
@@ -55,6 +55,10 @@ from napari.utils._test_utils import (
 )
 from napari.utils.colormaps import DirectLabelColormap
 from napari.utils.events.event import Event
+
+# A labeled range slider is not a QRangeSlider subclass, but takes the same
+# (low, high) values -- both spellings must go down the ranged branches below.
+_RANGE_SLIDERS = (QRangeSlider, QLabeledRangeSlider)
 
 
 def strip_ansi_codes(text: str) -> str:
@@ -367,7 +371,7 @@ def test_create_layer_controls_qslider(
     # check QAbstractSlider by changing value with `setValue` from minimum value to maximum
     for qslider in ctrl.findChildren(QAbstractSlider):
         if isinstance(qslider.minimum(), float):
-            if isinstance(qslider, QRangeSlider):
+            if isinstance(qslider, _RANGE_SLIDERS):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -389,7 +393,7 @@ def test_create_layer_controls_qslider(
             else:
                 value_range = np.linspace(qslider.minimum(), qslider.maximum())
         else:
-            if isinstance(qslider, QRangeSlider):
+            if isinstance(qslider, _RANGE_SLIDERS):
                 # create a list of tuples in the case the slider is ranged
                 # from (minimum, minimum) to (maximum, maximum) +
                 # from (minimum, maximum) to (minimum, minimum)
@@ -420,7 +424,7 @@ def test_create_layer_controls_qslider(
             captured = capsys.readouterr()
             assert not captured.out
             assert not captured.err
-        if isinstance(qslider, QRangeSlider):
+        if isinstance(qslider, _RANGE_SLIDERS):
             assert qslider.value()[0] == qslider.minimum()
         else:
             assert qslider.value() == qslider.maximum()

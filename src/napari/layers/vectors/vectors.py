@@ -265,6 +265,8 @@ class Vectors(Layer):
             edge_color=Event,
             vector_style=Event,
             edge_color_mode=Event,
+            edge_colormap=Event,
+            edge_contrast_limits=Event,
             properties=Event,
             out_of_slice_display=Event,
             features=Event,
@@ -299,6 +301,12 @@ class Vectors(Layer):
                 if self._data.size > 0
                 else self._feature_table.currents()
             ),
+        )
+        self._edge.events.continuous_colormap.connect(
+            lambda _event: self.events.edge_colormap()
+        )
+        self._edge.events.contrast_limits.connect(
+            lambda _event: self.events.edge_contrast_limits()
         )
 
         # now that everything is set up, make the layer visible (if set to visible)
