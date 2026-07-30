@@ -166,7 +166,7 @@ def test_progressive_bench_zoom_pan(qtbot, make_napari_viewer, monkeypatch):
             viewer.camera.zoom = arg
             label = f'zoom x{arg / moves[0][1] * 2:g}'
         else:
-            span = max(viewer._canvas_size) / viewer.camera.zoom
+            span = max(viewer.canvas.size) / viewer.camera.zoom
             center = np.asarray(viewer.camera.center, dtype=float)
             center[1] += arg[0] * span * 0.5
             center[2] += arg[1] * span * 0.5

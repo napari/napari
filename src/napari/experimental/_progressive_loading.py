@@ -1264,7 +1264,7 @@ class ProgressiveLoader:
             return None
         zoom = float(camera.zoom)
         try:
-            canvas_size = max(self._viewer._canvas_size)
+            canvas_size = max(self._viewer.canvas.size)
         except Exception:  # pragma: no cover - headless  # noqa: BLE001
             canvas_size = 800
         if not np.isfinite(zoom) or zoom <= 0 or canvas_size <= 0:
@@ -2761,7 +2761,7 @@ class ProgressiveLoader:
         try:
             dbuf = dbuf_cls(node, pool=pool)
             dbuf.attach_set_data()
-        except Exception:  # noqa: BLE001 - unexpected texture class
+        except Exception:
             LOGGER.warning(
                 'texture double buffering unavailable; falling back to '
                 'in-place texture patches',
@@ -2781,7 +2781,7 @@ class ProgressiveLoader:
             if self._dbuf is not None and self._dbuf.matches(node):
                 try:
                     self._dbuf.present()
-                except Exception:  # noqa: BLE001 # pragma: no cover - GL
+                except Exception:  # pragma: no cover - GL
                     LOGGER.warning(
                         'texture present failed; dropping double buffer',
                         exc_info=True,

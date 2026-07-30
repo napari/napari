@@ -94,7 +94,7 @@ class ChunkDebugOverlay:
             visible, text = self._saved_text_overlay
             viewer.text_overlay.visible = visible
             viewer.text_overlay.text = text
-        except Exception:  # noqa: BLE001 - viewer mid-teardown
+        except Exception:
             LOGGER.debug('debug overlay teardown incomplete', exc_info=True)
 
     # -- polling --
@@ -122,7 +122,7 @@ class ChunkDebugOverlay:
                 return
             self._signature = signature
             self._rebuild(level, vdata)
-        except Exception:  # noqa: BLE001 - debug aid must never crash the app
+        except Exception:
             LOGGER.debug('debug overlay refresh failed', exc_info=True)
 
     def _hud_text(self, level: int, vdata) -> str:

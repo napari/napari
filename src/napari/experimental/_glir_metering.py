@@ -157,7 +157,7 @@ def _notify_drained() -> None:
         alive.append(ref)
         try:
             cb()
-        except Exception:  # noqa: BLE001 # pragma: no cover - callback bug
+        except Exception:  # pragma: no cover - callback bug
             LOGGER.warning('drain callback failed', exc_info=True)
     _drain_callbacks[:] = alive
 
