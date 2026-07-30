@@ -599,7 +599,7 @@ class Vectors(Layer):
         edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
+            self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name

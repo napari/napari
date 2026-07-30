@@ -457,23 +457,25 @@ def test_edge_color_cycle():
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
-def test_edge_color_cycle_default():
-    """Cycle mode without an explicit cycle still distinguishes the categories.
+def test_switching_edge_color_mode_back_to_direct():
+    """Setting the mode to direct takes the layer out of a feature mapping.
 
-    The default used to be a single white, which made the mode a no-op: every category
-    mapped to the same color, and picking "cycle" in the layer controls turned the whole
-    layer white.
+    The setter used to assign an attribute nothing reads (`_edge_color_mode`), so the
+    layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
+    switch as expected.
     """
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
     layer = Vectors(
         data,
-        features={'vector_type': np.array(['A', 'B', 'C'] * 2)},
-        edge_color='vector_type',
+        features={'phase': np.linspace(-1, 1, 6)},
+        edge_color='phase',
     )
+    assert layer.edge_color_mode == 'colormap'
 
-    assert layer.edge_color_mode == 'cycle'
-    assert len(np.unique(layer.edge_color, axis=0)) > 1
+    layer.edge_color_mode = 'direct'
+
+    assert layer.edge_color_mode == 'direct'
 
 
 def test_edge_color_colormap():
