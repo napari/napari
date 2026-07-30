@@ -156,12 +156,52 @@ class PreferencesDialog(QDialog):
                         )
                     )
 
+        if field_name == 'application':
+            self._wire_playback_rate_rows(form.widget)
+
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
         page_scrollarea.setWidget(form)
 
         self._list.addItem(name)
         self._stack.addWidget(page_scrollarea)
+
+    @staticmethod
+    def _wire_playback_rate_rows(page) -> None:
+        """Show only the speed row matching the selected playback rate mode.
+
+        ``playback_fps`` and ``playback_cycle_seconds`` are alternate
+        expressions of the same speed, so displaying just the active one makes
+        them read as a single row that follows the "Playback rate mode"
+        selector.
+        """
+        from napari.settings._constants import PlaybackUnit
+
+        widgets = page.widgets
+        rows = ('playback_unit', 'playback_fps', 'playback_cycle_seconds')
+        if any(name not in widgets for name in rows):
+            # a future preferences_exclude could remove any of these rows
+            return
+
+        layout = page.layout()
+
+        def _update(*_) -> None:
+            cycle = (
+                PlaybackUnit(widgets['playback_unit'].state)
+                == PlaybackUnit.SECONDS_PER_CYCLE
+            )
+            for name, visible in (
+                ('playback_fps', not cycle),
+                ('playback_cycle_seconds', cycle),
+            ):
+                widget = widgets[name]
+                widget.setVisible(visible)
+                label = layout.labelForField(widget)
+                if label is not None:
+                    label.setVisible(visible)
+
+        widgets['playback_unit'].on_changed.connect(_update)
+        _update()
 
     def _get_page_dict(
         self, field_name: str, field_info: FieldInfo

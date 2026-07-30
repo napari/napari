@@ -176,19 +176,9 @@ class ApplicationSettings(EventedModel):
             'Last saved list of saved folders. This setting is managed by the application.'
         ),
     )
-    playback_fps: int = Field(
-        10,
-        title=trans._('Playback frames per second'),
-        description=trans._('Playback speed in frames per second.'),
-    )
-    playback_mode: LoopMode = Field(
-        LoopMode.LOOP,
-        title=trans._('Playback loop mode'),
-        description=trans._('Loop mode for playback.'),
-    )
     playback_unit: PlaybackUnit = Field(
         PlaybackUnit.FRAMES_PER_SECOND,
-        title=trans._('Playback speed unit'),
+        title=trans._('Playback rate mode'),
         description=trans._(
             'How default playback speed is expressed: as a fixed frame rate\n'
             'for every axis, or as the time one full cycle through an axis\n'
@@ -196,14 +186,24 @@ class ApplicationSettings(EventedModel):
             'its step count).'
         ),
     )
+    playback_fps: int = Field(
+        10,
+        title=trans._('Playback frames per second'),
+        description=trans._('Playback speed in frames per second.'),
+    )
     playback_cycle_seconds: float = Field(
         2.0,
         gt=0,
         title=trans._('Playback seconds per cycle'),
         description=trans._(
             'Default duration of one full playback cycle, used when the\n'
-            'playback speed unit is "seconds_per_cycle".'
+            'playback rate mode is "seconds_per_cycle".'
         ),
+    )
+    playback_mode: LoopMode = Field(
+        LoopMode.LOOP,
+        title=trans._('Playback loop mode'),
+        description=trans._('Loop mode for playback.'),
     )
 
     depth_axis_orientation: DepthAxisOrientation = Field(
