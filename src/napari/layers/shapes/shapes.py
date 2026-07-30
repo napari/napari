@@ -51,6 +51,7 @@ from napari.layers.shapes._shapes_utils import (
     validate_num_vertices,
 )
 from napari.layers.shapes.shape_types import BoxArray
+from napari.layers.utils.color_manager import DEFAULT_COLOR_CYCLE
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
     map_property,
@@ -84,8 +85,6 @@ if TYPE_CHECKING:
     from itertools import cycle
 
     import pandas as pd
-
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
 class Shapes(Layer):
