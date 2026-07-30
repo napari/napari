@@ -139,7 +139,7 @@ def _viewer_view(qt_viewer):
     viewer.dims.ndim = 3
     viewer.direction_labels.labels = LPS_AXIAL
     viewer.direction_labels.visible = True
-    return viewer, qt_viewer.canvas._overlay_to_visual[
+    return viewer, qt_viewer.canvas._viewer_overlay_to_visual[
         viewer.direction_labels
     ][0]
 

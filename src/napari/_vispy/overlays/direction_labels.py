@@ -98,15 +98,15 @@ class VispyDirectionLabelsOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Canvas (width, height) in pixels.
 
         Read straight from the vispy canvas when parented, so positions reflect
-        the *actual* size at render time. viewer._canvas_size is updated by a
+        the *actual* size at render time. viewer.canvas.size is updated by a
         separate resize handler with no ordering guarantee relative to ours, so
-        it is only a fallback (headless / not yet parented). viewer._canvas_size
+        it is only a fallback (headless / not yet parented). viewer.canvas.size
         is (height, width); a vispy SceneCanvas.size is (width, height).
         """
         if self._resize_canvas is not None:
             width, height = self._resize_canvas.size
             return float(width), float(height)
-        height, width = self.viewer._canvas_size
+        height, width = self.viewer.canvas.size
         return float(width), float(height)
 
     def _current_edges(self) -> dict[str, str] | None:
