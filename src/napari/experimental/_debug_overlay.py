@@ -68,7 +68,7 @@ class ChunkDebugOverlay:
         self._shapes = None
         self._signature = None
         self._too_dense = False
-        overlay = self._viewer.text_overlay
+        overlay = self._viewer.canvas.overlays.text
         self._saved_text_overlay = (overlay.visible, overlay.text)
         overlay.visible = True
         self._timer = QTimer()
@@ -92,8 +92,8 @@ class ChunkDebugOverlay:
             if shapes is not None and shapes in viewer.layers:
                 viewer.layers.remove(shapes)
             visible, text = self._saved_text_overlay
-            viewer.text_overlay.visible = visible
-            viewer.text_overlay.text = text
+            viewer.canvas.overlays.text.visible = visible
+            viewer.canvas.overlays.text.text = text
         except Exception:
             LOGGER.debug('debug overlay teardown incomplete', exc_info=True)
 
@@ -109,7 +109,9 @@ class ChunkDebugOverlay:
         try:
             level = int(self._layer.data_level)
             vdata = loader._data[level]
-            self._viewer.text_overlay.text = self._hud_text(level, vdata)
+            self._viewer.canvas.overlays.text.text = self._hud_text(
+                level, vdata
+            )
             signature = (
                 level,
                 vdata.interval,

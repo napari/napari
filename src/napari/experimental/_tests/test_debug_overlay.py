@@ -142,14 +142,14 @@ def test_debug_overlay_draws_chunk_grid(
 
         qtbot.waitUntil(all_real, timeout=10000)
 
-        assert f'rendering L{level}' in viewer.text_overlay.text
-        assert viewer.text_overlay.visible
+        assert f'rendering L{level}' in viewer.canvas.overlays.text.text
+        assert viewer.canvas.overlays.text.visible
     finally:
         loader.close()
 
     # close removed the shapes layer and restored the HUD
     assert all('chunks' not in existing.name for existing in viewer.layers)
-    assert not viewer.text_overlay.visible
+    assert not viewer.canvas.overlays.text.visible
 
 
 def test_debug_overlay_toggle(qtbot, make_napari_viewer, multiscale_arrays):
