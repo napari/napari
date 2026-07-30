@@ -35,6 +35,21 @@ class LoopMode(StringEnum):
     BACK_AND_FORTH = auto()
 
 
+class PlaybackUnit(StringEnum):
+    """Unit in which default playback speed is expressed.
+
+    PlaybackUnit.FRAMES_PER_SECOND
+        Every axis plays at the fixed frame rate ``playback_fps``.
+    PlaybackUnit.SECONDS_PER_CYCLE
+        Each axis derives its own frame rate from its step count so that one
+        full pass takes ``playback_cycle_seconds``, e.g. so a cardiac cine
+        loop spans one heartbeat regardless of how many phases were acquired.
+    """
+
+    FRAMES_PER_SECOND = auto()
+    SECONDS_PER_CYCLE = auto()
+
+
 class BrushSizeOnMouseModifiers(StrEnum):
     ALT = 'Alt'
     CTRL = 'Control'

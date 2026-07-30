@@ -8,6 +8,8 @@ from qtpy.QtCore import Qt
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
+from napari.settings import get_settings
+from napari.settings._constants import PlaybackUnit
 
 
 def test_creating_view(qtbot):
@@ -395,6 +397,74 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
     qtbot.waitUntil(qt_dims._animation_thread.isFinished)
+
+
+def test_playback_cycle_time_unit(qtbot, qt_dims):
+    """The popup's unit selector converts between fps and seconds per cycle."""
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 19, 1))  # 20 steps on the sliding axis
+    slider = qt_dims.slider_widgets[0]
+    button = slider.play_button
+
+    slider.fps = 10
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 10
+
+    # Switching units re-expresses the same speed: 20 steps / 10 fps = 2 s.
+    button.set_playback_unit(PlaybackUnit.SECONDS_PER_CYCLE)
+    assert button.uses_cycle_time
+    assert button.fpsspin.value() == 2
+    assert slider.fps == 10
+
+    # Editing the value in cycle mode sets fps = nsteps / seconds.
+    button.fpsspin.setValue(4)
+    button.fpsspin.editingFinished.emit()
+    assert slider.fps == 5
+
+    # A change in axis length keeps the cycle time and re-derives fps.
+    qt_dims.dims.set_range(0, (0, 39, 1))  # 40 steps
+    assert button.fpsspin.value() == 4
+    assert slider.fps == 10
+
+    # Direction applies on top of the converted rate.
+    button.reverse_check.setChecked(True)
+    assert slider.fps == -10
+    assert button.fpsspin.value() == 4
+
+    # Switching back re-expresses the speed as (unsigned) fps.
+    button.set_playback_unit(PlaybackUnit.FRAMES_PER_SECOND)
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 10
+    assert slider.fps == -10
+
+
+def test_playback_cycle_time_default_setting(qtbot):
+    """A cycle-time default derives per-axis fps and follows setting changes."""
+    settings = get_settings()
+    settings.application.playback_unit = PlaybackUnit.SECONDS_PER_CYCLE
+
+    dims = Dims(ndim=3)
+    dims.set_range(0, (0, 19, 1))  # 20 steps on the sliding axis
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    slider = view.slider_widgets[0]
+    button = slider.play_button
+
+    # The default 2 s per cycle over 20 steps starts the popup at 10 fps.
+    assert button.uses_cycle_time
+    assert button.fpsspin.value() == 2
+    assert slider.fps == 10
+
+    # Changing the default duration flows into cycle-mode popups.
+    settings.application.playback_cycle_seconds = 4
+    assert button.fpsspin.value() == 4
+    assert slider.fps == 5
+
+    # Switching the default unit back re-expresses the speed as fps.
+    settings.application.playback_unit = PlaybackUnit.FRAMES_PER_SECOND
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 5
+    assert slider.fps == 5
 
 
 def test_loop_mode_model_update_emits_once(qtbot):

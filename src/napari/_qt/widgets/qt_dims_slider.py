@@ -28,8 +28,11 @@ from napari._qt.widgets.qt_mirrored_sliders_popup import QMirroredSlidersPopup
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.components import Dims
 from napari.settings import get_settings
-from napari.settings._constants import LoopMode
-from napari.utils.events.event_utils import connect_setattr_value
+from napari.settings._constants import LoopMode, PlaybackUnit
+from napari.utils.events.event_utils import (
+    connect_no_arg,
+    connect_setattr_value,
+)
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -44,6 +47,11 @@ SLIDER_MINIMUM_WIDTH = 150
 
 # How long the padlock stays tinted amber after a blocked navigation attempt.
 LOCK_FLASH_MS = 300
+
+# Playback-speed spinbox bound per unit; a day per cycle is effectively
+# unbounded.
+PLAYBACK_FPS_MAX = 500
+PLAYBACK_CYCLE_SECONDS_MAX = 86400
 
 
 class _ModifiedScrollBar(ModifiedScrollBar):
@@ -133,6 +141,21 @@ class QtDimSliderWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
+
+        # Apply the default playback-speed unit and keep following it; in
+        # cycle-time mode each axis derives its own fps from the shared
+        # default duration.
+        self._sync_playback_unit_from_settings()
+        connect_no_arg(
+            settings.application.events.playback_unit,
+            self,
+            '_sync_playback_unit_from_settings',
+        )
+        connect_no_arg(
+            settings.application.events.playback_cycle_seconds,
+            self,
+            '_sync_cycle_seconds_from_settings',
+        )
 
         # One reusable single-shot timer per row drives the lock-flash: poking a
         # locked control again restarts it rather than stacking animations.
@@ -278,6 +301,9 @@ class QtDimSliderWidget(QWidget):
 
         play_button.fpsspin.editingFinished.connect(self._fps_listener)
         play_button.reverse_check.stateChanged.connect(self._fps_listener)
+        play_button.unit_combo.currentIndexChanged.connect(
+            self._playback_unit_changed
+        )
         self.play_stopped.connect(play_button._handle_stop)
         self.play_started.connect(play_button._handle_start)
         return play_button
@@ -339,8 +365,74 @@ class QtDimSliderWidget(QWidget):
             self.lock_button.style().unpolish(self.lock_button)
             self.lock_button.style().polish(self.lock_button)
 
+    def _playback_nsteps(self) -> int:
+        """Step count of this axis, for fps <-> cycle-time conversion.
+
+        Falls back to 1 when the axis has transiently disappeared during an
+        ndim reduction (same guard as ``_set_slice_from_label``).
+        """
+        try:
+            return max(self.dims.nsteps[self.axis], 1)
+        except IndexError:
+            return 1
+
+    def _playback_display_conversion(self, value: float) -> float:
+        """Convert between |fps| and the popup's displayed speed value.
+
+        ``fps = nsteps / seconds`` and ``seconds = nsteps / fps``, so one
+        division serves both directions; 0 maps to 0 (stopped). In fps mode
+        the display *is* fps and the value passes through unchanged.
+        """
+        if not self.play_button.uses_cycle_time:
+            return value
+        return self._playback_nsteps() / value if value else 0
+
+    def _sync_playback_unit_from_settings(self) -> None:
+        """Point the popup at the globally configured speed unit.
+
+        Switching to cycle time also applies the default cycle duration;
+        switching to fps keeps the current rate and merely re-expresses it.
+        """
+        settings = get_settings().application
+        if settings.playback_unit == PlaybackUnit.SECONDS_PER_CYCLE:
+            self._apply_cycle_seconds(settings.playback_cycle_seconds)
+        else:
+            self.play_button.set_playback_unit(PlaybackUnit.FRAMES_PER_SECOND)
+
+    def _sync_cycle_seconds_from_settings(self) -> None:
+        """Follow the default cycle duration while in cycle-time mode."""
+        if self.play_button.uses_cycle_time:
+            self._apply_cycle_seconds(
+                get_settings().application.playback_cycle_seconds
+            )
+
+    def _apply_cycle_seconds(self, seconds: float) -> None:
+        """Show ``seconds`` per cycle in the popup and derive this axis's fps."""
+        button = self.play_button
+        button.set_playback_unit(PlaybackUnit.SECONDS_PER_CYCLE)
+        with qt_signals_blocked(button.fpsspin):
+            button.fpsspin.setValue(seconds)
+        self._fps_listener()
+
+    def _playback_unit_changed(self) -> None:
+        """Re-express the popup's speed value in the newly selected unit.
+
+        The underlying fps is unchanged - only its display converts (10 fps
+        over 25 steps reads as 2.5 seconds per cycle).
+        """
+        spin = self.play_button.fpsspin
+        with qt_signals_blocked(spin):
+            spin.setMaximum(
+                PLAYBACK_CYCLE_SECONDS_MAX
+                if self.play_button.uses_cycle_time
+                else PLAYBACK_FPS_MAX
+            )
+            spin.setValue(self._playback_display_conversion(abs(self._fps)))
+
     def _fps_listener(self, *_) -> None:
-        fps = self.play_button.fpsspin.value()
+        fps = self._playback_display_conversion(
+            self.play_button.fpsspin.value()
+        )
         if self.play_button.reverse_check.isChecked():
             fps *= -1
             self.play_button.setProperty('reverse', 'True')
@@ -394,6 +486,11 @@ class QtDimSliderWidget(QWidget):
             self.totslice_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self._update_slice_labels()
 
+            # In cycle-time mode the seconds value is the user's intent, so a
+            # new step count re-derives fps rather than the reverse.
+            if self.play_button.uses_cycle_time:
+                self._fps_listener()
+
             if self.margins_popup:
                 self.margins_popup._reset_sliders()
 
@@ -424,7 +521,9 @@ class QtDimSliderWidget(QWidget):
         if self._fps == value:
             return
         self._fps = value
-        self.play_button.fpsspin.setValue(abs(value))
+        self.play_button.fpsspin.setValue(
+            self._playback_display_conversion(abs(value))
+        )
         self.play_button.reverse_check.setChecked(value < 0)
         self.fps_changed.emit(value)
 
@@ -642,13 +741,21 @@ class QtPlayButton(QPushButton):
         if hasattr(fpsspin, 'setStepType'):
             # this was introduced in Qt 5.12.  Totally optional, just nice.
             fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
-        fpsspin.setMaximum(500)
+        fpsspin.setMaximum(PLAYBACK_FPS_MAX)
         fpsspin.setMinimum(0)
-        form_layout.insertRow(
-            0,
-            QLabel('frames per second:', parent=self.popup),
-            fpsspin,
+
+        # The row label doubles as a unit selector; the slider widget converts
+        # the displayed value, and fps stays the canonical speed everywhere.
+        unit_combo = QComboBox(self.popup)
+        unit_combo.setObjectName('playbackUnitComboBox')
+        unit_combo.addItem('frames per second:', PlaybackUnit.FRAMES_PER_SECOND)
+        unit_combo.addItem('seconds per cycle:', PlaybackUnit.SECONDS_PER_CYCLE)
+        unit_combo.setToolTip(
+            'Set playback speed as a frame rate, or as the duration of one '
+            'full cycle through this axis.'
         )
+        form_layout.insertRow(0, unit_combo, fpsspin)
+        self.unit_combo = unit_combo
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
@@ -665,6 +772,15 @@ class QtPlayButton(QPushButton):
         )
         mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
+
+    @property
+    def uses_cycle_time(self) -> bool:
+        """True when the popup expresses speed as seconds per full cycle."""
+        return self.unit_combo.currentData() == PlaybackUnit.SECONDS_PER_CYCLE
+
+    def set_playback_unit(self, unit: PlaybackUnit) -> None:
+        """Select ``unit`` in the popup (no-op if already selected)."""
+        self.unit_combo.setCurrentIndex(self.unit_combo.findData(unit))
 
     def mouseReleaseEvent(self, event):
         """Show popup for right-click, toggle animation for right click.
