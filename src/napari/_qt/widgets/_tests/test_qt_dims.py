@@ -399,6 +399,29 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     qtbot.waitUntil(qt_dims._animation_thread.isFinished)
 
 
+@pytest.mark.skipif(
+    os.environ.get('CI') and platform == 'win32',
+    reason='not working in windows VM',
+)
+def test_play_popup_closes_on_enter(qtbot, qt_dims):
+    """Enter in the fps spinbox commits the value and dismisses the popup."""
+    qt_dims.dims.ndim = 3
+    qtbot.addWidget(qt_dims)
+    slider = qt_dims.slider_widgets[0]
+    button = slider.play_button
+
+    button.popup.show()
+    qtbot.waitUntil(button.popup.isVisible)
+
+    button.fpsspin.setFocus()
+    button.fpsspin.clear()
+    qtbot.keyClicks(button.fpsspin, '11')
+    qtbot.keyClick(button.fpsspin, Qt.Key.Key_Enter)
+
+    assert slider.fps == button.fpsspin.value() == 11
+    assert not button.popup.isVisible()
+
+
 def test_playback_cycle_time_unit(qtbot, qt_dims):
     """The popup's unit selector converts between fps and seconds per cycle."""
     qt_dims.dims.ndim = 3
