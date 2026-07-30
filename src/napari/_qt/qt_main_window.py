@@ -37,6 +37,7 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
+    QWIDGETSIZE_MAX,
     QApplication,
     QDialog,
     QDockWidget,
@@ -233,6 +234,7 @@ class _QtMainWindow(QMainWindow):
         self.sliding_docks[dock_widget] = {
             'visible_state': False,
             'animation': None,
+            'size': None,  # This is added to track size after resize. Otherwise it would reset after sliding.
         }
 
         dock_widget.topLevelChanged.connect(
@@ -247,7 +249,11 @@ class _QtMainWindow(QMainWindow):
             d for d in self.sliding_docks if self.dockWidgetArea(d) == area
         ]
 
-        def natural_size(d):
+        def effective_size(d):
+            user_size = self.sliding_docks[d].get('user_size')
+            if user_size:
+                return user_size
+
             inner = d.widget()
             hint = inner.sizeHint() if inner is not None else d.sizeHint()
             return (
@@ -256,7 +262,7 @@ class _QtMainWindow(QMainWindow):
                 else hint.height()
             )
 
-        sizes = [natural_size(d) for d in same_side_docks]
+        sizes = [effective_size(d) for d in same_side_docks]
         sizes = [s for s in sizes if s > 0]
 
         return max(sizes) if sizes else self.expanded_size
@@ -283,7 +289,6 @@ class _QtMainWindow(QMainWindow):
         dock.setMaximumHeight(16777215)
         dock.setMinimumWidth(0)
         dock.setMinimumHeight(0)
-        dock.setTitleBarWidget(None)
 
     def handle_multi_dock_hover(self, pos):
         edge_threshold = 20
@@ -352,6 +357,17 @@ class _QtMainWindow(QMainWindow):
         anim = QPropertyAnimation(dock, property_name, self)
         anim.setDuration(300)
         anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+        orientation = (
+            Qt.Orientation.Horizontal
+            if property_name == b'maximumWidth'
+            else Qt.Orientation.Vertical
+        )
+        anim.valueChanged.connect(
+            lambda size, dock=dock, orientation=orientation: (
+                self._on_dock_size_animated(dock, int(size), orientation)
+            )
+        )
+
         anim.finished.connect(
             lambda: self.on_generic_animation_finished(dock, property_name)
         )
@@ -377,13 +393,19 @@ class _QtMainWindow(QMainWindow):
 
         anim.start()
 
+    def _on_dock_size_animated(self, dock, size, orientation):
+        if size <= 0:
+            return
+        if dock not in self.sliding_docks:
+            return
+        self.resizeDocks([dock], [size], orientation)
+
     def on_generic_animation_finished(self, dock, property_name):
         state = self.sliding_docks.get(dock)
         if not state or not dock:
             return
 
         if state['visible_state']:
-            dock.setTitleBarWidget(None)
             if property_name == b'maximumWidth':
                 dock.setMaximumWidth(16777215)
             else:
@@ -519,7 +541,14 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
-        if event.type() == QEvent.Type.MouseMove:
+        is_user_dragging = bool(
+            QApplication.mouseButtons() & Qt.MouseButton.LeftButton
+        )
+
+        if event.type() == QEvent.Type.Resize and source in self.sliding_docks:
+            self._maybe_capture_user_resize(source)
+
+        if event.type() == QEvent.Type.MouseMove and not is_user_dragging:
             pos_in_main = self.mapFromGlobal(event.globalPosition().toPoint())
             self.handle_multi_dock_hover(pos_in_main)
         # Handle showing hidden menubar on mouse move event.
@@ -547,6 +576,53 @@ class _QtMainWindow(QMainWindow):
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
         return super().eventFilter(source, event)
+
+    def _maybe_capture_user_resize(self, dock):
+        state = self.sliding_docks[dock]
+        anim = state.get('animation')
+        is_user_dragging = bool(
+            QApplication.mouseButtons() & Qt.MouseButton.LeftButton
+        )
+
+        if not is_user_dragging:
+            # not a manual drag — either idle or our own animation ticking
+            return
+
+        # if our slide animation is mid-flight, the user grabbed the border
+        # mid-slide: stop fighting the drag and unclamp so it can track the cursor
+        if (
+            anim is not None
+            and anim.state() == QPropertyAnimation.State.Running
+        ):
+            anim.stop()
+            state['animation'] = None
+            state['visible_state'] = True
+
+            area = self.dockWidgetArea(dock)
+            if area in (
+                Qt.DockWidgetArea.LeftDockWidgetArea,
+                Qt.DockWidgetArea.RightDockWidgetArea,
+            ):
+                dock.setMaximumWidth(QWIDGETSIZE_MAX)
+            else:
+                dock.setMaximumHeight(QWIDGETSIZE_MAX)
+
+        if not state['visible_state']:
+            return
+
+        # capture the size on every resize event while dragging, so the final
+        # frame (mouse release) is what actually gets remembered
+        area = self.dockWidgetArea(dock)
+        if area in (
+            Qt.DockWidgetArea.LeftDockWidgetArea,
+            Qt.DockWidgetArea.RightDockWidgetArea,
+        ):
+            size = dock.width()
+        else:
+            size = dock.height()
+
+        if size > 0:
+            state['user_size'] = size
 
     def _load_window_settings(self):
         """
@@ -733,7 +809,10 @@ class _QtMainWindow(QMainWindow):
         super().changeEvent(event)
 
     def keyPressEvent(self, event):
-        """Called whenever a key is pressed.
+        """Dispatches key press event to the canvas any time a key is pressed.
+
+        The event is forwarded to the canvas after which it status is set to accepted.
+        This prevents further propagation of the event to other components.
 
         Parameters
         ----------
@@ -746,7 +825,10 @@ class _QtMainWindow(QMainWindow):
         event.accept()
 
     def keyReleaseEvent(self, event):
-        """Called whenever a key is released.
+        """Dispatches key release event to the canvas any time a key is released.
+
+        The event is forwarded to the canvas after which it status is set to accepted.
+        This prevents further propagation of the event to other components.
 
         Parameters
         ----------
