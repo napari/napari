@@ -352,6 +352,7 @@ class AutoScaleButtons(QWidget):
 
         self.auto_btn = QPushButton('continuous')
         self.auto_btn.setCheckable(True)
+        self.auto_btn.setChecked(layer.auto_contrast)
         self.auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.once_btn.clicked.connect(lambda: self.auto_btn.setChecked(False))
         connect_no_arg(self.once_btn.clicked, layer, 'reset_contrast_limits')
