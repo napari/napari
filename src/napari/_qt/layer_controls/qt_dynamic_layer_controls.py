@@ -11,10 +11,13 @@ from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari._qt.layer_controls.qt_shapes_buttons import QtShapesButtons
 from napari._qt.layer_controls.qt_surface_buttons import QtSurfaceButtons
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
+from napari._qt.layer_controls.qt_tracks_buttons import QtTracksButtons
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.layer_controls.qt_vectors_buttons import QtVectorsButtons
 from napari._qt.layer_controls.widgets import (
     QtOpacityBlendingControls,
     QtWidgetControlsBase,
@@ -28,6 +31,9 @@ from napari._qt.layer_controls.widgets.qt_gamma_slider import (
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
+from napari._qt.layer_controls.widgets.qt_colormap_control import QtColormapControl
+from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
+from napari._qt.layer_controls.widgets._points.qt_border_color import QtBorderColorControl
 from napari.layers import (
     Image,
     Labels,
@@ -55,7 +61,9 @@ controls_dict = {
     'contrast_limits': QtContrastLimitsControl,
     'histogram': QtHistogramControl,
     'gamma': QtGammaSliderControl,
-    #'colormap': QtColormapControl,
+    'colormap': QtColormapControl,
+    'face_color': QtFaceColorControl,
+    'border_color': QtBorderColorControl,
     #'projection_mode': QtProjectionModeControl,
     #'interpolation': QtInterpolationComboBoxControl,
 }
@@ -64,11 +72,9 @@ buttons_dict = {
     Surface: QtSurfaceButtons,
     Labels: QtLabelsButtons,
     Points: QtPointsButtons,
-    # Shapes: QtShapesButtons,
-    # Surface: QtSurfaceButtons,
-    # Vectors: QtVectorsButtons,
-    # Tracks: QtTracksButtons,
-    # comes in later for buttons at the top
+    Shapes: QtShapesButtons,
+    Vectors: QtVectorsButtons,
+    Tracks: QtTracksButtons,
 }
 
 

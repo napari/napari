@@ -1,3 +1,4 @@
+from napari.layers.base.base import Layer
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -6,7 +7,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
 
 
@@ -30,36 +30,37 @@ class QtBorderColorControl(QtWidgetControlsBase):
         Label for the current egde color chooser widget.
     """
 
-    _layer: Points
 
-    def __init__(self, parent: QWidget, layer: Points) -> None:
-        super().__init__(parent, layer)
+
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
         # Setup widgets
         self.border_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.current_border_color,
+            initial_color=self._layers[0].current_border_color,
             tooltip='Click to set the border color of currently selected points and any added afterwards.',
         )
-        connect_setattr(
-            self.border_color_edit.color_changed,
-            self._layer,
-            'current_border_color',
-        )
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
+        for layer in self._layers:
+            connect_setattr(
+                self.border_color_edit.color_changed,
+                layer,
                 'current_border_color',
-                self.border_color_edit,
-                'setColor',
             )
-        )
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer._border,
-                'current_color',
-                self.border_color_edit,
-                'setColor',
+            self._callbacks.append(
+                attr_to_settr(
+                    layer,
+                    'current_border_color',
+                    self.border_color_edit,
+                    'setColor',
+                )
             )
-        )
+            self._callbacks.append(
+                attr_to_settr(
+                    layer._border,
+                    'current_color',
+                    self.border_color_edit,
+                    'setColor',
+                )
+            )
 
         self.border_color_edit_label = QtWrappedLabel('border color:')
 

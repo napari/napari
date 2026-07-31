@@ -405,8 +405,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             layer.events.auto_contrast.connect(self._on_auto_contrast_change)
         print('hi lorenzo')
         # Setup widgets
-        for layer in self._layers:
-            self.auto_scale_buttons = AutoScaleButtons(layer, parent)
+        self.auto_scale_buttons = AutoScaleButtons(self._layers[0], parent)
         self.auto_scale_buttons_label = QtWrappedLabel('auto-contrast:')
         self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,

@@ -8,9 +8,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers import Points, Shapes
+from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 class QtFaceColorControl(QtWidgetControlsBase):
     """
@@ -34,44 +37,45 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
-    _layer: Shapes | Points
+    #_layer: Shapes | Points
 
     def __init__(
         self,
         parent: QWidget,
-        layer: Shapes | Points,
+        layers: list[Layer],
         tooltip: Optional[str] = None,
     ) -> None:
-        super().__init__(parent, layer)
+        super().__init__(parent, layers)
         # Setup widgets
         self.face_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.current_face_color,
+            initial_color=self._layers[0].current_face_color,
             tooltip=tooltip,
         )
         self.face_color_label = QtWrappedLabel('face color:')
-        connect_setattr(
-            self.face_color_edit.color_changed,
-            self._layer,
-            'current_face_color',
-        )
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
+        for layer in self._layers:
+            connect_setattr(
+                self.face_color_edit.color_changed,
+                layer,
                 'current_face_color',
-                self.face_color_edit,
-                'setColor',
             )
-        )
-        if hasattr(self._layer, '_face'):
-            # Handle Points layer case
             self._callbacks.append(
                 attr_to_settr(
-                    self._layer._face,
-                    'current_color',
+                    layer,
+                    'current_face_color',
                     self.face_color_edit,
                     'setColor',
                 )
             )
+            if hasattr(layer, '_face'):
+                # Handle Points layer case
+                self._callbacks.append(
+                    attr_to_settr(
+                        layer._face,
+                        'current_color',
+                        self.face_color_edit,
+                        'setColor',
+                    )
+                )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.face_color_label, self.face_color_edit)]
