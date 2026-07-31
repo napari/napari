@@ -948,7 +948,7 @@ class Points(Layer):
         if isinstance(size, list | tuple | np.ndarray):
             size = size[-1]
         if not isinstance(size, numbers.Number):
-            raise TypeError('currrent size must be a number')
+            raise TypeError('current size must be a number')
         if size < 0:
             raise ValueError(
                 'current_size value must be positive.',

@@ -24,5 +24,5 @@ except ImportError as e:
 
         def __getattr__(self, name):
             raise type(err)(
-                'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above'
+                'An error occurred when importing Qt dependencies.  Cannot show napari window.  See cause above'
             ) from err
