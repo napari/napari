@@ -2,23 +2,15 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QFormLayout,
-    QFrame,
     QGridLayout,
     QMessageBox,
 )
 
-from napari._qt.layer_controls.widgets import (
-    QtOpacityBlendingControls,
-    QtWidgetControlsBase,
-)
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
-
 
 
 class QtLayerButtons(QGridLayout):
@@ -67,8 +59,6 @@ class QtLayerButtons(QGridLayout):
         self.layer.events.editable.connect(self._on_editable_or_visible_change)
         self.layer.events.visible.connect(self._on_editable_or_visible_change)
 
-
-
         # Buttons
         self.button_group = QButtonGroup(self)
         # TODO:
@@ -93,13 +83,11 @@ class QtLayerButtons(QGridLayout):
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
 
-
         self.addWidget(self.panzoom_button, 0, 6)
         self.addWidget(self.transform_button, 0, 7)
         self.setContentsMargins(5, 0, 0, 5)
         self.setColumnStretch(0, 1)
         self.setSpacing(4)
-    
 
     def changeProjectionMode(self, text):
         with self.layer.events.blocker(self._on_projection_mode_change):

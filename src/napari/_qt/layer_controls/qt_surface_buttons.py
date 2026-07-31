@@ -2,12 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from napari._qt.layer_controls.qt_image_controls_base import (
-    QtBaseImageControls,
-)
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.widgets._surface import QtShadingComboBoxControl
-from napari._qt.utils import set_widgets_enabled_with_opacity
 
 if TYPE_CHECKING:
     import napari.layers
@@ -33,9 +28,9 @@ class QtSurfaceButtons(QtLayerButtons):
     def __init__(self, layer: napari.layers.Surface) -> None:
         super().__init__(layer)
         # Surface emits `data` when vertex_values or vertex_colors are reassigned.
-        #self.layer.events.data.connect(self._on_surface_coloring_change)
+        # self.layer.events.data.connect(self._on_surface_coloring_change)
 
-        #self._on_surface_coloring_change() #@lorenzo to keep or to yeet
+        # self._on_surface_coloring_change() #@lorenzo to keep or to yeet
 
     # def _on_surface_coloring_change(self) -> None:
     #     """Disable scalar-color controls when direct vertex colors are active."""

@@ -1,6 +1,8 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
-from napari._qt.layer_controls.qt_dynamic_layer_controls import QtDynamicLayerControls
 
+from napari._qt.layer_controls.qt_dynamic_layer_controls import (
+    QtDynamicLayerControls,
+)
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
@@ -27,7 +29,6 @@ layer_to_controls = {
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
 }
-
 
 
 class QtLayerControlsContainer(QStackedWidget):

@@ -1,3 +1,5 @@
+from contextlib import ExitStack
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QWidget,
@@ -12,7 +14,7 @@ from napari._qt.utils import attr_to_settr
 from napari.layers.base._base_constants import Blending
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from contextlib import ExitStack
+
 # opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {
     str(Blending.MINIMUM),
@@ -60,9 +62,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         sld.setValue(self._layers[0].opacity)
         self.opacity_slider = sld
         for layer in self._layers:
-            connect_setattr(
-                self.opacity_slider.valueChanged, layer, 'opacity'
-            )
+            connect_setattr(self.opacity_slider.valueChanged, layer, 'opacity')
             self._callbacks.append(
                 attr_to_settr(
                     layer, 'opacity', self.opacity_slider, 'setValue'
@@ -80,10 +80,16 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
 
         # opaque and minimum blending do not support changing alpha
         self.opacity_slider.setEnabled(
-            all(layer.blending not in NO_OPACITY_BLENDING_MODES for layer in self._layers)
+            all(
+                layer.blending not in NO_OPACITY_BLENDING_MODES
+                for layer in self._layers
+            )
         )
         self.opacity_label.setEnabled(
-            all(layer.blending not in NO_OPACITY_BLENDING_MODES for layer in self._layers)
+            all(
+                layer.blending not in NO_OPACITY_BLENDING_MODES
+                for layer in self._layers
+            )
         )
 
     def change_blending(self, text: str) -> None:
@@ -98,10 +104,16 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
             layer.blending = self.blend_combobox.currentEnum()
             # opaque and minimum blending do not support changing alpha
         self.opacity_slider.setEnabled(
-            all(layer.blending not in NO_OPACITY_BLENDING_MODES for layer in self._layers)
+            all(
+                layer.blending not in NO_OPACITY_BLENDING_MODES
+                for layer in self._layers
+            )
         )
         self.opacity_label.setEnabled(
-            all(layer.blending not in NO_OPACITY_BLENDING_MODES for layer in self._layers)
+            all(
+                layer.blending not in NO_OPACITY_BLENDING_MODES
+                for layer in self._layers
+            )
         )
 
         blending_tooltip = ''
@@ -115,8 +127,9 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         with ExitStack() as stack:
             for layer in self._layers:
                 stack.enter_context(layer.events.blending.blocker())
-            self.blend_combobox.setCurrentEnum(Blending(self._layers[0].blending))
-
+            self.blend_combobox.setCurrentEnum(
+                Blending(self._layers[0].blending)
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

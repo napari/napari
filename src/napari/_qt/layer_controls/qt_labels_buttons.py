@@ -1,18 +1,6 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.widgets import QtMultiscaleLevelControl
-from napari._qt.layer_controls.widgets._labels import (
-    QtBrushSizeSliderControl,
-    QtColorModeComboBoxControl,
-    QtContiguousCheckBoxControl,
-    QtContourSpinBoxControl,
-    QtDisplaySelectedLabelCheckBoxControl,
-    QtLabelControl,
-    QtLabelRenderControl,
-    QtNdimSpinBoxControl,
-    QtPreserveLabelsCheckBoxControl,
-)
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import Mode
@@ -125,7 +113,7 @@ class QtLabelsButtons(QtLayerButtons):
             'activate_labels_erase_mode',
         )
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
-        self._on_editable_or_visible_change() #@lorenzo: does this stay?
+        self._on_editable_or_visible_change()  # @lorenzo: does this stay?
 
         self.addWidget(self.colormap_update, 0, 0)
         self.addWidget(self.erase_button, 0, 1)
@@ -160,9 +148,9 @@ class QtLabelsButtons(QtLayerButtons):
         super()._on_editable_or_visible_change()
         self._set_polygon_tool_state()
 
-    def _on_ndisplay_changed(self): #@lorenzo: can this whole thing go? 
-        self._on_editable_or_visible_change() #both of these change polygon button state?
-        self._set_polygon_tool_state() #both of these change polygon button state?
+    def _on_ndisplay_changed(self):  # @lorenzo: can this whole thing go?
+        self._on_editable_or_visible_change()  # both of these change polygon button state?
+        self._set_polygon_tool_state()  # both of these change polygon button state?
         super()._on_ndisplay_changed()
 
     def _set_polygon_tool_state(self):

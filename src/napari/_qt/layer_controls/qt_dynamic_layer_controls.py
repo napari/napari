@@ -1,31 +1,33 @@
-#TODO: sort through necessary imports
-from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
-from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
-from napari._qt.layer_controls.qt_surface_buttons import QtSurfaceButtons
-from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
-from napari.layers.base.base import Layer
-from qtpy.QtWidgets import QFrame
-from napari.layers.base._base_constants import Mode
+# TODO: sort through necessary imports
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
 )
+
+from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
+from napari._qt.layer_controls.qt_image_controls import QtImageControls
+from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
+from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
+from napari._qt.layer_controls.qt_points_controls import QtPointsControls
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
+from napari._qt.layer_controls.qt_surface_buttons import QtSurfaceButtons
+from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
+from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
+from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari._qt.layer_controls.widgets import (
     QtOpacityBlendingControls,
     QtWidgetControlsBase,
 )
-from napari.utils.events import disconnect_events
-
-from napari._qt.utils import set_widgets_enabled_with_opacity
-
-from napari._qt.layer_controls.qt_image_controls import QtImageControls
-from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
-from napari._qt.layer_controls.qt_points_controls import QtPointsControls
-from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
-from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
-from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
-from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.layer_controls.widgets.qt_contrast_limits import (
+    QtContrastLimitsControl,
+)
+from napari._qt.layer_controls.widgets.qt_gamma_slider import (
+    QtGammaSliderControl,
+)
+from napari._qt.layer_controls.widgets.qt_histogram_control import (
+    QtHistogramControl,
+)
 from napari.layers import (
     Image,
     Labels,
@@ -35,12 +37,8 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari._qt.layer_controls.widgets.qt_contrast_limits import QtContrastLimitsControl
-from napari._qt.layer_controls.widgets.qt_colormap_control import QtColormapControl
-from napari._qt.layer_controls.widgets.qt_gamma_slider import QtGammaSliderControl
-from napari._qt.layer_controls.widgets.qt_projection_mode_control import QtProjectionModeControl
-from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import QtInterpolationComboBoxControl
-from napari._qt.layer_controls.widgets.qt_histogram_control import QtHistogramControl
+from napari.layers.base._base_constants import Mode
+from napari.utils.events import disconnect_events
 
 layer_to_controls = {
     Labels: QtLabelsControls,
@@ -66,12 +64,13 @@ buttons_dict = {
     Surface: QtSurfaceButtons,
     Labels: QtLabelsButtons,
     Points: QtPointsButtons,
-    #Shapes: QtShapesButtons,
-    #Surface: QtSurfaceButtons,
-    #Vectors: QtVectorsButtons,
-    #Tracks: QtTracksButtons,
-#comes in later for buttons at the top
+    # Shapes: QtShapesButtons,
+    # Surface: QtSurfaceButtons,
+    # Vectors: QtVectorsButtons,
+    # Tracks: QtTracksButtons,
+    # comes in later for buttons at the top
 }
+
 
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
@@ -81,6 +80,7 @@ class LayerFormLayout(QFormLayout):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+
 
 class QtDynamicLayerControls(QFrame):
     """Superclass for all the other LayerControl classes.
@@ -112,14 +112,14 @@ class QtDynamicLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
-        #self._EDIT_BUTTONS: tuple = ()
-        #self._MODE_BUTTONS: dict = {}
+        # self._EDIT_BUTTONS: tuple = ()
+        # self._MODE_BUTTONS: dict = {}
         self._layers = layers
 
-        #for layer in self._layers:
-            #self.layer.events.mode.connect(self._on_mode_change)
-            #self.layer.events.editable.connect(self._on_editable_or_visible_change)
-            #self.layer.events.visible.connect(self._on_editable_or_visible_change)
+        # for layer in self._layers:
+        # self.layer.events.mode.connect(self._on_mode_change)
+        # self.layer.events.editable.connect(self._on_editable_or_visible_change)
+        # self.layer.events.visible.connect(self._on_editable_or_visible_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -127,15 +127,14 @@ class QtDynamicLayerControls(QFrame):
         self.setLayout(LayerFormLayout(self))
 
         for layer_type, buttons in buttons_dict.items():
-                if len(layers) == 1 and isinstance(layers[0], layer_type):
-                    self.layout().addRow(buttons(layers[0]))
+            if len(layers) == 1 and isinstance(layers[0], layer_type):
+                self.layout().addRow(buttons(layers[0]))
 
-        #@lorenzo does this go into a seperate function or the init? Also do I need to 
+        # @lorenzo does this go into a seperate function or the init? Also do I need to
         # add the controls_dict anywhere
         for attr, control in controls_dict.items():
             if all(hasattr(layer, attr) for layer in self._layers):
                 self._add_widget_controls(control(parent=self, layers=layers))
-
 
     def _add_widget_controls(
         self,
@@ -176,7 +175,6 @@ class QtDynamicLayerControls(QFrame):
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only like the transform mode button.
         """
-        pass
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)

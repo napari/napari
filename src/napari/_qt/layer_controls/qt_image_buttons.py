@@ -1,18 +1,6 @@
 from typing import TYPE_CHECKING
 
-from napari._qt.layer_controls.qt_image_controls_base import (
-    QtBaseImageControls,
-)
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.widgets import (
-    QtMultiscaleLevelControl,
-    QtProjectionModeControl,
-)
-from napari._qt.layer_controls.widgets._image import (
-    QtDepictionControl,
-    QtImageRenderControl,
-    QtInterpolationComboBoxControl,
-)
 
 if TYPE_CHECKING:
     import napari.layers
@@ -46,7 +34,7 @@ class QtImageButtons(QtLayerButtons):
         super().__init__(layer)
         # Setup widgets controls
         self._on_ndisplay_changed()
-        
+
     def _on_ndisplay_changed(self):
         """Update widget visibility based on 2D and 3D visualization modes."""
         super()._on_ndisplay_changed()
