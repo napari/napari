@@ -1,5 +1,9 @@
 #TODO: sort through necessary imports
+from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
+from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
+from napari._qt.layer_controls.qt_surface_buttons import QtSurfaceButtons
+from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
 from napari.layers.base.base import Layer
 from qtpy.QtWidgets import QFrame
 from napari.layers.base._base_constants import Mode
@@ -12,6 +16,8 @@ from napari._qt.layer_controls.widgets import (
     QtWidgetControlsBase,
 )
 from napari.utils.events import disconnect_events
+
+from napari._qt.utils import set_widgets_enabled_with_opacity
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
@@ -56,10 +62,10 @@ controls_dict = {
     #'interpolation': QtInterpolationComboBoxControl,
 }
 buttons_dict = {
-    Layer: QtLayerButtons,
-    #Labels: QtLabelsButtons,
-    #Image: QtImageButtons,
-    #Points: QtPointsButtons,
+    Image: QtImageButtons,
+    Surface: QtSurfaceButtons,
+    Labels: QtLabelsButtons,
+    Points: QtPointsButtons,
     #Shapes: QtShapesButtons,
     #Surface: QtSurfaceButtons,
     #Vectors: QtVectorsButtons,
