@@ -2358,15 +2358,15 @@ def test_get_status_with_custom_index():
     )
     layer.properties = df
     assert (
-        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+        layer.get_status((0, 0))['coordinates'] == '[0, 0]: 0; [No Properties]'
     )
     assert (
         layer.get_status((3, 3))['coordinates']
-        == ' [3 3]: 1; text1: 1, text2: 7'
+        == '[3, 3]: 1; text1: 1, text2: 7'
     )
     assert (
         layer.get_status((6, 6))['coordinates']
-        == ' [6 6]: 2; text1: 3, text2: -2'
+        == '[6, 6]: 2; text1: 3, text2: -2'
     )
 
 

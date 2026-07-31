@@ -57,13 +57,13 @@ def orient_plane_normal_along_x(layer: Image) -> None:
 )
 def orient_plane_normal_along_view_direction(
     layer: Image,
-) -> None | Generator[None, None, None]:
+) -> Generator[None, None, None] | None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
         return None
 
     def sync_plane_normal_with_view_direction(
-        event: None | Event = None,
+        event: Event | None = None,
     ) -> None:
         """Plane normal syncronisation mouse callback."""
         layer.plane.normal = layer._world_to_displayed_data_normal(

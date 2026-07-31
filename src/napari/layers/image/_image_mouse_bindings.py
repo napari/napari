@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 def move_plane_along_normal(
     layer: Image, event: Event
-) -> None | Generator[None, None, None]:
+) -> Generator[None, None, None] | None:
     """Move a layers slicing plane along its normal vector on click and drag."""
     # early exit clauses
     if (

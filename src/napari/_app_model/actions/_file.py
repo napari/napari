@@ -104,6 +104,7 @@ def _create_single_layer(
         rotate=source_layer.rotate,
         shear=source_layer.shear,
         units=source_layer.units,
+        axis_labels=source_layer.axis_labels,
         affine=source_layer.affine.affine_matrix,
     )
 
