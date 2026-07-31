@@ -885,6 +885,67 @@ def test_huge_world_auto_normalized(qtbot, make_napari_viewer):
     loader.close()
 
 
+def test_close_restores_synchronous_slicing(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """Async slicing is a viewer-wide switch, so closing the last
+    progressive layer has to put it back.
+
+    Left on, a slice response emitted from the slicing thread while the
+    viewer is torn down strands a superqt ``CallCallable`` — held by a
+    global list — that owns ``QtViewer._on_slice_ready``, leaking the
+    whole QtViewer.
+    """
+    from napari.settings import get_settings
+
+    viewer = make_napari_viewer()
+    assert not get_settings().experimental.async_
+    assert viewer._layer_slicer._force_sync
+
+    layer = add_progressive_loading_image(multiscale_arrays, viewer=viewer)
+    loader = layer.metadata['progressive_loader']
+    assert get_settings().experimental.async_
+    assert not viewer._layer_slicer._force_sync
+    _wait_for_idle_loader(qtbot, loader)
+
+    loader.close()
+    assert not get_settings().experimental.async_
+    assert viewer._layer_slicer._force_sync
+
+
+def test_async_slicing_kept_while_another_progressive_layer_lives(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """Only the last progressive layer to go restores sync slicing."""
+    from napari.settings import get_settings
+
+    viewer = make_napari_viewer()
+    first = add_progressive_loading_image(
+        multiscale_arrays, viewer=viewer, name='first'
+    )
+    second = add_progressive_loading_image(
+        [level.copy() for level in multiscale_arrays],
+        viewer=viewer,
+        name='second',
+    )
+    loaders = [lyr.metadata['progressive_loader'] for lyr in (first, second)]
+    for loader in loaders:
+        _wait_for_idle_loader(qtbot, loader)
+
+    loaders[0].close()
+    viewer.layers.remove(first)
+    assert get_settings().experimental.async_
+    assert not viewer._layer_slicer._force_sync
+
+    loaders[1].close()
+    assert not get_settings().experimental.async_
+    assert viewer._layer_slicer._force_sync
+
+
 def test_huge_world_normalization_compensates_offsets():
     """The normalizing factor shrinks the world about the origin: a layer
     placed by translate/affine keeps its position, not just its size.

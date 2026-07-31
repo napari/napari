@@ -781,6 +781,10 @@ class ProgressiveLoader:
         self._last_refresh_duration = 0.0
         self._pbar = None
         self._resident_pbar = None
+        # (experimental.async_, slicer._force_sync) as they were before
+        # this layer switched the viewer to async slicing; restored by
+        # close(). Set by _attach_progressive_loader.
+        self._slicing_restore: tuple[bool, bool] | None = None
         # napari's Qt progress bar calls QApplication.processEvents() on
         # every update, which re-enters event handling *inside* the
         # caller; chunk handlers therefore only accumulate counts here
@@ -994,9 +998,39 @@ class ProgressiveLoader:
             )
         with contextlib.suppress(Exception):
             self._debounce_timer.stop()
+        self._restore_slicing()
         self._data = []
         self._viewer = None  # type: ignore[assignment]
         self._layer = None  # type: ignore[assignment]
+
+    def _restore_slicing(self) -> None:
+        """Put async slicing back the way this layer found it.
+
+        Progressive loading switches the whole viewer to async slicing;
+        leaving it on once the last progressive layer is gone changes
+        behavior for unrelated layers. It also keeps slice responses
+        coming from the slicing thread while the viewer is being torn
+        down, and ``QtViewer._on_slice_ready`` is ``@ensure_main_thread``:
+        superqt wraps such a call in a ``CallCallable`` held by a global
+        list until the main thread runs it. One posted during teardown is
+        never run, so the list keeps the whole ``QtViewer`` alive.
+        """
+        restore, self._slicing_restore = self._slicing_restore, None
+        if restore is None or self._viewer is None:
+            return
+        if any(
+            other is not self for other in _progressive_loaders(self._viewer)
+        ):
+            # another progressive layer still needs async slicing
+            return
+        async_, force_sync = restore
+        from napari.settings import get_settings
+
+        # the settings event drives every viewer's _force_sync, so put
+        # the setting back first and this viewer's flag back after
+        get_settings().experimental.async_ = async_
+        with contextlib.suppress(AttributeError):
+            self._viewer._layer_slicer._force_sync = force_sync
 
     # -- view tracking --
 
@@ -3011,6 +3045,18 @@ class ProgressiveLoader:
 # ---------- public entry point ----------
 
 
+def _progressive_loaders(viewer) -> list[ProgressiveLoader]:
+    """Every loader currently attached to a layer of *viewer*."""
+    return [
+        loader
+        for layer in viewer.layers
+        if isinstance(
+            loader := layer.metadata.get('progressive_loader'),
+            ProgressiveLoader,
+        )
+    ]
+
+
 def _estimate_contrast_limits(array) -> tuple[float, float] | None:
     """Estimate contrast limits from a central sample of an array."""
     try:
@@ -3129,7 +3175,20 @@ def _attach_progressive_loader(
     # concurrent slicing is safe.
     from napari.settings import get_settings
 
-    get_settings().experimental.async_ = True
+    settings = get_settings()
+    # inherit the snapshot from a progressive layer already on this
+    # viewer: reading the live state now would capture what that layer
+    # switched it *to*, and the last loader to close would restore async
+    # slicing instead of turning it off (see _restore_slicing)
+    slicing_restore = next(
+        (
+            other._slicing_restore
+            for other in _progressive_loaders(viewer)
+            if other._slicing_restore is not None
+        ),
+        (settings.experimental.async_, viewer._layer_slicer._force_sync),
+    )
+    settings.experimental.async_ = True
     viewer._layer_slicer._force_sync = False
     # Meter GLIR 3D texture uploads: without this, vispy drains every
     # queued glTexSubImage3D inside the next draw — including interaction
@@ -3151,6 +3210,7 @@ def _attach_progressive_loader(
         interactive_step_rate=interactive_step_rate,
         coarse_first=coarse_first,
     )
+    loader._slicing_restore = slicing_restore
     layer.metadata['progressive_loader'] = loader
     if debug_overlay is None:
         debug_overlay = bool(os.environ.get('NAPARI_PROGRESSIVE_DEBUG'))
