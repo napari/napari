@@ -1,4 +1,3 @@
-from napari.layers.base.base import Layer
 from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -7,6 +6,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
 
@@ -29,8 +29,6 @@ class QtBorderColorControl(QtWidgetControlsBase):
     border_color_edit_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current egde color chooser widget.
     """
-
-
 
     def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)

@@ -10,11 +10,12 @@ from qtpy.QtWidgets import (
     QStyleOptionViewItem,
     QWidget,
 )
-from napari._qt.utils import qt_signals_blocked
+
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import qt_signals_blocked
 from napari.layers.base.base import Layer
 from napari.utils.colormaps import (
     AVAILABLE_COLORMAPS,
@@ -100,7 +101,9 @@ class QtColormapComboBox(QComboBox):
         self.setView(view)
 
 
-class QtColormapControl(QtWidgetControlsBase): #@lorzenzo: help this doesnt do what it should
+class QtColormapControl(
+    QtWidgetControlsBase
+):  # @lorzenzo: help this doesnt do what it should
     """
     Class that wraps the connection of events/signals between the layer colormaps
     attribute and Qt widgets.
@@ -133,12 +136,16 @@ class QtColormapControl(QtWidgetControlsBase): #@lorzenzo: help this doesnt do w
         # Setup widgets
         comboBox = QtColormapComboBox(parent)
         comboBox.setObjectName('colormapComboBox')
-        comboBox._allitems = set().union(*(layer.colormaps for layer in self._layers))
-        #set(self._layers[0].colormaps) #@lorenzo I'd like to give the option of choosing 
-        # any colormap that any of the layers has. Is this the right spot?  
+        comboBox._allitems = set().union(
+            *(layer.colormaps for layer in self._layers)
+        )
+        # set(self._layers[0].colormaps) #@lorenzo I'd like to give the option of choosing
+        # any colormap that any of the layers has. Is this the right spot?
 
         for name, cm in AVAILABLE_COLORMAPS.items():
-            if name in set().union(*(layer.colormaps for layer in self._layers)):
+            if name in set().union(
+                *(layer.colormaps for layer in self._layers)
+            ):
                 comboBox.addItem(cm._display_name, name)
 
         comboBox.currentTextChanged.connect(self.change_color)
@@ -191,7 +198,7 @@ class QtColormapControl(QtWidgetControlsBase): #@lorzenzo: help this doesnt do w
                 index = self.colormap_combobox.findData(name)
                 self.colormap_combobox.setCurrentIndex(index)
 
-        # Note that QImage expects the image width followed by height
+            # Note that QImage expects the image width followed by height
 
             cbar = self._layers[0].colormap.colorbar
             image = QImage(

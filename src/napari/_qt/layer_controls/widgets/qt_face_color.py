@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtWidgets import QWidget
 
@@ -11,9 +11,9 @@ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
-from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from napari.layers.base.base import Layer
+
 
 class QtFaceColorControl(QtWidgetControlsBase):
     """
@@ -37,7 +37,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
-    #_layer: Shapes | Points
+    # _layer: Shapes | Points
 
     def __init__(
         self,

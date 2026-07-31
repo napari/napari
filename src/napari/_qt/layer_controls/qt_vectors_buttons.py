@@ -1,17 +1,6 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.layer_controls.widgets import (
-    QtOutSliceCheckBoxControl,
-    QtProjectionModeControl,
-)
-from napari._qt.layer_controls.widgets._vectors import (
-    QtEdgeColorFeatureControl,
-    QtLengthSpinBoxControl,
-    QtVectorStyleComboBoxControl,
-    QtWidthSpinBoxControl,
-)
 from napari.layers.base._base_constants import Mode
 
 if TYPE_CHECKING:

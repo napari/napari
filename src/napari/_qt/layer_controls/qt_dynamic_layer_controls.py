@@ -10,30 +10,34 @@ from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
-from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_shapes_buttons import QtShapesButtons
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_buttons import QtSurfaceButtons
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
-from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_tracks_buttons import QtTracksButtons
-from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_buttons import QtVectorsButtons
+from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
 from napari._qt.layer_controls.widgets import (
     QtOpacityBlendingControls,
     QtWidgetControlsBase,
 )
+from napari._qt.layer_controls.widgets._points.qt_border_color import (
+    QtBorderColorControl,
+)
+from napari._qt.layer_controls.widgets.qt_colormap_control import (
+    QtColormapControl,
+)
 from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QtContrastLimitsControl,
 )
+from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
-from napari._qt.layer_controls.widgets.qt_colormap_control import QtColormapControl
-from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
-from napari._qt.layer_controls.widgets._points.qt_border_color import QtBorderColorControl
 from napari.layers import (
     Image,
     Labels,

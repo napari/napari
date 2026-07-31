@@ -1,18 +1,6 @@
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.layer_controls.widgets._tracks import (
-    QtColormapComboBoxControl,
-    QtColorPropertiesComboBoxControl,
-    QtGraphCheckBoxControl,
-    QtHeadLengthSliderControl,
-    QtHideCompletedTracksCheckBoxControl,
-    QtIdCheckBoxControl,
-    QtTailDisplayCheckBoxControl,
-    QtTailLengthSliderControl,
-    QtTailWidthSliderControl,
-)
 from napari.layers.base._base_constants import Mode
 
 if TYPE_CHECKING:
