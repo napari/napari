@@ -80,7 +80,7 @@ def validate_match_signature(
     func: Callable,
     other_func: Callable,
     additional_params: set[str] | None = None,
-):
+) -> None:
     """
     Check if the signature of other_func matches the signature of func,
     allowing for additional parameters in other_func.
