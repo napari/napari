@@ -2,6 +2,7 @@
 
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 qtpy = pytest.importorskip('qtpy', reason='requires Qt backend')
@@ -96,6 +97,50 @@ def test_attach_when_enabled(
     assert layer.name == 'pyramid'
     assert layer.opacity == 0.5
     assert layer.contrast_limits == [0, 255]
+    _close_loaders(qtbot, viewer)
+
+
+@skip_pyside_pytest_hang
+def test_attach_preserves_transforms(
+    qtbot, make_napari_viewer, multiscale_dask, progressive_setting
+):
+    """The whole transform chain survives the swap, not just translate."""
+    viewer = make_napari_viewer()
+    affine = np.array([[1.0, 0.2, 7.0], [0.0, 1.0, -3.0], [0.0, 0.0, 1.0]])
+    original = viewer.add_image(
+        multiscale_dask,
+        multiscale=True,
+        contrast_limits=(0, 255),
+        name='transformed',
+        scale=(2.0, 3.0),
+        translate=(10.0, -5.0),
+        rotate=30.0,
+        shear=[0.5],
+        affine=affine,
+        units=('um', 'um'),
+        axis_labels=('y', 'x'),
+    )
+    qtbot.waitUntil(
+        lambda: (
+            len(viewer.layers) == 1
+            and 'progressive_loader' in viewer.layers[0].metadata
+        ),
+        timeout=10000,
+    )
+    layer = viewer.layers[0]
+    assert layer is not original
+    npt.assert_allclose(layer.scale, (2.0, 3.0))
+    npt.assert_allclose(layer.translate, (10.0, -5.0))
+    npt.assert_allclose(layer.rotate, original.rotate)
+    npt.assert_allclose(layer.shear, original.shear)
+    npt.assert_allclose(layer.affine.affine_matrix, affine)
+    assert layer.units == original.units
+    assert layer.axis_labels == ('y', 'x')
+    # the composed data->world placement matches the original exactly
+    npt.assert_allclose(
+        layer._transforms['data2physical'].affine_matrix,
+        original._transforms['data2physical'].affine_matrix,
+    )
     _close_loaders(qtbot, viewer)
 
 

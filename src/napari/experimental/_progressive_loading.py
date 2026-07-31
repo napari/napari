@@ -3051,6 +3051,12 @@ def _normalize_scale_for_float32(data, layer_kwargs, kind: str) -> None:
     lose pixel accuracy and 3D rendering goes blank. If the caller did not
     pass an explicit ``scale``, pick a power-of-two factor that keeps the
     largest axis under :data:`FLOAT32_EXTENT_LIMIT`.
+
+    The factor shrinks the whole world about the origin, not just the
+    voxel grid: any ``translate`` and ``affine`` offset the caller passed
+    is in that same space and is scaled to match, so the layer keeps its
+    placement relative to the rest of the scene. ``rotate``/``shear`` and
+    the affine's linear part are scale-free and pass through untouched.
     """
     if layer_kwargs.get('scale') is not None:
         return
@@ -3058,7 +3064,26 @@ def _normalize_scale_for_float32(data, layer_kwargs, kind: str) -> None:
     limit = float(FLOAT32_EXTENT_LIMIT)
     if max_extent > limit:
         factor = 2.0 ** -int(np.ceil(np.log2(max_extent / limit)))
-        layer_kwargs['scale'] = (factor,) * data.ndim
+        # an RGB(A) layer has one fewer world axis than its data array
+        ndim = data.ndim - 1 if layer_kwargs.get('rgb') else data.ndim
+        layer_kwargs['scale'] = (factor,) * ndim
+        translate = layer_kwargs.get('translate')
+        if translate is not None:
+            layer_kwargs['translate'] = tuple(
+                factor * np.asarray(translate, dtype=float)
+            )
+        affine = layer_kwargs.get('affine')
+        if affine is not None:
+            from napari.utils.transforms import Affine
+
+            # copy rather than mutate: the caller may still own the
+            # transform (and napari coerces a matrix back to an Affine)
+            matrix = np.array(
+                affine.affine_matrix if isinstance(affine, Affine) else affine,
+                dtype=float,
+            )
+            matrix[:-1, -1] *= factor
+            layer_kwargs['affine'] = matrix
         LOGGER.warning(
             '%s extent %.3g exceeds float32 rendering precision; scaling '
             'the layer by %g to keep it renderable. Pass scale= explicitly '

@@ -87,10 +87,38 @@ def _on_inserted(viewer_ref: weakref.ref, event: Event) -> None:
     QTimer.singleShot(0, partial(_replace_with_progressive, viewer_ref, layer))
 
 
-def _layer_kwargs(layer: Layer) -> dict:
-    """Carry the original layer's appearance over to its replacement."""
+def _transform_kwargs(layer: Layer) -> dict:
+    """The whole transform chain of *layer*, as constructor kwargs.
+
+    Both halves are carried: the ``data2physical`` components
+    (``scale``/``translate``/``rotate``/``shear``, plus the ``units`` and
+    ``axis_labels`` that live on the same transform) and the extra
+    ``physical2world`` ``affine``. Anything dropped here would silently
+    move the replacement layer relative to the rest of the scene.
+
+    ``scale`` is the one exception, and only when it is trivial: passing
+    an explicit scale disables the huge-world normalization in
+    :func:`~napari.experimental._progressive_loading.add_progressive_loading_image`,
+    which compensates ``translate`` and ``affine`` for whatever factor it
+    picks so the layer keeps its placement.
+    """
     import numpy as np
 
+    kwargs = {
+        'translate': tuple(layer.translate),
+        'rotate': np.array(layer.rotate),
+        'shear': np.array(layer.shear),
+        'affine': np.array(layer.affine.affine_matrix),
+        'units': tuple(layer.units),
+        'axis_labels': tuple(layer.axis_labels),
+    }
+    if not np.allclose(layer.scale, 1.0):
+        kwargs['scale'] = tuple(layer.scale)
+    return kwargs
+
+
+def _layer_kwargs(layer: Layer) -> dict:
+    """Carry the original layer's transform and appearance to its replacement."""
     from napari.layers import Labels
 
     kwargs = {
@@ -99,12 +127,8 @@ def _layer_kwargs(layer: Layer) -> dict:
         'blending': layer.blending,
         'visible': layer.visible,
         'metadata': dict(layer.metadata),
-        'translate': tuple(layer.translate),
+        **_transform_kwargs(layer),
     }
-    if not np.allclose(layer.scale, 1.0):
-        # only pass a non-trivial scale: an explicit scale disables the
-        # huge-world normalization in add_progressive_loading_image
-        kwargs['scale'] = tuple(layer.scale)
     if not isinstance(layer, Labels):
         kwargs['contrast_limits'] = tuple(layer.contrast_limits)
         kwargs['colormap'] = layer.colormap.name
@@ -147,12 +171,15 @@ def add_progressive_labels_like(
             )
         )
         label_arrays.append(zarr.zeros(lvl_shape, chunks=chunks, dtype=dtype))
+    transform = _transform_kwargs(base_layer)
+    # the base layer's scale is already float32-normalized; match it
+    # verbatim (including a trivial one) so the two layers stay aligned
+    transform['scale'] = tuple(base_layer.scale)
     add_progressive_loading_labels(
         label_arrays,
         viewer=viewer,  # type: ignore[arg-type]
         name=base_layer.name + ' - Labels',
-        scale=tuple(base_layer.scale),
-        translate=tuple(base_layer.translate),
+        **transform,
     )
 
 

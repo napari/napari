@@ -885,6 +885,75 @@ def test_huge_world_auto_normalized(qtbot, make_napari_viewer):
     loader.close()
 
 
+def test_huge_world_normalization_compensates_offsets():
+    """The normalizing factor shrinks the world about the origin: a layer
+    placed by translate/affine keeps its position, not just its size.
+    """
+    from napari.experimental._progressive_loading import (
+        _normalize_scale_for_float32,
+    )
+
+    class _Data:
+        shape = (2**23, 2**23)
+        ndim = 2
+
+    affine = np.array([[1.0, 0.2, 400.0], [0.0, 1.0, -800.0], [0.0, 0.0, 1.0]])
+    kwargs = {
+        'translate': (1000.0, -2000.0),
+        'rotate': np.eye(2),
+        'affine': affine,
+    }
+    _normalize_scale_for_float32(_Data(), kwargs, 'image')
+
+    factor = kwargs['scale'][0]
+    assert 0 < factor < 1
+    np.testing.assert_allclose(
+        kwargs['translate'], (1000.0 * factor, -2000.0 * factor)
+    )
+    # only the affine's offset column moves; its linear part is scale-free
+    np.testing.assert_allclose(kwargs['affine'][:2, :2], affine[:2, :2])
+    np.testing.assert_allclose(
+        kwargs['affine'][:2, 2], (400.0 * factor, -800.0 * factor)
+    )
+    np.testing.assert_allclose(kwargs['rotate'], np.eye(2))
+    # the caller's affine array is copied, not mutated in place
+    assert affine[0, 2] == 400.0
+
+
+def test_huge_world_normalization_skips_rgb_axis():
+    """An RGB layer has one fewer world axis than its data array, so the
+    normalizing scale must not gain a channel entry.
+    """
+    from napari.experimental._progressive_loading import (
+        _normalize_scale_for_float32,
+    )
+
+    class _Data:
+        shape = (2**23, 2**23, 3)
+        ndim = 3
+
+    kwargs = {'rgb': True, 'translate': (0.0, 0.0)}
+    _normalize_scale_for_float32(_Data(), kwargs, 'image')
+    assert len(kwargs['scale']) == 2
+
+
+def test_explicit_scale_leaves_offsets_untouched():
+    """An explicit scale opts out of normalization entirely."""
+    from napari.experimental._progressive_loading import (
+        _normalize_scale_for_float32,
+    )
+
+    class _Data:
+        shape = (2**23, 2**23)
+        ndim = 2
+
+    kwargs = {'scale': (1.0, 1.0), 'translate': (1000.0, -2000.0)}
+    _normalize_scale_for_float32(_Data(), kwargs, 'image')
+
+    assert kwargs['scale'] == (1.0, 1.0)
+    assert kwargs['translate'] == (1000.0, -2000.0)
+
+
 def test_texture_patching_used_in_3d(
     qtbot,
     make_napari_viewer,
@@ -2056,6 +2125,51 @@ def test_add_progressive_loading_labels(
 
     loader.close()
     qtbot.wait(300)
+
+
+def test_new_labels_inherits_base_transforms(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """A Labels layer made from a progressive layer lands on top of it:
+    the whole transform chain is inherited, not just scale/translate.
+    """
+    viewer = make_napari_viewer()
+    affine = np.array([[1.0, 0.0, 5.0], [0.0, 1.0, 9.0], [0.0, 0.0, 1.0]])
+    layer = add_progressive_loading_image(
+        multiscale_arrays,
+        viewer=viewer,
+        contrast_limits=(0, 255),
+        scale=(2.0, 2.0),
+        translate=(10.0, 20.0),
+        rotate=15.0,
+        shear=[0.3],
+        affine=affine,
+        units=('um', 'um'),
+        axis_labels=('y', 'x'),
+    )
+    _wait_for_idle_loader(qtbot, layer.metadata['progressive_loader'])
+    viewer.layers.selection.active = layer
+    viewer._new_labels()
+
+    labels = viewer.layers[-1]
+    assert labels is not layer
+    np.testing.assert_allclose(labels.scale, layer.scale)
+    np.testing.assert_allclose(labels.translate, layer.translate)
+    np.testing.assert_allclose(labels.rotate, layer.rotate)
+    np.testing.assert_allclose(labels.shear, layer.shear)
+    np.testing.assert_allclose(
+        labels.affine.affine_matrix, layer.affine.affine_matrix
+    )
+    assert labels.units == layer.units
+    assert labels.axis_labels == layer.axis_labels
+
+    for lyr in list(viewer.layers):
+        loader = lyr.metadata.get('progressive_loader')
+        if loader is not None:
+            _wait_for_idle_loader(qtbot, loader)
+            loader.close()
 
 
 def test_progressive_labels_data_matches_source(
