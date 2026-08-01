@@ -434,7 +434,7 @@ def test_screenshot_dialog(
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
-    expected_data = qt_viewer.screenshot(flash=False)
+    expected_data = qt_viewer.screenshot(flash=False, size=[400, 400])
     assert np.allclose(output_data, expected_data)
 
 
@@ -762,7 +762,7 @@ def _update_data(
     color_box_color = qt_viewer.controls.widgets[
         layer
     ]._label_control.colorbox.color
-    screenshot = qt_viewer.screenshot(flash=False)
+    screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
 
@@ -935,7 +935,7 @@ def test_thumbnail_labels(
     QApplication.processEvents()
     qtbot.wait(50)
 
-    canvas_screenshot_ = qt_viewer.screenshot(flash=False)
+    canvas_screenshot_ = qt_viewer.screenshot(flash=False, size=[400, 400])
 
     import imageio
 
@@ -978,7 +978,7 @@ def test_background_color(
         layer.data = data
         layer.colormap = label_colormap(49, background_value=background)
         qtbot.wait(50)
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         background_pixel = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         color_pixel = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1002,7 +1002,7 @@ def test_rendering_interpolation(
     layer.selected_label = 5
     viewer_model.dims.ndisplay = 3
     QApplication.processEvents()
-    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(canvas_screenshot.shape[:2])
     pixel = canvas_screenshot[tuple((shape * 0.5).astype(int))]
     color = layer.colormap.map(5) * 255
@@ -1031,7 +1031,7 @@ def test_selection_collision(
         layer.data = data.astype(dtype)
         layer.show_selected_label = False
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         pixel_10 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         pixel_59 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1040,7 +1040,7 @@ def test_selection_collision(
 
         layer.show_selected_label = True
 
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         pixel_10_2 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         pixel_59_2 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1060,7 +1060,7 @@ def test_all_supported_dtypes(
         data = np.full((10, 10), i, dtype=dtype)
         layer_.data = data
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1090,7 +1090,7 @@ def test_all_supported_dtypes(
         data = np.full((10, 10), i, dtype=dtype)
         layer_.data = data
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1124,7 +1124,7 @@ def test_more_than_uint16_colors(
     for i in [1, 1000, 100000]:
         data = np.full((10, 10), i, dtype=np.uint32)
         layer.data = data
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1146,14 +1146,14 @@ def test_scale_bar_colored(
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
     def check_all_black():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1164,7 +1164,7 @@ def test_scale_bar_colored(
 
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
     def check_colored_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 2])
@@ -1175,7 +1175,7 @@ def test_scale_bar_colored(
 
     # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
     def check_only_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1198,14 +1198,14 @@ def test_scale_bar_ticks(
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
     def check_all_black():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1216,11 +1216,11 @@ def test_scale_bar_ticks(
 
     # Check scale bar has ticks active and take screenshot for later comparison
     assert scale_bar.ticks
-    screenshot_with_ticks = qt_viewer.screenshot(flash=False)
+    screenshot_with_ticks = qt_viewer.screenshot(flash=False, size=[400, 400])
 
     # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
     def check_no_ticks_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])
@@ -1236,7 +1236,7 @@ def test_scale_bar_ticks(
 
     # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
     def check_ticks_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])

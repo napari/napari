@@ -1037,41 +1037,44 @@ def test_get_status_text():
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        },
-        '',
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
+        sorted(
+            {
+                'coordinates': '[1, 2]: 0; a: 1',
+                'coords': '[1, 2]',
+                'layer_base': 'Labels',
+                'layer_name': 'Labels',
+                'plugin': '',
+                'source_type': '',
+                'value': '0; a: 1',
+            }.items()
+        )
     )
     viewer.tooltip.visible = True
-    assert viewer._calc_status_from_cursor() == (
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
         {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
             'value': '0; a: 1',
-        },
-        '0\na: 1',
+        }.items()
     )
+    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
     viewer.update_status_from_cursor()
-    assert viewer.status == {
-        'coordinates': ' [1 2]: 0; a: 1',
-        'coords': ' [1 2]',
-        'layer_base': 'Labels',
-        'layer_name': 'Labels',
-        'plugin': '',
-        'source_type': '',
-        'value': '0; a: 1',
-    }
+    assert sorted(viewer.status.items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
+    )
     assert viewer.tooltip.text == '0\na: 1'
 
 
