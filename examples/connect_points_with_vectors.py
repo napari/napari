@@ -95,7 +95,7 @@ points_layer = viewer.add_points(atoms)
 points_layer.shading = "spherical"
 points_layer.face_color = "teal"
 points_layer.border_width = 0
-points_layer.size = 0.2
+points_layer.size = 0.3
 
 N = len(atoms)
 
