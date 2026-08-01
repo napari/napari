@@ -127,7 +127,7 @@ class QtLayerControlsContainer(QStackedWidget):
             if widget is not self.empty_widget:
                 widget.ndisplay = event.value
 
-    def _on_viewer_theme_changed(self, event=None):
+    def _on_viewer_theme_changed(self, event: Event | None = None) -> None:
         """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).
 
         The ``toggle_theme`` keybinding sets ``viewer.theme`` directly
