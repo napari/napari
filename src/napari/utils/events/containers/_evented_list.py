@@ -123,7 +123,7 @@ class EventedList(TypedMutableSequence[_T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
-            value = list(
+            new_values = list(
                 value
             )  # make sure we don't empty generators and reuse them
             if new_values == old:
@@ -135,7 +135,7 @@ class EventedList(TypedMutableSequence[_T]):
                 indices = list(range(*key.indices(len(self))))
                 if not len(new_values) == len(indices):
                     raise ValueError(
-                        f'attempt to assign sequence of size {len(value)} to extended slice of size {len(indices)}'
+                        f'attempt to assign sequence of size {len(new_values)} to extended slice of size {len(indices)}'
                     )
                 for i, v in zip(indices, new_values, strict=False):
                     self.__setitem__(i, v)
