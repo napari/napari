@@ -115,6 +115,8 @@ class LayerDelegate(QStyledItemDelegate):
         # an async paint event was queued).
         if not index.isValid():
             return
+        if painter is None:
+            return
         # update the icon based on layer type
         option.textElideMode = Qt.TextElideMode.ElideMiddle
         self.get_layer_icon(option, index)
