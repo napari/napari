@@ -550,16 +550,19 @@ class QtViewer(QSplitter):
             )
             return None
 
-    def _set_console_font(self, console: QtConsole | None = None) -> None:
-        """Apply the system fixed-width font to the console."""
-        if console is None:
-            console = self._console
-        if console is None:
+    def _set_console_font(self) -> None:
+        """Set the console to the system fixed-width font at the UI font size.
+
+        Must be re-applied after every stylesheet update: re-polishing the
+        console resets its QTextDocument default font back to the (variable
+        width) widget font.
+        """
+        if self._console is None:
             return
 
         font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
         font.setPointSize(get_settings().appearance.font_size)
-        console.font = font
+        self._console.font = font
 
     @property
     def console(self):
