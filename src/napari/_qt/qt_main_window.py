@@ -269,11 +269,11 @@ class _QtMainWindow(QMainWindow):
 
     def _on_dock_floating_changed(self, dock, floating):
         if floating:
-            self._deregister_sliding_dock(dock)
+            self.deregister_sliding_dock(dock)
         elif dock not in self.sliding_docks:
             self.register_sliding_dock(dock)
 
-    def _deregister_sliding_dock(self, dock):
+    def deregister_sliding_dock(self, dock):
         state = self.sliding_docks.pop(dock, None)
         if state is None:
             return
@@ -285,8 +285,8 @@ class _QtMainWindow(QMainWindow):
         ):
             anim.stop()
 
-        dock.setMaximumWidth(16777215)
-        dock.setMaximumHeight(16777215)
+        dock.setMaximumWidth(QWIDGETSIZE_MAX)
+        dock.setMaximumHeight(QWIDGETSIZE_MAX)
         dock.setMinimumWidth(0)
         dock.setMinimumHeight(0)
 
@@ -407,9 +407,9 @@ class _QtMainWindow(QMainWindow):
 
         if state['visible_state']:
             if property_name == b'maximumWidth':
-                dock.setMaximumWidth(16777215)
+                dock.setMaximumWidth(QWIDGETSIZE_MAX)
             else:
-                dock.setMaximumHeight(16777215)
+                dock.setMaximumHeight(QWIDGETSIZE_MAX)
         else:
             dock.setVisible(False)
 
@@ -1016,6 +1016,9 @@ class Window:
             self._update_theme_font_size
         )
         get_settings().appearance.events.logo.connect(self._update_logo)
+        get_settings().appearance.events.dock_widget_autohide.connect(
+            self._register_sliding_dock_widgets
+        )
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -1035,12 +1038,13 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
 
-        sliding_docks = [
+        self.sliding_docks = [
             self._qt_viewer.dockLayerControls,
             self._qt_viewer.dockLayerList,
         ]
-        for dock in sliding_docks:
-            self._qt_window.register_sliding_dock(dock)
+        if get_settings().appearance.dock_widget_autohide:
+            for dock in self.sliding_docks:
+                self._qt_window.register_sliding_dock(dock)
 
         if show:
             self.show()
@@ -1053,6 +1057,14 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
+    def _register_sliding_dock_widgets(self, event):
+        if event.value:
+            for dock in self.sliding_docks:
+                self._qt_window.register_sliding_dock(dock)
+        else:
+            for dock in self.sliding_docks:
+                self._qt_window.deregister_sliding_dock(dock)
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari

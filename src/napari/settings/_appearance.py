@@ -67,6 +67,11 @@ class AppearanceSettings(EventedModel):
             'Calculate status bar based on current active layer and mouse position.'
         ),
     )
+    dock_widget_autohide: bool = Field(
+        False,
+        title=trans._('Auto hide dock widgets'),
+        description=trans._('Toggle autohide of dock widgets.'),
+    )
 
     def update(
         self, values: Union['EventedModel', dict], recurse: bool = True

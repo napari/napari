@@ -140,6 +140,7 @@
       "napari:window:view:toggle_activity_dock",
       "napari:window:view:toggle_fullscreen",
       "napari:window:view:toggle_layer_tooltips",
+      "napari:window:view:toggle_auto_hide_dock_widgets",
       "napari:window:view:toggle_menubar",
       "napari:window:view:toggle_play",
       "napari:window:view:toggle_viewer_axes",

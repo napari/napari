@@ -135,6 +135,15 @@ def _tooltip_visibility_toggle() -> None:
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
+def _toggle_autohide_dock_widgets() -> None:
+    settings = get_settings().appearance
+    settings.dock_widget_autohide = not settings.dock_widget_autohide
+
+
+def _get_current_autohide_dock_widget() -> bool:
+    return get_settings().appearance.dock_widget_autohide
+
+
 def _get_current_tooltip_visibility() -> bool:
     return get_settings().appearance.layer_tooltip_visibility
 
@@ -238,6 +247,19 @@ VIEW_ACTIONS: list[Action] = [
         keybindings=[
             KeyBindingRule(primary='Ctrl+U', mac='Cmd+U'),
         ],
+    ),
+    Action(
+        id='napari.window.view.toggle_auto_hide_dock_widgets',
+        title=trans._('Toggle Auto Hide Dock Widgets'),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.RENDER,
+                'order': 10,
+            }
+        ],
+        callback=_toggle_autohide_dock_widgets,
+        toggled=ToggleRule(get_current=_get_current_autohide_dock_widget),
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
