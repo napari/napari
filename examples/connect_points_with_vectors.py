@@ -21,6 +21,7 @@ https://napari-hub.org/plugins/napari-molecule-reader.html
 """
 
 import numpy as np
+
 import napari
 
 # C60 fullerene atomic coordinates in Angstroms
