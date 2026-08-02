@@ -220,6 +220,7 @@ class _QtMainWindow(QMainWindow):
         self._command_palette = QCommandPalette(self)
 
         self.sliding_docks = {}
+        # default width of sliding out dock widget
         self.expanded_size = 250
 
     def register_sliding_dock(self, dock_widget):
@@ -235,12 +236,27 @@ class _QtMainWindow(QMainWindow):
             'visible_state': False,
             'animation': None,
             'size': None,  # This is added to track size after resize. Otherwise it would reset after sliding.
+            'cross_axis_size': None,  # Size across perpendicular axis, e.g. in case of left right widget -> height
         }
 
         dock_widget.topLevelChanged.connect(
             lambda floating, dock=dock_widget: self._on_dock_floating_changed(
                 dock, floating
             )
+        )
+
+    def _cross_orientation(self, orientation):
+        return (
+            Qt.Orientation.Vertical
+            if orientation == Qt.Orientation.Horizontal
+            else Qt.Orientation.Horizontal
+        )
+
+    def _cross_axis_dimension(self, dock, orientation):
+        return (
+            dock.height()
+            if orientation == Qt.Orientation.Horizontal
+            else dock.width()
         )
 
     def _get_expanded_size(self, dock, property_name):
@@ -302,7 +318,12 @@ class _QtMainWindow(QMainWindow):
                     pos.x() >= (win_width - edge_threshold)
                 ),
                 'should_hide': lambda dock: (
-                    pos.x() < (win_width - dock.width())
+                    pos.x()
+                    < (
+                        win_width
+                        - self._get_expanded_size(dock, b'maximumWidth')
+                        - self._get_expanded_size(dock, b'maximumWidth') * 0.05
+                    )
                 ),
             },
             Qt.DockWidgetArea.LeftDockWidgetArea: {
@@ -398,7 +419,25 @@ class _QtMainWindow(QMainWindow):
             return
         if dock not in self.sliding_docks:
             return
+
         self.resizeDocks([dock], [size], orientation)
+
+        # Docks sharing an edge also share a splitter along the perpendicular
+        # axis (e.g. two left docks split height between them; two bottom
+        # docks split width between them). Resizing along the animated axis
+        # alone lets Qt freely recompute that other split — reapply the last
+        # known cross-axis size so it doesn't drift between show/hide cycles.
+        state = self.sliding_docks[dock]
+        cross_orientation = self._cross_orientation(orientation)
+        cross_size = state.get('cross_axis_size')
+
+        current_cross = self._cross_axis_dimension(dock, orientation)
+        if cross_size is None and current_cross > 0:
+            cross_size = current_cross
+            state['cross_axis_size'] = cross_size
+
+        if cross_size:
+            self.resizeDocks([dock], [cross_size], cross_orientation)
 
     def on_generic_animation_finished(self, dock, property_name):
         state = self.sliding_docks.get(dock)
@@ -584,25 +623,28 @@ class _QtMainWindow(QMainWindow):
             QApplication.mouseButtons() & Qt.MouseButton.LeftButton
         )
 
-        if not is_user_dragging:
-            # not a manual drag — either idle or our own animation ticking
-            return
+        area = self.dockWidgetArea(dock)
+        primary_orientation = (
+            Qt.Orientation.Horizontal
+            if area
+            in (
+                Qt.DockWidgetArea.LeftDockWidgetArea,
+                Qt.DockWidgetArea.RightDockWidgetArea,
+            )
+            else Qt.Orientation.Vertical
+        )
 
-        # if our slide animation is mid-flight, the user grabbed the border
-        # mid-slide: stop fighting the drag and unclamp so it can track the cursor
         if (
             anim is not None
             and anim.state() == QPropertyAnimation.State.Running
         ):
+            if not is_user_dragging:
+                return
             anim.stop()
             state['animation'] = None
             state['visible_state'] = True
 
-            area = self.dockWidgetArea(dock)
-            if area in (
-                Qt.DockWidgetArea.LeftDockWidgetArea,
-                Qt.DockWidgetArea.RightDockWidgetArea,
-            ):
+            if primary_orientation == Qt.Orientation.Horizontal:
                 dock.setMaximumWidth(QWIDGETSIZE_MAX)
             else:
                 dock.setMaximumHeight(QWIDGETSIZE_MAX)
@@ -610,19 +652,21 @@ class _QtMainWindow(QMainWindow):
         if not state['visible_state']:
             return
 
-        # capture the size on every resize event while dragging, so the final
-        # frame (mouse release) is what actually gets remembered
-        area = self.dockWidgetArea(dock)
-        if area in (
-            Qt.DockWidgetArea.LeftDockWidgetArea,
-            Qt.DockWidgetArea.RightDockWidgetArea,
-        ):
-            size = dock.width()
-        else:
-            size = dock.height()
+        primary_size = (
+            dock.width()
+            if primary_orientation == Qt.Orientation.Horizontal
+            else dock.height()
+        )
+        cross_size = (
+            dock.height()
+            if primary_orientation == Qt.Orientation.Horizontal
+            else dock.width()
+        )
 
-        if size > 0:
-            state['user_size'] = size
+        if primary_size > 0:
+            state['user_size'] = primary_size
+        if cross_size > 0:
+            state['cross_axis_size'] = cross_size
 
     def _load_window_settings(self):
         """
@@ -631,8 +675,6 @@ class _QtMainWindow(QMainWindow):
         settings = get_settings()
         window_position = settings.application.window_position
 
-        # It's necessary to verify if the window/position value is valid with
-        # the current screen.
         if not window_position:
             window_position = (self.x(), self.y())
         else:
