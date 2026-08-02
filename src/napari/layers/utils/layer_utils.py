@@ -391,7 +391,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     if in_kind == 'b':
         return data.astype(out_dtype) * 255
     if in_kind == 'f':
-        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        image_out = np.multiply(data, out_max)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
@@ -405,7 +405,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
                 out_dtype
             )
 
-        np.maximum(data, 0, out=data, dtype=data.dtype)
+        np.maximum(data, 0, out=data)
         if data.dtype == np.int8:
             return (data * 2).astype(np.uint8)
         if data.max() < out_max:
