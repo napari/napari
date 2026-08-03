@@ -131,5 +131,5 @@ def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
             __base__=PluginPreferences,
             **fields,
         )
-        plugin_settings[plugin_name].display_name = display_names[plugin_name]  # type: ignore[attr-defined]
+        plugin_settings[plugin_name].display_name = display_names[plugin_name]
     return plugin_settings
