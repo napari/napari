@@ -3,12 +3,14 @@ from typing import Any
 
 from napari.settings._base import (
     _NOT_SET,
-    PluginPreferences,
-    plugin_configuration_generator,
 )
 from napari.settings._napari_settings import (
     CURRENT_SCHEMA_VERSION,
     NapariSettings,
+)
+from napari.settings._plugin_config_generator import (
+    PluginPreferences,
+    plugin_configuration_generator,
 )
 from napari.utils._platformdirs import user_config_dir
 
