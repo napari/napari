@@ -506,3 +506,19 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
 
 def checked_to_bool(value: Qt.CheckState) -> bool:
     return Qt.CheckState(value) == Qt.CheckState.Checked
+
+
+def _get_perpendicular_orientation(orientation: Qt.Orientation):
+    return (
+        Qt.Orientation.Vertical
+        if orientation == Qt.Orientation.Horizontal
+        else Qt.Orientation.Horizontal
+    )
+
+
+def _get_cross_axis_dimension_size(dock, orientation):
+    return (
+        dock.height()
+        if orientation == Qt.Orientation.Horizontal
+        else dock.width()
+    )
