@@ -11,6 +11,7 @@ from pydantic_settings import (
 )
 
 from napari.settings._base import (
+    _NotSetType,
     _remove_empty_dicts,
 )
 from napari.settings._general_settings import GeneralSettings
@@ -33,7 +34,7 @@ class PluginPreferences(
     )
     display: str = ''
     # private attributes and ClassVars will not appear in the schema
-    config_path: Path | None = Field(  # type: ignore
+    config_path: Path | _NotSetType | None = Field(
         Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True
     )
 
