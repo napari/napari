@@ -469,7 +469,7 @@ class _QtMainWindow(QMainWindow):
         (width or height) is reset to 0 first so the dock can actually shrink
         down to 0 instead of being clamped by its content's minimum size hint.
         The dock is only truly hidden (`setVisible(False)`) once the collapse
-        animation fully finishes, in `on_generic_animation_finished`.
+        animation fully finishes, in `_on_generic_animation_finished`.
         """
         state = self.sliding_docks[dock]
         if show == state['visible_state']:
@@ -499,7 +499,7 @@ class _QtMainWindow(QMainWindow):
         )
 
         anim.finished.connect(
-            lambda: self.on_generic_animation_finished(dock, property_name)
+            lambda: self._on_generic_animation_finished(dock, property_name)
         )
         state['animation'] = anim
 
@@ -584,7 +584,7 @@ class _QtMainWindow(QMainWindow):
         if cross_size:
             self.resizeDocks([dock], [cross_size], cross_orientation)
 
-    def on_generic_animation_finished(
+    def _on_generic_animation_finished(
         self, dock: QtViewerDockWidget, property_name: bytes
     ):
         """Clean up a dock's state once its slide animation finishes.
