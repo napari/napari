@@ -68,13 +68,13 @@ def get_settings(path=_NOT_SET, plugin=None) -> NapariSettings:
     return _SETTINGS
 
 
-_PLUGIN_PREFRERENCES: dict[str, PluginPreferences] | None = {}
+_PLUGIN_PREFRERENCES: dict[str, PluginPreferences] = {}
 
 
 def get_plugin_settings(
     plugin: str | None = None,
     path_dir=_NOT_SET,
-):
+) -> dict[str, PluginPreferences] | PluginPreferences:
     global _PLUGIN_PREFRERENCES
 
     if not _PLUGIN_PREFRERENCES:

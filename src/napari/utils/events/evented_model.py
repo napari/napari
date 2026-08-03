@@ -188,7 +188,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _primary_changes: dict[str, None] = PrivateAttr(default_factory=dict)
     _delay_check_semaphore: int = PrivateAttr(0)
     __slots__: ClassVar[set[str]] = {'__weakref__'}  # type: ignore
-
+    display: str
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
     model_config = ConfigDict(

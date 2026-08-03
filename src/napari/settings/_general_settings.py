@@ -1,6 +1,5 @@
 import os
 from abc import ABC
-from pathlib import Path
 from typing import Any
 
 from pydantic import Field
@@ -30,11 +29,6 @@ class GeneralSettings(EventedConfigFileSettings, ABC):
     schema_version: Version = Field(
         CURRENT_SCHEMA_VERSION,
         description='Napari settings schema version.',
-    )
-
-    # private attributes and ClassVars will not appear in the schema
-    config_path: Path | None = Field(
-        Path(_CFG_PATH) if _CFG_PATH else None, exclude=True
     )
 
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:

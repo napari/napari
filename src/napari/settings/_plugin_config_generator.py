@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING, Any
 
 from pydantic import (
     Field,
@@ -9,6 +10,9 @@ from pydantic import (
 
 from napari.settings._plugin_preferences import PluginPreferences
 from napari.utils.events import EventedModel
+
+if TYPE_CHECKING:
+    from npe2.manifest.contributions import ConfigurationContribution
 
 
 def _field_name(key: str, plugin_name: str) -> str:
@@ -54,11 +58,11 @@ _TYPE_MAP: dict[str, type] = {
 
 
 def _build_single_config_model(
-    configuration,
+    configuration: ConfigurationContribution,
     plugin_name: str,
 ) -> type[EventedModel]:
 
-    fields = {}
+    fields: dict[str, Any] = {}
 
     for key, props in configuration.properties.items():
         if props.type is None:
@@ -87,7 +91,7 @@ def _build_single_config_model(
     return model
 
 
-def plugin_configuration_generator() -> dict[str, PluginPreferences]:
+def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
     from npe2 import PluginManager
 
     pm = PluginManager.instance()
