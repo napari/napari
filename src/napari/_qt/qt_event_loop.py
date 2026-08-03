@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from warnings import warn
 
 from qtpy import PYQT5
@@ -284,7 +284,7 @@ def get_qapp(
             install_plugin_environment_qt_support,
         )
 
-        install_plugin_environment_qt_support(app)
+        install_plugin_environment_qt_support(cast('QApplication', app))
 
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
