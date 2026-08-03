@@ -31,12 +31,13 @@ class PluginPreferences(
         extra='ignore',
         populate_by_name=True,
     )
+    display: str = ''
     # private attributes and ClassVars will not appear in the schema
-    config_path: Path | None = Field(
+    config_path: Path | None = Field(  # type: ignore
         Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = 'PluginSettings (defaults excluded)\n' + 34 * '-' + '\n'
         data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))

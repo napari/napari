@@ -57,6 +57,10 @@ _TYPE_MAP: dict[str, type] = {
 }
 
 
+class Config(EventedModel):
+    display: str = ''
+
+
 def _build_single_config_model(
     configuration: ConfigurationContribution,
     plugin_name: str,
