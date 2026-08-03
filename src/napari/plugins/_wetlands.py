@@ -7,6 +7,8 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
+from packaging.version import InvalidVersion, Version
+
 from napari.plugins._environment_types import (
     BackendCanceled,
     BackendFailure,
@@ -249,17 +251,20 @@ class WetlandsBackend:
             import wetlands
         except ImportError as error:
             raise BackendUnavailable(
-                'Wetlands 2 is required for managed plugin environments',
-                details=(
-                    'Install the released Wetlands 2 package, or install the '
-                    'local Wetlands 2 checkout for development.'
-                ),
+                'Wetlands 2.2 or newer is required for managed plugin '
+                'environments',
+                details='Install wetlands>=2.2,<3.',
             ) from error
         version = wetlands.__version__
-        if version.partition('.')[0] != '2':
+        try:
+            supported = Version('2.2') <= Version(version) < Version('3')
+        except InvalidVersion:
+            supported = False
+        if not supported:
             raise BackendUnavailable(
-                f'Wetlands 2 is required, but Wetlands {version} is installed',
-                details='Install a Wetlands release in the >=2,<3 range.',
+                'Wetlands 2.2 or newer is required, but '
+                f'Wetlands {version} is installed',
+                details='Install wetlands>=2.2,<3.',
             )
         self._version = version
         self._environment_spec = wetlands.EnvironmentSpec

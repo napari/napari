@@ -51,7 +51,7 @@ class _EnvironmentManager:
         self.root = root
 
 
-def _wetlands_module(version: str = '2.0.0') -> SimpleNamespace:
+def _wetlands_module(version: str = '2.2.0') -> SimpleNamespace:
     return SimpleNamespace(
         __version__=version,
         EnvironmentManager=_EnvironmentManager,
@@ -61,12 +61,15 @@ def _wetlands_module(version: str = '2.0.0') -> SimpleNamespace:
     )
 
 
+@pytest.mark.parametrize('version', ['1.1.1', '2.1.0', 'not-a-version'])
 def test_backend_rejects_unsupported_wetlands_version(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch, version: str
 ) -> None:
-    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module('1.1.1'))
+    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module(version))
 
-    with pytest.raises(BackendUnavailable, match='Wetlands 2 is required'):
+    with pytest.raises(
+        BackendUnavailable, match=r'Wetlands 2\.2 or newer is required'
+    ):
         WetlandsBackend(tmp_path)
 
 
@@ -95,9 +98,9 @@ def test_spec_maps_local_packages_and_lockfile(
 def test_backend_version_participates_in_fingerprint(
     tmp_path: Path, monkeypatch
 ) -> None:
-    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module('2.0.0'))
+    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module('2.2.0'))
     first = WetlandsBackend(tmp_path).fingerprint(_recipe())
-    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module('2.1.0'))
+    monkeypatch.setitem(sys.modules, 'wetlands', _wetlands_module('2.3.0'))
     second = WetlandsBackend(tmp_path).fingerprint(_recipe())
 
     assert first != second

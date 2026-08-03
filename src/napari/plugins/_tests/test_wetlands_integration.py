@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
+from packaging.version import InvalidVersion, Version
 
 from napari.plugins import _environment_manager as manager_module
 from napari.plugins._environment_manager import PluginEnvironmentManager
@@ -31,7 +32,7 @@ _ENABLE_ENVIRONMENT_VARIABLE = 'NAPARI_RUN_WETLANDS_INTEGRATION'
 pytestmark = pytest.mark.slow
 
 
-def _require_wetlands_2() -> None:
+def _require_supported_wetlands() -> None:
     if os.environ.get(_ENABLE_ENVIRONMENT_VARIABLE) != '1':
         pytest.skip(
             f'set {_ENABLE_ENVIRONMENT_VARIABLE}=1 to provision real Pixi '
@@ -39,8 +40,12 @@ def _require_wetlands_2() -> None:
         )
     wetlands = pytest.importorskip('wetlands')
     version = getattr(wetlands, '__version__', '0')
-    if version.partition('.')[0] != '2':
-        pytest.skip(f'Wetlands 2 is required, found {version}')
+    try:
+        supported = Version('2.2') <= Version(version) < Version('3')
+    except InvalidVersion:
+        supported = False
+    if not supported:
+        pytest.skip(f'Wetlands >=2.2,<3 is required, found {version}')
 
 
 def _create_worker_package(root: Path) -> Path:
@@ -136,7 +141,7 @@ def test_real_wetlands_isolates_reuses_and_cancels_workers(
 ) -> None:
     """Exercise the napari task API against two real Pixi environments."""
 
-    _require_wetlands_2()
+    _require_supported_wetlands()
     package = _create_worker_package(tmp_path)
     old_recipe = _recipe(
         package,
