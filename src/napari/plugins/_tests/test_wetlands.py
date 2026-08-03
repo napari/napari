@@ -19,6 +19,7 @@ from napari.plugins._wetlands import (
     WetlandsPool,
     _normalize_error,
 )
+from napari.plugins.environments import PluginTaskPhase
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -104,6 +105,47 @@ def test_backend_version_participates_in_fingerprint(
     second = WetlandsBackend(tmp_path).fingerprint(_recipe())
 
     assert first != second
+
+
+def test_backend_does_not_expose_sub_operation_completion() -> None:
+    events = (
+        SimpleNamespace(
+            kind=SimpleNamespace(value='state'),
+            stage=None,
+            message='Operation started',
+            current=None,
+            maximum=None,
+        ),
+        SimpleNamespace(
+            kind=SimpleNamespace(value='output'),
+            stage=SimpleNamespace(value='install'),
+            message='Installing packages',
+            current=1,
+            maximum=2,
+        ),
+        SimpleNamespace(
+            kind=SimpleNamespace(value='state'),
+            stage=None,
+            message='Operation completed',
+            current=None,
+            maximum=None,
+        ),
+    )
+    operation = SimpleNamespace(
+        listen=lambda callback: [callback(event) for event in events]
+    )
+    received = []
+
+    WetlandsBackend._listen_operation(
+        operation,
+        PluginTaskPhase.PROVISIONING,
+        received.append,
+    )
+
+    assert [update.message for update in received] == [
+        'Operation started',
+        'install: Installing packages',
+    ]
 
 
 def test_pool_recognizes_public_cancellation_type() -> None:

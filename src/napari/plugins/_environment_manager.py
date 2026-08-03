@@ -30,10 +30,12 @@ from napari.plugins._environment_types import (
 from napari.plugins.environments import (
     PluginEnvironmentError,
     PluginEnvironmentInfo,
+    PluginEnvironmentOperation,
     PluginEnvironmentProvisioningError,
     PluginEnvironmentState,
     PluginEnvironmentUnavailableError,
     PluginTask,
+    PluginTaskMetadata,
     PluginTaskPhase,
     PluginTaskState,
     PluginWorkerError,
@@ -556,8 +558,15 @@ class PluginEnvironmentManager:
         return tuple(infos)
 
     def prepare(self, environment_id: str) -> PluginTask[None]:
-        task: PluginTask[None] = PluginTask()
-        if owner := _owner_for_contribution(environment_id):
+        owner = _owner_for_contribution(environment_id)
+        task: PluginTask[None] = PluginTask(
+            PluginTaskMetadata(
+                operation=PluginEnvironmentOperation.PREPARE,
+                plugin=owner,
+                environment_ids=(environment_id,),
+            )
+        )
+        if owner:
             self._associate_task(task, owner, environment_id)
             if self._is_stopping(owner, environment_id):
                 task.cancel()
@@ -576,12 +585,17 @@ class PluginEnvironmentManager:
                     provision='on_demand',
                 )
             backend = self._get_backend()
+            task._report_progress(
+                PluginTaskPhase.CLEANING_UP,
+                'Finalizing managed plugin environment',
+            )
             self._record_ownership(
                 declaration,
                 physical_name=physical_name,
                 fingerprint=backend.fingerprint(recipe),
             )
             self._finalize_preparation(
+                task,
                 backend,
                 recipe,
                 keep=physical_name,
@@ -609,18 +623,32 @@ class PluginEnvironmentManager:
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> PluginTask[Any]:
-        task: PluginTask[Any] = PluginTask()
         command: WorkerCommand | None = None
         command_error: Exception | None = None
         try:
             command = _find_worker_command(command_id)
         except Exception as error:  # noqa: BLE001
             command_error = error
+        owner = (
+            command.plugin
+            if command is not None
+            else _owner_for_contribution(command_id)
+        )
+        task: PluginTask[Any] = PluginTask(
+            PluginTaskMetadata(
+                operation=PluginEnvironmentOperation.EXECUTE,
+                plugin=owner,
+                environment_ids=(
+                    (command.environment_id,) if command is not None else ()
+                ),
+                command_id=command_id,
+            )
+        )
         if command is not None:
             self._associate_task(task, command.plugin, command.environment_id)
             if self._is_stopping(command.plugin, command.environment_id):
                 task.cancel()
-        elif owner := _owner_for_contribution(command_id):
+        elif owner:
             self._associate_task(task, owner)
 
         def run() -> None:
@@ -698,7 +726,15 @@ class PluginEnvironmentManager:
         plugin: str,
         environment_id: str | None = None,
     ) -> PluginTask[None]:
-        task: PluginTask[None] = PluginTask()
+        task: PluginTask[None] = PluginTask(
+            PluginTaskMetadata(
+                operation=PluginEnvironmentOperation.STOP,
+                plugin=plugin,
+                environment_ids=(
+                    (environment_id,) if environment_id is not None else ()
+                ),
+            )
+        )
         self._associate_task(task, plugin)
         selected = None if environment_id is None else {environment_id}
         with self._lock:
@@ -818,7 +854,13 @@ class PluginEnvironmentManager:
         plugin: str,
         environment_ids: tuple[str, ...] | None = None,
     ) -> PluginTask[None]:
-        task: PluginTask[None] = PluginTask()
+        task: PluginTask[None] = PluginTask(
+            PluginTaskMetadata(
+                operation=PluginEnvironmentOperation.REMOVE,
+                plugin=plugin,
+                environment_ids=environment_ids or (),
+            )
+        )
         self._associate_task(task, plugin)
         selected = None if environment_ids is None else set(environment_ids)
         with self._lock:
@@ -1239,13 +1281,16 @@ class PluginEnvironmentManager:
 
     def _finalize_preparation(
         self,
+        task: PluginTask[Any],
         backend: EnvironmentBackend,
         recipe: EnvironmentRecipe,
         *,
         keep: str,
     ) -> None:
-        self._retire_pool_generations(backend, recipe, keep=keep)
-        self._remove_stale_generations(backend, recipe, keep=keep)
+        self._raise_if_stopping(task, recipe)
+        self._retire_pool_generations(task, backend, recipe, keep=keep)
+        self._remove_stale_generations(task, backend, recipe, keep=keep)
+        self._raise_if_stopping(task, recipe)
 
     def _pool_for(
         self,
@@ -1279,7 +1324,12 @@ class PluginEnvironmentManager:
             physical_name=physical_name,
             fingerprint=backend.fingerprint(recipe),
         )
+        task._report_progress(
+            PluginTaskPhase.CLEANING_UP,
+            'Finalizing managed plugin environment',
+        )
         self._finalize_preparation(
+            task,
             backend,
             recipe,
             keep=physical_name,
@@ -1334,6 +1384,7 @@ class PluginEnvironmentManager:
 
     def _retire_pool_generations(
         self,
+        task: PluginTask[Any],
         backend: EnvironmentBackend,
         recipe: EnvironmentRecipe,
         *,
@@ -1352,7 +1403,7 @@ class PluginEnvironmentManager:
                         self._pool_entries.pop(name, None)
                         retired.append(entry)
         for entry in retired:
-            self._close_retired_pool(backend, entry)
+            self._close_retired_pool(backend, entry, task=task)
 
     def _release_pool(self, entry: _PoolEntry) -> None:
         backend: EnvironmentBackend | None = None
@@ -1376,6 +1427,8 @@ class PluginEnvironmentManager:
     def _close_retired_pool(
         backend: EnvironmentBackend,
         entry: _PoolEntry,
+        *,
+        task: PluginTask[Any] | None = None,
     ) -> None:
         try:
             entry.pool.close()
@@ -1385,8 +1438,29 @@ class PluginEnvironmentManager:
                 entry.physical_name,
             )
             return
+        progress: Callable[[BackendProgress], None] | None = None
+        cancel_callback: Callable[[Callable[[], Any]], None] | None = None
+        if task is not None:
+            if task.cancellation_requested:
+                raise BackendCanceled
+            task._report_progress(
+                PluginTaskPhase.CLEANING_UP,
+                f'Removing previous environment {entry.environment_id}',
+            )
+
+            def report_progress(update: BackendProgress) -> None:
+                PluginEnvironmentManager._report(task, update)
+
+            progress = report_progress
+            cancel_callback = task._set_cancel_callback
         try:
-            backend.remove_environment(entry.physical_name)
+            backend.remove_environment(
+                entry.physical_name,
+                progress=progress,
+                set_cancel_callback=cancel_callback,
+            )
+        except BackendCanceled:
+            raise
         except Exception:
             logger.exception(
                 'Failed to remove retired plugin environment %s',
@@ -1395,6 +1469,7 @@ class PluginEnvironmentManager:
 
     def _remove_stale_generations(
         self,
+        task: PluginTask[Any],
         backend: EnvironmentBackend,
         recipe: EnvironmentRecipe,
         *,
@@ -1413,8 +1488,20 @@ class PluginEnvironmentManager:
             return
         for name in names:
             if name.startswith(prefix) and name != keep and name not in active:
+                if task.cancellation_requested:
+                    raise BackendCanceled
+                task._report_progress(
+                    PluginTaskPhase.CLEANING_UP,
+                    f'Removing previous environment {recipe.environment_id}',
+                )
                 try:
-                    backend.remove_environment(name)
+                    backend.remove_environment(
+                        name,
+                        progress=lambda update: self._report(task, update),
+                        set_cancel_callback=task._set_cancel_callback,
+                    )
+                except BackendCanceled:
+                    raise
                 except Exception:
                     logger.exception(
                         'Failed to remove stale plugin environment %s',
@@ -1424,7 +1511,12 @@ class PluginEnvironmentManager:
     def release_plugin(self, plugin: str) -> None:
         """Stop worker pools owned by a disabled or unregistered plugin."""
 
-        task: PluginTask[None] = PluginTask()
+        task: PluginTask[None] = PluginTask(
+            PluginTaskMetadata(
+                operation=PluginEnvironmentOperation.STOP,
+                plugin=plugin,
+            )
+        )
         task._set_running(
             PluginTaskPhase.CLEANING_UP,
             f'Stopping managed workers for {plugin}',

@@ -307,11 +307,11 @@ class WetlandsBackend:
         progress: ProgressCallback,
     ) -> None:
         def receive(event: Any) -> None:
+            kind = getattr(getattr(event, 'kind', None), 'value', None)
+            if kind == 'state' and event.message == 'Operation completed':
+                return
             event_phase = phase
-            if (
-                getattr(getattr(event, 'kind', None), 'value', None)
-                == 'cleanup'
-            ):
+            if kind == 'cleanup':
                 event_phase = PluginTaskPhase.CLEANING_UP
             stage = event.stage
             stage_value = getattr(stage, 'value', stage)

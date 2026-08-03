@@ -1,24 +1,37 @@
 from __future__ import annotations
 
+import gc
 import threading
+import weakref
+from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING
 
 import pytest
 
-from napari.plugins import _environment_manager as manager_module
+from napari.plugins import (
+    _environment_manager as manager_module,
+    environments as environment_api,
+)
 from napari.plugins._environment_manager import PluginEnvironmentManager
+from napari.plugins._environment_types import BackendCanceled
 from napari.plugins._tests.test_environments import (
     _command,
     _FakeBackend,
     _recipe,
 )
 from napari.plugins.environments import (
+    PluginEnvironmentOperation,
     PluginEnvironmentUnavailableError,
     PluginTask,
     PluginTaskCanceledError,
+    PluginTaskMetadata,
     PluginTaskPhase,
     PluginTaskState,
+    PluginWorkerError,
+    PluginWorkerFailure,
     _immediate_dispatch,
+    _notify_task_created,
+    _PluginOperationHistory,
     _set_task_dispatcher,
 )
 
@@ -27,6 +40,7 @@ if TYPE_CHECKING:
 
     from napari.plugins._environment_types import (
         BackendPool,
+        CancelCallbackSetter,
         ProgressCallback,
     )
 
@@ -47,6 +61,34 @@ class _BlockingStartBackend(_FakeBackend):
         if not self.allow_start.wait(2):
             raise TimeoutError('test did not release pool startup')
         return super().start_pool(environment, progress=progress)
+
+
+class _BlockingRemovalBackend(_FakeBackend):
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.removal_started = threading.Event()
+        self.removal_canceled = threading.Event()
+        self.block_removal = False
+
+    def remove_environment(
+        self,
+        physical_name: str,
+        *,
+        progress: ProgressCallback | None = None,
+        set_cancel_callback: CancelCallbackSetter | None = None,
+    ) -> None:
+        if not self.block_removal:
+            return super().remove_environment(
+                physical_name,
+                progress=progress,
+                set_cancel_callback=set_cancel_callback,
+            )
+        self.removal_started.set()
+        if set_cancel_callback is not None:
+            set_cancel_callback(self.removal_canceled.set)
+        if not self.removal_canceled.wait(2):
+            raise TimeoutError('test did not cancel stale cleanup')
+        raise BackendCanceled
 
 
 def test_cancellation_requested_before_backend_callback_is_forwarded() -> None:
@@ -335,3 +377,177 @@ def test_control_task_starts_in_cleanup_phase(tmp_path: Path) -> None:
     assert progress
     assert progress[0].phase is PluginTaskPhase.CLEANING_UP
     manager.close()
+
+
+def test_stale_cleanup_reports_progress_and_can_be_canceled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = _BlockingRemovalBackend(tmp_path)
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: backend,
+    )
+    selected = _recipe()
+    monkeypatch.setattr(
+        manager_module,
+        '_find_environment',
+        lambda environment_id: selected,
+    )
+    try:
+        manager.prepare(selected.environment_id).result(2)
+        selected = _recipe(requirement='example-dependency==2')
+        backend.block_removal = True
+        progress = []
+
+        task = manager.prepare(selected.environment_id)
+        task.add_progress_callback(progress.append)
+        assert backend.removal_started.wait(2)
+
+        assert not task.done
+        assert progress[-1].phase is PluginTaskPhase.CLEANING_UP
+        assert 'Removing previous environment' in progress[-1].message
+        assert task.cancel()
+        with pytest.raises(PluginTaskCanceledError):
+            task.result(2)
+        assert backend.removal_canceled.is_set()
+
+        backend.block_removal = False
+        assert manager.prepare(selected.environment_id).result(2) is None
+        assert len(backend.known) == 1
+    finally:
+        manager.close()
+
+
+def test_manager_tasks_have_immutable_presentation_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = _FakeBackend(tmp_path)
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: backend,
+    )
+    recipe = _recipe()
+    command = _command('example-plugin.compute', recipe)
+    monkeypatch.setattr(
+        manager_module,
+        '_owner_for_contribution',
+        lambda contribution_id: recipe.plugin,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_environment',
+        lambda environment_id: recipe,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_worker_command',
+        lambda command_id: command,
+    )
+    try:
+        prepared = manager.prepare(recipe.environment_id)
+        assert prepared.result(2) is None
+        executed = manager.execute(command.command_id, (), {})
+        executed.result(2)
+        stopped = manager.stop_workers(recipe.plugin, recipe.environment_id)
+        assert stopped.result(2) is None
+        removed = manager.remove_environments(
+            recipe.plugin, (recipe.environment_id,)
+        )
+        assert removed.result(2) is None
+
+        assert prepared.metadata == PluginTaskMetadata(
+            PluginEnvironmentOperation.PREPARE,
+            recipe.plugin,
+            (recipe.environment_id,),
+        )
+        assert executed.metadata == PluginTaskMetadata(
+            PluginEnvironmentOperation.EXECUTE,
+            recipe.plugin,
+            (recipe.environment_id,),
+            command.command_id,
+        )
+        assert stopped.metadata is not None
+        assert stopped.metadata.operation is PluginEnvironmentOperation.STOP
+        assert removed.metadata is not None
+        assert removed.metadata.operation is PluginEnvironmentOperation.REMOVE
+        with pytest.raises(FrozenInstanceError):
+            prepared.metadata.plugin = 'changed'  # type: ignore[misc,union-attr]
+    finally:
+        manager.close()
+
+
+def test_recent_operation_history_is_bounded_replayable_and_scoped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    history = _PluginOperationHistory(max_records=3)
+    monkeypatch.setattr(environment_api, '_operation_history', history)
+    metadata = PluginTaskMetadata(
+        PluginEnvironmentOperation.EXECUTE,
+        'example-plugin',
+        ('example-plugin.worker',),
+        'example-plugin.compute',
+    )
+    task: PluginTask[None] = PluginTask(metadata)
+    received = []
+    unsubscribe = environment_api.add_plugin_environment_operation_callback(
+        received.append
+    )
+
+    _notify_task_created(task)
+    task._set_running(PluginTaskPhase.PREPARING, 'Preparing')
+    task._report_progress(PluginTaskPhase.EXECUTING, 'Running', 1, 2)
+    failure = PluginWorkerFailure(
+        category='remote_exception',
+        message='bad input',
+        traceback='ValueError: bad input',
+    )
+    task._set_error(
+        PluginWorkerError(
+            'Worker failed',
+            details='remote traceback',
+            failure=failure,
+        )
+    )
+    with pytest.raises(PluginWorkerError):
+        task.result()
+
+    records = environment_api.list_plugin_environment_operations(
+        'example-plugin', 'example-plugin.worker'
+    )
+    assert len(records) == 3
+    assert [record.sequence for record in records] == sorted(
+        record.sequence for record in records
+    )
+    assert records[-1].state is PluginTaskState.FAILED
+    assert records[-1].details == 'remote traceback'
+    assert records[-1].failure == failure
+    assert records[-1].timestamp.tzinfo is not None
+    assert received[-1] == records[-1]
+
+    replayed = []
+    stop_replay = environment_api.add_plugin_environment_operation_callback(
+        replayed.append, replay=True
+    )
+    assert replayed == list(records)
+    stop_replay()
+    unsubscribe()
+
+    environment_api.clear_plugin_environment_operations(
+        'example-plugin', 'example-plugin.worker'
+    )
+    assert environment_api.list_plugin_environment_operations() == ()
+
+
+def test_operation_history_does_not_retain_tasks() -> None:
+    history = _PluginOperationHistory(max_records=3)
+    task: PluginTask[None] = PluginTask(
+        PluginTaskMetadata(PluginEnvironmentOperation.PREPARE)
+    )
+    history.track(task)
+    task_reference = weakref.ref(task)
+
+    del task
+    gc.collect()
+
+    assert task_reference() is None
+    assert len(history._tracked_tasks) == 0
