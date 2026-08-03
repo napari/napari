@@ -7,6 +7,7 @@ from pydantic import Field
 from napari.settings._base import (
     _NOT_SET,
     EventedConfigFileSettings,
+    _NotSetType,
     _remove_empty_dicts,
 )
 from napari.settings._fields import Version
@@ -31,11 +32,13 @@ class GeneralSettings(EventedConfigFileSettings, ABC):
         description='Napari settings schema version.',
     )
 
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+    def __init__(
+        self, config_path: _NotSetType = _NOT_SET, **values: Any
+    ) -> None:
         super().__init__(config_path, **values)
         self._maybe_migrate()
 
-    def _save_dict(self, **kwargs):
+    def _save_dict(self, **kwargs: dict[Any, Any]) -> dict[str, Any]:
         # we always want schema_version written to the settings.yaml
         # TODO: is there a better way to always include schema version?
         return {
@@ -43,16 +46,16 @@ class GeneralSettings(EventedConfigFileSettings, ABC):
             **super()._save_dict(**kwargs),
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
         data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def _maybe_migrate(self):
+    def _maybe_migrate(self) -> None:
         if self.schema_version < CURRENT_SCHEMA_VERSION:
             from napari.settings._migrations import do_migrations
 

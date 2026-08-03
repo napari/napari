@@ -91,7 +91,7 @@ def _build_single_config_model(
         __base__=EventedModel,
         **fields,
     )
-    model.display = configuration.title  # pyright: ignore[reportAttributeAccessIssue]
+    model.display = configuration.title  # type: ignore[attr-defined]
     return model
 
 
@@ -113,23 +113,23 @@ def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
         for plug, conf in plugin_contr.items()
         if conf.configuration
     }
-    plugin_settings = {}
+    plugin_settings: dict[str, type[PluginPreferences]] = {}
     for plugin_name, configuration in configurations.items():
         models = [
             _build_single_config_model(conf, plugin_name)
             for conf in configuration
         ]
-        fields = {}
+        fields: dict[str, Any] = {}
 
         for model in models:
             fields[model.__name__] = (
                 model,
-                Field(default_factory=model, title=model.display),  # pyright: ignore[reportAttributeAccessIssue]
+                Field(default_factory=model, title=model.display),  # type: ignore[attr-defined]
             )
         plugin_settings[plugin_name] = create_model(
             f'{plugin_name} Preferences',
             __base__=PluginPreferences,
             **fields,
         )
-        plugin_settings[plugin_name].display_name = display_names[plugin_name]
+        plugin_settings[plugin_name].display_name = display_names[plugin_name]  # type: ignore[attr-defined]
     return plugin_settings
