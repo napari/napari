@@ -340,9 +340,14 @@ class _QtMainWindow(QMainWindow):
         dock: QtViewerDockWidget
             The dock widget to deregister.
         """
-        state = self.sliding_docks.pop(dock, None)
+        state = self.sliding_docks.get(dock)
         if state is None:
             return
+
+        was_visible = dock.isVisible()
+        remembered_user_size = state.get('user_size')
+
+        self.sliding_docks.pop(dock, None)
 
         anim = state.get('animation')
         if (
@@ -356,20 +361,18 @@ class _QtMainWindow(QMainWindow):
         dock.setMinimumWidth(0)
         dock.setMinimumHeight(0)
 
-        if not dock.isVisible():
+        if not was_visible:
             dock.setVisible(True)
-
             area = self.dockWidgetArea(dock)
             if area in (
                 Qt.DockWidgetArea.LeftDockWidgetArea,
                 Qt.DockWidgetArea.RightDockWidgetArea,
             ):
-                size = self._get_expanded_size(dock, b'maximumWidth')
                 orientation = Qt.Orientation.Horizontal
             else:
-                size = self._get_expanded_size(dock, b'maximumHeight')
                 orientation = Qt.Orientation.Vertical
 
+            size = remembered_user_size or self.expanded_size
             self.resizeDocks([dock], [size], orientation)
 
     def _handle_multi_dock_hover(self, pos: QPoint) -> None:
