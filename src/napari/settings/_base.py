@@ -29,9 +29,8 @@ from pydantic_settings import (
 )
 
 from napari._pydantic_util import get_inner_type, get_origin
-from napari.settings._fields import Version
+from napari.settings._plugin_preferences import PluginPreferences
 from napari.settings._yaml import PydanticYamlMixin
-from napari.utils._platformdirs import user_config_dir
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
 
@@ -508,60 +507,6 @@ def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
         if v == {}:
             del dct[k]
     return dct
-
-
-CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
-
-_PL_CFG_PATH = os.getenv('NAPARI_CONFIG', user_config_dir())
-
-
-class PluginPreferences(
-    EventedConfigFileSettings
-):  # Should become parent class of NapariSettings and this class should become empty class
-    schema_version: Version = Field(
-        CURRENT_SCHEMA_VERSION,
-        description='Napari settings schema version.',
-    )
-    model_config = SettingsConfigDict(
-        env_prefix='napari_',
-        nested_model_default_partial_update=True,
-        env_nested_delimiter='_',
-        env_nested_max_split=1,
-        use_enum_values=False,
-        extra='ignore',
-        populate_by_name=True,
-    )
-    # private attributes and ClassVars will not appear in the schema
-    config_path: Path | None = Field(
-        Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True
-    )
-
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
-        super().__init__(config_path, **values)
-        self._maybe_migrate()
-
-    def _save_dict(self, **kwargs):
-        # we always want schema_version written to the settings.yaml
-        # TODO: is there a better way to always include schema version?
-        return {
-            'schema_version': self.schema_version,
-            **super()._save_dict(**kwargs),
-        }
-
-    def __str__(self):
-        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
-        data = self.model_dump(exclude_defaults=True)
-        out += self._yaml_dump(_remove_empty_dicts(data))
-        return out
-
-    def __repr__(self):
-        return str(self)
-
-    def _maybe_migrate(self):
-        if self.schema_version < CURRENT_SCHEMA_VERSION:
-            from napari.settings._migrations import do_migrations
-
-            do_migrations(self)
 
 
 def _field_name(key: str, plugin_name: str) -> str:

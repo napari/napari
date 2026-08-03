@@ -39,6 +39,26 @@ contributions:
       colors:
         background: "#272822"
         foreground: "#75715e"
+  configuration:
+    - title: Demo Configuration for widget 1
+      properties:
+        my_plugin.reader.lazy:
+          type: boolean
+          default: false
+          title: bool input
+          description: Whether to load images lazily with dask
+        my_plugin.reader.sad:
+          type: integer
+          default: 10
+          title: integer input
+          description: Whether to load images lazily with sad
+    - title: Demo Configuration for widget 2
+      properties:
+        my_plugin.reader.dsasdas:
+          type: number
+          default: 2.1
+          title: Change size of ...
+          description: no desc
   sample_data:
     - display_name: Some Random Data (512 x 512)
       key: random_data

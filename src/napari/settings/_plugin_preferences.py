@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from pydantic import (
+    Field,
+)
+from pydantic_settings import (
+    SettingsConfigDict,
+)
+
+from napari.settings._base import (
+    _remove_empty_dicts,
+)
+from napari.settings._general_settings import GeneralSettings
+from napari.utils._platformdirs import user_config_dir
+
+_PL_CFG_PATH = os.getenv('NAPARI_CONFIG', user_config_dir())
+
+
+class PluginPreferences(
+    GeneralSettings
+):  # Should become parent class of NapariSettings and this class should become empty class
+    model_config = SettingsConfigDict(
+        env_prefix='napari_',
+        nested_model_default_partial_update=True,
+        env_nested_delimiter='_',
+        env_nested_max_split=1,
+        use_enum_values=False,
+        extra='ignore',
+        populate_by_name=True,
+    )
+    # private attributes and ClassVars will not appear in the schema
+    config_path: Path | None = Field(
+        Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True
+    )
+
+    def __str__(self):
+        out = 'PluginSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        data = self.model_dump(exclude_defaults=True)
+        out += self._yaml_dump(_remove_empty_dicts(data))
+        return out

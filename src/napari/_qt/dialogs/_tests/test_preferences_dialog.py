@@ -2,6 +2,7 @@ import sys
 
 import numpy.testing as npt
 import pytest
+from npe2 import PluginManager
 from pydantic import BaseModel
 from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtGui import QKeyEvent
@@ -64,7 +65,11 @@ def test_prefdialog_populated(pref):
         ),
         NapariSettings.model_fields.values(),
     )
-    assert pref._stack.count() == len(list(subfields))
+    pl_manager = PluginManager.instance()
+    number_of_plugins = pl_manager.discover()
+    assert (
+        pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
+    )  # +1 for the seperator of the plugins.
 
 
 def test_dask_widget(qtbot, pref):
