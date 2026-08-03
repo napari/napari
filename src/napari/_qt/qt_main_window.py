@@ -331,8 +331,9 @@ class _QtMainWindow(QMainWindow):
     def deregister_sliding_dock(self, dock: QtViewerDockWidget) -> None:
         """Deregister the dockwidget from the widgets registered as sliding dock widgets.
 
-        This removes the dock widget from the sliding dock widgets and ensures the animation is stopped and
-        settings are reset.
+        This removes the dock widget from the sliding dock widgets and ensures the animation is stopped,
+        size constraints are reset, and the dock ends up visible and normally sized, e.g. as if the sliding out
+        animation just finished, regardless of whether it was expanded or collapsed at the time of deregistering.
 
         Parameters
         ----------
@@ -354,6 +355,22 @@ class _QtMainWindow(QMainWindow):
         dock.setMaximumHeight(QWIDGETSIZE_MAX)
         dock.setMinimumWidth(0)
         dock.setMinimumHeight(0)
+
+        if not dock.isVisible():
+            dock.setVisible(True)
+
+            area = self.dockWidgetArea(dock)
+            if area in (
+                Qt.DockWidgetArea.LeftDockWidgetArea,
+                Qt.DockWidgetArea.RightDockWidgetArea,
+            ):
+                size = self._get_expanded_size(dock, b'maximumWidth')
+                orientation = Qt.Orientation.Horizontal
+            else:
+                size = self._get_expanded_size(dock, b'maximumHeight')
+                orientation = Qt.Orientation.Vertical
+
+            self.resizeDocks([dock], [size], orientation)
 
     def _handle_multi_dock_hover(self, pos: QPoint) -> None:
         """Show or hide sliding docks based on cursor proximity to window edges.
