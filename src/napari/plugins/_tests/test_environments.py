@@ -872,7 +872,7 @@ def test_worker_command_registry_uses_napari_proxy(
     )
     manifest = PluginManifest(
         name='isolated-example',
-        schema_version='0.4.0',
+        schema_version='0.3.0',
         contributions={
             'environments': [
                 {
