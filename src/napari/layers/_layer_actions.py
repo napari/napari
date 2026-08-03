@@ -258,7 +258,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
 
 
 def _project_points(ll: LayerList, axis: int = 0) -> None:
-    """Project a points layer onto a single plane by dropping one axis.
+    """Project a points layer by dropping its first axis.
 
     No reduction is applied: every point is kept and its coordinate along
     ``axis`` is removed, so a 3D layer becomes 2D. Per-point state (size,
@@ -270,7 +270,7 @@ def _project_points(ll: LayerList, axis: int = 0) -> None:
     if not isinstance(layer, Points):
         raise NotImplementedError(
             trans._(
-                'Single plane projection is only implemented for points',
+                'Dropping the first axis is only implemented for points',
                 deferred=True,
             )
         )

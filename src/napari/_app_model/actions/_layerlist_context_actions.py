@@ -353,7 +353,7 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
 LAYERLIST_CONTEXT_ACTIONS.append(
     Action(
         id='napari.layer.project_points_single_plane',
-        title=trans._('Single plane'),
+        title=trans._('Drop first axis'),
         callback=_layer_actions._project_points,
         enablement=LLSCK.active_layer_is_points_nd,
         menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
