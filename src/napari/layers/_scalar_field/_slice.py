@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
-import scipy.ndimage as ndi
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import (
@@ -396,7 +395,8 @@ class _ScalarFieldSliceRequest:
         """
         Query the given data with the given data indices using scipy's map_coordinates.
         """
-        return ndi.map_coordinates(
+        from scipy.ndimage import map_coordinates
+        return map_coordinates(
             data,
             data_indices,
             order=affine_slicing_sampling_order,
