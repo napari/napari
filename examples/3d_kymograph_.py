@@ -158,7 +158,7 @@ for s in samples:
         s['vol'], name=s['description'], scale=scale, blending='opaque'
     )
 
-viewer.grid.enabled = True  # show the volumes in grid mode
+viewer.canvas.grid.enabled = True  # show the volumes in grid mode
 viewer.axes.visible = True  # magenta error shows time direction
 
 # set an oblique view angle onto the kymograph grid

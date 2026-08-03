@@ -161,3 +161,37 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             if v is value or v == value:
                 return k
         return None
+
+
+class EventedDictNamespace(EventedDict[str, _T]):
+    """An evented dict that also exposes its elements as a simple namespace.
+
+    Needs keys to be str.
+    """
+
+    def __getattr__(self, name: str) -> _T:
+        # we need some special cases cause they are accessed before full initialization
+        if name == 'events':
+            raise AttributeError(name)
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    def __setattr__(self, name: str, value: _T) -> None:
+        # we need some special cases cause they are accessed before full initialization
+        if (
+            name in ('events', '_dict', '_basetypes')
+            or name in super().__dir__()
+        ):
+            super().__setattr__(name, value)
+        else:
+            self[name] = value
+
+    def __dir__(self) -> list[str]:
+        # provides autocompletion including the magical attributes computed from keys
+        # unless they are private
+        return sorted(
+            set(super().__dir__())
+            | {k for k in self.keys() if not k.startswith('_')}
+        )
