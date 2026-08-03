@@ -457,6 +457,27 @@ def test_edge_color_cycle():
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
+def test_switching_edge_color_mode_back_to_direct():
+    """Setting the mode to direct takes the layer out of a feature mapping.
+
+    The setter used to assign an attribute nothing reads (`_edge_color_mode`), so the
+    layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
+    switch as expected.
+    """
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(
+        data,
+        features={'phase': np.linspace(-1, 1, 6)},
+        edge_color='phase',
+    )
+    assert layer.edge_color_mode == 'colormap'
+
+    layer.edge_color_mode = 'direct'
+
+    assert layer.edge_color_mode == 'direct'
+
+
 def test_edge_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)
