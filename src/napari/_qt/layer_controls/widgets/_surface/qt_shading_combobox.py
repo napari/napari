@@ -9,6 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Surface
+from napari.layers.base.base import Layer
 from napari.layers.surface._surface_constants import Shading
 
 
@@ -32,16 +33,18 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    _layer: Surface
+    _layer: Surface #@lorenzo: this can be safely removed?
 
-    def __init__(self, parent: QWidget, layer: Surface) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.shading.connect(self._on_shading_change)
+        for layer in self._layers:
+            layer.events.shading.connect(self._on_shading_change)
 
         # Setup widgets
         shading_comboBox = QEnumComboBox(parent, Shading)
-        shading_comboBox.setCurrentEnum(Shading(self._layer.shading))
+        shading_comboBox.setCurrentEnum(Shading(self._layers[0].shading))
         shading_comboBox.currentEnumChanged.connect(self.change_shading)
         self.shading_combobox = shading_comboBox
 
@@ -54,12 +57,15 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         text : str
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
-        self._layer.shading = self.shading_combobox.currentEnum()
+        for layer in self._layers:
+            with layer.events.shading.blocker(self._on_shading_change):
+                layer.shading = self.shading_combobox.currentEnum()
+        #self._layer.shading = self.shading_combobox.currentEnum() @lorenzo: copilot suggested a blocker, I agree? is the blocker right?
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
         with qt_signals_blocked(self.shading_combobox):
-            self.shading_combobox.setCurrentEnum(Shading(self._layer.shading))
+            self.shading_combobox.setCurrentEnum(Shading(self._layers[0].shading))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.shading_combobox_label, self.shading_combobox)]

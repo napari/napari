@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
-
+from napari.layers.base.base import Layer
 
 class QtProjectionModeControl(QtWidgetControlsBase):
     """
@@ -30,23 +30,27 @@ class QtProjectionModeControl(QtWidgetControlsBase):
     """
 
     def __init__(
-        self, parent: QWidget, layer: Image | Points | Vectors
+        self, parent: QWidget, layers: list[Layer]
     ) -> None:
-        super().__init__(parent, layer)
+        super().__init__(parent, layers)
         # Setup layer
-        self._layer.events.projection_mode.connect(
-            self._on_projection_mode_change
-        )
+        self._layers = layers
+        for layer in self._layers:
+            layer.events.projection_mode.connect(
+                self._on_projection_mode_change
+            )
 
         # Setup widgets
-        proj_modes = [i.value for i in self._layer._projectionclass]
+# @margot remove this line if follow line works  proj_modes = [i.value for i in self._layer._projectionclass]
+        proj_modes = [i.value for i in set().union(*(layer._projectionclass for layer in self._layers))]
         self.projection_combobox = QComboBox(parent)
         self.projection_combobox.addItems(proj_modes)
-        connect_setattr(
-            self.projection_combobox.currentTextChanged,
-            self._layer,
-            'projection_mode',
-        )
+        for layer in self._layers:
+            connect_setattr(
+                self.projection_combobox.currentTextChanged,
+                layer,
+                'projection_mode',
+            )
 
         self._on_projection_mode_change()
 
@@ -55,7 +59,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
     def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):
             self.projection_combobox.setCurrentText(
-                str(self._layer.projection_mode)
+                str(self._layers[0].projection_mode)
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

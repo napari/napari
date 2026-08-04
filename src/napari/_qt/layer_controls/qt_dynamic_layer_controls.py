@@ -38,6 +38,30 @@ from napari._qt.layer_controls.widgets.qt_gamma_slider import (
 from napari._qt.layer_controls.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
+from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
+    QtMultiscaleLevelControl,
+)
+from napari._qt.layer_controls.widgets.qt_out_slice_checkbox import (
+    QtOutSliceCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
+    QtProjectionModeControl,
+)
+from napari._qt.layer_controls.widgets.qt_text_visibility import (
+    QtTextVisibilityControl,
+)
+from napari._qt.layer_controls.widgets._points.qt_current_size_slider import (
+    QtCurrentSizeSliderControl,
+)
+from napari._qt.layer_controls.widgets._points.qt_symbol_combobox import (
+    QtSymbolComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._surface.qt_shading_combobox import (
+    QtShadingComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._image.qt_depiction_control import (
+    QtDepictionControl,
+)
 from napari.layers import (
     Image,
     Labels,
@@ -68,7 +92,14 @@ controls_dict = {
     'colormap': QtColormapControl,
     'face_color': QtFaceColorControl,
     'border_color': QtBorderColorControl,
-    #'projection_mode': QtProjectionModeControl,
+    'multiscale': QtMultiscaleLevelControl,
+    'out_of_slice_display': QtOutSliceCheckBoxControl,
+    'projection_mode': QtProjectionModeControl,
+    'text': QtTextVisibilityControl,
+    'size': QtCurrentSizeSliderControl,
+    'symbol': QtSymbolComboBoxControl,
+    'shading': QtShadingComboBoxControl,
+    'depiction': QtDepictionControl,
     #'interpolation': QtInterpolationComboBoxControl,
 }
 buttons_dict = {

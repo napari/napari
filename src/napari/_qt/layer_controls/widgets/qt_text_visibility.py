@@ -30,34 +30,37 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         Label for the text visibility widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
         # Setup layer
-        self._layer.text.events.visible.connect(
-            self._on_text_visibility_change
-        )
+        for layer in self._layers:
+            layer.text.events.visible.connect(
+                self._on_text_visibility_change
+            )
 
         # Setup widgets
         text_disp_cb = QCheckBox()
         text_disp_cb.setToolTip('Toggle text visibility')
-        text_disp_cb.setChecked(self._layer.text.visible)
-        connect_setattr(
-            text_disp_cb.stateChanged,
-            layer.text,
-            'visible',
-            convert_fun=checked_to_bool,
-        )
+        text_disp_cb.setChecked(self._layers[0].text.visible)
+        for layer in self._layers:
+            connect_setattr(
+                text_disp_cb.stateChanged,
+                layer.text,
+                'visible',
+                convert_fun=checked_to_bool,
+            )
         self.text_disp_checkbox = text_disp_cb
         self.text_disp_label = QtWrappedLabel('display text:')
 
     def _on_text_visibility_change(self) -> None:
-        """Receive layer model text visibiltiy change change event and update checkbox."""
+        """Receive layer model text visibiltiy change event and update checkbox."""
         with qt_signals_blocked(self.text_disp_checkbox):
-            self.text_disp_checkbox.setChecked(self._layer.text.visible)
+            self.text_disp_checkbox.setChecked(self._layers[0].text.visible)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.text_disp_label, self.text_disp_checkbox)]
 
     def disconnect_widget_controls(self) -> None:
-        disconnect_events(self._layer.text.events, self)
+        for layer in self._layers:
+            disconnect_events(layer.text.events, self)
         super().disconnect_widget_controls()

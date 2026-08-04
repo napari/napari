@@ -32,23 +32,27 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         Label for the out of slice display enablement chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
         # Setup layer
-        self._layer.events.out_of_slice_display.connect(
-            self._on_out_of_slice_display_change
-        )
+        self._layers = layers
+
+        for layer in self._layers:
+            layer.events.out_of_slice_display.connect(
+                self._on_out_of_slice_display_change
+            )
 
         # Setup widgets
         self.out_of_slice_checkbox = QCheckBox()
         self.out_of_slice_checkbox.setToolTip('Out of slice display')
-        self.out_of_slice_checkbox.setChecked(self._layer.out_of_slice_display)
-        connect_setattr(
-            self.out_of_slice_checkbox.stateChanged,
-            layer,
-            'out_of_slice_display',
-            convert_fun=checked_to_bool,
-        )
+        self.out_of_slice_checkbox.setChecked(self._layers[0].out_of_slice_display)
+        for layer in self._layers:
+            connect_setattr(
+                self.out_of_slice_checkbox.stateChanged,
+                layer,
+                'out_of_slice_display',
+                convert_fun=checked_to_bool,
+            )
 
         self.out_of_slice_checkbox_label = QtWrappedLabel('out of slice:')
 
@@ -56,7 +60,7 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         """Receive layer model out_of_slice_display change event and update checkbox."""
         with qt_signals_blocked(self.out_of_slice_checkbox):
             self.out_of_slice_checkbox.setChecked(
-                self._layer.out_of_slice_display
+                self._layers[0].out_of_slice_display
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

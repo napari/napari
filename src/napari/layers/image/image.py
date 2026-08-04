@@ -139,7 +139,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    projection_mode : str
+    projection_mode : str #@lorenzo any reason this isnt also in the attributes docstring?
         How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to ImageProjectionMode
     rendering : str
