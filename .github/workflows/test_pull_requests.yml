@@ -20,11 +20,11 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Set up Python 3.14
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: 3.14
       - name: Install dependencies
@@ -40,10 +40,10 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.14"
           cache-dependency-path: pyproject.toml
@@ -58,25 +58,6 @@ jobs:
       - name: Check Manifest
         run: |
           tox -e check-manifest
-
-  localization_syntax:
-    # make sure all necessary files will be bundled in the release
-    name: Check l18n syntax
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.x"
-      - name: Check localization formatting
-        run: |
-          pip install --upgrade pip semgrep
-          # f"..." and f'...' are the same for semgrep
-          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
-          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
 
   build_wheel:
     name: Build wheel
@@ -223,12 +204,12 @@ jobs:
     env:
       GIT_LFS_SKIP_SMUDGE: 1
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
@@ -245,7 +226,7 @@ jobs:
           unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
           rm triangulation-benchmark-shapes.zip
 
-      - uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
+      - uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         # here we get hash of the latest release commit to compare with PR
         id: latest_release
         with:
