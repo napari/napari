@@ -12,6 +12,7 @@ from napari.settings._plugin_preferences import PluginPreferences
 from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
+    from npe2 import PluginManager
     from npe2.manifest.contributions import ConfigurationContribution
 
 
@@ -96,7 +97,7 @@ def _build_single_config_model(
 
 
 def plugin_configuration_generator(
-    plugin_manager=None,
+    plugin_manager: PluginManager | None = None,
 ) -> dict[str, type[PluginPreferences]]:
     if not plugin_manager:
         from npe2 import PluginManager
@@ -136,5 +137,5 @@ def plugin_configuration_generator(
             __base__=PluginPreferences,
             **fields,
         )
-        plugin_settings[plugin_name].display_name = display_names[plugin_name]  # type: ignore[attr-defined]
+        plugin_settings[plugin_name].display_name = display_names[plugin_name]
     return plugin_settings
