@@ -37,7 +37,6 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
-    QWIDGETSIZE_MAX,
     QApplication,
     QDialog,
     QDockWidget,
@@ -111,7 +110,8 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 _sentinel = object()
-
+# Putting this here because Pyside 6 backend does not expose this through qtpy.
+QWIDGETSIZE_MAX = 16777215
 SHOW_QT_WARNING = QT5
 # a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
 
