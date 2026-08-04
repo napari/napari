@@ -52,11 +52,11 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         if self.color_mode_combobox.currentEnum() == LabelColorMode.AUTO.value:
             self._layer.colormap = self._layer._original_random_colormap
         else:
-            self._layer.colormap = self._layer._direct_colormap  # type: ignore[attr-defined]
+            self._layer.colormap = self._layer._direct_colormap
 
     def _on_colormap_change(self) -> None:
-        enable_combobox = not self._layer._is_default_colors(  # type: ignore[attr-defined]
-            self._layer._direct_colormap.color_dict  # type: ignore[attr-defined]
+        enable_combobox = not self._layer._is_default_colors(
+            self._layer._direct_colormap.color_dict
         )
         self.color_mode_combobox.setEnabled(enable_combobox)
         if not enable_combobox:
