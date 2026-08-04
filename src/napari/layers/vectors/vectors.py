@@ -626,6 +626,7 @@ class Vectors(Layer):
                 )
 
             self._edge.color_mode = edge_color_mode
+            self.events.edge_color()
         self.events.edge_color_mode()
 
     @property
