@@ -223,6 +223,7 @@ docs = [
 ]
 dev = [
     "prek>=0.4.0",
+    "pre-commit>=2.9.0", # to keep old instructions for developers working on napari
     "tox",
     "tox-min-req",
     "napari[testing]",
@@ -310,6 +311,7 @@ docs = [
 ]
 dev = [
     "prek>=0.4.0",
+    "pre-commit>=2.9.0",  # to keep old instructions for developers working on napari
     "tox",
     "tox-min-req",
     {include-group = "testing"},

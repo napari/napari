@@ -20,7 +20,7 @@ settings-schema:
 	python -m napari.settings._napari_settings
 
 pre:
-	pre-commit run -a
+	prek run -a
 
 # If the first argument is "watch"...
 ifeq (watch,$(firstword $(MAKECMDGOALS)))
