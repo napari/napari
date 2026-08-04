@@ -3,11 +3,12 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
 )
-from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
+
 from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
 from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari._qt.layer_controls.qt_shapes_buttons import QtShapesButtons
@@ -173,10 +174,14 @@ class QtDynamicLayerControls(QFrame):
 
         for attr, control in controls_dict.items():
             if all(hasattr(layer, attr) for layer in self._layers):
-                if attr == 'colormap' and any(isinstance(layer, Labels) for layer in self._layers): #TODO: find a smarter way to do this
+                if attr == 'colormap' and any(
+                    isinstance(layer, Labels) for layer in self._layers
+                ):  # TODO: find a smarter way to do this
                     pass
                 else:
-                    self._add_widget_controls(control(parent=self, layers=layers))
+                    self._add_widget_controls(
+                        control(parent=self, layers=layers)
+                    )
 
     def _add_widget_controls(
         self,
@@ -223,7 +228,6 @@ class QtDynamicLayerControls(QFrame):
                 depiction._on_display_change_show()
             else:
                 depiction._on_display_change_hide()
-
 
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:
