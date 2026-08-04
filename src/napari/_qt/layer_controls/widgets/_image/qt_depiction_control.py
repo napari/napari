@@ -152,9 +152,7 @@ class QtDepictionControl(QtWidgetControlsBase):
             self._update_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self) -> None:
-        with self._layers[
-            0
-        ].plane.events.blocker():  # is blocking the first layer enough?
+        with qt_signals_blocked(self.plane_thickness_slider):
             self.plane_thickness_slider.setValue(
                 self._layers[0].plane.thickness
             )

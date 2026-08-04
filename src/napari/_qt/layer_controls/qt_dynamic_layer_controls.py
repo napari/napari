@@ -3,7 +3,7 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
 )
-
+from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
 from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
@@ -171,8 +171,6 @@ class QtDynamicLayerControls(QFrame):
             if len(layers) == 1 and isinstance(layers[0], layer_type):
                 self.layout().addRow(buttons(layers[0]))
 
-        # @lorenzo does this go into a seperate function or the init? Also do I need to
-        # add the controls_dict anywhere
         for attr, control in controls_dict.items():
             if all(hasattr(layer, attr) for layer in self._layers):
                 self._add_widget_controls(control(parent=self, layers=layers))
@@ -216,6 +214,17 @@ class QtDynamicLayerControls(QFrame):
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only like the transform mode button.
         """
+        depiction = self.findChild(QtDepictionControl)
+        if depiction is not None:
+            if self._ndisplay == 3:
+                depiction._on_display_change_show()
+            else:
+                depiction._on_display_change_hide()
+
+
+        buttons = self.findChild(QtLayerButtons)
+        if buttons is not None:
+            buttons.ndisplay = self.ndisplay
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)
