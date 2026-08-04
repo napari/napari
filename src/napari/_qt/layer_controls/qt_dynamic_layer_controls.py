@@ -22,8 +22,20 @@ from napari._qt.layer_controls.widgets import (
     QtOpacityBlendingControls,
     QtWidgetControlsBase,
 )
+from napari._qt.layer_controls.widgets._image.qt_depiction_control import (
+    QtDepictionControl,
+)
 from napari._qt.layer_controls.widgets._points.qt_border_color import (
     QtBorderColorControl,
+)
+from napari._qt.layer_controls.widgets._points.qt_current_size_slider import (
+    QtCurrentSizeSliderControl,
+)
+from napari._qt.layer_controls.widgets._points.qt_symbol_combobox import (
+    QtSymbolComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._surface.qt_shading_combobox import (
+    QtShadingComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_colormap_control import (
     QtColormapControl,
@@ -49,18 +61,6 @@ from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
 )
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
-)
-from napari._qt.layer_controls.widgets._points.qt_current_size_slider import (
-    QtCurrentSizeSliderControl,
-)
-from napari._qt.layer_controls.widgets._points.qt_symbol_combobox import (
-    QtSymbolComboBoxControl,
-)
-from napari._qt.layer_controls.widgets._surface.qt_shading_combobox import (
-    QtShadingComboBoxControl,
-)
-from napari._qt.layer_controls.widgets._image.qt_depiction_control import (
-    QtDepictionControl,
 )
 from napari.layers import (
     Image,

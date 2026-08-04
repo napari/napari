@@ -45,7 +45,9 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
         # Setup widgets
         self.out_of_slice_checkbox = QCheckBox()
         self.out_of_slice_checkbox.setToolTip('Out of slice display')
-        self.out_of_slice_checkbox.setChecked(self._layers[0].out_of_slice_display)
+        self.out_of_slice_checkbox.setChecked(
+            self._layers[0].out_of_slice_display
+        )
         for layer in self._layers:
             connect_setattr(
                 self.out_of_slice_checkbox.stateChanged,

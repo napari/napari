@@ -33,7 +33,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    _layer: Surface #@lorenzo: this can be safely removed?
+    _layer: Surface  # @lorenzo: this can be safely removed?
 
     def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)
@@ -60,12 +60,14 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         for layer in self._layers:
             with layer.events.shading.blocker(self._on_shading_change):
                 layer.shading = self.shading_combobox.currentEnum()
-        #self._layer.shading = self.shading_combobox.currentEnum() @lorenzo: copilot suggested a blocker, I agree? is the blocker right?
+        # self._layer.shading = self.shading_combobox.currentEnum() @lorenzo: copilot suggested a blocker, I agree? is the blocker right?
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""
         with qt_signals_blocked(self.shading_combobox):
-            self.shading_combobox.setCurrentEnum(Shading(self._layers[0].shading))
+            self.shading_combobox.setCurrentEnum(
+                Shading(self._layers[0].shading)
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.shading_combobox_label, self.shading_combobox)]

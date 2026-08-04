@@ -12,7 +12,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Points
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
@@ -53,8 +52,13 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        if any(layer.size.size for layer in self._layers): #@lorenzo: are we okay just picking from first or should we take the max across all layers?
-            max_value = max(100, int(np.max([layer.size.size for layer in self._layers])) + 1) #will this crash if a layer has no size?
+        if any(
+            layer.size.size for layer in self._layers
+        ):  # @lorenzo: are we okay just picking from first or should we take the max across all layers?
+            max_value = max(
+                100,
+                int(np.max([layer.size.size for layer in self._layers])) + 1,
+            )  # will this crash if a layer has no size?
         else:
             max_value = 100
         sld.setMaximum(max_value)

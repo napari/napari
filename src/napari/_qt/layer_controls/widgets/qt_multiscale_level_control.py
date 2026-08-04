@@ -6,7 +6,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer #@lorenzo: do I import layer or only the type checking layer import? In one of the other files something complained when i didnt import layers
+from napari.layers.base.base import (
+    Layer,  # @lorenzo: do I import layer or only the type checking layer import? In one of the other files something complained when i didnt import layers
+)
 from napari.utils.misc import human_readable_size
 
 
@@ -88,7 +90,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
 
-            if all(layer.multiscale for layer in self._layers): #@lorenzo: why are we checking here, this only gets called after a check already happened...
+            if all(
+                layer.multiscale for layer in self._layers
+            ):  # @lorenzo: why are we checking here, this only gets called after a check already happened...
                 shapes = self._layers[0].level_shapes
                 itemsize = self._layers[0].dtype.itemsize
                 for i, shape in enumerate(shapes):
@@ -99,7 +103,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                     self.level_combobox.addItem(label, i)
 
             # Reflect current locked state
-            locked = getattr(self._layers[0], '_locked_data_level', None) #@lorenzo: what do we want to represent here? only first or if any of them are locked? what even is this locking? 
+            locked = getattr(
+                self._layers[0], '_locked_data_level', None
+            )  # @lorenzo: what do we want to represent here? only first or if any of them are locked? what even is this locking?
             if locked is not None:
                 # +1 because index 0 is "Auto"
                 self.level_combobox.setCurrentIndex(locked + 1)

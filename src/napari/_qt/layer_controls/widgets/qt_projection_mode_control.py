@@ -5,9 +5,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Image, Points, Vectors
-from napari.utils.events.event_utils import connect_setattr
 from napari.layers.base.base import Layer
+from napari.utils.events.event_utils import connect_setattr
+
 
 class QtProjectionModeControl(QtWidgetControlsBase):
     """
@@ -29,9 +29,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
         Label for the projection mode chooser widget.
     """
 
-    def __init__(
-        self, parent: QWidget, layers: list[Layer]
-    ) -> None:
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         self._layers = layers
@@ -41,8 +39,13 @@ class QtProjectionModeControl(QtWidgetControlsBase):
             )
 
         # Setup widgets
-# @margot remove this line if follow line works  proj_modes = [i.value for i in self._layer._projectionclass]
-        proj_modes = [i.value for i in set().union(*(layer._projectionclass for layer in self._layers))]
+        # @margot remove this line if follow line works  proj_modes = [i.value for i in self._layer._projectionclass]
+        proj_modes = [
+            i.value
+            for i in set().union(
+                *(layer._projectionclass for layer in self._layers)
+            )
+        ]
         self.projection_combobox = QComboBox(parent)
         self.projection_combobox.addItems(proj_modes)
         for layer in self._layers:

@@ -39,9 +39,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         # Setup layer
         for layer in self._layers:
             layer.events.symbol.connect(self._on_current_symbol_change)
-            layer.events.current_symbol.connect(
-                self._on_current_symbol_change
-            )
+            layer.events.current_symbol.connect(self._on_current_symbol_change)
 
         # Setup widgets
         sym_cb = QEnumComboBox(enum_class=Symbol)

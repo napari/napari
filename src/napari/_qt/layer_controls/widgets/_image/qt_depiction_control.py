@@ -12,7 +12,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Image
 from napari.layers.base.base import Layer
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
@@ -153,8 +152,12 @@ class QtDepictionControl(QtWidgetControlsBase):
             self._update_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self) -> None:
-        with self._layers[0].plane.events.blocker(): #is blocking the first layer enough?
-            self.plane_thickness_slider.setValue(self._layers[0].plane.thickness)
+        with self._layers[
+            0
+        ].plane.events.blocker():  # is blocking the first layer enough?
+            self.plane_thickness_slider.setValue(
+                self._layers[0].plane.thickness
+            )
 
     def _on_display_change_hide(self) -> None:
         self.depiction_combobox.hide()

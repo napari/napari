@@ -34,9 +34,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         super().__init__(parent, layers)
         # Setup layer
         for layer in self._layers:
-            layer.text.events.visible.connect(
-                self._on_text_visibility_change
-            )
+            layer.text.events.visible.connect(self._on_text_visibility_change)
 
         # Setup widgets
         text_disp_cb = QCheckBox()
