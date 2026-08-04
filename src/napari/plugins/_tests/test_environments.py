@@ -298,6 +298,34 @@ def test_task_reports_progress_and_result() -> None:
     assert events[2][1].current == 2
 
 
+def test_backend_progress_uses_logical_environment_name() -> None:
+    task: PluginTask[None] = PluginTask()
+    received = []
+    task._set_running(PluginTaskPhase.CLEANING_UP, 'Cleaning')
+    task.add_progress_callback(received.append)
+    physical_name = 'example-plugin-example-plugin.worker-a1b2-c3d4'
+
+    PluginEnvironmentManager._report(
+        task,
+        BackendProgress(
+            PluginTaskPhase.CLEANING_UP,
+            f"Removing managed environment '{physical_name}'",
+            1,
+            2,
+        ),
+        physical_name=physical_name,
+        environment_id='example-plugin.worker',
+    )
+
+    assert received[-1].message == (
+        "Removing managed environment 'example-plugin.worker'"
+    )
+    assert received[-1].current == 1
+    assert received[-1].total == 2
+    task._set_result(None)
+    assert task.result() is None
+
+
 def test_incompatible_plugin_recipes_are_isolated(
     environment_manager, monkeypatch
 ) -> None:
