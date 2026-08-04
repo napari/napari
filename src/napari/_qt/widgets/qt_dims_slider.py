@@ -729,8 +729,12 @@ class QtPlayButton(QPushButton):
         # the displayed value, and fps stays the canonical speed everywhere.
         unit_combo = QComboBox(self.popup)
         unit_combo.setObjectName('playbackUnitComboBox')
-        unit_combo.addItem('frames per second:', PlaybackUnit.FRAMES_PER_SECOND)
-        unit_combo.addItem('seconds per cycle:', PlaybackUnit.SECONDS_PER_CYCLE)
+        unit_combo.addItem(
+            'frames per second:', PlaybackUnit.FRAMES_PER_SECOND
+        )
+        unit_combo.addItem(
+            'seconds per cycle:', PlaybackUnit.SECONDS_PER_CYCLE
+        )
         unit_combo.setToolTip(
             'Set playback speed as a frame rate, or as the duration of one '
             'full cycle through this axis.'

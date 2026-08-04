@@ -32,6 +32,8 @@ def test_move_margin_popup(qtbot):
     assert slider.margins_popup.right_slider.value() == dims.margin_right[0]
     slider.margins_popup.left_slider.setValue(1)
     assert slider.margins_popup.left_slider.value() == dims.margin_left[0]
+
+
 # -- Locked-axis flash reminder ------------------------------------------------
 
 
