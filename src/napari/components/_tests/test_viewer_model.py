@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._tests.utils import (
     count_warning_events,
     good_layer_data,
@@ -427,25 +428,25 @@ def test_grid():
     for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # reenter grid view with new stride
-    viewer.grid.stride = -2
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 2)
-    assert viewer.grid.stride == -2
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.stride = -2
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 2)
+    assert viewer.canvas.grid.stride == -2
+    assert viewer.canvas.grid.spacing == 0
 
 
 def test_add_remove_layer_dims_change():
@@ -805,7 +806,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
+    'field', ['camera', 'cursor', 'dims', 'canvas', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -1036,41 +1037,44 @@ def test_get_status_text():
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        },
-        '',
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
+        sorted(
+            {
+                'coordinates': '[1, 2]: 0; a: 1',
+                'coords': '[1, 2]',
+                'layer_base': 'Labels',
+                'layer_name': 'Labels',
+                'plugin': '',
+                'source_type': '',
+                'value': '0; a: 1',
+            }.items()
+        )
     )
     viewer.tooltip.visible = True
-    assert viewer._calc_status_from_cursor() == (
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
         {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
             'value': '0; a: 1',
-        },
-        '0\na: 1',
+        }.items()
     )
+    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
     viewer.update_status_from_cursor()
-    assert viewer.status == {
-        'coordinates': ' [1 2]: 0; a: 1',
-        'coords': ' [1 2]',
-        'layer_base': 'Labels',
-        'layer_name': 'Labels',
-        'plugin': '',
-        'source_type': '',
-        'value': '0; a: 1',
-    }
+    assert sorted(viewer.status.items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
+    )
     assert viewer.tooltip.text == '0\na: 1'
 
 
@@ -1264,3 +1268,84 @@ def test_fit_to_view_handles_no_layers():
     np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
     np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
     assert viewer.camera.zoom > 0
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_no_selection():
+    """New shapes/points layer created with no active layer gets default axis labels."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection.active = None
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+    new_points(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_multi_selection():
+    """New shapes/points layer created with  multiple layers selected gets default axis labels."""
+    viewer = ViewerModel()
+    layer1 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    layer2 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection = {layer1, layer2}
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_single_selection():
+    """New shapes/points layer created from a single selected layer inherits its axis labels."""
+    viewer = ViewerModel()
+    # test from image layer selection
+    image_layer = viewer.add_image(
+        np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c')
+    )
+    viewer.layers.selection.active = image_layer
+    new_shapes(viewer)  # image→shapes
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    new_points(viewer)  # image→points
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    # test from shapes layer selection (shapes→shapes)
+    shapes_layer = viewer.add_shapes(ndim=3, axis_labels=('z', 'y', 'x'))
+    viewer.layers.selection.active = shapes_layer
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels
+
+
+def test_new_labels_axis_labels_inheritance_on_no_selection():
+    """New labels layer created with no active layer gets default axis labels."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection.active = None
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('-2', '-1')
+
+
+def test_new_labels_axis_labels_inheritance_on_multi_selection():
+    """New labels layer created with with multiple layers selected gets default axis labels."""
+    viewer = ViewerModel()
+    layer1 = viewer.add_image(np.zeros((2, 2)), axis_labels=('a', 'b'))
+    layer2 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection = {layer1, layer2}
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_labels_axis_labels_inheritance_on_single_selection():
+    """New labels layer created from a single selected layer inherits its axis labels."""
+    viewer = ViewerModel()
+    # test from image layer selection (image→labels)
+    image_layer = viewer.add_image(
+        np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c')
+    )
+    viewer.layers.selection.active = image_layer
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    # test from shapes layer selection (shapes→labels)
+    shapes_layer = viewer.add_shapes(ndim=3, axis_labels=('z', 'y', 'x'))
+    viewer.layers.selection.active = shapes_layer
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels

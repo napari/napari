@@ -45,12 +45,10 @@ def check_view_menu_visibility(viewer, qtbot):
 
 
 @pytest.mark.parametrize(
-    ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
+    ('action_id', 'action_title', 'attribute_path'),
     toggle_action_details,
 )
-def test_toggle_axes_scale_bar_attr(
-    action_id, action_title, viewer_attr, sub_attr
-):
+def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -70,15 +68,18 @@ def test_toggle_axes_scale_bar_attr(
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    axes_scale_bar = getattr(viewer, viewer_attr)
-
-    # Get initial sub-attribute value (for example `axes.visible`)
-    initial_value = getattr(axes_scale_bar, sub_attr)
+    *parent_path, attr_name = attribute_path.split('.')
+    parent = viewer
+    for part in parent_path:
+        parent = getattr(parent, part)
+    initial_value = getattr(parent, attr_name)
 
     # Change sub-attribute via action command execution and check value
     with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
-    changed_value = getattr(axes_scale_bar, sub_attr)
+
+    changed_value = getattr(parent, attr_name)
+
     assert initial_value is not changed_value
 
 

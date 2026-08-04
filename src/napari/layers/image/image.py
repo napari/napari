@@ -29,7 +29,6 @@ from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
-from napari.utils.translations import trans
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -66,6 +65,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         provided scale, rotate, and shear values.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     axis_labels : tuple of str
         Dimension names of the layer data.
         If not provided, axis_labels will be set to (..., '-2', '-1').
@@ -111,6 +114,11 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float
         Threshold for isosurface.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -206,6 +214,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     gamma : float
         Gamma correction for determining colormap linearity.
     interpolation2d : str
@@ -250,6 +262,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         *,
         affine: npt.ArrayLike | Affine | None = None,
         attenuation: float = 0.05,
+        auto_contrast: bool = False,
         axis_labels: Sequence[str] | None = None,
         blending: str = 'translucent',
         cache: bool = True,
@@ -262,6 +275,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         interpolation2d: InterpolationStr = 'nearest',
         interpolation3d: InterpolationStr = 'linear',
         iso_threshold: float | None = None,
+        locked_data_level: int | None = None,
         metadata: dict | None = None,
         multiscale: bool | None = None,
         name: str | None = None,
@@ -281,9 +295,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         if rgb and not guess_rgb(data_shape, min_side_len=0):
             raise ValueError(
-                trans._(
-                    "'rgb' was set to True but data does not have suitable dimensions."
-                )
+                "'rgb' was set to True but data does not have suitable dimensions."
             )
         if rgb is None:
             rgb = guess_rgb(data_shape)
@@ -338,12 +350,16 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.contrast_limits_range = contrast_limits
         self._contrast_limits: tuple[float, float] = self.contrast_limits_range
         self.contrast_limits = self._contrast_limits
+        self.auto_contrast = auto_contrast
 
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
             self._iso_threshold = cmin + (cmax - cmin) / 2
         else:
             self._iso_threshold = iso_threshold
+
+        if locked_data_level is not None:
+            self.locked_data_level = locked_data_level
 
     @property
     def rendering(self) -> str:
@@ -395,6 +411,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
+                'locked_data_level': self.locked_data_level,
+                'auto_contrast': self.auto_contrast,
                 'colormap': self.colormap.model_dump(),
                 'contrast_limits': self.contrast_limits,
                 'interpolation2d': self.interpolation2d,
@@ -445,7 +463,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
-        if self._keep_auto_contrast:
+        if self.auto_contrast:
             self.reset_contrast_limits()
 
     @property
@@ -456,14 +474,12 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     def interpolation2d(self, value: InterpolationStr | Interpolation) -> None:
         if value == 'bilinear':
             raise ValueError(
-                trans._(
-                    "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
-                ),
+                "'bilinear' interpolation is not valid for interpolation2d. Did you mean 'linear' instead ?",
             )
         if value == 'bicubic':
             value = 'cubic'
             warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                "'bicubic' is deprecated. Please use 'cubic' instead",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -484,7 +500,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if value == 'bicubic':
             value = 'cubic'
             warnings.warn(
-                trans._("'bicubic' is deprecated. Please use 'cubic' instead"),
+                "'bicubic' is deprecated. Please use 'cubic' instead",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -589,11 +605,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             input_data = self._slice.image.raw  # ugh
         else:
             raise ValueError(
-                trans._(
-                    "mode must be either 'data' or 'slice', got {mode!r}",
-                    deferred=True,
-                    mode=mode,
-                )
+                f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
             cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
@@ -633,14 +645,15 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,
         ):
-            prev = self._keep_auto_contrast
-            self._keep_auto_contrast = False
+            # we use the private attribute here to avoid triggering the setter again
+            prev = self._auto_contrast
+            self._auto_contrast = False
             try:
                 self.refresh(highlight=False, extent=False)
             finally:
-                self._keep_auto_contrast = prev
+                self._auto_contrast = prev
 
-    def _calculate_value_from_ray(self, values: npt.NDArray) -> None | float:
+    def _calculate_value_from_ray(self, values: npt.NDArray) -> float | None:
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
             return np.ravel(values)[0]
@@ -707,7 +720,8 @@ class _ImageSlicingState(ScalarFieldSlicingState):
         WARNING: This is a hack.
         Will be removed as we want to go into multi canvas mode.
         """
-        if self.layer._keep_auto_contrast:
+        super()._update_slice_response(response)
+        if self.layer.auto_contrast:
             data = response.image.raw
             input_data = data[-1] if self.layer.multiscale else data
             self.layer.contrast_limits = calc_data_range(
@@ -715,10 +729,9 @@ class _ImageSlicingState(ScalarFieldSlicingState):
                 rgb=self.layer.rgb,
                 dtype=self.layer.dtype,
             )
-        super()._update_slice_response(response)
         if self.layer._should_calc_clims:
             self.layer.reset_contrast_limits_range()
             self.layer.reset_contrast_limits()
             self.layer._should_calc_clims = False
-        elif self.layer._keep_auto_contrast:
+        elif self.layer.auto_contrast:
             self.layer.reset_contrast_limits()
