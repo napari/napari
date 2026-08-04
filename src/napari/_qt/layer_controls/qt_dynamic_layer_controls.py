@@ -3,11 +3,12 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
 )
-from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
+
 from napari._qt.layer_controls.qt_image_buttons import QtImageButtons
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_buttons import QtLabelsButtons
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
 from napari._qt.layer_controls.qt_points_buttons import QtPointsButtons
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari._qt.layer_controls.qt_shapes_buttons import QtShapesButtons
@@ -65,6 +66,7 @@ from napari._qt.layer_controls.widgets.qt_text_visibility import (
 from napari.layers import (
     Image,
     Labels,
+    Layer,
     Points,
     Shapes,
     Surface,
@@ -72,6 +74,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.layers.base._base_constants import Mode
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.utils.events import disconnect_events
 
 layer_to_controls = {
@@ -85,21 +88,27 @@ layer_to_controls = {
 }
 
 controls_dict = {
-    'opacity': QtOpacityBlendingControls,
-    'contrast_limits': QtContrastLimitsControl,
-    'histogram': QtHistogramControl,
-    'gamma': QtGammaSliderControl,
-    'colormap': QtColormapControl,
-    'face_color': QtFaceColorControl,
-    'border_color': QtBorderColorControl,
-    'multiscale': QtMultiscaleLevelControl,
-    'out_of_slice_display': QtOutSliceCheckBoxControl,
-    'projection_mode': QtProjectionModeControl,
-    'text': QtTextVisibilityControl,
-    'size': QtCurrentSizeSliderControl,
-    'symbol': QtSymbolComboBoxControl,
-    'shading': QtShadingComboBoxControl,
-    'depiction': QtDepictionControl,
+    Layer: (
+        QtOpacityBlendingControls,
+        QtMultiscaleLevelControl,
+        QtProjectionModeControl,
+    ),
+    IntensityVisualizationMixin: (
+        QtContrastLimitsControl,
+        QtHistogramControl,
+        QtGammaSliderControl,
+        QtColormapControl,
+    ),
+    Points: (
+        QtFaceColorControl,
+        QtBorderColorControl,
+        QtCurrentSizeSliderControl,
+        QtSymbolComboBoxControl,
+        QtShadingComboBoxControl,
+    ),
+    Points | Vectors: (QtOutSliceCheckBoxControl,),
+    Image: (QtDepictionControl,),
+    Points | Shapes: (QtTextVisibilityControl,),
     #'interpolation': QtInterpolationComboBoxControl,
 }
 buttons_dict = {
@@ -171,12 +180,12 @@ class QtDynamicLayerControls(QFrame):
             if len(layers) == 1 and isinstance(layers[0], layer_type):
                 self.layout().addRow(buttons(layers[0]))
 
-        for attr, control in controls_dict.items():
-            if all(hasattr(layer, attr) for layer in self._layers):
-                if attr == 'colormap' and any(isinstance(layer, Labels) for layer in self._layers): #TODO: find a smarter way to do this
-                    pass
-                else:
-                    self._add_widget_controls(control(parent=self, layers=layers))
+        for layer_type, controls in controls_dict.items():
+            if all(isinstance(layer, layer_type) for layer in self._layers):
+                for control in controls:
+                    self._add_widget_controls(
+                        control(parent=self, layers=layers)
+                    )
 
     def _add_widget_controls(
         self,
@@ -224,7 +233,6 @@ class QtDynamicLayerControls(QFrame):
             else:
                 depiction._on_display_change_hide()
 
-
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:
             buttons.ndisplay = self.ndisplay
@@ -250,4 +258,4 @@ class QtDynamicLayerControls(QFrame):
                 self._disconnect_child_widget_controls(child)
                 if close_method is not None:
                     close_method()
-            return super().close()
+            super().close()
