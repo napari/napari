@@ -1,4 +1,7 @@
 import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 
 import numpy.testing as npt
 import pytest
@@ -21,10 +24,23 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
-from napari.settings import NapariSettings, get_settings
+from napari.settings import NapariSettings, get_plugin_settings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.settings._plugin_config_generator import (
+    plugin_configuration_generator,
+)
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
+
+if TYPE_CHECKING:
+    from npe2._pytest_plugin import TestPluginManager
+
+PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
+MANIFEST_PATH = (
+    Path(__file__).parent.parent.parent.parent
+    / 'plugins/_tests/_sample_manifest.yaml'
+)
 
 
 @pytest.fixture
@@ -57,6 +73,17 @@ def pref(qtbot):
     return dlg
 
 
+@pytest.fixture
+def mock_pm(npe2pm: 'TestPluginManager'):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    mock_reg = MagicMock()
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
+        yield npe2pm
+
+
 def test_prefdialog_populated(pref):
     subfields = filter(
         lambda f: (
@@ -70,6 +97,13 @@ def test_prefdialog_populated(pref):
     assert (
         pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
     )  # +1 for the seperator of the plugins.
+
+
+def test_add_plugin(mock_pm: 'TestPluginManager', pref):
+    assert len(get_plugin_settings()) == len(
+        plugin_configuration_generator(mock_pm)
+    )
+    pref._rebuild_dialog()
 
 
 def test_dask_widget(qtbot, pref):

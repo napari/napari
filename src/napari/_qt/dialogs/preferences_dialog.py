@@ -171,7 +171,6 @@ class PreferencesDialog(QDialog):
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
         page_scrollarea.setWidget(full)
-
         self._list.addItem(plugin.display_name)
         self._stack.addWidget(page_scrollarea)
 

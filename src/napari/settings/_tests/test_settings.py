@@ -356,6 +356,7 @@ def test_get_settings(tmp_path):
     p = f'{tmp_path}.yaml'
     s = settings.get_settings(p)
     assert str(s.config_path) == str(p)
+    settings.get_plugin_settings()
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):

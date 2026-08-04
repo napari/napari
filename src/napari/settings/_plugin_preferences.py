@@ -32,7 +32,6 @@ class PluginPreferences(
         extra='ignore',
         populate_by_name=True,
     )
-    display_name: str = ''
     # private attributes and ClassVars will not appear in the schema
     config_path: Path | _NotSetType | None = Field(
         Path(_PL_CFG_PATH) if _PL_CFG_PATH else None, exclude=True

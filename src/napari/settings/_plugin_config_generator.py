@@ -95,11 +95,16 @@ def _build_single_config_model(
     return model
 
 
-def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
-    from npe2 import PluginManager
+def plugin_configuration_generator(
+    plugin_manager=None,
+) -> dict[str, type[PluginPreferences]]:
+    if not plugin_manager:
+        from npe2 import PluginManager
 
-    pm = PluginManager.instance()
-    pm.discover()
+        pm = PluginManager.instance()
+        pm.discover()
+    else:
+        pm = plugin_manager
     plugins = sorted(
         pm.iter_manifests(),
         key=lambda x: x.name,
@@ -131,5 +136,5 @@ def plugin_configuration_generator() -> dict[str, type[PluginPreferences]]:
             __base__=PluginPreferences,
             **fields,
         )
-        plugin_settings[plugin_name].display_name = display_names[plugin_name]
+        plugin_settings[plugin_name].display_name = display_names[plugin_name]  # type: ignore[attr-defined]
     return plugin_settings
