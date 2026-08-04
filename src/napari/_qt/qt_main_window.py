@@ -323,9 +323,12 @@ class _QtMainWindow(QMainWindow):
         self, dock: QtViewerDockWidget, floating: bool
     ) -> None:
         """Dependent on floating status of the dock widget either register or deregister the dock widget as sliding."""
-        if floating:
+        if floating and dock in self.sliding_docks:
             self.deregister_sliding_dock(dock)
-        elif dock not in self.sliding_docks:
+        elif (
+            dock not in self.sliding_docks
+            and get_settings().appearance.dock_widget_autohide
+        ):
             self.register_sliding_dock(dock)
 
     def deregister_sliding_dock(self, dock: QtViewerDockWidget) -> None:
