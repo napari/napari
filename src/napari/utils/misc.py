@@ -92,7 +92,7 @@ def in_python_repl() -> bool:
 
 
 def ensure_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
@@ -104,7 +104,7 @@ def ensure_iterable(
 
 
 def is_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
     allow_none: bool = False,
 ) -> bool:
     """Determine if a single argument is an iterable."""

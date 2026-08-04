@@ -643,6 +643,33 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return max((layer.ndim for layer in self), default=2)
 
+    def _find_longest_annotated(self) -> tuple[str, ...]:
+        """Return the annotated axis labels spanning the most dimensions.
+
+        Returns () when no layer is annotated. When more are equally long,
+        the most recent layer wins.
+        """
+        annotated_list = [
+            layer.axis_labels
+            for layer in self
+            if not layer._has_default_axis_labels()
+        ][::-1]
+        return max(annotated_list, key=len, default=())
+
+    @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """Axis labels for the layer list.
+
+        Uses the labels from the layer with the longest annotated axis labels.
+        Missing axes annotations fall back to default indices.
+        """
+        axis_labels = [str(i) for i in range(-self.ndim, 0)]
+        labels = self._find_longest_annotated()
+        offset = self.ndim - len(labels)
+        for idx, label in enumerate(labels):
+            axis_labels[offset + idx] = label
+        return tuple(axis_labels)
+
     def _link_layers(
         self,
         method: str,
