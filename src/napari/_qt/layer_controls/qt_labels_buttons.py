@@ -148,7 +148,7 @@ class QtLabelsButtons(QtLayerButtons):
         super()._on_editable_or_visible_change()
         self._set_polygon_tool_state()
 
-    def _on_ndisplay_changed(self): 
+    def _on_ndisplay_changed(self):
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
