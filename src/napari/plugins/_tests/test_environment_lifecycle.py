@@ -106,6 +106,26 @@ def test_cancellation_requested_before_backend_callback_is_forwarded() -> None:
     assert not task.cancel()
 
 
+def test_cancellation_reason_is_preserved_in_error_and_history() -> None:
+    task: PluginTask[None] = PluginTask(
+        PluginTaskMetadata(PluginEnvironmentOperation.PREPARE)
+    )
+    history = _PluginOperationHistory(max_records=3)
+    history.track(task)
+
+    assert task.cancel('Environment is being removed')
+    task._set_canceled()
+
+    assert task.cancellation_reason == 'Environment is being removed'
+    with pytest.raises(
+        PluginTaskCanceledError, match='Environment is being removed'
+    ):
+        task.result()
+    assert history.list(None, None)[-1].message == (
+        'Environment is being removed'
+    )
+
+
 def test_completed_task_replays_latest_progress_and_done_once() -> None:
     task: PluginTask[int] = PluginTask()
     task._set_running(PluginTaskPhase.PREPARING, 'Preparing')
@@ -187,6 +207,42 @@ def test_shutdown_cancels_active_provisioning(
     assert task.state is PluginTaskState.CANCELED
     with pytest.raises(PluginTaskCanceledError):
         task.result()
+
+
+def test_active_tasks_can_be_queried_while_operation_is_running(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    backend = _FakeBackend(tmp_path)
+    backend.block_preparation = True
+    recipe = _recipe()
+    manager = PluginEnvironmentManager(
+        root=tmp_path,
+        backend_factory=lambda root: backend,
+    )
+    monkeypatch.setattr(
+        manager_module,
+        '_find_environment',
+        lambda environment_id: recipe,
+    )
+    monkeypatch.setattr(manager_module, '_manager', manager)
+
+    task = manager.prepare(recipe.environment_id)
+    assert backend.preparation_started.wait(2)
+
+    assert manager.active_tasks() == (task,)
+    assert manager.active_tasks(recipe.plugin, recipe.environment_id) == (
+        task,
+    )
+    assert environment_api.list_active_plugin_environment_tasks(
+        recipe.plugin, recipe.environment_id
+    ) == (task,)
+    assert manager.active_tasks('other-plugin') == ()
+
+    task.cancel()
+    with pytest.raises(PluginTaskCanceledError):
+        task.result(2)
+    assert manager.active_tasks() == ()
+    manager.close()
 
 
 def test_closed_manager_rejects_new_tasks(tmp_path: Path) -> None:

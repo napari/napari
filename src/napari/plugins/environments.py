@@ -21,6 +21,8 @@ management UI opened later can show provisioning output and structured
 failures. Use :func:`list_plugin_environment_operations`,
 :func:`add_plugin_environment_operation_callback`, and
 :func:`clear_plugin_environment_operations` to read, observe, and clear it.
+Application UI can use :func:`list_active_plugin_environment_tasks` to attach
+to operations that started before that UI was opened.
 Backend completion messages describe sub-operations; only a terminal
 :class:`PluginTaskState` means the complete napari-owned operation finished.
 """
@@ -349,6 +351,7 @@ class PluginTask(Generic[T]):
         self._operation_events: deque[_PluginTaskEvent] = deque(maxlen=500)
         self._operation_callbacks: list[Callable[[_PluginTaskEvent], Any]] = []
         self._cancellation_requested = False
+        self._cancellation_reason: str | None = None
         self._future: Future[T] = Future()
         self._lock = threading.RLock()
         self._done = threading.Event()
@@ -409,6 +412,13 @@ class PluginTask(Generic[T]):
             return self._cancellation_requested
 
     @property
+    def cancellation_reason(self) -> str | None:
+        """Return the napari-facing reason supplied with cancellation."""
+
+        with self._lock:
+            return self._cancellation_reason
+
+    @property
     def done(self) -> bool:
         """Return whether the task has finished."""
 
@@ -449,7 +459,7 @@ class PluginTask(Generic[T]):
         if progress is not None:
             self._dispatch_progress_callback(callback, progress, sequence)
 
-    def cancel(self) -> bool:
+    def cancel(self, reason: str | None = None) -> bool:
         """Request cancellation and return whether the request was accepted."""
 
         with self._lock:
@@ -457,6 +467,8 @@ class PluginTask(Generic[T]):
                 return False
             first_request = not self._cancellation_requested
             self._cancellation_requested = True
+            if reason and self._cancellation_reason is None:
+                self._cancellation_reason = reason
             callback = self._cancel_callback
         if first_request and callback is not None:
             callback()
@@ -606,8 +618,9 @@ class PluginTask(Generic[T]):
             self._finish()
 
     def _set_canceled(self) -> None:
+        message = self.cancellation_reason or 'Plugin task was canceled'
         error = PluginTaskCanceledError(
-            'Plugin task was canceled',
+            message,
             phase=self.phase,
         )
         with self._lock:
@@ -620,7 +633,7 @@ class PluginTask(Generic[T]):
                 timestamp=datetime.now(UTC),
                 state=PluginTaskState.CANCELED,
                 phase=self.phase,
-                message='Managed plugin operation canceled',
+                message=message,
             )
         )
         self._future.set_exception(error)
@@ -933,6 +946,25 @@ def list_plugin_environments(
     return get_plugin_environment_manager().list_environments(plugin)
 
 
+def list_active_plugin_environment_tasks(
+    plugin: str | None = None,
+    environment_id: str | None = None,
+) -> tuple[PluginTask[Any], ...]:
+    """Return active managed tasks for reconnecting application UI.
+
+    The returned tasks remain owned by napari. Callers may observe progress
+    and completion or request cancellation, but must not execute them.
+    """
+
+    from napari.plugins._environment_manager import (
+        get_plugin_environment_manager,
+    )
+
+    return get_plugin_environment_manager().active_tasks(
+        plugin, environment_id
+    )
+
+
 def stop_plugin_workers(
     plugin: str,
     environment_id: str | None = None,
@@ -1030,6 +1062,7 @@ __all__ = (
     'add_plugin_environment_operation_callback',
     'clear_plugin_environment_operations',
     'execute_worker_command',
+    'list_active_plugin_environment_tasks',
     'list_plugin_environment_operations',
     'list_plugin_environments',
     'prepare_plugin_environment',

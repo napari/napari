@@ -557,6 +557,38 @@ class PluginEnvironmentManager:
             )
         return tuple(infos)
 
+    def active_tasks(
+        self,
+        plugin: str | None = None,
+        environment_id: str | None = None,
+    ) -> tuple[PluginTask[Any], ...]:
+        """Return a stable snapshot of non-terminal managed tasks."""
+
+        with self._lock:
+            tasks = tuple(
+                (
+                    task,
+                    self._task_plugins.get(task),
+                    self._task_environments.get(task),
+                )
+                for task in self._tasks
+            )
+        selected = []
+        for task, task_plugin, task_environment in tasks:
+            metadata = task.metadata
+            if task.done or metadata is None:
+                continue
+            if plugin is not None and task_plugin != plugin:
+                continue
+            if (
+                environment_id is not None
+                and task_environment is not None
+                and environment_id != task_environment
+            ):
+                continue
+            selected.append(task)
+        return tuple(sorted(selected, key=lambda task: task.task_id))
+
     def prepare(self, environment_id: str) -> PluginTask[None]:
         owner = _owner_for_contribution(environment_id)
         task: PluginTask[None] = PluginTask(
@@ -569,7 +601,9 @@ class PluginEnvironmentManager:
         if owner:
             self._associate_task(task, owner, environment_id)
             if self._is_stopping(owner, environment_id):
-                task.cancel()
+                task.cancel(
+                    'The managed environment is being stopped or removed'
+                )
 
         def run() -> None:
             recipe = _find_environment(environment_id)
@@ -647,7 +681,9 @@ class PluginEnvironmentManager:
         if command is not None:
             self._associate_task(task, command.plugin, command.environment_id)
             if self._is_stopping(command.plugin, command.environment_id):
-                task.cancel()
+                task.cancel(
+                    'The managed environment is being stopped or removed'
+                )
         elif owner:
             self._associate_task(task, owner)
 
@@ -786,7 +822,9 @@ class PluginEnvironmentManager:
                 )
             )
         for candidate in tasks:
-            candidate.cancel()
+            candidate.cancel(
+                'The managed environment is being stopped or removed'
+            )
         return tasks
 
     def _stop_workers(
@@ -1100,6 +1138,10 @@ class PluginEnvironmentManager:
         if task.cancellation_requested or self._is_stopping(
             recipe.plugin, recipe.environment_id
         ):
+            if not task.cancellation_requested:
+                task.cancel(
+                    'The managed environment is being stopped or removed'
+                )
             raise BackendCanceled
 
     def _get_backend(self) -> EnvironmentBackend:
