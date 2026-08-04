@@ -497,6 +497,26 @@ def test_switching_edge_color_mode_back_to_direct():
     assert layer.edge_color_mode == 'direct'
 
 
+def test_switching_edge_color_mode_to_colormap_emits_edge_color():
+    """Notify renderers when a color mode change remaps vector colors."""
+    data = np.zeros((2, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(
+        data,
+        features={'phase': np.array([-1.0, 1.0])},
+        edge_color='phase',
+    )
+    layer.edge_color_mode = 'direct'
+    layer.edge_color = 'yellow'
+    events = []
+    layer.events.edge_color.connect(events.append)
+
+    layer.edge_color_mode = 'colormap'
+
+    assert len(events) == 1
+    assert len(np.unique(layer.edge_color, axis=0)) == 2
+
+
 def test_edge_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)
