@@ -139,8 +139,6 @@ class QtColormapControl(
         comboBox._allitems = set().union(
             *(layer.colormaps for layer in self._layers)
         )
-        # set(self._layers[0].colormaps) #@lorenzo I'd like to give the option of choosing
-        # any colormap that any of the layers has. Is this the right spot?
 
         for name, cm in AVAILABLE_COLORMAPS.items():
             if name in set().union(

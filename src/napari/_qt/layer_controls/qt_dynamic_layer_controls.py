@@ -173,7 +173,10 @@ class QtDynamicLayerControls(QFrame):
 
         for attr, control in controls_dict.items():
             if all(hasattr(layer, attr) for layer in self._layers):
-                self._add_widget_controls(control(parent=self, layers=layers))
+                if attr == 'colormap' and any(isinstance(layer, Labels) for layer in self._layers): #TODO: find a smarter way to do this
+                    pass
+                else:
+                    self._add_widget_controls(control(parent=self, layers=layers))
 
     def _add_widget_controls(
         self,

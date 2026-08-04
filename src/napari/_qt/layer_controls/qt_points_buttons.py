@@ -108,8 +108,3 @@ class QtPointsButtons(QtLayerButtons):
     def _on_ndisplay_changed(self):
         self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)
         super()._on_ndisplay_changed()
-
-    # def close(self): -> @lorenzo I think this only relies to widgets
-    #     """Disconnect events when widget is closing."""
-    #     disconnect_events(self.layer.text.events, self)
-    #     super().close()

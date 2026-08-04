@@ -113,7 +113,7 @@ class QtLabelsButtons(QtLayerButtons):
             'activate_labels_erase_mode',
         )
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
-        self._on_editable_or_visible_change()  # @lorenzo: does this stay?
+        self._on_editable_or_visible_change()
 
         self.addWidget(self.colormap_update, 0, 0)
         self.addWidget(self.erase_button, 0, 1)
@@ -148,9 +148,9 @@ class QtLabelsButtons(QtLayerButtons):
         super()._on_editable_or_visible_change()
         self._set_polygon_tool_state()
 
-    def _on_ndisplay_changed(self):  # @lorenzo: can this whole thing go?
-        self._on_editable_or_visible_change()  # both of these change polygon button state?
-        self._set_polygon_tool_state()  # both of these change polygon button state?
+    def _on_ndisplay_changed(self): 
+        self._on_editable_or_visible_change()
+        self._set_polygon_tool_state()
         super()._on_ndisplay_changed()
 
     def _set_polygon_tool_state(self):

@@ -27,20 +27,3 @@ class QtSurfaceButtons(QtLayerButtons):
 
     def __init__(self, layer: napari.layers.Surface) -> None:
         super().__init__(layer)
-        # Surface emits `data` when vertex_values or vertex_colors are reassigned.
-        # self.layer.events.data.connect(self._on_surface_coloring_change)
-
-        # self._on_surface_coloring_change() #@lorenzo to keep or to yeet
-
-    # def _on_surface_coloring_change(self) -> None:
-    #     """Disable scalar-color controls when direct vertex colors are active."""
-    #     enabled = self.layer.vertex_colors is None
-    #     for control in (
-    #         self._contrast_limits_control,
-    #         self._gamma_slider_control,
-    #         self._colormap_control,
-    #     ):
-    #         for label, widget in control.get_widget_controls():
-    #             set_widgets_enabled_with_opacity(
-    #                 self, (label, widget), enabled
-    #             )
