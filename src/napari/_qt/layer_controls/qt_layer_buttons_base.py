@@ -235,3 +235,20 @@ class QtLayerButtons(QGridLayout):
                 self.layer._reset_affine()
                 return True
         return super().eventFilter(qobject, event)
+
+
+class QtMultiLayerButtons(QGridLayout):
+    """Super simple shim for whhen multiple layers are selected.
+
+    Effectively does nothing, but shows the pan zoom button.
+    """
+
+    def __init__(self, layer) -> None:
+        super().__init__()
+        self.button_group = QButtonGroup(self)
+        btn = QtModeRadioButton(layer, 'pan', None, checked=True)
+        self.button_group.addButton(btn)
+        self.addWidget(btn, 0, 6)
+        self.setContentsMargins(5, 0, 0, 5)
+        self.setColumnStretch(0, 1)
+        self.setSpacing(4)
