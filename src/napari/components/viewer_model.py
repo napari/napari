@@ -297,7 +297,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     #       know that specific elements match specific types
     @property
     @deprecated(
-        'viewer.camera is a deprecated attribute since 0.8.1. Use viewer.scene.camera instead.',
+        'viewer.camera is a deprecated attribute since 0.9.0. Use viewer.scene.camera instead.',
         stacklevel=2,
     )
     def camera(self) -> Camera:
@@ -305,7 +305,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.axes is a deprecated attribute since 0.8.1. use viewer.scene.floating_axes instead.',
+        'viewer.axes is a deprecated attribute since 0.9.0. Use viewer.scene.axes instead.',
         stacklevel=2,
     )
     def axes(self) -> AxesOverlay:
@@ -313,7 +313,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.floating_axes is a deprecated attribute since 0.8.1. use viewer.canvas.overlays.floating_axes instead.',
+        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
         stacklevel=2,
     )
     def floating_axes(self) -> FloatingAxesOverlay:
