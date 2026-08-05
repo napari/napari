@@ -844,9 +844,9 @@ class ScalarFieldBase(Layer, ABC):
         return ScalarFieldSlicingState(layer=self, data=data, cache=cache)
 
     @property
-    def affine_slicing_sampling_order(self) -> int:
+    def affine_slicing_sampling_order(self):
         """Interpolation order for affine non-orthogonal sampling."""
-        return NotImplementedError("This property should be implemented in subclasses.")
+        raise NotImplementedError("This property should be implemented in subclasses.")
 
 
 class ScalarFieldSlicingState(_LayerSlicingState):
