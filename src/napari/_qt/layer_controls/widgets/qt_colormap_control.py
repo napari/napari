@@ -140,7 +140,7 @@ class QtColormapControl(
             *(layer.colormaps for layer in self._layers)
         )
 
-        for name, cm in AVAILABLE_COLORMAPS.items():
+        for name, cm in AVAILABLE_COLORMAPS.items(): #@margot dont take the union but the intersection. also somewhere else take the intersection, in QtOutSliceCheckBoxControl?
             if name in set().union(
                 *(layer.colormaps for layer in self._layers)
             ):

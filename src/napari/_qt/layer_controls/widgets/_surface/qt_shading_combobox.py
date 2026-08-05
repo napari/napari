@@ -22,7 +22,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Surface
+    layers : list of napari.layers.Surface
         An instance of a napari Surface layer.
 
     Attributes
@@ -33,7 +33,6 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    _layer: Surface  # @lorenzo: this can be safely removed?
 
     def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)
@@ -60,7 +59,6 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         for layer in self._layers:
             with layer.events.shading.blocker(self._on_shading_change):
                 layer.shading = self.shading_combobox.currentEnum()
-        # self._layer.shading = self.shading_combobox.currentEnum() @lorenzo: copilot suggested a blocker, I agree? is the blocker right?
 
     def _on_shading_change(self) -> None:
         """Receive layer model shading change event and update combobox."""

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -6,11 +7,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import (
-    Layer,  # @lorenzo: do I import layer or only the type checking layer import? In one of the other files something complained when i didnt import layers
-)
+
 from napari.utils.misc import human_readable_size
 
+from typing import TYPE_CHECKING  #@margot change the layer import to this everywhere! 
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 def _format_level_label(
     index: int,
@@ -67,7 +69,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
-        if all(layer.multiscale for layer in self._layers):
+        if all(layer.multiscale and layer.level_shapes == self._layers[0].level_shapes for layer in self._layers):
             self._update_level_labels()
             self.level_combobox.currentIndexChanged.connect(
                 self._on_combobox_changed
@@ -76,7 +78,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 layer.events.locked_data_level.connect(
                     self._on_locked_data_level_change
                 )
-                layer.events.data.connect(self._update_level_labels)
+                layer.events.data.connect(self._update_level_labels) #TODO: should this connection also happen when data is not multiscale
                 layer.events.set_data.connect(self._update_auto_label)
             self.level_combobox.show()
             self.level_label.show()
@@ -92,7 +94,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
 
             if all(
                 layer.multiscale for layer in self._layers
-            ):  # @lorenzo: why are we checking here, this only gets called after a check already happened...
+            ):
                 shapes = self._layers[0].level_shapes
                 itemsize = self._layers[0].dtype.itemsize
                 for i, shape in enumerate(shapes):
@@ -105,7 +107,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             # Reflect current locked state
             locked = getattr(
                 self._layers[0], '_locked_data_level', None
-            )  # @lorenzo: what do we want to represent here? only first or if any of them are locked? what even is this locking?
+            )
             if locked is not None:
                 # +1 because index 0 is "Auto"
                 self.level_combobox.setCurrentIndex(locked + 1)

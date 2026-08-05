@@ -1,4 +1,5 @@
 # TODO: sort through necessary imports
+from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import QtInterpolationComboBoxControl
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
@@ -59,6 +60,9 @@ from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
+from napari._qt.layer_controls.widgets._image.qt_render_control import (
+    QtImageRenderControl,
+)
 from napari.layers import (
     Image,
     Labels,
@@ -90,10 +94,13 @@ controls_dict = {
         QtBorderColorControl,
         QtCurrentSizeSliderControl,
         QtSymbolComboBoxControl,
-        QtShadingComboBoxControl,
     ),
+    Surface: (QtShadingComboBoxControl,),
     Points | Vectors: (QtOutSliceCheckBoxControl,),
-    Image: (QtDepictionControl,),
+    Image: (QtDepictionControl, 
+            QtInterpolationComboBoxControl,
+            QtImageRenderControl,
+    ),
     Points | Shapes: (QtTextVisibilityControl,),
     #'interpolation': QtInterpolationComboBoxControl,
 }
@@ -217,11 +224,22 @@ class QtDynamicLayerControls(QFrame):
         to 2D or 3D visualization only like the transform mode button.
         """
         depiction = self.findChild(QtDepictionControl)
+        depiction._update_plane_parameter_visibility()
         if depiction is not None:
             if self._ndisplay == 3:
                 depiction._on_display_change_show()
             else:
                 depiction._on_display_change_hide()
+
+        interpolation = self.findChild(QtInterpolationComboBoxControl)
+        interpolation._update_interpolation_combo(self.ndisplay)
+
+        rendering = self.findChild(QtImageRenderControl)
+        if rendering is not None:
+            if self._ndisplay == 3:
+                rendering._on_display_change_show()
+            else:
+                rendering._on_display_change_hide()
 
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:

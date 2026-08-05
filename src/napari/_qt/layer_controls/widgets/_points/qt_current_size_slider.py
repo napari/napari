@@ -52,15 +52,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        if any(
-            layer.size.size for layer in self._layers
-        ):  # @lorenzo: are we okay just picking from first or should we take the max across all layers?
-            max_value = max(
-                100,
-                int(np.max([layer.size.size for layer in self._layers])) + 1,
-            )  # will this crash if a layer has no size?
-        else:
-            max_value = 100
+        max_value = int(np.max([layer.size.max() for layer in self._layers if layer.size.size], initial=100))
         sld.setMaximum(max_value)
         sld.setSingleStep(1)
         value = self._layers[0].current_size
