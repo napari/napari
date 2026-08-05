@@ -44,7 +44,7 @@ from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
-    FloatingAxesOverlay,
+    CanvasAxesOverlay,
     SceneOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -312,15 +312,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
+        (
+            'viewer.floating_axes is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.axes instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
-    def floating_axes(self) -> FloatingAxesOverlay:
+    def floating_axes(self) -> CanvasAxesOverlay:
         return self.canvas.overlays.floating_axes  # type: ignore[return-value]
 
     @property
     @deprecated(
-        'viewer.scale_bar is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.scale_bar instead.',
+        (
+            'viewer.scale_bar is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.scale_bar instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
@@ -328,7 +334,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.text_overlay is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.text instead.',
+        (
+            'viewer.text_overlay is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.text instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
@@ -336,7 +345,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.grid is a deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
+        (
+            'viewer.grid is a deprecated attribute since 0.9.0. Use viewer.canvas.grid instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:

@@ -4,7 +4,7 @@ from napari.components import ViewerModel
 from napari.components.overlays import AxesOverlay
 
 
-def test_floating_axes_dimensions_properly_detected():
+def test_scene_axes_dimensions_properly_detected():
     viewer = ViewerModel()
     axes_model = AxesOverlay()
     axes_view = VispyAxesOverlay(

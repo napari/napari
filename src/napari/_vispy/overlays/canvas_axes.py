@@ -16,7 +16,7 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import FloatingAxesOverlay
+    from napari.components.overlays import CanvasAxesOverlay
 
 
 class _AxesScene(ViewBox):
@@ -35,10 +35,10 @@ class _AxesScene(ViewBox):
         # self.axes.update_gl_state(depth_test=True)
 
 
-class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
-    overlay: FloatingAxesOverlay
+    overlay: CanvasAxesOverlay
 
     def __init__(self, font_info: FontInfo, **kwargs: Any) -> None:
         super().__init__(
@@ -81,7 +81,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         reversed_axes = [self.viewer.dims.ndim - 1 - a for a in axes]
 
         # In 3D mode the default spacing (0.3) looks too tight in the
-        # floating axes viewport, so we use a larger offset for labels.
+        # viewport, so we use a larger offset for labels.
         text_offset = 0.45 if len(axes) == 3 else 0.3
         self.node.axes.set_data(
             axes=axes,
