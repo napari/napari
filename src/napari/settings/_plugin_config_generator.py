@@ -25,15 +25,28 @@ def _snake_identifier(name: str, plugin_name: str | None = None) -> str:
     (they are used both as the name of the generated model and as field names
     on the plugin preferences model).
 
+    If ``plugin_name`` is given, a leading ``<plugin_name>.`` namespace is
+    stripped from the key.  Plugin names and configuration keys may use
+    different separators (e.g. ``'my-plugin'`` vs ``'my_plugin.reader.lazy'``),
+    so the prefix is compared after normalizing separators.
+
     Examples
     --------
     >>> _snake_identifier('my_plugin.someSetting', 'my_plugin')
     'some_setting'
+    >>> _snake_identifier('my_plugin.reader.lazy', 'my-plugin')
+    'reader_lazy'
     >>> _snake_identifier('Demo Configuration for widget 1')
     'demo_configuration_for_widget_1'
     """
     if plugin_name:
-        name = name.removeprefix(f'{plugin_name}.')
+        # configuration keys are commonly namespaced with the plugin name;
+        # compare the two after splitting on non-alphanumeric runs so that
+        # '-' and '_' separators are treated the same
+        parts = re.split(r'[^0-9a-zA-Z]+', name)
+        plugin_parts = re.split(r'[^0-9a-zA-Z]+', plugin_name)
+        if parts[: len(plugin_parts)] == plugin_parts:
+            name = '.'.join(parts[len(plugin_parts) :])
 
     # camelCase -> snake_case (e.g. someSetting -> some_Setting)
     name = re.sub(r'(?<!^)(?=[A-Z])', '_', name)
