@@ -23,8 +23,8 @@ from napari.layers.image._image_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import (
-    _ThickNDAffineSlice,
     _SliceInput,
+    _ThickNDAffineSlice,
     _ThickNDSlice,
     apply_units_to_transform,
 )
@@ -846,7 +846,9 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def affine_slicing_sampling_order(self):
         """Interpolation order for affine non-orthogonal sampling."""
-        raise NotImplementedError("This property should be implemented in subclasses.")
+        raise NotImplementedError(
+            'This property should be implemented in subclasses.'
+        )
 
 
 class ScalarFieldSlicingState(_LayerSlicingState):
@@ -942,7 +944,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         slice_input: _SliceInput,
         world_to_data: Affine,
     ) -> _ThickNDSlice | _ThickNDAffineSlice:
-        # Multiscale affine slicing is not yet implemented 
+        # Multiscale affine slicing is not yet implemented
         if (
             self.layer.multiscale
             or slice_input.ndisplay != 2

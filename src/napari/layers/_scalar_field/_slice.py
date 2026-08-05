@@ -8,8 +8,8 @@ import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import (
-    _ThickNDAffineSlice,
     _SliceInput,
+    _ThickNDAffineSlice,
     _ThickNDSlice,
 )
 from napari.types import ArrayLike
