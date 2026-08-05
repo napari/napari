@@ -65,7 +65,12 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
         if e is None:
             return None
         if e.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
-            self._root.remove_selected()
+            # One press deletes one selection. Deletion is not undoable and
+            # remove_selected() selects a neighbor afterwards, so honoring
+            # auto-repeat would walk down the list and empty it while the key
+            # is held. Swallow the repeats rather than forwarding them.
+            if not e.isAutoRepeat():
+                self._root.remove_selected()
             return None
         return super().keyPressEvent(e)
 
