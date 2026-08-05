@@ -156,6 +156,11 @@ class Points(Layer):
     out_of_slice_display : bool
         DEPRECATED: If True, renders points not just in central plane but also
         slightly out of slice according to specified point marker size.
+        out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode).
+        To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar
+        (see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing).
+        Setting projection_mode to rescale_spherical may be more physically accurate
+        if your points correspond directly to objects with a physical size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass.
@@ -858,19 +863,38 @@ class Points(Layer):
     @property
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""
-        return self._projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
+        warnings.warn(
+            (
+                'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+                'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+                '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
+                'Setting projection_mode to rescale_spherical may be more physically accurate '
+                'if your points correspond directly to objects with a physical size. '
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._projection_mode in (
+            PointsProjectionMode.RESCALE_LINEAR,
+            PointsProjectionMode.RESCALE_SPHERICAL,
+        )
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         if out_of_slice_display:
             warnings.warn(
-                'out_of_slice_display is deprecated. For a similar effect, set projection_mode to '
-                '"rescale_spherical" and increase the dims margins to project a thicker slice.',
+                (
+                    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+                    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+                    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
+                    'Setting projection_mode to rescale_spherical may be more physically accurate '
+                    'if your points correspond directly to objects with a physical size. '
+                ),
                 category=FutureWarning,
                 stacklevel=2,
             )
         self._projection_mode = (
-            PointsProjectionMode.RESCALE_SPHERICAL
+            PointsProjectionMode.RESCALE_LINEAR
             if out_of_slice_display
             else PointsProjectionMode.ALL
         )
