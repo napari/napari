@@ -499,7 +499,8 @@ def test_settings_2():
     from napari.settings import PluginPreferences
 
     class TestPluginSettings(PluginPreferences):
-        model_config = SettingsConfigDict(env_prefix='testnapari_plugin_')
+        model_config = (SettingsConfigDict(env_prefix='testnapari_plugin_'),)
+        display_name: str = 'demo'
 
     return {
         'test-plugin': TestPluginSettings,
