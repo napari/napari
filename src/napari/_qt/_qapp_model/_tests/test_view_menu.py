@@ -15,6 +15,7 @@ from napari._app_model.actions._view import (
     _toggle_canvas_ndim,
     toggle_actions,
 )
+from napari._app_model.constants import MenuId
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -46,7 +47,7 @@ def check_view_menu_visibility(viewer, qtbot):
 
 @pytest.mark.parametrize(
     ('action_id', 'action_title', 'attribute_path'),
-    toggle_actions,
+    toggle_actions[MenuId.VIEW_SCALEBAR],
 )
 def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     """
