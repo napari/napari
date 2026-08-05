@@ -162,8 +162,8 @@ viewer.canvas.grid.enabled = True  # show the volumes in grid mode
 viewer.axes.visible = True  # magenta error shows time direction
 
 # set an oblique view angle onto the kymograph grid
-viewer.camera.center = (440, 880, 1490)
-viewer.camera.angles = (-20, 23, -50)
+viewer.scene.camera.center = (440, 880, 1490)
+viewer.scene.camera.angles = (-20, 23, -50)
 viewer.fit_to_view()
 
 napari.run()

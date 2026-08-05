@@ -42,7 +42,7 @@ viewer.add_image(
 )
 
 viewer.dims.ndisplay = 3
-viewer.camera.angles = (-20, 20, -20)
+viewer.scene.camera.angles = (-20, 20, -20)
 viewer.fit_to_view()
 
 if __name__ == '__main__':

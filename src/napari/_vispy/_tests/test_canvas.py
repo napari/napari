@@ -144,8 +144,8 @@ def test_grid_mode(qt_viewer):
 
     angles = 10, 20, 30  # just some nonzero stuff
     zoom = 1
-    viewer.camera.angles = angles
-    viewer.camera.zoom = zoom
+    viewer.scene.camera.angles = angles
+    viewer.scene.camera.zoom = zoom
 
     canvas.on_draw(None)
 

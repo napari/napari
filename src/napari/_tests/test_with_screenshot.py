@@ -474,7 +474,7 @@ def test_screenshot_has_no_border(make_napari_viewer):
     image_data = np.ones((60, 80), dtype=np.float32)
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
-    viewer.camera.zoom = 1000
+    viewer.scene.camera.zoom = 1000
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
@@ -495,7 +495,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img2_layer = viewer.add_image(img2)
 
     viewer.window._qt_viewer.canvas.size = shape
-    viewer.camera.zoom = 1
+    viewer.scene.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas
     img1_layer.blending = 'additive'
