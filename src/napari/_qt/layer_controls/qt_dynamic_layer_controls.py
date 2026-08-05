@@ -1,5 +1,4 @@
 # TODO: sort through necessary imports
-from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import QtInterpolationComboBoxControl
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
@@ -22,6 +21,12 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.layer_controls.widgets._image.qt_depiction_control import (
     QtDepictionControl,
+)
+from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import (
+    QtInterpolationComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._image.qt_render_control import (
+    QtImageRenderControl,
 )
 from napari._qt.layer_controls.widgets._points.qt_border_color import (
     QtBorderColorControl,
@@ -60,9 +65,6 @@ from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
-from napari._qt.layer_controls.widgets._image.qt_render_control import (
-    QtImageRenderControl,
-)
 from napari.layers import (
     Image,
     Labels,
@@ -97,9 +99,10 @@ controls_dict = {
     ),
     Surface: (QtShadingComboBoxControl,),
     Points | Vectors: (QtOutSliceCheckBoxControl,),
-    Image: (QtDepictionControl, 
-            QtInterpolationComboBoxControl,
-            QtImageRenderControl,
+    Image: (
+        QtDepictionControl,
+        QtInterpolationComboBoxControl,
+        QtImageRenderControl,
     ),
     Points | Shapes: (QtTextVisibilityControl,),
     #'interpolation': QtInterpolationComboBoxControl,

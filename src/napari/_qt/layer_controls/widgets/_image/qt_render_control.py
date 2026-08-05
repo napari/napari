@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 from superqt import QLabeledDoubleSlider
@@ -12,9 +15,10 @@ from napari.layers.image._image_constants import (
     ImageRendering,
 )
 from napari.utils.events.event_utils import connect_setattr
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from napari.layers.base.base import Layer
+
 
 class QtImageRenderControl(QtWidgetControlsBase):
     """

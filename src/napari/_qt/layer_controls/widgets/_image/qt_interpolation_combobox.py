@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
@@ -11,9 +14,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.image._image_constants import Interpolation
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from napari.layers.base.base import Layer
+
 
 class QtInterpolationComboBoxControl(QtWidgetControlsBase):
     """
@@ -40,12 +43,8 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         # Setup layer
         self._layers = layers
         for layer in self._layers:
-            layer.events.interpolation2d.connect(
-                self._on_interpolation_change
-            )
-            layer.events.interpolation3d.connect(
-                self._on_interpolation_change
-            )
+            layer.events.interpolation2d.connect(self._on_interpolation_change)
+            layer.events.interpolation3d.connect(self._on_interpolation_change)
 
         # Setup widgets
         self.interpolation_combobox = QComboBox(parent)
@@ -71,7 +70,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             'nearest', 'spline16', 'spline36'
         """
         # TODO: Better way to handle the ndisplay value?
-        for layer in self._layers: #@lorenzo @margot find a better way?
+        for layer in self._layers:  # @lorenzo @margot find a better way?
             if self.parent().ndisplay == 2:
                 layer.interpolation2d = text
             else:

@@ -8,7 +8,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Surface
 from napari.layers.base.base import Layer
 from napari.layers.surface._surface_constants import Shading
 
@@ -32,7 +31,6 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
     shading_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the shading value chooser widget.
     """
-
 
     def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)

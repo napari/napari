@@ -52,7 +52,16 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        max_value = int(np.max([layer.size.max() for layer in self._layers if layer.size.size], initial=100))
+        max_value = int(
+            np.max(
+                [
+                    layer.size.max()
+                    for layer in self._layers
+                    if layer.size.size
+                ],
+                initial=100,
+            )
+        )
         sld.setMaximum(max_value)
         sld.setSingleStep(1)
         value = self._layers[0].current_size
