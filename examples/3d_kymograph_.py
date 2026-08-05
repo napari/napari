@@ -159,7 +159,7 @@ for s in samples:
     )
 
 viewer.canvas.grid.enabled = True  # show the volumes in grid mode
-viewer.axes.visible = True  # magenta error shows time direction
+viewer.scene.overlays.axes.visible = True  # magenta error shows time direction
 
 # set an oblique view angle onto the kymograph grid
 viewer.scene.camera.center = (440, 880, 1490)

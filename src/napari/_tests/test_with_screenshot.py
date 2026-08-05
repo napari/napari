@@ -413,7 +413,7 @@ def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
     viewer.scale_bar.visible = True
-    viewer.axes.visible = True
+    viewer.scene.overlays.axes.visible = True
 
     screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
 
@@ -428,18 +428,18 @@ def test_axes_visible(make_napari_viewer):
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
 
     # Make axes visible and check something is seen
-    viewer.axes.visible = True
+    viewer.scene.overlays.axes.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.axes.visible
+    assert viewer.scene.overlays.axes.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make axes not visible and check they are gone
-    viewer.axes.visible = False
+    viewer.scene.overlays.axes.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 

@@ -64,9 +64,9 @@ viewer.window.resize(900, 600)
 
 viewer.theme = "light"
 viewer.dims.ndisplay = 3
-viewer.axes.visible = True
-viewer.axes.colored = False
-viewer.axes.labels = False
+viewer.scene.overlays.axes.visible = True
+viewer.scene.overlays.axes.colored = False
+viewer.scene.overlays.axes.labels = False
 viewer.canvas.overlays.text.visible = True
 viewer.canvas.overlays.text.text = "Hello World!"
 
