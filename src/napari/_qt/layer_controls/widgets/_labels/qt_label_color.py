@@ -103,7 +103,9 @@ class QtColorBox(QWidget):
         super().closeEvent(event)
 
 
-class QtLabelControl(QtWidgetControlsBase): #@lorenzo should we rename this to QtLabelColorControl?
+class QtLabelControl(
+    QtWidgetControlsBase
+):  # @lorenzo should we rename this to QtLabelColorControl?
     """
     Class that wraps the connection of events/signals between the current label
     layer attribute and Qt widgets.

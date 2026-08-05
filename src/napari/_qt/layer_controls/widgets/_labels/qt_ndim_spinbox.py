@@ -75,7 +75,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
             value = self._layers[0].n_edit_dimensions
             self.ndim_spinbox.setValue(int(value))
             # TODO: Check how to decouple this
-            self.parent()._set_polygon_tool_state() #@lorenzo I suspect we need to add this somehow in the dynamic layer control under n display change. It gets called in qt labels controls
+            self.parent()._set_polygon_tool_state()  # @lorenzo I suspect we need to add this somehow in the dynamic layer control under n display change. It gets called in qt labels controls
 
     def _on_data_change(self) -> None:
         self.ndim_spinbox.setMaximum(self._layers[0].ndim)

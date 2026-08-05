@@ -50,7 +50,9 @@ class QtLabelRenderControl(QtWidgetControlsBase):
 
         # Setup widgets
         render_combobox = QEnumComboBox(enum_class=LabelsRendering)
-        render_combobox.setCurrentEnum(LabelsRendering(self._layers[0].rendering))
+        render_combobox.setCurrentEnum(
+            LabelsRendering(self._layers[0].rendering)
+        )
         self.render_combobox = render_combobox
         for layer in self._layers:
             connect_setattr(

@@ -1,4 +1,3 @@
-from napari.layers.base.base import Layer
 from qtpy.QtWidgets import (
     QWidget,
 )
@@ -8,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari.layers import Labels
+from napari.layers.base.base import Layer
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
 )
@@ -35,7 +34,6 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-
     def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
@@ -54,7 +52,10 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""
         for layer in self._layers:
-            if self.color_mode_combobox.currentEnum() == LabelColorMode.AUTO.value:
+            if (
+                self.color_mode_combobox.currentEnum()
+                == LabelColorMode.AUTO.value
+            ):
                 layer.colormap = layer._original_random_colormap
             else:
                 layer.colormap = layer._direct_colormap

@@ -1,6 +1,4 @@
 # TODO: sort through necessary imports
-from napari._qt.layer_controls.widgets._labels.qt_brush_size_slider import QtBrushSizeSliderControl
-from napari._qt.layer_controls.widgets._labels.qt_color_mode_combobox import QtColorModeComboBoxControl
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
@@ -29,6 +27,33 @@ from napari._qt.layer_controls.widgets._image.qt_interpolation_combobox import (
 )
 from napari._qt.layer_controls.widgets._image.qt_render_control import (
     QtImageRenderControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_brush_size_slider import (
+    QtBrushSizeSliderControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_color_mode_combobox import (
+    QtColorModeComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox import (
+    QtContiguousCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_contour_spinbox import (
+    QtContourSpinBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox import (
+    QtDisplaySelectedLabelCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_label_color import (
+    QtLabelControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox import (
+    QtNdimSpinBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_preserve_labels_checkbox import (
+    QtPreserveLabelsCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._labels.qt_render_control import (
+    QtLabelRenderControl,
 )
 from napari._qt.layer_controls.widgets._points.qt_border_color import (
     QtBorderColorControl,
@@ -67,25 +92,6 @@ from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
-from napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox import (
-    QtContiguousCheckBoxControl,
-)
-from napari._qt.layer_controls.widgets._labels.qt_contour_spinbox import (
-    QtContourSpinBoxControl,
-)
-from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox import (
-    QtDisplaySelectedLabelCheckBoxControl,
-)
-from napari._qt.layer_controls.widgets._labels.qt_label_color import QtLabelControl
-from napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox import (
-    QtNdimSpinBoxControl,
-)
-from napari._qt.layer_controls.widgets._labels.qt_preserve_labels_checkbox import (
-    QtPreserveLabelsCheckBoxControl,
-)
-from napari._qt.layer_controls.widgets._labels.qt_render_control import (
-    QtLabelRenderControl,
-)
 from napari.layers import (
     Image,
     Labels,
@@ -119,15 +125,16 @@ controls_dict = {
         QtSymbolComboBoxControl,
     ),
     Surface: (QtShadingComboBoxControl,),
-    Labels: (QtBrushSizeSliderControl,
-             QtColorModeComboBoxControl,
-             QtContiguousCheckBoxControl,
-             QtContourSpinBoxControl,
-             QtDisplaySelectedLabelCheckBoxControl,
-             QtLabelControl,
-             QtNdimSpinBoxControl,
-             QtPreserveLabelsCheckBoxControl,
-             QtLabelRenderControl,
+    Labels: (
+        QtBrushSizeSliderControl,
+        QtColorModeComboBoxControl,
+        QtContiguousCheckBoxControl,
+        QtContourSpinBoxControl,
+        QtDisplaySelectedLabelCheckBoxControl,
+        QtLabelControl,
+        QtNdimSpinBoxControl,
+        QtPreserveLabelsCheckBoxControl,
+        QtLabelRenderControl,
     ),
     Image: (
         QtDepictionControl,
@@ -274,15 +281,13 @@ class QtDynamicLayerControls(QFrame):
                 rendering._on_display_change_show()
             else:
                 rendering._on_display_change_hide()
-        
+
         rendering_labels = self.findChild(QtLabelRenderControl)
         if rendering_labels is not None:
             if self._ndisplay == 3:
                 rendering_labels._on_display_change_show()
             else:
                 rendering_labels._on_display_change_hide()
-
-
 
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:

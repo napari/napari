@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -13,9 +16,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from napari.layers.base.base import Layer
+
 
 class QtBrushSizeSliderControl(QtWidgetControlsBase):
     """
