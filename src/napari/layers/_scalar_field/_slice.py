@@ -339,15 +339,27 @@ class _ScalarFieldSliceRequest:
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
         return _ThickNDSlice.from_array(slice_arr)
 
+    def _apply_projection_mode(self, sampled: np.ndarray, axis: tuple[int, ...], mode: str) -> np.ndarray:
+        if mode == 'none':
+            # just got to drop all the unnecessary axes
+            return sampled[(slice(None), slice(None), *([0] * len(axis)))]
+        else:
+            return self._project_slice(
+                data=sampled,
+                axis=axis,
+                mode=mode,
+            )
+
+
     def _project_affine_slice(
         self, data: ArrayLike, data_slice: _NDAffineSlice
     ) -> np.ndarray:
         """
-        Slice the given data with the given affine slice. Also projects the extra dims.
-        Note that as thick _NDAffineSlice are not implemented yet, this function
-        does not have the same structure as _project_thick_slice, and so it is directly
-        responsible for creating the affine-oriented slicing indices and also querying
-        the data with them.  
+        Slice the given data with the given affine slice.
+
+        For thick non-orthogonal slicing, this samples an nD slab in tile space
+        (row, col, and one thickness axis per non-displayed data axis) and
+        projects the thickness axes to recover a 2D image.
 
         Note that if the sampling is done on a finer grid (with appropriate sampled_data
         resizing), the result approximates what can be seen in Fiji's BigDataViewer, which
@@ -357,25 +369,81 @@ class _ScalarFieldSliceRequest:
         shape = data_slice.shape
         rows = np.arange(shape[0], dtype=float)
         cols = np.arange(shape[1], dtype=float)
-        rr, cc = np.meshgrid(rows, cols, indexing='ij')
+        non_displayed = [
+            ax
+            for ax in range(self.slice_input.ndim)
+            if ax not in data_slice.plane_axes
+        ]
 
-        coords = np.zeros((self.slice_input.ndim, *shape), dtype=float)
-        coords[data_slice.plane_axes[0]] = rr
-        coords[data_slice.plane_axes[1]] = cc
+        if self.projection_mode == 'none':
+            # maybe not necessary to do this
+            slab_coords_per_axis = [np.array([0.0], dtype=float)] * len(non_displayed)
+            projection_axes = ()
+        else:
+            slab_coords_per_axis = []
+            for ax in non_displayed:
+                slab_coords = np.array([0.0], dtype=float)
+                left = max(float(data_slice.margin_left[ax]), 0.0)
+                right = max(float(data_slice.margin_right[ax]), 0.0)
+                low = -int(np.round(left))
+                high = int(np.round(right))
+                slab_coords = np.arange(low, high + 1, dtype=float)
+                slab_coords_per_axis.append(slab_coords)
+
+            projection_axes = tuple(range(2, 2 + len(non_displayed)))
+
+
+        # slab_coords_per_axis = []
+        # for ax in non_displayed:
+        #     slab_coords = np.array([0.0], dtype=float)
+        #     if self.projection_mode != 'none':
+        #         left = max(float(data_slice.margin_left[ax]), 0.0)
+        #         right = max(float(data_slice.margin_right[ax]), 0.0)
+        #         low = -int(np.round(left))
+        #         high = int(np.round(right))
+        #         slab_coords = np.arange(low, high + 1, dtype=float)
+        #     slab_coords_per_axis.append(slab_coords)
+
+        grid_coords = np.meshgrid(
+            rows,
+            cols,
+            *slab_coords_per_axis,
+            indexing='ij',
+        )
+
+        coords = np.zeros(
+            (self.slice_input.ndim, *grid_coords[0].shape), dtype=float
+        )
+        # coords[data_slice.plane_axes[0]] = grid_coords[0]
+        # coords[data_slice.plane_axes[1]] = grid_coords[1]
+        coords[list(data_slice.plane_axes[:2])] = grid_coords[:2]
+        coords[non_displayed] = grid_coords[2:]
+        # for i, ax in enumerate(non_displayed):
+        #     coords[ax] = grid_coords[2 + i]
+
         coords = coords.reshape(self.slice_input.ndim, -1)
         data_coords = np.asarray(data_slice.tile_to_data(coords.T)).T
-        data_coords = data_coords.reshape((self.slice_input.ndim, *shape))
+        data_coords = data_coords.reshape(
+            (self.slice_input.ndim, *grid_coords[0].shape)
+        )
+
+        # projection_axes = (
+        #     tuple(range(2, 2 + len(non_displayed)))
+        #     if self.projection_mode != 'none'
+        #     else ()
+        # )
+
 
         if self.rgb and data.ndim == self.slice_input.ndim + 1:
             sampled_channels = []
             for channel in range(data.shape[-1]):
-                sampled_channels.append(
-                    self._query_data_using_data_indices(
-                        data=data[..., channel],
-                        data_indices=data_coords,
-                        affine_slicing_sampling_order=self.affine_slicing_sampling_order,
-                    )
+                sampled = self._query_data_using_data_indices(
+                    data=data[..., channel],
+                    data_indices=data_coords,
+                    affine_slicing_sampling_order=self.affine_slicing_sampling_order,
                 )
+                sampled = self._apply_projection_mode(sampled, projection_axes, self.projection_mode)
+                sampled_channels.append(sampled)
             return np.stack(sampled_channels, axis=-1)
 
         sampled_data = self._query_data_using_data_indices(
@@ -384,7 +452,7 @@ class _ScalarFieldSliceRequest:
             affine_slicing_sampling_order=self.affine_slicing_sampling_order,
         )
 
-        return sampled_data
+        return self._apply_projection_mode(sampled_data, projection_axes, self.projection_mode)
 
     def _query_data_using_data_indices(
         self,
