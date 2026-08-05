@@ -246,14 +246,14 @@ class _ScalarFieldSliceRequest:
             data = self._project_affine_slice(
                 self.data_at_data_level, self.data_slice
             )
-            # Compared to what is done in the "else"-case below, this is a hack: 
+            # Compared to what is done in the "else"-case below, this is a hack:
             # data_slice.tile_to_data is designed so that
             # Vispy is given an affine transform with an identity linear matrix,
-            # so that it does not apply any additional rotation or shear to the 
+            # so that it does not apply any additional rotation or shear to the
             # data pixels (our affine slicing procedure already accounts for the
             # "deformations" coming from the affine slicing, we do not want Vispy
             # to apply them again) when composing all of the layer's transforms
-            # (see function `on_matrix_change` in napari/_vispy/layers/base.py). 
+            # (see function `on_matrix_change` in napari/_vispy/layers/base.py).
             tile_to_data = self.data_slice.tile_to_data
         else:
             data = self._project_thick_slice(
@@ -339,17 +339,17 @@ class _ScalarFieldSliceRequest:
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
         return _ThickNDSlice.from_array(slice_arr)
 
-    def _apply_projection_mode(self, sampled: np.ndarray, axis: tuple[int, ...], mode: str) -> np.ndarray:
+    def _apply_projection_mode(
+        self, sampled: np.ndarray, axis: tuple[int, ...], mode: str
+    ) -> np.ndarray:
         if mode == 'none':
             # just got to drop all the unnecessary axes
             return sampled[(slice(None), slice(None), *([0] * len(axis)))]
-        else:
-            return self._project_slice(
-                data=sampled,
-                axis=axis,
-                mode=mode,
-            )
-
+        return self._project_slice(
+            data=sampled,
+            axis=axis,
+            mode=mode,
+        )
 
     def _project_affine_slice(
         self, data: ArrayLike, data_slice: _NDAffineSlice
@@ -376,7 +376,9 @@ class _ScalarFieldSliceRequest:
         ]
 
         if self.projection_mode == 'none':
-            slab_coords_per_axis = [np.array([0.0], dtype=float)] * len(non_displayed)
+            slab_coords_per_axis = [np.array([0.0], dtype=float)] * len(
+                non_displayed
+            )
         else:
             slab_coords_per_axis = []
             for ax in non_displayed:
@@ -409,7 +411,6 @@ class _ScalarFieldSliceRequest:
             (self.slice_input.ndim, *grid_coords[0].shape)
         )
 
-
         if self.rgb and data.ndim == self.slice_input.ndim + 1:
             sampled_channels = []
             for channel in range(data.shape[-1]):
@@ -418,7 +419,9 @@ class _ScalarFieldSliceRequest:
                     data_indices=data_coords,
                     affine_slicing_sampling_order=self.affine_slicing_sampling_order,
                 )
-                sampled = self._apply_projection_mode(sampled, projection_axes, self.projection_mode)
+                sampled = self._apply_projection_mode(
+                    sampled, projection_axes, self.projection_mode
+                )
                 sampled_channels.append(sampled)
             return np.stack(sampled_channels, axis=-1)
 
@@ -428,7 +431,9 @@ class _ScalarFieldSliceRequest:
             affine_slicing_sampling_order=self.affine_slicing_sampling_order,
         )
 
-        return self._apply_projection_mode(sampled_data, projection_axes, self.projection_mode)
+        return self._apply_projection_mode(
+            sampled_data, projection_axes, self.projection_mode
+        )
 
     def _query_data_using_data_indices(
         self,
@@ -440,6 +445,7 @@ class _ScalarFieldSliceRequest:
         Query the given data with the given data indices using scipy's map_coordinates.
         """
         from scipy.ndimage import map_coordinates
+
         return map_coordinates(
             data,
             data_indices,
