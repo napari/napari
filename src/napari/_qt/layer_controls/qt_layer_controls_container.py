@@ -73,7 +73,8 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the new dimensionality value at `event.value`.
         """
-        self.panel.ndisplay = event.value
+        if self.panel is not None:
+            self.panel.ndisplay = event.value
 
     def _on_viewer_theme_changed(self, event=None):
         """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).

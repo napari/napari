@@ -6,7 +6,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Labels
+from napari.layers.base.base import Layer
 from napari.layers.labels._labels_constants import (
     IsoCategoricalGradientMode,
     LabelsRendering,
@@ -38,43 +38,47 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         Label for the way labels should be rendered chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Labels) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.rendering.connect(self._on_rendering_change)
-        self._layer.events.iso_gradient_mode.connect(
-            self._on_iso_gradient_mode_change
-        )
+        for layer in self._layers:
+            layer.events.rendering.connect(self._on_rendering_change)
+            layer.events.iso_gradient_mode.connect(
+                self._on_iso_gradient_mode_change
+            )
 
         # Setup widgets
         render_combobox = QEnumComboBox(enum_class=LabelsRendering)
-        render_combobox.setCurrentEnum(LabelsRendering(self._layer.rendering))
+        render_combobox.setCurrentEnum(LabelsRendering(self._layers[0].rendering))
         self.render_combobox = render_combobox
-        connect_setattr(
-            render_combobox.currentEnumChanged, self._layer, 'rendering'
-        )
+        for layer in self._layers:
+            connect_setattr(
+                render_combobox.currentEnumChanged, layer, 'rendering'
+            )
         self.render_combobox_label = QtWrappedLabel('rendering:')
 
         iso_gradient_combobox = QEnumComboBox(
             enum_class=IsoCategoricalGradientMode
         )
         iso_gradient_combobox.setCurrentEnum(
-            IsoCategoricalGradientMode(self._layer.iso_gradient_mode)
+            IsoCategoricalGradientMode(self._layers[0].iso_gradient_mode)
         )
-        connect_setattr(
-            iso_gradient_combobox.currentEnumChanged,
-            self._layer,
-            'iso_gradient_mode',
-        )
-        iso_gradient_combobox.setEnabled(
-            self._layer.rendering == LabelsRendering.ISO_CATEGORICAL
-        )
+        for layer in self._layers:
+            connect_setattr(
+                iso_gradient_combobox.currentEnumChanged,
+                layer,
+                'iso_gradient_mode',
+            )
+            iso_gradient_combobox.setEnabled(
+                layer.rendering == LabelsRendering.ISO_CATEGORICAL
+            )
         self.iso_gradient_combobox = iso_gradient_combobox
         self.iso_gradient_combobox_label = QtWrappedLabel('gradient\nmode:')
 
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
-        rendering_mode = LabelsRendering(self._layer.rendering)
+        rendering_mode = LabelsRendering(self._layers[0].rendering)
 
         with qt_signals_blocked(self.render_combobox):
             self.render_combobox.setCurrentEnum(rendering_mode)
@@ -88,7 +92,7 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         """Receive layer model iso_gradient_mode change event and update dropdown menu."""
         with qt_signals_blocked(self.iso_gradient_combobox):
             self.iso_gradient_combobox.setCurrentEnum(
-                IsoCategoricalGradientMode(self._layer.iso_gradient_mode)
+                IsoCategoricalGradientMode(self._layers[0].iso_gradient_mode)
             )
 
     def _on_display_change_hide(self):
