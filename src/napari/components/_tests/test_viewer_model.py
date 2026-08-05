@@ -806,7 +806,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'canvas', 'layers']
+    'field', ['scene', 'cursor', 'dims', 'canvas', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""

@@ -31,27 +31,27 @@ toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
         'Axes Visible',
-        'axes.visible',
+        'scene.axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_axes_colored',
         'Axes Colored',
-        'axes.colored',
+        'scene.axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_axes_labels',
         'Axes Labels',
-        'axes.labels',
+        'scene.axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_axes_dashed',
         'Axes Dashed',
-        'axes.dashed',
+        'scene.axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_axes_arrows',
         'Axes Arrows',
-        'axes.arrows',
+        'scene.axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes',
