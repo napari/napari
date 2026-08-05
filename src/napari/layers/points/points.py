@@ -914,7 +914,7 @@ class Points(Layer):
         return self._current_symbol
 
     @current_symbol.setter
-    def current_symbol(self, symbol: None | float) -> None:
+    def current_symbol(self, symbol: float | None) -> None:
         symbol = coerce_symbols(np.array([symbol]))[0]
         self._current_symbol = symbol
         if self._update_properties and len(self.selected_data) > 0:
@@ -944,7 +944,7 @@ class Points(Layer):
         return self._current_size
 
     @current_size.setter
-    def current_size(self, size: None | float) -> None:
+    def current_size(self, size: float | None) -> None:
         if isinstance(size, list | tuple | np.ndarray):
             size = size[-1]
         if not isinstance(size, numbers.Number):
@@ -1059,7 +1059,7 @@ class Points(Layer):
         return self._current_border_width
 
     @current_border_width.setter
-    def current_border_width(self, border_width: None | float) -> None:
+    def current_border_width(self, border_width: float | None) -> None:
         self._current_border_width = border_width
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
@@ -1120,7 +1120,7 @@ class Points(Layer):
 
     @border_contrast_limits.setter
     def border_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ) -> None:
         self._border.contrast_limits = contrast_limits
 
@@ -1199,7 +1199,7 @@ class Points(Layer):
         self._face.continuous_colormap = colormap
 
     @property
-    def face_contrast_limits(self) -> None | tuple[float, float]:
+    def face_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1207,7 +1207,7 @@ class Points(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ) -> None:
         self._face.contrast_limits = contrast_limits
 
@@ -1670,7 +1670,7 @@ class Points(Layer):
             ]
             # positions are scaled anisotropically by scale, but sizes are not,
             # so we need to calculate the ratio to correctly map to screen coordinates
-            scale_ratio = (
+            scale_ratio = np.abs(
                 self.scale[self._slice_input.displayed] / self.scale[-1]
             )
             # Get the point sizes
@@ -1736,7 +1736,9 @@ class Points(Layer):
 
         # positions are scaled anisotropically by scale, but sizes are not,
         # so we need to calculate the ratio to correctly map to screen coordinates
-        scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
+        scale_ratio = np.abs(
+            self.scale[self._slice_input.displayed] / self.scale[-1]
+        )
         # find the points the click intersects
         sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
         distances = abs(rotated_points - rotated_click_point)

@@ -124,6 +124,31 @@ def test_change_antialiasing():
     assert vispy_layer.node.antialias == layer.antialiasing
 
 
+@pytest.mark.parametrize('scale', [(-1, -1), (1, -1), (-1, 1)])
+def test_negative_scale_highlight(scale):
+    """Negative layer scale must not produce negative sizes/widths.
+
+    A negative scale is sometimes used to flip axes (and can be inherited
+    from an image layer); vispy rejects negative ``edge_width``, so adding
+    or selecting a point used to raise ValueError.
+    """
+    layer = Points(np.zeros((0, 2)), size=10, scale=scale)
+    layer.border_width_is_relative = False
+    layer.border_width = 1.0
+
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
+
+    # previously raised ValueError: edge_width cannot be negative
+    layer.add([10, 10])
+
+    for markers in (
+        vispy_layer.node.points_markers,
+        vispy_layer.node.selection_markers,
+    ):
+        assert np.all(markers._data['a_size'] > 0)
+        assert np.all(markers._data['a_edgewidth'] >= 0)
+
+
 def test_highlight_with_out_of_slice_display():
     """Highlight should work when out_of_slice_display is enabled.
 
