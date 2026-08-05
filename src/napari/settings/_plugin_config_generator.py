@@ -53,22 +53,15 @@ VALUE_TRANSLATOR = {
     'exclusive_maximum': 'lt',
     'exclusive_minimum': 'gt',
 }
+# npe2 coerces configuration property types to JSON Schema type names
+# (see ``npe2.manifest.contributions._json_schema``), so only those four
+# need mapping
 _TYPE_MAP: dict[str, type] = {
     'boolean': bool,
-    'string': str,
     'integer': int,
     'number': float,
-    'array': list,
-    'int': int,
-    'float': float,
-    'str': str,
-    'bool': bool,
-    'list': list,
+    'string': str,
 }
-
-
-class Config(EventedModel):
-    display: str = ''
 
 
 def _build_single_config_model(
