@@ -376,9 +376,7 @@ class _ScalarFieldSliceRequest:
         ]
 
         if self.projection_mode == 'none':
-            # maybe not necessary to do this
             slab_coords_per_axis = [np.array([0.0], dtype=float)] * len(non_displayed)
-            projection_axes = ()
         else:
             slab_coords_per_axis = []
             for ax in non_displayed:
@@ -390,19 +388,7 @@ class _ScalarFieldSliceRequest:
                 slab_coords = np.arange(low, high + 1, dtype=float)
                 slab_coords_per_axis.append(slab_coords)
 
-            projection_axes = tuple(range(2, 2 + len(non_displayed)))
-
-
-        # slab_coords_per_axis = []
-        # for ax in non_displayed:
-        #     slab_coords = np.array([0.0], dtype=float)
-        #     if self.projection_mode != 'none':
-        #         left = max(float(data_slice.margin_left[ax]), 0.0)
-        #         right = max(float(data_slice.margin_right[ax]), 0.0)
-        #         low = -int(np.round(left))
-        #         high = int(np.round(right))
-        #         slab_coords = np.arange(low, high + 1, dtype=float)
-        #     slab_coords_per_axis.append(slab_coords)
+        projection_axes = tuple(range(2, 2 + len(non_displayed)))
 
         grid_coords = np.meshgrid(
             rows,
@@ -414,24 +400,14 @@ class _ScalarFieldSliceRequest:
         coords = np.zeros(
             (self.slice_input.ndim, *grid_coords[0].shape), dtype=float
         )
-        # coords[data_slice.plane_axes[0]] = grid_coords[0]
-        # coords[data_slice.plane_axes[1]] = grid_coords[1]
         coords[list(data_slice.plane_axes[:2])] = grid_coords[:2]
         coords[non_displayed] = grid_coords[2:]
-        # for i, ax in enumerate(non_displayed):
-        #     coords[ax] = grid_coords[2 + i]
 
         coords = coords.reshape(self.slice_input.ndim, -1)
         data_coords = np.asarray(data_slice.tile_to_data(coords.T)).T
         data_coords = data_coords.reshape(
             (self.slice_input.ndim, *grid_coords[0].shape)
         )
-
-        # projection_axes = (
-        #     tuple(range(2, 2 + len(non_displayed)))
-        #     if self.projection_mode != 'none'
-        #     else ()
-        # )
 
 
         if self.rgb and data.ndim == self.slice_input.ndim + 1:
