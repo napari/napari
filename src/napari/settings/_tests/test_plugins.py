@@ -48,4 +48,4 @@ def test_single_config(mock_pm: 'TestPluginManager'):
         len(_build_single_config_model(configs[0], PLUGIN_NAME).model_fields)
         == 2
     )
-    assert plugin_configuration_generator(mock_pm)
+    str(plugin_configuration_generator(mock_pm)['my-plugin'])

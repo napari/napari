@@ -103,6 +103,11 @@ def test_add_plugin(mock_pm: 'TestPluginManager', pref):
     assert len(get_plugin_settings()) == len(
         plugin_configuration_generator(mock_pm)
     )
+
+    with pytest.raises(KeyError):
+        get_plugin_settings('random-plugin')
+
+    get_plugin_settings('my-plugin')
     pref._rebuild_dialog()
 
 

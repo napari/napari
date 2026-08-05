@@ -491,3 +491,71 @@ def test_settings_no_import_qt(tmp_path):
     subprocess.check_call(
         [sys.executable, str(tmp_path / 'test_no_import.py')]
     )
+
+
+@pytest.fixture
+def test_settings_2():
+    """A fixture that mimics plugin_configuration_generator()."""
+    from napari.settings import PluginPreferences
+
+    class TestPluginSettings(PluginPreferences):
+        model_config = SettingsConfigDict(env_prefix='testnapari_plugin_')
+
+    return {
+        'test-plugin': TestPluginSettings,
+    }
+
+
+@pytest.fixture(autouse=True)
+def reset_plugin_settings():
+    import napari.settings as settings
+
+    settings._PLUGIN_PREFRERENCES.clear()
+    return
+
+
+def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    s = settings.get_plugin_settings(path_dir=tmp_path)
+
+    assert 'test-plugin' in s
+    assert s['test-plugin'].config_path == tmp_path / 'test-plugin.yaml'
+
+    plugin = settings.get_plugin_settings('test-plugin')
+
+    assert plugin is s['test-plugin']
+
+
+def test_get_plugin_settings_path_set_twice(
+    tmp_path, monkeypatch, test_settings_2
+):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    settings.get_plugin_settings(path_dir=tmp_path)
+
+    with pytest.raises(RuntimeError, match='The path can only be set once'):
+        settings.get_plugin_settings(path_dir=tmp_path)
+
+
+def test_get_plugin_settings_unknown_plugin(
+    tmp_path, monkeypatch, test_settings_2
+):
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    settings.get_plugin_settings(path_dir=tmp_path)
+
+    with pytest.raises(KeyError):
+        settings.get_plugin_settings('does-not-exist')
