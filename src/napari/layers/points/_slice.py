@@ -129,24 +129,24 @@ class _PointSliceRequest:
 
         size = self.size[visible]
 
-        match self.projection_mode:
-            case PointsProjectionMode.NONE | PointsProjectionMode.ALL:
-                pass
-            case PointsProjectionMode.RESCALE_LINEAR:
-                # rescale size of points based on how far they are from the center
-                # (closest to the old out_of_slice_display)
-                dist_from_slice = np.abs(
-                    data_not_disp[visible] - point
-                ).squeeze()
+        if self.projection_mode in (
+            PointsProjectionMode.RESCALE_LINEAR,
+            PointsProjectionMode.RESCALE_SPHERICAL,
+        ):
+            # rescale size of points based on how far they are from the center
+            dist_from_slice = np.abs(data_not_disp[visible] - point)
+            # use the highest distance (since if you're far in any dimension then
+            # it doesn't matter how close you are in any other)
+            min_dist_from_slice = np.min(dist_from_slice, axis=1)
+
+            if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
+                # linear, closest to the old out_of_slice_display
                 max_dist = np.max([np.abs(low - point), np.abs(high - point)])
-                size = size * dist_from_slice / max_dist
-            case PointsProjectionMode.RESCALE_SPHERICAL:
+                size = size * min_dist_from_slice / max_dist
+            elif self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
                 # This follows a spherical decay, meaning that while a point's poisition
                 # may be in the slice, if the sphere centered on it does not intersect
                 # the center of the slice, it will be discarded
-                dist_from_slice = np.abs(
-                    data_not_disp[visible] - point
-                ).squeeze()
                 cap_radius_square = (size / 2) ** 2 - dist_from_slice**2
 
                 # slice out ASAP to reduce computations
