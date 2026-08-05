@@ -974,6 +974,22 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             linear_matrix=np.eye(self.layer.ndim),
             translate=origin,
         )
+
+        # For affine slicing, margins are defined in world coordinates
+        # before being mapped to data by tile_to_data during actual slicing.
+        not_displayed = slice_input.not_displayed
+        world_slice_not_disp = slice_input.world_slice[not_displayed].as_array()
+
+        margin_left_arr = np.zeros(self.layer.ndim, dtype=float)
+        margin_right_arr = np.zeros(self.layer.ndim, dtype=float)
+
+        # world_slice_not_disp contains on its first line the positions of the slice, then on its two other lines the values of the margins
+        margin_left_arr[not_displayed] = np.maximum(world_slice_not_disp[1], 0.0)
+        margin_right_arr[not_displayed] = np.maximum(world_slice_not_disp[2], 0.0)
+
+        margin_left = tuple(margin_left_arr)
+        margin_right = tuple(margin_right_arr)
+
         # `tile_to_data` is carefully designed so that when Vispy tries to compose
         # all transforms of a layer (see method `_on_matrix_change` of the VispyBaseLayer
         # class), effectively computing
@@ -990,6 +1006,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             tile_to_data=tile_to_data,
             shape=shape,
             plane_axes=plane_axes,
+            margin_left=margin_left,
+            margin_right=margin_right,
         )
 
     def _make_slice_request_internal(
