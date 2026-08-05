@@ -144,6 +144,10 @@ class _NDAffineSlice:
     # This is the pair of axis indices displayed in "world coordinates" i.e what the user
     # sees on the 2D canvas. There might be a naming inaccuracy in the previous sentence (to be discussed).
     plane_axes: tuple[int, int]
+    # Thickness margins in data coordinates for non-displayed dimensions.
+    # These values are used to sample a slab and project it back to 2D.
+    margin_left: tuple[float, ...]
+    margin_right: tuple[float, ...]
 
     @property
     def ndim(self) -> int:
