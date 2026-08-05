@@ -215,7 +215,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         # to transform the shape of the pixels it displays, i.e this is what allows napari
         # to display sheared/rotated pixels. For affine slicing, the first element of
         # layer._transforms is designed to insure that the linear part of the total compose
-        # is identity. 
+        # is identity.
         # mypy: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering

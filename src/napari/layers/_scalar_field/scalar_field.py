@@ -958,14 +958,14 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         span = np.ceil(extent[1] - extent[0]).astype(int) + 1
         shape = tuple(max(int(s), 1) for s in span)
 
-        # This is essential to allow the slice to be correctly displayed on screen by Vispy. 
+        # This is essential to allow the slice to be correctly displayed on screen by Vispy.
         # `tile_to_world` is a translation that contains:
         #   1. the top-left corner of the slice (not setting this not only makes the slice
-        #      be ill-centered, but some parts of it also do not display at all)  
+        #      be ill-centered, but some parts of it also do not display at all)
         origin = np.array(self.layer._extent_world_augmented[0], dtype=float)
         #   2. the information that is normally contained in _ThickNDSlice.point, i.e
         #      the position of the slider in the viewer (not setting this makes the sliders
-        #      unresponsive) 
+        #      unresponsive)
         for ax in slice_input.not_displayed:
             origin[ax] = slice_input.world_slice.point[ax]
 
@@ -978,14 +978,20 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # For affine slicing, margins are defined in world coordinates
         # before being mapped to data by tile_to_data during actual slicing.
         not_displayed = slice_input.not_displayed
-        world_slice_not_disp = slice_input.world_slice[not_displayed].as_array()
+        world_slice_not_disp = slice_input.world_slice[
+            not_displayed
+        ].as_array()
 
         margin_left_arr = np.zeros(self.layer.ndim, dtype=float)
         margin_right_arr = np.zeros(self.layer.ndim, dtype=float)
 
         # world_slice_not_disp contains on its first line the positions of the slice, then on its two other lines the values of the margins
-        margin_left_arr[not_displayed] = np.maximum(world_slice_not_disp[1], 0.0)
-        margin_right_arr[not_displayed] = np.maximum(world_slice_not_disp[2], 0.0)
+        margin_left_arr[not_displayed] = np.maximum(
+            world_slice_not_disp[1], 0.0
+        )
+        margin_right_arr[not_displayed] = np.maximum(
+            world_slice_not_disp[2], 0.0
+        )
 
         margin_left = tuple(margin_left_arr)
         margin_right = tuple(margin_right_arr)
@@ -998,8 +1004,8 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         #           = data_to_world @ (world_to_data @ tile_to_world) (by definition)
         #           = tile_to_world (by cancelling of matrix by its inverse),
         # the resulting total affine transform has a linear part which is identity.
-        # This makes Vispy draw axis-aligned squares for pixels instead of them being 
-        # potentially sheared or rotated (as is the case if an orthogonal shear/rotation is 
+        # This makes Vispy draw axis-aligned squares for pixels instead of them being
+        # potentially sheared or rotated (as is the case if an orthogonal shear/rotation is
         # applied in the plane displayed on the canvas).
         tile_to_data = world_to_data.compose(tile_to_world)
         return _ThickNDAffineSlice(
