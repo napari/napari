@@ -68,16 +68,16 @@ def get_settings(path=_NOT_SET, plugin=None) -> NapariSettings:
     return _SETTINGS
 
 
-_PLUGIN_PREFRERENCES: dict[str, PluginPreferences] = {}
+_PLUGIN_PREFERENCES: dict[str, PluginPreferences] = {}
 
 
 def get_plugin_settings(
     plugin: str | None = None,
     path_dir=_NOT_SET,
 ) -> dict[str, PluginPreferences] | PluginPreferences:
-    global _PLUGIN_PREFRERENCES
+    global _PLUGIN_PREFERENCES
 
-    if not _PLUGIN_PREFRERENCES:
+    if not _PLUGIN_PREFERENCES:
         if path_dir is _NOT_SET:
             path_dir = Path(user_config_dir())
         elif path_dir is not None:
@@ -87,7 +87,7 @@ def get_plugin_settings(
             config_path = (
                 None if path_dir is None else path_dir / f'{key}.yaml'
             )
-            _PLUGIN_PREFRERENCES[key] = model(config_path=config_path)
+            _PLUGIN_PREFERENCES[key] = model(config_path=config_path)
 
     elif path_dir is not _NOT_SET:
         import inspect
@@ -101,8 +101,8 @@ def get_plugin_settings(
 
     if plugin is not None:
         try:
-            return _PLUGIN_PREFRERENCES[plugin]
+            return _PLUGIN_PREFERENCES[plugin]
         except KeyError as err:
             raise KeyError(f"Plugin named '{plugin}' does not exist.") from err
 
-    return _PLUGIN_PREFRERENCES
+    return _PLUGIN_PREFERENCES

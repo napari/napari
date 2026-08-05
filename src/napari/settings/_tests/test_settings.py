@@ -497,9 +497,11 @@ def test_settings_no_import_qt(tmp_path):
 def test_settings_2():
     """A fixture that mimics plugin_configuration_generator()."""
     from napari.settings import PluginPreferences
+    from napari.settings._base import SettingsConfigDict
 
     class TestPluginSettings(PluginPreferences):
-        model_config = (SettingsConfigDict(env_prefix='testnapari_plugin_'),)
+        model_config = SettingsConfigDict(env_prefix='testnapari_plugin_')
+
         display_name: str = 'demo'
 
     return {
@@ -507,7 +509,18 @@ def test_settings_2():
     }
 
 
-def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
+@pytest.fixture
+def reset_plugin_settings():
+    import napari.settings as settings
+
+    settings._PLUGIN_PREFERENCES.clear()
+    yield
+    settings._PLUGIN_PREFERENCES.clear()
+
+
+def test_get_plugin_settings(
+    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+):
     monkeypatch.setattr(
         settings,
         'plugin_configuration_generator',
@@ -522,14 +535,6 @@ def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
     plugin = settings.get_plugin_settings('test-plugin')
 
     assert plugin is s['test-plugin']
-
-
-@pytest.fixture
-def reset_plugin_settings():
-    import napari.settings as settings
-
-    settings._PLUGIN_PREFRERENCES.clear()
-    return
 
 
 def test_get_plugin_settings_path_set_twice(
