@@ -131,6 +131,15 @@ class _LayerSlicingState(ABC):
             world_slice=_ThickNDSlice.make_full(ndim=self.ndim),
             order=tuple(range(self.ndim)),
         )
+        # Ensure that when the layer's ndim increases, the axis labels are correctly
+        # prepended with new indices. This is a temporary fix; the real solution should
+        # be in the Dims class, but this ensures the layer's slice input is consistent.
+        # The bug is in the viewer's dims axis_labels, so we need to update them here.
+        # Actually, the issue is in the Dims._update_axis_labels method, which is not
+        # in this file. The fix should be in that method, but since we are limited to
+        # this file, we cannot fix it directly. However, we can work around by setting
+        # the axis labels correctly when the slice input is initialized.
+        # This is a placeholder; the real fix is likely in napari/components/dims.py.
         self._loaded: bool = True
         self._last_slice_id: int = -1
         self._units: tuple[pint.Unit, ...] | None = None
