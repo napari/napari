@@ -97,7 +97,7 @@ class PreferencesDialog(QDialog):
             exclude={'schema_version'}
         )
 
-        self._list.clear()  # Why recreate the list now? Why create it in the init?
+        self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
 
@@ -114,31 +114,23 @@ class PreferencesDialog(QDialog):
         item.setFlags(item.flags() & ~Qt.ItemIsSelectable & ~Qt.ItemIsEnabled)
         self._list.addItem(item)
         self._stack.addWidget(QWidget())
-        self.plugin_index = self._list.count()
 
         for plugin_name, plugin in self._plugin_settings.items():
             self._add_plugin(plugin_name, plugin)
         self._list.setCurrentRow(0)
-
-    # def skip_plugin_pref(self):
-    #     current = self._list.currentIndex().row()
-
-    #     if self.plugin_index - 1 == current:
-    #         next_index = current + 1
-    #         if next_index < self._list.model().rowCount():
-    #             self._list.setCurrentIndex(self._list.model().index(next_index, 0))
 
     def _add_plugin(
         self,
         plugin_name: str,
         plugin,
     ):
-        """ "Builds the Plugin preferences widgets using the json schema builder.
-        Similar to _add_page.
-        This function only exists because it is possible to have multiple plugin configuration sets in one plugin.
-        And they should all appear in the same place.
+        """Builds the Plugin preferences widgets using the json schema builder.
 
-         Parameters
+        Similar to ``_add_page``. This function only exists because it is
+        possible to have multiple plugin configuration sets in one plugin,
+        and they should all appear in the same place.
+
+        Parameters
         ----------
         plugin_name : str
             the name of the plugin
@@ -168,7 +160,8 @@ class PreferencesDialog(QDialog):
                 )
                 plugin_list.append(form)
         full.setLayout(layout)
-        [full.layout().addWidget(pl) for pl in plugin_list]
+        for pl in plugin_list:
+            full.layout().addWidget(pl)
         page_scrollarea = QScrollArea()
         page_scrollarea.setWidgetResizable(True)
         page_scrollarea.setWidget(full)
