@@ -14,7 +14,12 @@ from napari.settings._plugin_config_generator import (
 )
 from napari.utils._platformdirs import user_config_dir
 
-__all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
+__all__ = [
+    'CURRENT_SCHEMA_VERSION',
+    'NapariSettings',
+    'get_plugin_settings',
+    'get_settings',
+]
 
 
 class _SettingsProxy:
@@ -32,7 +37,7 @@ SETTINGS = _SettingsProxy()
 _SETTINGS: NapariSettings | None = None
 
 
-def get_settings(path=_NOT_SET, plugin=None) -> NapariSettings:
+def get_settings(path=_NOT_SET) -> NapariSettings:
     """
     Get settings for a given path.
 
