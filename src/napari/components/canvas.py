@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
@@ -51,6 +52,17 @@ class OverlayTiling(EventedModel):
     bottom_right: Orientation = Orientation.VERTICAL
 
 
+class _DeprecatingEventedDictNamespace(EventedDictNamespace):
+    @property
+    def floating_axes(self) -> CanvasAxesOverlay:
+        warnings.warn(
+            'viewer.canvas.overlays.floating_axes is deprecated since 0.9.0 and will be removed in 0.10.0. Use viewer.canvas.overlays.axes instead.',
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.axes
+
+
 class Canvas(EventedModel):
     """
     Canvas evented model.
@@ -74,8 +86,8 @@ class Canvas(EventedModel):
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
-    overlays: EventedDictNamespace[CanvasOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(
+    overlays: _DeprecatingEventedDictNamespace[CanvasOverlay] = Field(
+        default_factory=lambda: _DeprecatingEventedDictNamespace(
             {
                 'scale_bar': ScaleBarOverlay(),
                 'text': TextOverlay(),

@@ -311,15 +311,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return self._scene_overlays.axes  # type: ignore[return-value]
 
     @property
-    @deprecated(
-        (
-            'viewer.floating_axes is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.axes instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
-        ),
-        stacklevel=2,
-    )
     def floating_axes(self) -> CanvasAxesOverlay:
-        return self.canvas.overlays.floating_axes  # type: ignore[return-value]
+        warnings.warn(
+            'viewer.floating_axes is deprecated since 0.9.0 and will be removed in 0.10.0. Use viewer.canvas.overlays.axes instead.',
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.canvas.overlays.axes  # type: ignore[return-value]
 
     @property
     @deprecated(
