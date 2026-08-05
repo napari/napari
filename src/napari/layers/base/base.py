@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import magicgui as mgui
 import numpy as np
+import pint
 from npe2 import plugin_manager as pm
 
 from napari.layers.base._base_constants import (
@@ -68,7 +69,6 @@ from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    import pint
 
     from napari.components.dims import Dims
     from napari.components.overlays import BoundingBoxOverlay, Overlay
@@ -2235,6 +2235,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return source_str
 
+    def _use_integer_coords_in_status(self) -> bool:
+        """If scale, translation, and units are default, use int coords.
+
+        This matches the legacy behavior of the viewer status bar and is
+        probably close to what users want, especially for images, in the case
+        where metadata is absent.
+
+        See https://github.com/napari/napari/pull/9287 for further discussion.
+        """
+        return bool(
+            np.all(np.asarray(self.scale) == 1)
+            and np.all(np.asarray(self.translate) == 0)
+            and all(
+                unit == pint.get_application_registry().pixel
+                for unit in self.units
+            )
+        )
+
     def get_status(
         self,
         position: npt.ArrayLike | None = None,
@@ -2271,6 +2289,29 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         status_dict = self._get_source_info().copy()
 
         if position is not None:
+            # We need to display the position in world coordinates with a
+            # specific precision. Here is how it is computed:
+            # - scale can be negative, so we take the abs
+            # - then, you take the -log10. For example, if the scale is 0.01,
+            #   you need 2 decimal places of precision to display the
+            #   coordinates so that you get at least 1 distinct coordinate
+            #   value per pixel.
+            # - the number of digits has to be an int, and we need to go higher
+            #   for "fractional" precision. That is, for 0.009, we need three
+            #   digits of precision. So we take the ceil.
+            # - we take the max over all the axes. [potential future
+            #   enhancement: each axis is displayed with its own precision]
+            # - Finally, this is all for the *minimum* precision to display
+            #   coordinates accurately. You want a bit of margin to prevent the
+            #   coordinates from changing abruptly in the middle of a pixel
+            #   whenever -log10(s) is not an integer. Therefore, we add 2
+            #   levels of precision.
+            # - we take a max because we don't want to go below 0 precision.
+            # - we convert to int because it needs to be int to be used in a
+            #   format string.
+            precision = int(
+                max(np.max(np.ceil(-np.log10(np.abs(self.scale)))), -2) + 2
+            )
             position = np.asarray(position)
             value = self.get_value(
                 position,
@@ -2278,9 +2319,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
                 dims_displayed=dims_displayed,
                 world=world,
             )
+            if self._use_integer_coords_in_status():
+                position = np.round(position).astype(int)
             coords_str, value_str = generate_layer_status_strings(
                 position[-self.ndim :],
                 value,
+                precision=precision,
             )
         else:
             coords_str, value_str = '', ''
