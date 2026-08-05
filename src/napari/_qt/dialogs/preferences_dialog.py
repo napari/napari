@@ -148,7 +148,6 @@ class PreferencesDialog(QDialog):
 
         full = QWidget()
         layout = QVBoxLayout()
-        name = plugin_name
         plugin_list = []
         for (
             field_name,
@@ -161,9 +160,11 @@ class PreferencesDialog(QDialog):
                 schema, values = self._get_page_dict(
                     field_name, field_info, self._plugin_settings[plugin_name]
                 )
-                name = field_info.title or field_name
                 form = self._widget_builder(
-                    schema, values, name, self._plugin_settings[plugin_name]
+                    schema,
+                    values,
+                    field_name,
+                    self._plugin_settings[plugin_name],
                 )
                 plugin_list.append(form)
         full.setLayout(layout)

@@ -16,26 +16,35 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import ConfigurationContribution
 
 
-def _field_name(key: str, plugin_name: str) -> str:
+def _snake_identifier(name: str, plugin_name: str | None = None) -> str:
     """
-    Convert:
-        my_plugin.someSetting -> some_setting
+    Convert free-form text into a valid snake_case Python identifier.
+
+    Used to derive pydantic field/model names from npe2 configuration keys and
+    titles, which are free-form text that must become valid Python identifiers
+    (they are used both as the name of the generated model and as field names
+    on the plugin preferences model).
+
+    Examples
+    --------
+    >>> _snake_identifier('my_plugin.someSetting', 'my_plugin')
+    'some_setting'
+    >>> _snake_identifier('Demo Configuration for widget 1')
+    'demo_configuration_for_widget_1'
     """
-    key = key.removeprefix(f'{plugin_name}.')
+    if plugin_name:
+        name = name.removeprefix(f'{plugin_name}.')
 
-    key = re.sub(
-        r'(?<!^)(?=[A-Z])',
-        '_',
-        key,
-    )
-
-    key = re.sub(
-        r'[.\-\s]+',
-        '_',
-        key,
-    )
-
-    return key.lower()
+    # camelCase -> snake_case (e.g. someSetting -> some_Setting)
+    name = re.sub(r'(?<!^)(?=[A-Z])', '_', name)
+    # any run of non-alphanumeric characters is a separator
+    name = re.sub(r'[^0-9a-zA-Z]+', '_', name)
+    name = re.sub(r'_+', '_', name).strip('_').lower()
+    if not name:
+        name = 'settings'
+    if name[0].isdigit():
+        name = f'_{name}'
+    return name
 
 
 VALUE_TRANSLATOR = {
@@ -80,15 +89,14 @@ def _build_single_config_model(
 
         field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
 
-        field_name = _field_name(key, plugin_name)
+        field_name = _snake_identifier(key, plugin_name)
 
         fields[field_name] = (
             field_type,
             Field(**field_kwargs),
         )
-    model_name = configuration.title.lower()
     model = create_model(
-        model_name,
+        _snake_identifier(configuration.title),
         __base__=EventedModel,
         **fields,
     )

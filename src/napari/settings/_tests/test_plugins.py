@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 from napari.settings._plugin_config_generator import (
     _build_single_config_model,
-    _field_name,
+    _snake_identifier,
     plugin_configuration_generator,
 )
 
@@ -31,11 +31,15 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-def test_field_name():
-    plugin_name = 'demoplugin'
-    key = 'demoplugin.value1.value2'
-
-    assert _field_name(key, plugin_name) == 'value1_value2'
+def test_snake_identifier():
+    assert (
+        _snake_identifier('demoplugin.value1.value2', 'demoplugin')
+        == 'value1_value2'
+    )
+    assert (
+        _snake_identifier('Demo Configuration for widget 1')
+        == 'demo_configuration_for_widget_1'
+    )
 
 
 def test_single_config(mock_pm: 'TestPluginManager'):
@@ -44,8 +48,9 @@ def test_single_config(mock_pm: 'TestPluginManager'):
     assert configs[0].title == 'Demo Configuration for widget 1'
     assert configs[0].properties['my_plugin.reader.lazy'].type == 'boolean'
 
-    assert (
-        len(_build_single_config_model(configs[0], PLUGIN_NAME).model_fields)
-        == 2
-    )
+    model = _build_single_config_model(configs[0], PLUGIN_NAME)
+    assert len(model.model_fields) == 2
+    # model/field names must be valid Python identifiers so the parent
+    # preferences model can be built (pydantic < 2.9 raises otherwise)
+    assert all(name.isidentifier() for name in model.model_fields)
     str(plugin_configuration_generator(mock_pm)['my-plugin'])
