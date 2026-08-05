@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 
 import numpy.testing as npt
 import pytest
-from npe2 import PluginManager
 from pydantic import BaseModel
 from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtGui import QKeyEvent
@@ -36,7 +35,6 @@ if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
-PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = (
     Path(__file__).parent.parent.parent.parent
     / 'plugins/_tests/_sample_manifest.yaml'
@@ -84,7 +82,16 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-def test_prefdialog_populated(pref):
+@pytest.fixture
+def reset_plugin_settings():
+    import napari.settings as settings
+
+    settings._PLUGIN_PREFERENCES.clear()
+    yield
+    settings._PLUGIN_PREFERENCES.clear()
+
+
+def test_prefdialog_populated(reset_plugin_settings, pref):
     subfields = filter(
         lambda f: (
             isinstance(ff := get_inner_type(f.annotation), type)
@@ -92,14 +99,13 @@ def test_prefdialog_populated(pref):
         ),
         NapariSettings.model_fields.values(),
     )
-    pl_manager = PluginManager.instance()
-    number_of_plugins = pl_manager.discover()
-    assert (
-        pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
-    )  # +1 for the seperator of the plugins.
+    # one page per napari setting, plus a separator page, plus one page
+    # per plugin that contributes a configuration
+    number_of_plugins = len(plugin_configuration_generator())
+    assert pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
 
 
-def test_add_plugin(mock_pm: 'TestPluginManager', pref):
+def test_add_plugin(reset_plugin_settings, mock_pm, pref):
     assert len(get_plugin_settings()) == len(
         plugin_configuration_generator(mock_pm)
     )
