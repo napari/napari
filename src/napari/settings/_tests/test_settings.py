@@ -506,14 +506,6 @@ def test_settings_2():
     }
 
 
-@pytest.fixture(autouse=True)
-def reset_plugin_settings():
-    import napari.settings as settings
-
-    settings._PLUGIN_PREFRERENCES.clear()
-    return
-
-
 def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
     monkeypatch.setattr(
         settings,
@@ -531,8 +523,16 @@ def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
     assert plugin is s['test-plugin']
 
 
+@pytest.fixture
+def reset_plugin_settings():
+    import napari.settings as settings
+
+    settings._PLUGIN_PREFRERENCES.clear()
+    return
+
+
 def test_get_plugin_settings_path_set_twice(
-    tmp_path, monkeypatch, test_settings_2
+    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
 ):
     monkeypatch.setattr(
         settings,
@@ -547,7 +547,7 @@ def test_get_plugin_settings_path_set_twice(
 
 
 def test_get_plugin_settings_unknown_plugin(
-    tmp_path, monkeypatch, test_settings_2
+    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
 ):
     monkeypatch.setattr(
         settings,
