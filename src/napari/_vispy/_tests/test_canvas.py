@@ -1,10 +1,10 @@
 import numpy as np
 
 from napari.components.overlays import (
-    AxesOverlay,
     BoundingBoxOverlay,
     CanvasOverlay,
     ScaleBarOverlay,
+    SceneAxesOverlay,
 )
 
 
@@ -24,7 +24,7 @@ def test_scene_overlays(qt_viewer):
         vispy_canvas._viewer_overlay_to_visual.items()
     )
 
-    new_overlay = AxesOverlay(visible=True)
+    new_overlay = SceneAxesOverlay(visible=True)
     viewer._scene_overlays.test = new_overlay
 
     assert new_overlay in vispy_canvas._viewer_overlay_to_visual

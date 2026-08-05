@@ -43,8 +43,8 @@ from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
-    AxesOverlay,
     CanvasAxesOverlay,
+    SceneAxesOverlay,
     SceneOverlay,
 )
 from napari.components.tooltip import Tooltip
@@ -204,7 +204,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     title: str = 'napari'
     _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
         default_factory=lambda: (  # type: ignore
-            EventedDictNamespace({'axes': AxesOverlay()})
+            EventedDictNamespace({'axes': SceneAxesOverlay()})
         )
     )
     _ctx: Context = PrivateAttr()
@@ -307,7 +307,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
     #       know that specific elements match specific types
     @property
-    def axes(self) -> AxesOverlay:
+    def axes(self) -> SceneAxesOverlay:
         return self._scene_overlays.axes  # type: ignore[return-value]
 
     @property

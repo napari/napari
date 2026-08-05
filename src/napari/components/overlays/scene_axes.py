@@ -1,7 +1,7 @@
 from napari.components.overlays.base import SceneOverlay
 
 
-class AxesOverlay(SceneOverlay):
+class SceneAxesOverlay(SceneOverlay):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes

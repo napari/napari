@@ -10,13 +10,13 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import AxesOverlay
+    from napari.components.overlays import SceneAxesOverlay
 
 
-class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
+class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
-    overlay: AxesOverlay
+    overlay: SceneAxesOverlay
     node: Axes
 
     def __init__(

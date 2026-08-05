@@ -1,4 +1,3 @@
-from napari.components.overlays.axes import AxesOverlay
 from napari.components.overlays.base import (
     CanvasOverlay,
     Overlay,
@@ -17,6 +16,7 @@ from napari.components.overlays.labels_brush_stroke import (
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
 from napari.components.overlays.scale_bar import ScaleBarOverlay
+from napari.components.overlays.scene_axes import SceneAxesOverlay
 from napari.components.overlays.text import (
     CurrentSliceOverlay,
     LayerNameOverlay,
@@ -25,7 +25,6 @@ from napari.components.overlays.text import (
 from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
-    'AxesOverlay',
     'BoundingBoxOverlay',
     'BrushCircleOverlay',
     'CanvasAxesOverlay',
@@ -37,6 +36,7 @@ __all__ = [
     'LayerNameOverlay',
     'Overlay',
     'ScaleBarOverlay',
+    'SceneAxesOverlay',
     'SceneOverlay',
     'SelectionBoxOverlay',
     'TextOverlay',
