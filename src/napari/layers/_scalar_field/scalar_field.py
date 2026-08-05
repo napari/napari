@@ -23,7 +23,7 @@ from napari.layers.image._image_mouse_bindings import (
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import (
-    _NDAffineSlice,
+    _ThickNDAffineSlice,
     _SliceInput,
     _ThickNDSlice,
     apply_units_to_transform,
@@ -941,7 +941,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         *,
         slice_input: _SliceInput,
         world_to_data: Affine,
-    ) -> _ThickNDSlice | _NDAffineSlice:
+    ) -> _ThickNDSlice | _ThickNDAffineSlice:
         # Multiscale affine slicing is not yet implemented 
         if (
             self.layer.multiscale
@@ -1002,7 +1002,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # potentially sheared or rotated (as is the case if an orthogonal shear/rotation is 
         # applied in the plane displayed on the canvas).
         tile_to_data = world_to_data.compose(tile_to_world)
-        return _NDAffineSlice(
+        return _ThickNDAffineSlice(
             tile_to_data=tile_to_data,
             shape=shape,
             plane_axes=plane_axes,
@@ -1014,7 +1014,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         self,
         *,
         slice_input: _SliceInput,
-        sampling_plane: _ThickNDSlice | _NDAffineSlice,
+        sampling_plane: _ThickNDSlice | _ThickNDAffineSlice,
         dask_indexer: DaskIndexer,
     ) -> _ScalarFieldSliceRequest:
         """Needed to support old-style sync slicing through _slice_dims and

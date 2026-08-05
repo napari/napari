@@ -132,7 +132,7 @@ class _ThickNDSlice(Generic[_T]):
 
 
 @dataclass(frozen=True)
-class _NDAffineSlice:
+class _ThickNDAffineSlice:
     """Sampling plan for a non-axis-aligned 2D slice through nD data."""
 
     tile_to_data: Affine

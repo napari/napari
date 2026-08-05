@@ -8,7 +8,7 @@ import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.utils._slice_input import (
-    _NDAffineSlice,
+    _ThickNDAffineSlice,
     _SliceInput,
     _ThickNDSlice,
 )
@@ -200,7 +200,7 @@ class _ScalarFieldSliceRequest:
         The pre-selected data source for the thumbnail.
     dtype : DTypeLike
         The dtype of the layer's data.
-    data_slice : _ThickNDSlice | _NDAffineSlice
+    data_slice : _ThickNDSlice | _ThickNDAffineSlice
         The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
@@ -213,7 +213,7 @@ class _ScalarFieldSliceRequest:
     data_at_thumbnail_level: Any = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
-    data_slice: _ThickNDSlice | _NDAffineSlice
+    data_slice: _ThickNDSlice | _ThickNDAffineSlice
     projection_mode: Any
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
@@ -242,7 +242,7 @@ class _ScalarFieldSliceRequest:
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        if isinstance(self.data_slice, _NDAffineSlice):
+        if isinstance(self.data_slice, _ThickNDAffineSlice):
             data = self._project_affine_slice(
                 self.data_at_data_level, self.data_slice
             )
@@ -352,7 +352,7 @@ class _ScalarFieldSliceRequest:
 
 
     def _project_affine_slice(
-        self, data: ArrayLike, data_slice: _NDAffineSlice
+        self, data: ArrayLike, data_slice: _ThickNDAffineSlice
     ) -> np.ndarray:
         """
         Slice the given data with the given affine slice.
