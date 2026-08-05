@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from vispy.util import keys
 
 from napari.utils import key_bindings
 from napari.utils.key_bindings import (
@@ -417,3 +418,170 @@ def test_key_release_callback(monkeypatch):
     monkeypatch.setattr(time, 'time', lambda: 2)
     handler.release_key('K')
     assert called2
+
+
+def _key_event(name, *, auto_repeat, modifiers=()):
+    """Minimal stand-in for the vispy key event `on_key_press` consumes."""
+    return types.SimpleNamespace(
+        key=types.SimpleNamespace(name=name),
+        modifiers=list(modifiers),
+        native=types.SimpleNamespace(isAutoRepeat=lambda: auto_repeat),
+        handled=False,
+    )
+
+
+def _press(handler, name, *, held_for=0, modifiers=()):
+    """Send one real press followed by `held_for` auto-repeats."""
+    handler.on_key_press(
+        _key_event(name, auto_repeat=False, modifiers=modifiers)
+    )
+    for _ in range(held_for):
+        handler.on_key_press(
+            _key_event(name, auto_repeat=True, modifiers=modifiers)
+        )
+
+
+def _handler_with_provider():
+    """A fresh handler and its own provider class, isolated per test."""
+
+    class Foo(KeymapProvider): ...
+
+    handler = KeymapHandler()
+    handler.keymap_providers = [Foo()]
+    return handler, Foo
+
+
+@pytest.mark.parametrize('key', ['Up', 'K', 'PageDown'])
+def test_autorepeat_delivered_by_default(key):
+    """A held key repeats at the OS rate, however and to whatever it is bound.
+
+    Auto-repeat used to be dropped unless the binding was on an opt-in
+    whitelist; now the OS policy applies uniformly, as in any desktop app.
+    """
+    handler, Foo = _handler_with_provider()
+    presses = []
+
+    @Foo.bind_key(key)
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, key, held_for=4)
+    assert len(presses) == 5  # initial press plus every auto-repeat
+
+
+def test_modified_keys_autorepeat():
+    """Modified combos repeat too, exactly like their bare counterparts.
+
+    Uses Alt, not Control: vispy's CONTROL maps to KeyMod.CtrlCmd, spelled
+    `Meta+` on macOS but `Ctrl+` by `bind_key`, so a Control test would miss
+    the binding for reasons unrelated to auto-repeat.
+    """
+    handler, Foo = _handler_with_provider()
+    presses = []
+
+    @Foo.bind_key('Alt+Up')
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'Up', held_for=4, modifiers=[keys.ALT])
+    assert len(presses) == 5
+
+
+def test_autorepeat_suppressed_while_hold_generator_pending():
+    """A generator (press/release) binding must not re-enter under repeat.
+
+    Its press body runs once; auto-repeats while the release side is pending
+    are dropped, and the release body still runs exactly once on real release.
+    """
+    handler, Foo = _handler_with_provider()
+    pressed = []
+    released = []
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        pressed.append(1)
+        yield
+        released.append(1)
+
+    _press(handler, 'A', held_for=4)
+    assert len(pressed) == 1
+    assert len(released) == 0
+
+    handler.on_key_release(_key_event('A', auto_repeat=False))
+    assert len(released) == 1
+
+
+def test_autorepeat_release_events_ignored():
+    """Auto-repeat *release* events never resume a pending hold.
+
+    On Linux a held key arrives as press/release trains; resuming the
+    generator on those would end the hold while the key is still down.
+    """
+    handler, Foo = _handler_with_provider()
+    released = []
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        yield
+        released.append(1)
+
+    _press(handler, 'A', held_for=2)
+    handler.on_key_release(_key_event('A', auto_repeat=True))
+    assert len(released) == 0
+
+    handler.on_key_release(_key_event('A', auto_repeat=False))
+    assert len(released) == 1
+
+
+def test_autorepeat_preserves_tap_vs_hold(monkeypatch):
+    """Repeats neither re-enter a release-callback binding nor reset its clock.
+
+    Attribute actions (layer mode switches) return a restore callback and time
+    the hold; re-entering under repeat would re-stash with a fresh timestamp,
+    turning every hold into a tap.
+    """
+    monkeypatch.setattr(time, 'time', lambda: 1)
+    handler, Foo = _handler_with_provider()
+    presses = []
+    restored = []
+
+    @Foo.bind_key('K')
+    def _mode_switch(x):
+        presses.append(1)
+        return lambda: restored.append(1)
+
+    _press(handler, 'K', held_for=4)
+    assert len(presses) == 1
+    assert len(restored) == 0
+
+    monkeypatch.setattr(time, 'time', lambda: 2)  # > hold_button_delay
+    handler.on_key_release(_key_event('K', auto_repeat=False))
+    assert len(restored) == 1
+
+
+def test_release_clears_pending_hold_state():
+    """Release pops the stashed hold, so presence means exactly 'pending'.
+
+    The auto-repeat suppression in `on_key_press` keys off that stash; a
+    stale entry would wrongly swallow repeats of later bindings on the key.
+    """
+    handler, Foo = _handler_with_provider()
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        yield
+
+    assert handler.press_key('A')
+    assert handler.release_key('A')
+    # popped: a second release finds nothing to resume
+    assert not handler.release_key('A')
+
+    # and a subsequent auto-repeat of the same key is delivered again
+    presses = []
+
+    @Foo.bind_key('A', overwrite=True)
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'A', held_for=2)
+    assert len(presses) == 3
