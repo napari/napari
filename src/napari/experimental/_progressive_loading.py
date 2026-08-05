@@ -974,6 +974,11 @@ class ProgressiveLoader:
             self._resident_worker.quit()
             self._resident_worker = None
         if self._repair_worker is not None:
+            # quit() only requests abort, and nothing polls it for a
+            # non-generator worker: an in-flight gather runs to
+            # completion. It is safe because it holds its own reference
+            # to the pyramid (see _repair_backdrop) rather than reading
+            # self._data, which is dropped below.
             with contextlib.suppress(Exception):
                 self._repair_worker.quit()
             self._repair_worker = None
@@ -1752,7 +1757,13 @@ class ProgressiveLoader:
             layer.corner_pixels = corners
         return True
 
-    def _backdrop_level(self, level: int, min_coord, max_coord) -> int | None:
+    def _backdrop_level(
+        self,
+        level: int,
+        min_coord,
+        max_coord,
+        data=None,
+    ) -> int | None:
         """Pick the best level to initialize newly exposed regions from.
 
         Prefers the level closest in resolution to ``level`` whose resident
@@ -1760,17 +1771,22 @@ class ProgressiveLoader:
         just displayed, so a resolution switch keeps the previous data on
         screen until the new chunks arrive. Falls back to the coarsest
         level with any loaded data.
+
+        ``data`` overrides the pyramid to read: worker threads pass the
+        snapshot they took before starting, so a concurrent :meth:`close`
+        cannot pull the sources out from under them.
         """
-        n_levels = len(self._data)
-        factors = self._data._scale_factors
-        ndim = self._data.ndim
+        data = self._data if data is None else data
+        n_levels = len(data)
+        factors = data._scale_factors
+        ndim = data.ndim
         candidates = sorted(
             (c for c in range(n_levels) if c != level),
             key=lambda c: (abs(c - level), c),
         )
         fallback = None
         for cand in candidates:
-            src = self._data[cand]
+            src = data[cand]
             if not src.loaded_chunks:
                 continue
             cand_min = [
@@ -1887,7 +1903,7 @@ class ProgressiveLoader:
             self._repair_backdrop()
         return patched
 
-    def _backdrop_fill_layered(self, level, lo, hi) -> bool:
+    def _backdrop_fill_layered(self, level, lo, hi, data=None) -> bool:
         """Fill unloaded regions of ``[lo, hi)`` from every level with
         useful resident data, coarsest first so finer sources overwrite
         their overlap.
@@ -1897,17 +1913,26 @@ class ProgressiveLoader:
         including levels finer than the target, so zooming back out
         reuses already-fetched detail instead of restarting from the
         coarsest level.
+
+        ``data`` overrides the pyramid to read; see
+        :meth:`_backdrop_level`.
         """
-        n_levels = len(self._data)
-        factors = self._data._scale_factors
-        ndim = self._data.ndim
+        data = self._data if data is None else data
+        if len(data) == 0:
+            # close() drops the pyramid to release the resident level's
+            # memory, and a repair worker runs a plain function that
+            # quit() cannot interrupt — so teardown can land here.
+            return False
+        n_levels = len(data)
+        factors = data._scale_factors
+        ndim = data.ndim
         # single-cover shortcut: when the closest-resolution source
         # fully covers the region, one gather suffices — layering
         # coarse->fine would run one gather per level with data, all
         # but the last overwritten
-        full = self._backdrop_level(level, lo, hi)
+        full = self._backdrop_level(level, lo, hi, data=data)
         if full is not None and full != level:
-            src = self._data[full]
+            src = data[full]
             cand_lo = [
                 int(np.floor(lo[d] * factors[level][d] / factors[full][d]))
                 for d in range(ndim)
@@ -1922,7 +1947,7 @@ class ProgressiveLoader:
             ):
                 with contextlib.suppress(Exception):
                     return bool(
-                        self._data.fill_unloaded_from(
+                        data.fill_unloaded_from(
                             level,
                             full,
                             region=(list(lo), list(hi)),
@@ -1933,7 +1958,7 @@ class ProgressiveLoader:
         for cand in range(n_levels - 1, -1, -1):
             if cand == level:
                 continue
-            src = self._data[cand]
+            src = data[cand]
             if not src.loaded_chunks:
                 continue
             with src.lock:
@@ -1955,7 +1980,7 @@ class ProgressiveLoader:
                 continue
             with contextlib.suppress(Exception):
                 wrote = (
-                    self._data.fill_unloaded_from(
+                    data.fill_unloaded_from(
                         level,
                         cand,
                         region=(region_lo, region_hi),
@@ -2859,6 +2884,8 @@ class ProgressiveLoader:
         on a background thread (VirtualData is lock-guarded) limited to
         the currently rendered region; the layer refreshes on completion.
         """
+        if self._closed:
+            return
         level = int(self._layer.data_level)
         if level == self._resident_level:
             return
@@ -2874,9 +2901,22 @@ class ProgressiveLoader:
             self._repair_again = True
             return
 
+        # Snapshot the pyramid for the worker. close() swaps self._data
+        # out to release the resident level, and cannot interrupt this
+        # worker (a plain function, so quit() only sets a flag nothing
+        # polls), so the worker must not read state teardown invalidates.
+        data = self._data
+
         @thread_worker
         def repair():
-            return self._backdrop_fill_layered(level, min_coord, max_coord)
+            if self._closed:
+                return False
+            return self._backdrop_fill_layered(
+                level,
+                min_coord,
+                max_coord,
+                data=data,
+            )
 
         worker = repair()
 

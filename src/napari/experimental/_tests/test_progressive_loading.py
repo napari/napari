@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 import dask.array as da
 import numpy as np
@@ -944,6 +945,76 @@ def test_async_slicing_kept_while_another_progressive_layer_lives(
     loaders[1].close()
     assert not get_settings().experimental.async_
     assert viewer._layer_slicer._force_sync
+
+
+def test_backdrop_fill_after_close_is_a_noop(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """close() drops the pyramid, so a late fill must bail, not raise."""
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_image(multiscale_arrays, viewer=viewer)
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+
+    loader.close()
+    assert len(loader._data) == 0
+    assert loader._backdrop_fill_layered(0, (0, 0), (32, 32)) is False
+
+
+def test_repair_worker_survives_close_mid_gather(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """A backdrop repair already running when the layer goes away must
+    still finish cleanly.
+
+    ``repair`` is a plain function worker, so ``quit()`` only sets an
+    abort flag that nothing polls — teardown cannot stop the gather. It
+    used to read ``self._data``, which ``close()`` had replaced with an
+    empty list, raising ``AttributeError: 'list' object has no attribute
+    '_scale_factors'`` from the worker thread.
+    """
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_image(multiscale_arrays, viewer=viewer)
+    loader = layer.metadata['progressive_loader']
+    layer.locked_data_level = 0
+    _wait_for_idle_loader(qtbot, loader)
+    assert layer.data_level != loader._resident_level
+
+    # Hold the gather open past close(), from inside the fill (so its
+    # empty-pyramid guard has already passed) and only on the worker
+    # thread — blocking the GUI thread here would deadlock the release.
+    main_thread = threading.current_thread()
+    entered = threading.Event()
+    release = threading.Event()
+    real_backdrop_level = loader._backdrop_level
+
+    def blocking_backdrop_level(*args, **kwargs):
+        if threading.current_thread() is not main_thread:
+            entered.set()
+            release.wait(10)
+        return real_backdrop_level(*args, **kwargs)
+
+    loader._backdrop_level = blocking_backdrop_level
+
+    loader._repair_backdrop()
+    worker = loader._repair_worker
+    assert worker is not None
+    errors: list = []
+    finished: list = []
+    worker.errored.connect(errors.append)
+    worker.finished.connect(lambda: finished.append(True))
+    qtbot.waitUntil(entered.is_set, timeout=10000)
+
+    loader.close()
+    assert len(loader._data) == 0
+
+    release.set()
+    qtbot.waitUntil(lambda: bool(finished), timeout=10000)
+    assert errors == []
 
 
 def test_huge_world_normalization_compensates_offsets():

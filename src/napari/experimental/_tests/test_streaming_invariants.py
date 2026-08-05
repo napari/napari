@@ -285,7 +285,7 @@ def test_sync_backdrop_bounded_to_viewport(
 
         fills: list[tuple] = []
         patches: list[tuple] = []
-        loader._backdrop_fill_layered = lambda level, lo, hi: (
+        loader._backdrop_fill_layered = lambda level, lo, hi, data=None: (
             fills.append((level, list(lo), list(hi))) or True
         )
         loader._patch_texture_region = lambda vdata, lo, hi, block=None: (
@@ -706,7 +706,7 @@ def test_repair_requests_chain_when_busy(
         fills = []
         release = threading.Event()
 
-        def slow_fill(level, lo, hi):
+        def slow_fill(level, lo, hi, data=None):
             fills.append(level)
             release.wait(10)
             return True
