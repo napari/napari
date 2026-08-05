@@ -1,4 +1,4 @@
-from napari._vispy.overlays.axes import VispySceneAxesOverlay
+from napari._vispy.overlays.scene_axes import VispySceneAxesOverlay
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.components.overlays import SceneAxesOverlay

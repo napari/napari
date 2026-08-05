@@ -1,4 +1,4 @@
-from napari.components.overlays.axes import SceneAxesOverlay
+from napari.components.overlays.scene_axes import SceneAxesOverlay
 
 
 def test_axes():
