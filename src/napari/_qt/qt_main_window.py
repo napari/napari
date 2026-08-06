@@ -99,6 +99,7 @@ if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
+    from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
 
 _sentinel = object()
@@ -143,6 +144,7 @@ class _QtMainWindow(QMainWindow):
             viewer, show_welcome_screen=show_welcome_screen
         )
         self._quit_app = False
+        self._viewer_tour: GuidedTour | None = None
 
         get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
