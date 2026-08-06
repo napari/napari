@@ -119,11 +119,11 @@ def _tooltip_visibility_toggle() -> None:
 
 def _toggle_autohide_dock_widgets() -> None:
     settings = get_settings().appearance
-    settings.dock_widget_autohide = not settings.dock_widget_autohide
+    settings.dock_area_autohide = not settings.dock_area_autohide
 
 
 def _get_current_autohide_dock_widget() -> bool:
-    return get_settings().appearance.dock_widget_autohide
+    return get_settings().appearance.dock_area_autohide
 
 
 def _get_current_tooltip_visibility() -> bool:

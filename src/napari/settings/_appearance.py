@@ -58,10 +58,10 @@ class AppearanceSettings(EventedModel):
         title='Update status based on layer',
         description='Calculate status bar based on current active layer and mouse position.',
     )
-    dock_widget_autohide: bool = Field(
+    dock_area_autohide: bool = Field(
         False,
-        title='Auto hide dock widgets',
-        description='Toggle autohide of dock widgets.',
+        title='Auto hide docking areas',
+        description='Toggle autohide of docking areas.',
     )
 
     def update(
