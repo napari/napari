@@ -2836,6 +2836,8 @@ class Shapes(Layer):
 
     def remove_selected(self) -> None:
         """Remove any selected shapes."""
+        if self._is_creating:
+            return
         self.remove(list(self.selected_data))
 
     def get_shape_info(self, index: int) -> dict[str, Any]:
