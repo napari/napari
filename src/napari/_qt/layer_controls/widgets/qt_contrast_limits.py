@@ -345,7 +345,9 @@ class QContrastLimitsPopup(QtPopup):
 
 
 class AutoScaleButtons(QWidget):
-    def __init__(self, layer: Layer, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, layers: list[Layer], parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent=parent)
 
         self.setLayout(QHBoxLayout())
@@ -356,11 +358,14 @@ class AutoScaleButtons(QWidget):
 
         self.auto_btn = QPushButton('continuous')
         self.auto_btn.setCheckable(True)
-        self.auto_btn.setChecked(layer.auto_contrast)
+        self.auto_btn.setChecked(layers[0].auto_contrast)
         self.auto_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.once_btn.clicked.connect(lambda: self.auto_btn.setChecked(False))
-        connect_no_arg(self.once_btn.clicked, layer, 'reset_contrast_limits')
-        connect_setattr(self.auto_btn.toggled, layer, 'auto_contrast')
+        for layer in layers:
+            connect_no_arg(
+                self.once_btn.clicked, layer, 'reset_contrast_limits'
+            )
+            connect_setattr(self.auto_btn.toggled, layer, 'auto_contrast')
 
         self.layout().addWidget(self.once_btn)
         self.layout().addWidget(self.auto_btn)
@@ -404,7 +409,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             )
             layer.events.auto_contrast.connect(self._on_auto_contrast_change)
         # Setup widgets
-        self.auto_scale_buttons = AutoScaleButtons(self._layers[0], parent)
+        self.auto_scale_buttons = AutoScaleButtons(self._layers, parent)
         self.auto_scale_buttons_label = QtWrappedLabel('auto-contrast:')
         self.contrast_limits_slider = _QDoubleRangeSlider(
             Qt.Orientation.Horizontal,
