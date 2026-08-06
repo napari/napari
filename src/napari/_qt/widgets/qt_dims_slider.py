@@ -29,7 +29,6 @@ from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.components import Dims
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
-from napari.utils.events.event_utils import connect_setattr_value
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QResizeEvent
@@ -98,18 +97,17 @@ class QtDimSliderWidget(QWidget):
         sep.setFixedSize(1, 14)
         sep.setObjectName('slice_label_sep')
 
+        # The preference seeds this axis's playback settings; it does not stay
+        # bound to them. Each slider owns its own fps and loop mode, which the
+        # play button's popup edits per axis, so pushing a later preference
+        # change into every open slider would silently discard those overrides.
+        # "restore defaults" in the popup re-reads the preference on demand.
         settings = get_settings()
         self._fps = settings.application.playback_fps
-        connect_setattr_value(
-            settings.application.events.playback_fps, self, 'fps'
-        )
 
         self._minframe = 0
         self._maxframe = 0
         self._loop_mode = settings.application.playback_mode
-        connect_setattr_value(
-            settings.application.events.playback_mode, self, 'loop_mode'
-        )
 
         layout = QHBoxLayout()
         self.axis_label = self._create_axis_label_widget()
@@ -218,9 +216,29 @@ class QtDimSliderWidget(QWidget):
 
         play_button.fpsspin.editingFinished.connect(self._fps_listener)
         play_button.reverse_check.stateChanged.connect(self._fps_listener)
+        play_button.reset_button.clicked.connect(self._reset_playback_settings)
         self.play_stopped.connect(play_button._handle_stop)
         self.play_started.connect(play_button._handle_start)
         return play_button
+
+    def _reset_playback_settings(self) -> None:
+        """Re-read this axis's playback settings from the preferences."""
+        settings = get_settings()
+        fps = settings.application.playback_fps
+        # Both controls are updated before anything is announced: letting
+        # setChecked emit would run _fps_listener against the old spinbox
+        # value, publishing a speed that is neither the override nor the
+        # default. A running animation follows fps_changed, so it would act
+        # on that intermediate value. Afterwards _fps_listener runs once, as
+        # it does when the value is typed in, so the button's `reverse`
+        # styling stays in sync.
+        with qt_signals_blocked(self.play_button.reverse_check):
+            self.play_button.reverse_check.setChecked(fps < 0)
+            self.play_button.fpsspin.setValue(abs(fps))
+        self._fps_listener()
+        self.play_button.mode_combo.setCurrentText(
+            str(settings.application.playback_mode).replace('_', ' ')
+        )
 
     def _fps_listener(self, *_) -> None:
         fps = self.play_button.fpsspin.value()
@@ -548,6 +566,17 @@ class QtPlayButton(QPushButton):
         )
         mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
+
+        # The popup is where the per-axis override is made, so it is also where
+        # it is revoked - the preferences dialog resets preferences, not the
+        # per-axis state seeded from them.
+        reset_button = QPushButton('restore defaults', parent=self.popup)
+        reset_button.setObjectName('playbackResetButton')
+        reset_button.setToolTip(
+            'Reset this axis to the playback speed and mode set in preferences.'
+        )
+        form_layout.insertRow(3, reset_button)
+        self.reset_button = reset_button
 
     def mouseReleaseEvent(self, event):
         """Show popup for right-click, toggle animation for right click.
