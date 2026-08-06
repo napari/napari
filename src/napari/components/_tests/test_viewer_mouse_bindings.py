@@ -27,12 +27,12 @@ class WheelEvent:
         (
             ['Control'],
             WheelEvent(False),
-            [[5, 5, 5], [4, 5, 5], [3, 5, 5], [0, 5, 5]],
+            [[5, 5, 5], [4, 5, 5], [3, 5, 5], [2, 5, 5]],
         ),
         (
             ['Control'],
             WheelEvent(True),
-            [[5, 5, 5], [6, 5, 5], [7, 5, 5], [9, 5, 5]],
+            [[5, 5, 5], [6, 5, 5], [7, 5, 5], [8, 5, 5]],
         ),
     ],
 )
@@ -189,4 +189,4 @@ def test_drag_to_zoom_only_in_pan_zoom_mode():
     with pytest.raises(StopIteration):
         next(generator)
 
-    assert viewer._zoom_box.visible is False
+    assert viewer.canvas.overlays._zoom_box.visible is False
