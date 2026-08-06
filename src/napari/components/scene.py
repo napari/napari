@@ -27,7 +27,7 @@ class Scene(EventedModel):
 
     camera: Camera = Field(default_factory=Camera, frozen=True)
     overlays: EventedDictNamespace[SceneOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(
+        default_factory=lambda: EventedDictNamespace[SceneOverlay](
             {
                 'axes': AxesOverlay(),
             }
