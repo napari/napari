@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets._labels import (
     QtContiguousCheckBoxControl,
     QtContourSpinBoxControl,
     QtDisplaySelectedLabelCheckBoxControl,
-    QtLabelControl,
+    QtCurrentLabelControls,
     QtLabelRenderControl,
     QtNdimSpinBoxControl,
     QtPreserveLabelsCheckBoxControl,
@@ -135,7 +135,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
         # Setup widgets controls
-        self._label_control = QtLabelControl(self, layer)
+        self._label_control = QtCurrentLabelControls(self, layer)
         self._add_widget_controls(self._label_control)
         self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
         self._add_widget_controls(self._brush_size_slider_control)

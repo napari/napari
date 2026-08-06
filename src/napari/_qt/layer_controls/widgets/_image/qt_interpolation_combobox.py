@@ -70,7 +70,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             'nearest', 'spline16', 'spline36'
         """
         # TODO: Better way to handle the ndisplay value?
-        for layer in self._layers:  # @lorenzo @margot find a better way?
+        for layer in self._layers:
             if self.parent().ndisplay == 2:
                 layer.interpolation2d = text
             else:

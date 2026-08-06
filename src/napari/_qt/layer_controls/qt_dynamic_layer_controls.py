@@ -43,8 +43,8 @@ from napari._qt.layer_controls.widgets._labels.qt_contour_spinbox import (
 from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox import (
     QtDisplaySelectedLabelCheckBoxControl,
 )
-from napari._qt.layer_controls.widgets._labels.qt_label_color import (
-    QtLabelControl,
+from napari._qt.layer_controls.widgets._labels.qt_current_label_controls import (
+    QtCurrentLabelControls,
 )
 from napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox import (
     QtNdimSpinBoxControl,
@@ -131,7 +131,7 @@ controls_dict = {
         QtContiguousCheckBoxControl,
         QtContourSpinBoxControl,
         QtDisplaySelectedLabelCheckBoxControl,
-        QtLabelControl,
+        QtCurrentLabelControls,
         QtNdimSpinBoxControl,
         QtPreserveLabelsCheckBoxControl,
         QtLabelRenderControl,
@@ -288,6 +288,10 @@ class QtDynamicLayerControls(QFrame):
                 rendering_labels._on_display_change_show()
             else:
                 rendering_labels._on_display_change_hide()
+
+        label_buttons = self.findChild(QtLabelsButtons)
+        if label_buttons is not None:
+            label_buttons._set_polygon_tool_state()
 
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:
