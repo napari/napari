@@ -75,7 +75,7 @@ class Canvas(EventedModel):
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
     overlays: EventedDictNamespace[CanvasOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace[CanvasOverlay](
+        default_factory=lambda: EventedDictNamespace(
             {
                 'scale_bar': ScaleBarOverlay(),
                 'text': TextOverlay(),

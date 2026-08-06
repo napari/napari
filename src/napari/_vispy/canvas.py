@@ -341,10 +341,13 @@ class VispyCanvas:
 
     def _disconnect_events(self) -> None:
         disconnect_events(self.viewer.events, self)
+        disconnect_events(self.viewer.canvas.events, self)
+        disconnect_events(self.viewer.canvas.overlays.events, self)
+        disconnect_events(self.viewer.canvas.overlay_tiling.events, self)
         disconnect_events(self.viewer.scene.overlays.events, self)
         disconnect_events(self.viewer.scene.camera.events, self)
-        disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.scene.camera.events, self)
+        disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
 
