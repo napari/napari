@@ -16,6 +16,7 @@ from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
 from ...._qt.widgets.qt_spinbox import QtSpinBox
 
+
 if TYPE_CHECKING:
     from .form import WidgetBuilder
 
@@ -26,14 +27,14 @@ QT_GE_66 = parse_version(QT_VERSION) >= parse_version("6.6.0")
 class SchemaWidgetMixin:
     on_changed = Signal()
 
-    VALID_COLOUR = "#ffffff"
-    INVALID_COLOUR = "#f6989d"
+    VALID_COLOUR = '#ffffff'
+    INVALID_COLOUR = '#f6989d'
 
     def __init__(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -162,16 +163,16 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
-        if "minimum" in self.schema:
-            self.setMinimum(self.schema["minimum"])
-        if "maximum" in self.schema:
-            self.setMaximum(self.schema["maximum"])
-        if "step" in self.schema:
-            self.setSingleStep(self.schema["step"])
+        if 'minimum' in self.schema:
+            self.setMinimum(self.schema['minimum'])
+        if 'maximum' in self.schema:
+            self.setMaximum(self.schema['maximum'])
+        if 'step' in self.schema:
+            self.setSingleStep(self.schema['step'])
+
 
     def setDescription(self, description: str):
         self.description = description
-
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
@@ -202,8 +203,8 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
 
         self.setRange(minimum, maximum)
 
-        if "not" in self.schema and "const" in self.schema["not"]:
-            self.setProhibitValue(self.schema["not"]["const"])
+        if "not" in self.schema and 'const' in self.schema["not"]:
+            self.setProhibitValue(self.schema["not"]['const'])
 
     def setDescription(self, description: str):
         self.description = description
@@ -214,7 +215,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(
             schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
@@ -331,7 +332,7 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
@@ -350,9 +351,10 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.button_widget.clicked.connect(self._on_clicked)
         self.path_widget.textChanged.connect(self.on_changed.emit)
 
+
     def file_filter(self) -> str:
-        if "file_extension" in self.schema:
-            extension = self.schema["file_extension"]
+        if 'file_extension' in self.schema:
+            extension = self.schema['file_extension']
             return f"File (*.{extension})"
         return "All Files (*)"
 
@@ -362,9 +364,7 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         else:
             start_dir = os.path.expanduser("~")
 
-        path, filter = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Select File", start_dir, self.file_filter()
-        )
+        path, filter = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", start_dir, self.file_filter())
         if not path:
             return
         self.path_widget.setText(path)
@@ -408,7 +408,9 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         self.delete_button.clicked.connect(lambda _: self.on_delete.emit())
 
         self.down_button = QtWidgets.QPushButton()
-        self.down_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_ArrowDown))
+        self.down_button.setIcon(
+            style.standardIcon(QtWidgets.QStyle.SP_ArrowDown)
+        )
         self.down_button.clicked.connect(lambda _: self.on_move_down.emit())
 
         group_layout = QtWidgets.QHBoxLayout()
@@ -424,7 +426,9 @@ class ArrayControlsWidget(QtWidgets.QWidget):
 
 
 class ArrayRowWidget(QtWidgets.QWidget):
-    def __init__(self, widget: QtWidgets.QWidget, controls: ArrayControlsWidget):
+    def __init__(
+        self, widget: QtWidgets.QWidget, controls: ArrayControlsWidget
+    ):
         super().__init__()
 
         layout = QtWidgets.QHBoxLayout()
@@ -475,7 +479,9 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.opacity.setOpacity(1)
 
         self.add_button = QtWidgets.QPushButton()
-        self.add_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_FileIcon))
+        self.add_button.setIcon(
+            style.standardIcon(QtWidgets.QStyle.SP_FileIcon)
+        )
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
@@ -496,9 +502,13 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         previous_row = None
         for i, row in enumerate(self.rows):
             if previous_row:
-                can_exchange_previous = previous_row.widget.schema == row.widget.schema
+                can_exchange_previous = (
+                    previous_row.widget.schema == row.widget.schema
+                )
                 row.controls.up_button.setEnabled(can_exchange_previous)
-                previous_row.controls.down_button.setEnabled(can_exchange_previous)
+                previous_row.controls.down_button.setEnabled(
+                    can_exchange_previous
+                )
             else:
                 row.controls.up_button.setEnabled(False)
             row.controls.delete_button.setEnabled(not self.is_fixed_schema(i))
@@ -508,7 +518,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
             previous_row.controls.down_button.setEnabled(False)
 
     def is_fixed_schema(self, index: int) -> bool:
-        schema = self.schema["items"]
+        schema = self.schema['items']
         if isinstance(schema, dict):
             return False
 
@@ -516,7 +526,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
     @property
     def next_item_schema(self) -> Optional[dict]:
-        item_schema = self.schema["items"]
+        item_schema = self.schema['items']
 
         if isinstance(item_schema, dict):
             return item_schema
@@ -584,7 +594,9 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
-class HighlightPreviewWidget(SchemaWidgetMixin, QtHighlightPreviewWidget):
+class HighlightPreviewWidget(
+    SchemaWidgetMixin, QtHighlightPreviewWidget
+):
     @state_property
     def state(self) -> dict:
         return self.value()
@@ -680,11 +692,13 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
-        self.widgets = self.populate_from_schema(schema, ui_schema, widget_builder)
+        self.widgets = self.populate_from_schema(
+            schema, ui_schema, widget_builder
+        )
 
     @state_property
     def state(self) -> dict:
@@ -710,18 +724,12 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         raise NotImplementedError
 
-    def _prepare_widget(
-        self,
-        name: str,
-        sub_schema: dict,
-        widget_builder: "WidgetBuilder",
-        ui_schema: dict,
-    ):
-        description = sub_schema.get("description", "")
+    def _prepare_widget(self, name: str, sub_schema: dict, widget_builder: 'WidgetBuilder', ui_schema: dict):
+        description = sub_schema.get('description', "")
 
         label = QtWidgets.QLabel(sub_schema.get("title", name))
 
@@ -734,22 +742,19 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
 
         return label, widget
 
-
 class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
     def populate_from_schema(
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
 
         widgets = {}
-        for name, sub_schema in schema["properties"].items():
-            label, widget = self._prepare_widget(
-                name, sub_schema, widget_builder, ui_schema
-            )
+        for name, sub_schema in schema['properties'].items():
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
             layout.addWidget(label)
             layout.addWidget(widget)
             widgets[name] = widget
@@ -763,24 +768,26 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
         self,
         schema: dict,
         ui_schema: dict,
-        widget_builder: "WidgetBuilder",
+        widget_builder: 'WidgetBuilder',
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
         layout.setAlignment(QtCore.Qt.AlignTop)
         self.setFlat(False)
 
-        if "title" in schema:
-            self.setTitle(schema["title"])
+        if 'title' in schema:
+            self.setTitle(schema['title'])
+
 
         # Populate rows
         widgets = {}
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
-        for name, sub_schema in schema["properties"].items():
-            label, widget = self._prepare_widget(
-                name, sub_schema, widget_builder, ui_schema
-            )
-            if sub_schema.get("title") == "":
+        for name, sub_schema in schema['properties'].items():
+            label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
+            # render a label unless the property explicitly has an empty title
+            # (intentional divergence from upstream qt_json_builder, which
+            # suppressed the label for any single-property schema)
+            if sub_schema.get('title') == '':
                 layout.addRow(widget)
             else:
                 layout.addRow(label, widget)
@@ -808,7 +815,9 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
             self.addItem(str(opt))
             self.setItemData(i, opt)
 
-        self.currentIndexChanged.connect(lambda _: self.on_changed.emit(self.state))
+        self.currentIndexChanged.connect(
+            lambda _: self.on_changed.emit(self.state)
+        )
 
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
@@ -849,7 +858,9 @@ class FormWidget(QtWidgets.QWidget):
             item.widget().deleteLater()
 
         for err in errors:
-            widget = QtWidgets.QLabel(f"<b>.{'.'.join(err.path)}</b> {err.message}")
+            widget = QtWidgets.QLabel(
+                f"<b>.{'.'.join(err.path)}</b> {err.message}"
+            )
             layout.addWidget(widget)
 
     def clear_errors(self):

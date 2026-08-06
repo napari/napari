@@ -13,7 +13,6 @@ from napari.settings._plugin_config_generator import (
 )
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
-PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 MANIFEST_PATH = (
     Path(__file__).parent.parent.parent
     / 'plugins/_tests/_sample_manifest.yaml'
@@ -39,6 +38,12 @@ def test_snake_identifier():
     assert (
         _snake_identifier('Demo Configuration for widget 1')
         == 'demo_configuration_for_widget_1'
+    )
+    # keys may be namespaced with the plugin name using a different separator
+    # than the plugin name itself ('my_plugin.' in the key vs 'my-plugin')
+    assert (
+        _snake_identifier('my_plugin.reader.lazy', 'my-plugin')
+        == 'reader_lazy'
     )
 
 
