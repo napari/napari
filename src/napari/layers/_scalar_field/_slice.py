@@ -333,7 +333,12 @@ class _ScalarFieldSliceRequest:
         """
         Get the data_slice rescaled for a specific level.
         """
-        slice_arr = self.data_slice.as_array()
+        data_slice = self.data_slice
+        if not isinstance(data_slice, _ThickNDSlice):
+            raise TypeError(
+                'Affine slices are not supported for multiscale data.'
+            )
+        slice_arr = data_slice.as_array()
         # downsample based on level
         slice_arr /= self.downsample_factors[level]
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
@@ -344,7 +349,8 @@ class _ScalarFieldSliceRequest:
     ) -> np.ndarray:
         if mode == 'none':
             # just got to drop all the unnecessary axes
-            return sampled[(slice(None), slice(None), *([0] * len(axis)))]
+            index = [slice(None), slice(None)] + [0] * len(axis)
+            return sampled[tuple(index)]
         return self._project_slice(
             data=sampled,
             axis=axis,

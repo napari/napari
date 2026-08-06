@@ -952,13 +952,15 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         ):
             return slice_input.data_slice(world_to_data)
 
-        plane_axes = tuple(slice_input.displayed)
+        # Affine slicing is only ever 2D, so get first entries to satisfy mypy
+        displayed = slice_input.displayed
+        plane_axes = tuple(displayed[0], displayed[1])
         # All the heavy lifting is actually done upstream by _extent_world_augmented
         # as it directly gives us the size of the "bounding rectangle" containing the slice
         # in world coordinates.
         extent = self.layer._extent_world_augmented[:, plane_axes]
         span = np.ceil(extent[1] - extent[0]).astype(int) + 1
-        shape = tuple(max(int(s), 1) for s in span)
+        shape = tuple(max(int(span[0]), 1), max(int(span[1]), 1))
 
         # This is essential to allow the slice to be correctly displayed on screen by Vispy.
         # `tile_to_world` is a translation that contains:
