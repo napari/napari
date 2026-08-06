@@ -126,15 +126,14 @@ class _VectorSliceRequest:
 
         alphas = np.ones(len(visible))
 
-        match self.projection_mode:
-            case VectorsProjectionMode.NONE | VectorsProjectionMode.ALL:
-                pass
-            case VectorsProjectionMode.FADE:
-                # rescale alphas of vectors based on how far they are from the center
-                dist_from_slice = np.abs(
-                    coords_not_disp[visible] - point
-                ).squeeze()
-                max_dist = np.max([np.abs(low - point), np.abs(high - point)])
-                alphas = dist_from_slice / max_dist
+        if self.projection_mode == VectorsProjectionMode.FADE:
+            # rescale alphas of vectors based on how far they are from the center
+            dist_from_point = coords_not_disp[visible] - point
+            # margins can be different, so we need to treat low/high distance independently
+            slice_end = np.where(
+                dist_from_point < 0, low - point, high - point
+            )
+            # we multiply the alphas from each dimension into a single one
+            alphas = np.prod(1 - dist_from_point / slice_end, axis=1)
 
         return visible, alphas
