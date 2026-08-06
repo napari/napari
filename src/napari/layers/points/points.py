@@ -57,7 +57,9 @@ from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import project_points_onto_plane, rotate_points
+from napari.utils.migrations import deprecated_constructor_arg_by_attr
 from napari.utils.status_messages import format_feature_value
 from napari.utils.transforms import Affine
 
@@ -75,6 +77,14 @@ if TYPE_CHECKING:
     from napari.components.dims import Dims
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+
+_OUT_SLICE_DISP_WARNING_MSG = (
+    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
+    'Setting projection_mode to rescale_spherical may be more physically accurate '
+    'if your points correspond directly to objects with a physical size. '
+)
 
 
 class Points(Layer):
@@ -146,21 +156,10 @@ class Points(Layer):
         is a feature.
     metadata : dict
         Layer metadata.
-    n_dimensional : bool
-        DEPRECATED: If True, renders points not just in central plane but also
-        slightly out of slice according to specified point marker size.
     name : str
         Name of the layer. If not provided then will be guessed using heuristics.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
-    out_of_slice_display : bool
-        DEPRECATED: If True, renders points not just in central plane but also
-        slightly out of slice according to specified point marker size.
-        out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode).
-        To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar
-        (see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing).
-        Setting projection_mode to rescale_spherical may be more physically accurate
-        if your points correspond directly to objects with a physical size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass.
@@ -370,6 +369,8 @@ class Points(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
+    @deprecated_constructor_arg_by_attr('n_dimensional')
+    @deprecated_constructor_arg_by_attr('out_of_slice_display')
     def __init__(
         self,
         data=None,
@@ -395,10 +396,8 @@ class Points(Layer):
         feature_defaults=None,
         features=None,
         metadata=None,
-        n_dimensional=False,
         name=None,
         opacity=1.0,
-        out_of_slice_display=False,
         projection_mode='all',
         properties=None,
         property_choices=None,
@@ -484,8 +483,10 @@ class Points(Layer):
             current_properties=Event,
             symbol=Event,
             current_symbol=Event,
-            out_of_slice_display=Event,
-            n_dimensional=Event,
+            out_of_slice_display=WarningEmitter('deprecated!', FutureWarning),
+            n_dimensional=WarningEmitter(
+                'deprecated!', FutureWarning, type_name='n_dimensional'
+            ),
             highlight=Event,
             shading=Event,
             antialiasing=Event,
@@ -558,8 +559,6 @@ class Points(Layer):
             self.canvas_size_limits = canvas_size_limits
             self.shading = shading
             self.antialiasing = antialiasing
-            self.out_of_slice_display = out_of_slice_display
-            self.n_dimensional = n_dimensional
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
@@ -864,13 +863,7 @@ class Points(Layer):
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""
         warnings.warn(
-            (
-                'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
-                'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
-                '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
-                'Setting projection_mode to rescale_spherical may be more physically accurate '
-                'if your points correspond directly to objects with a physical size. '
-            ),
+            _OUT_SLICE_DISP_WARNING_MSG,
             category=FutureWarning,
             stacklevel=2,
         )
@@ -883,13 +876,7 @@ class Points(Layer):
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         if out_of_slice_display:
             warnings.warn(
-                (
-                    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
-                    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
-                    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
-                    'Setting projection_mode to rescale_spherical may be more physically accurate '
-                    'if your points correspond directly to objects with a physical size. '
-                ),
+                _OUT_SLICE_DISP_WARNING_MSG,
                 category=FutureWarning,
                 stacklevel=2,
             )
@@ -907,6 +894,7 @@ class Points(Layer):
         """
         This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
         """
+        # deprecation warning fires via out_of_slice_display.getter
         return self.out_of_slice_display
 
     @n_dimensional.setter
@@ -1381,8 +1369,6 @@ class Points(Layer):
                 'properties': self.properties,
                 'property_choices': self.property_choices,
                 'text': self.text.model_dump(),
-                'out_of_slice_display': self.out_of_slice_display,
-                'n_dimensional': self.out_of_slice_display,
                 'size': self.size,
                 'ndim': self.ndim,
                 'data': self.data,

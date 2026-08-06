@@ -1863,7 +1863,7 @@ def test_view_size():
     """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
     sizes = np.array([5, 5, 3, 3])
-    layer = Points(coords, size=sizes, out_of_slice_display=False)
+    layer = Points(coords, size=sizes)
 
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[0, 1]])

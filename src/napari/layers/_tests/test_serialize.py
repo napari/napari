@@ -28,6 +28,9 @@ def test_attrs_arrays(Layer, data, ndim):
         # excluding `cache` which is not yet in `_get_state`
         if param == 'cache':
             continue
+        # exclude deprecated stuff:
+        if param == 'n_dimensional':
+            breakpoint()
         assert param in properties
 
     # Check new layer can be created
