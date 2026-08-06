@@ -1533,7 +1533,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         NoAvailableReaderError
             when no plugins are available to read path
         ReaderPluginError
-            when reading with only available or prefered plugin fails
+            when reading with only available or preferred plugin fails
         MultipleReaderError
             when multiple readers are available to read the path
         """

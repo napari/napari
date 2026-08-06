@@ -688,7 +688,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             values_attenuated = (
                 values - self.contrast_limits[0]
             ) / self.contrast_limits[1]
-            # approx, step size is actually calculated with int(lenght(ray) * 2)
+            # approx, step size is actually calculated with int(length(ray) * 2)
             step_size = 0.5
             sumval = (
                 step_size
