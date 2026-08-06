@@ -348,11 +348,11 @@ def test_zoom_actions(make_napari_viewer):
     initial_zoom = viewer.scene.camera.zoom
 
     # Check zoom in action
-    app.commands.execute_command('napari.viewer.scene.camera.zoom_in')
+    app.commands.execute_command('napari.viewer.camera.zoom_in')
     assert viewer.scene.camera.zoom == pytest.approx(1.5 * initial_zoom)
 
     # Check zoom out action
-    app.commands.execute_command('napari.viewer.scene.camera.zoom_out')
+    app.commands.execute_command('napari.viewer.camera.zoom_out')
     assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
     viewer.scene.camera.zoom = 2
