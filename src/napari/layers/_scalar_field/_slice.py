@@ -373,8 +373,6 @@ class _ScalarFieldSliceRequest:
         """
 
         shape = data_slice.shape
-        rows = np.arange(shape[0], dtype=float)
-        cols = np.arange(shape[1], dtype=float)
         non_displayed = [
             ax
             for ax in range(self.slice_input.ndim)
@@ -382,47 +380,42 @@ class _ScalarFieldSliceRequest:
         ]
 
         if self.projection_mode == 'none':
-            slab_coords_per_axis = [np.array([0.0], dtype=float)] * len(
-                non_displayed
-            )
+            margins_left = [0] * len(non_displayed)
+            margins_right = [0] * len(non_displayed)
         else:
-            slab_coords_per_axis = []
+            margins_left = []
+            margins_right = []
             for ax in non_displayed:
-                slab_coords = np.array([0.0], dtype=float)
                 left = max(float(data_slice.margin_left[ax]), 0.0)
                 right = max(float(data_slice.margin_right[ax]), 0.0)
-                low = -int(np.round(left))
-                high = int(np.round(right))
-                slab_coords = np.arange(low, high + 1, dtype=float)
-                slab_coords_per_axis.append(slab_coords)
+                left = -int(np.ceil(left)) # should we round instead of ceil ?
+                right = int(np.ceil(right)) # should we round instead of ceil ?
+                margins_left.append(left)
+                margins_right.append(right)
 
         projection_axes = tuple(range(2, 2 + len(non_displayed)))
-
-        grid_coords = np.meshgrid(
-            rows,
-            cols,
-            *slab_coords_per_axis,
-            indexing='ij',
+        slab_shape = tuple(
+            right - left + 1 for left, right in zip(margins_left, margins_right, strict=False)
         )
 
-        coords = np.zeros(
-            (self.slice_input.ndim, *grid_coords[0].shape), dtype=float
-        )
-        coords[list(data_slice.plane_axes[:2])] = grid_coords[:2]
-        coords[non_displayed] = grid_coords[2:]
+        output_shape = (*shape, *slab_shape)
+        output_axes = [*data_slice.plane_axes[:2], *non_displayed]
 
-        coords = coords.reshape(self.slice_input.ndim, -1)
-        data_coords = np.asarray(data_slice.tile_to_data(coords.T)).T
-        data_coords = data_coords.reshape(
-            (self.slice_input.ndim, *grid_coords[0].shape)
-        )
+        linear = data_slice.tile_to_data.linear_matrix
+        matrix = linear[:, output_axes]
+        offset = data_slice.tile_to_data.translate.copy()
+        # add the left margins to go from output_shape indices (0 to right - left) to the actual data indices (left to right) 
+        for left, ax in zip(margins_left, non_displayed, strict=False):
+            offset += linear[:, ax] * left # and transform them to data space!
 
         if self.rgb and data.ndim == self.slice_input.ndim + 1:
             sampled_channels = []
             for channel in range(data.shape[-1]):
-                sampled = self._query_data_using_data_indices(
+                sampled = self._query_data_using_direct_affine_transform(
                     data=data[..., channel],
-                    data_indices=data_coords,
+                    matrix=matrix,
+                    offset=offset,
+                    output_shape=output_shape,
                     affine_slicing_sampling_order=self.affine_slicing_sampling_order,
                 )
                 sampled = self._apply_projection_mode(
@@ -431,9 +424,11 @@ class _ScalarFieldSliceRequest:
                 sampled_channels.append(sampled)
             return np.stack(sampled_channels, axis=-1)
 
-        sampled_data = self._query_data_using_data_indices(
+        sampled_data = self._query_data_using_direct_affine_transform(
             data=data,
-            data_indices=data_coords,
+            matrix=matrix,
+            offset=offset,
+            output_shape=output_shape,
             affine_slicing_sampling_order=self.affine_slicing_sampling_order,
         )
 
@@ -441,20 +436,24 @@ class _ScalarFieldSliceRequest:
             sampled_data, projection_axes, self.projection_mode
         )
 
-    def _query_data_using_data_indices(
+    def _query_data_using_direct_affine_transform(
         self,
         data: ArrayLike,
-        data_indices: npt.NDArray,
+        matrix: npt.NDArray,
+        offset: npt.NDArray,
+        output_shape: tuple[int, ...],
         affine_slicing_sampling_order: int,
     ) -> np.ndarray:
         """
-        Query the given data with the given data indices using scipy's map_coordinates.
+        Query the given data with scipy's affine_transform.
         """
-        from scipy.ndimage import map_coordinates
+        from scipy.ndimage import affine_transform
 
-        return map_coordinates(
+        return affine_transform(
             data,
-            data_indices,
+            matrix=matrix,
+            offset=offset,
+            output_shape=output_shape,
             order=affine_slicing_sampling_order,
             mode='constant',
             cval=np.nan,
