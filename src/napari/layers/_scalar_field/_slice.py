@@ -7,7 +7,11 @@ import numpy as np
 import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDAffineSlice,
+    _ThickNDSlice,
+)
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
@@ -196,7 +200,7 @@ class _ScalarFieldSliceRequest:
         The pre-selected data source for the thumbnail.
     dtype : DTypeLike
         The dtype of the layer's data.
-    data_slice : _ThickNDSlice
+    data_slice : _ThickNDSlice | _ThickNDAffineSlice
         The slicing coordinates and margins in data space.
     others
         See the corresponding attributes in `Layer` and `Image`.
@@ -209,7 +213,7 @@ class _ScalarFieldSliceRequest:
     data_at_thumbnail_level: Any = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
-    data_slice: _ThickNDSlice
+    data_slice: _ThickNDSlice | _ThickNDAffineSlice
     projection_mode: Any
     multiscale: bool = field(repr=False)
     corner_pixels: np.ndarray
@@ -218,6 +222,7 @@ class _ScalarFieldSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
+    affine_slicing_sampling_order: int = field(repr=False, default=1)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ScalarFieldSliceResponse:
@@ -237,17 +242,31 @@ class _ScalarFieldSliceRequest:
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(
-            self.data_at_data_level, self.data_slice
-        )
+        if isinstance(self.data_slice, _ThickNDAffineSlice):
+            data = self._project_affine_slice(
+                self.data_at_data_level, self.data_slice
+            )
+            # Compared to what is done in the "else"-case below, this is a hack:
+            # data_slice.tile_to_data is designed so that
+            # Vispy is given an affine transform with an identity linear matrix,
+            # so that it does not apply any additional rotation or shear to the
+            # data pixels (our affine slicing procedure already accounts for the
+            # "deformations" coming from the affine slicing, we do not want Vispy
+            # to apply them again) when composing all of the layer's transforms
+            # (see function `on_matrix_change` in napari/_vispy/layers/base.py).
+            tile_to_data = self.data_slice.tile_to_data
+        else:
+            data = self._project_thick_slice(
+                self.data_at_data_level, self.data_slice
+            )
+            # `Layer.multiscale` is mutable so we need to pass back the identity
+            # transform to ensure `tile2data` is properly set on the layer.
+            ndim = self.slice_input.ndim
+            tile_to_data = Affine(
+                name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
+            )
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
-        # `Layer.multiscale` is mutable so we need to pass back the identity
-        # transform to ensure `tile2data` is properly set on the layer.
-        ndim = self.slice_input.ndim
-        tile_to_data = Affine(
-            name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
-        )
         return _ScalarFieldSliceResponse(
             image=image,
             thumbnail=image,
@@ -314,11 +333,135 @@ class _ScalarFieldSliceRequest:
         """
         Get the data_slice rescaled for a specific level.
         """
-        slice_arr = self.data_slice.as_array()
+        data_slice = self.data_slice
+        if not isinstance(data_slice, _ThickNDSlice):
+            raise TypeError(
+                'Affine slices are not supported for multiscale data.'
+            )
+        slice_arr = data_slice.as_array()
         # downsample based on level
         slice_arr /= self.downsample_factors[level]
         slice_arr[0] = np.clip(slice_arr[0], 0, self.level_shapes[level] - 1)
         return _ThickNDSlice.from_array(slice_arr)
+
+    def _apply_projection_mode(
+        self, sampled: np.ndarray, axis: tuple[int, ...], mode: str
+    ) -> np.ndarray:
+        if mode == 'none':
+            # just got to drop all the unnecessary axes
+            index = [slice(None), slice(None)] + [0] * len(axis)
+            return sampled[tuple(index)]
+        return self._project_slice(
+            data=sampled,
+            axis=axis,
+            mode=mode,
+        )
+
+    def _project_affine_slice(
+        self, data: ArrayLike, data_slice: _ThickNDAffineSlice
+    ) -> np.ndarray:
+        """
+        Slice the given data with the given affine slice.
+
+        For thick non-orthogonal slicing, this samples an nD slab in tile space
+        (row, col, and one thickness axis per non-displayed data axis) and
+        projects the thickness axes to recover a 2D image.
+
+        Note that if the sampling is done on a finer grid (with appropriate sampled_data
+        resizing), the result approximates what can be seen in Fiji's BigDataViewer, which
+        is able to do "actual" slicing of cubic voxels.
+        """
+
+        shape = data_slice.shape
+        non_displayed = [
+            ax
+            for ax in range(self.slice_input.ndim)
+            if ax not in data_slice.plane_axes
+        ]
+
+        if self.projection_mode == 'none':
+            margins_left = [0] * len(non_displayed)
+            margins_right = [0] * len(non_displayed)
+        else:
+            margins_left = []
+            margins_right = []
+            for ax in non_displayed:
+                left = max(float(data_slice.margin_left[ax]), 0.0)
+                right = max(float(data_slice.margin_right[ax]), 0.0)
+                left = -int(np.ceil(left))  # should we round instead of ceil ?
+                right = int(
+                    np.ceil(right)
+                )  # should we round instead of ceil ?
+                margins_left.append(left)
+                margins_right.append(right)
+
+        projection_axes = tuple(range(2, 2 + len(non_displayed)))
+        slab_shape = tuple(
+            right - left + 1
+            for left, right in zip(margins_left, margins_right, strict=False)
+        )
+
+        output_shape = (*shape, *slab_shape)
+        output_axes = [*data_slice.plane_axes[:2], *non_displayed]
+
+        linear = data_slice.tile_to_data.linear_matrix
+        matrix = linear[:, output_axes]
+        offset = data_slice.tile_to_data.translate.copy()
+        # add the left margins to go from output_shape indices (0 to right - left) to the actual data indices (left to right)
+        for left, ax in zip(margins_left, non_displayed, strict=False):
+            offset += linear[:, ax] * left  # and transform them to data space!
+
+        if self.rgb and data.ndim == self.slice_input.ndim + 1:
+            sampled_channels = []
+            for channel in range(data.shape[-1]):
+                sampled = self._query_data_using_direct_affine_transform(
+                    data=data[..., channel],
+                    matrix=matrix,
+                    offset=offset,
+                    output_shape=output_shape,
+                    affine_slicing_sampling_order=self.affine_slicing_sampling_order,
+                )
+                sampled = self._apply_projection_mode(
+                    sampled, projection_axes, self.projection_mode
+                )
+                sampled_channels.append(sampled)
+            return np.stack(sampled_channels, axis=-1)
+
+        sampled_data = self._query_data_using_direct_affine_transform(
+            data=data,
+            matrix=matrix,
+            offset=offset,
+            output_shape=output_shape,
+            affine_slicing_sampling_order=self.affine_slicing_sampling_order,
+        )
+
+        return self._apply_projection_mode(
+            sampled_data, projection_axes, self.projection_mode
+        )
+
+    def _query_data_using_direct_affine_transform(
+        self,
+        data: ArrayLike,
+        matrix: npt.NDArray,
+        offset: npt.NDArray,
+        output_shape: tuple[int, ...],
+        affine_slicing_sampling_order: int,
+    ) -> np.ndarray:
+        """
+        Query the given data with scipy's affine_transform.
+        """
+        from scipy.ndimage import affine_transform
+
+        return affine_transform(
+            data,
+            matrix=matrix,
+            offset=offset,
+            output_shape=output_shape,
+            order=affine_slicing_sampling_order,
+            mode='constant',
+            cval=np.nan,
+            prefilter=False,
+        )
 
     def _project_thick_slice(
         self, data: ArrayLike, data_slice: _ThickNDSlice
@@ -363,6 +506,9 @@ class _ScalarFieldSliceRequest:
 
     def _slice_out_of_bounds(self) -> bool:
         """Check if the data slice is out of bounds for any dimension."""
+        if not isinstance(self.data_slice, _ThickNDSlice):
+            return False
+
         for d in self.slice_input.not_displayed:
             pt = self.data_slice.point[d]
             max_idx = self.level_shapes[0][d] - 1
