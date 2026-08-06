@@ -79,7 +79,7 @@ if TYPE_CHECKING:
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 _OUT_SLICE_DISP_WARNING_MSG = (
-    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+    'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
     'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
     '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
     'Setting projection_mode to rescale_spherical may be more physically accurate '
@@ -483,9 +483,15 @@ class Points(Layer):
             current_properties=Event,
             symbol=Event,
             current_symbol=Event,
-            out_of_slice_display=WarningEmitter('deprecated!', FutureWarning),
+            out_of_slice_display=WarningEmitter(
+                _OUT_SLICE_DISP_WARNING_MSG,
+                FutureWarning,
+                type_name='out_of_slice_display',
+            ),
             n_dimensional=WarningEmitter(
-                'deprecated!', FutureWarning, type_name='n_dimensional'
+                _OUT_SLICE_DISP_WARNING_MSG,
+                FutureWarning,
+                type_name='n_dimensional',
             ),
             highlight=Event,
             shading=Event,
@@ -880,19 +886,27 @@ class Points(Layer):
                 category=FutureWarning,
                 stacklevel=2,
             )
-        self._projection_mode = (
+        old = self.projection_mode in (
+            PointsProjectionMode.RESCALE_LINEAR,
+            PointsProjectionMode.RESCALE_SPHERICAL,
+        )
+        self.projection_mode = (
             PointsProjectionMode.RESCALE_LINEAR
             if out_of_slice_display
             else PointsProjectionMode.ALL
         )
-        self.events.out_of_slice_display()
-        self.events.projection_mode()
-        self.refresh(extent=False)
+        new = self.projection_mode in (
+            PointsProjectionMode.RESCALE_LINEAR,
+            PointsProjectionMode.RESCALE_SPHERICAL,
+        )
+        if old != new:
+            self.events.out_of_slice_display()
+            self.events.n_dimensional()
 
     @property
     def n_dimensional(self) -> bool:
         """
-        This property will soon be deprecated in favor of `out_of_slice_display`. Use that instead.
+        n_dimensional is deprecated. Use projection_mode instead.
         """
         # deprecation warning fires via out_of_slice_display.getter
         return self.out_of_slice_display
