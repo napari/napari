@@ -1044,6 +1044,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         interpolation2d='nearest',
         interpolation3d='linear',
         iso_threshold=None,
+        locked_data_level=None,
         metadata=None,
         multiscale=None,
         name=None,
@@ -1136,6 +1137,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Same as 'interpolation2d' but for 3D rendering.
         iso_threshold : float or list of float
             Threshold for isosurface.
+        locked_data_level : int, optional
+            Lock the multiscale resolution level to a specific index. When set,
+            forces rendering at the given multiscale level instead of automatic
+            level selection based on the viewport. Set to ``None`` (default) to
+            use automatic selection.
         metadata : dict or list of dict
             Layer metadata.
         multiscale : bool
@@ -1207,6 +1213,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
+            'locked_data_level': locked_data_level,
             'interpolation2d': interpolation2d,
             'interpolation3d': interpolation3d,
             'rendering': rendering,
@@ -1309,7 +1316,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             If `plugin` does not provide a sample named `sample`.
         """
         plugin_spec_reader = None
-        data: None | SampleDataCreator | SampleData
+        data: SampleDataCreator | SampleData | None
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 

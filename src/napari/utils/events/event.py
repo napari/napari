@@ -541,7 +541,7 @@ class EventEmitter:
         return old_callback  # allows connect to be used as a decorator
 
     def disconnect(
-        self, callback: Callback | CallbackRef | None | object = None
+        self, callback: Callback | CallbackRef | object | None = None
     ):
         """Disconnect a callback from this emitter.
 
