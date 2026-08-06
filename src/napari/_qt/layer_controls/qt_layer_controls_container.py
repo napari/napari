@@ -102,7 +102,7 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         selection = self.viewer.layers.selection
-        layers = [l for l in self.viewer.layers if l in selection]
+        layers = [layer for layer in self.viewer.layers if layer in selection]
         self._remove(event)
         if not layers:
             self.setCurrentWidget(self.empty_widget)

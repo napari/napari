@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
 
-from qtpy.QtWidgets import QWidget
+from typing import TYPE_CHECKING, Optional
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -8,10 +8,11 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
     from napari.layers.base.base import Layer
 
 

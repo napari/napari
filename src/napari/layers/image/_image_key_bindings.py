@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import napari
 from napari.layers.base._base_constants import Mode
-from napari.layers.image.image import Image
 from napari.layers.base.base import Layer
+from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
 )
@@ -88,7 +88,9 @@ def orient_plane_normal_along_view_direction(
 
 # The generator function above can't be bound to a button, so here
 # is a non-generator version of the function
-def orient_plane_normal_along_view_direction_no_gen(layers: Selection[Layer]) -> None:
+def orient_plane_normal_along_view_direction_no_gen(
+    layers: Selection[Layer],
+) -> None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
         return

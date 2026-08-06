@@ -4,9 +4,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QWidget,
-)
 from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -18,6 +15,8 @@ from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
     from napari.layers.base.base import Layer
 
 

@@ -82,8 +82,10 @@ def _provide_window_or_raise(msg: str = '') -> Window:
 def _provide_active_layer() -> layers.Layer | None:
     return v.layers.selection.active if (v := _provide_viewer()) else None
 
+
 def _provide_selected_layers() -> Selection[layers.Layer] | None:
     return v.layers.selection if (v := _provide_viewer()) else None
+
 
 def _provide_active_layer_list() -> components.LayerList | None:
     return v.layers if (v := _provide_viewer()) else None

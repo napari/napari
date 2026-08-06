@@ -103,9 +103,7 @@ class QtColorBox(QWidget):
         super().closeEvent(event)
 
 
-class QtCurrentLabelControls(
-    QtWidgetControlsBase
-):
+class QtCurrentLabelControls(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current label
     layer attribute and Qt widgets.

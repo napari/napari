@@ -40,11 +40,11 @@ from napari._qt.layer_controls.widgets._labels.qt_contiguous_checkbox import (
 from napari._qt.layer_controls.widgets._labels.qt_contour_spinbox import (
     QtContourSpinBoxControl,
 )
-from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox import (
-    QtDisplaySelectedLabelCheckBoxControl,
-)
 from napari._qt.layer_controls.widgets._labels.qt_current_label_controls import (
     QtCurrentLabelControls,
+)
+from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbox import (
+    QtDisplaySelectedLabelCheckBoxControl,
 )
 from napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox import (
     QtNdimSpinBoxControl,
