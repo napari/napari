@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (
     QComboBox,
     QWidget,
@@ -8,8 +12,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Image
 from napari.layers.image._image_constants import Interpolation
+
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 
 class QtInterpolationComboBoxControl(QtWidgetControlsBase):
@@ -32,15 +38,13 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Image) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
         # Setup layer
-        self._layer.events.interpolation2d.connect(
-            self._on_interpolation_change
-        )
-        self._layer.events.interpolation3d.connect(
-            self._on_interpolation_change
-        )
+        self._layers = layers
+        for layer in self._layers:
+            layer.events.interpolation2d.connect(self._on_interpolation_change)
+            layer.events.interpolation3d.connect(self._on_interpolation_change)
 
         # Setup widgets
         self.interpolation_combobox = QComboBox(parent)
@@ -66,10 +70,11 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             'nearest', 'spline16', 'spline36'
         """
         # TODO: Better way to handle the ndisplay value?
-        if self.parent().ndisplay == 2:
-            self._layer.interpolation2d = text
-        else:
-            self._layer.interpolation3d = text
+        for layer in self._layers:
+            if self.parent().ndisplay == 2:
+                layer.interpolation2d = text
+            else:
+                layer.interpolation3d = text
 
     def _on_interpolation_change(self, event) -> None:
         """Receive layer interpolation change event and update dropdown menu.
@@ -89,9 +94,9 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
     def _update_interpolation_combo(self, ndisplay: int) -> None:
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
-            self._layer.interpolation2d
+            self._layers[0].interpolation2d
             if ndisplay == 2
-            else self._layer.interpolation3d
+            else self._layers[0].interpolation3d
         )
         with qt_signals_blocked(self.interpolation_combobox):
             self.interpolation_combobox.clear()

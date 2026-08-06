@@ -46,14 +46,14 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layers : list[napari.layers.Layer]
+        A list of napari layers.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
         super().__init__(parent)
         # Setup layer
-        self._layer = layer
+        self._layers = layers
         # Track registered callbacks (defined via `attr_to_settr` for example)
         # so it is possible to disconnect them when the widget is being closed/deleted.
         # Arguments of callbacks are hard to track; Any is the best we can do here.
@@ -74,11 +74,12 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
 
     def disconnect_widget_controls(self) -> None:
         """
-        Disconnect layer from widget controls.
+        Disconnect layers from widget controls.
         """
-        disconnect_events(self._layer.events, self)
-        for callback in self._callbacks:
-            disconnect_events(self._layer.events, callback)
+        for layer in self._layers:
+            disconnect_events(layer.events, self)
+            for callback in self._callbacks:
+                disconnect_events(layer.events, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()

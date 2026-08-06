@@ -1,18 +1,6 @@
 from typing import TYPE_CHECKING
 
-from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-from napari._qt.layer_controls.widgets import QtMultiscaleLevelControl
-from napari._qt.layer_controls.widgets._labels import (
-    QtBrushSizeSliderControl,
-    QtColorModeComboBoxControl,
-    QtContiguousCheckBoxControl,
-    QtContourSpinBoxControl,
-    QtCurrentLabelControls,
-    QtDisplaySelectedLabelCheckBoxControl,
-    QtLabelRenderControl,
-    QtNdimSpinBoxControl,
-    QtPreserveLabelsCheckBoxControl,
-)
+from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.labels._labels_constants import Mode
@@ -24,7 +12,7 @@ if TYPE_CHECKING:
 INT32_MAX = 2**31 - 1
 
 
-class QtLabelsControls(QtLayerControls):
+class QtLabelsButtons(QtLayerButtons):
     """Qt view and controls for the napari Labels layer.
 
     Parameters
@@ -127,44 +115,12 @@ class QtLabelsControls(QtLayerControls):
         # don't bind with action manager as this would remove "Toggle with {shortcut}"
         self._on_editable_or_visible_change()
 
-        self.button_grid.addWidget(self.colormap_update, 0, 0)
-        self.button_grid.addWidget(self.erase_button, 0, 1)
-        self.button_grid.addWidget(self.paint_button, 0, 2)
-        self.button_grid.addWidget(self.polygon_button, 0, 3)
-        self.button_grid.addWidget(self.fill_button, 0, 4)
-        self.button_grid.addWidget(self.pick_button, 0, 5)
-
-        # Setup widgets controls
-        self._label_control = QtCurrentLabelControls(self, layer)
-        self._add_widget_controls(self._label_control)
-        self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
-        self._add_widget_controls(self._brush_size_slider_control)
-        self._render_control = QtLabelRenderControl(self, layer)
-        self._add_widget_controls(self._render_control)
-        self._colormode_combobox_control = QtColorModeComboBoxControl(
-            self, layer
-        )
-        self._add_widget_controls(self._colormode_combobox_control)
-        self._contour_spinbox_control = QtContourSpinBoxControl(self, layer)
-        self._add_widget_controls(self._contour_spinbox_control)
-        self._ndim_spinbox_control = QtNdimSpinBoxControl(self, layer)
-        self._add_widget_controls(self._ndim_spinbox_control)
-        self._contiguous_checkbox_control = QtContiguousCheckBoxControl(
-            self, layer
-        )
-        self._add_widget_controls(self._contiguous_checkbox_control)
-        self._preserve_labels_checkbox_control = (
-            QtPreserveLabelsCheckBoxControl(self, layer)
-        )
-        self._add_widget_controls(self._preserve_labels_checkbox_control)
-        self._display_selected_label_checkbox_control = (
-            QtDisplaySelectedLabelCheckBoxControl(self, layer)
-        )
-        self._add_widget_controls(
-            self._display_selected_label_checkbox_control
-        )
-        self._multiscale_level_control = QtMultiscaleLevelControl(self, layer)
-        self._add_widget_controls(self._multiscale_level_control)
+        self.addWidget(self.colormap_update, 0, 0)
+        self.addWidget(self.erase_button, 0, 1)
+        self.addWidget(self.paint_button, 0, 2)
+        self.addWidget(self.polygon_button, 0, 3)
+        self.addWidget(self.fill_button, 0, 4)
+        self.addWidget(self.pick_button, 0, 5)
 
         self._on_ndisplay_changed()
 
@@ -193,11 +149,6 @@ class QtLabelsControls(QtLayerControls):
         self._set_polygon_tool_state()
 
     def _on_ndisplay_changed(self):
-        show_3d_widgets = self.ndisplay == 3
-        if show_3d_widgets:
-            self._render_control._on_display_change_show()
-        else:
-            self._render_control._on_display_change_hide()
         self._on_editable_or_visible_change()
         self._set_polygon_tool_state()
         super()._on_ndisplay_changed()

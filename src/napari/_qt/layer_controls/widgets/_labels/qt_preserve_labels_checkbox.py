@@ -8,7 +8,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, checked_to_bool
-from napari.layers import Labels
+from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
 
 
@@ -32,28 +32,30 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         Label for the layer should preserve labels chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Labels) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup widgets
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
             'Preserve existing labels while painting'
         )
-        preserve_labels_cb.setChecked(self._layer.preserve_labels)
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
-                'preserve_labels',
-                preserve_labels_cb,
-                'setChecked',
+        preserve_labels_cb.setChecked(self._layers[0].preserve_labels)
+        for layer in self._layers:
+            self._callbacks.append(
+                attr_to_settr(
+                    layer,
+                    'preserve_labels',
+                    preserve_labels_cb,
+                    'setChecked',
+                )
             )
-        )
-        connect_setattr(
-            preserve_labels_cb.stateChanged,
-            layer,
-            'preserve_labels',
-            convert_fun=checked_to_bool,
-        )
+            connect_setattr(
+                preserve_labels_cb.stateChanged,
+                layer,
+                'preserve_labels',
+                convert_fun=checked_to_bool,
+            )
         self.preserve_labels_checkbox = preserve_labels_cb
 
         self.preserve_labels_checkbox_label = QtWrappedLabel(

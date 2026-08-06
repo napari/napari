@@ -9,7 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Labels
+from napari.layers.base.base import Layer
 
 
 class QtNdimSpinBoxControl(QtWidgetControlsBase):
@@ -32,13 +32,15 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         Label for the number of editable dimensions chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Labels) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.n_edit_dimensions.connect(
-            self._on_n_edit_dimensions_change
-        )
-        self._layer.events.data.connect(self._on_data_change)
+        for layer in self._layers:
+            layer.events.n_edit_dimensions.connect(
+                self._on_n_edit_dimensions_change
+            )
+            layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
         ndim_sb = QSpinBox()
@@ -46,7 +48,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         ndim_sb.setToolTip('Number of dimensions for label editing')
         ndim_sb.valueChanged.connect(self.change_n_edit_dim)
         ndim_sb.setMinimum(2)
-        ndim_sb.setMaximum(self._layer.ndim)
+        ndim_sb.setMaximum(self._layers[0].ndim)
         ndim_sb.setSingleStep(1)
         ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._on_n_edit_dimensions_change()
@@ -60,7 +62,8 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         value : int
             The number of editable dimensions to set.
         """
-        self._layer.n_edit_dimensions = value
+        for layer in self._layers:
+            layer.n_edit_dimensions = value
         self.ndim_spinbox.clearFocus()
 
         # TODO: Check how to decouple this
@@ -69,13 +72,13 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
     def _on_n_edit_dimensions_change(self) -> None:
         """Receive layer model n-dim mode change event and update the checkbox."""
         with qt_signals_blocked(self.ndim_spinbox):
-            value = self._layer.n_edit_dimensions
+            value = self._layers[0].n_edit_dimensions
             self.ndim_spinbox.setValue(int(value))
             # TODO: Check how to decouple this
-            self.parent()._set_polygon_tool_state()
+            self.parent()._on_ndisplay_changed()  # this syncs the polygon tool button
 
     def _on_data_change(self) -> None:
-        self.ndim_spinbox.setMaximum(self._layer.ndim)
+        self.ndim_spinbox.setMaximum(self._layers[0].ndim)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.ndim_spinbox_label, self.ndim_spinbox)]

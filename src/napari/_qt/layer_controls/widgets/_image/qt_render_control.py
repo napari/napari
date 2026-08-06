@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 from superqt import QLabeledDoubleSlider
@@ -7,11 +11,13 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, qt_signals_blocked
-from napari.layers import Image
 from napari.layers.image._image_constants import (
     ImageRendering,
 )
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 
 class QtImageRenderControl(QtWidgetControlsBase):
@@ -42,20 +48,22 @@ class QtImageRenderControl(QtWidgetControlsBase):
         Label for the attenuation slider widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Image) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.rendering.connect(self._on_rendering_change)
-        self._layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
+        for layer in self._layers:
+            layer.events.rendering.connect(self._on_rendering_change)
+            layer.events.contrast_limits.connect(
+                self._on_contrast_limits_change
+            )
 
         # Setup widgets
         render_combobox = QComboBox(parent)
         rendering_options = [i.value for i in ImageRendering]
         render_combobox.addItems(rendering_options)
         index = render_combobox.findText(
-            self._layer.rendering, Qt.MatchFlag.MatchFixedString
+            self._layers[0].rendering, Qt.MatchFlag.MatchFixedString
         )
         render_combobox.setCurrentIndex(index)
         render_combobox.currentTextChanged.connect(self.change_rendering)
@@ -65,14 +73,15 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        cmin, cmax = self._layer.contrast_limits_range
+        cmin, cmax = self._layers[0].contrast_limits_range
         sld.setMinimum(cmin)
         sld.setMaximum(cmax)
-        sld.setValue(self._layer.iso_threshold)
-        connect_setattr(sld.valueChanged, self._layer, 'iso_threshold')
-        self._callbacks.append(
-            attr_to_settr(self._layer, 'iso_threshold', sld, 'setValue')
-        )
+        sld.setValue(self._layers[0].iso_threshold)
+        for layer in self._layers:
+            connect_setattr(sld.valueChanged, layer, 'iso_threshold')
+            self._callbacks.append(
+                attr_to_settr(layer, 'iso_threshold', sld, 'setValue')
+            )
         self.iso_threshold_slider = sld
 
         self.iso_threshold_label = QtWrappedLabel('iso threshold:')
@@ -82,12 +91,13 @@ class QtImageRenderControl(QtWidgetControlsBase):
         sld.setMinimum(0)
         sld.setMaximum(0.5)
         sld.setSingleStep(0.001)
-        sld.setValue(self._layer.attenuation)
+        sld.setValue(self._layers[0].attenuation)
         sld.setDecimals(3)
-        connect_setattr(sld.valueChanged, self._layer, 'attenuation')
-        self._callbacks.append(
-            attr_to_settr(self._layer, 'attenuation', sld, 'setValue')
-        )
+        for layer in self._layers:
+            connect_setattr(sld.valueChanged, layer, 'attenuation')
+            self._callbacks.append(
+                attr_to_settr(layer, 'attenuation', sld, 'setValue')
+            )
         self.attenuation_slider = sld
 
         self.attenuation_label = QtWrappedLabel('attenuation:')
@@ -115,21 +125,22 @@ class QtImageRenderControl(QtWidgetControlsBase):
               display the maximum value that was encountered after attenuation.
               This will make nearer objects appear more prominent.
         """
-        self._layer.rendering = text
+        for layer in self._layers:
+            layer.rendering = text
         self._update_rendering_parameter_visibility()
 
     def _on_rendering_change(self):
         """Receive layer model rendering change event and update dropdown menu."""
         with qt_signals_blocked(self.render_combobox):
             index = self.render_combobox.findText(
-                self._layer.rendering, Qt.MatchFlag.MatchFixedString
+                self._layers[0].rendering, Qt.MatchFlag.MatchFixedString
             )
             self.render_combobox.setCurrentIndex(index)
             self._update_rendering_parameter_visibility()
 
     def _on_contrast_limits_change(self):
         with qt_signals_blocked(self.iso_threshold_slider):
-            cmin, cmax = self._layer.contrast_limits_range
+            cmin, cmax = self._layers[0].contrast_limits_range
             self.iso_threshold_slider.setMinimum(cmin)
             self.iso_threshold_slider.setMaximum(cmax)
 
@@ -148,7 +159,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
     def _update_rendering_parameter_visibility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
-        rendering = ImageRendering(self._layer.rendering)
+        rendering = ImageRendering(self._layers[0].rendering)
         iso_threshold_visible = rendering == ImageRendering.ISO
         self.iso_threshold_label.setVisible(iso_threshold_visible)
         self.iso_threshold_slider.setVisible(iso_threshold_visible)

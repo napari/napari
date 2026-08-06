@@ -97,7 +97,7 @@ class QtModePushButton(QPushButton):
 
     def __init__(
         self,
-        layer: napari.layers.Layer,
+        layers: list[napari.layers.Layer],
         button_name: str,
         *,
         slot: Callable[[], None] | None = None,
@@ -105,7 +105,7 @@ class QtModePushButton(QPushButton):
     ) -> None:
         super().__init__()
 
-        self.layer = layer
+        self.layers = layers
         self.setProperty('mode', button_name)
         self.setToolTip(tooltip or button_name)
         self.setFixedWidth(28)

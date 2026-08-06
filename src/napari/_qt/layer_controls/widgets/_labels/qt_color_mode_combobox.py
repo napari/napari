@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari.layers import Labels
+from napari.layers.base.base import Layer
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
 )
@@ -34,12 +34,12 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    _layer: Labels
-
-    def __init__(self, parent: QWidget, layer: Labels) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.colormap.connect(self._on_colormap_change)
+        for layer in self._layers:
+            layer.events.colormap.connect(self._on_colormap_change)
 
         # Setup widgets
         color_mode_comboBox = QEnumComboBox(enum_class=LabelColorMode)
@@ -51,14 +51,18 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
 
     def change_color_mode(self) -> None:
         """Change color mode of label layer"""
-        if self.color_mode_combobox.currentEnum() == LabelColorMode.AUTO.value:
-            self._layer.colormap = self._layer._original_random_colormap
-        else:
-            self._layer.colormap = self._layer._direct_colormap
+        for layer in self._layers:
+            if (
+                self.color_mode_combobox.currentEnum()
+                == LabelColorMode.AUTO.value
+            ):
+                layer.colormap = layer._original_random_colormap
+            else:
+                layer.colormap = layer._direct_colormap
 
     def _on_colormap_change(self) -> None:
-        enable_combobox = not self._layer._is_default_colors(
-            self._layer._direct_colormap.color_dict
+        enable_combobox = not self._layers[0]._is_default_colors(
+            self._layers[0]._direct_colormap.color_dict
         )
         self.color_mode_combobox.setEnabled(enable_combobox)
         if not enable_combobox:
@@ -66,7 +70,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
                 'Layer needs a user-set DirectLabelColormap to enable direct '
                 'mode.'
             )
-        if isinstance(self._layer.colormap, CyclicLabelColormap):
+        if isinstance(self._layers[0].colormap, CyclicLabelColormap):
             self.color_mode_combobox.setCurrentEnum(LabelColorMode.AUTO)
         else:
             self.color_mode_combobox.setCurrentEnum(LabelColorMode.DIRECT)

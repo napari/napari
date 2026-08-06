@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import napari
 from napari.layers.base._base_constants import Mode
+from napari.layers.base.base import Layer
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
@@ -14,6 +15,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.utils.action_manager import action_manager
 from napari.utils.events import Event
+from napari.utils.events.containers._selection import Selection
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -38,18 +40,21 @@ def auto_contrast_once(layer: Image) -> None:
 
 
 @register_image_action('Orient plane normal along z-axis')
-def orient_plane_normal_along_z(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
+def orient_plane_normal_along_z(layers: Selection[Layer]) -> None:
+    for layer in layers:
+        orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
 @register_image_action('Orient plane normal along y-axis')
-def orient_plane_normal_along_y(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
+def orient_plane_normal_along_y(layers: Selection[Layer]) -> None:
+    for layer in layers:
+        orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
 @register_image_action('Orient plane normal along x-axis')
-def orient_plane_normal_along_x(layer: Image) -> None:
-    orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
+def orient_plane_normal_along_x(layers: Selection[Layer]) -> None:
+    for layer in layers:
+        orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
 @register_image_action(
@@ -83,13 +88,16 @@ def orient_plane_normal_along_view_direction(
 
 # The generator function above can't be bound to a button, so here
 # is a non-generator version of the function
-def orient_plane_normal_along_view_direction_no_gen(layer: Image) -> None:
+def orient_plane_normal_along_view_direction_no_gen(
+    layers: Selection[Layer],
+) -> None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
         return
-    layer.plane.normal = layer._world_to_displayed_data_normal(
-        viewer.camera.view_direction, [-3, -2, -1]
-    )
+    for layer in layers:
+        layer.plane.normal = layer._world_to_displayed_data_normal(
+            viewer.camera.view_direction, [-3, -2, -1]
+        )
 
 
 # register the non-generator without a keybinding
