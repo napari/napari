@@ -103,9 +103,6 @@ class Vectors(Layer):
         An empty vectors layer can be instantiated with arbitrary ndim.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
-    out_of_slice_display : bool
-        DEPRACATED: If True, renders vectors not just in central plane but also slightly out of slice
-        according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
@@ -176,9 +173,6 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also slightly out of slice
-        according to specified point marker size.
     units: tuple of pint.Unit
         Units of the layer data in world coordinates.
 
