@@ -12,6 +12,7 @@ from napari.settings._constants import (
     BrushSizeOnMouseModifiers,
     LabelDTypes,
     LoopMode,
+    PlaybackUnit,
 )
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
@@ -139,10 +140,25 @@ class ApplicationSettings(EventedModel):
         title='Saved folders history',
         description='Last saved list of saved folders. This setting is managed by the application.',
     )
+    playback_unit: PlaybackUnit = Field(
+        PlaybackUnit.FRAMES_PER_SECOND,
+        title='Playback rate mode',
+        description='How default playback speed is expressed: as a fixed\n'
+        'frame rate for every axis, or as the time one full cycle through\n'
+        'an axis should take (each axis then derives its own frame rate\n'
+        'from its step count).',
+    )
     playback_fps: int = Field(
         10,
         title='Playback frames per second',
         description='Playback speed in frames per second.',
+    )
+    playback_cycle_seconds: float = Field(
+        2.0,
+        gt=0,
+        title='Playback seconds per cycle',
+        description='Default duration of one full playback cycle, used when\n'
+        'the playback rate mode is "seconds_per_cycle".',
     )
     playback_mode: LoopMode = Field(
         LoopMode.LOOP,
