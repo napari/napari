@@ -2383,8 +2383,10 @@ class Shapes(Layer):
 
         This is often needed when calculating screen-space sizes and distances
         of vertices for interactivity (rescaling, adding vertices, etc).
+        We use only the magnitude of the layer scale, because sizes and
+        distances must remain positive.
         """
-        return self.scale_factor / self.scale[-1]
+        return self.scale_factor / abs(self.scale[-1])
 
     @property
     def _normalized_vertex_radius(self):

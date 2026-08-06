@@ -1670,7 +1670,7 @@ class Points(Layer):
             ]
             # positions are scaled anisotropically by scale, but sizes are not,
             # so we need to calculate the ratio to correctly map to screen coordinates
-            scale_ratio = (
+            scale_ratio = np.abs(
                 self.scale[self._slice_input.displayed] / self.scale[-1]
             )
             # Get the point sizes
@@ -1736,7 +1736,9 @@ class Points(Layer):
 
         # positions are scaled anisotropically by scale, but sizes are not,
         # so we need to calculate the ratio to correctly map to screen coordinates
-        scale_ratio = self.scale[self._slice_input.displayed] / self.scale[-1]
+        scale_ratio = np.abs(
+            self.scale[self._slice_input.displayed] / self.scale[-1]
+        )
         # find the points the click intersects
         sizes = np.expand_dims(self._view_size, axis=1) / scale_ratio / 2
         distances = abs(rotated_points - rotated_click_point)
