@@ -60,7 +60,6 @@ class _VectorSliceRequest:
     data_slice: _ThickNDSlice = field(repr=False)
     projection_mode: VectorsProjectionMode
     length: float = field(repr=False)
-    out_of_slice_display: bool = field(repr=False)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _VectorSliceResponse:
