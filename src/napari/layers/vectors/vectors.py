@@ -842,7 +842,6 @@ class _VectorsSlicingState(_LayerSlicingState):
             data=self.layer.data,
             data_slice=data_slice,
             projection_mode=self.layer.projection_mode,
-            out_of_slice_display=self.layer.out_of_slice_display,
             length=self.layer.length,
         )
 
