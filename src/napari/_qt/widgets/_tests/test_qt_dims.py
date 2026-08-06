@@ -281,7 +281,9 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.setText('napari')
+    first_label.setFocus()
+    first_label.selectAll()
+    qtbot.keyClicks(first_label, 'napari')
     assert first_label.text() == view.dims.axis_labels[0]
     assert '…' in first_label._elidedText()
     assert observed_axis_labels_event
@@ -336,6 +338,27 @@ def test_slider_press_updates_last_used(qtbot):
             # visible slider (dim 0)
             assert not widg.isVisibleTo(view)
             assert view.dims.last_used == 0
+
+
+def test_last_used_style_property_set_at_creation(qtbot):
+    """The active slider is marked from the start, not only after a change.
+
+    The ``last_used`` event only fires on a change, so with the default
+    ``last_used == 0`` freshly created sliders never got the style property
+    and the active slider opened unhighlighted.
+    """
+    view = QtDims(Dims(ndim=4))
+    qtbot.addWidget(view)
+
+    assert view.dims.last_used == 0
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [True, False, False, False]
+
+    view.dims.last_used = 1
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [False, True, False, False]
 
 
 @pytest.mark.skipif(

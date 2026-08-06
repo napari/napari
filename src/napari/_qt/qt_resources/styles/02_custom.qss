@@ -23,8 +23,8 @@ QStatusBar {
 /* ------------- Window separator --------- */
 
 QMainWindow::separator {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   padding: 2px;
   border: none;
   background-color: {{ background }};
@@ -190,6 +190,10 @@ QtColorBox {
 QtLayerControls > QComboBox, QtLayerControls > QLabel, QtLayerControls, QtPlaneControls > QLabeledSlider > QAbstractSpinBox {
   color: {{ text }};
 }
+QPushButton#newLabelButton {
+  min-height: 12px;
+  max-height: 12px;
+}
 
 SliderLabel {
   background-color: {{ darken(background, 15) }};
@@ -212,7 +216,7 @@ PlaneNormalButtons QPushButton {
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ highlight }};
+    background: {{ current }};
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
@@ -227,7 +231,7 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
-/* ------------- QtModal (Grid, Play, nDisplay, Roll --------- */
+/* ------------- QtModal (Grid, Play, nDisplay, Roll) --------- */
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */

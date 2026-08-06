@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import struct
 import sys
-import warnings
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -11,7 +10,6 @@ import numpy as np
 
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -56,9 +54,7 @@ def imsave(filename: str, data: np.ndarray):
         '.stk',
     ] and np.issubdtype(data.dtype, np.floating):
         show_warning(
-            trans._(
-                'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
-            )
+            'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
         )
         return
     # Save screenshot image data to output file
@@ -137,30 +133,6 @@ def imsave_tiff(filename, data):
                 compressionargs={'level': 1},
                 bigtiff=True,
             )
-
-
-def __getattr__(name: str):
-    if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
-    }:
-        warnings.warn(
-            trans._(
-                '{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
-                deferred=True,
-                name=name,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        import napari_builtins.io
-
-        return getattr(napari_builtins.io, name)
-
-    raise AttributeError(f'module {__name__} has no attribute {name}')
 
 
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
