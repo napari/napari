@@ -42,6 +42,10 @@ on:
         required: false
         type: string
         default: ""
+      pytest_posargs:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   test:
@@ -65,6 +69,10 @@ jobs:
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+      PYTEST_ADDOPTS: >-
+        ${{ startsWith(inputs.platform, 'ubuntu')
+            && '--pystack-threshold=60 --pystack-args=--native-all'
+            || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -157,11 +165,13 @@ jobs:
         run: |
           echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          read -ra POSARGS <<< "${PYTEST_POSARGS}"
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp "${POSARGS[@]}"
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
+          PYTEST_POSARGS: ${{ inputs.pytest_posargs }}
 
       - name: Test with tox second qt_backend
         timeout-minutes: ${{ inputs.timeout }}
