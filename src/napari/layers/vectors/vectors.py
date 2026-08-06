@@ -26,11 +26,19 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import deprecated_constructor_arg_by_attr
 
 if TYPE_CHECKING:
     import pandas as pd
 
     from napari.components.dims import Dims
+
+_OUT_SLICE_DISP_WARNING_MSG = (
+    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
+)
 
 
 class Vectors(Layer):
@@ -200,6 +208,7 @@ class Vectors(Layer):
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
 
+    @deprecated_constructor_arg_by_attr('out_of_slice_display')
     def __init__(
         self,
         data=None,
@@ -221,7 +230,6 @@ class Vectors(Layer):
         name=None,
         ndim=None,
         opacity=0.7,
-        out_of_slice_display=False,
         projection_mode='all',
         properties=None,
         property_choices=None,
@@ -266,7 +274,11 @@ class Vectors(Layer):
             vector_style=Event,
             edge_color_mode=Event,
             properties=Event,
-            out_of_slice_display=Event,
+            out_of_slice_display=WarningEmitter(
+                _OUT_SLICE_DISP_WARNING_MSG,
+                FutureWarning,
+                type_name='out_of_slice_display',
+            ),
             features=Event,
             feature_defaults=Event,
         )
@@ -274,7 +286,6 @@ class Vectors(Layer):
         # Save the vector style params
         self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
-        self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
 
@@ -459,7 +470,6 @@ class Vectors(Layer):
                 'ndim': self.ndim,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
-                'out_of_slice_display': self.out_of_slice_display,
             }
         )
         return state
@@ -490,25 +500,30 @@ class Vectors(Layer):
     @property
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""
+        warnings.warn(
+            _OUT_SLICE_DISP_WARNING_MSG,
+            category=FutureWarning,
+            stacklevel=2,
+        )
         return self._projection_mode == VectorsProjectionMode.FADE
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
         if out_of_slice_display:
             warnings.warn(
-                'out_of_slice_display is deprecated. For a similar effect, set projection_mode to '
-                '"rescale" and increase the dims margins to project a thicker slice.',
+                _OUT_SLICE_DISP_WARNING_MSG,
                 category=FutureWarning,
                 stacklevel=2,
             )
-        self._projection_mode = (
+        old = self.projection_mode == VectorsProjectionMode.FADE
+        self.projection_mode = (
             VectorsProjectionMode.FADE
             if out_of_slice_display
             else VectorsProjectionMode.ALL
         )
-        self.events.out_of_slice_display()
-        self.events.projection_mode()
-        self.refresh(extent=False)
+        new = self.projection_mode == VectorsProjectionMode.FADE
+        if old != new:
+            self.events.out_of_slice_display()
 
     @property
     def edge_width(self) -> float:
