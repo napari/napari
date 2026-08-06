@@ -95,6 +95,23 @@ def test_list_view_keypress(qtbot):
     assert first not in root
 
 
+@pytest.mark.parametrize('key', [Qt.Key_Delete, Qt.Key_Backspace])
+def test_list_view_delete_ignores_autorepeat(qtbot, key):
+    """Holding delete must not empty the list, one press deletes one item."""
+    root: SelectableEventedList[T] = SelectableEventedList(map(T, range(5)))
+    view = QtListView(root)
+    qtbot.addWidget(view)
+
+    root.selection = {root[0]}
+    # first press deletes, the following auto-repeats must not
+    view.keyPressEvent(QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier))
+    for _ in range(4):
+        view.keyPressEvent(
+            QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier, '', True)
+        )
+    assert len(root) == 4
+
+
 @pytest.mark.parametrize(('sources', 'dest', 'expectation'), BASIC_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
