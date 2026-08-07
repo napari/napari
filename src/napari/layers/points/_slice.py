@@ -157,14 +157,24 @@ class _PointSliceRequest:
                 # in any dimension, then there is no intersection!
                 radius = size / 2
                 radius_segment = np.abs(dist_from_point)
+
+                # discard points whose radius is bigger than the distance to the slice
+                # (no intersection between the sphere and the slice center)
                 valid = np.all(radius_segment < radius[:, None], axis=1)
-                # slice ASAP to reduce computations, discarding non-intersecting spheres
-                # TODO: getting average size for now, but what should I actually do?
-                radius_segment = np.mean(radius_segment[valid], axis=1)
+                radius_segment = radius_segment[valid]
                 radius = radius[valid]
-                # radius of the disc
+
+                # reduce to one dimension by getting the ndimensional "in slice portion"
+                # of the point, and multiplying them together
+                out_of_slice_portion = np.prod(
+                    1 - (radius_segment / radius[:, None])
+                )
+                radius_segment = (1 - out_of_slice_portion) * radius
+
+                # radius of the "disc"
                 disc_radius = np.sqrt(radius**2 - radius_segment**2)
                 size = disc_radius * 2
+
                 visible = visible[valid]
 
         return visible, size
