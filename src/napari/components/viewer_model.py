@@ -41,10 +41,6 @@ from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
-from napari.components.overlays import (
-    CanvasAxesOverlay,
-    SceneAxesOverlay,
-)
 from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -103,7 +99,12 @@ if TYPE_CHECKING:
 
     from napari.components.camera import Camera
     from napari.components.grid import GridCanvas
-    from napari.components.overlays import ScaleBarOverlay, TextOverlay
+    from napari.components.overlays import (
+        CanvasAxesOverlay,
+        ScaleBarOverlay,
+        SceneAxesOverlay,
+        TextOverlay,
+    )
 
 
 DEFAULT_THEME = 'dark'
