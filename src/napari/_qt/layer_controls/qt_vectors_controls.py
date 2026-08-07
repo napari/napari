@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
@@ -41,12 +43,12 @@ class QtVectorsControls(QtLayerControls):
         Widget that wraps a spinbox controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Vectors'
+    layer: napari.layers.Vectors
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: napari.layers.Vectors) -> None:
         super().__init__(layer)
         # Setup widgets controls
         self._width_spinbox_control = QtWidthSpinBoxControl(self, layer)
