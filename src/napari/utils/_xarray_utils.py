@@ -4,15 +4,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple, cast
 
+import numpy as np
+
 if TYPE_CHECKING:
     import xarray as xr
     from numpy.typing import ArrayLike
 
 
 __all__ = (
+    '_CoordMetadata',
+    '_XarrayMetadata',
     '_XarrayProps',
     '_check_xarray',
+    '_coord_metadata',
+    '_datetime_metadata',
     '_get_xr_axis_labels',
+    '_get_xr_metadata',
     '_get_xr_scale',
     '_get_xr_translate',
     '_get_xr_units',
@@ -45,6 +52,20 @@ class _XarrayMetadata(NamedTuple):
     translate: list[float] | None = None
     units: list[str | None] | None = None
 
+
+class _CoordMetadata(NamedTuple):
+    """Scale, translate, and unit inferred for one dimension's coordinate.
+
+    ``unit`` is ``None`` for numeric or string coordinates (napari then uses
+    its default units) and set to the derived time unit for
+    ``datetime64`` coordinates.
+    """
+
+    scale: float
+    translate: float
+    unit: str | None
+
+
 def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
 
@@ -70,51 +91,140 @@ def _get_xr_axis_labels(data: xr.DataArray | xr.Variable) -> tuple[str, ...]:
     return tuple(str(d) for d in data.dims)
 
 
-def _get_xr_scale(data: xr.DataArray) -> list[float]:
-    """Infer scale from first coordinate values spacing.
+# time units, from largest to smallest, mapped to their length in
+# nanoseconds.
+_TIME_UNITS: dict[str, int] = {
+    'day': 86_400 * 10**9,
+    'hour': 3_600 * 10**9,
+    'minute': 60 * 10**9,
+    'second': 10**9,
+    'millisecond': 10**6,
+    'microsecond': 10**3,
+}
 
-    Assumes coordinates are linearly spaced. Falls back to 1.0 for
-    single-element dimensions (size < 2), where spacing is undefined.
+
+def _datetime_metadata(
+    values: np.ndarray,
+) -> _CoordMetadata | None:
+    """Return metadata for a ``datetime64`` coordinate, or ``None``.
+
+    Picks the largest whole time unit (from day down to nanosecond) that
+    divides the spacing between the first two values, so a monthly axis
+    yields ``scale=31, unit='day'``, a 6-hourly axis ``scale=6,
+    unit='hour'``, and a 500 ms axis ``scale=500, unit='millisecond'``.
+    ``translate`` is the first value expressed in that unit, anchored at
+    the ``datetime64`` epoch (1970-01-01) so that layers with different
+    time resolutions share a consistent world frame.
     """
-    return [
-        float(data.coords[d].values[1] - data.coords[d].values[0])
-        if data.coords[d].size >= 2
-        else 1.0
-        for d in data.dims
-    ]
+    if values.size < 2 or not np.issubdtype(values.dtype, np.datetime64):
+        return None
+    if np.isnat(values[0]) or np.isnat(values[1]):
+        # missing (NaT) timestamps give no meaningful spacing/offset; the
+        # caller falls back to index/pixel space
+        return None
+    # integer nanoseconds keeps the divisibility check exact: float modulo
+    # is unreliable for sub-second units (e.g. 0.5 % 0.001 != 0).
+    step_ns = int((values[1] - values[0]) / np.timedelta64(1, 'ns'))
+    translate_ns = int(
+        (
+            values[0].astype('datetime64[ns]')
+            - np.datetime64('1970-01-01', 'ns')
+        )
+        / np.timedelta64(1, 'ns')
+    )
+    for unit, ns in _TIME_UNITS.items():
+        if abs(step_ns) % ns == 0:
+            return _CoordMetadata(
+                scale=float(step_ns) / ns,
+                translate=translate_ns / ns,
+                unit=unit,
+            )
+    # anything finer than a microsecond falls back to nanoseconds (the
+    # resolution of datetime64)
+    return _CoordMetadata(
+        scale=float(step_ns),
+        translate=float(translate_ns),
+        unit='nanosecond',
+    )
+
+
+def _coord_metadata(
+    values: np.ndarray,
+) -> _CoordMetadata:
+    """Return metadata for one dimension's coordinate.
+
+    Numeric coordinates give the spacing between the first two values and
+    the first value; ``datetime64`` coordinates give real-time units via
+    :func:`_datetime_metadata`; single-element, empty, or string
+    coordinates fall back to index/pixel space (scale 1.0, translate 0.0,
+    unit ``None``).  ``unit`` is only set for ``datetime64`` coordinates
+    (``attrs['units']`` is handled separately by :func:`_get_xr_units`).
+    """
+    dt = _datetime_metadata(values)
+    if dt is not None:
+        return dt
+    if values.size > 0 and np.issubdtype(values.dtype, np.number):
+        scale = float(values[1] - values[0]) if values.size >= 2 else 1.0
+        return _CoordMetadata(
+            scale=scale, translate=float(values[0]), unit=None
+        )
+    return _CoordMetadata(scale=1.0, translate=0.0, unit=None)
+
+
+def _get_xr_scale(data: xr.DataArray) -> list[float]:
+    """Infer scale from coordinate spacing.
+
+    Numeric coordinates give the spacing between the first two values;
+    ``datetime64`` coordinates give real-time units (see
+    :func:`_datetime_metadata`); single-element or string coordinates fall
+    back to 1.0 (index/pixel space).
+    """
+    return [_coord_metadata(data.coords[d].values).scale for d in data.dims]
 
 
 def _get_xr_translate(data: xr.DataArray) -> list[float]:
-    """Infer translate (offset) from the first coordinate value.
+    """Infer translate (offset) from coordinates.
 
-    Returns ``coord.values[0]`` for each dimension, which is the
-    physical offset of the first pixel along that axis.
+    Numeric coordinates give the first value; ``datetime64`` coordinates
+    give the offset in the derived time unit, anchored at the ``datetime64``
+    epoch; string coordinates fall back to 0.0.
     """
-    return [float(data.coords[d].values[0]) for d in data.dims]
+    return [
+        _coord_metadata(data.coords[d].values).translate for d in data.dims
+    ]
 
 
 def _get_xr_units(data: xr.DataArray) -> list[str | None]:
     """Read units from coordinate attrs, validating against pint.
 
-    Uses the CF convention (``coord.attrs['units']``).  Invalid unit
-    strings (e.g. ``'degrees_north'``, CF-compliant but not valid in
-    pint alone) are silently dropped and replaced with ``None``, so
-    napari will use its default (pixel) for that axis.
+    Uses the CF convention (``coord.attrs['units']``).  Strings that pint
+    cannot parse (e.g. ``'degrees_north'`` — CF-compliant but not a unit
+    pint knows on its own) are silently dropped and replaced with ``None``,
+    so napari uses its default (pixel) for that axis.  ``datetime64``
+    coordinates with no usable ``units`` attr instead report the time unit
+    derived by :func:`_get_xr_scale` (day down to nanosecond).
 
-    If ``cf_xarray`` is installed its unit registry is loaded
-    automatically, making many CF-standard unit names valid.
+    Users can register additional unit conventions with pint so napari can
+    recognise them, e.g.::
+
+        import pint
+        ureg = pint.get_application_registry()
+        ureg.define('degrees_north = degree')
+
+    napari deliberately does not bundle CF unit conventions itself.
     """
-    # Optionally register CF conventions with pint so that strings
-    # like 'degrees_north', 'degrees_east', 'days since ...' etc.
-    # are recognised as valid pint units.
-    with suppress(ImportError):
-        import cf_xarray.units  # noqa: F401
-
     from napari.utils.transforms._units import get_unit_from_name
 
     units: list[str | None] = []
     for dim in data.dims:
-        unit = data.coords[dim].attrs.get('units')
+        coord = data.coords[dim]
+        if np.issubdtype(coord.values.dtype, np.datetime64):
+            # scale/translate are derived from the datetime spacing, so the
+            # unit must match; an explicit units attr could disagree and is
+            # ignored for datetime coordinates
+            units.append(_coord_metadata(coord.values).unit)
+            continue
+        unit = coord.attrs.get('units')
         if unit is not None:
             try:
                 get_unit_from_name(unit)
