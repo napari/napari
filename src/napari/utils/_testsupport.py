@@ -69,11 +69,6 @@ def fail_obj_graph(Klass):  # pragma: no cover
             max_depth=20,
             filename=str(file_path),
         )
-
-        Klass._instances.clear()
-
-        assert file_path.exists()
-
         # Also store dot files which provide more text
         file_path2 = Path(
             f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
@@ -83,6 +78,10 @@ def fail_obj_graph(Klass):  # pragma: no cover
             max_depth=20,
             filename=str(file_path2),
         )
+
+        Klass._instances.clear()
+
+        assert file_path.exists()
         assert file_path2.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
