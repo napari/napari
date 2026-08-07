@@ -355,6 +355,16 @@ def test_hover_at_left_edge_expands_dock(make_napari_viewer):
     assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
     assert dock.isVisible() is True
 
+    try:
+        assert (
+            qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+        )
+        assert dock.isVisible() is True
+    finally:
+        # Prevent dangling animations
+        for state in qt_window.widgets_sliding_dock_area.values():
+            state['animation'].stop()
+
 
 def test_hover_away_from_center_does_not_expand_dock(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
@@ -387,7 +397,14 @@ def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer, qtbot):
         QPoint(qt_window.width() - 1, qt_window.height() // 2)
     )
 
-    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+    try:
+        assert (
+            qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+        )
+    finally:
+        # Prevent dangling animations
+        for state in qt_window.widgets_sliding_dock_area.values():
+            state['animation'].stop()
 
 
 def test_hover_does_not_affect_dock_when_autohide_disabled(make_napari_viewer):

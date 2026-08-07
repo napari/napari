@@ -228,6 +228,9 @@ class _QtMainWindow(QMainWindow):
         # default width of sliding out dock widget
         self.expanded_size = 250
 
+        self._sliding_dock_callbacks = {}
+        self._is_closing = False
+
     def register_widget_sliding_dock(
         self, dock_widget: QtViewerDockWidget
     ) -> None:
@@ -264,11 +267,7 @@ class _QtMainWindow(QMainWindow):
             'cross_axis_size': None,  # Size across perpendicular axis, e.g. in case of left right widget -> height
         }
 
-        dock_widget.topLevelChanged.connect(
-            lambda floating, dock=dock_widget: self._on_dock_floating_changed(
-                dock, floating
-            )
-        )
+        dock_widget.topLevelChanged.connect(self._on_dock_floating_changed)
 
     def _get_expanded_size(
         self, dock: QtViewerDockWidget, property_name: bytes
@@ -323,10 +322,9 @@ class _QtMainWindow(QMainWindow):
 
         return max(sizes) if sizes else self.expanded_size
 
-    def _on_dock_floating_changed(
-        self, dock: QtViewerDockWidget, floating: bool
-    ) -> None:
+    def _on_dock_floating_changed(self, floating: bool) -> None:
         """Dependent on floating status of the dock widget either register or deregister the dock widget as sliding."""
+        dock = self.sender()
         if floating and dock in self.widgets_sliding_dock_area:
             self.deregister_widget_sliding_dock(dock)
         elif (
@@ -496,6 +494,9 @@ class _QtMainWindow(QMainWindow):
         The dock is only truly hidden (`setVisible(False)`) once the collapse
         animation fully finishes, in `_on_generic_animation_finished`.
         """
+        if self._is_closing:
+            return
+
         state = self.widgets_sliding_dock_area[dock]
         if show == state['visible_state']:
             return
@@ -1095,6 +1096,15 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        self._is_closing = True
+        for state in self.widgets_sliding_dock_area.values():
+            animation = state.get('animation')
+            if animation is not None:
+                animation.stop()
+                state['animation'] = None
+
+        self.widgets_sliding_dock_area.clear()
+
         task_status = self._window._task_status_manager.get_status()
         if (
             event.spontaneous()
