@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -34,6 +33,17 @@ class _XarrayProps(NamedTuple):
     has_dims: bool = False
     has_coords: bool = False
 
+
+class _XarrayMetadata(NamedTuple):
+    """Inferred layer metadata.
+
+    ``None`` fields mean no value could be inferred for that metadata type.
+    """
+
+    axis_labels: tuple[str, ...] | None = None
+    scale: list[float] | None = None
+    translate: list[float] | None = None
+    units: list[str | None] | None = None
 
 def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
@@ -112,3 +122,32 @@ def _get_xr_units(data: xr.DataArray) -> list[str | None]:
                 unit = None
         units.append(unit)
     return units
+
+
+def _get_xr_metadata(
+    data: xr.DataArray | xr.Variable,
+    *,
+    axis_labels: tuple[str, ...] | None = None,
+    scale: list[float] | None = None,
+    translate: list[float] | None = None,
+    units: list[str | None] | None = None,
+) -> _XarrayMetadata:
+    """Return layer metadata inherited from *data*.
+
+    Any field passed in as ``None`` is inferred from *data* where possible;
+    explicitly provided values pass through unchanged.  Only ``axis_labels``
+    is inferred for ``Variable``-like objects, which have no coordinates.
+    """
+    props = _check_xarray(data)
+    if props.has_dims and axis_labels is None:
+        axis_labels = _get_xr_axis_labels(data)
+    if props.has_coords:
+        # only DataArrays have coordinates
+        da = cast('xr.DataArray', data)
+        if scale is None:
+            scale = _get_xr_scale(da)
+        if translate is None:
+            translate = _get_xr_translate(da)
+        if units is None:
+            units = _get_xr_units(da)
+    return _XarrayMetadata(axis_labels, scale, translate, units)

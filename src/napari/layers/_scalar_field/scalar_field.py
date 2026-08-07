@@ -33,13 +33,7 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
-from napari.utils._xarray_utils import (
-    _check_xarray,
-    _get_xr_axis_labels,
-    _get_xr_scale,
-    _get_xr_translate,
-    _get_xr_units,
-)
+from napari.utils._xarray_utils import _get_xr_metadata
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -267,18 +261,17 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        xrprops = _check_xarray(xr_source)
-        if axis_labels is None and xrprops.has_dims:
-            axis_labels = _get_xr_axis_labels(xr_source)
-
-        if scale is None and xrprops.has_coords:
-            scale = _get_xr_scale(xr_source)
-
-        if translate is None and xrprops.has_coords:
-            translate = _get_xr_translate(xr_source)
-
-        if units is None and xrprops.has_coords:
-            units = _get_xr_units(xr_source)
+        xr_metadata = _get_xr_metadata(
+            xr_source,
+            axis_labels=axis_labels,
+            scale=scale,
+            translate=translate,
+            units=units,
+        )
+        axis_labels = xr_metadata.axis_labels
+        scale = xr_metadata.scale
+        translate = xr_metadata.translate
+        units = xr_metadata.units
 
         super().__init__(
             data,
