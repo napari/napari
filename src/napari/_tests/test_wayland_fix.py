@@ -21,7 +21,7 @@ def _apply_env(monkeypatch, env):
     monkeypatch.delenv('PYOPENGL_PLATFORM', raising=False)
 
 
-def _patch_gpu(monkeypatch, nvidia, wayland_plugin, qt_from_conda=False):
+def _patch_gpu(monkeypatch, nvidia, wayland_plugin, qt_from_conda):
     """Stub the Nvidia-driver, Wayland-plugin and conda-Qt probes."""
     monkeypatch.setattr(_wayland_fix, '_nvidia_driver_loaded', lambda: nvidia)
     monkeypatch.setattr(
@@ -50,7 +50,7 @@ def test_fix_wayland_opengl_no_op(
 ):
     """Leaves env untouched unless the workaround can actually help."""
     monkeypatch.setattr(sys, 'platform', platform)
-    _patch_gpu(monkeypatch, nvidia, wayland_plugin)
+    _patch_gpu(monkeypatch, nvidia, wayland_plugin, qt_from_conda=False)
     _apply_env(monkeypatch, env)
     _fix_wayland_opengl()
     assert 'QT_QPA_PLATFORM' not in os.environ
@@ -68,7 +68,7 @@ def test_fix_wayland_opengl_no_op(
 def test_fix_wayland_opengl_sets_vars(monkeypatch, nvidia, wayland_plugin):
     """Sets xcb+glx on Nvidia or when no native Wayland plugin is present."""
     monkeypatch.setattr(sys, 'platform', 'linux')
-    _patch_gpu(monkeypatch, nvidia, wayland_plugin)
+    _patch_gpu(monkeypatch, nvidia, wayland_plugin, qt_from_conda=False)
     _apply_env(monkeypatch, WAYLAND_ENV)
     _fix_wayland_opengl()
     assert os.environ['QT_QPA_PLATFORM'] == 'xcb'
@@ -88,7 +88,7 @@ def test_fix_wayland_opengl_no_display_hint(
 ):
     """Prints an install hint when Qt cannot load any platform plugin."""
     monkeypatch.setattr(sys, 'platform', 'linux')
-    _patch_gpu(monkeypatch, False, wayland_plugin, qt_from_conda)
+    _patch_gpu(monkeypatch, False, wayland_plugin, qt_from_conda=qt_from_conda)
     _apply_env(monkeypatch, {'WAYLAND_DISPLAY': 'wayland-0'})
     _fix_wayland_opengl()
     err = capsys.readouterr().err
@@ -100,7 +100,9 @@ def test_fix_wayland_opengl_no_display_hint(
 def test_fix_wayland_opengl_does_not_override(monkeypatch):
     """Does not override env vars already set by the user."""
     monkeypatch.setattr(sys, 'platform', 'linux')
-    _patch_gpu(monkeypatch, nvidia=False, wayland_plugin=False)
+    _patch_gpu(
+        monkeypatch, nvidia=False, wayland_plugin=False, qt_from_conda=False
+    )
     _apply_env(monkeypatch, WAYLAND_ENV)
     monkeypatch.setenv('QT_QPA_PLATFORM', 'wayland')
     monkeypatch.setenv('PYOPENGL_PLATFORM', 'egl')

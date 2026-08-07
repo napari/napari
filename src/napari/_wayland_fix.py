@@ -31,7 +31,7 @@ def _qt_plugins_path() -> str | None:
 
         try:
             return QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
-        except AttributeError:  # PyQt5/PySide2 spelling
+        except AttributeError:  # PyQt5 spelling
             return QLibraryInfo.location(QLibraryInfo.PluginsPath)  # type: ignore[attr-defined]
     except (ImportError, AttributeError, OSError):
         return None
@@ -48,6 +48,8 @@ def _native_wayland_plugin_available() -> bool:
     plugins = _qt_plugins_path()
     if plugins is None:
         return True
+    # Globbed because the plugin file name is not stable: Qt5 and Qt6 <= 6.9
+    # ship libqwayland-generic.so, Qt6 >= 6.10 a single libqwayland.so.
     return bool(glob.glob(os.path.join(plugins, 'platforms', '*wayland*')))
 
 
@@ -97,8 +99,9 @@ def _fix_wayland_opengl() -> None:
     if not os.environ.get('DISPLAY'):
         if _qt_from_conda() and not _native_wayland_plugin_available():
             sys.stderr.write(
-                'You use Qt from conda and need qt6-wayland installed to '
-                'start napari install qt6-wayland using conda install qt6-wayland or pixi add qt6-wayland'
+                'You use Qt from conda and need qt6-wayland to start '
+                'napari: install it with conda install qt6-wayland or '
+                'pixi add qt6-wayland\n'
             )
         return
     if not _nvidia_driver_loaded() and _native_wayland_plugin_available():
