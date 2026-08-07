@@ -242,6 +242,17 @@ class TestLockedDataLevel:
         assert layer.locked_data_level is None
 
 
+def test_locked_data_level_constructor():
+    """locked_data_level can be set via the Image constructor."""
+    data = _make_multiscale_3d()
+    layer = Image(data, multiscale=True, locked_data_level=2)
+    assert layer.locked_data_level == 2
+
+    # Default (None) should also be safe
+    layer2 = Image(data, multiscale=True)
+    assert layer2.locked_data_level is None
+
+
 def _draw_layer(layer, shape_threshold=(800, 600)):
     """Call ``_update_draw`` with a viewport that sees the full data extent."""
     displayed = layer._slice_input.displayed
