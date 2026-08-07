@@ -95,7 +95,7 @@ def _fix_wayland_opengl() -> None:
     if not wayland_active:
         return
     if not os.environ.get('DISPLAY'):
-        if not _native_wayland_plugin_available() and _qt_from_conda():
+        if _qt_from_conda() and not _native_wayland_plugin_available():
             sys.stderr.write(
                 'You use Qt from conda and need qt6-wayland installed to '
                 'start napari: conda install -c conda-forge qt6-wayland\n'
