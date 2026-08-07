@@ -647,6 +647,20 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if isinstance(
             base_layer := self.layers.selection.active, ScalarFieldBase
         ):
+            if 'progressive_loader' in base_layer.metadata:
+                # experimental: the new Labels layer must mirror the
+                # progressive pyramid, not be a single dense array
+                from napari.experimental._auto_progressive import (
+                    add_progressive_labels_like,
+                )
+
+                add_progressive_labels_like(
+                    base_layer,
+                    self,
+                    get_settings().application.new_labels_dtype,
+                )
+                return
+
             layer = Labels(
                 data=np.zeros(
                     base_layer.data.shape[

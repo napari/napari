@@ -17,7 +17,8 @@ from napari.utils.notifications import notification_manager
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
 if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
-        'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
+        'Use `napari/_tests/test_examples.py` to test examples.',
+        allow_module_level=True,
     )
 
 # not testing these examples
@@ -30,6 +31,19 @@ skip = [
     'embed_ipython_.py',  # fails without monkeypatch
     'new_theme.py',  # testing theme is extremely slow on CI
     'dynamic-projections-dask.py',  # extremely slow / does not finish
+    'progressive_loading_mandelbrot_.py',  # too slow without numba (optional dep)
+    'progressive_loading_mandelbulb_.py',  # too slow without numba (optional dep)
+    'progressive_loading_mandelbulb_rgb_.py',  # too slow without numba
+    'progressive_loading_ome_zarr_.py',  # requires network access
+    'progressive_loading_viewer_uv_.py',  # uv-only launcher, requires network access
+    'progressive_loading_local_zarr_.py',  # too slow without numba (optional dep)
+    'progressive_loading_cosem_labels_.py',  # requires network + s3fs
+    'progressive_loading_wsi_.py',  # requires network + s3fs
+    'progressive_loading_cosem_cardiac_.py',  # requires network + s3fs
+    'progressive_loading_cosem_hela_labels_.py',  # requires network + s3fs
+    'progressive_loading_cosem_covid_.py',  # requires network + s3fs
+    'progressive_loading_giant_2d_.py',  # requires network access
+    'progressive_loading_platynereis_.py',  # requires network access
 ]
 # To skip examples during docs build end name with `_.py`
 
@@ -38,11 +52,15 @@ skip = [
 skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
 
 EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples/'
-DEV_EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+DEV_EXAMPLE_DIR = (
+    Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+)
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
-dev_examples = [f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev]
+dev_examples = [
+    f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev
+]
 
 
 # still some CI segfaults, but only on windows with pyqt5
@@ -53,14 +71,11 @@ if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
 
 
-
-
 @pytest.fixture(autouse=True)
 def _mock_pooch(monkeypatch):
     from napari.utils._examples_data import napari_choose_downloader
 
     monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
-
 
 
 @pytest.fixture
