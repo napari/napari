@@ -305,7 +305,7 @@ def test_sliding_dock_cross_axis_size_preserved_across_cycles(
             )
             qt_window.widgets_sliding_dock_area[dock]['animation'].stop()
             qt_window._on_dock_size_animated(
-                dock, dock.width(), Qt.Orientation.Horizontal
+                dock.width(), dock=dock, orientation=Qt.Orientation.Horizontal
             )
         QApplication.processEvents()
 
@@ -327,7 +327,7 @@ def test_sliding_dock_cross_axis_size_preserved_across_cycles(
 
     qt_window.widgets_sliding_dock_area[dock_b]['cross_axis_size'] = None
     qt_window._on_dock_size_animated(
-        dock_b, dock_b.width(), Qt.Orientation.Horizontal
+        dock_b.width(), dock=dock_b, orientation=Qt.Orientation.Horizontal
     )
     QApplication.processEvents()
     remembered_height = qt_window.widgets_sliding_dock_area[dock_b][
