@@ -171,10 +171,12 @@ class LabelRendering:
 
     def _time_zoom_change(self, *_):
         """Time to zoom in and zoom out."""
-        initial_zoom = self.viewer.scene.camera.zoom
-        self.viewer.scene.camera.zoom = 0.5 * initial_zoom
+        # TODO: this uses the old acess (viewer.camera instead of viewer.scene.camera)
+        #       so the benchmark is backward compatible. Eventually to be updated.
+        initial_zoom = self.viewer.camera.zoom
+        self.viewer.camera.zoom = 0.5 * initial_zoom
         self.app.processEvents()
-        self.viewer.scene.camera.zoom = 2 * initial_zoom
+        self.viewer.camera.zoom = 2 * initial_zoom
         self.app.processEvents()
 
 
@@ -215,7 +217,9 @@ class LabelRenderingSuite3D(LabelRendering):
     def time_rotate(self, *_):
         """Time to rotate the layer."""
         for i in range(0, (self.steps * 20), 5):
-            self.viewer.scene.camera.angles = (0, i / 2, i)
+            # TODO: this uses the old acess (viewer.camera instead of viewer.scene.camera)
+            #       so the benchmark is backward compatible. Eventually to be updated.
+            self.viewer.camera.angles = (0, i / 2, i)
             self.app.processEvents()
 
     def time_iterate_components(self, *args):
