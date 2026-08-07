@@ -32,6 +32,15 @@ class LabelsPolygonOverlay(SceneOverlay):
     completion_radius : int | float
         Defines the radius from the first polygon vertex within which
         the drawing process can be completed by a left double-click.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     enabled: bool = False
