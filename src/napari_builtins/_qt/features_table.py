@@ -766,8 +766,8 @@ class FeaturesTable(QWidget):
         self.setLayout(QVBoxLayout())
 
         self.info = QLabel('')
-        self.editable_toggle = QToggleSwitch('editable.')
         self.join_toggle = QToggleSwitch('shared columns only')
+        self.editable_toggle = QToggleSwitch('editable.')
         self.add_column_button = QtViewerPushButton(
             'add_button',
             tooltip='Add Column',
@@ -787,16 +787,17 @@ class FeaturesTable(QWidget):
         self.table = PandasView()
         self.layout().addWidget(self.info)
         button_layout = QHBoxLayout()
-        button_layout.addWidget(self.editable_toggle)
         button_layout.addWidget(self.join_toggle)
+        button_layout.addWidget(self.editable_toggle)
+        button_layout.addStretch()
         button_layout.addWidget(self.add_column_button)
         button_layout.addWidget(self.delete_column_button)
         button_layout.addWidget(self.save_button)
         self.layout().addLayout(button_layout)
         self.layout().addWidget(self.table)
 
-        self.editable_toggle.toggled.connect(self._on_editable_change)
         self.join_toggle.toggled.connect(self._on_join_change)
+        self.editable_toggle.toggled.connect(self._on_editable_change)
 
         self.table.selectionModel().selectionChanged.connect(
             self._on_table_selection_changed
@@ -882,8 +883,8 @@ class FeaturesTable(QWidget):
 
             # Show widgets and update table
             self._on_features_change()
-            self.editable_toggle.setVisible(True)
             self.join_toggle.setVisible(len(self._selected_layers) > 1)
+            self.editable_toggle.setVisible(True)
             # sync edit buttons state
             self._on_editable_change()
             self.save_button.setVisible(True)
@@ -904,8 +905,8 @@ class FeaturesTable(QWidget):
                 self.info.setText(f'Features of [{layer_names}]')
         else:
             # Hide widgets and show appropriate message
-            self.editable_toggle.setVisible(False)
             self.join_toggle.setVisible(False)
+            self.editable_toggle.setVisible(False)
             self.save_button.setVisible(False)
             self.table.setVisible(False)
             self.add_column_button.setVisible(False)
