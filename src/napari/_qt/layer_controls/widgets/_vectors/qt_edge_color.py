@@ -52,11 +52,6 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         # Setup widgets
         # dropdown to select the feature for mapping edge_color
         self.color_feature_box = QComboBox(parent)
-        # Populate before connecting: inserting the first item emits
-        # currentTextChanged, and connecting first would assign that feature
-        # as the layer's edge_color while the controls are being built —
-        # replacing an explicitly requested direct color with feature-mapped
-        # colors the layer then keeps when its mode is restored.
         self.color_feature_box.addItems(self._layer.features.columns)
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
@@ -111,9 +106,6 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             Edge color for vectors. Must be: 'direct', 'cycle', or 'colormap'
         """
         old_mode = self._layer.edge_color_mode
-        # Block only this widget's own resync callback; a bare blocker() would
-        # silence every listener of the event, leaving other observers of
-        # edge_color_mode unaware of mode changes made through these controls.
         with self._layer.events.edge_color_mode.blocker(
             self._on_edge_color_mode_change
         ):
@@ -122,13 +114,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
                 self._update_edge_color_gui(mode)
 
             except ValueError:
-                # The rejected mode never took effect: roll back silently —
-                # listeners must not be notified of a change that did not
-                # happen — and restore the GUI through the resync handler,
-                # whose blocked combobox signal avoids re-entering this method.
-                with self._layer.events.edge_color_mode.blocker():
-                    self._layer.edge_color_mode = old_mode
-                self._on_edge_color_mode_change()
+                # if the color mode was invalid, revert to the old mode (layer and GUI)
+                self._layer.edge_color_mode = old_mode
+                self.color_mode_combobox.setCurrentText(old_mode)
                 raise
 
     def _on_edge_color_mode_change(self):
