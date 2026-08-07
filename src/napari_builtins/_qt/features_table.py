@@ -44,6 +44,7 @@ from napari.utils.misc import in_ipython
 if TYPE_CHECKING:
     import napari
     import napari.components
+    from napari.layers import Layer
 
 
 class PandasModel(QAbstractTableModel):
@@ -753,7 +754,7 @@ class FeaturesTable(QWidget):
         viewer: napari.viewer.ViewerModel,
     ) -> None:
         super().__init__()
-        self._selected_layers = []
+        self._selected_layers: list[Layer] = []
         self._selection_blocked = False
 
         self.viewer = viewer
@@ -1281,7 +1282,7 @@ class FeaturesTable(QWidget):
 
     def _add_column(self):
         model = self.table.model().sourceModel()
-        df = model.df.copy()
+        df = model.df
 
         base_name = 'new_column'
         col_name = base_name
@@ -1305,9 +1306,10 @@ class FeaturesTable(QWidget):
                 value = pd.eval(
                     expr, local_dict={'df': df, 'pd': pd, 'np': np}
                 )
-            df[col_name] = value
-            if value:
-                df[col_name] = df[col_name].astype(dtype)
+            for layer in self._selected_layers:
+                layer.features[col_name] = pd.Series(
+                    value, index=layer.features.index, dtype=dtype
+                )
 
         except (ValueError, TypeError, KeyError, SyntaxError) as e:
             QMessageBox.warning(
@@ -1315,10 +1317,10 @@ class FeaturesTable(QWidget):
                 'Invalid Expression or Dtype',
                 f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}\n\nFalling back to None.",
             )
-            df[col_name] = None
+            for layer in self._selected_layers:
+                layer.features[col_name] = None
 
-        self._active_layer.features = df
-        model.replace_data(df)
+        self._on_features_change()
 
     def _delete_column(self):
         model = self.table.model().sourceModel()
@@ -1358,11 +1360,13 @@ class FeaturesTable(QWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        self._active_layer.features = self._active_layer.features.drop(
-            columns=col_names
-        )
+        for layer in self._selected_layers:
+            layer.features.drop(
+                columns=col_names,
+                inplace=True,
+            )
 
-        model.replace_data(self._active_layer.features)
+        self._on_features_change()
 
     def _on_save_clicked(self):
         dlg = QFileDialog()
