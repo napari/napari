@@ -246,6 +246,8 @@ def test_sliding_dock_area_disable_restores_user_size(make_napari_viewer):
     QApplication.processEvents()
     assert dock.width() == 444
 
+    for state_dict in qt_window.widgets_sliding_dock_area.values():
+        state_dict['animation'].stop()
     viewer.close()
 
 
@@ -345,6 +347,8 @@ def test_sliding_dock_cross_axis_size_preserved_across_cycles(
         expand_both()
         assert dock_b.height() == remembered_height
 
+    for state_dict in qt_window.widgets_sliding_dock_area.values():
+        state_dict['animation'].stop()
     viewer.close()
 
 
@@ -362,6 +366,8 @@ def test_hover_at_left_edge_expands_dock(make_napari_viewer):
     assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
     assert dock.isVisible() is True
 
+    for state_dict in qt_window.widgets_sliding_dock_area.values():
+        state_dict['animation'].stop()
     viewer.close()
 
 
@@ -383,7 +389,7 @@ def test_hover_away_from_center_does_not_expand_dock(make_napari_viewer):
     viewer.close()
 
 
-def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer):
+def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer, qtbot):
     viewer = make_napari_viewer(show=True)
     qt_window = viewer.window._qt_window
     settings = get_settings()
@@ -400,12 +406,12 @@ def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer):
 
     assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
 
+    for state_dict in qt_window.widgets_sliding_dock_area.values():
+        state_dict['animation'].stop()
     viewer.close()
 
 
-def test_hover_does_not_affect_dock_when_autohide_disabled(
-    make_napari_viewer,
-):
+def test_hover_does_not_affect_dock_when_autohide_disabled(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
     qt_window = viewer.window._qt_window
     settings = get_settings()
@@ -418,5 +424,3 @@ def test_hover_does_not_affect_dock_when_autohide_disabled(
     qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
 
     assert dock.isVisible() == was_visible
-
-    viewer.close()
