@@ -2364,6 +2364,9 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        get_settings().appearance.events.dock_area_autohide.disconnect(
+            self._register_widgets_sliding_dock_area
+        )
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
