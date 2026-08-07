@@ -1,13 +1,25 @@
 from pathlib import Path
 from typing import Any
 
-from napari.settings._base import _NOT_SET
+from napari.settings._base import (
+    _NOT_SET,
+)
 from napari.settings._napari_settings import (
     CURRENT_SCHEMA_VERSION,
     NapariSettings,
 )
+from napari.settings._plugin_config_generator import (
+    PluginPreferences,
+    plugin_configuration_generator,
+)
+from napari.utils._platformdirs import user_config_dir
 
-__all__ = ['CURRENT_SCHEMA_VERSION', 'NapariSettings', 'get_settings']
+__all__ = [
+    'CURRENT_SCHEMA_VERSION',
+    'NapariSettings',
+    'get_plugin_settings',
+    'get_settings',
+]
 
 
 class _SettingsProxy:
@@ -59,3 +71,43 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         )
 
     return _SETTINGS
+
+
+_PLUGIN_PREFERENCES: dict[str, PluginPreferences] = {}
+
+
+def get_plugin_settings(
+    plugin: str | None = None,
+    path_dir=_NOT_SET,
+) -> dict[str, PluginPreferences] | PluginPreferences:
+    global _PLUGIN_PREFERENCES
+
+    if not _PLUGIN_PREFERENCES:
+        if path_dir is _NOT_SET:
+            path_dir = Path(user_config_dir())
+        elif path_dir is not None:
+            path_dir = Path(path_dir).resolve()
+
+        for key, model in plugin_configuration_generator().items():
+            config_path = (
+                None if path_dir is None else path_dir / f'{key}.yaml'
+            )
+            _PLUGIN_PREFERENCES[key] = model(config_path=config_path)
+
+    elif path_dir is not _NOT_SET:
+        import inspect
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        raise RuntimeError(
+            f'The path can only be set once per session. '
+            f'Settings called from {calframe[1][3]}'
+        )
+
+    if plugin is not None:
+        try:
+            return _PLUGIN_PREFERENCES[plugin]
+        except KeyError as err:
+            raise KeyError(f"Plugin named '{plugin}' does not exist.") from err
+
+    return _PLUGIN_PREFERENCES
