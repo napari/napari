@@ -1,16 +1,16 @@
 import numpy as np
 from vispy.util.quaternion import Quaternion
 
-from napari._vispy.overlays.floating_axes import VispyFloatingAxesOverlay
+from napari._vispy.overlays.canvas_axes import VispyCanvasAxesOverlay
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
-from napari.components.overlays import FloatingAxesOverlay
+from napari.components.overlays import CanvasAxesOverlay
 
 
-def test_floating_axes_dimensions_properly_detected():
+def test_canvas_axes_dimensions_properly_detected():
     viewer = ViewerModel()
-    axes_model = FloatingAxesOverlay()
-    axes_view = VispyFloatingAxesOverlay(
+    axes_model = CanvasAxesOverlay()
+    axes_view = VispyCanvasAxesOverlay(
         viewer=viewer, overlay=axes_model, font_info=FontInfo()
     )
     viewer.dims.ndim = 2
@@ -42,20 +42,20 @@ def _assert_quat_equal(q1, q2):
 
 def test_angles():
     viewer = ViewerModel()
-    axes_model = FloatingAxesOverlay()
-    axes_view = VispyFloatingAxesOverlay(
+    axes_model = CanvasAxesOverlay()
+    axes_view = VispyCanvasAxesOverlay(
         viewer=viewer, overlay=axes_model, font_info=FontInfo()
     )
     viewer.dims.ndim = 3
     viewer.dims.ndisplay = 3
 
-    viewer.camera.angles = (0, 0, 0)
+    viewer.scene.camera.angles = (0, 0, 0)
 
     _assert_quat_equal(
         axes_view.node.camera._quaternion, Quaternion(0.707, 0.707, 0, 0)
     )
 
-    viewer.camera.angles = (-45, 0, -45)
+    viewer.scene.camera.angles = (-45, 0, -45)
 
     _assert_quat_equal(
         axes_view.node.camera._quaternion,
@@ -65,7 +65,7 @@ def test_angles():
     # we have z flip by default
     assert axes_view.node.camera.flip == (False, False, True)
     # changing flip affects flip and quaternion
-    viewer.camera.orientation = ('away', 'down', 'right')
+    viewer.scene.camera.orientation = ('away', 'down', 'right')
     axes_view.node.camera.flip = (False, False, False)
     _assert_quat_equal(
         axes_view.node.camera._quaternion,

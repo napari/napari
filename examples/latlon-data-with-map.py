@@ -73,8 +73,8 @@ bounds_map_wgs84 = gpd.GeoSeries(
 
 # display the background map in napari
 viewer = napari.Viewer()
-viewer.camera.orientation2d = 'up','right'
-viewer.floating_axes.visible = True
+viewer.scene.camera.orientation2d = 'up','right'
+viewer.canvas.overlays.axes.visible = True
 viewer.dims.axis_labels = 'lat','lon'
 viewer.window.add_plugin_dock_widget('napari', 'Features table widget')
 
