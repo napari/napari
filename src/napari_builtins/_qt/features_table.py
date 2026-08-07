@@ -12,20 +12,14 @@ from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
-    QSize,
     QSortFilterProxyModel,
     Qt,
     QTimer,
 )
 from qtpy.QtGui import (
-    QColor,
     QGuiApplication,
-    QIcon,
     QKeySequence,
-    QPainter,
-    QPixmap,
 )
-from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -36,7 +30,6 @@ from qtpy.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
@@ -44,6 +37,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import QToggleSwitch
 
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.utils.history import get_save_history
 from napari.utils.misc import in_ipython
 
@@ -773,21 +767,22 @@ class FeaturesTable(QWidget):
         self.info = QLabel('')
         self.toggle = QToggleSwitch('editable.')
         self.join_toggle = QToggleSwitch('shared columns only')
-        self.add_column = CustomIconPushButton(
+        self.add_column = QtViewerPushButton(
+            'add_button',
             tooltip='Add Column',
-            icon_path='src/napari/resources/icons/add.svg',
-            icon_color='green',
+            slot=self._add_column,
         )
-        self.delete_column = CustomIconPushButton(
+        self.delete_column = QtViewerPushButton(
+            'delete_button',
             tooltip='Delete Column',
-            icon_path='src/napari/resources/icons/delete.svg',
-            icon_color='red',
+            slot=self._delete_column,
         )
-        self.save = CustomIconPushButton(
+        self.save = QtViewerPushButton(
+            'save',
             tooltip='Save as CSV',
-            icon_path='src/napari/resources/icons/save.svg',
-            icon_color='blue',
+            slot=self._on_save_clicked,
         )
+
         self.table = PandasView()
         self.layout().addWidget(self.info)
         button_layout = QHBoxLayout()
@@ -801,9 +796,6 @@ class FeaturesTable(QWidget):
 
         self.toggle.toggled.connect(self._on_editable_change)
         self.join_toggle.toggled.connect(self._on_join_change)
-        self.save.clicked.connect(self._on_save_clicked)
-        self.delete_column.clicked.connect(self._delete_column)
-        self.add_column.clicked.connect(self._add_column)
 
         self.table.selectionModel().selectionChanged.connect(
             self._on_table_selection_changed
@@ -1458,50 +1450,6 @@ class FeaturesTable(QWidget):
         # Remove invalid characters
         suggested_name = selected_layer_name.translate(translation_table)
         return suggested_name
-
-
-class CustomIconPushButton(QPushButton):
-    def __init__(
-        self,
-        button_name: str = '',
-        tooltip: str = '',
-        icon_path: str = '',
-        icon_color: str = 'white',
-        slot=None,
-    ):
-        super().__init__(button_name)
-
-        tooltip = tooltip or button_name
-        self.setToolTip(tooltip)
-
-        if icon_path != '':
-            icon = self._colored_svg_icon(icon_path, QColor(icon_color))
-            self.setIcon(icon)
-
-        if slot is not None:
-            self.clicked.connect(slot)
-
-    def _colored_svg_icon(self, path: str, color: QColor) -> QIcon:
-        size = QSize(28, 28)
-
-        svg_renderer = QSvgRenderer(path)
-        base_pixmap = QPixmap(size)
-        base_pixmap.fill(Qt.transparent)
-
-        painter = QPainter(base_pixmap)
-        svg_renderer.render(painter)
-        painter.end()
-
-        tinted_pixmap = QPixmap(size)
-        tinted_pixmap.fill(Qt.transparent)
-
-        painter = QPainter(tinted_pixmap)
-        painter.drawPixmap(0, 0, base_pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-        painter.fillRect(tinted_pixmap.rect(), color)
-        painter.end()
-
-        return QIcon(tinted_pixmap)
 
 
 class AddColumnDialog(QDialog):
