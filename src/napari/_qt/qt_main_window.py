@@ -5,6 +5,7 @@ wrap.
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import inspect
 import os
@@ -622,8 +623,7 @@ class _QtMainWindow(QMainWindow):
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 
-        self.status_thread.close_terminate()
-        self.status_thread.wait()
+        self._stop_worker_threads()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -644,12 +644,15 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
-        self._qt_viewer.dims.stop()
-
         if self._quit_app:
             quit_app_()
 
         event.accept()
+
+    def _stop_worker_threads(self) -> None:
+        self.status_thread.close_terminate()
+        self.status_thread.wait()
+        self._qt_viewer.dims.stop()
 
     def restart(self):
         """Restart the napari application in a detached process."""
@@ -677,6 +680,15 @@ class _QtMainWindow(QMainWindow):
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
+
+
+@atexit.register
+def _shutdown_open_windows() -> None:
+    """Stop worker threads for windows still open at interpreter shutdown."""
+    for window in list(_QtMainWindow._instances):
+        # Qt may have deleted a window while leaving its Python wrapper alive.
+        with contextlib.suppress(RuntimeError):
+            window._stop_worker_threads()
 
 
 class Window:
