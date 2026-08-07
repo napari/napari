@@ -26,7 +26,7 @@ class _XarrayProps(NamedTuple):
     Attributes
     ----------
     has_dims : bool
-        True if data exposes ``.dims`` (NamedArray / Variable / DataArray).
+        True if data exposes ``.dims`` (Variable / DataArray).
     has_coords : bool
         True if data exposes ``.coords`` (DataArray only).
     """
@@ -38,18 +38,18 @@ class _XarrayProps(NamedTuple):
 def _check_xarray(data: ArrayLike) -> _XarrayProps:
     """Check what xarray properties *data* exposes.
 
-    Returns a named tuple with ``has_dims`` (True for NamedArray and all
-    subclasses) and ``has_coords`` (True for DataArray only).
+    Returns a named tuple with ``has_dims`` (True for Variable / DataArray)
+    and ``has_coords`` (True for DataArray only).
     """
+    # xarray is an optional dependency, so it may not be importable.
     try:
         import xarray as xr
-        from xarray.namedarray.core import NamedArray
     except ImportError:
         return _XarrayProps()
 
     if isinstance(data, xr.DataArray):
         return _XarrayProps(has_dims=True, has_coords=True)
-    if isinstance(data, (xr.Variable, NamedArray)):
+    if isinstance(data, xr.Variable):
         return _XarrayProps(has_dims=True)
 
     return _XarrayProps()
