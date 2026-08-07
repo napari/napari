@@ -48,8 +48,8 @@ def _native_wayland_plugin_available() -> bool:
     plugins = _qt_plugins_path()
     if plugins is None:
         return True
-    # Globbed because the plugin file name is not stable: Qt5 and Qt6 <= 6.9
-    # ship libqwayland-generic.so, Qt6 >= 6.10 a single libqwayland.so.
+    # Globbed because the plugin file name is not stable: Qt <= 6.9 ships
+    # libqwayland-generic.so, Qt >= 6.10 a single libqwayland.so.
     return bool(glob.glob(os.path.join(plugins, 'platforms', '*wayland*')))
 
 
