@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.utils.qt_font import FontInfo
@@ -39,12 +38,4 @@ def test_scale_bar_inconsistent_units_default_to_pixel(
     assert vispy_scale_bar._unit.units.dimensionless
     img1.units = ('um', 'um')
     vispy_scale_bar._on_unit_change()
-    assert vispy_scale_bar._unit.units == 'micrometer'
-    with pytest.warns(
-        FutureWarning,
-        match='Setting unit on the ScaleBar model is deprecated.',
-    ):
-        model.unit = 's'
-    vispy_scale_bar._on_unit_change()
-    # this has no effect now, it should not change
     assert vispy_scale_bar._unit.units == 'micrometer'
