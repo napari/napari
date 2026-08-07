@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QAbstractSpinBox,
     QComboBox,
+    QDialog,
     QDoubleSpinBox,
     QFileDialog,
     QLineEdit,
@@ -210,7 +211,7 @@ def test_features_table_edit(qtbot):
     w.table.edit(idx)
     assert w.table.state() != QAbstractItemView.State.EditingState
 
-    w.toggle.click()
+    w.editable_toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
     assert w.table.state() == QAbstractItemView.State.EditingState
@@ -231,12 +232,15 @@ def test_features_table_add_columns(qtbot):
     layer = v.add_points(np.zeros((2, 2)), features={'a': [1, 2]})
 
     assert 'b' not in model.df.columns
-    with patch(
-        'napari_builtins._qt.features_table.QInputDialog.getText',
-        side_effect=[
-            ('b', True),
-            ('df["a"] + 10', True),
-        ],
+    with (
+        patch(
+            'napari_builtins._qt.features_table.AddColumnDialog.exec_',
+            lambda x: QDialog.Accepted,
+        ),
+        patch(
+            'napari_builtins._qt.features_table.AddColumnDialog.get_values',
+            lambda x: ('b', 'df["a"] + 10', 'float'),
+        ),
     ):
         w._add_column()
 
@@ -284,7 +288,7 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
         QFileDialog, 'getSaveFileName', MagicMock(return_value=(path, None))
     )
 
-    w.save.click()
+    w.save_button.click()
 
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
 
@@ -326,7 +330,7 @@ def test_features_table_copy_paste(qtbot, qapp):
         QItemSelectionModel.SelectionFlag.ClearAndSelect,
     )
 
-    w.toggle.click()
+    w.editable_toggle.click()
     QGuiApplication.clipboard().setText('3\t8\t7')
     # we test here that presence of additional columns does not
     # cause issues when pasting and we just discard them
@@ -376,7 +380,7 @@ def test_features_tables_dtypes(
         == rendered_val
     )
 
-    w.toggle.click()
+    w.editable_toggle.click()
     w.table.edit(idx)
 
     if editor_class is None:
@@ -638,7 +642,7 @@ def test_features_table_multilayer_edit(qtbot):
     w.table.edit(idx)
     assert w.table.state() != QAbstractItemView.State.EditingState
 
-    w.toggle.click()
+    w.editable_toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
     assert w.table.state() == QAbstractItemView.State.EditingState
@@ -670,6 +674,6 @@ def test_features_table_multilayer_save_csv(qtbot, tmp_path, monkeypatch):
         QFileDialog, 'getSaveFileName', MagicMock(return_value=(path, None))
     )
 
-    w.save.click()
+    w.save_button.click()
 
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
