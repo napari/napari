@@ -592,7 +592,7 @@ ignore_errors = true
 module = [
     'napari._qt.code_syntax_highlight',
     'napari._qt.containers._layer_delegate',
-    'napari._qt.containers.qt_layer_model',
+    'napari._qt.containers.qt_axis_model',
     'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
     'napari._qt.dialogs.confirm_close_dialog',
