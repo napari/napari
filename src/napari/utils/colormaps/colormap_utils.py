@@ -219,7 +219,7 @@ DISCONTINUOUS_COLORMAPS = {
         name='nan',
         display_name='NaN',
         colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
-        bad_color=[1.0, 0.0, 0.0, 1.0],
+        nan_color=[1.0, 0.0, 0.0, 1.0],
     ),
 }
 
