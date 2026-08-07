@@ -324,8 +324,9 @@ class QtDims(QWidget):
 
     @Slot()
     def stop(self):
-        """Stop axis animation"""
+        """Stop axis animation and wait for its thread to finish."""
         self._animation_thread._stop()
+        self._animation_thread.wait()
 
     @property
     def is_playing(self):
