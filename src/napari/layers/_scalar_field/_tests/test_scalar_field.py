@@ -497,3 +497,23 @@ class TestXarrayMetadataInit:
         np.testing.assert_allclose(layer.scale, [1.0, 1.0])
         np.testing.assert_allclose(layer.translate, [100.0, 200.0])
         assert str(layer.units[0]) == 'micron'
+
+    def test_xarray_datetime_coords(self):
+        """Datetime coords get a real time unit, scale and translate."""
+        data = xr.DataArray(
+            np.random.random((3, 10, 15)),
+            dims=['time', 'y', 'x'],
+            coords={
+                'time': np.array(
+                    ['2013-01-01', '2013-01-02', '2013-01-03'],
+                    dtype='datetime64[ns]',
+                ),
+                'y': ('y', np.arange(100, 110).astype(float)),
+                'x': ('x', np.arange(200, 215).astype(float)),
+            },
+        )
+        layer = Image(data)
+        assert layer.axis_labels == ('time', 'y', 'x')
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [15706.0, 100.0, 200.0])
+        assert str(layer.units[0]) == 'day'
