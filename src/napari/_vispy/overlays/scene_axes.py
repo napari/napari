@@ -41,7 +41,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.arrows.connect(self._on_data_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
-        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self.viewer.scene.camera.events.zoom.connect(self._on_zoom_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
@@ -80,7 +80,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.text.text = axis_labels
 
     def _on_zoom_change(self):
-        scale = 1 / self.viewer.camera.zoom
+        scale = 1 / self.viewer.scene.camera.zoom
 
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:

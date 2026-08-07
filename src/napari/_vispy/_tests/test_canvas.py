@@ -12,7 +12,7 @@ def test_scene_overlays(qt_viewer):
     viewer = qt_viewer.viewer
     vispy_canvas = qt_viewer.canvas
 
-    for overlay in viewer._scene_overlays.values():
+    for overlay in viewer.scene.overlays.values():
         # vispy overlays only exist if they are visible at least once
         overlay.visible = True
         assert (
@@ -25,7 +25,7 @@ def test_scene_overlays(qt_viewer):
     )
 
     new_overlay = SceneAxesOverlay(visible=True)
-    viewer._scene_overlays.test = new_overlay
+    viewer.scene.overlays.test = new_overlay
 
     assert new_overlay in vispy_canvas._viewer_overlay_to_visual
     new_overlay_node = vispy_canvas._viewer_overlay_to_visual[new_overlay][
@@ -39,7 +39,7 @@ def test_scene_overlays(qt_viewer):
         for vispy_overlay in vispy_overlays:
             assert vispy_overlay.node in vispy_canvas.view.scene.children
 
-    viewer._scene_overlays.pop('test')
+    viewer.scene.overlays.pop('test')
     assert new_overlay not in vispy_canvas._viewer_overlay_to_visual
     assert new_overlay_node not in vispy_canvas.view.children
 
@@ -144,8 +144,8 @@ def test_grid_mode(qt_viewer):
 
     angles = 10, 20, 30  # just some nonzero stuff
     zoom = 1
-    viewer.camera.angles = angles
-    viewer.camera.zoom = zoom
+    viewer.scene.camera.angles = angles
+    viewer.scene.camera.zoom = zoom
 
     canvas.on_draw(None)
 
