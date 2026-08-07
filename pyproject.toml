@@ -591,7 +591,6 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = [
     'napari._qt.code_syntax_highlight',
-    'napari._qt.containers._layer_delegate',
     'napari._qt.containers.qt_layer_model',
     'napari._qt.containers.qt_list_view',
     'napari._qt.containers.qt_tree_model',
