@@ -446,8 +446,6 @@ class _QtMainWindow(QMainWindow):
 
         for dock, state in self.widgets_sliding_dock_area.items():
             rule = dock_slide_configs.get(self.dockWidgetArea(dock))
-            if rule is None:
-                continue
 
             is_visible = state['visible_state']
 
@@ -588,8 +586,6 @@ class _QtMainWindow(QMainWindow):
         the animation was still running).
         """
         if size <= 0:
-            return
-        if dock not in self.widgets_sliding_dock_area:
             return
 
         self.resizeDocks([dock], [size], orientation)

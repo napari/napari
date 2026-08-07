@@ -117,12 +117,12 @@ def _tooltip_visibility_toggle() -> None:
     settings.layer_tooltip_visibility = not settings.layer_tooltip_visibility
 
 
-def _toggle_autohide_dock_widgets() -> None:
+def _toggle_autohide_dock_areas() -> None:
     settings = get_settings().appearance
     settings.dock_area_autohide = not settings.dock_area_autohide
 
 
-def _get_current_autohide_dock_widget() -> bool:
+def _get_current_autohide_dock_areas() -> bool:
     return get_settings().appearance.dock_area_autohide
 
 
@@ -240,8 +240,11 @@ VIEW_ACTIONS: list[Action] = [
                 'order': 10,
             }
         ],
-        callback=_toggle_autohide_dock_widgets,
-        toggled=ToggleRule(get_current=_get_current_autohide_dock_widget),
+        callback=_toggle_autohide_dock_areas,
+        toggled=ToggleRule(get_current=_get_current_autohide_dock_areas),
+        keybindings=[
+            KeyBindingRule(primary='Ctrl+T', mac='Cmd+T'),
+        ],
     ),
     Action(
         id='napari.window.view.toggle_layer_tooltips',
