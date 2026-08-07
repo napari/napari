@@ -882,12 +882,13 @@ class FeaturesTable(QWidget):
             # Show widgets and update table
             self._on_features_change()
             self.editable_toggle.setVisible(True)
+            self.join_toggle.setVisible(len(self._selected_layers) > 1)
+            # sync edit buttons state
+            self._on_editable_change()
             self.save_button.setVisible(True)
             self.table.setVisible(True)
-            self.add_column_button.setVisible(True)
-            self.delete_column_button.setVisible(True)
-            self.join_toggle.setVisible(len(self._selected_layers) > 1)
 
+            # update description label based on how many layers are selected
             if len(self._selected_layers) == 1:
                 self.info.setText(
                     f'Features of "{self._selected_layers[0].name}"'
@@ -980,9 +981,10 @@ class FeaturesTable(QWidget):
         return df
 
     def _on_editable_change(self):
-        self.table.model().sourceModel().editable = (
-            self.editable_toggle.isChecked()
-        )
+        editable = self.editable_toggle.isChecked()
+        self.table.model().sourceModel().editable = editable
+        self.add_column_button.setVisible(editable)
+        self.delete_column_button.setVisible(editable)
 
     def _on_join_change(self):
         """Update the table when join mode changes."""
