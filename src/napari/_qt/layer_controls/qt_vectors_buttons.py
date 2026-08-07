@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
@@ -31,7 +33,7 @@ class QtVectorsButtons(QtLayerButtons):
         Widget that wraps a spinbox controlling edge line width of vectors.
     """
 
-    layer: 'napari.layers.Vectors'
+    layer: napari.layers.Vectors
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'

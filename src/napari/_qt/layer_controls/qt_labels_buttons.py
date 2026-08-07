@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
@@ -60,7 +62,7 @@ class QtLabelsButtons(QtLayerButtons):
         FILL.
     """
 
-    layer: 'napari.layers.Labels'
+    layer: napari.layers.Labels
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_labels_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_labels_transform_mode'

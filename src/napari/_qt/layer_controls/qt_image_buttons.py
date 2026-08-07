@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
@@ -26,7 +28,7 @@ class QtImageButtons(QtLayerButtons):
         Widget that wraps widgets related with the method used to render the layer.
     """
 
-    layer: 'napari.layers.Image'
+    layer: napari.layers.Image
     PAN_ZOOM_ACTION_NAME = 'activate_image_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_image_transform_mode'
 

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import (
@@ -9,8 +13,10 @@ from qtpy.QtWidgets import (
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import Mode
-from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
+
+if TYPE_CHECKING:
+    from napari.layers.base.base import Layer
 
 
 class QtLayerButtons(QGridLayout):

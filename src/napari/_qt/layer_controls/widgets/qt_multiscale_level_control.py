@@ -75,7 +75,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         # Only set up and show widgets if layer is multiscale
         if all(
             layer.multiscale
-            and layer.level_shapes == self._layers[0].level_shapes
+            and np.array_equal(
+                layer.level_shapes, self._layers[0].level_shapes
+            )
             for layer in self._layers
         ):
             self._update_level_labels()

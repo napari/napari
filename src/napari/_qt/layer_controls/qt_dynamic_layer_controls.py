@@ -163,7 +163,9 @@ class LayerFormLayout(QFormLayout):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
-        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
 
 
 class QtDynamicLayerControls(QFrame):
@@ -210,10 +212,11 @@ class QtDynamicLayerControls(QFrame):
 
         self.setLayout(LayerFormLayout(self))
 
-        for layer_type, buttons_class in buttons_dict.items():
-            if len(layers) == 1 and isinstance(layers[0], layer_type):
-                self.layout().addRow(buttons_class(layers[0]))
-        if len(layers) > 1:
+        if len(layers) == 1:
+            for layer_type, buttons_class in buttons_dict.items():
+                if isinstance(layers[0], layer_type):
+                    self.layout().addRow(buttons_class(layers[0]))
+        else:
             buttons = QtMultiLayerButtons(layers[0])
             self.layout().addRow(buttons)
 
@@ -314,8 +317,6 @@ class QtDynamicLayerControls(QFrame):
         for layer in self._layers:
             disconnect_events(layer.events, self)
             for child in self.children():
-                close_method = getattr(child, 'close', None)
                 self._disconnect_child_widget_controls(child)
-                if close_method is not None:
-                    close_method()
+                getattr(child, 'close', lambda: None)()
             super().close()

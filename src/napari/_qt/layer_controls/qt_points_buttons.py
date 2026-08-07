@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
@@ -47,7 +49,7 @@ class QtPointsButtons(QtLayerButtons):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
-    layer: 'napari.layers.Points'
+    layer: napari.layers.Points
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_points_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_points_transform_mode'
