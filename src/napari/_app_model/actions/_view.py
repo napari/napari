@@ -31,27 +31,27 @@ toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
         'Axes Visible',
-        'axes.visible',
+        'scene.overlays.axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_axes_colored',
         'Axes Colored',
-        'axes.colored',
+        'scene.overlays.axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_axes_labels',
         'Axes Labels',
-        'axes.labels',
+        'scene.overlays.axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_axes_dashed',
         'Axes Dashed',
-        'axes.dashed',
+        'scene.overlays.axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_axes_arrows',
         'Axes Arrows',
-        'axes.arrows',
+        'scene.overlays.axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_floating_axes',
@@ -126,11 +126,11 @@ def _fit_to_view(viewer: ViewerModel) -> None:
 
 
 def _zoom_in(viewer: ViewerModel) -> None:
-    viewer.camera.zoom *= 1.5
+    viewer.scene.camera.zoom *= 1.5
 
 
 def _zoom_out(viewer: ViewerModel) -> None:
-    viewer.camera.zoom /= 1.5
+    viewer.scene.camera.zoom /= 1.5
 
 
 def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
@@ -143,12 +143,12 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
 
 def _toggle_synced_camera(viewer: ViewerModel) -> None:
     """Toggle the camera synced mode between synced and separate."""
-    viewer.camera.synced = not viewer.camera.synced
+    viewer.scene.camera.synced = not viewer.scene.camera.synced
 
 
 def _get_current_synced_camera(viewer: ViewerModel) -> bool:
     """Return the current synced state of the camera."""
-    return viewer.camera.synced
+    return viewer.scene.camera.synced
 
 
 VIEW_ACTIONS: list[Action] = [
