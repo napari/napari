@@ -16,10 +16,10 @@ from napari.settings import get_settings
 class ConfirmCloseDialog(QDialog):
     def __init__(
         self,
-        parent,
-        close_app=False,
-        display_checkbox=True,
-        extra_info='',
+        parent: QWidget | None,
+        close_app: bool = False,
+        display_checkbox: bool = True,
+        extra_info: str = '',
     ) -> None:
         super().__init__(parent)
         extra_info = f'\n\n{extra_info}' if extra_info else ''
@@ -80,7 +80,7 @@ class ConfirmCloseDialog(QDialog):
         self.close_btn = close_btn
         self.cancel_btn = cancel_btn
 
-    def accept(self):
+    def accept(self) -> None:
         if self._display_checkbox and self.do_not_ask.isChecked():
             get_settings().application.confirm_close_window = False
         super().accept()
