@@ -765,19 +765,19 @@ class FeaturesTable(QWidget):
         self.setLayout(QVBoxLayout())
 
         self.info = QLabel('')
-        self.toggle = QToggleSwitch('editable.')
+        self.editable_toggle = QToggleSwitch('editable.')
         self.join_toggle = QToggleSwitch('shared columns only')
-        self.add_column = QtViewerPushButton(
+        self.add_column_button = QtViewerPushButton(
             'add_button',
             tooltip='Add Column',
             slot=self._add_column,
         )
-        self.delete_column = QtViewerPushButton(
+        self.delete_column_button = QtViewerPushButton(
             'delete_button',
             tooltip='Delete Column',
             slot=self._delete_column,
         )
-        self.save = QtViewerPushButton(
+        self.save_button = QtViewerPushButton(
             'save',
             tooltip='Save as CSV',
             slot=self._on_save_clicked,
@@ -786,15 +786,15 @@ class FeaturesTable(QWidget):
         self.table = PandasView()
         self.layout().addWidget(self.info)
         button_layout = QHBoxLayout()
-        button_layout.addWidget(self.toggle)
+        button_layout.addWidget(self.editable_toggle)
         button_layout.addWidget(self.join_toggle)
-        button_layout.addWidget(self.add_column)
-        button_layout.addWidget(self.delete_column)
-        button_layout.addWidget(self.save)
+        button_layout.addWidget(self.add_column_button)
+        button_layout.addWidget(self.delete_column_button)
+        button_layout.addWidget(self.save_button)
         self.layout().addLayout(button_layout)
         self.layout().addWidget(self.table)
 
-        self.toggle.toggled.connect(self._on_editable_change)
+        self.editable_toggle.toggled.connect(self._on_editable_change)
         self.join_toggle.toggled.connect(self._on_join_change)
 
         self.table.selectionModel().selectionChanged.connect(
@@ -881,11 +881,11 @@ class FeaturesTable(QWidget):
 
             # Show widgets and update table
             self._on_features_change()
-            self.toggle.setVisible(True)
-            self.save.setVisible(True)
+            self.editable_toggle.setVisible(True)
+            self.save_button.setVisible(True)
             self.table.setVisible(True)
-            self.add_column.setVisible(True)
-            self.delete_column.setVisible(True)
+            self.add_column_button.setVisible(True)
+            self.delete_column_button.setVisible(True)
             self.join_toggle.setVisible(len(self._selected_layers) > 1)
 
             if len(self._selected_layers) == 1:
@@ -902,12 +902,12 @@ class FeaturesTable(QWidget):
                 self.info.setText(f'Features of [{layer_names}]')
         else:
             # Hide widgets and show appropriate message
-            self.toggle.setVisible(False)
+            self.editable_toggle.setVisible(False)
             self.join_toggle.setVisible(False)
-            self.save.setVisible(False)
+            self.save_button.setVisible(False)
             self.table.setVisible(False)
-            self.add_column.setVisible(False)
-            self.delete_column.setVisible(False)
+            self.add_column_button.setVisible(False)
+            self.delete_column_button.setVisible(False)
 
             # Determine message based on original selection
             if len(self.viewer.layers.selection) > 0:
@@ -980,7 +980,9 @@ class FeaturesTable(QWidget):
         return df
 
     def _on_editable_change(self):
-        self.table.model().sourceModel().editable = self.toggle.isChecked()
+        self.table.model().sourceModel().editable = (
+            self.editable_toggle.isChecked()
+        )
 
     def _on_join_change(self):
         """Update the table when join mode changes."""
