@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import warnings
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -519,13 +520,19 @@ class _QtMainWindow(QMainWindow):
             else Qt.Orientation.Vertical
         )
         anim.valueChanged.connect(
-            lambda size, dock=dock, orientation=orientation: (
-                self._on_dock_size_animated(dock, int(size), orientation)
+            partial(
+                self._on_dock_size_animated,
+                dock=dock,
+                orientation=orientation,
             )
         )
 
         anim.finished.connect(
-            lambda: self._on_generic_animation_finished(dock, property_name)
+            partial(
+                self._on_generic_animation_finished,
+                dock,
+                property_name,
+            )
         )
         state['animation'] = anim
 
@@ -550,7 +557,11 @@ class _QtMainWindow(QMainWindow):
         anim.start()
 
     def _on_dock_size_animated(
-        self, dock: QtViewerDockWidget, size: int, orientation: Qt.Orientation
+        self,
+        size: int,
+        *,
+        dock: QtViewerDockWidget,
+        orientation: Qt.Orientation,
     ):
         """Resize a dock to match the current animation frame.
 
