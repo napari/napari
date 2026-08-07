@@ -7,8 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.utils import checked_to_bool
 from napari.layers import Tracks
-from napari.utils.translations import trans
+from napari.utils.events.event_utils import connect_setattr
 
 
 class QtIdCheckBoxControl(QtWidgetControlsBase):
@@ -38,12 +39,14 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.id_checkbox = QCheckBox()
-        self.id_checkbox.stateChanged.connect(self.change_display_id)
+        connect_setattr(
+            self.id_checkbox.stateChanged,
+            layer,
+            'display_id',
+            convert_fun=checked_to_bool,
+        )
 
-        self.id_checkbox_label = QtWrappedLabel(trans._('show ID:'))
-
-    def change_display_id(self, state) -> None:
-        self._layer.display_id = self.id_checkbox.isChecked()
+        self.id_checkbox_label = QtWrappedLabel('show ID:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.id_checkbox_label, self.id_checkbox)]

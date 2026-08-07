@@ -49,7 +49,7 @@ def get_scale_translate(dataset, array_name):
     dims = [getattr(dataset, dim) for dim in array.dims]
     translate = [float(d[0]) for d in dims]
     scale = [float(d[1] - d[0]) for d in dims]
-    return {'scale': scale, 'translate': translate}
+    return {'scale': scale, 'translate': translate, 'units':('ns', 'degrees', 'degrees')}
 
 
 # Show the raw (not resampled) model data
@@ -58,8 +58,9 @@ viewer, sst_layer = napari.imshow(
         name='sea surface temp',
         **get_scale_translate(sst, 'sst'),
         colormap='magma',
+        axis_labels=sst.sst.dims,
         )
-viewer.dims.axis_labels = sst.sst.dims
+viewer.scale_bar.visible = True
 
 air_layer = viewer.add_image(
         airtemp.air,
@@ -68,8 +69,10 @@ air_layer = viewer.add_image(
         colormap='viridis',
         blending='additive',
         contrast_limits=(-23 + 273, 32 + 273),  # data are in degrees Kelvin
+        axis_labels=sst.sst.dims
         )
 
+viewer.layers.units = ('hour', 'degrees', 'degrees')
 # set a time that overlaps both datasets
 viewer.dims.set_point(0, np.datetime64('2013-03-10T18:00:00.000000000'))
 

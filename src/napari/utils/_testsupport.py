@@ -1,4 +1,5 @@
 import gc
+import logging
 import os
 import sys
 import warnings
@@ -82,37 +83,6 @@ def fail_obj_graph(Klass):  # pragma: no cover
         )
 
 
-@pytest.fixture
-def napari_plugin_manager(monkeypatch):
-    """A napari plugin manager that blocks discovery by default.
-
-    Note you can still use `napari_plugin_manager.register()` to directly
-    register a plugin module, class or dict for testing.
-
-    Or, to re-enable global discovery, use:
-    `napari_plugin_manager.discovery_blocker.stop()`
-    """
-    import napari
-    import napari.plugins.io
-    from napari.plugins._plugin_manager import NapariPluginManager
-
-    pm = NapariPluginManager()
-
-    # make it so that internal requests for the plugin_manager
-    # get this test version for the duration of the test.
-    monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
-    with suppress(AttributeError):
-        monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
-    # prevent discovery of plugins in the environment
-    # you can still use `pm.register` to explicitly register something.
-    pm.discovery_blocker = patch.object(pm, 'discover')
-    pm.discovery_blocker.start()
-    pm._initialize()  # register our builtins
-    yield pm
-    pm.discovery_blocker.stop()
-
-
 GCPASS = 0
 
 
@@ -191,12 +161,20 @@ def mock_app_model():
             init_qactions.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def _disable_qt_warnings(monkeypatch):
+    try:
+        from napari._qt import qt_main_window
+    except ImportError:
+        return
+    monkeypatch.setattr(qt_main_window, 'SHOW_QT_WARNING', False)
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',
     mock_app_model,
-    napari_plugin_manager,
     monkeypatch,
 ):
     """A pytest fixture function that creates a napari viewer for use in testing.
@@ -230,10 +208,6 @@ def make_napari_viewer(
         the napari package.
         This can be made globally true by setting the 'NAPARI_STRICT_QT'
         environment variable.
-    block_plugin_discovery : bool, optional
-        Block discovery of non-builtin plugins.  Note: plugins can still be
-        manually registered by using the 'napari_plugin_manager' fixture and
-        the `napari_plugin_manager.register()` method. By default, True.
 
     Examples
     --------
@@ -241,9 +215,6 @@ def make_napari_viewer(
     ...     viewer = make_napari_viewer()
     ...     viewer.add_shapes()
     ...     assert len(viewer.layers) == 1
-
-    >>> def test_something_with_plugins(make_napari_viewer):
-    ...     viewer = make_napari_viewer(block_plugin_discovery=False)
 
     >>> def test_something_with_strict_qt_tests(make_napari_viewer):
     ...     viewer = make_napari_viewer(strict_qt=True)
@@ -314,7 +285,6 @@ def make_napari_viewer(
         *model_args,
         ViewerClass=Viewer,
         strict_qt=None,
-        block_plugin_discovery=True,
         **model_kwargs,
     ):
         if strict_qt is None:
@@ -322,13 +292,14 @@ def make_napari_viewer(
         nonlocal _strict
         _strict = strict_qt
 
-        if not block_plugin_discovery:
-            napari_plugin_manager.discovery_blocker.stop()
-
         should_show = request.config.getoption('--show-napari-viewer')
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
+        model_kwargs.setdefault('show_welcome_screen', False)
         viewer = ViewerClass(*model_args, **model_kwargs)
         viewers.add(viewer)
+
+        if model_kwargs.get('show', False):
+            qtbot.wait_exposed(viewer.window._qt_window, timeout=5000)
 
         return viewer
 
@@ -456,3 +427,29 @@ def MouseEvent():
         handled: bool = False
 
     return Event
+
+
+class LeakSafeLogRecord(logging.LogRecord):
+    """LogRecord that converts args to strings to prevent reference retention."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Convert args to strings immediately
+        if self.args:
+            self.args = tuple(
+                str(arg) if not isinstance(arg, int | float) else arg
+                for arg in self.args
+            )
+
+
+@pytest.fixture(autouse=True, scope='session')
+def use_leak_safe_log_records():
+    """Use custom LogRecord factory that doesn't retain object references."""
+    original_record_factory = logging.getLogRecordFactory()
+
+    logging.setLogRecordFactory(LeakSafeLogRecord)
+
+    yield
+
+    # Restore original factory
+    logging.setLogRecordFactory(original_record_factory)

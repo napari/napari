@@ -1,6 +1,9 @@
 """Scale bar model."""
 
-from napari._pydantic_compat import Field
+import warnings
+
+from pydantic import Field
+
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
 
@@ -30,9 +33,6 @@ class ScaleBarOverlay(CanvasOverlay):
     box_color : Optional[str | array-like]
         Background box color.
         See ``ColorValue.validate`` for supported values.
-    unit : Optional[str]
-        Unit to be used by the scale bar. The value can be set
-        to `None` to display no units.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
         it is determined automatically based on zoom level.
@@ -50,9 +50,27 @@ class ScaleBarOverlay(CanvasOverlay):
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
     font_size: float = 10
-    box: bool = False
-    box_color: ColorValue = Field(
-        default_factory=lambda: ColorValue([0, 0, 0, 0.6])
-    )
-    unit: str | None = None
     length: float | None = None
+
+    @property
+    def unit(self) -> None:
+        warnings.warn(
+            'ScaleBar.unit is deprecated and now always returns None. '
+            'This attribute will be removed in 0.9.0.\n'
+            'Units are instead computed from the layers in the layerlist. '
+            'Use `Layer.units` to set units for each layer.',
+            category=FutureWarning,
+            stacklevel=4,
+        )
+        return None
+
+    @unit.setter
+    def unit(self, value: str | None) -> None:
+        warnings.warn(
+            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
+            'This attribute will be removed in 0.9.0.\n'
+            'Units are instead computed from the layers in the layerlist. '
+            'Use `Layer.units` to set units for each layer.',
+            category=FutureWarning,
+            stacklevel=4,
+        )

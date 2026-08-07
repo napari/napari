@@ -2,7 +2,6 @@ import warnings
 
 import numpy as np
 from qtpy.QtCore import Slot
-from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from napari._qt.widgets.qt_dims_slider import (
@@ -11,7 +10,6 @@ from napari._qt.widgets.qt_dims_slider import (
 )
 from napari.components.dims import Dims
 from napari.settings._constants import LoopMode
-from napari.utils.translations import trans
 
 
 class QtDims(QWidget):
@@ -53,7 +51,9 @@ class QtDims(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
         self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
 
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
@@ -132,6 +132,9 @@ class QtDims(QWidget):
             self._update_range()
             if self._displayed_sliders[i]:
                 self._update_slider()
+        # Freshly created sliders have no `last_used` style property yet, and
+        # the `last_used` event only fires on a change
+        self._on_last_used_changed()
         self.stop()
 
     def _resize_axis_labels(self):
@@ -180,7 +183,7 @@ class QtDims(QWidget):
                 if length > width:
                     width = length
         # gui width of a string of length `width`
-        fm = QFontMetrics(QFont('', 0))
+        fm = self.fontMetrics()
         width = fm.boundingRect('8' * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
@@ -288,16 +291,12 @@ class QtDims(QWidget):
             _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
-                    trans._(
-                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
-                        _modes=_modes,
-                        loop_mode=loop_mode,
-                    )
+                    f'loop_mode must be one of {_modes}. Got: {loop_mode}'
                 )
             loop_mode = LoopMode(loop_mode)
 
         if axis >= self.dims.ndim:
-            raise IndexError(trans._('axis argument out of range'))
+            raise IndexError('axis argument out of range')
 
         if self.is_playing and self._animation_thread.axis == axis:
             self.slider_widgets[axis]._update_play_settings(
@@ -321,12 +320,7 @@ class QtDims(QWidget):
                 self._animation_thread.slider.play_button._handle_start()
 
         else:
-            warnings.warn(
-                trans._(
-                    'Refusing to play a hidden axis',
-                    deferred=True,
-                )
-            )
+            warnings.warn('Refusing to play a hidden axis')
 
     @Slot()
     def stop(self):

@@ -3,9 +3,9 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from napari import Viewer, layers
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -154,7 +154,7 @@ def test_screenshot(make_napari_viewer, qtbot):
 
     np.random.seed(0)
     # Add image
-    data = np.random.random((10, 15))
+    data = np.ones((10, 15), dtype=np.uint8)
     viewer.add_image(data)
 
     # Add labels
@@ -176,9 +176,7 @@ def test_screenshot(make_napari_viewer, qtbot):
     # Take screenshot of the image canvas only
     # Test that flash animation does not occur
     screenshot = viewer.screenshot(canvas_only=True)
-    assert not hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert not hasattr(viewer.window._qt_viewer, '_flash_animation')
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
@@ -191,17 +189,13 @@ def test_screenshot(make_napari_viewer, qtbot):
 
     # test flash animation works
     screenshot = viewer.screenshot(canvas_only=True, flash=True)
-    assert hasattr(
-        viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-    )
+    assert hasattr(viewer.window._qt_viewer, '_flash_animation')
 
     # Here we wait until the flash animation will be over for teardown.
     # We cannot wait on finished signal as _flash_animation may be already
     # removed when calling wait.
     qtbot.waitUntil(
-        lambda: not hasattr(
-            viewer.window._qt_viewer._welcome_widget, '_flash_animation'
-        )
+        lambda: not hasattr(viewer.window._qt_viewer, '_flash_animation')
     )
 
 
@@ -209,7 +203,6 @@ def test_screenshot(make_napari_viewer, qtbot):
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False)
-    viewer.window._qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
     size = viewer.window._qt_viewer.size()
     viewer.window._qt_viewer.setFixedSize(size)
@@ -289,19 +282,19 @@ def test_toggling_scale_bar(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # Check scale bar is not visible
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible
-    viewer.scale_bar.visible = True
-    assert viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = True
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Enter 3D rendering and check scale bar is still visible
     viewer.dims.ndisplay = 3
-    assert viewer.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar not visible
-    viewer.scale_bar.visible = False
-    assert not viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = False
+    assert not viewer.canvas.overlays.scale_bar.visible
 
 
 def test_removing_points_data(make_napari_viewer):
@@ -345,7 +338,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     data = np.array([[0, 0], [10, 10], [20, 20]])
     layer = viewer.add_points(data, size=2)
     viewer.layers.selection.active = layer
-
+    layer.mode = 'select'
     assert layer._value is None
     viewer.mouse_over_canvas = True
     viewer.cursor.position = tuple(layer.data[1])
@@ -457,3 +450,83 @@ def test_negative_translate(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     _ = viewer.add_image(data, translate=(-1, 0, 0))
     assert viewer.dims.range[2].start == -1
+
+
+@pytest.mark.parametrize(
+    ('axis_labels', 'expected_labels', 'expected_ndim'),
+    [
+        ((), ('-2', '-1'), 2),
+        (('x',), ('-2', 'x'), 2),
+        (('y', 'x'), ('y', 'x'), 2),
+        (('z', 'y', 'x'), ('z', 'y', 'x'), 3),
+        (('t', 'z', 'y', 'x'), ('t', 'z', 'y', 'x'), 4),
+    ],
+)
+def test_axis_labels(
+    make_napari_viewer,
+    qtbot,
+    axis_labels: tuple[str, ...],
+    expected_labels: tuple[str, ...],
+    expected_ndim: int,
+):
+    """
+    Check that axis labels are set properly.
+    """
+    viewer = make_napari_viewer(axis_labels=axis_labels)
+    assert viewer.dims.axis_labels == expected_labels
+    assert viewer.dims.ndim == expected_ndim
+
+
+def test_axis_labels_after_data(make_napari_viewer, qtbot):
+    """
+    Check that axis labels persist after adding data in different ways.
+    """
+    original_labels = ('z', 'y', 'x')
+    viewer = make_napari_viewer(axis_labels=original_labels)
+    assert viewer.dims.ndim == 3
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with same dimensionality as viewer
+    _ = viewer.add_image(np.random.random((10, 12, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer
+    _ = viewer.add_image(np.random.random((10, 12)))
+    assert viewer.dims.axis_labels == original_labels
+
+    # Add data with lower dimensionality than viewer,
+    # with different axis labels
+    data_labels = ('i', 'j')
+    assert data_labels != original_labels
+    _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
+    assert viewer.dims.axis_labels == ('z', 'i', 'j')
+
+
+def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
+    """
+    Check viewer.dims.axis_labels reflect layers.axis_labels."""
+    viewer = make_napari_viewer()
+
+    # Default indices on empty viewer
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-2', '-1')
+
+    # Annotated layer propagates to dims
+    viewer.add_image(np.random.random((3, 4, 5)), axis_labels=('z', 'y', 'x'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Lower-dim, annotated layer doesn't override the longer labels
+    # This is different from test_axis_labels_after_data because in that
+    # case we are overwriting result of
+    # `viewer.dims.axis_labels = ('z', 'y', 'x')`, whereas in this case
+    # `viewer.dims.axis_labels` is only ever set dynamically from the layer
+    # list.
+    viewer.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+
+    # Higher-dim, unannotated layer doesn't override the annotated labels
+    viewer.add_image(np.random.random((2, 3, 4, 5)))
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
+    assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')

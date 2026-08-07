@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import inspect
 import itertools
+import logging
 import os
 import warnings
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Iterator,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -13,33 +19,33 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse
 
 import numpy as np
+from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
-from app_model.expressions import Context
+from pydantic import Field, PrivateAttr, field_validator
+from typing_extensions import deprecated
 
 from napari import layers
-from napari._pydantic_compat import Extra, Field, PrivateAttr, validator
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
     double_click_to_zoom,
     drag_to_zoom,
+    layers_scroll,
 )
 from napari.components.camera import Camera
+from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
-from napari.components.grid import GridCanvas
 from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
-    BrushCircleOverlay,
-    Overlay,
-    ScaleBarOverlay,
-    TextOverlay,
-    ZoomOverlay,
+    FloatingAxesOverlay,
+    SceneOverlay,
 )
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -57,6 +63,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.layers._scalar_field import ScalarFieldBase
 from napari.layers._source import Source, layer_source
 from napari.layers.image._image_key_bindings import image_fun_to_mode
 from napari.layers.image._image_utils import guess_labels
@@ -67,7 +74,8 @@ from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
-from napari.plugins.utils import get_potential_readers, get_preferred_reader
+from napari.plugins import _npe2
+from napari.plugins.utils import get_preferred_reader
 from napari.settings import get_settings
 from napari.types import (
     FullLayerData,
@@ -82,19 +90,21 @@ from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
-    EventedDict,
+    EventedDictNamespace,
     EventedModel,
     disconnect_events,
 )
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
-from napari.utils.mouse_bindings import MousemapProvider
+from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
+
+    from napari.components.grid import GridCanvas
+    from napari.components.overlays import ScaleBarOverlay, TextOverlay
 
 
 DEFAULT_THEME = 'dark'
@@ -113,21 +123,24 @@ Dict = dict  # rename, because ViewerModel has method dict
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 
+logger = logging.getLogger(__name__)
+
+
 def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
-DEFAULT_OVERLAYS = {
-    'scale_bar': ScaleBarOverlay,
-    'text': TextOverlay,
-    'axes': AxesOverlay,
-    'brush_circle': BrushCircleOverlay,
-    'zoom': ZoomOverlay,
-}
+def _validate_paths_exist(paths: list[PathLike]) -> None:
+    """Raise FileNotFoundError if any local (non-URL) path does not exist."""
+    for p in paths:
+        p_str = str(p)
+        parsed = urlparse(p_str)
+        if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
+            raise FileNotFoundError(f'Path {p_str!r} does not exist.')
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
-class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
+class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -152,8 +165,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
-    grid: napari.components.grid.Gridcanvas
-        Gridcanvas allowing for the current implementation of a gridview of the canvas.
     help: str
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
@@ -168,38 +179,35 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
-    _canvas_size: Tuple[int, int]
-        The canvas size following the Numpy convention of height x width
     _ctx: Mapping
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
-    _overlays: napari.utils.events.containers._evented_dict.EventedDict[str, Overlay]
-        An EventedDict with as keys the string names of different napari overlays and as values the napari.Overlay
-        objects.
+    _overlays: napari.utils.events.containers._evented_dict.EventedDictNamespace[SceneOverlay]
+        An EventedDictNamespace with as keys the string names of different napari overlays and as values
+        the napari.SceneOverlay objects.
     """
 
-    # Using allow_mutation=False means these attributes aren't settable and don't
+    # Using frozen=True means these attributes aren't settable and don't
     # have an event emitter associated with them
-    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
-    cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
-    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
-    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
+    canvas: Canvas = Field(default_factory=Canvas, frozen=True)
+    camera: Camera = Field(default_factory=Camera, frozen=True)
+    cursor: Cursor = Field(default_factory=Cursor, frozen=True)
+    dims: Dims = Field(default_factory=Dims, frozen=True)
     layers: LayerList = Field(
-        default_factory=LayerList, allow_mutation=False
+        default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, dict] = 'Ready'
-    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
+    status: Union[str, Dict[str, str]] = 'Ready'
+    tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # private track of overlays, only expose the old ones for backward compatibility
-    _overlays: EventedDict[str, Overlay] = PrivateAttr(
-        default_factory=EventedDict
+    _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
+        default_factory=lambda: (  # type: ignore
+            EventedDictNamespace({'axes': AxesOverlay()})
+        )
     )
-    # 2-tuple indicating height and width
-    _canvas_size: tuple[int, int] = (800, 600)
-    _ctx: Context
+    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -207,27 +215,28 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
+    _layer_list_scroll_progress: float = 0
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
         # max_depth=0 means don't look for parent contexts.
-        from napari._app_model.context import create_context
 
         # FIXME: just like the LayerList, this object should ideally be created
         # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        self._ctx = create_context(self, max_depth=0)
+        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
-        self.__config__.extra = Extra.allow
+        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
+                'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
                 'ndisplay': ndisplay,
                 'order': order,
             },
         )
-        self.__config__.extra = Extra.ignore
+        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -245,20 +254,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         settings.application.events.horizontal_axis_orientation.connect(
             self._update_camera_orientation
         )
+        self._update_synced_camera()
+        settings.application.events.synced_camera.connect(
+            self._update_synced_camera
+        )
 
-        self._update_viewer_grid()
-        settings.application.events.grid_stride.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_width.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_height.connect(
-            self._update_viewer_grid
-        )
-        settings.application.events.grid_spacing.connect(
-            self._update_viewer_grid
-        )
         settings.experimental.events.async_.connect(self._update_async)
 
         # Add extra reset_view event. Ideally this should be removed in the
@@ -267,7 +267,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.fit_to_view)
+        self.dims.events.ndisplay.connect(
+            self._save_camera_state, position='first'
+        )
+        self.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.fit_to_view)
         self.dims.events.point.connect(self._update_layers)
@@ -279,6 +282,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         #        can remove the following line. Note that because of this we fire double events,
         #        but this should be ok because we have early returns when slices are unchanged.
         self.dims.events.current_step.connect(self._update_layers)
+
+        # Track previous ndisplay for per-mode camera state caching.
+        self._previous_ndisplay: int = self.dims.ndisplay
+
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
         self.cursor.events.position.connect(self.update_status_from_cursor)
@@ -286,34 +293,54 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.selection.events.active.connect(self._on_active_layer)
+        self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
-        self._overlays.update({k: v() for k, v in DEFAULT_OVERLAYS.items()})
+        self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
-    # simple properties exposing overlays for backward compatibility
+    # simple properties exposing overlays for backward compatibility and easy access
+    # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
+    #       know that specific elements match specific types
     @property
-    def axes(self):
-        return self._overlays['axes']
-
-    @property
-    def scale_bar(self):
-        return self._overlays['scale_bar']
+    def axes(self) -> AxesOverlay:
+        return self._scene_overlays.axes  # type: ignore[return-value]
 
     @property
-    def text_overlay(self):
-        return self._overlays['text']
+    @deprecated(
+        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
+        stacklevel=2,
+    )
+    def floating_axes(self) -> FloatingAxesOverlay:
+        return self.canvas.overlays.floating_axes  # type: ignore[return-value]
 
     @property
-    def _zoom_box(self):
-        return self._overlays['zoom']
+    @deprecated(
+        'viewer.scale_bar is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.scale_bar instead.',
+        stacklevel=2,
+    )
+    def scale_bar(self) -> ScaleBarOverlay:
+        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
     @property
-    def _brush_circle_overlay(self):
-        return self._overlays['brush_circle']
+    @deprecated(
+        'viewer.text_overlay is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.text instead.',
+        stacklevel=2,
+    )
+    def text_overlay(self) -> TextOverlay:
+        return self.canvas.overlays.text  # type: ignore[return-value]
+
+    @property
+    @deprecated(
+        'viewer.grid is a deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
+        stacklevel=2,
+    )
+    def grid(self) -> GridCanvas:
+        return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -328,28 +355,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             settings.application.horizontal_axis_orientation,
         )
 
-    def _update_viewer_grid(self):
-        """Keep viewer grid settings up to date with settings values."""
-
+    def _update_synced_camera(self):
+        """Update camera synced mode based on settings."""
         settings = get_settings()
+        self.camera.synced = settings.application.synced_camera
 
-        self.grid.stride = settings.application.grid_stride
-        self.grid.shape = (
-            settings.application.grid_height,
-            settings.application.grid_width,
-        )
-        self.grid.spacing = settings.application.grid_spacing
-
-    @validator('theme', allow_reuse=True)
+    @field_validator('theme')
+    @classmethod
     def _valid_theme(cls, v):
         if not is_theme_available(v):
             raise ValueError(
-                trans._(
-                    "Theme '{theme_name}' not found; options are {themes}.",
-                    deferred=True,
-                    theme_name=v,
-                    themes=', '.join(available_themes()),
-                )
+                f"Theme '{v}' not found; options are {', '.join(available_themes())}."
             )
 
         return v
@@ -364,7 +380,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         exclude = exclude.union(EXCLUDE_JSON)
         return super().json(exclude=exclude, **kwargs)
 
-    def dict(self, **kwargs):
+    def model_dump(self, **kwargs) -> dict[str, Any]:
         """Convert to a dictionary."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -372,7 +388,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
         exclude = kwargs.pop('exclude', set())
         exclude = exclude.union(EXCLUDE_DICT)
-        return super().dict(exclude=exclude, **kwargs)
+        return super().model_dump(exclude=exclude, **kwargs)
 
     def __hash__(self):
         return id(self)
@@ -413,11 +429,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         reset_camera_angle : bool
-            Whether to reset the camera angles to (0, 0, 90) before fitting
+            Whether to reset the camera angles to (0, 0, 0) before fitting
             to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
-            self.camera.angles = (0, 0, 90)
+            self.camera.angles = (0, 0, 0)
         self.fit_to_view(margin=margin)
 
     def fit_to_view(self, *, margin: float = 0.05) -> None:
@@ -445,7 +461,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # of view will occupy 95% of the canvas on the most filled axis
         if np.max(scene_size) == 0:
             # TODO: does this even ever happen?
-            self.camera.zoom = scale_factor * np.min(self._canvas_size)
+            self.camera.zoom = scale_factor * np.min(self.canvas.size)
 
         elif self.dims.ndisplay == 2:
             self.camera.zoom = self._get_2d_camera_zoom(
@@ -462,6 +478,53 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             zoom=self.camera.zoom,
             angles=self.camera.angles,
         )
+
+    def _save_camera_state(self) -> None:
+        """Save camera state for the mode we're leaving (runs at 'first').
+
+        Always caches the current camera state so that the "separate"
+        (synced=False) mode can restore it when returning to this
+        ndisplay mode. Caching is harmless in synced mode since
+        ``_on_ndisplay_changed`` does not use the cached values there.
+        """
+        self.camera._cache_state(self._previous_ndisplay)
+
+    def _on_ndisplay_changed(self) -> None:
+        """Handle ndisplay changes based on the current camera synced mode.
+
+        * ``synced=True`` — center and zoom persist between modes.
+          The depth (z) component is set from the dims slider on 2D→3D
+          and the dims slider tracks the camera z on 3D→2D.
+        * ``synced=False`` — each mode remembers its own center, zoom,
+          and angles independently (per-mode caching).
+        """
+        if self.camera.synced:
+            center = list(self.camera.center)
+            if len(self.dims.order) >= 3:
+                new_display_dim = self.dims.order[-3]
+                if self.dims.ndisplay == 3:
+                    center[0] = float(self.dims.point[new_display_dim])
+                else:
+                    self.dims.set_point(new_display_dim, center[0])
+                    center[0] = 0.0
+            elif self.dims.ndisplay == 2:
+                center[0] = 0.0
+            self.camera.center = center[0], center[1], center[2]
+            self._previous_ndisplay = self.dims.ndisplay
+            return
+
+        # Separate (synced=False) — per-mode caching
+        new_mode = self.dims.ndisplay
+        cached = self.camera._pop_cached_state(new_mode)
+        if cached is not None:
+            self.camera.center = cached.center
+            self.camera.zoom = cached.zoom
+            self.camera.angles = cached.angles
+        else:
+            # First time in this mode — use fit_to_view defaults
+            self.fit_to_view()
+            self.camera._cache_state(new_mode)
+        self._previous_ndisplay = new_mode
 
     def _get_scene_parameters(
         self,
@@ -505,29 +568,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if 0 <= margin < 1:
             return 1 - margin
         raise ValueError(
-            trans._(
-                'margin must be between 0 and 1; got {margin} instead.',
-                deferred=True,
-                margin=margin,
-            )
+            f'margin must be between 0 and 1; got {margin} instead.'
         )
-
-    def _get_viewbox_size(self):
-        """Get the size of a single viewbox (whether grid is enabled or not).
-
-        If grid.border_width > 0, that's accounted for too.
-        """
-        viewbox_size = np.array(self._canvas_size)
-        if self.grid.enabled:
-            grid_shape = np.array(self.grid.actual_shape(len(self.layers)))
-            spacing_pixels = self.grid._compute_canvas_spacing(
-                self._canvas_size, len(self.layers)
-            )
-            # Now calculate actual available space
-            total_gap_space = spacing_pixels * (grid_shape - 1)
-            available_space = self._canvas_size - total_gap_space
-            viewbox_size = available_space / grid_shape
-        return viewbox_size
 
     def _get_2d_camera_zoom(
         self, scene_size: np.ndarray, scale_factor: float
@@ -535,7 +577,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        return scale_factor * np.min(self._get_viewbox_size() / scale)
+        return scale_factor * np.min(
+            self.canvas.viewbox_size(self.layers) / scale
+        )
 
     def _get_3d_camera_zoom(
         self, extent: np.ndarray, scale_factor: float
@@ -546,7 +590,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             view_direction=self.camera.view_direction,
             up_direction=self.camera.up_direction,
         )
-        return scale_factor * np.min(self._get_viewbox_size() / bounding_box)
+        return scale_factor * np.min(
+            self.canvas.viewbox_size(self.layers) / bounding_box
+        )
 
     @staticmethod
     def _calculate_bounding_box(
@@ -598,21 +644,59 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _new_labels(self) -> None:
         """Create new labels layer filling full world coordinates space."""
-        layers_extent = self.layers.extent
-        extent = layers_extent.world
-        scale = layers_extent.step
-        scene_size = extent[1] - extent[0]
-        corner = extent[0]
-        shape = [
-            np.round(s / sc).astype('int') + 1
-            for s, sc in zip(scene_size, scale, strict=False)
-        ]
-        dtype_str = get_settings().application.new_labels_dtype
-        empty_labels = np.zeros(shape, dtype=dtype_str)
-        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)  # type: ignore[attr-defined]
-        # We define `add_labels` dynamically, so mypy doesn't know about it.
+        if isinstance(
+            base_layer := self.layers.selection.active, ScalarFieldBase
+        ):
+            layer = Labels(
+                data=np.zeros(
+                    base_layer.data.shape[
+                        : base_layer.ndim
+                    ],  # use :base_layer.ndim to cut channels from rgb images
+                    dtype=get_settings().application.new_labels_dtype,
+                ),
+                scale=base_layer.scale,
+                translate=base_layer.translate,
+                rotate=base_layer.rotate,
+                shear=base_layer.shear,
+                units=base_layer.units,
+                axis_labels=base_layer.axis_labels,
+                affine=base_layer.affine,
+                name=base_layer.name + ' - Labels',
+            )
+        elif self.layers.selection:
+            # non scalar field layer or more than one layer selected
+            layers_extent = self.layers.get_extent(self.layers.selection)
+            extent = layers_extent.world
+            scale = layers_extent.step
+            units = layers_extent.units
+            scene_size = extent[1] - extent[0]
+            corner = extent[0]
+            shape = [
+                np.round(s / sc).astype('int') + 1
+                for s, sc in zip(scene_size, scale, strict=False)
+            ]
+            dtype_str = get_settings().application.new_labels_dtype
+            empty_labels = np.zeros(shape, dtype=dtype_str)
+            active = self.layers.selection.active
+            axis_labels = active.axis_labels if active is not None else None
+            layer = Labels(
+                data=empty_labels,
+                translate=np.array(corner),
+                scale=scale,
+                units=units,
+                axis_labels=axis_labels,
+            )
+        else:
+            layer = Labels(
+                data=np.zeros(
+                    (512, 512),
+                    dtype=get_settings().application.new_labels_dtype,
+                )
+            )
+        self.add_layer(layer)
 
     def _on_layer_reload(self, event: Event) -> None:
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(
             layers=[event.layer], dims=self.dims, force=True
         )
@@ -626,6 +710,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
+        self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
         # If the currently selected layer is sliced asynchronously, then the value
         # shown with this position may be incorrect. See the discussion for more details:
@@ -663,6 +748,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
+    def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
+        """Combine layerlist axis labels onto the current dims labels.
+
+        Replaces dims axis label at indices where layers axis labels exist.
+        """
+        updated_axis_labels = list(self.dims.axis_labels)
+        for pos, label in enumerate(self.layers.axis_labels):
+            if label != str(pos - self.dims.ndim):
+                updated_axis_labels[pos] = label
+        return tuple(updated_axis_labels)
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -672,6 +768,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
+            self.dims.units = self.layers.units
+            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels()
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
@@ -718,7 +816,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
-        if self.tooltip.visible and active is not None and active._loaded:
+        if (
+            self.tooltip.visible
+            and active is not None
+            and active._slicing_state._loaded
+        ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
                 view_direction=self.cursor._view_direction,
@@ -728,7 +830,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # If there is an active layer and a single selection, calculate status using "the classic way".
         # Then return the status and the tooltip.
-        if active is not None and active._loaded and len(selection) < 2:
+        if (
+            active is not None
+            and active._slicing_state._loaded
+            and len(selection) < 2
+        ):
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -743,8 +849,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if (
                 not layer.visible
                 or layer.opacity == 0
-                or not layer._loaded
-                or (layer not in selection and not self.grid.enabled)
+                or not layer._slicing_state._loaded
+                or (layer not in selection and not self.canvas.grid.enabled)
             ):
                 continue
             status = layer.get_status(
@@ -763,7 +869,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     f'{layer.name}: {status["value"]}{emphasis}'
                 )
         if coord2val:
-            if not self.grid.enabled:
+            if not self.canvas.grid.enabled:
                 # use a single coordinate system
                 values = list(itertools.chain(*coord2val.values()))
                 key = next(iter(coord2val))  # choose arbitrary coordinate
@@ -773,9 +879,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 for key, values in coord2val.items()
             ]
             status_str = separator.join(status_strs)
-        elif coord_str and not self.grid.enabled:
+        elif coord_str and not self.canvas.grid.enabled:
             status_str = coord_str + '[empty]'
-        elif self.grid.enabled:
+        elif self.canvas.grid.enabled:
             status_str = '[empty]'
         else:
             status_str = 'Ready'
@@ -821,10 +927,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
+        layer.events.units.connect(self._on_layers_change)
         layer.events.translate.connect(self._on_layers_change)
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
+        layer.events.axis_labels.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
@@ -866,13 +974,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             desc = action_manager._actions[action_name].description.lower()
             if not shortcuts.get(action_name, []):
                 continue
-            help_li.append(
-                trans._(
-                    'use <{shortcut}> for {desc}',
-                    shortcut=shortcuts[action_name][0],
-                    desc=desc,
-                )
-            )
+            help_li.append(f'use <{shortcuts[action_name][0]}> for {desc}')
 
         layer.help = ', '.join(help_li)
 
@@ -928,8 +1030,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         *,
         channel_axis=None,
         affine=None,
-        axis_labels=None,
         attenuation=0.05,
+        auto_contrast=False,
+        axis_labels=None,
         blending=None,
         cache=True,
         colormap=None,
@@ -941,6 +1044,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         interpolation2d='nearest',
         interpolation3d='linear',
         iso_threshold=None,
+        locked_data_level=None,
         metadata=None,
         multiscale=None,
         name=None,
@@ -982,11 +1086,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             the final column is a length N translation vector and a 1 or a
             napari `Affine` transform object. Applied as an extra transform on
             top of the provided scale, rotate, and shear values.
-        axis_labels : tuple of str
-            Dimension names of the layer data.
-            If not provided, axis_labels will be set to (..., 'axis -2', 'axis -1').
         attenuation : float or list of float
             Attenuation rate for attenuated maximum intensity projection.
+        auto_contrast : bool
+            Wether to automatically set contrast limits to the min and max of the
+            currently viewed slice. If True, contrast limits will be updated
+            whenever the slice changes.
+        axis_labels : tuple of str
+            Dimension names of the layer data.
+            If not provided, axis_labels will be set to (..., '-2', '-1').
         blending : str or list of str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
@@ -1029,6 +1137,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Same as 'interpolation2d' but for 3D rendering.
         iso_threshold : float or list of float
             Threshold for isosurface.
+        locked_data_level : int, optional
+            Lock the multiscale resolution level to a specific index. When set,
+            forces rendering at the given multiscale level instead of automatic
+            level selection based on the viewport. Set to ``None`` (default) to
+            use automatic selection.
         metadata : dict or list of dict
             Layer metadata.
         multiscale : bool
@@ -1100,12 +1213,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
+            'locked_data_level': locked_data_level,
             'interpolation2d': interpolation2d,
             'interpolation3d': interpolation3d,
             'rendering': rendering,
             'depiction': depiction,
             'iso_threshold': iso_threshold,
             'attenuation': attenuation,
+            'auto_contrast': auto_contrast,
             'name': name,
             'metadata': metadata,
             'scale': scale,
@@ -1148,11 +1263,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
                     raise TypeError(
-                        trans._(
-                            "Received sequence for argument '{argument}', did you mean to specify a 'channel_axis'? ",
-                            deferred=True,
-                            argument=k,
-                        )
+                        f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
             layer = Image(data, **kwargs)
             self.layers.append(layer)
@@ -1204,21 +1315,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from napari.plugins import _npe2, plugin_manager
-
         plugin_spec_reader = None
-        data: None | SampleDataCreator | SampleData
+        data: SampleDataCreator | SampleData | None
         # try with npe2
         data, available = _npe2.get_sample_data(plugin, sample)
 
-        # then try with npe1
-        if data is None:
-            try:
-                data = plugin_manager._sample_data[plugin][sample]['data']
-            except KeyError:
-                available += list(plugin_manager.available_samples())
         # npe2 uri sample data, extract the path so we can use viewer.open
-        elif hasattr(data, '__self__') and hasattr(data.__self__, 'uri'):
+        if (
+            data is not None
+            and hasattr(data, '__self__')
+            and hasattr(data.__self__, 'uri')
+        ):
             if (
                 hasattr(data.__self__, 'reader_plugin')
                 and data.__self__.reader_plugin != reader_plugin
@@ -1230,27 +1337,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             data = data.__self__.uri
 
         if data is None:
-            msg = trans._(
-                'Plugin {plugin!r} does not provide sample data named {sample!r}. ',
-                plugin=plugin,
-                sample=sample,
-                deferred=True,
-            )
+            msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. '
             if available:
-                msg = trans._(
-                    'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                    samples=available,
-                )
+                msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {available}.'
             else:
-                msg = trans._(
-                    'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                )
+                msg = f'Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.'
 
             raise KeyError(msg)
 
@@ -1266,12 +1357,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         added.extend(self._add_layer_from_data(*datum))
                 if needs_error:
                     raise ValueError(
-                        trans._(
-                            'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.',
-                            deferred=True,
-                            sample=sample,
-                            plugin=plugin,
-                        )
+                        f'Sample "{sample}" from plugin "{plugin}" did not return any valid layer data tuples.'
                     )
                 return added
             if isinstance(data, str | Path):
@@ -1285,24 +1371,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         and reader_plugin != plugin_spec_reader
                     ):
                         raise ValueError(
-                            trans._(
-                                'Chosen reader {chosen_reader} failed to open sample. Plugin {plugin} declares {original_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {original_reader} explicitly.',
-                                deferred=True,
-                                plugin=plugin,
-                                chosen_reader=reader_plugin,
-                                original_reader=plugin_spec_reader,
-                            )
+                            f'Chosen reader {reader_plugin} failed to open sample. Plugin {plugin} declares {plugin_spec_reader} as the reader for this sample - try calling `open_sample` with no `reader_plugin` or passing {plugin_spec_reader} explicitly.'
                         ) from e
                     raise e  # noqa: TRY201
 
             raise TypeError(
-                trans._(
-                    'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
-                    deferred=True,
-                    plugin=plugin,
-                    sample=sample,
-                    data_type=type(data),
-                )
+                f'Got unexpected type for sample ({plugin!r}, {sample!r}): {type(data)}'
             )
 
     def open(
@@ -1355,10 +1429,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         if plugin == 'builtins':
             warnings.warn(
-                trans._(
-                    'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
-                    deferred=True,
-                ),
+                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
             )
             plugin = 'napari'
 
@@ -1367,6 +1438,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             if isinstance(path, Path | str)
             else [os.fspath(p) for p in path]
         )
+
+        _validate_paths_exist(paths_)
 
         paths: Sequence[PathOrPaths] = paths_
         # If stack is a bool and True, add an additional layer of nesting.
@@ -1380,7 +1453,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: list[Layer] = []  # for layers that get added
         with progress(
             paths,
-            desc=trans._('Opening Files'),
+            desc='Opening Files',
             total=(
                 0 if len(paths) == 1 else None
             ),  # indeterminate bar for 1 file
@@ -1468,14 +1541,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         _path = paths[0]
         # we want to display the paths nicely so make a help string here
         path_message = f'[{_path}], ...]' if len(paths) > 1 else _path
-        readers = get_potential_readers(_path)
+        readers = _npe2.get_readers(str(_path))
         if not readers:
             raise NoAvailableReaderError(
-                trans._(
-                    'No plugin found capable of reading {path_message}.',
-                    path_message=path_message,
-                    deferred=True,
-                ),
+                f'No plugin found capable of reading {path_message}.',
                 paths,
             )
 
@@ -1483,17 +1552,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if plugin and plugin not in readers:
             warnings.warn(
                 RuntimeWarning(
-                    trans._(
-                        "Can't find {plugin} plugin associated with {path_message} files. ",
-                        plugin=plugin,
-                        path_message=path_message,
-                    )
-                    + trans._(
-                        "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
-                    )
-                    + trans._(
-                        'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
-                    )
+                    f"Can't find {plugin} plugin associated with {path_message} files. "
+                    "This may be because you've switched environments, or have uninstalled the plugin without updating the reader preference. "
+                    'You can remove this preference in the preference dialog, or by editing `settings.plugins.extension2reader`.'
                 )
             )
             plugin = None
@@ -1512,11 +1573,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             # plugin failed
             except Exception as e:
                 raise ReaderPluginError(
-                    trans._(
-                        'Tried opening with {plugin}, but failed.',
-                        deferred=True,
-                        plugin=plugin,
-                    ),
+                    f'Tried opening with {plugin}, but failed.',
                     plugin,
                     paths,
                     original_error=e,
@@ -1524,12 +1581,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # multiple plugins
         else:
             raise MultipleReaderError(
-                trans._(
-                    'Multiple plugins found capable of reading {path_message}. Select plugin from {plugins} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
-                    path_message=path_message,
-                    plugins=readers,
-                    deferred=True,
-                ),
+                f'Multiple plugins found capable of reading {path_message}. Select plugin from {readers} and pass to reading function e.g. `viewer.open(..., plugin=...)`.',
                 list(readers.keys()),
                 paths,
             )
@@ -1588,12 +1640,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             assert isinstance(p, str)
 
         if stack:
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
         else:
             assert len(paths) == 1
-            layer_data, hookimpl = read_data_with_plugins(
+            layer_data, plugin = read_data_with_plugins(
                 paths, plugin=plugin, stack=stack
             )
 
@@ -1613,7 +1665,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: list[Layer] = []  # for layers that get added
-        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames, strict=False):
             basename, _ext = os.path.splitext(os.path.basename(filename))
             # actually add the layer
@@ -1690,12 +1741,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
-                    deferred=True,
-                    layer_type=layer_type,
-                    layer_names=layers.NAMES,
-                )
+                f"Unrecognized layer_type: '{layer_type}'. Must be one of: {layers.NAMES}."
             )
 
         try:
@@ -1706,12 +1752,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 raise
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                trans._(
-                    '_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}',
-                    deferred=True,
-                    bad_key=bad_key,
-                    layer_type=layer_type,
-                )
+                f'_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}'
             ) from exc
         return layer if isinstance(layer, list) else [layer]
 
@@ -1736,32 +1777,20 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
         not a ``dict``, or the third item is not a valid layer_type ``str``
     """
     if not isinstance(data, tuple) and 0 < len(data) < 4:
-        raise ValueError(
-            trans._(
-                'LayerData must be a 1-, 2-, or 3-tuple',
-                deferred=True,
-            )
-        )
+        raise ValueError('LayerData must be a 1-, 2-, or 3-tuple')
 
     _data = list(data)
     if len(_data) > 1:
         if not isinstance(_data[1], MutableMapping):
             raise ValueError(
-                trans._(
-                    'The second item in a LayerData tuple must be a dict or other MutableMapping.',
-                    deferred=True,
-                )
+                'The second item in a LayerData tuple must be a dict or other MutableMapping.'
             )
     else:
         _data.append({})
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
-                trans._(
-                    'The third item in a LayerData tuple must be one of: {layers!r}.',
-                    deferred=True,
-                    layers=layers.NAMES,
-                )
+                f'The third item in a LayerData tuple must be one of: {layers.NAMES!r}.'
             )
     else:
         _data.append(guess_labels(_data[0]))
@@ -1872,13 +1901,7 @@ def prune_kwargs(kwargs: Mapping[str, Any], layer_type: str) -> dict[str, Any]:
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
-        raise ValueError(
-            trans._(
-                'Invalid layer_type: {layer_type}',
-                deferred=True,
-                layer_type=layer_type,
-            )
-        )
+        raise ValueError(f'Invalid layer_type: {layer_type}')
 
     # get valid params for the corresponding add_<layer_type> method
     valid = valid_add_kwargs()[layer_type]

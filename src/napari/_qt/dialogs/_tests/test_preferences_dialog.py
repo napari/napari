@@ -1,12 +1,14 @@
 import sys
 
 import numpy.testing as npt
-import pyautogui
 import pytest
-from qtpy.QtCore import QPoint, Qt
+from pydantic import BaseModel
+from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtGui import QKeyEvent
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication
 
-from napari._pydantic_compat import BaseModel
+from napari._pydantic_util import get_inner_type
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
@@ -56,8 +58,11 @@ def pref(qtbot):
 
 def test_prefdialog_populated(pref):
     subfields = filter(
-        lambda f: isinstance(f.type_, type) and issubclass(f.type_, BaseModel),
-        NapariSettings.__fields__.values(),
+        lambda f: (
+            isinstance(ff := get_inner_type(f.annotation), type)
+            and issubclass(ff, BaseModel)
+        ),
+        NapariSettings.model_fields.values(),
     )
     assert pref._stack.count() == len(list(subfields))
 
@@ -220,13 +225,13 @@ def test_preferences_dialog_ok(qtbot, pref):
 def test_preferences_dialog_close(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.close()
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 def test_preferences_dialog_escape(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         qtbot.keyPress(pref, Qt.Key_Escape)
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 @pytest.mark.key_bindings
@@ -303,12 +308,6 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     Notes:
         * Skipped on macOS CI due to accessibility permissions not being
           settable on macOS GitHub Actions runners.
-        * For this test to pass locally, you need to give the Terminal/iTerm/VSCode
-          application accessibility permissions:
-              `System Settings > Privacy & Security > Accessibility`
-
-        See https://github.com/asweigart/pyautogui/issues/247 and
-        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     shortcut_widget = (
         pref._stack.widget(3).widget().widget.widgets['shortcuts']
@@ -342,9 +341,26 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         pos=item_pos,
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    pyautogui.press('delete')
+
+    editor = QApplication.focusWidget()
+    assert editor is not None
+    # Send a ShortcutOverride event to trigger Delete handling,
+    # which clears the selected shortcut text
+    delete_event = QKeyEvent(
+        QEvent.Type.ShortcutOverride,
+        Qt.Key.Key_Delete,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(editor, delete_event)
     qtbot.wait(100)
-    pyautogui.press(confirm_key)
+
+    # Confirm the change with the given key
+    confirm_key_map = {
+        'enter': Qt.Key.Key_Enter,
+        'return': Qt.Key.Key_Return,
+        'tab': Qt.Key.Key_Tab,
+    }
+    QTest.keyClick(editor, confirm_key_map[confirm_key])
     qtbot.wait(100)
 
     # ensure the dialog is still open
@@ -355,3 +371,10 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         12, shortcut_widget._shortcut_col
     ).text()
     assert shortcut == ''
+
+
+def test_startup_script_file_extension(pref):
+    startup_script_widget = (
+        pref._stack.widget(0).widget().widget.widgets['startup_script']
+    )
+    assert startup_script_widget.file_filter() == 'File (*.py)'

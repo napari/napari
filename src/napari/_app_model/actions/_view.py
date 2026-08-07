@@ -1,20 +1,28 @@
 from app_model import Action
-from app_model.types import StandardKeyBinding, SubmenuItem, ToggleRule
+from app_model.types import (
+    KeyBindingRule,
+    StandardKeyBinding,
+    SubmenuItem,
+    ToggleRule,
+)
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
 from napari.settings import get_settings
-from napari.utils.translations import trans
 
 VIEW_SUBMENUS = [
     (
         MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_AXES, title=trans._('Axes')),
+        SubmenuItem(submenu=MenuId.VIEW_AXES, title='Axes'),
     ),
     (
         MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title=trans._('Scale Bar')),
+        SubmenuItem(submenu=MenuId.VIEW_FLOATING_AXES, title='Floating Axes'),
+    ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title='Scale Bar'),
     ),
 ]
 
@@ -22,61 +30,86 @@ VIEW_SUBMENUS = [
 toggle_action_details = [
     (
         'napari.window.view.toggle_viewer_axes',
-        trans._('Axes Visible'),
-        'axes',
-        'visible',
+        'Axes Visible',
+        'axes.visible',
     ),
     (
         'napari.window.view.toggle_viewer_axes_colored',
-        trans._('Axes Colored'),
-        'axes',
-        'colored',
+        'Axes Colored',
+        'axes.colored',
     ),
     (
         'napari.window.view.toggle_viewer_axes_labels',
-        trans._('Axes Labels'),
-        'axes',
-        'labels',
+        'Axes Labels',
+        'axes.labels',
     ),
     (
         'napari.window.view.toggle_viewer_axes_dashed',
-        trans._('Axes Dashed'),
-        'axes',
-        'dashed',
+        'Axes Dashed',
+        'axes.dashed',
     ),
     (
         'napari.window.view.toggle_viewer_axes_arrows',
-        trans._('Axes Arrows'),
-        'axes',
-        'arrows',
+        'Axes Arrows',
+        'axes.arrows',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes',
+        'Floating Axes Visible',
+        'canvas.overlays.floating_axes.visible',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_box',
+        'Floating Axes Box',
+        'canvas.overlays.floating_axes.box',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_colored',
+        'Floating Axes Colored',
+        'canvas.overlays.floating_axes.colored',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_labels',
+        'Floating Axes Labels',
+        'canvas.overlays.floating_axes.labels',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_dashed',
+        'Floating Axes Dashed',
+        'canvas.overlays.floating_axes.dashed',
+    ),
+    (
+        'napari.window.view.toggle_viewer_floating_axes_arrows',
+        'Floating Axes Arrows',
+        'canvas.overlays.floating_axes.arrows',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar',
-        trans._('Scale Bar Visible'),
-        'scale_bar',
-        'visible',
+        'Scale Bar Visible',
+        'canvas.overlays.scale_bar.visible',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_box',
-        trans._('Scale Bar Box'),
-        'scale_bar',
-        'box',
+        'Scale Bar Box',
+        'canvas.overlays.scale_bar.box',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_colored',
-        trans._('Scale Bar Colored'),
-        'scale_bar',
-        'colored',
+        'Scale Bar Colored',
+        'canvas.overlays.scale_bar.colored',
     ),
     (
         'napari.window.view.toggle_viewer_scale_bar_ticks',
-        trans._('Scale Bar Ticks'),
-        'scale_bar',
-        'ticks',
+        'Scale Bar Ticks',
+        'canvas.overlays.scale_bar.ticks',
     ),
 ]
 
-MENUID_DICT = {'axes': MenuId.VIEW_AXES, 'scale_bar': MenuId.VIEW_SCALEBAR}
+MENUID_DICT = {
+    'axes': MenuId.VIEW_AXES,
+    'floating_axes': MenuId.VIEW_FLOATING_AXES,
+    'scale_bar': MenuId.VIEW_SCALEBAR,
+}
 
 
 def _tooltip_visibility_toggle() -> None:
@@ -108,10 +141,20 @@ def _toggle_canvas_ndim(viewer: ViewerModel) -> None:
         viewer.dims.ndisplay = 2
 
 
-VIEW_ACTIONS = [
+def _toggle_synced_camera(viewer: ViewerModel) -> None:
+    """Toggle the camera synced mode between synced and separate."""
+    viewer.camera.synced = not viewer.camera.synced
+
+
+def _get_current_synced_camera(viewer: ViewerModel) -> bool:
+    """Return the current synced state of the camera."""
+    return viewer.camera.synced
+
+
+VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.viewer.fit_to_view',
-        title=trans._('Fit to View'),
+        title='Fit to View',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -124,7 +167,7 @@ VIEW_ACTIONS = [
     ),
     Action(
         id='napari.viewer.camera.zoom_in',
-        title=trans._('Zoom In'),
+        title='Zoom In',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -137,7 +180,7 @@ VIEW_ACTIONS = [
     ),
     Action(
         id='napari.viewer.camera.zoom_out',
-        title=trans._('Zoom Out'),
+        title='Zoom Out',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -152,7 +195,7 @@ VIEW_ACTIONS = [
     # using a similar pattern to the above ViewerToggleAction classes
     Action(
         id='napari.window.view.toggle_ndisplay',
-        title=trans._('Toggle 2D/3D Camera'),
+        title='Toggle 2D/3D Camera',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -163,8 +206,24 @@ VIEW_ACTIONS = [
         callback=_toggle_canvas_ndim,
     ),
     Action(
+        id='napari.viewer.toggle_synced_camera',
+        title='Toggle Synced Camera',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 2,
+            }
+        ],
+        callback=_toggle_synced_camera,
+        toggled=ToggleRule(get_current=_get_current_synced_camera),
+        keybindings=[
+            KeyBindingRule(primary='Ctrl+U', mac='Cmd+U'),
+        ],
+    ),
+    Action(
         id='napari.window.view.toggle_layer_tooltips',
-        title=trans._('Toggle Layer Tooltips'),
+        title='Toggle Layer Tooltips',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -177,13 +236,12 @@ VIEW_ACTIONS = [
     ),
 ]
 
-for cmd, cmd_title, viewer_attr, sub_attr in toggle_action_details:
+for cmd, cmd_title, attribute_path in toggle_action_details:
     VIEW_ACTIONS.append(
         ViewerModelToggleAction(
             id=cmd,
             title=cmd_title,
-            viewer_attribute=viewer_attr,
-            sub_attribute=sub_attr,
-            menus=[{'id': MENUID_DICT[viewer_attr]}],
+            attribute_path=attribute_path,
+            menus=[{'id': MENUID_DICT[attribute_path.split('.')[-2]]}],
         )
     )

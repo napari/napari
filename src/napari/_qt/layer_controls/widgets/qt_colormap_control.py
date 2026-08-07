@@ -22,7 +22,6 @@ from napari.utils.colormaps import (
     ensure_colormap,
     make_colorbar,
 )
-from napari.utils.translations import trans
 
 COLORMAP_WIDTH = 50
 TEXT_WIDTH = 130
@@ -143,7 +142,7 @@ class QtColormapControl(QtWidgetControlsBase):
         self.colormap_combobox = comboBox
         self.colorbar_label = QPushButton(parent=parent)
         self.colorbar_label.setObjectName('colorbar')
-        self.colorbar_label.setToolTip(trans._('Colorbar'))
+        self.colorbar_label.setToolTip('Colorbar')
         self.colorbar_label.clicked.connect(self._on_make_colormap)
 
         colormap_layout = QHBoxLayout()
@@ -157,12 +156,12 @@ class QtColormapControl(QtWidgetControlsBase):
             colormap_layout.addWidget(self.colormap_combobox, stretch=1)
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
-        self.colormapWidget.setProperty('emphasized', True)
         self.colormapWidget.setLayout(colormap_layout)
+        self.colormapWidget.setProperty('foreground', 'true')
 
         self._on_colormap_change()
 
-        self.colormap_widget_label = QtWrappedLabel(trans._('colormap:'))
+        self.colormap_widget_label = QtWrappedLabel('colormap:')
 
     def change_color(self, text):
         """Change colormap on the layer model.

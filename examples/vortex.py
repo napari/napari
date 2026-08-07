@@ -46,10 +46,7 @@ offset = step // 2
 usub = u[offset::step, offset::step]
 vsub = v[offset::step, offset::step]
 
-vectors_field = np.transpose(  # transpose required — skimage bug?
-        np.stack([usub, vsub], axis=-1),
-        (1, 0, 2),
-        )
+vectors_field = np.stack([usub, vsub], axis=-1)
 
 #######################################################################
 # Finally, we create a viewer, and add the vortex frames, the flow

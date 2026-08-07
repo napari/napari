@@ -10,9 +10,9 @@ from typing import (
 )
 
 import numpy as np
+from pydantic import ConfigDict
 
 from napari.utils.events import EventedModel
-from napari.utils.translations import trans
 
 IndicesType = Union[range, list[int], np.ndarray]
 
@@ -107,13 +107,7 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
 
 
 class _StyleEncodingModel(EventedModel):
-    class Config:
-        # Forbid extra initialization parameters instead of ignoring
-        # them by default. This is useful when parsing style encodings
-        # from dicts, as different types of encodings may have the same
-        # field names.
-        # https://pydantic-docs.helpmanual.io/usage/model_config/#options
-        extra = 'forbid'
+    model_config = ConfigDict(extra='forbid')
 
 
 # The following classes provide generic implementations of common ways
@@ -163,7 +157,7 @@ class _ConstantStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _ManualStyleEncoding(
@@ -211,11 +205,11 @@ class _ManualStyleEncoding(
         pass
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 class _DerivedStyleEncoding(
-    _StyleEncodingModel, Generic[StyleValue, StyleArray], ABC
+    _StyleEncodingModel, ABC, Generic[StyleValue, StyleArray]
 ):
     """Encodes style values by deriving them from feature values.
 
@@ -255,10 +249,7 @@ class _DerivedStyleEncoding(
             array = self(features)
         except (KeyError, ValueError):
             warnings.warn(
-                trans._(
-                    'Applying the encoding failed. Using the safe fallback value instead.',
-                    deferred=True,
-                ),
+                'Applying the encoding failed. Using the safe fallback value instead.',
                 category=RuntimeWarning,
             )
             shape = (features.shape[0], *self.fallback.shape)
@@ -275,7 +266,7 @@ class _DerivedStyleEncoding(
         self._cached = _empty_array_like(self.fallback)
 
     def _json_encode(self) -> dict:
-        return self.dict()
+        return self.model_dump()
 
 
 def _get_style_values(

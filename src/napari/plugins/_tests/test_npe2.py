@@ -30,32 +30,48 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-def test_read(mock_pm: 'TestPluginManager'):
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=False)
+def test_read_no_stack(mock_pm: 'TestPluginManager'):
+    _, reader_name = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
-    mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(['some.fzzy'], stack=True)
+
+def test_read_no_stack_pathlib(mock_pm: 'TestPluginManager'):
+    """pathlib.Path inputs should be accepted, not only str (#8586)."""
+    _, reader_name = _npe2.read([Path('some.fzzy')], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    mock_pm.commands.get.reset_mock()
+    assert reader_name == PLUGIN_NAME
+
+
+def test_read_with_stack_pathlib(mock_pm: 'TestPluginManager'):
+    """pathlib.Path inputs should be accepted when stacking (#8586)."""
+    _, _ = _npe2.read([Path('some.fzzy'), Path('other.fzzy')], stack=True)
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+
+
+def test_read_with_stack(mock_pm: 'TestPluginManager'):
+    _, _ = _npe2.read(['some.fzzy'], stack=True)
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
+
+
+def test_read_no_compatible_readers(mock_pm: 'TestPluginManager'):
     with pytest.raises(ValueError, match='No compatible readers'):
         _npe2.read(['some.randomext'], stack=False)
     mock_pm.commands.get.assert_not_called()
 
-    mock_pm.commands.get.reset_mock()
-    assert (
+
+def test_read_nonexistent_plugin(mock_pm: 'TestPluginManager'):
+    with pytest.raises(ValueError, match=r'Given reader .* does not exist'):
         _npe2.read(['some.randomext'], stack=True, plugin='not-npe2-plugin')
-        is None
-    )
     mock_pm.commands.get.assert_not_called()
 
-    mock_pm.commands.get.reset_mock()
-    _, hookimpl = _npe2.read(
+
+def test_read_with_explicit_plugin(mock_pm: 'TestPluginManager'):
+    _, reader_name = _npe2.read(
         ['some.fzzy'], stack=False, plugin='my-plugin.some_reader'
     )
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')
-    assert hookimpl.plugin_name == PLUGIN_NAME
+    assert reader_name == PLUGIN_NAME
 
 
 @pytest.mark.skipif(
@@ -92,6 +108,22 @@ def test_write(mock_pm: 'TestPluginManager'):
     ]
     mock_pm.commands.get.assert_not_called()
     writer.exec.assert_called_once()
+    assert writer.exec.call_args_list[0].kwargs['args'][0] == 'some_file.tif'
+
+
+def test_write_pathlib(mock_pm: 'TestPluginManager'):
+    """pathlib.Path inputs should be accepted, not only str (#8586)."""
+    image = Image(np.random.rand(20, 20), name='ex_img')
+    _npe2.write_layers(Path('some_file.tif'), [image])
+    mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.my_writer')
+
+    mock_pm.commands.get.reset_mock()
+    points = Points(np.random.rand(20, 2), name='ex_points')
+    writer = mock_pm.get_manifest(PLUGIN_NAME).contributions.writers[0]
+    writer = MagicMock(wraps=writer)
+    writer.exec.return_value = ['']
+    _npe2.write_layers(Path('some_file.tif'), [points], writer=writer)
+    # the path forwarded to the writer must be a str, since npe2 requires str
     assert writer.exec.call_args_list[0].kwargs['args'][0] == 'some_file.tif'
 
 
@@ -132,6 +164,11 @@ def test_file_extensions_string_for_layers(mock_pm: 'TestPluginManager'):
 
 def test_get_readers(mock_pm):
     assert _npe2.get_readers('some.fzzy') == {PLUGIN_NAME: 'My Plugin'}
+
+
+def test_get_readers_pathlib(mock_pm):
+    """pathlib.Path inputs should be accepted, not only str (#8586)."""
+    assert _npe2.get_readers(Path('some.fzzy')) == {PLUGIN_NAME: 'My Plugin'}
 
 
 def test_iter_manifest(mock_pm):

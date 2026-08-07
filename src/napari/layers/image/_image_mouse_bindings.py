@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -11,13 +10,15 @@ from napari.utils.geometry import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari.layers.image.image import Image
     from napari.utils.events import Event
 
 
 def move_plane_along_normal(
     layer: Image, event: Event
-) -> None | Generator[None, None, None]:
+) -> Generator[None, None, None] | None:
     """Move a layers slicing plane along its normal vector on click and drag."""
     # early exit clauses
     if (

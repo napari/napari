@@ -1,4 +1,3 @@
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -11,13 +10,12 @@ from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Vectors
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
-class QtEdgeColorPropertyControl(QtWidgetControlsBase):
+class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge
-    color, color mode and color property selection from the layer attributes and
+    color, color mode and color feature selection from the layer attributes and
     Qt widgets.
 
     Parameters
@@ -37,10 +35,10 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         ColorSwatchEdit controlling current edge color of the layer.
     edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
-    color_prop_box : qtpy.QtWidgets.QComboBox
-        Dropdown to select the property for mapping edge_color.
-    edge_prop_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
-        Label for the current selected _edge_color_property chooser widget.
+    color_feature_box : qtpy.QtWidgets.QComboBox
+        Dropdown to select the feature for mapping edge_color.
+    edge_feature_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the color_feature_box chooser widget.
     """
 
     def __init__(self, parent: QWidget, layer: Vectors) -> None:
@@ -52,26 +50,23 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self._layer.events.edge_color.connect(self._on_edge_color_change)
 
         # Setup widgets
-        # dropdown to select the property for mapping edge_color
-        color_properties = self._get_property_values()
-        self.color_prop_box = QComboBox(parent)
-        self.color_prop_box.currentTextChanged.connect(
-            self.change_edge_color_property
+        # dropdown to select the feature for mapping edge_color
+        self.color_feature_box = QComboBox(parent)
+        self.color_feature_box.currentTextChanged.connect(
+            self.change_edge_color_feature
         )
-        self.color_prop_box.addItems(color_properties)
-        self.edge_prop_label = QtWrappedLabel(trans._('edge property:'))
+        self.color_feature_box.addItems(self._layer.features.columns)
+        self.edge_feature_label = QtWrappedLabel('edge feature:')
 
         # vector direct color mode adjustment and widget
         self.edge_color_edit = QColorSwatchEdit(
             initial_color=self._layer.edge_color,
-            tooltip=trans._(
-                'Click to set current edge color',
-            ),
+            tooltip='Click to set current edge color',
         )
         connect_setattr(
             self.edge_color_edit.color_changed, self._layer, 'edge_color'
         )
-        self.edge_color_label = QtWrappedLabel(trans._('edge color:'))
+        self.edge_color_label = QtWrappedLabel('edge color:')
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
@@ -81,24 +76,23 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         self.color_mode_combobox.currentTextChanged.connect(
             self.change_edge_color_mode
         )
-        self.color_mode_label = QtWrappedLabel(trans._('edge color mode:'))
+        self.color_mode_label = QtWrappedLabel('edge color mode:')
         self._on_edge_color_mode_change()
 
-    def change_edge_color_property(self, property_name: str):
-        """Change edge_color_property of vectors on the layer model.
-        This property is the property the edge color is mapped to.
+    def change_edge_color_feature(self, feature: str):
+        """Change edge_color feature of vectors on the layer model.
 
         Parameters
         ----------
-        property_name : str
-            property to map the edge color to
+        feature : str
+            feature to map the edge color to
         """
         mode = self._layer.edge_color_mode
         try:
-            self._layer.edge_color = property_name
+            self._layer.edge_color = feature
             self._layer.edge_color_mode = mode
         except TypeError:
-            # if the selected property is the wrong type for the current color mode
+            # if the selected feature is the wrong type for the current color mode
             # the color mode will be changed to the appropriate type, so we must update
             self._on_edge_color_mode_change()
             raise
@@ -150,26 +144,12 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
-            with qt_signals_blocked(self.color_prop_box):
+            with qt_signals_blocked(self.color_feature_box):
                 prop = self._layer._edge.color_properties.name
-                index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
-                self.color_prop_box.setCurrentIndex(index)
-
-    def _get_property_values(self):
-        """Get the current property values from the Vectors layer
-
-        Returns
-        -------
-        property_values : np.ndarray
-            array of all of the union of the property names (keys)
-            in Vectors.properties and Vectors.property_choices
-
-        """
-        property_choices = [*self._layer.property_choices]
-        properties = [*self._layer.properties]
-        property_values = np.union1d(property_choices, properties)
-
-        return property_values
+                index = self.color_feature_box.findText(
+                    prop, Qt.MatchFixedString
+                )
+                self.color_feature_box.setCurrentIndex(index)
 
     def _update_edge_color_gui(self, mode: str):
         """Update the GUI element associated with edge_color.
@@ -184,18 +164,18 @@ class QtEdgeColorPropertyControl(QtWidgetControlsBase):
         if mode in {'cycle', 'colormap'}:
             self.edge_color_edit.setHidden(True)
             self.edge_color_label.setHidden(True)
-            self.color_prop_box.setHidden(False)
-            self.edge_prop_label.setHidden(False)
+            self.color_feature_box.setHidden(False)
+            self.edge_feature_label.setHidden(False)
 
         elif mode == 'direct':
             self.edge_color_edit.setHidden(False)
             self.edge_color_label.setHidden(False)
-            self.color_prop_box.setHidden(True)
-            self.edge_prop_label.setHidden(True)
+            self.color_feature_box.setHidden(True)
+            self.edge_feature_label.setHidden(True)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
             (self.color_mode_label, self.color_mode_combobox),
             (self.edge_color_label, self.edge_color_edit),
-            (self.edge_prop_label, self.color_prop_box),
+            (self.edge_feature_label, self.color_feature_box),
         ]

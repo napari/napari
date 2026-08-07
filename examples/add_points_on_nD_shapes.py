@@ -67,8 +67,8 @@ for d in data:
 # set the viewer to 3D rendering mode with the first two rectangles in view
 viewer.dims.ndisplay = 3
 viewer.dims.set_point(axis=0, value=0)
-viewer.camera.angles = (70, 30, 150)
-viewer.camera.zoom = 2.5
+viewer.camera.angles = (0, 15, 150)
+viewer.fit_to_view()
 
 if __name__ == '__main__':
     napari.run()

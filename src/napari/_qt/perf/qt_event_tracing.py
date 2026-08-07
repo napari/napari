@@ -11,7 +11,6 @@ from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
 from napari.utils import perf
-from napari.utils.translations import trans
 
 
 class QApplicationWithTracing(QApplication):
@@ -54,6 +53,8 @@ class EventTypes:
     We use this class for PyQt5 and PySide2 to be consistent.
     """
 
+    # TODO Check PySide6
+
     def __init__(self) -> None:
         """Create mapping for all known event types."""
         self.string_name = {}
@@ -71,7 +72,7 @@ class EventTypes:
         try:
             return self.string_name[event]
         except KeyError:
-            return trans._('UnknownEvent:{event}', event=event)
+            return f'UnknownEvent:{event}'
 
 
 EVENT_TYPES = EventTypes()
