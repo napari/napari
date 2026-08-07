@@ -74,11 +74,22 @@ def fail_obj_graph(Klass):  # pragma: no cover
 
         assert file_path.exists()
 
+        # Also store dot files which provide more text
+        file_path2 = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
+        ).absolute()
+        objgraph.show_backrefs(
+            list(Klass._instances),
+            max_depth=20,
+            filename=str(file_path2),
+        )
+        assert file_path2.exists()
+
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
         pytest.fail(
             f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
-            f'The object graph is saved in {file_path}.'
+            f'The object graph is saved in {file_path} and {file_path2}.'
             f'{len(Klass._instances)} objects left after cleanup'
         )
 
