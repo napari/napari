@@ -14,6 +14,7 @@ before displaying it in napari.
 
 .. tags:: visualization-advanced, layers, xarray
 """
+import numpy as np
 import pint
 import xarray as xr
 
@@ -50,7 +51,8 @@ air_layer = viewer.add_image(
 # set a time point that overlaps both datasets. The time axis inherits a
 # real time unit (hours/days since 1970-01-01); napari reconciles the two
 # layers' different units, so we navigate it in hours.
-viewer.dims.set_point(0, 383322)  # hours since 1970-01-01 ≈ 2013-09-23
+time_point = np.datetime64('2013-09-23').astype('datetime64[h]').astype(float)
+viewer.dims.set_point(0, time_point)
 
 # latitude goes from -90 (south, down) to 90 (north, up),
 # so we make sure that the camera vertical axis points up.
