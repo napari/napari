@@ -77,6 +77,9 @@ def fail_obj_graph(Klass):  # pragma: no cover
             list(Klass._instances),
             max_depth=20,
             filename=str(file_path2),
+            extra_info=lambda obj: (
+                repr(obj) if isinstance(obj, BaseException) else ''
+            ),
         )
 
         Klass._instances.clear()
