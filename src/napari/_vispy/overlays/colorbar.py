@@ -9,7 +9,6 @@ from napari._vispy.overlays.base import (
     VispyTiledCanvasOverlay,
 )
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 
     from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
-    from napari.layers import Image, Layer, Surface
+    from napari.layers import Image, Surface
     from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
@@ -70,21 +69,19 @@ class ColorManagerWrapper:
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
     overlay: ColorBarOverlay
+    layer: Image | Surface
 
     def __init__(
         self,
         *,
-        layer: Image | Surface,
         font_info: FontInfo,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             node=ColorBar(font_info=font_info),
-            layer=layer,
             font_info=font_info,
             **kwargs,
         )
-        self.layer: Layer
         self.x_size = 50
         self.y_size = 250
 
@@ -112,8 +109,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
-        get_settings().appearance.events.theme.connect(self._on_data_change)
-        self.viewer.events.theme.connect(self._on_data_change)
+        self.viewer.canvas.events.background_color.connect(
+            self._on_data_change
+        )
 
         self.reset()
 
@@ -158,6 +156,8 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
+        if not self.node.visible:
+            return
         if self.source_wrapper.contrast_limits is None:
             return
 
