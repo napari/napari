@@ -98,7 +98,7 @@ def _fix_wayland_opengl() -> None:
         if _qt_from_conda() and not _native_wayland_plugin_available():
             sys.stderr.write(
                 'You use Qt from conda and need qt6-wayland installed to '
-                'start napari: conda install -c conda-forge qt6-wayland\n'
+                'start napari install qt6-wayland using conda install qt6-wayland or pixi add qt6-wayland'
             )
         return
     if not _nvidia_driver_loaded() and _native_wayland_plugin_available():
