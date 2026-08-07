@@ -26,7 +26,6 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -390,10 +389,7 @@ class Vectors(Layer):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    trans._(
-                        'property used for edge_color dropped',
-                        deferred=True,
-                    ),
+                    'property used for edge_color dropped',
                     RuntimeWarning,
                 )
             else:
@@ -595,7 +591,7 @@ class Vectors(Layer):
         edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
+            self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
@@ -612,20 +608,12 @@ class Vectors(Layer):
                         ],
                     }
                     warnings.warn(
-                        trans._(
-                            'edge_color property was not set, setting to: {color_property}',
-                            deferred=True,
-                            color_property=color_property,
-                        ),
+                        f'edge_color property was not set, setting to: {color_property}',
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Points.properties to use {edge_color_mode}',
-                            deferred=True,
-                            edge_color_mode=edge_color_mode,
-                        )
+                        f'There must be a valid Points.properties to use {edge_color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -634,10 +622,7 @@ class Vectors(Layer):
                 np.number,
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
 
             self._edge.color_mode = edge_color_mode
@@ -678,7 +663,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge.contrast_limits = contrast_limits
 
@@ -798,7 +783,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         # Data containing vectors in the currently viewed slice
         self._view_data: np.ndarray[
             tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
-        ] = np.empty((0, 2, 2))  # type: ignore[assignment]
+        ] = np.empty((0, 2, 2))
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 
