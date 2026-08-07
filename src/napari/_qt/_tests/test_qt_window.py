@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from magicgui.widgets import Container
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import QApplication, QWidget
 
@@ -252,10 +252,6 @@ def test_sliding_dock_area_disable_restores_user_size(make_napari_viewer):
 def test_sliding_dock_redock_to_different_area_resets_state(
     make_napari_viewer,
 ):
-    """A dock floated and redocked to a different edge should be
-    re-registered with fresh state — no leftover user_size or
-    cross_axis_size from its previous side — rather than reusing stale
-    values that no longer make sense on the new edge."""
     viewer = make_napari_viewer(show=True)
     qt_window = viewer.window._qt_window
     settings = get_settings()
@@ -348,5 +344,79 @@ def test_sliding_dock_cross_axis_size_preserved_across_cycles(
         collapse_both()
         expand_both()
         assert dock_b.height() == remembered_height
+
+    viewer.close()
+
+
+def test_hover_at_left_edge_expands_dock(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    assert not dock.isVisible()
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+    assert dock.isVisible() is True
+
+    viewer.close()
+
+
+def test_hover_away_from_center_does_not_expand_dock(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+
+    qt_window._handle_multi_dock_hover(
+        QPoint(qt_window.width() // 2, qt_window.height() // 2)
+    )
+
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+    assert not dock.isVisible()
+
+    viewer.close()
+
+
+def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+
+    qt_window._handle_multi_dock_hover(
+        QPoint(qt_window.width() - 1, qt_window.height() // 2)
+    )
+
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+
+    viewer.close()
+
+
+def test_hover_does_not_affect_dock_when_autohide_disabled(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    assert not settings.appearance.dock_area_autohide
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    assert dock not in qt_window.widgets_sliding_dock_area
+    was_visible = dock.isVisible()
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+
+    assert dock.isVisible() == was_visible
 
     viewer.close()
