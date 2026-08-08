@@ -228,7 +228,6 @@ class _QtMainWindow(QMainWindow):
         # default width of sliding out dock widget
         self.expanded_size = 250
 
-        self._sliding_dock_callbacks = {}
         self._is_closing = False
 
     def register_widget_sliding_dock(
@@ -325,6 +324,7 @@ class _QtMainWindow(QMainWindow):
     def _on_dock_floating_changed(self, floating: bool) -> None:
         """Dependent on floating status of the dock widget either register or deregister the dock widget as sliding."""
         dock = self.sender()
+
         if floating and dock in self.widgets_sliding_dock_area:
             self.deregister_widget_sliding_dock(dock)
         elif (
@@ -1762,6 +1762,9 @@ class Window:
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
+        self.widgets_sliding_dock_area.append(dock_widget)
+        if get_settings().appearance.dock_area_autohide:
+            self._qt_window.register_widget_sliding_dock(dock_widget)
 
         return dock_widget
 
@@ -1916,6 +1919,11 @@ class Window:
         self._qt_window.removeDockWidget(_dw)
         if menu is not None:
             menu.removeAction(_dw.toggleViewAction())
+
+        self.widgets_sliding_dock_area.remove(_dw)
+
+        if get_settings().appearance.dock_area_autohide:
+            self._qt_window.deregister_widget_sliding_dock(_dw)
 
         # Remove dock widget from dictionary
         self._wrapped_dock_widgets.pop(_dw.name, None)
