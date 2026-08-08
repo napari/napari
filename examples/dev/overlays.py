@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 from magicgui import magicgui
-from vispy.scene.visuals import Ellipse
+from vispy.scene.visuals import Ellipse, Text
 
 import napari
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -68,9 +68,40 @@ class VispyDotOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_size_change()
 
 
+class OrientationOverlay(CanvasOverlay):
+    """Orientation marker at one of the cardinal directions of the canvas."""
+    text: str
+    size: int = 10
+
+class VispyOrientationOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+    """Orientation marker at one of the cardinal directions of the canvas."""
+    def __init__(self, **kwargs):
+        super().__init__(
+            node=Text(text='', bold=True, color='white', font_size=10),
+            **kwargs
+        )
+        self.overlay.events.text.connect(self._on_text_change)
+        self.overlay.events.size.connect(self._on_size_change)
+
+        self.reset()
+
+    def _on_text_change(self, event=None):
+        self.node.text = self.overlay.text
+
+    def _on_size_change(self, event=None):
+        self.node.font_size = self.overlay.size
+        self._on_position_change()
+
+    def reset(self):
+        super().reset()
+        self._on_text_change()
+        self._on_size_change()
+
+
 # for napari to know how to use this overlay, we need to add it to the overlay_to_visual dict
 # this will ideally be exposed at some point
 overlay_to_visual[DotOverlay] = VispyDotOverlay
+overlay_to_visual[OrientationOverlay] = VispyOrientationOverlay
 
 viewer = napari.Viewer()
 # we also need to add at least a layer to see any overlay,
@@ -82,6 +113,18 @@ viewer.add_image(np.random.rand(10, 10))
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     viewer._scene_overlays.dot = DotOverlay(visible=True)
+    viewer.canvas.overlays.orientation_n = OrientationOverlay(
+        visible=True, text='N', position='top_center'
+    )
+    viewer.canvas.overlays.orientation_s = OrientationOverlay(
+        visible=True, text='S', position='bottom_center'
+    )
+    viewer.canvas.overlays.orientation_w = OrientationOverlay(
+        visible=True, text='W', position='middle_left'
+    )
+    viewer.canvas.overlays.orientation_e = OrientationOverlay(
+        visible=True, text='E', position='middle_right'
+    )
 
 
 # let's make a simple widget to control the overlay
