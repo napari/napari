@@ -11,7 +11,6 @@ import os
 import sys
 import time
 import warnings
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -514,26 +513,9 @@ class _QtMainWindow(QMainWindow):
         anim = QPropertyAnimation(dock, property_name, self)
         anim.setDuration(300)
         anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
-        orientation = (
-            Qt.Orientation.Horizontal
-            if property_name == b'maximumWidth'
-            else Qt.Orientation.Vertical
-        )
-        anim.valueChanged.connect(
-            partial(
-                self._on_dock_size_animated,
-                dock=dock,
-                orientation=orientation,
-            )
-        )
 
-        anim.finished.connect(
-            partial(
-                self._on_generic_animation_finished,
-                dock,
-                property_name,
-            )
-        )
+        anim.valueChanged.connect(self._on_dock_size_animated)
+        anim.finished.connect(self._on_generic_animation_finished)
         state['animation'] = anim
 
         if show:
@@ -559,9 +541,6 @@ class _QtMainWindow(QMainWindow):
     def _on_dock_size_animated(
         self,
         size: int,
-        *,
-        dock: QtViewerDockWidget,
-        orientation: Qt.Orientation,
     ):
         """Resize a dock to match the current animation frame.
 
@@ -580,16 +559,10 @@ class _QtMainWindow(QMainWindow):
 
         Parameters
         ----------
-        dock : QtViewerDockWidget
-            The dock widget being resized.
         size : int
             The current animated size, in pixels, along `orientation`. Values
             less than or equal to 0 are ignored, since `resizeDocks` requires
             strictly positive sizes.
-        orientation : Qt.Orientation
-            The axis being animated: `Qt.Orientation.Horizontal` for
-            left/right docks (width), or `Qt.Orientation.Vertical` for
-            bottom docks (height).
 
         Notes
         -----
@@ -597,6 +570,21 @@ class _QtMainWindow(QMainWindow):
         registered sliding dock (e.g. it was floated and deregistered while
         the animation was still running).
         """
+        anim = self.sender()
+        if not isinstance(anim, QPropertyAnimation):
+            return
+
+        dock = anim.targetObject()
+        if not isinstance(dock, QtViewerDockWidget):
+            return
+
+        property_name = bytes(anim.propertyName())
+        orientation = (
+            Qt.Orientation.Horizontal
+            if property_name == b'maximumWidth'
+            else Qt.Orientation.Vertical
+        )
+
         if size <= 0:
             return
 
@@ -619,9 +607,7 @@ class _QtMainWindow(QMainWindow):
         if cross_size:
             self.resizeDocks([dock], [cross_size], cross_orientation)
 
-    def _on_generic_animation_finished(
-        self, dock: QtViewerDockWidget, property_name: bytes
-    ):
+    def _on_generic_animation_finished(self):
         """Clean up a dock's state once its slide animation finishes.
 
         If the dock finished expanding, its maximum size constraint is
@@ -630,20 +616,23 @@ class _QtMainWindow(QMainWindow):
         finished collapsing, it's hidden (`setVisible(False)`) now that it
         has visually shrunk to 0.
 
-        Parameters
-        ----------
-        dock : QtViewerDockWidget
-            The dock widget whose animation just finished.
-        property_name : bytes
-            The property that was animated, b'maximumWidth' or
-            b'maximumHeight', used to decide which constraint to release.
-
         Notes
         -----
         No-ops if `dock` is no longer a registered sliding dock (e.g. it was
         floated and deregistered while the animation was still running).
         """
+        anim = self.sender()
+        if not isinstance(anim, QPropertyAnimation):
+            return
+
+        dock = anim.targetObject()
+        if not isinstance(dock, QtViewerDockWidget):
+            return
+
+        property_name = bytes(anim.propertyName())
+
         state = self.widgets_sliding_dock_area.get(dock)
+
         if not state or not dock:
             return
 
