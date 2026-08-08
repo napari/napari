@@ -538,6 +538,32 @@ class _QtMainWindow(QMainWindow):
 
         anim.start()
 
+    def _apply_dock_animated_size(
+        self,
+        size: int,
+        dock: QtViewerDockWidget,
+        orientation: Qt.Orientation,
+    ) -> None:
+        if size <= 0:
+            return
+
+        state = self.widgets_sliding_dock_area.get(dock)
+        if state is None:
+            return
+
+        self.resizeDocks([dock], [size], orientation)
+
+        cross_orientation = _get_perpendicular_orientation(orientation)
+        cross_size = state.get('cross_axis_size')
+
+        current_cross = _get_cross_axis_dimension_size(dock, orientation)
+        if cross_size is None and current_cross > 0:
+            cross_size = current_cross
+            state['cross_axis_size'] = cross_size
+
+        if cross_size:
+            self.resizeDocks([dock], [cross_size], cross_orientation)
+
     def _on_dock_size_animated(
         self,
         size: int,
@@ -585,27 +611,11 @@ class _QtMainWindow(QMainWindow):
             else Qt.Orientation.Vertical
         )
 
-        if size <= 0:
-            return
-
-        self.resizeDocks([dock], [size], orientation)
-
-        # Dock widgets sharing an edge also share a splitter along the perpendicular
-        # axis (e.g. two left dock widgets split height between them and two bottom
-        # docks split width between them). Resizing along the animated axis
-        # alone lets Qt freely recompute the other split so we reapply the last
-        # known cross-axis size so it doesn't drift between show/hide cycles.
-        state = self.widgets_sliding_dock_area[dock]
-        cross_orientation = _get_perpendicular_orientation(orientation)
-        cross_size = state.get('cross_axis_size')
-
-        current_cross = _get_cross_axis_dimension_size(dock, orientation)
-        if cross_size is None and current_cross > 0:
-            cross_size = current_cross
-            state['cross_axis_size'] = cross_size
-
-        if cross_size:
-            self.resizeDocks([dock], [cross_size], cross_orientation)
+        self._apply_dock_animated_size(
+            int(size),
+            dock,
+            orientation,
+        )
 
     def _on_generic_animation_finished(self):
         """Clean up a dock's state once its slide animation finishes.

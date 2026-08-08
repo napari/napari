@@ -189,11 +189,6 @@ def make_napari_viewer(
     request: 'FixtureRequest',
     mock_app_model,
     monkeypatch,
-    _find_dangling_widgets,
-    _dangling_qthread_pool,
-    _dangling_qanimations,
-    _dangling_qthreads,
-    _dangling_qtimers,
 ):
     """A pytest fixture function that creates a napari viewer for use in testing.
 
