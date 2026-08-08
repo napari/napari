@@ -404,7 +404,7 @@ class _QtMainWindow(QMainWindow):
         (see `eventFilter`), not just on edge crossings, since it re-evaluates
         show/hide conditions for every registered dock on each call.
         """
-        edge_threshold = 20
+        edge_threshold = 40
         win_width = self.width()
         win_height = self.height()
 
