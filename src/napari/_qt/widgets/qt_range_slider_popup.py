@@ -63,4 +63,4 @@ class QRangeSliderPopup(QtPopup):
         ):
             self.slider.setFocus()
             return
-        super().keyPressEvent(event)  # type: ignore[no-untyped-call]
+        super().keyPressEvent(event)

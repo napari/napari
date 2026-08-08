@@ -3,11 +3,9 @@
 typestubs:
 	tox -e typestub
 
-# note: much faster to run mypy as daemon,
-# dmypy run -- ...
-# https://mypy.readthedocs.io/en/stable/mypy_daemon.html
+# run the ty type checker via tox
 typecheck:
-	tox -e mypy
+	tox -e ty
 
 check-manifest:
 	tox -e check-manifest

@@ -210,9 +210,9 @@ QPROCESSORS: dict[object, Callable] = {
 }
 
 # Add future and LayerData processors for each layer type.
-for t in types._LayerData.__args__:  # type: ignore [attr-defined]
+for t in types._LayerData.__args__:
     QPROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    QPROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
+    QPROCESSORS[Future[t]] = partial(
         _add_future_data, return_type=t, _from_tuple=False
     )

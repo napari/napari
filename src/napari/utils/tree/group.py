@@ -72,7 +72,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         new._list.extend(iterable)
         return new
 
-    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # type: ignore[override]
+    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:
         return super().__getitem__(key)
 
     def __delitem__(self, key: MaybeNestedIndex) -> None:
@@ -80,9 +80,9 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         if isinstance(key, int | tuple):
             self[key].parent = None
         else:
-            for item in self[key]:  # type: ignore[union-attr]
+            for item in self[key]:  # type: ignore
                 item.parent = None
-        super().__delitem__(key)  # type: ignore[arg-type]
+        super().__delitem__(key)  # type: ignore
 
     def insert(self, index: int, value: NodeType) -> None:
         """Insert ``value`` as child of this group at position ``index``."""
@@ -103,8 +103,8 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield obj  # type: ignore[misc]
-        for child in obj:  # type: ignore[attr-defined]
+            yield obj  # type: ignore
+        for child in obj:  # type: ignore
             yield from child.traverse(leaves_only)
 
     def _render(self) -> list[str]:

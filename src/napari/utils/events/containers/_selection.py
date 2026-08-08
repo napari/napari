@@ -229,7 +229,7 @@ class Selection(EventedSet[_T]):
         obj._current_ = current
         return obj
 
-    def _json_encode(self) -> dict:  # type: ignore[override]
+    def _json_encode(self) -> dict:  # type: ignore
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
         return {'selection': super()._json_encode(), '_current': self._current}

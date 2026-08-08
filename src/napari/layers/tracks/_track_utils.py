@@ -190,7 +190,7 @@ class TrackManager:
         features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
-        self._feature_table.reorder(self._order)  # type: ignore[arg-type]
+        self._feature_table.reorder(self._order)  # type: ignore
         if 'track_id' not in self._feature_table.values:
             self._feature_table.values['track_id'] = self.track_ids
 

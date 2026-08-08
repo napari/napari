@@ -460,9 +460,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._histogram = HistogramModel(self)
         return self._histogram
 
-    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
+        ScalarFieldBase.data.fset(self, data)
         if self.auto_contrast:
             self.reset_contrast_limits()
 
@@ -638,9 +638,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
         return fixed_contrast_info.coerce_data(raw)
 
-    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    @IntensityVisualizationMixin.contrast_limits.setter
     def contrast_limits(self, contrast_limits: tuple[float, float]) -> None:
-        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # type: ignore [attr-defined]
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)
         if not np.allclose(
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,
             self.contrast_limits,

@@ -93,7 +93,7 @@ class SettingsAwareContext(Context):
         If no map is provided, an empty dict is used.
         """
         # important to use self, not *self.maps
-        return Context(m or {}, self)  # type: ignore
+        return Context(m or {}, self)
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):

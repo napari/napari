@@ -58,7 +58,7 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
     _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:
-        return super().model()  # type: ignore[return-value]
+        return super().model()
 
     def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Delete items with delete key."""

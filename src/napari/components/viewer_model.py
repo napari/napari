@@ -203,9 +203,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
     _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
-        default_factory=lambda: (  # type: ignore
-            EventedDictNamespace({'axes': AxesOverlay()})
-        )
+        default_factory=lambda: EventedDictNamespace({'axes': AxesOverlay()})
     )
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
@@ -308,7 +306,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     #       know that specific elements match specific types
     @property
     def axes(self) -> AxesOverlay:
-        return self._scene_overlays.axes  # type: ignore[return-value]
+        return self._scene_overlays.axes
 
     @property
     @deprecated(
@@ -316,7 +314,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> FloatingAxesOverlay:
-        return self.canvas.overlays.floating_axes  # type: ignore[return-value]
+        return self.canvas.overlays.floating_axes
 
     @property
     @deprecated(
@@ -324,7 +322,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        return self.canvas.overlays.scale_bar
 
     @property
     @deprecated(
@@ -332,7 +330,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        return self.canvas.overlays.text
 
     @property
     @deprecated(
