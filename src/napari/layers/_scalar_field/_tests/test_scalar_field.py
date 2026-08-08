@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari.components import Dims
 from napari.layers import Image, Labels
@@ -437,3 +438,95 @@ def test_set_view_slice_3d_multiscale_corners_without_viewer():
             'when switching to 3D without a viewer'
         ),
     )
+
+
+class TestXarrayMetadataInit:
+    def test_xarray_image_all_metadata(self):
+        """Image inherits axis_labels, scale, translate, units from DataArray."""
+        data = xr.DataArray(
+            np.random.random((3, 10, 15)),
+            dims=['z', 'y', 'x'],
+            coords={
+                'z': ('z', [10, 15, 20], {'units': 'microns'}),
+                'y': ('y', np.arange(100, 110).astype(float), {'units': 'mm'}),
+                'x': ('x', np.arange(200, 215).astype(float)),
+            },
+        )
+        layer = Image(data)
+        assert layer.axis_labels == ('z', 'y', 'x')
+        np.testing.assert_allclose(layer.scale, [5.0, 1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [10.0, 100.0, 200.0])
+        assert str(layer.units[0]) == 'micron'
+        assert str(layer.units[1]) == 'millimeter'
+        assert str(layer.units[2]) == 'pixel'
+
+    def test_xarray_labels_gets_metadata(self):
+        """Labels inherits axis_labels from DataArray dims (no coords)."""
+        data = xr.DataArray(
+            np.random.randint(0, 5, (5, 10, 15)), dims=['z', 'y', 'x']
+        )
+        layer = Labels(data)
+        assert layer.axis_labels == ('z', 'y', 'x')
+
+    def test_xarray_explicit_overrides(self):
+        """Explicit axis_labels, scale, units override auto-inheritance."""
+        data = xr.DataArray(
+            np.random.random((10, 15)),
+            dims=['y', 'x'],
+            coords={
+                'y': [0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
+                'x': list(range(15)),
+            },
+        )
+        layer = Image(
+            data,
+            axis_labels=('row', 'col'),
+            scale=(3.0, 3.0),
+            translate=(5.0, 5.0),
+            units=('mm', 'mm'),
+        )
+        assert layer.axis_labels == ('row', 'col')
+        np.testing.assert_allclose(layer.scale, [3.0, 3.0])
+        np.testing.assert_allclose(layer.translate, [5.0, 5.0])
+        assert str(layer.units[0]) == 'millimeter'
+
+    def test_xarray_multiscale_list(self):
+        """List of xarrays (multiscale) inherits metadata from first level."""
+        da_full = xr.DataArray(
+            np.random.random((10, 20)),
+            dims=['y', 'x'],
+            coords={
+                'y': (
+                    'y',
+                    np.arange(100, 110).astype(float),
+                    {'units': 'microns'},
+                ),
+                'x': ('x', np.arange(200, 220).astype(float)),
+            },
+        )
+        da_half = xr.DataArray(np.random.random((5, 10)), dims=['y', 'x'])
+        layer = Image([da_full, da_half], multiscale=True)
+        assert layer.axis_labels == ('y', 'x')
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [100.0, 200.0])
+        assert str(layer.units[0]) == 'micron'
+
+    def test_xarray_datetime_coords(self):
+        """Datetime coords get a real time unit, scale and translate."""
+        data = xr.DataArray(
+            np.random.random((3, 10, 15)),
+            dims=['time', 'y', 'x'],
+            coords={
+                'time': np.array(
+                    ['2013-01-01', '2013-01-02', '2013-01-03'],
+                    dtype='datetime64[ns]',
+                ),
+                'y': ('y', np.arange(100, 110).astype(float)),
+                'x': ('x', np.arange(200, 215).astype(float)),
+            },
+        )
+        layer = Image(data)
+        assert layer.axis_labels == ('time', 'y', 'x')
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [15706.0, 100.0, 200.0])
+        assert str(layer.units[0]) == 'day'
