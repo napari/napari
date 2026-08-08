@@ -427,7 +427,9 @@ class _QtMainWindow(QMainWindow):
                 'property_name': b'maximumWidth',
                 'should_show': lambda dock: pos.x() <= edge_threshold,
                 'should_hide': lambda dock: (
-                    pos.x() > dock.width() + dock.width() * 0.05
+                    pos.x()
+                    > self._get_expanded_size(dock, b'maximumWidth')
+                    + self._get_expanded_size(dock, b'maximumWidth') * 0.05
                 ),
             },
             Qt.DockWidgetArea.BottomDockWidgetArea: {
@@ -437,7 +439,12 @@ class _QtMainWindow(QMainWindow):
                 ),
                 'should_hide': lambda dock: (
                     pos.y()
-                    < (win_height - dock.height() + dock.height() * 0.05)
+                    < (
+                        win_height
+                        - self._get_expanded_size(dock, b'maximumHeight')
+                        - self._get_expanded_size(dock, b'maximumHeight')
+                        * 0.05
+                    )
                 ),
             },
         }
@@ -621,7 +628,8 @@ class _QtMainWindow(QMainWindow):
         """Clean up a dock's state once its slide animation finishes.
 
         If the dock finished expanding, its maximum size constraint is
-        released back to unconstrained (`QWIDGETSIZE_MAX`), so it can be
+        released back to unconstrained (`QWIDsize
+        GETSIZE_MAX`), so it can be
         freely resized afterward (e.g. by the user dragging its edge). If it
         finished collapsing, it's hidden (`setVisible(False)`) now that it
         has visually shrunk to 0.
@@ -653,6 +661,9 @@ class _QtMainWindow(QMainWindow):
                 dock.setMaximumHeight(QWIDGETSIZE_MAX)
         else:
             dock.setVisible(False)
+
+        if state.get('animation') is anim:
+            state['animation'] = None
 
     def _get_window_icon(self) -> str:
         if hasattr(self, '_window_icon'):
