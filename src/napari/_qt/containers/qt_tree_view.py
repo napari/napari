@@ -44,8 +44,8 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
         self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]) -> None:  # type: ignore
-        super().setRoot(root)  # type: ignore
+    def setRoot(self, root: Group[Node]) -> None:  # type: ignore[ty:invalid-method-override]
+        super().setRoot(root)  # type: ignore[ty:invalid-argument-type]
 
         # make tree look like a list if it contains no lists.
         self.model().rowsRemoved.connect(self._redecorate_root)

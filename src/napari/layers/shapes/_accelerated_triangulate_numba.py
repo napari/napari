@@ -970,4 +970,4 @@ def normalize_vertices_and_edges(
     for i, vertex in enumerate(new_vertices):
         new_vertices_array[i] = vertex
     edges_array = np.array(list(edges), dtype=np.int64)
-    return new_vertices_array, edges_array  # type: ignore
+    return new_vertices_array, edges_array  # type: ignore[ty:invalid-return-type]
