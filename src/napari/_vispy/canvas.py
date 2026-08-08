@@ -1261,6 +1261,8 @@ class VispyCanvas:
             x = y = 0
             if 'top' in position:
                 y = y_offset
+            elif 'middle' in position:
+                y = y_max / 2 - vispy_overlay.y_size / 2
             elif 'bottom' in position:
                 y = y_max - vispy_overlay.y_size - y_offset
 
