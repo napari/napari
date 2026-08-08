@@ -24,10 +24,12 @@ from weakref import WeakValueDictionary
 
 from qtpy import QT5
 from qtpy.QtCore import (
+    QEasingCurve,
     QEvent,
     QEventLoop,
     QPoint,
     QProcess,
+    QPropertyAnimation,
     QRect,
     QSize,
     Qt,
@@ -64,7 +66,13 @@ from napari._qt.qt_event_loop import (
 from napari._qt.qt_resources import get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.threads.status_checker import StatusChecker
-from napari._qt.utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from napari._qt.utils import (
+    QImg2array,
+    _get_cross_axis_dimension_size,
+    _get_perpendicular_orientation,
+    qbytearray_to_str,
+    str_to_qbytearray,
+)
 from napari._qt.widgets.qt_command_palette import QCommandPalette
 from napari._qt.widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
@@ -102,7 +110,8 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 _sentinel = object()
-
+# Putting this here because Pyside 6 backend does not expose this through qtpy.
+QWIDGETSIZE_MAX = 16777215
 SHOW_QT_WARNING = QT5
 # a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
 
@@ -214,6 +223,436 @@ class _QtMainWindow(QMainWindow):
         )
 
         self._command_palette = QCommandPalette(self)
+
+        self.widgets_sliding_dock_area = {}
+        # default width of sliding out dock widget
+        self.expanded_size = 250
+
+        self._is_closing = False
+
+    def register_widget_sliding_dock(
+        self, dock_widget: QtViewerDockWidget
+    ) -> None:
+        """Register a widget as part of sliding dock areas.
+
+        When registering a docking widget in sliding docking areas, the visibility is initially set to False, e.g.
+        the dock widget is collapsed to the side. Registering a widget in sliding docking areas tracks a couple of
+        things:
+        - visible_state: whether the dock widget should show or not if registered as sliding.
+        - animation: the current QPropertyAnimation. Held so it can be stopped if needed.
+        - user_size: the dock's remembered size along the axis being animated (width for left/right docks, height
+          for bottom docks), captured from a manual user resize (dragging the dock's edge). When set, this is used
+          instead of the widget's sizeHint() as the target size to expand to, so a user's manual resize persists across
+          subsequent collapse/expand cycles rather than resetting back to the default each time.
+        - cross_axis_size: the dock's size along the perpendicular axis to the one being animated.
+          For a left/right dock (animating width), this is its height and for a bottom dock
+          (animating height), this is its width. It is captured for the case a dock on one side has more than
+          one widget as otherwise the size of these widgets would be freely distributed.
+
+        The widget is connected to a callback to register / deregister upon docking status changed to floating / docked.
+
+        dock_widget: QtViewerDockWidget
+            Instance of a QtViewerDockWidget, e.g. layer controls or layer list dock widget.
+        """
+        if dock_widget.widget():
+            dock_widget.widget().setMouseTracking(True)
+
+        dock_widget.setVisible(False)
+
+        self.widgets_sliding_dock_area[dock_widget] = {
+            'visible_state': False,
+            'animation': None,
+            'user_size': None,  # This is added to track size after resize. Otherwise it would reset after sliding.
+            'cross_axis_size': None,  # Size across perpendicular axis, e.g. in case of left right widget -> height
+        }
+
+        dock_widget.topLevelChanged.connect(self._on_dock_floating_changed)
+
+    def _get_expanded_size(
+        self, dock: QtViewerDockWidget, property_name: bytes
+    ) -> int:
+        """Compute the target expanded size for a dock along the animated axis.
+
+        The size is taken as the maximum, across all sliding docks sharing the
+        same dock area as `dock`, of either that dock's remembered
+        `user_size` (if it was manually resized) or its inner widget's
+        `sizeHint()` otherwise. Using the max across same-side docks keeps
+        docks sharing an edge visually consistent in size when shown.
+
+        Parameters
+        ----------
+        dock : QtViewerDockWidget
+            The dock widget to compute the expanded size for.
+        property_name : bytes
+            The animated property name, either b'maximumWidth' or
+            b'maximumHeight'. Determines whether width or height is used
+            when reading size hints. Given as bytes because that is what
+            QPropertyAnimation expects.
+
+        Returns
+        -------
+        int
+            The target size, in pixels, that `dock` should animate to when
+            expanding. Falls back to `self.expanded_size` if no valid size
+            (greater than 0) could be determined from any dock sharing the
+            same area."""
+        area = self.dockWidgetArea(dock)
+        same_side_docks = [
+            d
+            for d in self.widgets_sliding_dock_area
+            if self.dockWidgetArea(d) == area
+        ]
+
+        def effective_size(d):
+            user_size = self.widgets_sliding_dock_area[d].get('user_size')
+            if user_size:
+                return user_size
+
+            inner = d.widget()
+            hint = inner.sizeHint() if inner is not None else d.sizeHint()
+            return (
+                hint.width()
+                if property_name == b'maximumWidth'
+                else hint.height()
+            )
+
+        sizes = [effective_size(d) for d in same_side_docks]
+        sizes = [s for s in sizes if s > 0]
+
+        return max(sizes) if sizes else self.expanded_size
+
+    def _on_dock_floating_changed(self, floating: bool) -> None:
+        """Dependent on floating status of the dock widget either register or deregister the dock widget as sliding."""
+        dock = self.sender()
+
+        if floating and dock in self.widgets_sliding_dock_area:
+            self.deregister_widget_sliding_dock(dock)
+        elif (
+            dock not in self.widgets_sliding_dock_area
+            and get_settings().appearance.dock_area_autohide
+        ):
+            self.register_widget_sliding_dock(dock)
+
+    def deregister_widget_sliding_dock(self, dock: QtViewerDockWidget) -> None:
+        """Deregister the dockwidget from the widgets registered as sliding dock widgets.
+
+        This removes the dock widget from the sliding dock widgets and ensures the animation is stopped,
+        size constraints are reset, and the dock ends up visible and normally sized, e.g. as if the sliding out
+        animation just finished, regardless of whether it was expanded or collapsed at the time of deregistering.
+
+        Parameters
+        ----------
+        dock: QtViewerDockWidget
+            The dock widget to deregister.
+        """
+        state = self.widgets_sliding_dock_area.get(dock)
+        if state is None:
+            return
+
+        was_visible = dock.isVisible()
+        remembered_user_size = state.get('user_size')
+
+        self.widgets_sliding_dock_area.pop(dock, None)
+
+        anim = state.get('animation')
+        if (
+            anim is not None
+            and anim.state() == QPropertyAnimation.State.Running
+        ):
+            anim.stop()
+
+        dock.setMaximumWidth(QWIDGETSIZE_MAX)
+        dock.setMaximumHeight(QWIDGETSIZE_MAX)
+        dock.setMinimumWidth(0)
+        dock.setMinimumHeight(0)
+
+        if not was_visible:
+            dock.setVisible(True)
+            area = self.dockWidgetArea(dock)
+            if area in (
+                Qt.DockWidgetArea.LeftDockWidgetArea,
+                Qt.DockWidgetArea.RightDockWidgetArea,
+            ):
+                orientation = Qt.Orientation.Horizontal
+            else:
+                orientation = Qt.Orientation.Vertical
+
+            size = remembered_user_size or self.expanded_size
+            self.resizeDocks([dock], [size], orientation)
+
+    def _handle_multi_dock_hover(self, pos: QPoint) -> None:
+        """Show or hide sliding docks based on cursor proximity to window edges.
+
+        For each registered sliding dock, checks the cursor position `pos`
+        against window edge-specific show / hide rules depending on which
+        dock widget area the dock currently occupies (left, right, or bottom).
+        A dock is expanded when the cursor enters its edge's activation zone
+        (within `edge_threshold` pixels of that window edge), and collapses
+        once the cursor moves far enough away from the dock's expanded area
+        (with a small margin to allow for increasing the size without the
+        docking area collapsing).
+
+        Parameters
+        ----------
+        pos : QPoint
+            The current cursor position, in coordinates local to this main
+            window (e.g. as produced by `self.mapFromGlobal()`).
+
+        Notes
+        -----
+        This is intended to be called on every relevant mouse-move event
+        (see `eventFilter`), not just on edge crossings, since it re-evaluates
+        show/hide conditions for every registered dock on each call.
+        """
+        edge_threshold = 20
+        win_width = self.width()
+        win_height = self.height()
+
+        dock_slide_configs = {
+            Qt.DockWidgetArea.RightDockWidgetArea: {
+                'property_name': b'maximumWidth',
+                'should_show': lambda dock: (
+                    pos.x() >= (win_width - edge_threshold)
+                ),
+                'should_hide': lambda dock: (
+                    pos.x()
+                    < (
+                        win_width
+                        - self._get_expanded_size(dock, b'maximumWidth')
+                        - self._get_expanded_size(dock, b'maximumWidth') * 0.05
+                    )
+                ),
+            },
+            Qt.DockWidgetArea.LeftDockWidgetArea: {
+                'property_name': b'maximumWidth',
+                'should_show': lambda dock: pos.x() <= edge_threshold,
+                'should_hide': lambda dock: (
+                    pos.x() > dock.width() + dock.width() * 0.05
+                ),
+            },
+            Qt.DockWidgetArea.BottomDockWidgetArea: {
+                'property_name': b'maximumHeight',
+                'should_show': lambda dock: (
+                    pos.y() >= (win_height - edge_threshold)
+                ),
+                'should_hide': lambda dock: (
+                    pos.y()
+                    < (win_height - dock.height() + dock.height() * 0.05)
+                ),
+            },
+        }
+
+        for dock, state in self.widgets_sliding_dock_area.items():
+            rule = dock_slide_configs.get(self.dockWidgetArea(dock))
+
+            is_visible = state['visible_state']
+
+            if not is_visible and rule['should_show'](dock):
+                self._slide_dock_generic(
+                    dock, show=True, property_name=rule['property_name']
+                )
+            elif is_visible and rule['should_hide'](dock):
+                self._slide_dock_generic(
+                    dock, show=False, property_name=rule['property_name']
+                )
+
+    def _slide_dock_generic(
+        self, dock: QtViewerDockWidget, show: bool, property_name: bytes
+    ):
+        """Animate a sliding dock opening or closing.
+
+        Starts a `QPropertyAnimation` on `property_name` (the dock's
+        maximumWidth or maximumHeight) to smoothly expand the dock to its
+        target size (as determined by `_get_expanded_size`) or collapse
+        it to 0.
+        Any animation already running for this dock is stopped first. As the
+        animation progresses, `_on_dock_size_animated` is called on each
+        frame to actually resize the dock within its layout, since changing
+        the maximum size alone does not alter the dock.
+
+        Parameters
+        ----------
+        dock : QtViewerDockWidget
+            The dock widget to show or hide.
+        show : bool
+            True to expand (slide open) the dock, False to collapse
+            (slide closed) it. If this matches the dock's current
+            `visible_state`, the call is a no-op.
+        property_name : bytes
+            The dock property to animate: b'maximumWidth' for left/right
+            docks, or b'maximumHeight' for bottom docks. Determines both
+            which Qt property is animated and which orientation is passed
+            to `resizeDocks` via the derived `orientation`. Given in bytes
+            because this is what QPropertyAnimation expects.
+
+        Notes
+        -----
+        When expanding, the dock is made visible and minimum size constraints
+        are left as-is; when collapsing, the corresponding minimum size
+        (width or height) is reset to 0 first so the dock can actually shrink
+        down to 0 instead of being clamped by its content's minimum size hint.
+        The dock is only truly hidden (`setVisible(False)`) once the collapse
+        animation fully finishes, in `_on_generic_animation_finished`.
+        """
+        if self._is_closing:
+            return
+
+        state = self.widgets_sliding_dock_area[dock]
+        if show == state['visible_state']:
+            return
+
+        old_anim = state.get('animation')
+        if (
+            old_anim is not None
+            and old_anim.state() == QPropertyAnimation.State.Running
+        ):
+            old_anim.stop()
+
+        state['visible_state'] = show
+
+        anim = QPropertyAnimation(dock, property_name, self)
+        anim.setDuration(300)
+        anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+
+        anim.valueChanged.connect(self._on_dock_size_animated)
+        anim.finished.connect(self._on_generic_animation_finished)
+        state['animation'] = anim
+
+        if show:
+            dock.setVisible(True)
+            anim.setStartValue(1)
+            anim.setEndValue(self._get_expanded_size(dock, property_name))
+        else:
+            if property_name == b'maximumWidth':
+                dock.setMinimumWidth(0)
+            else:
+                dock.setMinimumHeight(0)
+
+            current_dimension = (
+                dock.width()
+                if property_name == b'maximumWidth'
+                else dock.height()
+            )
+            anim.setStartValue(current_dimension)
+            anim.setEndValue(0)
+
+        anim.start()
+
+    def _apply_dock_animated_size(
+        self,
+        size: int,
+        dock: QtViewerDockWidget,
+        orientation: Qt.Orientation,
+    ) -> None:
+        if size <= 0:
+            return
+
+        state = self.widgets_sliding_dock_area.get(dock)
+        if state is None:
+            return
+
+        self.resizeDocks([dock], [size], orientation)
+
+        cross_orientation = _get_perpendicular_orientation(orientation)
+        cross_size = state.get('cross_axis_size')
+
+        current_cross = _get_cross_axis_dimension_size(dock, orientation)
+        if cross_size is None and current_cross > 0:
+            cross_size = current_cross
+            state['cross_axis_size'] = cross_size
+
+        if cross_size:
+            self.resizeDocks([dock], [cross_size], cross_orientation)
+
+    def _on_dock_size_animated(
+        self,
+        size: int,
+    ):
+        """Resize a dock to match the current animation frame.
+
+        Called on each `valueChanged` tick of the dock's slide animation.
+        Changing maximumWidth/maximumHeight alone doesn't actually resize the
+        dock within the QMainWindow's layout, so this calls `resizeDocks` to
+        grow/shrink it to `size` along `orientation`.
+
+        It also reapplies the dock widget's remembered `cross_axis_size` (see
+        `register_widget_sliding_dock`) after each resize. Otherwise, resizing along
+        one axis lets Qt freely redistribute space along the other axis among
+        sibling dock widgets sharing that edge, so their size on that axis drifts
+        across show/hide cycles. The first time a positive cross-axis size is
+        seen for this dock, it's saved for reuse, but also any manual user resize
+        will be captured.
+
+        Parameters
+        ----------
+        size : int
+            The current animated size, in pixels, along `orientation`. Values
+            less than or equal to 0 are ignored, since `resizeDocks` requires
+            strictly positive sizes.
+
+        Notes
+        -----
+        No-ops if `size` isn't positive, or if `dock` is no longer a
+        registered sliding dock (e.g. it was floated and deregistered while
+        the animation was still running).
+        """
+        anim = self.sender()
+        if not isinstance(anim, QPropertyAnimation):
+            return
+
+        dock = anim.targetObject()
+        if not isinstance(dock, QtViewerDockWidget):
+            return
+
+        property_name = bytes(anim.propertyName())
+        orientation = (
+            Qt.Orientation.Horizontal
+            if property_name == b'maximumWidth'
+            else Qt.Orientation.Vertical
+        )
+
+        self._apply_dock_animated_size(
+            int(size),
+            dock,
+            orientation,
+        )
+
+    def _on_generic_animation_finished(self):
+        """Clean up a dock's state once its slide animation finishes.
+
+        If the dock finished expanding, its maximum size constraint is
+        released back to unconstrained (`QWIDGETSIZE_MAX`), so it can be
+        freely resized afterward (e.g. by the user dragging its edge). If it
+        finished collapsing, it's hidden (`setVisible(False)`) now that it
+        has visually shrunk to 0.
+
+        Notes
+        -----
+        No-ops if `dock` is no longer a registered sliding dock (e.g. it was
+        floated and deregistered while the animation was still running).
+        """
+        anim = self.sender()
+        if not isinstance(anim, QPropertyAnimation):
+            return
+
+        dock = anim.targetObject()
+        if not isinstance(dock, QtViewerDockWidget):
+            return
+
+        property_name = bytes(anim.propertyName())
+
+        state = self.widgets_sliding_dock_area.get(dock)
+
+        if not state or not dock:
+            return
+
+        if state['visible_state']:
+            if property_name == b'maximumWidth':
+                dock.setMaximumWidth(QWIDGETSIZE_MAX)
+            else:
+                dock.setMaximumHeight(QWIDGETSIZE_MAX)
+        else:
+            dock.setVisible(False)
 
     def _get_window_icon(self) -> str:
         if hasattr(self, '_window_icon'):
@@ -343,6 +782,19 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        is_user_dragging = bool(
+            QApplication.mouseButtons() & Qt.MouseButton.LeftButton
+        )
+
+        if (
+            event.type() == QEvent.Type.Resize
+            and source in self.widgets_sliding_dock_area
+        ):
+            self._maybe_capture_user_resize(source)
+
+        if event.type() == QEvent.Type.MouseMove and not is_user_dragging:
+            pos_in_main = self.mapFromGlobal(event.globalPosition().toPoint())
+            self._handle_multi_dock_hover(pos_in_main)
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
@@ -369,6 +821,58 @@ class _QtMainWindow(QMainWindow):
                 self.menuBar().hide()
         return super().eventFilter(source, event)
 
+    def _maybe_capture_user_resize(self, dock):
+        state = self.widgets_sliding_dock_area[dock]
+        anim = state.get('animation')
+        is_user_dragging = bool(
+            QApplication.mouseButtons() & Qt.MouseButton.LeftButton
+        )
+
+        area = self.dockWidgetArea(dock)
+        primary_orientation = (
+            Qt.Orientation.Horizontal
+            if area
+            in (
+                Qt.DockWidgetArea.LeftDockWidgetArea,
+                Qt.DockWidgetArea.RightDockWidgetArea,
+            )
+            else Qt.Orientation.Vertical
+        )
+
+        if (
+            anim is not None
+            and anim.state() == QPropertyAnimation.State.Running
+        ):
+            if not is_user_dragging:
+                return
+            anim.stop()
+            state['animation'] = None
+            state['visible_state'] = True
+
+            if primary_orientation == Qt.Orientation.Horizontal:
+                dock.setMaximumWidth(QWIDGETSIZE_MAX)
+            else:
+                dock.setMaximumHeight(QWIDGETSIZE_MAX)
+
+        if not state['visible_state']:
+            return
+
+        primary_size = (
+            dock.width()
+            if primary_orientation == Qt.Orientation.Horizontal
+            else dock.height()
+        )
+        cross_size = (
+            dock.height()
+            if primary_orientation == Qt.Orientation.Horizontal
+            else dock.width()
+        )
+
+        if primary_size > 0:
+            state['user_size'] = primary_size
+        if cross_size > 0:
+            state['cross_axis_size'] = cross_size
+
     def _load_window_settings(self):
         """
         Load window layout settings from configuration.
@@ -376,8 +880,6 @@ class _QtMainWindow(QMainWindow):
         settings = get_settings()
         window_position = settings.application.window_position
 
-        # It's necessary to verify if the window/position value is valid with
-        # the current screen.
         if not window_position:
             window_position = (self.x(), self.y())
         else:
@@ -554,7 +1056,10 @@ class _QtMainWindow(QMainWindow):
         super().changeEvent(event)
 
     def keyPressEvent(self, event):
-        """Called whenever a key is pressed.
+        """Dispatches key press event to the canvas any time a key is pressed.
+
+        The event is forwarded to the canvas after which it status is set to accepted.
+        This prevents further propagation of the event to other components.
 
         Parameters
         ----------
@@ -567,7 +1072,10 @@ class _QtMainWindow(QMainWindow):
         event.accept()
 
     def keyReleaseEvent(self, event):
-        """Called whenever a key is released.
+        """Dispatches key release event to the canvas any time a key is released.
+
+        The event is forwarded to the canvas after which it status is set to accepted.
+        This prevents further propagation of the event to other components.
 
         Parameters
         ----------
@@ -618,6 +1126,15 @@ class _QtMainWindow(QMainWindow):
         ):
             event.ignore()
             return
+
+        self._is_closing = True
+        for state in self.widgets_sliding_dock_area.values():
+            animation = state.get('animation')
+            if animation is not None:
+                animation.stop()
+                state['animation'] = None
+
+        self.widgets_sliding_dock_area.clear()
 
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
@@ -725,6 +1242,8 @@ class Window:
         self._qt_window = _QtMainWindow(
             viewer, self, show_welcome_screen=show_welcome_screen
         )
+        # Required for slide out dockwidget with layer controls
+        self._qt_window.setMouseTracking(True)
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
@@ -753,6 +1272,9 @@ class Window:
             self._update_theme_font_size
         )
         get_settings().appearance.events.logo.connect(self._update_logo)
+        get_settings().appearance.events.dock_area_autohide.connect(
+            self._register_widgets_sliding_dock_area
+        )
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -772,6 +1294,15 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
 
+        # TODO check empty wrapped dock widgets at this point
+        self.widgets_sliding_dock_area = [
+            self._qt_viewer.dockLayerControls,
+            self._qt_viewer.dockLayerList,
+        ]
+        if get_settings().appearance.dock_area_autohide:
+            for dock in self.widgets_sliding_dock_area:
+                self._qt_window.register_widget_sliding_dock(dock)
+
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
@@ -783,6 +1314,14 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
+    def _register_widgets_sliding_dock_area(self, event):
+        if event.value:
+            for widget in self.widgets_sliding_dock_area:
+                self._qt_window.register_widget_sliding_dock(widget)
+        else:
+            for widget in self.widgets_sliding_dock_area:
+                self._qt_window.deregister_widget_sliding_dock(widget)
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -1223,6 +1762,9 @@ class Window:
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
+        self.widgets_sliding_dock_area.append(dock_widget)
+        if get_settings().appearance.dock_area_autohide:
+            self._qt_window.register_widget_sliding_dock(dock_widget)
 
         return dock_widget
 
@@ -1377,6 +1919,11 @@ class Window:
         self._qt_window.removeDockWidget(_dw)
         if menu is not None:
             menu.removeAction(_dw.toggleViewAction())
+
+        self.widgets_sliding_dock_area.remove(_dw)
+
+        if get_settings().appearance.dock_area_autohide:
+            self._qt_window.deregister_widget_sliding_dock(_dw)
 
         # Remove dock widget from dictionary
         self._wrapped_dock_widgets.pop(_dw.name, None)
@@ -1845,6 +2392,9 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        get_settings().appearance.events.dock_area_autohide.disconnect(
+            self._register_widgets_sliding_dock_area
+        )
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

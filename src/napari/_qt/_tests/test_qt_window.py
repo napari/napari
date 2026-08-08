@@ -4,12 +4,14 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from magicgui.widgets import Container
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QApplication, QWidget
 
-from napari._qt.qt_main_window import Window, _QtMainWindow
+from napari._qt.qt_main_window import QWIDGETSIZE_MAX, Window, _QtMainWindow
 from napari._qt.utils import QImg2array
 from napari._tests.utils import skip_on_win_ci
+from napari.settings import get_settings
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -191,3 +193,230 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
 
     with pytest.raises(TypeError):
         viewer.window.dock_widgets['widget name (sample_plugin)'] = 1
+
+
+def test_sliding_dock_area(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+
+    assert not settings.appearance.dock_area_autohide
+    assert not qt_window.widgets_sliding_dock_area
+
+    settings.appearance.dock_area_autohide = True
+    assert all(
+        not dock.isVisible() for dock in qt_window.widgets_sliding_dock_area
+    )
+    assert len(qt_window.widgets_sliding_dock_area) == 2
+
+    for dock in qt_window.widgets_sliding_dock_area:
+        assert dock.maximumWidth() != QWIDGETSIZE_MAX or (
+            dock.maximumHeight() != QWIDGETSIZE_MAX
+        )
+
+    get_settings().appearance.dock_area_autohide = False
+    assert not qt_window.widgets_sliding_dock_area
+    assert all(
+        dock.isVisible()
+        for dock in [
+            viewer.window._qt_viewer.dockLayerControls,
+            viewer.window._qt_viewer.dockLayerList,
+        ]
+    )
+
+    settings.appearance.dock_area_autohide = True
+    assert len(qt_window.widgets_sliding_dock_area) == 2
+    assert all(
+        not dock.isVisible() for dock in qt_window.widgets_sliding_dock_area
+    )
+
+
+def test_sliding_dock_area_disable_restores_user_size(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    # This will act like a resize actually happened
+    qt_window.widgets_sliding_dock_area[dock]['user_size'] = 444
+
+    settings.appearance.dock_area_autohide = False
+    QApplication.processEvents()
+    assert dock.width() == 444
+
+
+def test_sliding_dock_redock_to_different_area_resets_state(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    original_area = qt_window.dockWidgetArea(dock)
+    new_area = (
+        Qt.DockWidgetArea.RightDockWidgetArea
+        if original_area == Qt.DockWidgetArea.LeftDockWidgetArea
+        else Qt.DockWidgetArea.LeftDockWidgetArea
+    )
+
+    # expand it and give it manual sizes on its original side
+    qt_window._slide_dock_generic(
+        dock, show=True, property_name=b'maximumWidth'
+    )
+    qt_window.widgets_sliding_dock_area[dock]['animation'].stop()
+    qt_window.widgets_sliding_dock_area[dock]['user_size'] = 555
+    qt_window.widgets_sliding_dock_area[dock]['cross_axis_size'] = 321
+
+    dock.setFloating(True)
+    assert dock not in qt_window.widgets_sliding_dock_area
+
+    qt_window.addDockWidget(new_area, dock)
+    dock.setFloating(False)
+
+    assert dock in qt_window.widgets_sliding_dock_area
+    state = qt_window.widgets_sliding_dock_area[dock]
+    assert qt_window.dockWidgetArea(dock) == new_area
+    assert state['user_size'] is None
+    assert state['cross_axis_size'] is None
+    assert state['visible_state'] is False
+    assert state['animation'] is None
+
+
+def test_sliding_dock_cross_axis_size_preserved_across_cycles(
+    make_napari_viewer,
+):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock_a = viewer.window._qt_viewer.dockLayerControls
+    dock_b = viewer.window._qt_viewer.dockLayerList
+    assert qt_window.dockWidgetArea(dock_a) == qt_window.dockWidgetArea(dock_b)
+
+    # Need these functions as the sliding happens on the dock area and not single widget
+    def expand_both():
+        for dock in (dock_a, dock_b):
+            qt_window._slide_dock_generic(
+                dock, show=True, property_name=b'maximumWidth'
+            )
+            qt_window.widgets_sliding_dock_area[dock]['animation'].stop()
+            qt_window._apply_dock_animated_size(
+                dock.width(), dock=dock, orientation=Qt.Orientation.Horizontal
+            )
+        QApplication.processEvents()
+
+    def collapse_both():
+        for dock in (dock_a, dock_b):
+            qt_window._slide_dock_generic(
+                dock, show=False, property_name=b'maximumWidth'
+            )
+            qt_window.widgets_sliding_dock_area[dock]['animation'].stop()
+        QApplication.processEvents()
+
+    # Give a remembered height for dock b when expanded. This is a request, can be that it is not exactly 123
+    # We do a sanity check that at least the height indeed changed.
+    expand_both()
+    height_before_resize = dock_b.height()
+    qt_window.resizeDocks([dock_b], [123], Qt.Orientation.Vertical)
+    QApplication.processEvents()
+    assert dock_b.height() != height_before_resize
+
+    qt_window.widgets_sliding_dock_area[dock_b]['cross_axis_size'] = None
+    qt_window._apply_dock_animated_size(
+        dock_b.width(), dock=dock_b, orientation=Qt.Orientation.Horizontal
+    )
+    QApplication.processEvents()
+    remembered_height = qt_window.widgets_sliding_dock_area[dock_b][
+        'cross_axis_size'
+    ]
+    assert remembered_height == dock_b.height()
+
+    for _ in range(3):
+        collapse_both()
+        expand_both()
+        assert dock_b.height() == remembered_height
+
+
+def test_hover_at_left_edge_expands_dock(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    assert not dock.isVisible()
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+    assert dock.isVisible() is True
+
+    try:
+        assert (
+            qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+        )
+        assert dock.isVisible() is True
+    finally:
+        # Prevent dangling animations
+        for state in qt_window.widgets_sliding_dock_area.values():
+            state['animation'].stop()
+
+
+def test_hover_away_from_center_does_not_expand_dock(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+
+    qt_window._handle_multi_dock_hover(
+        QPoint(qt_window.width() // 2, qt_window.height() // 2)
+    )
+
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+    assert not dock.isVisible()
+
+
+def test_hover_away_from_expanded_dock_collapses_it(make_napari_viewer, qtbot):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    settings.appearance.dock_area_autohide = True
+
+    dock = viewer.window._qt_viewer.dockLayerList
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+    assert qt_window.widgets_sliding_dock_area[dock]['visible_state'] is True
+
+    qt_window._handle_multi_dock_hover(
+        QPoint(qt_window.width() - 1, qt_window.height() // 2)
+    )
+
+    try:
+        assert (
+            qt_window.widgets_sliding_dock_area[dock]['visible_state'] is False
+        )
+    finally:
+        # Prevent dangling animations
+        for state in qt_window.widgets_sliding_dock_area.values():
+            state['animation'].stop()
+
+
+def test_hover_does_not_affect_dock_when_autohide_disabled(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+    settings = get_settings()
+    assert not settings.appearance.dock_area_autohide
+
+    dock = viewer.window._qt_viewer.dockLayerList
+    assert dock not in qt_window.widgets_sliding_dock_area
+    was_visible = dock.isVisible()
+
+    qt_window._handle_multi_dock_hover(QPoint(0, qt_window.height() // 2))
+
+    assert dock.isVisible() == was_visible
