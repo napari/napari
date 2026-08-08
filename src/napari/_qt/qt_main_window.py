@@ -1106,15 +1106,6 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        self._is_closing = True
-        for state in self.widgets_sliding_dock_area.values():
-            animation = state.get('animation')
-            if animation is not None:
-                animation.stop()
-                state['animation'] = None
-
-        self.widgets_sliding_dock_area.clear()
-
         task_status = self._window._task_status_manager.get_status()
         if (
             event.spontaneous()
@@ -1135,6 +1126,15 @@ class _QtMainWindow(QMainWindow):
         ):
             event.ignore()
             return
+
+        self._is_closing = True
+        for state in self.widgets_sliding_dock_area.values():
+            animation = state.get('animation')
+            if animation is not None:
+                animation.stop()
+                state['animation'] = None
+
+        self.widgets_sliding_dock_area.clear()
 
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
