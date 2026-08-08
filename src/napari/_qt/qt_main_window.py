@@ -441,8 +441,22 @@ class _QtMainWindow(QMainWindow):
                     pos.y()
                     < (
                         win_height
+                        - self.statusBar().height()
                         - self._get_expanded_size(dock, b'maximumHeight')
                         - self._get_expanded_size(dock, b'maximumHeight')
+                        * 0.05
+                    )
+                ),
+            },
+            Qt.DockWidgetArea.TopDockWidgetArea: {
+                'property_name': b'maximumHeight',
+                'should_show': lambda dock: pos.y() <= edge_threshold,
+                'should_hide': lambda dock: (
+                    pos.y()
+                    > (
+                        self.menuBar().height()
+                        + self._get_expanded_size(dock, b'maximumHeight')
+                        + self._get_expanded_size(dock, b'maximumHeight')
                         * 0.05
                     )
                 ),
