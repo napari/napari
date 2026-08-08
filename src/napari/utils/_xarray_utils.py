@@ -244,6 +244,9 @@ def _get_xr_metadata(
 ) -> _XarrayMetadata:
     """Return layer metadata inherited from *data*.
 
+    Initially checks that *data* is Xarray-like (Variable or DataArray) and if
+    not is a no-op returning original values.
+
     Any field passed in as ``None`` is inferred from *data* where possible;
     explicitly provided values pass through unchanged.  Only ``axis_labels``
     is inferred for ``Variable``-like objects, which have no coordinates.

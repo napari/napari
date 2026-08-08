@@ -1,8 +1,11 @@
 import numpy as np
+import pytest
 import xarray as xr
 
 from napari.utils._xarray_utils import (
     _check_xarray,
+    _coord_metadata,
+    _CoordMetadata,
     _get_xr_axis_labels,
     _get_xr_metadata,
     _get_xr_scale,
@@ -12,339 +15,392 @@ from napari.utils._xarray_utils import (
     _XarrayProps,
 )
 
+# Days between the datetime64 epoch (1970-01-01) and 2013-01-01, the base
+# timestamp used throughout the datetime coordinate tests. The translate
+# expectations below are derived from this offset so they stay readable
+# instead of appearing as magic numbers.
+_EPOCH_DAYS = 15706
+_EPOCH_HOURS = _EPOCH_DAYS * 24
+_EPOCH_MINUTES = _EPOCH_HOURS * 60
+_EPOCH_SECONDS = _EPOCH_MINUTES * 60
+_EPOCH_MILLISECONDS = _EPOCH_SECONDS * 1000
+_EPOCH_MICROSECONDS = _EPOCH_MILLISECONDS * 1000
+_EPOCH_NANOSECONDS = _EPOCH_MICROSECONDS * 1000
+
+
+def _dt(values):
+    """Build a ``datetime64[ns]`` coordinate array from ISO 8601 strings."""
+    return np.array(values, dtype='datetime64[ns]')
+
+
+@pytest.fixture
+def da_factory():
+    """Factory for building DataArrays with a given shape, dims, and coords."""
+
+    def _build(shape, dims, coords=None, attrs=None):
+        return xr.DataArray(
+            np.ones(shape), dims=dims, coords=coords or {}, attrs=attrs or {}
+        )
+
+    return _build
+
 
 class TestCheckXarray:
-    def test_dataarray(self):
-        """DataArray has both dims and coords."""
-        da = xr.DataArray(np.ones((3, 4)), dims=['y', 'x'])
-        caps = _check_xarray(da)
-        assert caps == _XarrayProps(has_dims=True, has_coords=True)
+    """_check_xarray: which xarray properties does the data expose?"""
 
-    def test_variable(self):
-        """Variable (NamedArray) has dims but not coords."""
-        v = xr.Variable(('y', 'x'), np.ones((3, 4)))
-        caps = _check_xarray(v)
-        assert caps == _XarrayProps(has_dims=True, has_coords=False)
-
-    def test_numpy(self):
-        """Numpy array has neither dims nor coords."""
-        caps = _check_xarray(np.ones((3, 4)))
-        assert caps == _XarrayProps(False, False)
-
-    def test_list(self):
-        """List (multiscale) has neither dims nor coords."""
-        caps = _check_xarray([np.ones((5, 5)), np.ones((3, 3))])
-        assert caps == _XarrayProps(False, False)
+    @pytest.mark.parametrize(
+        ('data', 'expected'),
+        [
+            (
+                xr.DataArray(np.ones((3, 4)), dims=['y', 'x']),
+                _XarrayProps(has_dims=True, has_coords=True),
+            ),
+            (
+                xr.Variable(('y', 'x'), np.ones((3, 4))),
+                _XarrayProps(has_dims=True, has_coords=False),
+            ),
+            (
+                np.ones((3, 4)),
+                _XarrayProps(has_dims=False, has_coords=False),
+            ),
+            (
+                [np.ones((5, 5)), np.ones((3, 3))],
+                _XarrayProps(has_dims=False, has_coords=False),
+            ),
+        ],
+        ids=['dataarray', 'variable', 'numpy', 'list'],
+    )
+    def test_props(self, data, expected):
+        assert _check_xarray(data) == expected
 
 
 class TestGetXrAxisLabels:
-    def test_dataarray(self):
-        """Axis labels extracted from DataArray dims."""
-        da = xr.DataArray(np.ones((3, 4)), dims=['y', 'x'])
-        assert _get_xr_axis_labels(da) == ('y', 'x')
+    """_get_xr_axis_labels: labels inferred from xarray dims."""
 
-    def test_variable(self):
-        """Axis labels extracted from Variable (has dims, no coords)."""
-        v = xr.Variable(('y', 'x'), np.ones((3, 4)))
-        assert _get_xr_axis_labels(v) == ('y', 'x')
+    @pytest.mark.parametrize(
+        'data',
+        [
+            xr.DataArray(np.ones((3, 4)), dims=['y', 'x']),
+            xr.Variable(('y', 'x'), np.ones((3, 4))),
+        ],
+        ids=['dataarray', 'variable'],
+    )
+    def test_labels(self, data):
+        assert _get_xr_axis_labels(data) == ('y', 'x')
 
 
-class TestGetXrScale:
-    def test_normal(self):
-        """Scale computed from equally-spaced coordinate values."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': [0, 5, 10], 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_scale(da) == [5.0, 2.0]
+class TestCoordMetadata:
+    """_coord_metadata: per-axis scale/translate/unit from coordinate values."""
 
-    def test_single_element(self):
-        """Single-element coords fall back to 1.0."""
-        da = xr.DataArray(
-            np.ones((1, 4)),
-            dims=['y', 'x'],
-            coords={'y': [0], 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_scale(da) == [1.0, 2.0]
-
-    def test_negative_spacing(self):
-        """Decreasing coordinate values produce negative scale."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': [88, 86, 84], 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_scale(da) == [-2.0, 2.0]
-
-    def test_datetime_coords(self):
-        """Datetime coords use the largest whole time unit for scale."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
-                    ['2000-01-01', '2000-01-04', '2000-01-07'],
-                    dtype='datetime64[ns]',
+    @pytest.mark.parametrize(
+        ('values', 'expected'),
+        [
+            # numeric
+            ([10, 15, 20], _CoordMetadata(5.0, 10.0, None)),
+            ([42], _CoordMetadata(1.0, 42.0, None)),
+            ([88, 86, 84], _CoordMetadata(-2.0, 88.0, None)),
+            (np.array([], dtype=float), _CoordMetadata(1.0, 0.0, None)),
+            # string (categorical)
+            (['a', 'b', 'c'], _CoordMetadata(1.0, 0.0, None)),
+            # datetime64: missing (NaT) timestamps degrade to index space
+            (
+                _dt(['2013-01-01', 'NaT', '2013-01-03']),
+                _CoordMetadata(1.0, 0.0, None),
+            ),
+            (
+                _dt(['NaT', '2013-01-02', '2013-01-03']),
+                _CoordMetadata(1.0, 0.0, None),
+            ),
+            # one entry per time unit, largest to smallest, plus the
+            # nanosecond fallback for steps finer than any whole unit
+            (
+                _dt(['2013-01-01', '2013-01-04', '2013-01-07']),
+                _CoordMetadata(3.0, float(_EPOCH_DAYS), 'day'),
+            ),
+            (
+                _dt(
+                    [
+                        '2013-01-01',
+                        '2013-01-01 06:00:00',
+                        '2013-01-01 12:00:00',
+                    ]
                 ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        # 3-day spacing -> day/3
-        assert _get_xr_scale(da) == [3.0, 2.0]
-
-    def test_sub_second_datetime_coords(self):
-        """Sub-second datetime steps use ms/us/ns units."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
+                _CoordMetadata(6.0, float(_EPOCH_HOURS), 'hour'),
+            ),
+            (
+                _dt(
+                    [
+                        '2013-01-01',
+                        '2013-01-01 00:30:00',
+                        '2013-01-01 01:00:00',
+                    ]
+                ),
+                _CoordMetadata(30.0, float(_EPOCH_MINUTES), 'minute'),
+            ),
+            (
+                _dt(
+                    [
+                        '2013-01-01',
+                        '2013-01-01 00:01:30',
+                        '2013-01-01 00:03:00',
+                    ]
+                ),
+                _CoordMetadata(90.0, float(_EPOCH_SECONDS), 'second'),
+            ),
+            (
+                _dt(
                     [
                         '2013-01-01T00:00:00.000',
                         '2013-01-01T00:00:00.500',
                         '2013-01-01T00:00:01.000',
-                    ],
-                    dtype='datetime64[ns]',
+                    ]
                 ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        assert _get_xr_scale(da) == [500.0, 2.0]
-        assert _get_xr_units(da) == ['millisecond', None]
-
-    def test_nanosecond_fallback(self):
-        """Steps finer than a microsecond fall back to nanoseconds."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
+                _CoordMetadata(
+                    500.0, float(_EPOCH_MILLISECONDS), 'millisecond'
+                ),
+            ),
+            (
+                _dt(
                     [
-                        '2013-01-01T00:00:00.000000000',
-                        '2013-01-01T00:00:00.000000500',
-                        '2013-01-01T00:00:00.000001000',
-                    ],
-                    dtype='datetime64[ns]',
+                        '2013-01-01T00:00:00.000000',
+                        '2013-01-01T00:00:00.000500',
+                        '2013-01-01T00:00:01.000000',
+                    ]
                 ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        assert _get_xr_scale(da) == [500.0, 2.0]
-        assert _get_xr_units(da) == ['nanosecond', None]
-
-    def test_string_coords(self):
-        """String (categorical) coords fall back to 1.0."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': ('y', ['a', 'b', 'c']), 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_scale(da) == [1.0, 2.0]
-
-    def test_nat_coords(self):
-        """Missing (NaT) timestamps degrade to index space, not crash."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
-                    ['2013-01-01', 'NaT', '2013-01-03'],
-                    dtype='datetime64[ns]',
+                _CoordMetadata(
+                    500.0, float(_EPOCH_MICROSECONDS), 'microsecond'
                 ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        assert _get_xr_scale(da) == [1.0, 2.0]
-        assert _get_xr_units(da) == [None, None]
-
-
-class TestGetXrTranslate:
-    def test_normal(self):
-        """Translate from first coordinate values."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': [10, 15, 20], 'x': [100, 102, 104, 106]},
-        )
-        assert _get_xr_translate(da) == [10.0, 100.0]
-
-    def test_single_element(self):
-        """Single-element coords still return their first value."""
-        da = xr.DataArray(
-            np.ones((1, 4)),
-            dims=['y', 'x'],
-            coords={'y': [42], 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_translate(da) == [42.0, 0.0]
-
-    def test_datetime_coords(self):
-        """Datetime coords translate is since the datetime64 epoch."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
-                    ['2000-01-01', '2000-01-04', '2000-01-07'],
-                    dtype='datetime64[ns]',
-                ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        # 2000-01-01 is day 10957 since the 1970-01-01 epoch
-        assert _get_xr_translate(da) == [10957.0, 0.0]
-
-    def test_sub_second_datetime_coords(self):
-        """Sub-second datetime translate is in the derived unit."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
-                    [
-                        '2013-01-01T00:00:00.000',
-                        '2013-01-01T00:00:00.500',
-                        '2013-01-01T00:00:01.000',
-                    ],
-                    dtype='datetime64[ns]',
-                ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        # 2013-01-01T00:00:00 in milliseconds since the 1970-01-01 epoch
-        assert _get_xr_translate(da) == [1356998400000.0, 0.0]
-
-    def test_nanosecond_fallback(self):
-        """Sub-microsecond datetime translate is in nanoseconds."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
+            ),
+            (
+                _dt(
                     [
                         '2013-01-01T00:00:00.000000000',
                         '2013-01-01T00:00:00.000000500',
                         '2013-01-01T00:00:01.000000000',
-                    ],
-                    dtype='datetime64[ns]',
+                    ]
                 ),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        # 2013-01-01T00:00:00 in nanoseconds since the 1970-01-01 epoch
-        assert _get_xr_translate(da) == [1356998400000000000.0, 0.0]
+                _CoordMetadata(500.0, float(_EPOCH_NANOSECONDS), 'nanosecond'),
+            ),
+        ],
+        ids=[
+            'numeric',
+            'single',
+            'negative',
+            'empty',
+            'string',
+            'nat-second',
+            'nat-first',
+            'day',
+            'hour',
+            'minute',
+            'second',
+            'millisecond',
+            'microsecond',
+            'nanosecond',
+        ],
+    )
+    def test_coord_metadata(self, values, expected):
+        assert _coord_metadata(np.asarray(values)) == expected
 
-    def test_string_coords(self):
-        """String (categorical) coords fall back to 0.0."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': ('y', ['a', 'b', 'c']), 'x': [0, 2, 4, 6]},
-        )
-        assert _get_xr_translate(da) == [0.0, 0.0]
+
+class TestGetXrScale:
+    """_get_xr_scale: per-axis scale extracted from a DataArray's coords."""
+
+    @pytest.mark.parametrize(
+        ('coords', 'shape', 'expected'),
+        [
+            ({'y': [0, 5, 10], 'x': [0, 2, 4, 6]}, (3, 4), [5.0, 2.0]),
+            (
+                {'y': ('y', ['a', 'b', 'c']), 'x': [0, 2, 4, 6]},
+                (3, 4),
+                [1.0, 2.0],
+            ),
+            (
+                {
+                    'y': _dt(['2013-01-01', '2013-01-04', '2013-01-07']),
+                    'x': [0, 2, 4, 6],
+                },
+                (3, 4),
+                [3.0, 2.0],
+            ),
+        ],
+        ids=['numeric', 'string', 'datetime'],
+    )
+    def test_scale(self, da_factory, coords, shape, expected):
+        da = da_factory(shape, ['y', 'x'], coords)
+        assert _get_xr_scale(da) == expected
+
+
+class TestGetXrTranslate:
+    """_get_xr_translate: per-axis offset from a DataArray's coords."""
+
+    @pytest.mark.parametrize(
+        ('coords', 'shape', 'expected'),
+        [
+            (
+                {'y': [10, 15, 20], 'x': [100, 102, 104, 106]},
+                (3, 4),
+                [10.0, 100.0],
+            ),
+            (
+                {'y': ('y', ['a', 'b', 'c']), 'x': [0, 2, 4, 6]},
+                (3, 4),
+                [0.0, 0.0],
+            ),
+            (
+                {
+                    'y': _dt(['2013-01-01', '2013-01-04', '2013-01-07']),
+                    'x': [0, 2, 4, 6],
+                },
+                (3, 4),
+                [float(_EPOCH_DAYS), 0.0],
+            ),
+        ],
+        ids=['numeric', 'string', 'datetime'],
+    )
+    def test_translate(self, da_factory, coords, shape, expected):
+        da = da_factory(shape, ['y', 'x'], coords)
+        assert _get_xr_translate(da) == expected
 
 
 class TestGetXrUnits:
-    def test_all_present(self):
-        """Units read from all coord attrs."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': ('y', [0, 1, 2], {'units': 'microns'}),
-                'x': ('x', [0, 1, 2, 3], {'units': 'mm'}),
-            },
-        )
-        assert _get_xr_units(da) == ['microns', 'mm']
+    """_get_xr_units: per-axis units from coord attrs / datetime dtype."""
 
-    def test_partial(self):
-        """Missing units attrs yield None for those axes."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': ('y', [0, 1, 2], {'units': 'microns'}),
-                'x': [0, 1, 2, 3],  # no attrs
-            },
-        )
-        assert _get_xr_units(da) == ['microns', None]
+    @pytest.mark.parametrize(
+        ('coords', 'expected'),
+        [
+            (
+                {
+                    'y': ('y', [0, 1, 2], {'units': 'microns'}),
+                    'x': ('x', [0, 1, 2, 3], {'units': 'mm'}),
+                },
+                ['microns', 'mm'],
+            ),
+            (
+                {
+                    'y': ('y', [0, 1, 2], {'units': 'microns'}),
+                    'x': [0, 1, 2, 3],  # no attrs
+                },
+                ['microns', None],
+            ),
+            (
+                {
+                    'y': ('y', [0, 1, 2], {'units': 'not_a_real_unit_ever'}),
+                    'x': [0, 1, 2, 3],
+                },
+                [None, None],
+            ),
+            (
+                {
+                    'y': ('y', [0, 1, 2], {'units': 'microns'}),
+                    'x': (
+                        'x',
+                        [0, 1, 2, 3],
+                        {'units': 'not_a_real_unit_ever'},
+                    ),
+                },
+                ['microns', None],
+            ),
+        ],
+        ids=['all', 'partial', 'invalid', 'mixed'],
+    )
+    def test_from_attrs(self, da_factory, coords, expected):
+        da = da_factory((3, 4), ['y', 'x'], coords)
+        assert _get_xr_units(da) == expected
 
-    def test_invalid_unit_filtered(self):
-        """Unrecognized unit strings are silently dropped."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': ('y', [0, 1, 2], {'units': 'not_a_real_unit_ever'}),
-            },
-        )
-        assert _get_xr_units(da) == [None, None]
-
-    def test_mixed_valid_invalid(self):
-        """Valid and invalid units mixed."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': ('y', [0, 1, 2], {'units': 'microns'}),
-                'x': ('x', [0, 1, 2, 3], {'units': 'not_a_real_unit_ever'}),
-            },
-        )
-        assert _get_xr_units(da) == ['microns', None]
-
-    def test_datetime_derives_unit(self):
-        """Datetime coords with no units attr report the derived time unit."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': np.array(
-                    ['2013-01-01', '2013-01-02', '2013-01-03'],
-                    dtype='datetime64[ns]',
+    @pytest.mark.parametrize(
+        ('values', 'expected_unit'),
+        [
+            (_dt(['2013-01-01', '2013-01-02', '2013-01-03']), 'day'),
+            (
+                _dt(
+                    [
+                        '2013-01-01',
+                        '2013-01-01 06:00:00',
+                        '2013-01-01 12:00:00',
+                    ]
                 ),
-                'x': [0, 1, 2, 3],
-            },
-        )
-        assert _get_xr_units(da) == ['day', None]
+                'hour',
+            ),
+            (
+                _dt(
+                    [
+                        '2013-01-01T00:00:00.000',
+                        '2013-01-01T00:00:00.500',
+                        '2013-01-01T00:00:01.000',
+                    ]
+                ),
+                'millisecond',
+            ),
+            (
+                _dt(
+                    [
+                        '2013-01-01T00:00:00.000000000',
+                        '2013-01-01T00:00:00.000000500',
+                        '2013-01-01T00:00:01.000000000',
+                    ]
+                ),
+                'nanosecond',
+            ),
+        ],
+        ids=['day', 'hour', 'millisecond', 'nanosecond'],
+    )
+    def test_datetime_derives_unit(self, da_factory, values, expected_unit):
+        """Datetime coords report the time unit derived from their spacing."""
+        da = da_factory((3, 4), ['y', 'x'], {'y': values, 'x': [0, 2, 4, 6]})
+        assert _get_xr_units(da) == [expected_unit, None]
 
-    def test_datetime_units_attr_ignored(self):
-        """A units attr on a datetime coord is ignored to stay consistent."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
+    def test_datetime_units_attr_ignored(self, da_factory):
+        """A units attr on a datetime coord is ignored to match its scale."""
+        da = da_factory(
+            (3, 4),
+            ['y', 'x'],
+            {
                 'y': (
                     'y',
-                    np.array(
+                    _dt(
                         [
                             '2013-01-01',
                             '2013-01-01 06:00:00',
                             '2013-01-01 12:00:00',
-                        ],
-                        dtype='datetime64[ns]',
+                        ]
                     ),
                     {'units': 'days'},
                 ),
                 'x': [0, 2, 4, 6],
             },
         )
-        # scale is 6 (hours); units must report 'hour', not the 'days' attr
+        # scale is 6 (hours); the unit must be 'hour', not the 'days' attr
         assert _get_xr_scale(da) == [6.0, 2.0]
         assert _get_xr_units(da) == ['hour', None]
 
-    def test_registered_cf_aliases(self):
-        """CF aliases registered in the pint registry are recognized."""
+    def test_datetime_nat_has_no_unit(self, da_factory):
+        """NaT timestamps degrade to index space with no unit."""
+        da = da_factory(
+            (3, 4),
+            ['y', 'x'],
+            {'y': _dt(['2013-01-01', 'NaT', '2013-01-03']), 'x': [0, 2, 4, 6]},
+        )
+        assert _get_xr_units(da) == [None, None]
+
+    def test_registered_cf_aliases(self, monkeypatch, da_factory):
+        """CF aliases registered in the pint registry are recognized.
+
+        A private registry is used (via monkeypatch) so this test never
+        mutates napari's global application registry, which would otherwise
+        leak into other tests.
+        """
         import pint
 
-        ureg = pint.get_application_registry()
-        if 'degrees_north' not in ureg:
-            ureg.define('degrees_north = degree')
-        if 'degrees_east' not in ureg:
-            ureg.define('degrees_east = degree')
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
+        ureg = pint.UnitRegistry()
+        ureg.define('degrees_north = degree')
+        ureg.define('degrees_east = degree')
+        monkeypatch.setattr(pint, 'get_application_registry', lambda: ureg)
+
+        da = da_factory(
+            (3, 4),
+            ['y', 'x'],
+            {
                 'y': ('y', [0, 1, 2], {'units': 'degrees_north'}),
                 'x': ('x', [0, 1, 2, 3], {'units': 'degrees_east'}),
             },
@@ -353,47 +409,48 @@ class TestGetXrUnits:
 
 
 class TestGetXrMetadata:
+    """_get_xr_metadata: orchestration of label/scale/translate/units."""
+
+    def test_non_xarray_noop(self):
+        """Plain arrays are a no-op: no metadata is inferred."""
+        assert _get_xr_metadata(np.ones((3, 4))) == _XarrayMetadata()
+
     def test_variable_only_labels(self):
-        """Variable only contributes axis_labels (no coords)."""
+        """Variable contributes axis_labels only (it has no coords)."""
         v = xr.Variable(('y', 'x'), np.ones((3, 4)))
         assert _get_xr_metadata(v) == _XarrayMetadata(
+            axis_labels=('y', 'x'), scale=None, translate=None, units=None
+        )
+
+    def test_dataarray_infers_all_fields(self, da_factory):
+        """DataArray contributes labels, scale, translate, and units."""
+        da = da_factory(
+            (3, 4),
+            ['y', 'x'],
+            {'y': ('y', [0, 5, 10], {'units': 'microns'}), 'x': [0, 2, 4, 6]},
+        )
+        assert _get_xr_metadata(da) == _XarrayMetadata(
             axis_labels=('y', 'x'),
-            scale=None,
-            translate=None,
-            units=None,
+            scale=[5.0, 2.0],
+            translate=[0.0, 0.0],
+            units=['microns', None],
         )
 
-    def test_dataarray_all_fields(self):
-        """DataArray contributes labels, scale, translate, units."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={
-                'y': ('y', [0, 5, 10], {'units': 'microns'}),
-                'x': [0, 2, 4, 6],
-            },
-        )
-        meta = _get_xr_metadata(da)
-        assert meta.axis_labels == ('y', 'x')
-        assert meta.scale == [5.0, 2.0]
-        assert meta.translate == [0.0, 0.0]
-        assert meta.units == ['microns', None]
-
-    def test_explicit_overrides_win(self):
-        """Explicitly provided metadata is not overwritten."""
-        da = xr.DataArray(
-            np.ones((3, 4)),
-            dims=['y', 'x'],
-            coords={'y': [0, 5, 10], 'x': [0, 2, 4, 6]},
+    def test_explicit_overrides_win(self, da_factory):
+        """Explicitly provided metadata is never overwritten."""
+        da = da_factory(
+            (3, 4), ['y', 'x'], {'y': [0, 5, 10], 'x': [0, 2, 4, 6]}
         )
         meta = _get_xr_metadata(
             da,
             axis_labels=('row', 'col'),
             scale=[3.0, 3.0],
+            translate=[1.0, 1.0],
             units=['mm', 'mm'],
         )
-        assert meta.axis_labels == ('row', 'col')
-        assert meta.scale == [3.0, 3.0]
-        # translate was not passed, so it is still inferred
-        assert meta.translate == [0.0, 0.0]
-        assert meta.units == ['mm', 'mm']
+        assert meta == _XarrayMetadata(
+            axis_labels=('row', 'col'),
+            scale=[3.0, 3.0],
+            translate=[1.0, 1.0],
+            units=['mm', 'mm'],
+        )

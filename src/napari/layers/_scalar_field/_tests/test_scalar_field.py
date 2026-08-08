@@ -482,10 +482,12 @@ class TestXarrayMetadataInit:
             data,
             axis_labels=('row', 'col'),
             scale=(3.0, 3.0),
+            translate=(5.0, 5.0),
             units=('mm', 'mm'),
         )
         assert layer.axis_labels == ('row', 'col')
         np.testing.assert_allclose(layer.scale, [3.0, 3.0])
+        np.testing.assert_allclose(layer.translate, [5.0, 5.0])
         assert str(layer.units[0]) == 'millimeter'
 
     def test_xarray_multiscale_list(self):

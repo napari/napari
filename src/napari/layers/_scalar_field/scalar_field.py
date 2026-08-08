@@ -256,6 +256,7 @@ class ScalarFieldBase(Layer, ABC):
             ndim = len(data.shape)
         self._data = data
 
+        # Xarray metadata inference is a no-op if data is not xarray-like
         xr_source = (
             data[0]
             if isinstance(data, (list, tuple, MultiScaleData))
