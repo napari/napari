@@ -281,7 +281,9 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.setText('napari')
+    first_label.setFocus()
+    first_label.selectAll()
+    qtbot.keyClicks(first_label, 'napari')
     assert first_label.text() == view.dims.axis_labels[0]
     assert '…' in first_label._elidedText()
     assert observed_axis_labels_event

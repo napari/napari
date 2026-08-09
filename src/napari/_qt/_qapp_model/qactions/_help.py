@@ -81,13 +81,13 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.getting_started',
-        title='Getting started',
+        title='Getting started ↗',
         callback=partial(web_open, url=HELP_URLS['getting_started']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.tutorials',
-        title='Tutorials',
+        title='Tutorials ↗',
         callback=partial(web_open, url=HELP_URLS['tutorials']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
@@ -107,25 +107,25 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.layers_guide',
-        title='Using Layers Guides',
+        title='Using Layers Guides ↗',
         callback=partial(web_open, url=HELP_URLS['layers_guide']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.examples',
-        title='Examples Gallery',
+        title='Examples Gallery ↗',
         callback=partial(web_open, url=HELP_URLS['examples_gallery']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.plugins',
-        title='Extend with Plugins',
+        title='Extend with Plugins ↗',
         callback=partial(web_open, url=HELP_URLS['plugins']),
         menus=[{'id': MenuId.MENUBAR_HELP}],
     ),
     Action(
         id='napari.window.help.release_notes',
-        title='Release Notes',
+        title='Release Notes ↗',
         callback=partial(web_open, url=HELP_URLS['release_notes']),
         menus=[
             {
@@ -137,7 +137,7 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.github_issue',
-        title='Report an issue on GitHub',
+        title='Report an issue on GitHub ↗',
         callback=partial(web_open, url=HELP_URLS['github_issue']),
         menus=[
             {
@@ -149,13 +149,13 @@ Q_HELP_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.help.contribute',
-        title='Contribute to napari',
+        title='Contribute to napari ↗',
         callback=partial(web_open, url=HELP_URLS['contribute']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
     Action(
         id='napari.window.help.homepage',
-        title='napari homepage',
+        title='napari homepage ↗',
         callback=partial(web_open, url=HELP_URLS['homepage']),
         menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
     ),
