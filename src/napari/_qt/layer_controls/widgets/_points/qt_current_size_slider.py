@@ -29,8 +29,8 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list of napari.layers.Layer
-        An instance of a napari layers.
+    layers : list[napari.layers.Points]
+        A list of napari Points layers.
 
     Attributes
     ----------

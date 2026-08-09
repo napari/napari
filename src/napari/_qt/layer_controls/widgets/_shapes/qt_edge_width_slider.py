@@ -29,8 +29,8 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Shapes
-        An instance of a napari Shapes layer.
+    layers : list[napari.layers.Shapes]
+        A list of napari Shapes layers.
 
     Attributes
     ----------

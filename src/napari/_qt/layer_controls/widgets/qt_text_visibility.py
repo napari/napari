@@ -25,8 +25,8 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layers : list[napari.layers.Points | napari.layers.Shapes]
+        An list of Points and Shapes napari layers.
 
     Attributes
     ----------

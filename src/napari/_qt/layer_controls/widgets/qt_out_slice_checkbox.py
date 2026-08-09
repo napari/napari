@@ -27,8 +27,8 @@ class QtOutSliceCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layers : list[napari.layers.Points | napari.layers.Vectors]
+        A list of Points and Vectors napari layers.
 
     Attributes
     ----------

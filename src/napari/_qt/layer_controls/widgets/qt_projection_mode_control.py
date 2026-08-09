@@ -24,8 +24,8 @@ class QtProjectionModeControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Image | napari.layers.Points | napari.layers.Vectors
-        An instance of an Image, Points or Vectors napari layer.
+    layers : list[napari.layers.Image | napari.layers.Points | napari.layers.Vectors]
+        A list of Image, Points and Vectors napari layers.
 
     Attributes
     ----------

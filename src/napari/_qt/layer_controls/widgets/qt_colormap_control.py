@@ -116,8 +116,8 @@ class QtColormapControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list of napari.layers.Layer
-        A list of napari layers.
+    layers : list[napari.layers.Image | napari.layers.Surface]
+        A list of napari Image and Surface layers.
 
     Attributes
     ----------

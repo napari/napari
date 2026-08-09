@@ -18,14 +18,6 @@ class QtImageButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _depiction_control : napari._qt.layer_controls.widgets._image.QtDepictionControl
-        Widget that wraps widgets related with the layer depiction and plane attributes.
-    _interpolation_control : napari._qt.layer_controls.widgets._image.QtInterpolationComboBoxControl
-        Widget that wraps dropdown menu to select the interpolation mode for image display.
-    _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
-        Widget that wraps dropdown menu to select the projection mode for the layer.
-    _render_control : napari._qt.layer_controls.widgets._image.QtImageRenderControl
-        Widget that wraps widgets related with the method used to render the layer.
     """
 
     layer: napari.layers.Image

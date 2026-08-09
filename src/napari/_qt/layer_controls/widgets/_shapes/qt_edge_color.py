@@ -26,8 +26,8 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Shapes
-        An instance of a napari Shapes layer.
+    layers : list[napari.layers.Shapes]
+        A list of napari Shapes layers.
     toolip : str
         String to use for the tooltip of the edge color edit widget.
 

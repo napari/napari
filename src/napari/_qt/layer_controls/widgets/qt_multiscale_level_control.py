@@ -52,7 +52,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
     ----------
     parent : QWidget
         Parent widget.
-    layer : Image | Labels
+    layer : Image | Labels @lorenzo: this used to be only for image or lables yet now it exists for any layer, was that on purpose?!
         A napari layer with multiscale data (Image or Labels).
 
     Attributes

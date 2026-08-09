@@ -19,18 +19,6 @@ class QtVectorsButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _edge_color_feature_control : napari._qt.layer_controls.widgets._vectors.QtEdgeColorFeatureControl
-        Widget that wraps the widgets used to select vectors edge color mode, feature and color.
-    _length_spinbox_control : napari._qt.layer_controls.widgets._vectors.QtLengthSpinBoxControl
-        Widget that wraps a spinbox widget controlling length of vectors.
-    _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
-        Widget that wraps a checkbox to indicate whether to render out of slice.
-    _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
-        Widget that wraps dropdown menu to select the projection mode for the layer.
-    _vector_style_combobox_control : napari._qt.layer_controls.widgets._vectors.QtVectorStyleComboBoxControl
-        Widget that wraps a dropdown widget to select vector_style for the vectors.
-    _width_spinbox_control : napari._qt.layer_controls.widgets._vectors.QtWidthSpinBoxControl
-        Widget that wraps a spinbox controlling edge line width of vectors.
     """
 
     layer: napari.layers.Vectors

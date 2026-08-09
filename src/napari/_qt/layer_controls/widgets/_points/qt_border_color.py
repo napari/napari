@@ -25,8 +25,8 @@ class QtBorderColorControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Points
-        An instance of a napari Points layer.
+    layers : list[napari.layers.Points]
+        A list of napari Points layers.
 
     Attributes
     ----------

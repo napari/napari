@@ -231,7 +231,7 @@ class QtDynamicLayerControls(QFrame):
     """Superclass for all the other LayerControl classes.
 
     This class is never directly instantiated anywhere.
-
+    @lorenzo we have to populate this.
     Parameters
     ----------
     layers : list of napari.layers.Layer
@@ -241,12 +241,9 @@ class QtDynamicLayerControls(QFrame):
     ----------
     MODE : Enum
         Available modes in the associated layer.
-    _opacity_blending_controls: napari._qt.layer_controls.widgets.QtOpacityBlendingControls
-        Wrapper widget with a dropdown widget to select the layer blending mode and
-        a slider for the layer opacity.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
-    layers : list of selected layers in the viewer
+
+    layers : list of napari.layers.Layer
+        A list of selected layers in the viewer
     """
 
     MODE = Mode

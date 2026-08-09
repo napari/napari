@@ -118,8 +118,8 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Labels
-        An instance of a napari Labels layer.
+    layers : list[napari.layers.Labels]
+        A list of napari Labels layers.
 
     Attributes
     ----------

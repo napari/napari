@@ -30,8 +30,8 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Vectors
-        An instance of a napari Vectors layer.
+    layers : list[napari.layers.Vectors]
+        A list of napari Vectors layers.
 
     Attributes
     ----------

@@ -36,8 +36,8 @@ class QtHistogramControl(QtWidgetControlsBase):
     ----------
     parent : QWidget
         Parent widget, typically QtBaseImageControls.
-    layer : Image
-        The napari Image layer.
+    layers : list[Image | Surface]
+        The napari Image or Surface layers.
 
     Attributes
     ----------

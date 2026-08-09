@@ -27,8 +27,8 @@ class QtGammaSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layers : list[napari.layers.Image | napari.layers.Surface]
+        A list of Image and Surface napari layers.
 
     Attributes
     ----------

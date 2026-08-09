@@ -25,8 +25,8 @@ class QtFaceColorControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Shapes | napari.layers.Points
-        An instance of a napari Shapes or Points layer.
+    layers : list[napari.layers.Points]
+        A list of napari Points layers.
     toolip : str
         String to use for the tooltip of the face color edit widget.
 

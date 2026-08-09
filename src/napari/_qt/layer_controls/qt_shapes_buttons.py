@@ -22,14 +22,6 @@ class QtShapesButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _edge_color_control : napari._qt.layer_controls.widgets._shapes.QtEdgeColorControl
-        Widget that wraps a ColorSwatchEdit controlling current edge color of the layer.
-    _edge_width_slider_control : napari._qt.layer_controls.widgets._shapes.QtEdgeWidthSliderControl
-        Widget that wraps a slider controlling line edge width of layer.
-    _face_color_control : napari._qt.layer_controls.widgets.QtFaceColorControl
-        Widget that wraps a ColorSwatchEdit controlling current face color of the layer.
-    _text_visibility_control : napari._qt.layer_controls.widgets.QtTextVisibilityControl
-        WIdget that wraps a checkbox controlling if text on the layer is visible or not.
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton

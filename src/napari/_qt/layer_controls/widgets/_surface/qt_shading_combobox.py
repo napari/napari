@@ -26,8 +26,8 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list of napari.layers.Surface
-        An instance of a napari Surface layer.
+    layers : list[napari.layers.Surface]
+        A list of napari Surface layers.
 
     Attributes
     ----------

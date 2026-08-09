@@ -24,24 +24,6 @@ class QtLabelsButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _brush_size_slider_control : napari._qt.layer_controls.widgets._labels.QtBrushSizeSliderControl
-        Widget that wraps the slider controlling current layer brush size.
-    _colormode_combobox_control : napari._qt.layer_controls.widgets._labels.QtColorModeComboBoxControl
-        Widget that wraps the comboBox controlling current color mode of the layer.
-    _contiguous_checkbox_control : napari._qt.layer_controls.widgets._labels.QtContiguousCheckBoxControl
-        Widget that wraps the checkbox to control if label layer fill in is contiguous.
-    _contour_spinbox_control : napari._qt.layer_controls.widgets._labels.QtContourSpinBoxControl
-        Widget that wraps the spinbox to control the layer contour thickness.
-    _display_selected_label_checkbox_control : napari._qt.layer_controls.widgets._labels.QtDisplaySelectedLabelCheckBoxControl
-        Widget that wraps the checkbox to control if only the current selected label is shown.
-    _ndim_spinbox_control : napari._qt.layer_controls.widgets._labels.QtNdimSpinBoxControl
-        Widget that wraps the spinbox to control the number of editable layer dimensions.
-    _label_control : napari._qt.layer_controls.widgets._labels.QtLabelControl
-        Wrapper widget to handle current label selection.
-    _preserve_labels_checkbox_control :napari._qt.layer_controls.widgets._labels.QtPreserveLabelsCheckBoxControl
-        Widget that wraps the checkbox to control if existing labels are preserved.
-    _render_control : napari._qt.layer_controls.widgets._labels.QtLabelRenderControl
-        Wrapper widget to control current label render method.
     colormap_update : napari._qt.widgets.qt_mode_buttons.QtModePushButton
         Button to update colormap of label layer.
     erase_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton

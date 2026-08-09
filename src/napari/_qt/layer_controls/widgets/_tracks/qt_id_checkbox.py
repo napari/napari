@@ -27,8 +27,8 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Tracks
-        An instance of a napari Tracks layer.
+    layers : list[napari.layers.Tracks]
+        A list of napari Tracks layers.
 
     Attributes
     ----------

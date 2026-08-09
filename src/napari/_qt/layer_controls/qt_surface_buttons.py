@@ -18,8 +18,6 @@ class QtSurfaceButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _shading_combobox_control : napari._qt.layer_controls.widgets._surface.QtShadingComboBoxControl
-        Widget that wraps comboBox controlling current shading value of the layer.
     """
 
     PAN_ZOOM_ACTION_NAME = 'activate_surface_pan_zoom_mode'

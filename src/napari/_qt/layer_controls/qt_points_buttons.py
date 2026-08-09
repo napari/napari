@@ -21,20 +21,6 @@ class QtPointsButtons(QtLayerButtons):
 
     Attributes
     ----------
-    _border_color_control : napari._qt.layer_controls.widgets._points.QtBorderColorControl
-        Widget to handle point's border color.
-    _current_size_slider_control : napari._qt.layer_controls.widgets._points.QtCurrentSizeSliderControl
-        Widget that wraps slider controlling size of points.
-    _face_color_control : napari._qt.layer_controls.widgets.QtFaceColorControl
-        Widget to select display color for points faces.
-    _out_slice_checkbox_control : napari._qt.layer_controls.widgets.QtOutSliceCheckBoxControl
-        Widget that wraps a checkbox to indicate whether to render out of slice.
-    _projection_mode_control : napari._qt.layer_controls.widgets.QtProjectionModeControl
-        Widget that wraps dropdown menu to select the projection mode for the layer.
-    _symbol_combobox_control : napari._qt.layer_controls.widgets._points.QtSymbolComboBoxControl
-        Widget that wraps a dropdown list of symbol options for points markers.
-    _text_visibility_control : napari._qt.layer_controls.widgets.QtTextVisibilityControl
-        Widget that wraps a checkbox controlling if text on the layer is visible or not.
     addition_button : napari._qt.widgets.qt_mode_button.QtModeRadioButton
         Button to add points to layer.
     delete_button : qtpy.QtWidgets.QtModePushButton

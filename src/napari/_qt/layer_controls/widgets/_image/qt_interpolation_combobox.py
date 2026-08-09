@@ -27,8 +27,8 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Image
-        An instance of a napari Image layer.
+    layers : list[napari.layers.Image]
+        A list of napari Image layers.
 
     Attributes
     ----------
