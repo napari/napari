@@ -293,9 +293,7 @@ class GuidedTour(QObject):
         target = step.target()
         if target is None or not target.isVisible():
             return
-        visible = [
-            i for i, s in enumerate(self._steps) if not s.skip()
-        ]
+        visible = [i for i, s in enumerate(self._steps) if not s.skip()]
         top_left = target.mapTo(self._window, QPoint(0, 0))
         rect = QRect(top_left, target.size())
         self._overlay.setGeometry(self._window.rect())
@@ -362,7 +360,8 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 ),
                 anchor='above',
                 skip=lambda: (
-                    qt_viewer.viewer.dims.ndim <= qt_viewer.viewer.dims.ndisplay
+                    qt_viewer.viewer.dims.ndim
+                    <= qt_viewer.viewer.dims.ndisplay
                 ),
             ),
             TourStep(
