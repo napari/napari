@@ -218,8 +218,8 @@ buttons_dict = {
 class LayerFormLayout(QFormLayout):
     """Reusable form layout for subwidgets in each QtLayerControls class"""
 
-    def __init__(self, QWidget=None) -> None:
-        super().__init__(QWidget)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent=parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
         self.setFieldGrowthPolicy(

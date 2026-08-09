@@ -218,8 +218,9 @@ class QtColormapControl(QtWidgetControlsBase):
 
         color = get_color(self.parent(), mode='hex')
         if color:
+            colormap = ensure_colormap(color)
             for layer in self._layers:
-                layer.colormap = ensure_colormap(color)
+                layer.colormap = colormap
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.colormap_widget_label, self.colormapWidget)]
