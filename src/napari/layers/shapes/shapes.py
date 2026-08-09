@@ -1026,7 +1026,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1084,7 +1084,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> None | tuple[float, float]:
+    def face_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1092,7 +1092,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -2383,8 +2383,10 @@ class Shapes(Layer):
 
         This is often needed when calculating screen-space sizes and distances
         of vertices for interactivity (rescaling, adding vertices, etc).
+        We use only the magnitude of the layer scale, because sizes and
+        distances must remain positive.
         """
-        return self.scale_factor / self.scale[-1]
+        return self.scale_factor / abs(self.scale[-1])
 
     @property
     def _normalized_vertex_radius(self):
@@ -3069,7 +3071,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, None | np.ndarray]:
+    ) -> tuple[float | int | None, np.ndarray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 

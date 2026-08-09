@@ -198,6 +198,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     def __init__(
         self, layer, node=None, texture_format='r8', **kwargs
     ) -> None:
+        self._colormap_dtypes: tuple[np.dtype, np.dtype] | None = None
         super().__init__(
             layer,
             node=node,
@@ -215,6 +216,18 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
+
+    def _on_data_change(self) -> None:
+        super()._on_data_change()
+        dtypes = (
+            self.layer._slice.image.raw.dtype,
+            self.layer._slice.image.view.dtype,
+        )
+        # The empty slice created by _ScalarFieldSliceResponse.make_empty uses
+        # the view dtype for both raw and view. An async slice response replaces
+        # it with the source raw dtype, so rebuild to avoid stale label colors.
+        if dtypes != self._colormap_dtypes:
+            self._on_colormap_change()
 
     def _on_rendering_change(self):
         # overriding the Image method, so we can maintain the same old rendering name
@@ -296,6 +309,8 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.node.shared_program['LUT_shape'] = val_texture.shape[:2]
         else:
             self.node.cmap = VispyColormap(*colormap)
+
+        self._colormap_dtypes = (raw_dtype, view_dtype)
 
     def _on_iso_gradient_mode_change(self):
         if isinstance(self.node, VolumeNode):
