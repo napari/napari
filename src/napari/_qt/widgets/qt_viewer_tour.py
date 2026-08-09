@@ -6,15 +6,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
 from qtpy.QtWidgets import (
-    QAbstractSpinBox,
-    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
-    QPlainTextEdit,
     QPushButton,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -51,6 +46,7 @@ class _TourTooltip(QFrame):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setObjectName('qt_viewer_tour_tooltip')
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 14, 14, 14)
@@ -73,12 +69,15 @@ class _TourTooltip(QFrame):
         nav.addWidget(self._counter)
         nav.addStretch()
         self._back = QPushButton()
+        self._back.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._back.clicked.connect(self.back_clicked)
         nav.addWidget(self._back)
         self._next = QPushButton()
+        self._next.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._next.clicked.connect(self.next_clicked)
         nav.addWidget(self._next)
         self._skip = QPushButton()
+        self._skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._skip.clicked.connect(self.skip_clicked)
         nav.addWidget(self._skip)
         layout.addLayout(nav)
@@ -147,6 +146,29 @@ class _TourTooltip(QFrame):
         self._skip.setVisible(step < total)
         self._update_size()
 
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:
+        if event is None:
+            return
+        if event.key() == Qt.Key.Key_Escape:
+            self.skip_clicked.emit()
+            return
+        if event.key() in (
+            Qt.Key.Key_N,
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Enter,
+            Qt.Key.Key_Return,
+        ):
+            self.next_clicked.emit()
+            return
+        if event.key() in (
+            Qt.Key.Key_P,
+            Qt.Key.Key_Left,
+            Qt.Key.Key_Backspace,
+        ):
+            self.back_clicked.emit()
+            return
+        super().keyPressEvent(event)
+
     def place(self, target_rect: QRect, anchor: str, bounds: QRect) -> None:
         gap = 12
         w, h = self.width(), self.height()
@@ -210,13 +232,6 @@ class _TourOverlay(QWidget):
         painter.drawRect(rect)
 
 
-def _focus_accepts_text() -> bool:
-    focus = QApplication.focusWidget()
-    return isinstance(
-        focus, (QAbstractSpinBox, QLineEdit, QPlainTextEdit, QTextEdit)
-    )
-
-
 class GuidedTour(QObject):
     finished = Signal()
 
@@ -247,18 +262,15 @@ class GuidedTour(QObject):
         self._overlay.raise_()
         self._tooltip.show()
         self._tooltip.raise_()
-        app = QApplication.instance()
-        if app is not None:
-            app.installEventFilter(self)
+        self._tooltip.setFocus()
+        self._window.installEventFilter(self)
         QTimer.singleShot(0, lambda: self._show_step(0))
 
     def close_tour(self) -> None:
         if not self._active or self._window is None:
             return
         self._active = False
-        app = QApplication.instance()
-        if app is not None:
-            app.removeEventFilter(self)
+        self._window.removeEventFilter(self)
         self._tooltip.next_clicked.disconnect(self._on_next)
         self._tooltip.back_clicked.disconnect(self._on_back)
         self._tooltip.skip_clicked.disconnect(self.close_tour)
@@ -280,30 +292,6 @@ class GuidedTour(QObject):
             return super().eventFilter(watched, event)
         if watched is self._window and event.type() == QEvent.Type.Resize:
             self._show_step(self._current)
-        elif event.type() == QEvent.Type.KeyPress:
-            key_event = event
-            if not isinstance(key_event, QKeyEvent):
-                return super().eventFilter(watched, event)
-            if key_event.key() == Qt.Key.Key_Escape:
-                self.close_tour()
-                return True
-            if _focus_accepts_text():
-                return super().eventFilter(watched, event)
-            if key_event.key() in (
-                Qt.Key.Key_N,
-                Qt.Key.Key_Right,
-                Qt.Key.Key_Enter,
-                Qt.Key.Key_Return,
-            ):
-                self._on_next()
-                return True
-            if key_event.key() in (
-                Qt.Key.Key_P,
-                Qt.Key.Key_Left,
-                Qt.Key.Key_Backspace,
-            ):
-                self._on_back()
-                return True
         return super().eventFilter(watched, event)
 
     def _on_next(self) -> None:
