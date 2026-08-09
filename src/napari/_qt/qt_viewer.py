@@ -129,7 +129,8 @@ class QtViewer(QSplitter):
     """
 
     _instances = WeakSet()
-    console_visibility_toggled = Signal(bool)
+    # Added for console. Choose not for qt native here as during sliding animation visibility is toggled as well.
+    visibility_toggled = Signal(bool)
 
     def __init__(
         self,
@@ -1135,7 +1136,7 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-        self.console_visibility_toggled.emit(viz)
+        self.visibility_toggled.emit(viz)
 
     def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
         """Replace the welcome screen tip pool."""
