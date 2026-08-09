@@ -31,6 +31,7 @@ class TourStep:
     title: str
     body: str
     anchor: str = 'right'
+    skip: Callable[[], bool] = lambda: False
 
 
 _TOOLTIP_MAX_WIDTH = 420
@@ -231,7 +232,11 @@ class GuidedTour(QObject):
         self._tooltip.raise_()
         self._tooltip.setFocus()
         self._window.installEventFilter(self)
-        QTimer.singleShot(0, lambda: self._show_step(0))
+        start_index = self._seek(0, 1)
+        if start_index is None:
+            self.close_tour()
+            return
+        QTimer.singleShot(0, lambda: self._show_step(start_index))
 
     def close_tour(self) -> None:
         if not self._active or self._window is None:
@@ -261,15 +266,24 @@ class GuidedTour(QObject):
             self._show_step(self._current)
         return super().eventFilter(watched, event)
 
+    def _seek(self, index: int, direction: int) -> int | None:
+        while 0 <= index < len(self._steps):
+            if not self._steps[index].skip():
+                return index
+            index += direction
+        return None
+
     def _on_next(self) -> None:
-        if self._current >= len(self._steps) - 1:
+        next_index = self._seek(self._current + 1, 1)
+        if next_index is None:
             self.close_tour()
             return
-        self._show_step(self._current + 1)
+        self._show_step(next_index)
 
     def _on_back(self) -> None:
-        if self._current > 0:
-            self._show_step(self._current - 1)
+        prev_index = self._seek(self._current - 1, -1)
+        if prev_index is not None:
+            self._show_step(prev_index)
 
     def _show_step(self, index: int) -> None:
         if self._window is None:
@@ -279,12 +293,18 @@ class GuidedTour(QObject):
         target = step.target()
         if target is None or not target.isVisible():
             return
+        visible = [
+            i for i, s in enumerate(self._steps) if not s.skip()
+        ]
         top_left = target.mapTo(self._window, QPoint(0, 0))
         rect = QRect(top_left, target.size())
         self._overlay.setGeometry(self._window.rect())
         self._overlay.set_spotlight(rect)
         self._tooltip.set_content(
-            step.title, step.body, index + 1, len(self._steps)
+            step.title,
+            step.body,
+            visible.index(index) + 1,
+            len(visible),
         )
         self._tooltip.place(rect, step.anchor, self._window.rect())
         self._tooltip.raise_()
@@ -341,6 +361,9 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                     'Extra dimensions show up here. Move through slices, or press play on a slider to animate along that axis.'
                 ),
                 anchor='above',
+                skip=lambda: (
+                    qt_viewer.viewer.dims.ndim <= qt_viewer.viewer.dims.ndisplay
+                ),
             ),
             TourStep(
                 target=lambda: status_bar,

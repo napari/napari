@@ -4,6 +4,7 @@ import sys
 from types import SimpleNamespace
 from unittest import mock
 
+import numpy as np
 import pytest
 import requests
 from qtpy.QtCore import Qt
@@ -11,7 +12,7 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
-from napari._qt.widgets.qt_viewer_tour import _TourTooltip
+from napari._qt.widgets.qt_viewer_tour import _TourTooltip, build_viewer_tour
 
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
@@ -55,6 +56,26 @@ def test_tour_tooltip_keyboard_shortcuts(qtbot):
         qtbot.keyPress(tooltip, Qt.Key.Key_P)
     with qtbot.waitSignal(tooltip.skip_clicked, timeout=1000):
         qtbot.keyPress(tooltip, Qt.Key.Key_Escape)
+
+
+@pytest.mark.parametrize(
+    ('shape', 'expect_dims_step'),
+    [((4, 4), False), ((4, 4, 4), True)],
+)
+def test_tour_skips_dims_step_without_extra_dims(
+    make_napari_viewer, shape, expect_dims_step
+):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros(shape))
+    tour = build_viewer_tour(viewer.window._qt_window)
+
+    titles = []
+    index = tour._seek(0, 1)
+    while index is not None:
+        titles.append(tour._steps[index].title)
+        index = tour._seek(index + 1, 1)
+
+    assert ('Dimension sliders' in titles) is expect_dims_step
 
 
 def test_start_viewer_tour():
