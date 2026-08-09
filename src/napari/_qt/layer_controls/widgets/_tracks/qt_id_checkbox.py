@@ -32,19 +32,21 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
         Label for showing the id chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Tracks) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_id` attribute)
 
         # Setup widgets
         self.id_checkbox = QCheckBox()
-        connect_setattr(
-            self.id_checkbox.stateChanged,
-            layer,
-            'display_id',
-            convert_fun=checked_to_bool,
-        )
+        for layer in self._layers:
+            connect_setattr(
+                self.id_checkbox.stateChanged,
+                layer,
+                'display_id',
+                convert_fun=checked_to_bool,
+            )
 
         self.id_checkbox_label = QtWrappedLabel('show ID:')
 

@@ -34,10 +34,12 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         Label for the current edge width widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Shapes) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Shapes]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers  # @lorenzo is this necessary? it gets it from the parent class no?
         # Setup layer
-        self._layer.events.edge_width.connect(self._on_edge_width_change)
+        for layer in self._layers:
+            layer.events.edge_width.connect(self._on_edge_width_change)
 
         # Setup widgets
         sld = QLabeledSlider(Qt.Orientation.Horizontal)
@@ -45,19 +47,20 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         sld.setMinimum(0)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        value = self._layer.current_edge_width
+        value = self._layers[0].current_edge_width
         if isinstance(value, Iterable):
             if isinstance(value, list):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
         self.edge_width_slider = sld
-        connect_setattr(
-            self.edge_width_slider.valueChanged,
-            self._layer,
-            'current_edge_width',
-            convert_fun=float,
-        )
+        for layer in self._layers:
+            connect_setattr(
+                self.edge_width_slider.valueChanged,
+                layer,
+                'current_edge_width',
+                convert_fun=float,
+            )
         self.edge_width_slider.setToolTip(
             'Set the edge width of currently selected shapes and any added afterwards.'
         )
@@ -66,7 +69,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
     def _on_edge_width_change(self) -> None:
         """Receive layer model edge line width change event and update slider."""
         with qt_signals_blocked(self.edge_width_slider):
-            value = self._layer.current_edge_width
+            value = self._layers[0].current_edge_width
             value = np.clip(int(value), 0, 40)
             self.edge_width_slider.setValue(value)
 

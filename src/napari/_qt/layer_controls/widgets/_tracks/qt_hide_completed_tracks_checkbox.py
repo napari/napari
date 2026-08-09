@@ -32,26 +32,28 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
         Label for showing the option checkbox.
     """
 
-    def __init__(self, parent: QWidget, layer: Tracks) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
 
         # Setup widgets
         self.hide_completed_tracks_checkbox = QCheckBox()
-        self._callbacks.append(
-            attr_to_settr(
-                self._layer,
-                'hide_completed_tracks',
-                self.hide_completed_tracks_checkbox,
-                'setChecked',
+        for layer in self._layers:
+            self._callbacks.append(
+                attr_to_settr(
+                    layer,
+                    'hide_completed_tracks',
+                    self.hide_completed_tracks_checkbox,
+                    'setChecked',
+                )
             )
-        )
-        connect_setattr(
-            self.hide_completed_tracks_checkbox.stateChanged,
-            layer,
-            'hide_completed_tracks',
-            convert_fun=checked_to_bool,
-        )
+            connect_setattr(
+                self.hide_completed_tracks_checkbox.stateChanged,
+                layer,
+                'hide_completed_tracks',
+                convert_fun=checked_to_bool,
+            )
 
         self.hide_completed_tracks_checkbox_label = QtWrappedLabel(
             'hide completed:'

@@ -32,20 +32,22 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
         Label for showing the graph chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Tracks) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_graph` attribute)
 
         # Setup widgets
         self.graph_checkbox = QCheckBox()
         self.graph_checkbox.setChecked(True)
-        connect_setattr(
-            self.graph_checkbox.stateChanged,
-            layer,
-            'display_graph',
-            convert_fun=checked_to_bool,
-        )
+        for layer in self._layers:
+            connect_setattr(
+                self.graph_checkbox.stateChanged,
+                layer,
+                'display_graph',
+                convert_fun=checked_to_bool,
+            )
 
         self.graph_checkbox_label = QtWrappedLabel('graph:')
 

@@ -12,6 +12,8 @@ from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
 
 
+# @margot @lorenzo maybe come back to this, I dont think it behaves as expected
+# and also: when I select two layers they automatically get changed away from color mode direct and feature pos_angle :(
 class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge
@@ -41,13 +43,15 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         Label for the color_feature_box chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Vectors) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.edge_color_mode.connect(
-            self._on_edge_color_mode_change
-        )
-        self._layer.events.edge_color.connect(self._on_edge_color_change)
+        for layer in self._layers:
+            layer.events.edge_color_mode.connect(
+                self._on_edge_color_mode_change
+            )
+            layer.events.edge_color.connect(self._on_edge_color_change)
 
         # Setup widgets
         # dropdown to select the feature for mapping edge_color
@@ -55,17 +59,18 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
         )
-        self.color_feature_box.addItems(self._layer.features.columns)
+        self.color_feature_box.addItems(self._layers[0].features.columns)
         self.edge_feature_label = QtWrappedLabel('edge feature:')
 
         # vector direct color mode adjustment and widget
         self.edge_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.edge_color,
+            initial_color=self._layers[0].edge_color,
             tooltip='Click to set current edge color',
         )
-        connect_setattr(
-            self.edge_color_edit.color_changed, self._layer, 'edge_color'
-        )
+        for layer in self._layers:
+            connect_setattr(
+                self.edge_color_edit.color_changed, layer, 'edge_color'
+            )
         self.edge_color_label = QtWrappedLabel('edge color:')
         self._on_edge_color_change()
 
@@ -87,15 +92,16 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         feature : str
             feature to map the edge color to
         """
-        mode = self._layer.edge_color_mode
-        try:
-            self._layer.edge_color = feature
-            self._layer.edge_color_mode = mode
-        except TypeError:
-            # if the selected feature is the wrong type for the current color mode
-            # the color mode will be changed to the appropriate type, so we must update
-            self._on_edge_color_mode_change()
-            raise
+        for layer in self._layers:
+            mode = layer.edge_color_mode
+            try:
+                layer.edge_color = feature
+                layer.edge_color_mode = mode
+            except TypeError:
+                # if the selected feature is the wrong type for the current color mode
+                # the color mode will be changed to the appropriate type, so we must update
+                self._on_edge_color_mode_change()
+                raise
 
     def change_edge_color_mode(self, mode: str):
         """Change edge color mode of vectors on the layer model.
@@ -105,17 +111,20 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         mode : str
             Edge color for vectors. Must be: 'direct', 'cycle', or 'colormap'
         """
-        old_mode = self._layer.edge_color_mode
-        with self._layer.events.edge_color_mode.blocker():
-            try:
-                self._layer.edge_color_mode = mode
-                self._update_edge_color_gui(mode)
+        for layer in self._layers:
+            old_mode = layer.edge_color_mode
+            with layer.events.edge_color_mode.blocker():
+                try:
+                    layer.edge_color_mode = mode
+                    self._update_edge_color_gui(mode)
 
-            except ValueError:
-                # if the color mode was invalid, revert to the old mode (layer and GUI)
-                self._layer.edge_color_mode = old_mode
-                self.color_mode_combobox.setCurrentText(old_mode)
-                raise
+                except ValueError:
+                    # if the color mode was invalid, revert to the old mode (layer and GUI)
+                    layer.edge_color_mode = old_mode
+                    self.color_mode_combobox.setCurrentText(
+                        old_mode
+                    )  # @lorenzo: now im setting the text multiple times, can I take this out of the loop somehow?
+                    raise
 
     def _on_edge_color_mode_change(self):
         """Receive layer model edge color mode change event & update dropdown."""
@@ -124,7 +133,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             return
 
         with qt_signals_blocked(self.color_mode_combobox):
-            mode = self._layer._edge.color_mode
+            mode = self._layers[0]._edge.color_mode
             index = self.color_mode_combobox.findText(
                 mode, Qt.MatchFixedString
             )
@@ -135,17 +144,17 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     def _on_edge_color_change(self):
         """Receive layer model edge color  change event & update dropdown."""
         if (
-            self._layer._edge.color_mode == ColorMode.DIRECT
-            and len(self._layer.data) > 0
+            self._layers[0]._edge.color_mode == ColorMode.DIRECT
+            and len(self._layers[0].data) > 0
         ):
             with qt_signals_blocked(self.edge_color_edit):
-                self.edge_color_edit.setColor(self._layer.edge_color[0])
-        elif self._layer._edge.color_mode in (
+                self.edge_color_edit.setColor(self._layers[0].edge_color[0])
+        elif self._layers[0]._edge.color_mode in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
             with qt_signals_blocked(self.color_feature_box):
-                prop = self._layer._edge.color_properties.name
+                prop = self._layers[0]._edge.color_properties.name
                 index = self.color_feature_box.findText(
                     prop, Qt.MatchFixedString
                 )

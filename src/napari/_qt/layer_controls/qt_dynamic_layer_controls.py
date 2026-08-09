@@ -64,8 +64,47 @@ from napari._qt.layer_controls.widgets._points.qt_current_size_slider import (
 from napari._qt.layer_controls.widgets._points.qt_symbol_combobox import (
     QtSymbolComboBoxControl,
 )
+from napari._qt.layer_controls.widgets._shapes.qt_edge_color import (
+    QtEdgeColorControl,
+)
+from napari._qt.layer_controls.widgets._shapes.qt_edge_width_slider import (
+    QtEdgeWidthSliderControl,
+)
 from napari._qt.layer_controls.widgets._surface.qt_shading_combobox import (
     QtShadingComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_color_properties_combobox import (
+    QtColorPropertiesComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_colormap_control import (
+    QtColormapComboBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_graph_checkbox import (
+    QtGraphCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_head_slider import (
+    QtHeadLengthSliderControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_hide_completed_tracks_checkbox import (
+    QtHideCompletedTracksCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_id_checkbox import (
+    QtIdCheckBoxControl,
+)
+from napari._qt.layer_controls.widgets._tracks.qt_tail_control import (
+    QtTailDisplayCheckBoxControl,
+    QtTailLengthSliderControl,
+    QtTailWidthSliderControl,
+)
+from napari._qt.layer_controls.widgets._vectors.qt_edge_color import (
+    QtEdgeColorFeatureControl,
+)
+from napari._qt.layer_controls.widgets._vectors.qt_line_dimension_spinbox import (
+    QtLengthSpinBoxControl,
+    QtWidthSpinBoxControl,
+)
+from napari._qt.layer_controls.widgets._vectors.qt_vector_style_combobox import (
+    QtVectorStyleComboBoxControl,
 )
 from napari._qt.layer_controls.widgets.qt_colormap_control import (
     QtColormapControl,
@@ -140,6 +179,27 @@ controls_dict = {
         QtDepictionControl,
         QtInterpolationComboBoxControl,
         QtImageRenderControl,
+    ),
+    Shapes: (
+        QtEdgeColorControl,
+        QtEdgeWidthSliderControl,
+    ),
+    Tracks: (
+        QtColorPropertiesComboBoxControl,
+        QtColormapComboBoxControl,
+        QtGraphCheckBoxControl,
+        QtHeadLengthSliderControl,
+        QtHideCompletedTracksCheckBoxControl,
+        QtIdCheckBoxControl,
+        QtTailLengthSliderControl,
+        QtTailWidthSliderControl,
+        QtTailDisplayCheckBoxControl,
+    ),
+    Vectors: (
+        QtEdgeColorFeatureControl,
+        QtWidthSpinBoxControl,
+        QtLengthSpinBoxControl,
+        QtVectorStyleComboBoxControl,
     ),
     Points | Vectors: (QtOutSliceCheckBoxControl,),
     Points | Shapes: (QtTextVisibilityControl,),

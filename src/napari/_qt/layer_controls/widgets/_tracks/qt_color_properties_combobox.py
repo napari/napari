@@ -30,20 +30,22 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
         Label for the color property chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Tracks) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.color_by.connect(self._on_color_by_change)
-        self._layer.events.properties.connect(self._on_properties_change)
-
+        for layer in self._layers:
+            layer.events.color_by.connect(self._on_color_by_change)
+            layer.events.properties.connect(self._on_properties_change)
         # Setup widgets
         # combo box for track coloring, we can get these from the properties
         # keys
         self.color_by_combobox = QComboBox()
-        self.color_by_combobox.addItems(self._layer.properties_to_color_by)
-        connect_setattr(
-            self.color_by_combobox.currentTextChanged, self._layer, 'color_by'
-        )
+        self.color_by_combobox.addItems(self._layers[0].properties_to_color_by)
+        for layer in self._layers:
+            connect_setattr(
+                self.color_by_combobox.currentTextChanged, layer, 'color_by'
+            )
 
         self.color_by_combobox_label = QtWrappedLabel('color by:')
 
@@ -52,7 +54,7 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
     def _on_color_by_change(self) -> None:
         """Receive layer model color_by change event and update combobox."""
         with qt_signals_blocked(self.color_by_combobox):
-            color_by = self._layer.color_by
+            color_by = self._layers[0].color_by
 
             idx = self.color_by_combobox.findText(
                 color_by, Qt.MatchFlag.MatchFixedString
@@ -63,7 +65,9 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
         """Change the properties that can be used to color the tracks."""
         with qt_signals_blocked(self.color_by_combobox):
             self.color_by_combobox.clear()
-            self.color_by_combobox.addItems(self._layer.properties_to_color_by)
+            self.color_by_combobox.addItems(
+                self._layers[0].properties_to_color_by
+            )
         self._on_color_by_change()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

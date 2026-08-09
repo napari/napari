@@ -29,10 +29,12 @@ class QtColormapComboBoxControl(QtWidgetControlsBase):
         Label for the colormap chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Tracks) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup layer
-        self._layer.events.colormap.connect(self._on_colormap_change)
+        for layer in self._layers:
+            layer.events.colormap.connect(self._on_colormap_change)
 
         # Setup widgets
         self.colormap_combobox = QComboBox()
@@ -46,13 +48,14 @@ class QtColormapComboBoxControl(QtWidgetControlsBase):
         self._on_colormap_change()
 
     def change_colormap(self, colormap: str):
-        self._layer.colormap = self.colormap_combobox.currentData()
+        for layer in self._layers:
+            layer.colormap = self.colormap_combobox.currentData()
 
     def _on_colormap_change(self):
         """Receive layer model colormap change event and update combobox."""
         with qt_signals_blocked(self.colormap_combobox):
             self.colormap_combobox.setCurrentIndex(
-                self.colormap_combobox.findData(self._layer.colormap)
+                self.colormap_combobox.findData(self._layers[0].colormap)
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

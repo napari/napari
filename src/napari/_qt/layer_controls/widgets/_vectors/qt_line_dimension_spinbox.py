@@ -32,8 +32,9 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         Label for the edge width of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Vectors) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup widgets
         # line width in pixels
         self.width_spinbox = QDoubleSpinBox()
@@ -41,11 +42,13 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.setSingleStep(0.1)
         self.width_spinbox.setMinimum(0.01)
         self.width_spinbox.setMaximum(np.inf)
-        self.width_spinbox.setValue(self._layer.edge_width)
+        self.width_spinbox.setValue(self._layers[0].edge_width)
         self.width_spinbox.valueChanged.connect(self.change_width)
         self._callbacks.append(
             attr_to_settr(
-                self._layer,
+                self._layers[
+                    0
+                ],  # @lorenzo: either this is wrong or all the others are wrong. usually I loop but I think I should take first
                 'edge_width',
                 self.width_spinbox,
                 'setValue',
@@ -60,7 +63,8 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         value : float
             Line width of vectors.
         """
-        self._layer.edge_width = value
+        for layer in self._layers:
+            layer.edge_width = value
         self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
@@ -90,20 +94,21 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         Label for line length of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Vectors) -> None:
-        super().__init__(parent, layer)
+    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
+        super().__init__(parent, layers)
+        self._layers = layers
         # Setup widgets
         # line length
         self.length_spinbox = QDoubleSpinBox()
         self.length_spinbox.setKeyboardTracking(False)
         self.length_spinbox.setSingleStep(0.1)
-        self.length_spinbox.setValue(self._layer.length)
+        self.length_spinbox.setValue(self._layers[0].length)
         self.length_spinbox.setMinimum(0.1)
         self.length_spinbox.setMaximum(np.inf)
         self.length_spinbox.valueChanged.connect(self.change_length)
         self._callbacks.append(
             attr_to_settr(
-                self._layer,
+                self._layers[0],
                 'length',
                 self.length_spinbox,
                 'setValue',
@@ -119,7 +124,8 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         value : float
             Length of vectors.
         """
-        self._layer.length = value
+        for layer in self._layers:
+            layer.length = value
         self.length_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
