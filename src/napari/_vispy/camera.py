@@ -1,47 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
-
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
-if TYPE_CHECKING:
-    from napari.components import Camera
-
-
-def get_vispy_flipped_axes(
-    camera: Camera, ndisplay: Literal[2, 3] = 2
-) -> tuple[int, int, int]:
-    # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
-    # while the napari axis order is zyx / plane-row-column, or depth, vertical,
-    # horizontal — i.e. it is exactly inverted. This switch happens when data
-    # is passed from napari to Vispy, usually with a transposition. In the camera
-    # models, this means that the order of these orientations appear in the
-    # opposite order to that in napari.components.Camera.
-    #
-    # Note that the default Vispy camera orientations come from Vispy, not from us.
-    vispy_default_orientation = (
-        ('right', 'up', 'towards')
-        if ndisplay == 2
-        else ('right', 'down', 'away')
-    )
-
-    # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
-    # start by inverting the order of coordinates coming from the napari
-    # camera model:
-    orientation_xyz = camera.orientation[::-1]
-    # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
-    # whether they are flipped relative to the Vispy default.
-    return cast(
-        tuple[int, int, int],
-        tuple(
-            int(ori != default_ori)
-            for ori, default_ori in zip(
-                orientation_xyz, vispy_default_orientation, strict=True
-            )
-        ),
-    )
+from napari.utils.camera_orientations import (
+    _flipped_axes_to_factors,
+    _get_vispy_flipped_axes,
+)
 
 
 def napari_angles_to_vispy_quat(
@@ -50,7 +16,7 @@ def napari_angles_to_vispy_quat(
     from scipy.spatial.transform import Rotation
 
     # flip handedness so the rotation is always righthanded even with axis flipping
-    angles_flipped = angles * np.where(flipped_axes, -1, 1)
+    angles_flipped = angles * _flipped_axes_to_factors(flipped_axes)
     # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
     angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
     # see #8281 for why this is yzx. In short: longstanding vispy bug.
@@ -71,7 +37,7 @@ def vispy_quat_to_napari_angles(
     # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
     angles_fixed = (angles - (0, 0, 90)) * (1, -1, 1)
     # flip handedness so the rotation is always righthanded even with axis flipping
-    return tuple(angles_fixed * np.where(flipped_axes, -1, 1))
+    return tuple(angles_fixed * _flipped_axes_to_factors(flipped_axes))
 
 
 class VispyCamera:
@@ -121,7 +87,9 @@ class VispyCamera:
         """
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
+            flipped_axes = _get_vispy_flipped_axes(
+                self._camera.orientation, ndisplay=3
+            )
             return vispy_quat_to_napari_angles(
                 self._view.camera._quaternion, flipped_axes
             )
@@ -135,7 +103,9 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
+            flipped_axes = _get_vispy_flipped_axes(
+                self._camera.orientation, ndisplay=3
+            )
             quat = napari_angles_to_vispy_quat(
                 self._camera.angles, flipped_axes
             )
@@ -247,8 +217,12 @@ class VispyCamera:
         self.zoom = self._camera.zoom
 
     def _on_orientation_change(self):
-        self._2D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=2)
-        self._3D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=3)
+        self._2D_camera.flip = _get_vispy_flipped_axes(
+            self._camera.orientation, ndisplay=2
+        )
+        self._3D_camera.flip = _get_vispy_flipped_axes(
+            self._camera.orientation, ndisplay=3
+        )
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective
