@@ -1,4 +1,3 @@
-# TODO: sort through necessary imports
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
