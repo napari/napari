@@ -15,6 +15,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
+from psygnal import Signal
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import QGuiApplication, QImage
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
@@ -128,6 +129,7 @@ class QtViewer(QSplitter):
     """
 
     _instances = WeakSet()
+    console_visibility_toggled = Signal(bool)
 
     def __init__(
         self,
@@ -1113,6 +1115,8 @@ class QtViewer(QSplitter):
 
         viz = not self.dockConsole.isVisible()
         # modulate visibility at the dock widget level as console is dockable
+        # if not self.dockConsole.isFloating() and get_settings().appearance.dock_area_autohide:
+        #     self.window
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
@@ -1130,6 +1134,8 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+        self.console_visibility_toggled.emit(viz)
 
     def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
         """Replace the welcome screen tip pool."""

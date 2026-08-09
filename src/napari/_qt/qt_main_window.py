@@ -1328,6 +1328,10 @@ class Window:
             for dock in self.widgets_sliding_dock_area:
                 self._qt_window.register_widget_sliding_dock(dock)
 
+        self._qt_viewer.console_visibility_toggled.connect(
+            self._toggle_sliding_console
+        )
+
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
@@ -1339,6 +1343,23 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
+
+    def _toggle_sliding_console(self, visibility: bool):
+        if get_settings().appearance.dock_area_autohide:
+            if visibility:
+                self.widgets_sliding_dock_area.append(
+                    self._qt_viewer.dockConsole
+                )
+                self._qt_window.register_widget_sliding_dock(
+                    self._qt_viewer.dockConsole
+                )
+            else:
+                self.widgets_sliding_dock_area.remove(
+                    self._qt_viewer.dockConsole
+                )
+                self._qt_window.deregister_widget_sliding_dock(
+                    self._qt_viewer.dockConsole
+                )
 
     def _register_widgets_sliding_dock_area(self, event):
         if event.value:
