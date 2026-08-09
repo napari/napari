@@ -519,44 +519,42 @@ class _QtMainWindow(QMainWindow):
             return
 
         state = self.widgets_sliding_dock_area[dock]
+
         if show == state['visible_state']:
             return
 
-        old_anim = state.get('animation')
-        if (
-            old_anim is not None
-            and old_anim.state() == QPropertyAnimation.State.Running
-        ):
-            old_anim.stop()
+        is_width = property_name == b'maximumWidth'
+        anim = state.get('animation')
+
+        if anim is None:
+            anim = QPropertyAnimation(dock, property_name, self)
+            anim.setDuration(300)
+            anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+            anim.valueChanged.connect(self._on_dock_size_animated)
+            anim.finished.connect(self._on_generic_animation_finished)
+            state['animation'] = anim
 
         state['visible_state'] = show
 
-        anim = QPropertyAnimation(dock, property_name, self)
-        anim.setDuration(300)
-        anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
-
-        anim.valueChanged.connect(self._on_dock_size_animated)
-        anim.finished.connect(self._on_generic_animation_finished)
-        state['animation'] = anim
-
         if show:
+            if dock.isVisible():
+                start_size = dock.width() if is_width else dock.height()
+            else:
+                start_size = 1
+
             dock.setVisible(True)
-            anim.setStartValue(1)
-            anim.setEndValue(self._get_expanded_size(dock, property_name))
+            target_size = self._get_expanded_size(dock, property_name)
         else:
-            if property_name == b'maximumWidth':
+            start_size = dock.width() if is_width else dock.height()
+            if is_width:
                 dock.setMinimumWidth(0)
             else:
                 dock.setMinimumHeight(0)
 
-            current_dimension = (
-                dock.width()
-                if property_name == b'maximumWidth'
-                else dock.height()
-            )
-            anim.setStartValue(current_dimension)
-            anim.setEndValue(0)
+            target_size = 0
 
+        anim.setStartValue(start_size)
+        anim.setEndValue(target_size)
         anim.start()
 
     def _apply_dock_animated_size(
