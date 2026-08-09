@@ -201,27 +201,28 @@ class QContrastLimitsPopup(QtPopup):
         # QtHistogramContentWidget (vispy canvas) is deferred to
         # _ensure_histogram_content() to avoid a PySide6 segfault when
         # creating native GL widgets during __init__.
-        self._histogram_enabled_checkbox = None
-        self.histogram_content = None
-        self._frame_base_height: int = 0
+        if len(self._layers) == 1:
+            self._histogram_enabled_checkbox = None
+            self.histogram_content = None
+            self._frame_base_height: int = 0
 
-        self._histogram_enabled_checkbox = QCheckBox('histogram')
-        self._histogram_enabled_checkbox.setChecked(
-            self._layers[0].histogram.enabled
-        )
-        self._histogram_enabled_checkbox.setToolTip(
-            'Show histogram in this popup'
-        )
-        self._histogram_enabled_checkbox.toggled.connect(
-            self._on_popup_histogram_toggled
-        )
-        button_layout.addWidget(self._histogram_enabled_checkbox)
-        # If histogram was already enabled, create content lazily
-        # when the popup is shown (showEvent), not during __init__.
-        if self._layers[0].histogram.enabled:
-            self._needs_content_on_show = True
-        else:
-            self._needs_content_on_show = False
+            self._histogram_enabled_checkbox = QCheckBox('histogram')
+            self._histogram_enabled_checkbox.setChecked(
+                self._layers[0].histogram.enabled
+            )
+            self._histogram_enabled_checkbox.setToolTip(
+                'Show histogram in this popup'
+            )
+            self._histogram_enabled_checkbox.toggled.connect(
+                self._on_popup_histogram_toggled
+            )
+            button_layout.addWidget(self._histogram_enabled_checkbox)
+            # If histogram was already enabled, create content lazily
+            # when the popup is shown (showEvent), not during __init__.
+            if self._layers[0].histogram.enabled:
+                self._needs_content_on_show = True
+            else:
+                self._needs_content_on_show = False
 
         button_layout.addStretch()
 
@@ -266,7 +267,7 @@ class QContrastLimitsPopup(QtPopup):
             layer.histogram.events.enabled.disconnect(
                 self._on_external_histogram_enabled
             )
-        if self.histogram_content is not None:
+        if len(self._layers) == 1 and self.histogram_content is not None:
             self.histogram_content.cleanup()
             self.histogram_content = None
 
@@ -328,9 +329,7 @@ class QContrastLimitsPopup(QtPopup):
     def _on_external_histogram_enabled(self) -> None:
         """Sync checkbox when ``layer.histogram.enabled`` changes from outside."""
         if self._histogram_enabled_checkbox is not None:
-            with qt_signals_blocked(
-                self._histogram_enabled_checkbox
-            ):  # @lorenzo do I loop?
+            with qt_signals_blocked(self._histogram_enabled_checkbox):
                 self._histogram_enabled_checkbox.setChecked(
                     self._layers[0].histogram.enabled
                 )
@@ -464,28 +463,28 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         # Histogram toggle button — added alongside the slider via a
         # wrapper widget in get_widget_controls().
         self.histogram_button = None
-
-        self.histogram_button = QtModePushButton(
-            self._layers,
-            'histogram',
-            tooltip=(
-                'Left click to toggle histogram in layer controls.\n'
-                'Right click to open histogram popup.'
-            ),
-        )
-        self.histogram_button.setCheckable(True)
-        self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.histogram_button.toggled.connect(
-            self._on_histogram_button_toggled
-        )
-        self.histogram_button.installEventFilter(self)
-        self._clim_layout.addWidget(self.histogram_button)
-
-        # Sync button checked state when ``enabled`` changes via the API
-        for layer in self._layers:
-            layer.histogram.events.enabled.connect(
-                self._on_histogram_model_enabled
+        if len(self._layers) == 1:
+            self.histogram_button = QtModePushButton(
+                self._layers,
+                'histogram',
+                tooltip=(
+                    'Left click to toggle histogram in layer controls.\n'
+                    'Right click to open histogram popup.'
+                ),
             )
+            self.histogram_button.setCheckable(True)
+            self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.histogram_button.toggled.connect(
+                self._on_histogram_button_toggled
+            )
+            self.histogram_button.installEventFilter(self)
+            self._clim_layout.addWidget(self.histogram_button)
+
+            # Sync button checked state when ``enabled`` changes via the API
+            for layer in self._layers:
+                layer.histogram.events.enabled.connect(
+                    self._on_histogram_model_enabled
+                )
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
@@ -594,7 +593,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect histogram model events and base controls."""
-        # @Lorenzo: not sure if this is right. super().disconnect_widget_controls() can take layerS already
         for layer in self._layers:
             disconnect_events(layer.histogram.events, self)
         super().disconnect_widget_controls()

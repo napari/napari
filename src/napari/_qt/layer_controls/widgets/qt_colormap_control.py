@@ -143,14 +143,11 @@ class QtColormapControl(QtWidgetControlsBase):
         comboBox._allitems = set().union(
             *(layer.colormaps for layer in self._layers)
         )
-
-        for (
-            name,
-            cm,
-        ) in AVAILABLE_COLORMAPS.items():  # @margot dont take the union but the intersection. also somewhere else take the intersection, in QtOutSliceCheckBoxControl?
-            if name in set().union(
-                *(layer.colormaps for layer in self._layers)
-            ):
+        common_colormaps = set.intersection(
+            *(set(layer.colormaps) for layer in self._layers)
+        )
+        for name, cm in AVAILABLE_COLORMAPS.items():
+            if name in common_colormaps:
                 comboBox.addItem(cm._display_name, name)
 
         comboBox.currentTextChanged.connect(self.change_color)

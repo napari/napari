@@ -254,14 +254,7 @@ class QtDynamicLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
-        # self._EDIT_BUTTONS: tuple = ()
-        # self._MODE_BUTTONS: dict = {}
         self._layers = layers
-
-        # for layer in self._layers:
-        # self.layer.events.mode.connect(self._on_mode_change)
-        # self.layer.events.editable.connect(self._on_editable_or_visible_change)
-        # self.layer.events.visible.connect(self._on_editable_or_visible_change)
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -279,6 +272,8 @@ class QtDynamicLayerControls(QFrame):
         for layer_type, controls in controls_dict.items():
             if all(isinstance(layer, layer_type) for layer in self._layers):
                 for control in controls:
+                    if control is QtHistogramControl and len(self._layers) > 1:
+                        continue
                     self._add_widget_controls(
                         control(parent=self, layers=layers)
                     )
@@ -301,7 +296,9 @@ class QtDynamicLayerControls(QFrame):
         for label_text, control_widget in controls:
             self.layout().addRow(label_text, control_widget)
 
-    def changeProjectionMode(self, text):
+    def changeProjectionMode(
+        self, text
+    ):  # @lorenzo is this even used anywhere? how is it accessed?
         for layer in self._layers:
             with layer.events.blocker(self._on_projection_mode_change):
                 layer.projection_mode = text

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 class QtHistogramControl(QtWidgetControlsBase):
     """
-    Histogram control widget for Image layers.
+    Histogram control widget for IntensityMixin layers.
 
     This widget provides the lazily-created inline histogram content that is
     shown or hidden via the histogram button on the contrast limits control.

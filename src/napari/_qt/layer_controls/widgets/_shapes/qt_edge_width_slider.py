@@ -42,7 +42,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layers: list[Shapes]) -> None:
         super().__init__(parent, layers)
-        self._layers = layers  # @lorenzo is this necessary? it gets it from the parent class no?
+        self._layers = layers
         # Setup layer
         for layer in self._layers:
             layer.events.edge_width.connect(self._on_edge_width_change)

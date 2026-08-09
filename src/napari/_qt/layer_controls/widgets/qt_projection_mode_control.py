@@ -45,11 +45,11 @@ class QtProjectionModeControl(QtWidgetControlsBase):
             )
 
         # Setup widgets
-        # @margot remove this line if follow line works  proj_modes = [i.value for i in self._layer._projectionclass]
+        # @lorenzo this only shows the projection modes that are common to all layers and only if the layers are the same type. Is that okay?
         proj_modes = [
             i.value
-            for i in set().union(
-                *(layer._projectionclass for layer in self._layers)
+            for i in set.intersection(
+                *(set(layer._projectionclass) for layer in self._layers)
             )
         ]
         self.projection_combobox = QComboBox(parent)
