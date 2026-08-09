@@ -82,38 +82,6 @@ class _TourTooltip(QFrame):
         nav.addWidget(self._skip)
         layout.addLayout(nav)
 
-    def apply_theme(self, theme_name: str) -> None:
-        theme = get_theme(theme_name).to_rgb_dict()
-        accent = theme['primary']
-        bg = theme['background']
-        fg = theme['text']
-        border = theme['foreground']
-        btn_bg = theme['secondary']
-        self.setStyleSheet(
-            f"""
-            QFrame#qt_viewer_tour_tooltip {{
-                background: {bg};
-                border: 1px solid {border};
-                border-radius: 0;
-            }}
-            QFrame#qt_viewer_tour_tooltip QLabel {{
-                color: {fg};
-                background: transparent;
-                border: none;
-            }}
-            QFrame#qt_viewer_tour_tooltip QPushButton {{
-                background: {btn_bg};
-                color: {fg};
-                border: none;
-                border-radius: 0;
-                padding: 5px 12px;
-            }}
-            QFrame#qt_viewer_tour_tooltip QPushButton:hover {{
-                background: {accent};
-            }}
-            """
-        )
-
     def _update_size(self) -> None:
         parent = self.parentWidget()
         window_width = parent.width() if parent is not None else 900
@@ -248,7 +216,6 @@ class GuidedTour(QObject):
             parent_window, accent_color=theme['primary']
         )
         self._tooltip = _TourTooltip(parent_window)
-        self._tooltip.apply_theme(theme_name)
         self._tooltip.next_clicked.connect(self._on_next)
         self._tooltip.back_clicked.connect(self._on_back)
         self._tooltip.skip_clicked.connect(self.close_tour)
