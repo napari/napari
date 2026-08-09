@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -12,9 +16,11 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
+
+if TYPE_CHECKING:
+    from napari.layers import Image
 
 
 class PlaneNormalButtons(QWidget):
@@ -93,7 +99,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         Label for the plane normal thickness value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

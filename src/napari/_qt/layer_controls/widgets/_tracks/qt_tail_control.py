@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -10,8 +14,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
-from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers import Tracks
 
 
 class QtTailLengthSliderControl(QtWidgetControlsBase):

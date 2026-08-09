@@ -17,7 +17,7 @@ from napari.layers.image._image_constants import (
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
+    from napari.layers import Image
 
 
 class QtImageRenderControl(QtWidgetControlsBase):
@@ -48,7 +48,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
         Label for the attenuation slider widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

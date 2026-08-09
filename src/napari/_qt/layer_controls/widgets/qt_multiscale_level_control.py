@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,  # @margot change the layer import to this everywhere!
-)
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtWidgets import QComboBox, QWidget

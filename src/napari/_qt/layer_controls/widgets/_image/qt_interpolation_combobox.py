@@ -15,7 +15,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers.image._image_constants import Interpolation
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
+    from napari.layers import Image
 
 
 class QtInterpolationComboBoxControl(QtWidgetControlsBase):
@@ -38,7 +38,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         self._layers = layers

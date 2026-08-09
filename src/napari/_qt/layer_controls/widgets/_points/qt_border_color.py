@@ -1,4 +1,6 @@
-from qtpy.QtWidgets import QWidget
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -6,8 +8,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Points
 
 
 class QtBorderColorControl(QtWidgetControlsBase):
@@ -30,7 +36,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
         Label for the current egde color chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Points]) -> None:
         super().__init__(parent, layers)
         # Setup widgets
         self.border_color_edit = QColorSwatchEdit(

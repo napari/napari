@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -7,9 +11,11 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.layers import Vectors
 from napari.layers.utils._color_manager_constants import ColorMode
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers import Vectors
 
 
 # @margot @lorenzo maybe come back to this, I dont think it behaves as expected

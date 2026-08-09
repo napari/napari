@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import QModelIndex, QRect
 from qtpy.QtGui import QIcon, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
@@ -16,13 +20,15 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.utils.colormaps import (
     AVAILABLE_COLORMAPS,
     display_name_to_name,
     ensure_colormap,
     make_colorbar,
 )
+
+if TYPE_CHECKING:
+    from napari.layers import Image, Surface
 
 COLORMAP_WIDTH = 50
 TEXT_WIDTH = 130
@@ -101,9 +107,7 @@ class QtColormapComboBox(QComboBox):
         self.setView(view)
 
 
-class QtColormapControl(
-    QtWidgetControlsBase
-):  # @lorzenzo: help this doesnt do what it should
+class QtColormapControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer colormaps
     attribute and Qt widgets.
@@ -127,7 +131,7 @@ class QtColormapControl(
         Label for the color mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         for layer in self._layers:

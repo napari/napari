@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -8,8 +12,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, checked_to_bool
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
 
 
 class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
@@ -32,7 +38,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         Label for the layer should preserve labels chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup widgets

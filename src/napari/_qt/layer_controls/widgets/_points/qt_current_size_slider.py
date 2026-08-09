@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import contextlib
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QWidget,
-)
 from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -12,8 +12,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Points
 
 
 class QtCurrentSizeSliderControl(QtWidgetControlsBase):
@@ -36,7 +40,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Points]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         self._layers = layers

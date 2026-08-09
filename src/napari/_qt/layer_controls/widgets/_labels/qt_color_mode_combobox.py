@@ -1,17 +1,22 @@
-from qtpy.QtWidgets import (
-    QWidget,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari.layers.base.base import Layer
 from napari.layers.labels._labels_constants import (
     LabelColorMode,
 )
 from napari.utils import CyclicLabelColormap
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Labels
 
 
 class QtColorModeComboBoxControl(QtWidgetControlsBase):
@@ -34,7 +39,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

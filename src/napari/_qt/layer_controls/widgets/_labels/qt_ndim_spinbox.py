@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QSpinBox,
@@ -9,7 +13,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
 
 
 class QtNdimSpinBoxControl(QtWidgetControlsBase):
@@ -32,7 +38,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         Label for the number of editable dimensions chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

@@ -15,7 +15,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
-from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from napari._qt.widgets.qt_histogram_settings import (
         QtHistogramSettingsWidget,
     )
+    from napari.layers import Image, Surface
 
 
 class QtHistogramControl(QtWidgetControlsBase):
@@ -51,7 +51,7 @@ class QtHistogramControl(QtWidgetControlsBase):
         Widget for histogram mode and log scale controls.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
         super().__init__(parent, layers)
 
         # Persistent container — always in the form layout, shown/hidden

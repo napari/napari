@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QComboBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -5,8 +9,10 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Tracks
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
+
+if TYPE_CHECKING:
+    from napari.layers import Tracks
 
 
 class QtColormapComboBoxControl(QtWidgetControlsBase):

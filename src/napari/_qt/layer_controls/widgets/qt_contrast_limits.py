@@ -33,7 +33,7 @@ from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
+    from napari.layers import Image, Surface
 
 
 def range_to_decimals(range_, dtype):
@@ -96,7 +96,7 @@ class QContrastLimitsPopup(QtPopup):
 
     def __init__(
         self,
-        layers: list[Layer],
+        layers: list[Image | Surface],
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
@@ -346,7 +346,7 @@ class QContrastLimitsPopup(QtPopup):
 
 class AutoScaleButtons(QWidget):
     def __init__(
-        self, layers: list[Layer], parent: Optional[QWidget] = None
+        self, layers: list[Image | Surface], parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent=parent)
 
@@ -397,7 +397,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         for layer in self._layers:

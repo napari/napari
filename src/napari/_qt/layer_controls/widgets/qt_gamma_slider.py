@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget
 from superqt import QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -7,8 +10,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Image, Surface
 
 
 class QtGammaSliderControl(QtWidgetControlsBase):
@@ -31,7 +38,7 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Label for the gamma chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
         super().__init__(parent, layers)
 
         # Setup gamma slider - exactly like opacity slider

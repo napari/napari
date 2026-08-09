@@ -156,6 +156,8 @@ controls_dict = {
         QtGammaSliderControl,
         QtColormapControl,
     ),
+    Points | Vectors: (QtOutSliceCheckBoxControl,),
+    Points | Shapes: (QtTextVisibilityControl,),
     Points: (
         QtFaceColorControl,
         QtBorderColorControl,
@@ -200,8 +202,6 @@ controls_dict = {
         QtLengthSpinBoxControl,
         QtVectorStyleComboBoxControl,
     ),
-    Points | Vectors: (QtOutSliceCheckBoxControl,),
-    Points | Shapes: (QtTextVisibilityControl,),
 }
 
 buttons_dict = {
@@ -337,12 +337,12 @@ class QtDynamicLayerControls(QFrame):
         if interpolation is not None:
             interpolation._update_interpolation_combo(self.ndisplay)
 
-        rendering = self.findChild(QtImageRenderControl)
-        if rendering is not None:
+        rendering_image = self.findChild(QtImageRenderControl)
+        if rendering_image is not None:
             if self._ndisplay == 3:
-                rendering._on_display_change_show()
+                rendering_image._on_display_change_show()
             else:
-                rendering._on_display_change_hide()
+                rendering_image._on_display_change_hide()
 
         rendering_labels = self.findChild(QtLabelRenderControl)
         if rendering_labels is not None:

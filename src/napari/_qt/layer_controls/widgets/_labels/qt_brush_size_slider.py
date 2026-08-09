@@ -11,13 +11,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-    from napari.layers.base.base import Layer
+    from napari.layers import Labels
 
 
 class QtBrushSizeSliderControl(QtWidgetControlsBase):
@@ -42,7 +41,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     _layer: Labels
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         self._layers = layers

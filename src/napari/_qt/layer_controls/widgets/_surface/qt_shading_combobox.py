@@ -1,6 +1,7 @@
-from qtpy.QtWidgets import (
-    QWidget,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from superqt import QEnumComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -8,8 +9,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.layers.surface._surface_constants import Shading
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Surface
 
 
 class QtShadingComboBoxControl(QtWidgetControlsBase):
@@ -32,7 +37,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Surface]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

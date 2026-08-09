@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtWidgets import (
     QDoubleSpinBox,
@@ -9,7 +13,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari.layers import Vectors
+
+if TYPE_CHECKING:
+    from napari.layers import Vectors
 
 
 class QtWidthSpinBoxControl(QtWidgetControlsBase):

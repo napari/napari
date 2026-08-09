@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QWidget,
-)
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -12,8 +12,15 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari.layers.base._base_constants import Blending
-from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import (
+        QWidget,
+    )
+
+    from napari.layers.base.base import Layer
+
 
 # opaque, minimum, and multiplicative blending do not support changing alpha (opacity)
 NO_OPACITY_BLENDING_MODES = {

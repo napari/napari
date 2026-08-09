@@ -1,7 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QWidget,
-)
 from superqt import QLargeIntSpinBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -9,9 +10,13 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-from napari.layers.base.base import Layer
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Labels
 
 
 class QtContourSpinBoxControl(QtWidgetControlsBase):
@@ -34,7 +39,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         Label for the layer contour thickness chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
 

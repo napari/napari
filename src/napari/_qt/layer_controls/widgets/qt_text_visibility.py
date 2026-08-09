@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QCheckBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -5,9 +9,11 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers import Points, Shapes
 
 
 class QtTextVisibilityControl(QtWidgetControlsBase):
@@ -30,7 +36,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         Label for the text visibility widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Points | Shapes]) -> None:
         super().__init__(parent, layers)
         # Setup layer
         for layer in self._layers:

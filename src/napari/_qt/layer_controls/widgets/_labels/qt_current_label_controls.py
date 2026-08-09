@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -13,12 +17,14 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, qt_signals_blocked
-from napari.layers.base.base import Layer
 from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
 
 
 class QtColorBox(QWidget):
@@ -30,7 +36,7 @@ class QtColorBox(QWidget):
         An instance of a napari Labels layer.
     """
 
-    def __init__(self, layer: Layer) -> None:
+    def __init__(self, layer: Labels) -> None:
         super().__init__()
 
         self._layer = layer
@@ -130,7 +136,7 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
         Button to add a new label to the label layer.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
         super().__init__(parent, layers)
         self._layers = layers
         # Setup layer

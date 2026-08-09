@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
-from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
+
+    from napari.layers.base.base import Layer
 
     _QtABCMeta = ABCMeta
 
