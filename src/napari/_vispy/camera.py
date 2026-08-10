@@ -21,21 +21,6 @@ def _get_vispy_flipped_axes(
     ],
     ndisplay: Literal[2, 3] = 2,
 ) -> tuple[int, int, int]:
-    """Return the VisPy axis flips corresponding to the given orientation.
-
-    Parameters
-    ----------
-    orientation : 3-tuple of str
-        The napari orientation, with depth, vertical, and horizontal components,
-        in napari (zyx) order.
-    ndisplay : {2, 3}
-        Whether the flips are for the 2D or 3D VisPy camera.
-
-    Returns
-    -------
-    3-tuple of int
-        The VisPy flips, in VisPy (xyz) order.
-    """
     # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
     # while the napari axis order is zyx / plane-row-column, or depth, vertical,
     # horizontal — i.e. it is exactly inverted. This switch happens when data

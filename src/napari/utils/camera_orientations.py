@@ -51,36 +51,15 @@ def _orientation_signs(
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ],
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Return the sign factors relating a camera direction to the Euler angles.
-
-    The camera rotation in 3D is a single rotation matrix built from the Euler
-    ``angles`` plus a fixed 90-degree offset for the home view. Each
-    orientation describes how the depth, vertical, and horizontal axes relate
-    to the camera viewport, which is expressed by flipping the sign of some
-    axes. The signs are applied in different orders to the Euler angles and to
-    the direction vectors, so that the resulting camera basis stays
-    right-handed across all orientations.
-
-    Parameters
-    ----------
-    orientation : 3-tuple of str
-        The napari orientation, with depth, vertical, and horizontal components,
-        in napari (zyx) order.
-
-    Returns
-    -------
-    angle_factors, direction_factors : np.ndarray
-        Sign factors (each +/-1) applied elementwise to the Euler angles and to
-        the direction vectors, respectively, both in napari (zyx) order.
-    """
-    depth, vertical, horizontal = orientation
-    depth_sign = 1 if str(depth) == 'away' else -1
-    vertical_sign = 1 if str(vertical) == 'down' else -1
-    horizontal_sign = 1 if str(horizontal) == 'right' else -1
-    return (
-        np.array([horizontal_sign, vertical_sign, depth_sign]),
-        np.array([depth_sign, vertical_sign, horizontal_sign]),
+) -> npt.NDArray[np.float64]:
+    """Sign factors (-1 or 1) for each camera angle based on current orientation."""
+    return np.array(
+        [
+            1 if ori == default_ori else -1
+            for ori, default_ori in zip(
+                orientation, DEFAULT_ORIENTATION, strict=True
+            )
+        ]
     )
 
 
@@ -118,7 +97,7 @@ def _camera_rotation_matrix(
     """
     from scipy.spatial.transform import Rotation as R
 
-    angle_factors, _ = _orientation_signs(orientation)
+    angle_factors = _orientation_signs(orientation)
     rotation = R.from_euler(
         'yxz', np.asarray(angles) * angle_factors, degrees=True
     )
@@ -140,7 +119,8 @@ def view_direction_from_angles(
     The direction is returned in 3D scene coordinates (world coordinates of
     the three displayed dimensions).
     """
-    _, direction_factors = _orientation_signs(orientation)
+    # directions are based on the *opposite* angle, so we invert
+    direction_factors = _orientation_signs(orientation)[::-1]
     matrix = _camera_rotation_matrix(angles, orientation)
     return tuple(direction_factors * matrix[1])
 
@@ -158,7 +138,8 @@ def up_direction_from_angles(
     The direction is returned in 3D scene coordinates (world coordinates of
     the three displayed dimensions).
     """
-    _, direction_factors = _orientation_signs(orientation)
+    # directions are based on the *opposite* angle, so we invert
+    direction_factors = _orientation_signs(orientation)
     matrix = _camera_rotation_matrix(angles, orientation)
     return tuple(direction_factors * matrix[0])
 
@@ -203,7 +184,8 @@ def angles_from_view_direction(
     # up, view, and right directions, scaled elementwise by the direction sign
     # factors (see the forward direction in `_camera_rotation_matrix`). The
     # right direction closes the basis.
-    angle_factors, direction_factors = _orientation_signs(orientation)
+    angle_factors = _orientation_signs(orientation)
+    direction_factors = angle_factors[::-1]
     up_row = direction_factors * up
     view_row = direction_factors * view
     matrix = np.stack([up_row, view_row, np.cross(up_row, view_row)])
