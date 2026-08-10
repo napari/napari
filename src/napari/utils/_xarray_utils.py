@@ -235,7 +235,7 @@ def _get_xr_units(data: xr.DataArray) -> list[str | None]:
 
 
 def _get_xr_metadata(
-    data: xr.DataArray | xr.Variable,
+    data: ArrayLike,
     *,
     axis_labels: tuple[str, ...] | None = None,
     scale: list[float] | None = None,
@@ -248,19 +248,22 @@ def _get_xr_metadata(
     not is a no-op returning original values.
 
     Any field passed in as ``None`` is inferred from *data* where possible;
-    explicitly provided values pass through unchanged.  Only ``axis_labels``
-    is inferred for ``Variable``-like objects, which have no coordinates.
+    explicitly provided values pass through unchanged.
+
+    Note: Only ``axis_labels``s inferred for ``Variable``-like objects,
+    which have no coordinates.
     """
     props = _check_xarray(data)
     if props.has_dims and axis_labels is None:
-        axis_labels = _get_xr_axis_labels(data)
+        axis_labels = _get_xr_axis_labels(
+            cast('xr.DataArray | xr.Variable', data)
+        )
     if props.has_coords:
-        # only DataArrays have coordinates
-        da = cast('xr.DataArray', data)
+        data_array = cast('xr.DataArray', data)
         if scale is None:
-            scale = _get_xr_scale(da)
+            scale = _get_xr_scale(data_array)
         if translate is None:
-            translate = _get_xr_translate(da)
+            translate = _get_xr_translate(data_array)
         if units is None:
-            units = _get_xr_units(da)
+            units = _get_xr_units(data_array)
     return _XarrayMetadata(axis_labels, scale, translate, units)
