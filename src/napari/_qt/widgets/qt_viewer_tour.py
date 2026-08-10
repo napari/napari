@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
@@ -308,14 +309,47 @@ class GuidedTour(QObject):
         self._tooltip.raise_()
 
 
+_BUILTIN_TOUR_TARGETS: dict[str, Callable[[_QtMainWindow], QWidget | None]] = {
+    'canvas': lambda qt_window: qt_window._qt_viewer.canvas.native,
+    'layer_list': lambda qt_window: qt_window._qt_viewer.dockLayerList,
+    'layer_buttons': lambda qt_window: qt_window._qt_viewer.layerButtons,
+    'layer_controls': lambda qt_window: qt_window._qt_viewer.dockLayerControls,
+    'viewer_buttons': lambda qt_window: qt_window._qt_viewer.viewerButtons,
+    'dims': lambda qt_window: qt_window._qt_viewer.dims,
+    'status_bar': lambda qt_window: qt_window.statusBar(),
+}
+
+
+def resolve_tour_target(
+    qt_window: _QtMainWindow, name: str
+) -> QWidget | None:
+    """Resolve a tour step target by name.
+
+    Checks napari's built-in viewer regions first (``'canvas'``,
+    ``'layer_list'``, ``'layer_buttons'``, ``'layer_controls'``,
+    ``'viewer_buttons'``, ``'dims'``, ``'status_bar'``), then falls back to
+    ``window.dock_widgets``, so a plugin can target a widget it docked by
+    the name it registered it under, without reaching into ``qt_viewer``.
+    """
+    builtin = _BUILTIN_TOUR_TARGETS.get(name)
+    if builtin is not None:
+        return builtin(qt_window)
+    widget = qt_window._window.dock_widgets.get(name)
+    if widget is None or isinstance(widget, QWidget):
+        return widget
+    return widget.native
+
+
 def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
-    qt_viewer = window._qt_viewer
-    status_bar = window.statusBar()
+    viewer = window._qt_viewer.viewer
+
+    def target(name: str) -> Callable[[], QWidget | None]:
+        return partial(resolve_tour_target, window, name)
 
     return GuidedTour(
         [
             TourStep(
-                target=lambda: qt_viewer.canvas.native,
+                target=target('canvas'),
                 title=trans._('Welcome to the viewer'),
                 body=trans._(
                     'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
@@ -324,28 +358,28 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 anchor=TourAnchor.BELOW,
             ),
             TourStep(
-                target=lambda: qt_viewer.dockLayerList,
+                target=target('layer_list'),
                 title=trans._('Layer list'),
                 body=trans._(
                     'Layers live here. Select one to edit it, rename it inline, change visibility, or reorder by dragging.'
                 ),
             ),
             TourStep(
-                target=lambda: qt_viewer.layerButtons,
+                target=target('layer_buttons'),
                 title=trans._('Layer buttons'),
                 body=trans._(
                     'These create or delete layers. They are the quickest way to add points, shapes, or labels on top of your data.'
                 ),
             ),
             TourStep(
-                target=lambda: qt_viewer.dockLayerControls,
+                target=target('layer_controls'),
                 title=trans._('Layer controls'),
                 body=trans._(
                     'The active layer decides what appears here. Different layer types expose different controls for appearance and editing.'
                 ),
             ),
             TourStep(
-                target=lambda: qt_viewer.viewerButtons,
+                target=target('viewer_buttons'),
                 title=trans._('Viewer buttons'),
                 body=trans._(
                     'Use these for grid mode, 2D/3D display, axis order, and resetting the camera with the home button.'
@@ -353,19 +387,16 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 anchor=TourAnchor.ABOVE,
             ),
             TourStep(
-                target=lambda: qt_viewer.dims,
+                target=target('dims'),
                 title=trans._('Dimension sliders'),
                 body=trans._(
                     'Extra dimensions show up here. Move through slices, or press play on a slider to animate along that axis.'
                 ),
                 anchor=TourAnchor.ABOVE,
-                skip=lambda: (
-                    qt_viewer.viewer.dims.ndim
-                    <= qt_viewer.viewer.dims.ndisplay
-                ),
+                skip=lambda: viewer.dims.ndim <= viewer.dims.ndisplay,
             ),
             TourStep(
-                target=lambda: status_bar,
+                target=target('status_bar'),
                 title=trans._('Status bar'),
                 body=trans._(
                     'The status bar reports cursor position, values under the mouse, and small context-sensitive hints while you interact.'

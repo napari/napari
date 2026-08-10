@@ -8,15 +8,17 @@ import numpy as np
 import pytest
 import requests
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QLabel, QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
 from napari._qt.widgets.qt_viewer_tour import (
+    _BUILTIN_TOUR_TARGETS,
     GuidedTour,
     TourStep,
     _TourTooltip,
     build_viewer_tour,
+    resolve_tour_target,
 )
 
 
@@ -81,6 +83,26 @@ def test_tour_skips_dims_step_without_extra_dims(
         index = tour._seek(index + 1, 1)
 
     assert ('Dimension sliders' in titles) is expect_dims_step
+
+
+def test_resolve_tour_target_builtins(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+
+    for name in _BUILTIN_TOUR_TARGETS:
+        assert resolve_tour_target(qt_window, name) is not None
+
+    assert resolve_tour_target(qt_window, 'nonexistent') is None
+
+
+def test_resolve_tour_target_plugin_dock_widget(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_window = viewer.window._qt_window
+
+    label = QLabel('hello')
+    viewer.window.add_dock_widget(label, name='My Plugin Widget')
+
+    assert resolve_tour_target(qt_window, 'My Plugin Widget') is label
 
 
 def test_tour_skips_missing_target(qtbot):
