@@ -1,7 +1,5 @@
 """Tests for the shared camera orientation math in ``napari.utils.camera_orientations``."""
 
-import os
-
 import numpy as np
 import pytest
 
@@ -20,17 +18,8 @@ ORIENTATIONS = [
 
 
 @pytest.mark.filterwarnings('ignore:gimbal lock')
-@pytest.mark.skipif(
-    'GITHUB_ACTIONS' in os.environ, reason='Too slow for GitHub Actions'
-)
 def test_view_direction_correct_under_rotation():
-    """Check that the napari direction math matches a real VisPy 3D camera.
-
-    The orientation math in ``napari.utils.camera_orientations`` is a pure,
-    backend-agnostic definition of the camera orientation. This test verifies
-    that the VisPy 3D camera renders exactly the view and up directions that
-    the napari camera model reports, for random angles across all orientations.
-    """
+    """Check that the napari direction math matches a real VisPy 3D camera."""
     from vispy import scene
 
     from napari._vispy.camera import (
