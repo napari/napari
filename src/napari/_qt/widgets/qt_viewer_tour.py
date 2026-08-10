@@ -72,31 +72,39 @@ class _TourTooltip(QFrame):
         self._body.setWordWrap(True)
         layout.addWidget(self._body)
 
-        nav = QHBoxLayout()
-        nav.setSpacing(8)
+        self._nav = QHBoxLayout()
+        self._nav.setSpacing(8)
         self._counter = QLabel()
-        nav.addWidget(self._counter)
-        nav.addStretch()
+        self._nav.addWidget(self._counter)
+        self._nav.addStretch()
         self._back = QPushButton()
         self._back.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._back.clicked.connect(self.back_clicked)
-        nav.addWidget(self._back)
+        self._nav.addWidget(self._back)
         self._next = QPushButton()
         self._next.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._next.clicked.connect(self.next_clicked)
-        nav.addWidget(self._next)
+        self._nav.addWidget(self._next)
         self._skip = QPushButton()
         self._skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._skip.clicked.connect(self.skip_clicked)
-        nav.addWidget(self._skip)
-        layout.addLayout(nav)
+        self._nav.addWidget(self._skip)
+        layout.addLayout(self._nav)
 
     def _update_size(self) -> None:
         layout = self.layout()
         if layout is None:
             return
-        self.setFixedWidth(_TOOLTIP_WIDTH)
-        self.setFixedHeight(layout.heightForWidth(_TOOLTIP_WIDTH))
+        # sizeHint() can be stale after a previous fixed-width pass;
+        # invalidate() forces a fresh measurement of the current button text.
+        self._nav.invalidate()
+        margins = layout.contentsMargins()
+        nav_width = (
+            self._nav.sizeHint().width() + margins.left() + margins.right()
+        )
+        width = max(_TOOLTIP_WIDTH, nav_width)
+        self.setFixedWidth(width)
+        self.setFixedHeight(layout.heightForWidth(width))
         layout.activate()
 
     def set_content(

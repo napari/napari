@@ -14,6 +14,7 @@ from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
 from napari._qt.widgets.qt_viewer_tour import (
     _BUILTIN_TOUR_TARGETS,
+    _TOOLTIP_WIDTH,
     GuidedTour,
     TourStep,
     _TourTooltip,
@@ -49,6 +50,29 @@ def test_about_action(make_napari_viewer, action_id):
     ) as mock_about:
         app.commands.execute_command(action_id)
     mock_about.assert_called_once_with(viewer.window._qt_window)
+
+
+def test_tour_tooltip_widens_for_long_nav_labels(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    tooltip = _TourTooltip(parent)
+    qtbot.addWidget(tooltip)
+
+    tooltip.set_content('Title', 'Body.', 2, 5)  # middle step: all 3 nav buttons visible
+    assert tooltip.width() == _TOOLTIP_WIDTH
+
+    tooltip._back.setText('Previous step in the guided tour')
+    tooltip._next.setText('Next step in the guided tour')
+    tooltip._skip.setText('Skip this entire guided tour now')
+    tooltip._update_size()
+
+    assert tooltip.width() > _TOOLTIP_WIDTH
+    for button in (tooltip._back, tooltip._next, tooltip._skip):
+        assert button.geometry().width() >= button.minimumSizeHint().width() - 2
+
+    # width should shrink back down once labels return to normal
+    tooltip.set_content('Title', 'Body.', 3, 5)
+    assert tooltip.width() == _TOOLTIP_WIDTH
 
 
 def test_tour_tooltip_keyboard_shortcuts(qtbot):
