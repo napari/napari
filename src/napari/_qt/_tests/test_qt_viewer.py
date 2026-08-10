@@ -759,7 +759,7 @@ def _update_data(
 
     qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
 
-    color_box_color = qt_viewer.controls.widgets[
+    color_box_color = qt_viewer.controls.panels[
         layer
     ]._label_control.colorbox.color
     screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
