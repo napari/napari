@@ -7,6 +7,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+from pandas.errors import UndefinedVariableError
 from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
@@ -1301,27 +1302,36 @@ class FeaturesTable(QWidget):
             return
 
         try:
-            if expr.strip() == '' or expr.strip().lower() == 'none':
-                value = None
-            else:
-                value = pd.eval(
-                    expr, local_dict={'df': df, 'pd': pd, 'np': np}
-                )
             for layer in self._selected_layers:
+                value = layer.features.eval(expr)
+                if dtype != 'float' and value is None:
+                    # TODO: this should be fancier (actually accept nan value) but requires
+                    #       a lot more work to get editors and column types to behave
+                    raise ValueError(  # noqa: TRY301
+                        'NA values are not yet supported for non-float columns'
+                    )
                 layer.features[col_name] = pd.Series(
                     value, index=layer.features.index, dtype=dtype
                 )
 
-        except (ValueError, TypeError, KeyError, SyntaxError) as e:
+        except (
+            ValueError,
+            TypeError,
+            KeyError,
+            SyntaxError,
+            UndefinedVariableError,
+        ) as e:
             QMessageBox.warning(
                 self,
                 'Invalid Expression or Dtype',
                 f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}\n\nFalling back to None.",
             )
             for layer in self._selected_layers:
-                layer.features[col_name] = None
-
-        self._on_features_change()
+                if col_name in layer.features:
+                    del layer.features[col_name]
+        else:
+            # only if nothing went wrong
+            self._on_features_change()
 
     def _delete_column(self):
         model = self.table.model().sourceModel()
@@ -1365,6 +1375,7 @@ class FeaturesTable(QWidget):
             layer.features.drop(
                 columns=col_names,
                 inplace=True,
+                errors='ignore',
             )
 
         self._on_features_change()
@@ -1471,7 +1482,7 @@ class AddColumnDialog(QDialog):
         self.dtype_input = QComboBox()
         self.dtype_input.setEditable(True)
         self.dtype_input.addItems(
-            ['int', 'float', 'str', 'bool', 'object', 'category']
+            ['float', 'int', 'str', 'bool', 'object', 'category']
         )
 
         self._buttons = QDialogButtonBox(
@@ -1484,7 +1495,15 @@ class AddColumnDialog(QDialog):
         layout.addWidget(QLabel('Column Name:'))
         layout.addWidget(self.col_name_input)
 
-        layout.addWidget(QLabel('Column Expression:'))
+        pd_docs_link = 'https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.eval.html#pandas.DataFrame.eval'
+        expr_label = QLabel(
+            f'Column Expression (<a href={pd_docs_link}>syntax</a>):'
+        )
+        expr_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
+        expr_label.setOpenExternalLinks(True)
+        layout.addWidget(expr_label)
         layout.addWidget(self.expr_input)
 
         layout.addWidget(QLabel('Column Dtype:'))
