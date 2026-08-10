@@ -80,6 +80,13 @@ Q_HELP_ACTIONS: list[Action] = [
         status_tip='About napari',
     ),
     Action(
+        id='napari.window.help.viewer_tour',
+        title='Take a tour',
+        callback=_start_viewer_tour,
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+        status_tip='Start a guided tour of the napari viewer',
+    ),
+    Action(
         id='napari.window.help.getting_started',
         title='Getting started ↗',
         callback=partial(web_open, url=HELP_URLS['getting_started']),
@@ -97,13 +104,6 @@ Q_HELP_ACTIONS: list[Action] = [
         callback=_show_tips,
         menus=[{'id': MenuId.MENUBAR_HELP}],
         status_tip='Show some quick napari tips and tricks',
-    ),
-    Action(
-        id='napari.window.help.viewer_tour',
-        title='Take a tour',
-        callback=_start_viewer_tour,
-        menus=[{'id': MenuId.MENUBAR_HELP}],
-        status_tip='Start a guided tour of the napari viewer',
     ),
     Action(
         id='napari.window.help.layers_guide',
