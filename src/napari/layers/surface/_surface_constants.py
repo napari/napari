@@ -23,3 +23,15 @@ class Shading(StringEnum):
     NONE = auto()
     FLAT = auto()
     SMOOTH = auto()
+
+
+class SurfaceProjectionMode(StringEnum):
+    """
+    Projection mode for aggregating a thick nD slice onto displayed dimensions.
+
+        * NONE: ignore slice thickness, only using the dims point
+        * ALL: project all surfaces in the slice onto displayed dimensions
+    """
+
+    NONE = auto()
+    ALL = auto()

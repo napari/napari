@@ -37,6 +37,11 @@ if TYPE_CHECKING:
     from napari._qt.widgets.qt_dims import QtDims
 
 
+# Width companion to QtDims.SLIDERHEIGHT: keeps a narrow window from collapsing
+# the groove until the handle covers it and dragging becomes impossible.
+SLIDER_MINIMUM_WIDTH = 150
+
+
 class _ModifiedScrollBar(ModifiedScrollBar):
     def mousePressEvent(self, event):
         """Update the slider, or, on right-click, pop-up the margin controls.
@@ -153,7 +158,7 @@ class QtDimSliderWidget(QWidget):
         label.setEnabled(True)
         label.setAlignment(Qt.AlignmentFlag.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
-        label.textChanged.connect(self._update_label)
+        label.textEdited.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
         return label
 
@@ -171,6 +176,7 @@ class QtDimSliderWidget(QWidget):
         # shape of the layer as the endpoint is included
         slider = _ModifiedScrollBar(Qt.Orientation.Horizontal)
         slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        slider.setMinimumWidth(SLIDER_MINIMUM_WIDTH)
         slider.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         slider.setMinimum(0)
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)

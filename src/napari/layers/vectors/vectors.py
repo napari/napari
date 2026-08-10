@@ -591,7 +591,7 @@ class Vectors(Layer):
         edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
+            self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
@@ -663,7 +663,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge.contrast_limits = contrast_limits
 

@@ -30,6 +30,8 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         Label for the current symbol chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -43,7 +45,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
         sym_cb.setToolTip(
             'Change the symbol of currently selected points and any added afterwards.'
         )
-        sym_cb.setCurrentEnum(self._layer.current_symbol)
+        sym_cb.setCurrentEnum(Symbol(self._layer.current_symbol))
         sym_cb.currentEnumChanged.connect(self.change_current_symbol)
         self.symbol_combobox = sym_cb
 
@@ -63,7 +65,9 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
     def _on_current_symbol_change(self) -> None:
         """Receive marker symbol change event and update the dropdown menu."""
         with qt_signals_blocked(self.symbol_combobox):
-            self.symbol_combobox.setCurrentEnum(self._layer.current_symbol)
+            self.symbol_combobox.setCurrentEnum(
+                Symbol(self._layer.current_symbol)
+            )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.symbol_combobox_label, self.symbol_combobox)]
