@@ -115,7 +115,8 @@ def register_layer_action(
         The description of the action, this will typically be translated and
         will be what will be used in tooltips.
     repeatable : bool
-        A flag indicating whether the action autorepeats when key is held
+        Deprecated and ignored. Key auto-repeat is delivered to every binding
+        by default; hold-semantics bindings suppress it automatically.
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
 
@@ -203,10 +204,11 @@ def register_layer_attr_action(
 
             return _callback
 
-        repeatable = False  # attribute actions are always non-repeatable
-        register_layer_action(
-            keymapprovider, description, repeatable, shortcuts
-        )(_wrapper)
+        # _wrapper returns a release callback, so held-key auto-repeat is
+        # suppressed automatically while the hold is pending
+        register_layer_action(keymapprovider, description, False, shortcuts)(
+            _wrapper
+        )
         return func
 
     return _handle

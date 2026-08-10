@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
+from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -36,7 +37,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
-    repeatable: bool = False
+    repeatable: bool = False  # deprecated, ignored: auto-repeat is the default
 
     @cached_property
     def injected(self) -> Callable[..., Future]:
@@ -110,8 +111,6 @@ class ActionManager:
          - a name (unique), usually `packagename:name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
-         - a boolean repeatability flag indicating whether it can be auto-
-           repeated (i.e. when a key is held down); defaults to False
 
         Actions can then be later bound/unbound from button elements, and
         shortcuts; and the action manager will take care of modifying the keymap
@@ -134,8 +133,10 @@ class ActionManager:
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
         repeatable : bool
-            a boolean flag indicating whether the action can be autorepeated.
-            Defaults to False.
+            Deprecated and ignored. Key auto-repeat is now delivered to every
+            binding by default; only hold-semantics bindings (generators and
+            bindings returning a release callback) suppress it, which is
+            derived from the bound callable rather than declared here.
 
 
         Notes
@@ -153,6 +154,18 @@ class ActionManager:
 
         """
 
+        if repeatable:
+            warnings.warn(
+                trans._(
+                    'The `repeatable` flag is deprecated since napari 0.8.1 '
+                    'and is ignored: key auto-repeat is now delivered to '
+                    'every binding by default, and hold-semantics bindings '
+                    'suppress it automatically. Stop passing `repeatable`.',
+                    deferred=True,
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._validate_action_name(name)
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
@@ -388,33 +401,6 @@ class ActionManager:
                     active_shortcuts[str(shortcut)] = action.description
 
         return active_shortcuts
-
-    def _get_repeatable_shortcuts(self, active_keymap) -> list:
-        """
-        Get active, repeatable shortcuts for the given active keymap.
-
-        Parameters
-        ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
-
-        Returns
-        -------
-        list
-            List of shortcuts that are repeatable.
-        """
-        active_func_names = {i[1].__name__ for i in active_keymap.items()}
-        active_repeatable_shortcuts = []
-        for name, shortcuts in self._shortcuts.items():
-            action = self._actions.get(name, None)
-            if (
-                action
-                and action.command.__name__ in active_func_names
-                and action.repeatable
-            ):
-                active_repeatable_shortcuts.extend(shortcuts)
-
-        return active_repeatable_shortcuts
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""
