@@ -2329,6 +2329,31 @@ def test_value():
     assert value == (None, None)
 
 
+@pytest.mark.parametrize('scale', [(-1, -1), (1, -1), (-2, 3)])
+def test_value_vertex_with_negative_scale(scale):
+    """Vertices must stay grabbable when the layer scale is negative.
+
+    A negative scale flips the layer, but the vertex radius in screen space
+    must remain positive, otherwise no vertex ever matches.
+    """
+    data = [[[0, 0], [0, 10], [10, 10], [10, 0]]]
+
+    def selected_layer(layer_scale):
+        layer = Shapes(data, scale=layer_scale)
+        layer.mode = 'select'
+        layer.selected_data = {0}
+        return layer
+
+    layer = selected_layer(scale)
+    # flipping the layer must not change which vertex is under the cursor
+    # in data coordinates, only the sign of the scale differs
+    reference = selected_layer(np.abs(scale))
+
+    assert layer._normalized_vertex_radius > 0
+    assert layer.get_value((0, 0)) == reference.get_value((0, 0))
+    assert layer.get_value((0, 0))[1] is not None
+
+
 def test_value_non_convex():
     """Test getting the value of the data at the current coordinates."""
     data = [
