@@ -1,6 +1,10 @@
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QFormLayout,
     QFrame,
+    QHBoxLayout,
+    QLabel,
+    QWidget,
 )
 
 from napari._qt.layer_controls.dynamic.buttons.qt_image_buttons import (
@@ -246,6 +250,15 @@ class LayerFormLayout(QFormLayout):
         )
 
 
+EXPERIMENTAL_WARNING = """Dynamically generated layer controls are a new experimental feature.
+If you see this, it's either because you selected multiple layers, or because
+you enabled the experimental feature for single layer dynamic controls
+(see Preferences -> Experimental -> Generate GUI layer controls dynamically).
+Expect some issues, such as controls being out of sync with the layer models!
+For any issues you encounter, please head to the napari repository to report,
+and stay tuned for the fixes in the upcoming releases!"""
+
+
 class QtDynamicLayerControls(QFrame):
     """Superclass for all the other LayerControl classes.
 
@@ -297,6 +310,20 @@ class QtDynamicLayerControls(QFrame):
                     )
         for layer in self._layers:
             layer.events.data.connect(self._on_surface_coloring_change)
+
+        # warning experimental: qss theme takes care of the icon by giving it a name
+        warn_icon = QLabel()
+        warn_icon.setObjectName('error_label')
+        warn_icon.setToolTip(EXPERIMENTAL_WARNING)
+        # need a separate container widget for centering to work nice
+        warn_widget = QWidget(self)
+        warn_layout = QHBoxLayout(warn_widget)
+        warn_layout.setContentsMargins(0, 0, 0, 0)
+        warn_layout.addStretch(1)
+        warn_layout.addWidget(warn_icon)
+        warn_layout.addStretch(1)
+        warn_widget.setAttribute(Qt.WA_TranslucentBackground)
+        self.layout().addRow('experimental!', warn_widget)
         self._on_surface_coloring_change()
         self._on_ndisplay_changed()
 
