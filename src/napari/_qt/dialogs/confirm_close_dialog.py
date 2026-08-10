@@ -36,7 +36,7 @@ class ConfirmCloseDialog(QDialog):
             self.setWindowTitle('Close Application?')
             text = (
                 'Do you want to close the application? '
-                f"('{QKeySequence('Ctrl+Q').toString(QKeySequence.NativeText)}' to confirm). "
+                f"('{QKeySequence('Ctrl+Q').toString(QKeySequence.SequenceFormat.NativeText)}' to confirm). "
                 'This will close all Qt Windows in this process{extra_info}'
             )
             close_btn.setObjectName('error_icon_btn')
@@ -46,7 +46,7 @@ class ConfirmCloseDialog(QDialog):
             self.setWindowTitle('Close Window?')
             text = (
                 'Confirm to close window (or press '
-                f"'{QKeySequence('Ctrl+W').toString(QKeySequence.NativeText)}'){extra_info}"
+                f"'{QKeySequence('Ctrl+W').toString(QKeySequence.SequenceFormat.NativeText)}'){extra_info}"
             )
             close_btn.setObjectName('warning_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+W'))
