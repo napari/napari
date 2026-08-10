@@ -75,7 +75,7 @@ def pour_creamer():
 
 # Set viewer camera angles and zoom
 viewer.dims.ndisplay = 3
-viewer.camera.angles = (180, -27, 5)
+viewer.scene.camera.angles = (180, -27, 5)
 
 # Add button to create new layer with transformed object using magicgui
 viewer.window.add_dock_widget(pour_creamer)

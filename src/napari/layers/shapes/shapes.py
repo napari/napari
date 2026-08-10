@@ -1621,7 +1621,7 @@ class Shapes(Layer):
         return state
 
     @property
-    def _indices_view(self):
+    def _view_indices(self):
         return np.where(self._data_view._displayed)[0]
 
     @property
@@ -1636,7 +1636,7 @@ class Shapes(Layer):
         # This may be triggered when the string encoding instance changed,
         # in which case it has no cached values, so generate them here.
         self.text.string._apply(self.features)
-        return self.text.view_text(self._indices_view)
+        return self.text.view_text(self._view_indices)
 
     @property
     def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
@@ -1656,7 +1656,7 @@ class Shapes(Layer):
 
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
-            self._data_view.data[i] for i in self._indices_view
+            self._data_view.data[i] for i in self._view_indices
         ]
 
         # get the coordinates for the dimensions being displayed
@@ -1674,7 +1674,7 @@ class Shapes(Layer):
     def _view_text_color(self) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
         self.text.color._apply(self.features)
-        return self.text._view_color(self._indices_view)
+        return self.text._view_color(self._view_indices)
 
     @property
     def mode(self):
@@ -2382,8 +2382,10 @@ class Shapes(Layer):
 
         This is often needed when calculating screen-space sizes and distances
         of vertices for interactivity (rescaling, adding vertices, etc).
+        We use only the magnitude of the layer scale, because sizes and
+        distances must remain positive.
         """
-        return self.scale_factor / self.scale[-1]
+        return self.scale_factor / abs(self.scale[-1])
 
     @property
     def _normalized_vertex_radius(self):
