@@ -33,7 +33,6 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -202,7 +201,6 @@ class ScalarFieldBase(Layer, ABC):
         `True`.
     """
 
-    _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
     _level_materializer: Callable[[int], np.ndarray] | None
