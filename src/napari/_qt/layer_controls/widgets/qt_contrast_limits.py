@@ -227,12 +227,7 @@ class QContrastLimitsPopup(QtPopup):
             self._ensure_histogram_content()
 
     def keyPressEvent(self, event):
-        """Override to prevent Enter from closing the popup.
-
-        Hitting Enter/Return inside the popup should defocus the
-        line-edit rather than closing the window, consistent with
-        the behaviour of the original QRangeSliderPopup.
-        """
+        """Move focus to the slider when return is pressed."""
         if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
             self.slider.setFocus()
             return

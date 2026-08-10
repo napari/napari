@@ -55,8 +55,6 @@ class QRangeSliderPopup(QtPopup):
         event : qtpy.QtCore.QKeyEvent
             Event from the Qt context.
         """
-        # we override the parent keyPressEvent so that hitting enter does not
-        # hide the window... but we do want to lose focus on the lineEdits
         if event is not None and event.key() in (
             Qt.Key.Key_Return,
             Qt.Key.Key_Enter,
