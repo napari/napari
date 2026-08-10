@@ -19,6 +19,7 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.settings import get_settings
 
 layer_to_controls = {
     Labels: QtLabelsControls,
@@ -160,9 +161,10 @@ class QtLayerControlsContainer(QStackedWidget):
             self.panel = None
 
         selection = self.viewer.layers.selection
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
         if not selection:
             self.setCurrentWidget(self.empty_widget)
-        elif selection.active is not None:
+        elif selection.active is not None and not always_dynamic:
             controls = self.panels[selection.active]
             self.setCurrentWidget(controls)
         else:
@@ -183,6 +185,9 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        if always_dynamic:
+            return
         layer = event.value
         controls = create_qt_layer_controls(layer)
         controls.ndisplay = self.viewer.dims.ndisplay
@@ -197,6 +202,9 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        if always_dynamic:
+            return
         layer = event.value
         controls = self.panels[layer]
         self.removeWidget(controls)
