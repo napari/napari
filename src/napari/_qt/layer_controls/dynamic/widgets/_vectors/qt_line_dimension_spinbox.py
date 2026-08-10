@@ -52,9 +52,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.valueChanged.connect(self.change_width)
         self._callbacks.append(
             attr_to_settr(
-                self._layers[
-                    0
-                ],  # @lorenzo: either this is wrong or all the others are wrong. usually I loop but I think I should take first
+                self._layers[0],
                 'edge_width',
                 self.width_spinbox,
                 'setValue',

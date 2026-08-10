@@ -150,16 +150,14 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
         self.selection_spinbox.setValue(self._layers[0].selected_label)
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
-        self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'selected_label',
-                    self.selection_spinbox,
-                    'setValue',
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'selected_label',
+                self.selection_spinbox,
+                'setValue',
             )
+        )
         self.new_label_button = QPushButton()
         self.new_label_button.setText('new')
         self.new_label_button.setObjectName('newLabelButton')

@@ -60,7 +60,7 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
                 layer,
                 'current_edge_color',
             )
-        self._callbacks.append(  # @lorenzo: does this trigger the widget to change? in that case I only do it for the first layer no? -> yes, @margot check other files and change there
+        self._callbacks.append(
             attr_to_settr(
                 self._layers[0],
                 'current_edge_color',

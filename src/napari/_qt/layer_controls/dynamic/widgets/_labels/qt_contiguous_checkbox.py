@@ -46,15 +46,16 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
         contig_cb = QCheckBox()
         contig_cb.setToolTip('Contiguous editing')
         contig_cb.setChecked(self._layers[0].contiguous)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'contiguous',
-                    contig_cb,
-                    'setChecked',
-                )
+
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'contiguous',
+                contig_cb,
+                'setChecked',
             )
+        )
+        for layer in self._layers:
             connect_setattr(
                 contig_cb.stateChanged,
                 layer,

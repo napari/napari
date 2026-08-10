@@ -47,15 +47,15 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             'Preserve existing labels while painting'
         )
         preserve_labels_cb.setChecked(self._layers[0].preserve_labels)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'preserve_labels',
-                    preserve_labels_cb,
-                    'setChecked',
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'preserve_labels',
+                preserve_labels_cb,
+                'setChecked',
             )
+        )
+        for layer in self._layers:
             connect_setattr(
                 preserve_labels_cb.stateChanged,
                 layer,

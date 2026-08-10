@@ -45,15 +45,15 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
 
         # Setup widgets
         self.hide_completed_tracks_checkbox = QCheckBox()
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'hide_completed_tracks',
-                    self.hide_completed_tracks_checkbox,
-                    'setChecked',
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'hide_completed_tracks',
+                self.hide_completed_tracks_checkbox,
+                'setChecked',
             )
+        )
+        for layer in self._layers:
             connect_setattr(
                 self.hide_completed_tracks_checkbox.stateChanged,
                 layer,

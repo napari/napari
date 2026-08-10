@@ -70,11 +70,11 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         self.opacity_slider = sld
         for layer in self._layers:
             connect_setattr(self.opacity_slider.valueChanged, layer, 'opacity')
-            self._callbacks.append(
-                attr_to_settr(
-                    layer, 'opacity', self.opacity_slider, 'setValue'
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0], 'opacity', self.opacity_slider, 'setValue'
             )
+        )
         self.opacity_label = QtWrappedLabel('opacity:')
 
         blend_combobox = QEnumComboBox(parent, Blending)

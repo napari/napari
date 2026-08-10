@@ -54,15 +54,15 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         self.contour_spinbox.valueChanged.connect(self.change_contour)
         self.contour_spinbox.setKeyboardTracking(False)
         self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'contour',
-                    self.contour_spinbox,
-                    'setValue',
-                )
+
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'contour',
+                self.contour_spinbox,
+                'setValue',
             )
+        )
 
         self.contour_spinbox_label = QtWrappedLabel('contour:')
 

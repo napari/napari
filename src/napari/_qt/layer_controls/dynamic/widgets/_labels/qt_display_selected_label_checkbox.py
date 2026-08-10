@@ -45,15 +45,15 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         selected_color_checkbox = QCheckBox()
         selected_color_checkbox.setToolTip('Display only selected label')
         selected_color_checkbox.setChecked(self._layers[0].show_selected_label)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'show_selected_label',
-                    selected_color_checkbox,
-                    'setChecked',
-                )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'show_selected_label',
+                selected_color_checkbox,
+                'setChecked',
             )
+        )
+        for layer in self._layers:
             connect_setattr(
                 selected_color_checkbox.stateChanged,
                 layer,

@@ -79,9 +79,9 @@ class QtImageRenderControl(QtWidgetControlsBase):
         sld.setValue(self._layers[0].iso_threshold)
         for layer in self._layers:
             connect_setattr(sld.valueChanged, layer, 'iso_threshold')
-            self._callbacks.append(
-                attr_to_settr(layer, 'iso_threshold', sld, 'setValue')
-            )
+        self._callbacks.append(
+            attr_to_settr(self._layers[0], 'iso_threshold', sld, 'setValue')
+        )
         self.iso_threshold_slider = sld
 
         self.iso_threshold_label = QtWrappedLabel('iso threshold:')
@@ -95,9 +95,9 @@ class QtImageRenderControl(QtWidgetControlsBase):
         sld.setDecimals(3)
         for layer in self._layers:
             connect_setattr(sld.valueChanged, layer, 'attenuation')
-            self._callbacks.append(
-                attr_to_settr(layer, 'attenuation', sld, 'setValue')
-            )
+        self._callbacks.append(
+            attr_to_settr(self._layers[0], 'attenuation', sld, 'setValue')
+        )
         self.attenuation_slider = sld
 
         self.attenuation_label = QtWrappedLabel('attenuation:')

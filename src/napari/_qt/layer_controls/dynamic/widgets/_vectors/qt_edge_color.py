@@ -18,8 +18,6 @@ if TYPE_CHECKING:
     from napari.layers import Vectors
 
 
-# @margot @lorenzo maybe come back to this, I dont think it behaves as expected
-# and also: when I select two layers they automatically get changed away from color mode direct and feature pos_angle :(
 class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current edge

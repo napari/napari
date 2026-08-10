@@ -50,9 +50,9 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         sld.setValue(self._layers[0].gamma)
         for layer in self._layers:
             connect_setattr(sld.valueChanged, layer, 'gamma')
-            self._callbacks.append(
-                attr_to_settr(layer, 'gamma', sld, 'setValue')
-            )
+        self._callbacks.append(
+            attr_to_settr(self._layers[0], 'gamma', sld, 'setValue')
+        )
         self.gamma_slider = sld
 
         self.gamma_slider_label = QtWrappedLabel('gamma:')
