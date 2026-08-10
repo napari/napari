@@ -949,6 +949,17 @@ source = [
     "napari_builtins",
 ]
 
+[tool.coverage.paths]
+source = [
+  "src/napari",
+  "**/site-packages/napari",
+]
+builtins = [
+  "src/napari_builtins",
+  "**/site-packages/napari_builtins",
+]
+
+
 [tool.importlinter]
 root_package = "napari"
 include_external_packages = true
