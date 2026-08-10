@@ -26,6 +26,9 @@ class AxesOverlay(SceneOverlay):
         The opacity of the overlay. 0 is fully transparent.
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     labels: bool = True

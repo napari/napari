@@ -556,10 +556,14 @@ class KeymapHandler:
 
         repeatables = {
             *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            'Up',
-            'Down',
-            'Left',
-            'Right',
+            # Nav keys are exempt however they were bound. They must be
+            # KeyBinding, not str: the set is tested against a KeyBinding, which
+            # never compares equal to a str, so str literals here silently never
+            # matched and no key bound via bind_key() auto-repeated. See #9203.
+            *(
+                KeyBinding.from_str(key)
+                for key in ('Up', 'Down', 'Left', 'Right')
+            ),
         }
 
         if (
