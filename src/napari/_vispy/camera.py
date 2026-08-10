@@ -1,13 +1,70 @@
 from __future__ import annotations
 
+from typing import Literal, cast
+
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
 from napari.utils.camera_orientations import (
-    _flipped_axes_to_factors,
-    _get_vispy_flipped_axes,
+    DepthAxisOrientation,
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
 )
+
+
+def _get_vispy_flipped_axes(
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+    ndisplay: Literal[2, 3] = 2,
+) -> tuple[int, int, int]:
+    """Return the VisPy axis flips corresponding to the given orientation.
+
+    Parameters
+    ----------
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+    ndisplay : {2, 3}
+        Whether the flips are for the 2D or 3D VisPy camera.
+
+    Returns
+    -------
+    3-tuple of int
+        The VisPy flips, in VisPy (xyz) order.
+    """
+    # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
+    # while the napari axis order is zyx / plane-row-column, or depth, vertical,
+    # horizontal — i.e. it is exactly inverted. This switch happens when data
+    # is passed from napari to Vispy, usually with a transposition. In the camera
+    # models, this means that the order of these orientations appear in the
+    # opposite order to that in napari.components.Camera.
+    #
+    # Note that the default Vispy camera orientations come from Vispy, not from us.
+    vispy_default_orientation = (
+        ('right', 'up', 'towards')
+        if ndisplay == 2
+        else ('right', 'down', 'away')
+    )
+
+    # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
+    # start by inverting the order of coordinates coming from the napari
+    # camera model:
+    orientation_xyz = orientation[::-1]
+    # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
+    # whether they are flipped relative to the Vispy default.
+    return cast(
+        tuple[int, int, int],
+        tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, vispy_default_orientation, strict=True
+            )
+        ),
+    )
 
 
 def napari_angles_to_vispy_quat(
@@ -16,7 +73,7 @@ def napari_angles_to_vispy_quat(
     from scipy.spatial.transform import Rotation
 
     # flip handedness so the rotation is always righthanded even with axis flipping
-    angles_flipped = angles * _flipped_axes_to_factors(flipped_axes)
+    angles_flipped = angles * np.where(flipped_axes, -1, 1)
     # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
     angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
     # see #8281 for why this is yzx. In short: longstanding vispy bug.
@@ -37,7 +94,7 @@ def vispy_quat_to_napari_angles(
     # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
     angles_fixed = (angles - (0, 0, 90)) * (1, -1, 1)
     # flip handedness so the rotation is always righthanded even with axis flipping
-    return tuple(angles_fixed * _flipped_axes_to_factors(flipped_axes))
+    return tuple(angles_fixed * np.where(flipped_axes, -1, 1))
 
 
 class VispyCamera:

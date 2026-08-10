@@ -14,7 +14,6 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientationStr,
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
-    _get_vispy_flipped_axes,
     angles_from_view_direction,
     up_direction_from_angles,
     view_direction_from_angles,
@@ -131,8 +130,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        flipped_axes = _get_vispy_flipped_axes(self.orientation, ndisplay=3)
-        return view_direction_from_angles(self.angles, flipped_axes)
+        return view_direction_from_angles(self.angles, self.orientation)
 
     @property
     def up_direction(self) -> tuple[float, float, float]:
@@ -142,8 +140,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        flipped_axes = _get_vispy_flipped_axes(self.orientation, ndisplay=3)
-        return up_direction_from_angles(self.angles, flipped_axes)
+        return up_direction_from_angles(self.angles, self.orientation)
 
     def set_view_direction(
         self,
@@ -171,9 +168,8 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
-        flipped_axes = _get_vispy_flipped_axes(self.orientation, ndisplay=3)
         self.angles = angles_from_view_direction(
-            view_direction, up_direction, flipped_axes
+            view_direction, up_direction, self.orientation
         )
 
     def calculate_nd_view_direction(
