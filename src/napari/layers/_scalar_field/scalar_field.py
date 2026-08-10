@@ -257,6 +257,8 @@ class ScalarFieldBase(Layer, ABC):
         self._data = data
 
         # Xarray metadata inference is a no-op if data is not xarray-like
+        # and is only done for args that are None, so explicitly provided
+        # values pass through unchanged.
         xr_source = (
             data[0]
             if isinstance(data, (list, tuple, MultiScaleData))
