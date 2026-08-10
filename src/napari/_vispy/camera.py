@@ -10,6 +10,9 @@ from napari.utils.camera_orientations import (
     DepthAxisOrientation,
     HorizontalAxisOrientation,
     VerticalAxisOrientation,
+    angles_from_view_direction,
+    up_direction_from_angles,
+    view_direction_from_angles,
 )
 
 
@@ -52,34 +55,168 @@ def _get_vispy_flipped_axes(
     )
 
 
-def napari_angles_to_vispy_quat(
-    angles: tuple[float, float, float], flipped_axes: tuple[int, int, int]
-) -> Quaternion:
+def _quaternion_to_matrix(
+    quat: Quaternion,
+) -> np.ndarray:
+    """Return the rotation matrix that VisPy derives from a quaternion.
+
+    VisPy builds its 3D camera rotation from the quaternion axis-angle and
+    applies it with ``transforms.rotate``, passing the vector part permuted as
+    ``(x, z, y)`` and using a transposed (row-vector) matrix. The result is
+    exactly ``Rotation.from_rotvec(theta * (x, z, y)).as_matrix().T``, where
+    ``theta`` is the quaternion rotation angle. See #8281 for the historical
+    origin of this quirk.
+
+    Parameters
+    ----------
+    quat : vispy.util.quaternion.Quaternion
+        The VisPy quaternion as rendered by the VisPy 3D camera.
+
+    Returns
+    -------
+    np.ndarray
+        The (3, 3) rotation matrix in VisPy (xyz) coordinates.
+    """
     from scipy.spatial.transform import Rotation
 
-    # flip handedness so the rotation is always righthanded even with axis flipping
-    angles_flipped = angles * np.where(flipped_axes, -1, 1)
-    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-    angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
-    # see #8281 for why this is yzx. In short: longstanding vispy bug.
-    rotation = Rotation.from_euler('yzx', angles_fixed, degrees=True)
-    # Create quaternion
-    return Quaternion(*rotation.as_quat(scalar_first=True))
+    w, x, y, z = quat.w, quat.x, quat.y, quat.z
+    theta = 2 * np.arccos(np.clip(w, -1, 1))
+    norm = np.sqrt(x * x + y * y + z * z)
+    rotvec = np.array([x, z, y], dtype=float)
+    if norm:
+        rotvec *= theta / norm
+    return Rotation.from_rotvec(rotvec).as_matrix().T
+
+
+def _matrix_to_quaternion(
+    matrix: np.ndarray,
+) -> Quaternion:
+    """Return the VisPy quaternion that renders as the given rotation matrix.
+
+    The inverse of :func:`_quaternion_to_matrix`.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        The (3, 3) rotation matrix in VisPy (xyz) coordinates.
+
+    Returns
+    -------
+    vispy.util.quaternion.Quaternion
+        The VisPy quaternion rendering as ``matrix``.
+    """
+    from scipy.spatial.transform import Rotation
+
+    rotvec = Rotation.from_matrix(matrix.T).as_rotvec()
+    theta = np.linalg.norm(rotvec)
+    if theta == 0:
+        return Quaternion(1, 0, 0, 0)
+    x, z, y = rotvec / theta
+    return Quaternion(
+        np.cos(theta / 2),
+        x * np.sin(theta / 2),
+        y * np.sin(theta / 2),
+        z * np.sin(theta / 2),
+    )
+
+
+def _directions_to_vispy_quat(
+    view_direction: tuple[float, float, float],
+    up_direction: tuple[float, float, float],
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> Quaternion:
+    """Return the VisPy quaternion rendering the given directions.
+
+    The VisPy 3D camera matrix has the right, view, and up directions as rows
+    (in VisPy xyz coordinates), with each direction flipped according to the
+    camera flips. The quaternion is then extracted so that VisPy renders
+    exactly these directions.
+    """
+    flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    factors = np.where(flipped_axes, -1, 1)
+    # VisPy uses xyz coordinates; napari uses zyx, hence the reversed order.
+    view_row = factors * np.asarray(view_direction)[::-1]
+    up_row = factors * np.asarray(up_direction)[::-1]
+    # The right row closes the basis as a proper rotation.
+    matrix = np.stack([np.cross(view_row, up_row), view_row, up_row])
+    return _matrix_to_quaternion(matrix)
+
+
+def napari_angles_to_vispy_quat(
+    angles: tuple[float, float, float],
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> Quaternion:
+    """Convert napari camera angles to a VisPy quaternion.
+
+    The conversion goes through the napari view and up directions (see
+    ``napari.utils.camera_orientations``), so that VisPy renders exactly the
+    camera orientation described by the napari camera model. The orientation
+    determines how the directions are flipped to build the VisPy camera matrix.
+
+    Parameters
+    ----------
+    angles : 3-tuple of float
+        Euler angles of the camera in 3D viewing, in degrees.
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+
+    Returns
+    -------
+    vispy.util.quaternion.Quaternion
+        The VisPy quaternion rendering the given camera angles.
+    """
+    return _directions_to_vispy_quat(
+        view_direction_from_angles(angles, orientation),
+        up_direction_from_angles(angles, orientation),
+        orientation,
+    )
 
 
 def vispy_quat_to_napari_angles(
-    quat: Quaternion, flipped_axes: tuple[int, int, int]
+    quat: Quaternion,
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
 ) -> tuple[float, float, float]:
-    from scipy.spatial.transform import Rotation
+    """Convert a VisPy quaternion to napari camera angles.
 
-    # Do conversion from quaternion representation to euler angles
-    rotation = Rotation.from_quat([quat.x, quat.y, quat.z, quat.w])
-    # see #8281 for why this is yzx. In short: longstanding vispy bug.
-    angles = rotation.as_euler('yzx', degrees=True)
-    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-    angles_fixed = (angles - (0, 0, 90)) * (1, -1, 1)
-    # flip handedness so the rotation is always righthanded even with axis flipping
-    return tuple(angles_fixed * np.where(flipped_axes, -1, 1))
+    The view and up directions rendered by VisPy are recovered from the
+    rotation matrix and converted back to angles with the napari convention
+    (see ``napari.utils.camera_orientations``).
+
+    Parameters
+    ----------
+    quat : vispy.util.quaternion.Quaternion
+        The VisPy quaternion as rendered by the VisPy 3D camera.
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+
+    Returns
+    -------
+    3-tuple of float
+        Euler angles (rx, ry, rz) of the camera in 3D viewing, in degrees.
+    """
+    matrix = _quaternion_to_matrix(quat)
+    flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    factors = np.where(flipped_axes, -1, 1)
+    # Undo the flips and switch from VisPy (xyz) to napari (zyx) coordinates.
+    view_direction = tuple((factors * matrix[1])[::-1])
+    up_direction = tuple((factors * matrix[2])[::-1])
+    return angles_from_view_direction(
+        view_direction, up_direction, orientation
+    )
 
 
 class VispyCamera:
@@ -129,11 +266,8 @@ class VispyCamera:
         """
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = _get_vispy_flipped_axes(
-                self._camera.orientation, ndisplay=3
-            )
             return vispy_quat_to_napari_angles(
-                self._view.camera._quaternion, flipped_axes
+                self._view.camera._quaternion, self._camera.orientation
             )
 
         return (0, 0, 0)
@@ -145,11 +279,8 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            flipped_axes = _get_vispy_flipped_axes(
-                self._camera.orientation, ndisplay=3
-            )
             quat = napari_angles_to_vispy_quat(
-                self._camera.angles, flipped_axes
+                self._camera.angles, self._camera.orientation
             )
             self._view.camera.set_state(_quaternion=quat)
 

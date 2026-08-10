@@ -126,7 +126,8 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             )
         else:
             quat = napari_angles_to_vispy_quat(
-                self.viewer.scene.camera.angles, flipped_axes
+                self.viewer.scene.camera.angles,
+                self.viewer.scene.camera.orientation,
             )
             self.node.camera.set_state(
                 _quaternion=quat,
