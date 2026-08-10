@@ -51,6 +51,7 @@ def test_increment_unnamed_colormap():
         '[unnamed colormap 1]',
     ]
     assert _increment_unnamed_colormap(names)[0] == '[unnamed colormap 2]'
+    assert _increment_unnamed_colormap(names)[1] == '[unnamed colormap 2]'
 
     # test that named colormaps are not incremented
     named_colormap = 'perfect_colormap'
