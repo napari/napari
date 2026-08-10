@@ -58,6 +58,11 @@ class AppearanceSettings(EventedModel):
         title='Update status based on layer',
         description='Calculate status bar based on current active layer and mouse position.',
     )
+    dock_area_autohide: bool = Field(
+        False,
+        title='Auto hide docking areas',
+        description='Toggle autohide of docking areas.',
+    )
 
     def update(
         self, values: Union['EventedModel', dict], recurse: bool = True
