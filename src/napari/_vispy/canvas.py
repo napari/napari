@@ -198,7 +198,7 @@ class VispyCanvas:
         self.view: ViewBox = self.central_widget.add_view(border_width=0)
         self.view.order = 100  # ensure it's always drawn on top
         self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
+            self.view, self.viewer.scene.camera, self.viewer.dims
         )
 
         self.grid: Grid = self.central_widget.add_grid(
@@ -262,9 +262,11 @@ class VispyCanvas:
             self._on_bgcolor_change
         )
 
-        self.viewer.camera.events.mouse_pan.connect(self._on_interactive)
-        self.viewer.camera.events.mouse_zoom.connect(self._on_interactive)
-        self.viewer.camera.events.zoom.connect(self._on_cursor)
+        self.viewer.scene.camera.events.mouse_pan.connect(self._on_interactive)
+        self.viewer.scene.camera.events.mouse_zoom.connect(
+            self._on_interactive
+        )
+        self.viewer.scene.camera.events.zoom.connect(self._on_cursor)
 
         self.viewer.canvas.overlays._zoom_box.events.zoom_area.connect(
             self._on_boxzoom
@@ -284,13 +286,13 @@ class VispyCanvas:
         self.viewer.canvas.grid.events.shape.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.enabled.connect(self._update_scenegraph)
         self.viewer.canvas.grid.events.spacing.connect(self._update_scenegraph)
-        self.viewer._scene_overlays.events.added.connect(
+        self.viewer.scene.overlays.events.added.connect(
             self._update_viewer_overlays
         )
-        self.viewer._scene_overlays.events.removed.connect(
+        self.viewer.scene.overlays.events.removed.connect(
             self._update_viewer_overlays
         )
-        self.viewer._scene_overlays.events.changed.connect(
+        self.viewer.scene.overlays.events.changed.connect(
             self._update_viewer_overlays
         )
         self.viewer.canvas.overlays.events.added.connect(
@@ -339,10 +341,13 @@ class VispyCanvas:
 
     def _disconnect_events(self) -> None:
         disconnect_events(self.viewer.events, self)
-        disconnect_events(self.viewer._scene_overlays.events, self)
-        disconnect_events(self.viewer.camera.events, self)
+        disconnect_events(self.viewer.canvas.events, self)
+        disconnect_events(self.viewer.canvas.overlays.events, self)
+        disconnect_events(self.viewer.canvas.overlay_tiling.events, self)
+        disconnect_events(self.viewer.scene.overlays.events, self)
+        disconnect_events(self.viewer.scene.camera.events, self)
+        disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.layers.events, self)
-        disconnect_events(self.viewer.camera.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
 
@@ -387,7 +392,7 @@ class VispyCanvas:
             # Scale size by zoom if needed
             size = self.viewer.cursor.size
             if self.viewer.cursor.scaled:
-                size *= self.viewer.camera.zoom
+                size *= self.viewer.scene.camera.zoom
 
             size = int(size)
 
@@ -420,7 +425,8 @@ class VispyCanvas:
         """Link interactive attributes of view and viewer."""
         # Is this should be changed or renamed?
         interactive = (
-            self.viewer.camera.mouse_zoom or self.viewer.camera.mouse_pan
+            self.viewer.scene.camera.mouse_zoom
+            or self.viewer.scene.camera.mouse_pan
         )
         if self.viewer.canvas.grid.enabled:
             self.view.interactive = False
@@ -438,8 +444,10 @@ class VispyCanvas:
         )
         box_center_world = np.mean(zoom_area, axis=0)
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
-        self.viewer.camera.zoom = self.viewer.camera.zoom * np.min(ratio)
-        self.viewer.camera.center = box_center_world
+        self.viewer.scene.camera.zoom = self.viewer.scene.camera.zoom * np.min(
+            ratio
+        )
+        self.viewer.scene.camera.center = box_center_world
 
     def _map_canvas2world(
         self,
@@ -558,10 +566,10 @@ class VispyCanvas:
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
-            up_direction=self.viewer.camera.calculate_nd_up_direction(
+            up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
-            camera_zoom=self.viewer.camera.zoom,
+            camera_zoom=self.viewer.scene.camera.zoom,
             position=self._map_canvas2world(event.pos, viewbox),
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
@@ -735,7 +743,7 @@ class VispyCanvas:
             else:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
             layer._update_draw(
-                scale_factor=1 / self.viewer.camera.zoom,
+                scale_factor=1 / self.viewer.scene.camera.zoom,
                 corner_pixels_displayed=viewbox_corners_world[
                     :, displayed_axes
                 ],
@@ -793,7 +801,9 @@ class VispyCanvas:
         napari_layer._overlays.events.changed.connect(overlay_callback)
         napari_layer.events.units.connect(self._deferred_world_units_update)
         self._overlay_callbacks[napari_layer] = overlay_callback
-        self.viewer.camera.events.angles.connect(vispy_layer._on_camera_move)
+        self.viewer.scene.camera.events.angles.connect(
+            vispy_layer._on_camera_move
+        )
         self._deferred_world_units_update()
 
         # we need to trigger _on_matrix_change once after adding the overlays so that
@@ -842,7 +852,7 @@ class VispyCanvas:
         del self._overlay_callbacks[layer]
 
         vispy_layer = self.layer_to_visual.pop(layer)
-        disconnect_events(self.viewer.camera.events, vispy_layer)
+        disconnect_events(self.viewer.scene.camera.events, vispy_layer)
         vispy_layer.close()
         del vispy_layer
 
@@ -957,7 +967,7 @@ class VispyCanvas:
 
     def _update_viewer_overlays(self) -> None:
         """Update the viewer's overlay visuals."""
-        all_overlays = set(self.viewer._scene_overlays.values()) | set(
+        all_overlays = set(self.viewer.scene.overlays.values()) | set(
             self.viewer.canvas.overlays.values()
         )
         # delete outdated overlays
@@ -1286,7 +1296,7 @@ class VispyCanvas:
             return None
 
         if self.viewer.dims.ndim == 2:
-            return self.viewer.camera.calculate_nd_view_direction(
+            return self.viewer.scene.camera.calculate_nd_view_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             )
         x, y = event_pos
@@ -1359,7 +1369,9 @@ class VispyCanvas:
             view.border_width = 0
             view.border_color = None
 
-            camera = VispyCamera(view, self.viewer.camera, self.viewer.dims)
+            camera = VispyCamera(
+                view, self.viewer.scene.camera, self.viewer.dims
+            )
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
 
@@ -1436,7 +1448,7 @@ class VispyCanvas:
         if raw_spacing > safe_spacing:
             warnings.warn(
                 f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                f'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
                 'becoming too small. Consider using a smaller spacing value or '
                 'increasing the canvas size.',
                 UserWarning,
