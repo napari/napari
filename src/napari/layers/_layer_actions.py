@@ -208,7 +208,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # before opening up to other layer types, this line should be updated.
 
     if layer.multiscale:
-        # This evaluates if the pyramid structure is kept after removing
+        # This evaluates if the multi-resolution pyramid is kept after removing
         # the projected axis and assigns multiscale data if structure is
         # conserved.
         resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
@@ -225,7 +225,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
                     np,
                     mode,
                 )(
-                    layer.data[layer.data_level],
+                    layer.data[0],
                     axis=axis,
                     keepdims=False,
                 ),
