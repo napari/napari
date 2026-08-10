@@ -58,7 +58,9 @@ def test_tour_tooltip_widens_for_long_nav_labels(qtbot):
     tooltip = _TourTooltip(parent)
     qtbot.addWidget(tooltip)
 
-    tooltip.set_content('Title', 'Body.', 2, 5)  # middle step: all 3 nav buttons visible
+    tooltip.set_content(
+        'Title', 'Body.', 2, 5
+    )  # middle step: all 3 nav buttons visible
     assert tooltip.width() == _TOOLTIP_WIDTH
 
     tooltip._back.setText('Previous step in the guided tour')
@@ -68,7 +70,9 @@ def test_tour_tooltip_widens_for_long_nav_labels(qtbot):
 
     assert tooltip.width() > _TOOLTIP_WIDTH
     for button in (tooltip._back, tooltip._next, tooltip._skip):
-        assert button.geometry().width() >= button.minimumSizeHint().width() - 2
+        assert (
+            button.geometry().width() >= button.minimumSizeHint().width() - 2
+        )
 
     # width should shrink back down once labels return to normal
     tooltip.set_content('Title', 'Body.', 3, 5)
