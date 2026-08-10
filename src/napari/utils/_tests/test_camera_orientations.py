@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from hypothesis import given, settings, strategies as st
 
 from napari.utils.camera_orientations import (
     angles_from_view_direction,
@@ -16,48 +17,65 @@ ORIENTATIONS = [
     for horizontal in ['right', 'left']
 ]
 
+ANGLES = st.tuples(
+    *[
+        st.floats(
+            min_value=-180,
+            max_value=180,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+        for _ in range(3)
+    ]
+)
 
-@pytest.mark.filterwarnings('ignore:gimbal lock')
-def test_view_direction_correct_under_rotation():
-    """Check that the napari direction math matches a real VisPy 3D camera."""
+
+@pytest.fixture(scope='module')
+def arcball_camera():
     from vispy import scene
 
-    from napari._vispy.camera import (
-        _get_vispy_flipped_axes,
-        napari_angles_to_vispy_quat,
-    )
-
-    rng = np.random.default_rng()
     canvas = scene.SceneCanvas(size=(100, 100), show=False)
     try:
         view = canvas.central_widget.add_view()
         camera = scene.ArcballCamera(fov=0)
         view.camera = camera
         camera.set_range(x=(0, 10), y=(0, 10), z=(0, 10))
-        for orientation in ORIENTATIONS:
-            camera.flip = _get_vispy_flipped_axes(orientation, ndisplay=3)
-            for _ in range(25):
-                angles = tuple(90 * rng.random(3))
-                camera.set_state(
-                    _quaternion=napari_angles_to_vispy_quat(
-                        angles, orientation
-                    )
-                )
-                camera.view_changed()
-                matrix_inv = np.linalg.inv(camera.transform.matrix[:3, :3])
-                # VisPy uses xyz coordinates; napari uses zyx, hence the reversal.
-                view_direction = (-matrix_inv[:, 2])[::-1]
-                up_direction = (matrix_inv[:, 1])[::-1]
-                assert np.allclose(
-                    view_direction_from_angles(angles, orientation),
-                    view_direction,
-                )
-                assert np.allclose(
-                    up_direction_from_angles(angles, orientation),
-                    up_direction,
-                )
+        yield camera
     finally:
         canvas.close()
+
+
+@pytest.mark.filterwarnings('ignore:gimbal lock')
+@pytest.mark.parametrize('orientation', ORIENTATIONS)
+@given(angles=ANGLES)
+@settings(max_examples=20, deadline=None)
+def test_view_direction_correct_under_rotation(
+    orientation, angles, arcball_camera
+):
+    """Check that the napari direction math matches a real VisPy 3D camera."""
+    from napari._vispy.camera import (
+        _get_vispy_flipped_axes,
+        napari_angles_to_vispy_quat,
+    )
+
+    camera = arcball_camera
+    camera.flip = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    camera.set_state(
+        _quaternion=napari_angles_to_vispy_quat(angles, orientation)
+    )
+    camera.view_changed()
+    matrix_inv = np.linalg.inv(camera.transform.matrix[:3, :3])
+    # VisPy uses xyz coordinates; napari uses zyx, hence the reversal.
+    view_direction = (-matrix_inv[:, 2])[::-1]
+    up_direction = (matrix_inv[:, 1])[::-1]
+    assert np.allclose(
+        view_direction_from_angles(angles, orientation),
+        view_direction,
+    )
+    assert np.allclose(
+        up_direction_from_angles(angles, orientation),
+        up_direction,
+    )
 
 
 @pytest.mark.parametrize('orientation', ORIENTATIONS)
@@ -106,47 +124,45 @@ def test_single_angle_rotation_axis(angle_index, axis_component):
 
 
 @pytest.mark.parametrize('orientation', ORIENTATIONS)
-def test_vispy_quat_roundtrip(orientation):
+@given(angles=ANGLES)
+@settings(max_examples=50, deadline=None)
+def test_vispy_quat_roundtrip(orientation, angles):
     """Check the vispy quaternion conversion inverts exactly."""
     from napari._vispy.camera import (
         napari_angles_to_vispy_quat,
         vispy_quat_to_napari_angles,
     )
 
-    rng = np.random.default_rng()
-    for _ in range(20):
-        angles = tuple(90 * rng.random(3))
-        quat = napari_angles_to_vispy_quat(angles, orientation)
-        recovered = vispy_quat_to_napari_angles(quat, orientation)
-        assert np.allclose(
-            view_direction_from_angles(recovered, orientation),
-            view_direction_from_angles(angles, orientation),
-        )
-        assert np.allclose(
-            up_direction_from_angles(recovered, orientation),
-            up_direction_from_angles(angles, orientation),
-        )
+    quat = napari_angles_to_vispy_quat(angles, orientation)
+    recovered = vispy_quat_to_napari_angles(quat, orientation)
+    assert np.allclose(
+        view_direction_from_angles(recovered, orientation),
+        view_direction_from_angles(angles, orientation),
+    )
+    assert np.allclose(
+        up_direction_from_angles(recovered, orientation),
+        up_direction_from_angles(angles, orientation),
+    )
 
 
 @pytest.mark.parametrize('orientation', ORIENTATIONS)
-def test_angles_from_view_direction_roundtrip(orientation):
+@given(angles=ANGLES)
+@settings(max_examples=50, deadline=None)
+def test_angles_from_view_direction_roundtrip(orientation, angles):
     """Check that angles_from_view_direction inverts view/up direction."""
-    rng = np.random.default_rng()
-    for _ in range(20):
-        angles = tuple(90 * rng.random(3))
-        view_direction = view_direction_from_angles(angles, orientation)
-        up_direction = up_direction_from_angles(angles, orientation)
-        recovered = angles_from_view_direction(
-            view_direction, up_direction, orientation
-        )
-        # Euler angles are degenerate, so compare the resulting directions
-        # rather than the angles themselves.
-        assert np.allclose(
-            view_direction_from_angles(recovered, orientation), view_direction
-        )
-        assert np.allclose(
-            up_direction_from_angles(recovered, orientation), up_direction
-        )
+    view_direction = view_direction_from_angles(angles, orientation)
+    up_direction = up_direction_from_angles(angles, orientation)
+    recovered = angles_from_view_direction(
+        view_direction, up_direction, orientation
+    )
+    # Euler angles are degenerate, so compare the resulting directions
+    # rather than the angles themselves.
+    assert np.allclose(
+        view_direction_from_angles(recovered, orientation), view_direction
+    )
+    assert np.allclose(
+        up_direction_from_angles(recovered, orientation), up_direction
+    )
 
 
 @pytest.mark.parametrize('orientation', ORIENTATIONS)
