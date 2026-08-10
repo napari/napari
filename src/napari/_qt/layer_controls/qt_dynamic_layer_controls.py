@@ -130,6 +130,7 @@ from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
 from napari._qt.layer_controls.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
+from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari.layers import (
     Image,
     Labels,
@@ -157,9 +158,11 @@ controls_dict = {
         QtColormapControl,
     ),
     Points | Vectors: (QtOutSliceCheckBoxControl,),
-    Points | Shapes: (QtTextVisibilityControl,),
-    Points: (
+    Points | Shapes: (
+        QtTextVisibilityControl,
         QtFaceColorControl,
+    ),
+    Points: (
         QtBorderColorControl,
         QtCurrentSizeSliderControl,
         QtSymbolComboBoxControl,
@@ -231,7 +234,6 @@ class QtDynamicLayerControls(QFrame):
     """Superclass for all the other LayerControl classes.
 
     This class is never directly instantiated anywhere.
-    @lorenzo we have to populate this.
     Parameters
     ----------
     layers : list of napari.layers.Layer
@@ -277,6 +279,10 @@ class QtDynamicLayerControls(QFrame):
                     self._add_widget_controls(
                         control(parent=self, layers=layers)
                     )
+        for layer in self._layers:
+            layer.events.data.connect(self._on_surface_coloring_change)
+        self._on_surface_coloring_change()
+        self._on_ndisplay_changed()
 
     def _add_widget_controls(
         self,
@@ -296,9 +302,7 @@ class QtDynamicLayerControls(QFrame):
         for label_text, control_widget in controls:
             self.layout().addRow(label_text, control_widget)
 
-    def changeProjectionMode(
-        self, text
-    ):  # @lorenzo is this even used anywhere? how is it accessed?
+    def changeProjectionMode(self, text):
         for layer in self._layers:
             with layer.events.blocker(self._on_projection_mode_change):
                 layer.projection_mode = text
@@ -352,6 +356,27 @@ class QtDynamicLayerControls(QFrame):
         buttons = self.findChild(QtLayerButtons)
         if buttons is not None:
             buttons.ndisplay = self.ndisplay
+
+    def _on_surface_coloring_change(
+        self,
+    ) -> None:
+        """Disable scalar-color controls when direct vertex colors are active."""
+        enabled = all(
+            getattr(layer, 'vertex_colors', None) is None
+            for layer in self._layers
+        )
+        for cls in (
+            QtContrastLimitsControl,
+            QtGammaSliderControl,
+            QtColormapControl,
+        ):
+            control = self.findChild(cls)
+            if control is None:
+                continue
+            for label, widget in control.get_widget_controls():
+                set_widgets_enabled_with_opacity(
+                    self, (label, widget), enabled
+                )
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)

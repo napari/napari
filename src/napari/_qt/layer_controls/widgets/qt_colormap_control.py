@@ -140,15 +140,9 @@ class QtColormapControl(QtWidgetControlsBase):
         # Setup widgets
         comboBox = QtColormapComboBox(parent)
         comboBox.setObjectName('colormapComboBox')
-        comboBox._allitems = set().union(
-            *(layer.colormaps for layer in self._layers)
-        )
-        common_colormaps = set.intersection(
-            *(set(layer.colormaps) for layer in self._layers)
-        )
+        comboBox._allitems = set(AVAILABLE_COLORMAPS)
         for name, cm in AVAILABLE_COLORMAPS.items():
-            if name in common_colormaps:
-                comboBox.addItem(cm._display_name, name)
+            comboBox.addItem(cm._display_name, name)
 
         comboBox.currentTextChanged.connect(self.change_color)
         self.colormap_combobox = comboBox

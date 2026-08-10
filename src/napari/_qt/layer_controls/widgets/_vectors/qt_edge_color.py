@@ -66,6 +66,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             self.change_edge_color_feature
         )
         self.color_feature_box.addItems(self._layers[0].features.columns)
+        self.color_feature_box.setCurrentText(
+            self._layers[0]._edge.color_properties.name
+        )
         self.edge_feature_label = QtWrappedLabel('edge feature:')
 
         # vector direct color mode adjustment and widget
@@ -84,6 +87,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.color_mode_combobox = QComboBox(parent)
         color_modes = [e.value for e in ColorMode]
         self.color_mode_combobox.addItems(color_modes)
+        self.color_mode_combobox.setCurrentText(
+            self._layers[0].edge_color_mode
+        )
         self.color_mode_combobox.currentTextChanged.connect(
             self.change_edge_color_mode
         )

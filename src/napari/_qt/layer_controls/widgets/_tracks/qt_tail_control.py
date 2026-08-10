@@ -66,9 +66,11 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
     def _on_tail_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
         with qt_signals_blocked(self.tail_length_slider):
-            value = self._layers[0].tail_length
+            value = int(self._layers[0].tail_length)
             if value > self.tail_length_slider.maximum():
-                self.tail_length_slider.setMaximum(self._layers[0]._max_length)
+                self.tail_length_slider.setMaximum(
+                    int(self._layers[0]._max_length)
+                )
             self.tail_length_slider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
@@ -101,7 +103,6 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         # Setup layer
         for layer in self._layers:
             layer.events.tail_width.connect(self._on_tail_width_change)
-            layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
         # slider for track edge width
@@ -123,12 +124,11 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         """Receive layer model track line width change event and update slider."""
         with qt_signals_blocked(self.tail_width_slider):
             value = int(self._layers[0].tail_width)
+            if value > self.tail_width_slider.maximum():
+                self.tail_width_slider.setMaximum(
+                    int(self._layers[0]._max_width)
+                )
             self.tail_width_slider.setValue(value)
-
-    def _on_data_change(
-        self,
-    ) -> None:  # @lorenzo why is it split here and not above?
-        self.tail_width_slider.setMaximum(int(self._layers[0]._max_width))
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]

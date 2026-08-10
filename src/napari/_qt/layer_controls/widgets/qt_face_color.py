@@ -13,7 +13,7 @@ from napari.utils.events.event_utils import connect_setattr
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-    from napari.layers import Points
+    from napari.layers import Points, Shapes
 
 
 class QtFaceColorControl(QtWidgetControlsBase):
@@ -38,12 +38,10 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
-    # _layer: Shapes | Points @lorenzo we changed this to only points on purpose right?
-
     def __init__(
         self,
         parent: QWidget,
-        layers: list[Points],
+        layers: list[Points | Shapes],
         tooltip: Optional[str] = None,
     ) -> None:
         super().__init__(parent, layers)

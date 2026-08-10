@@ -60,14 +60,14 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
                 layer,
                 'current_edge_color',
             )
-            self._callbacks.append(  # @lorenzo: does this trigger the widget to change? in that case I only do it for the first layer no?
-                attr_to_settr(
-                    layer,
-                    'current_edge_color',
-                    self.edge_color_edit,
-                    'setColor',
-                )
+        self._callbacks.append(  # @lorenzo: does this trigger the widget to change? in that case I only do it for the first layer no? -> yes, @margot check other files and change there
+            attr_to_settr(
+                self._layers[0],
+                'current_edge_color',
+                self.edge_color_edit,
+                'setColor',
             )
+        )
         self.edge_color_label = QtWrappedLabel('edge color:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

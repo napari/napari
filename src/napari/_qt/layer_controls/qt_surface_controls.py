@@ -49,7 +49,7 @@ class QtSurfaceControls(QtBaseImageControls):
 
     def _on_surface_coloring_change(
         self,
-    ) -> None:  # @lorenzo this is how the cow clims are greyed out. I dont know how to transfer it to our machinery though
+    ) -> None:
         """Disable scalar-color controls when direct vertex colors are active."""
         enabled = self.layer.vertex_colors is None
         for control in (

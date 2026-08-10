@@ -85,13 +85,16 @@ class QtLayerControlsContainer(QStackedWidget):
         the gap by forwarding ``event.value`` (the new theme) to any
         histogram widgets that have been lazily created.
         """
-        for widget in self.panel.values():
-            histogram_control = getattr(widget, '_histogram_control', None)
-            if histogram_control is None:
-                continue
-            hist_widget = getattr(histogram_control, 'histogram_widget', None)
-            if hist_widget is not None:
-                hist_widget._on_theme_change(event)
+        if self.panel is not None:
+            for widget in self.panel.values():
+                histogram_control = getattr(widget, '_histogram_control', None)
+                if histogram_control is None:
+                    continue
+                hist_widget = getattr(
+                    histogram_control, 'histogram_widget', None
+                )
+                if hist_widget is not None:
+                    hist_widget._on_theme_change(event)
 
     def _populate(self, event):
         """Change the displayed controls to be those of the target layers.
