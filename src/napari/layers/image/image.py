@@ -240,6 +240,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
     plane : SlicingPlane or dict
         Properties defining plane rendering in 3D. Valid dictionary keys are
         {'position', 'normal', 'thickness'}.
+    projection_mode : str
+        How data outside the viewed dimensions, but inside the thick Dims slice will
+        be projected onto the viewed dimensions. Must fit to ImageProjectionMode
     experimental_clipping_planes : ClippingPlaneList
         Clipping planes defined in data coordinates, used to clip the volume.
     custom_interpolation_kernel_2d : np.ndarray

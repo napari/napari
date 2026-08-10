@@ -209,7 +209,7 @@ class QtViewer(QSplitter):
         self.setAcceptDrops(True)
 
         # Create the experimental QtPool for the monitor.
-        self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+        self._qt_poll = _create_qt_poll(self, self.viewer.scene.camera)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
@@ -916,8 +916,8 @@ class QtViewer(QSplitter):
             if ndisplay == 3:
                 scene_size = self.viewer._calculate_bounding_box(
                     extent=extent,
-                    view_direction=self.viewer.camera.view_direction,
-                    up_direction=self.viewer.camera.up_direction,
+                    view_direction=self.viewer.scene.camera.view_direction,
+                    up_direction=self.viewer.scene.camera.up_direction,
                 )
 
             # adjust size by the scale, to return the size in real pixels
@@ -953,7 +953,7 @@ class QtViewer(QSplitter):
         """
         canvas = self.canvas
         prev_size = canvas.size
-        camera = self.viewer.camera
+        camera = self.viewer.scene.camera
         old_center = camera.center
         old_zoom = camera.zoom
         if size is not None:
@@ -1360,7 +1360,7 @@ class QtViewer(QSplitter):
             )
 
         screenshot_list = []
-        camera = self.viewer.camera
+        camera = self.viewer.scene.camera
         start_camera_center = camera.center
         start_camera_zoom = camera.zoom
         canvas = self.canvas

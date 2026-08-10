@@ -210,13 +210,13 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
             if self.layer.multiscale:
                 raise ValueError(
                     f'Shape of individual tiles in multiscale {data.shape} cannot '
-                    'exceed GL_MAX_TEXTURE_SIZE {MAX_TEXTURE_SIZE}. Rendering is '
-                    'currently in {self.layer._slice_input.ndisplay}D mode.'
+                    f'exceed GL_MAX_TEXTURE_SIZE {MAX_TEXTURE_SIZE}. Rendering is '
+                    f'currently in {self.layer._slice_input.ndisplay}D mode.'
                 )
             warnings.warn(
                 f'data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE {MAX_TEXTURE_SIZE}'
                 ' in at least one axis and will be downsampled.'
-                ' Rendering is currently in {self.layer._slice_input.ndisplay}D mode.'
+                f' Rendering is currently in {self.layer._slice_input.ndisplay}D mode.'
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)

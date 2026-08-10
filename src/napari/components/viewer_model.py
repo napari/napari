@@ -37,7 +37,6 @@ from napari.components._viewer_mouse_bindings import (
     drag_to_zoom,
     layers_scroll,
 )
-from napari.components.camera import Camera
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
@@ -45,8 +44,8 @@ from napari.components.layerlist import LayerList
 from napari.components.overlays import (
     AxesOverlay,
     FloatingAxesOverlay,
-    SceneOverlay,
 )
+from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
     MultipleReaderError,
@@ -90,7 +89,6 @@ from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
-    EventedDictNamespace,
     EventedModel,
     disconnect_events,
 )
@@ -103,6 +101,7 @@ from napari.utils.theme import available_themes, is_theme_available
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
 
+    from napari.components.camera import Camera
     from napari.components.grid import GridCanvas
     from napari.components.overlays import ScaleBarOverlay, TextOverlay
 
@@ -159,8 +158,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
-    camera: napari.components.camera.Camera
-        The camera object modeling the position and view.
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -183,15 +180,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
-    _overlays: napari.utils.events.containers._evented_dict.EventedDictNamespace[SceneOverlay]
-        An EventedDictNamespace with as keys the string names of different napari overlays and as values
-        the napari.SceneOverlay objects.
     """
 
     # Using frozen=True means these attributes aren't settable and don't
     # have an event emitter associated with them
     canvas: Canvas = Field(default_factory=Canvas, frozen=True)
-    camera: Camera = Field(default_factory=Camera, frozen=True)
+    scene: Scene = Field(default_factory=Scene, frozen=True)
     cursor: Cursor = Field(default_factory=Cursor, frozen=True)
     dims: Dims = Field(default_factory=Dims, frozen=True)
     layers: LayerList = Field(
@@ -202,9 +196,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    _scene_overlays: EventedDictNamespace[SceneOverlay] = PrivateAttr(
-        default_factory=lambda: EventedDictNamespace({'axes': AxesOverlay()})
-    )
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
@@ -305,8 +296,26 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
     #       know that specific elements match specific types
     @property
+    @deprecated(
+        (
+            'viewer.camera is a deprecated attribute since 0.9.0. Use viewer.scene.camera instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
+        stacklevel=2,
+    )
+    def camera(self) -> Camera:
+        return self.scene.camera
+
+    @property
+    @deprecated(
+        (
+            'viewer.axes is a deprecated attribute since 0.9.0. Use viewer.scene.overlays.axes instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
+        stacklevel=2,
+    )
     def axes(self) -> AxesOverlay:
-        return self._scene_overlays.axes
+        return self.scene.overlays.axes  # type: ignore[return-value]
 
     @property
     @deprecated(
@@ -347,7 +356,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Update camera orientation based on settings."""
         settings = get_settings()
 
-        self.camera.orientation = (
+        self.scene.camera.orientation = (
             settings.application.depth_axis_orientation,
             settings.application.vertical_axis_orientation,
             settings.application.horizontal_axis_orientation,
@@ -356,7 +365,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _update_synced_camera(self):
         """Update camera synced mode based on settings."""
         settings = get_settings()
-        self.camera.synced = settings.application.synced_camera
+        self.scene.camera.synced = settings.application.synced_camera
 
     @field_validator('theme')
     @classmethod
@@ -431,7 +440,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             to view. Default is True.
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
-            self.camera.angles = (0, 0, 0)
+            self.scene.camera.angles = (0, 0, 0)
         self.fit_to_view(margin=margin)
 
     def fit_to_view(self, *, margin: float = 0.05) -> None:
@@ -449,7 +458,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # Get the scene parameters
         extent, scene_size, corner = self._get_scene_parameters()
 
-        self.camera.center = self._calculate_view_center(corner, scene_size)
+        self.scene.camera.center = self._calculate_view_center(
+            corner, scene_size
+        )
 
         scale_factor = self._get_scale_factor(margin)
 
@@ -459,22 +470,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # of view will occupy 95% of the canvas on the most filled axis
         if np.max(scene_size) == 0:
             # TODO: does this even ever happen?
-            self.camera.zoom = scale_factor * np.min(self.canvas.size)
+            self.scene.camera.zoom = scale_factor * np.min(self.canvas.size)
 
         elif self.dims.ndisplay == 2:
-            self.camera.zoom = self._get_2d_camera_zoom(
+            self.scene.camera.zoom = self._get_2d_camera_zoom(
                 scene_size, scale_factor
             )
 
         elif self.dims.ndisplay == 3:
-            self.camera.zoom = self._get_3d_camera_zoom(extent, scale_factor)
+            self.scene.camera.zoom = self._get_3d_camera_zoom(
+                extent, scale_factor
+            )
 
         # Emit a reset view event, which is no longer used internally, but
         # which maybe useful for building on napari.
         self.events.reset_view(
-            center=self.camera.center,
-            zoom=self.camera.zoom,
-            angles=self.camera.angles,
+            center=self.scene.camera.center,
+            zoom=self.scene.camera.zoom,
+            angles=self.scene.camera.angles,
         )
 
     def _save_camera_state(self) -> None:
@@ -485,7 +498,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ndisplay mode. Caching is harmless in synced mode since
         ``_on_ndisplay_changed`` does not use the cached values there.
         """
-        self.camera._cache_state(self._previous_ndisplay)
+        self.scene.camera._cache_state(self._previous_ndisplay)
 
     def _on_ndisplay_changed(self) -> None:
         """Handle ndisplay changes based on the current camera synced mode.
@@ -496,8 +509,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         * ``synced=False`` — each mode remembers its own center, zoom,
           and angles independently (per-mode caching).
         """
-        if self.camera.synced:
-            center = list(self.camera.center)
+        if self.scene.camera.synced:
+            center = list(self.scene.camera.center)
             if len(self.dims.order) >= 3:
                 new_display_dim = self.dims.order[-3]
                 if self.dims.ndisplay == 3:
@@ -507,21 +520,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     center[0] = 0.0
             elif self.dims.ndisplay == 2:
                 center[0] = 0.0
-            self.camera.center = center[0], center[1], center[2]
+            self.scene.camera.center = center[0], center[1], center[2]
             self._previous_ndisplay = self.dims.ndisplay
             return
 
         # Separate (synced=False) — per-mode caching
         new_mode = self.dims.ndisplay
-        cached = self.camera._pop_cached_state(new_mode)
+        cached = self.scene.camera._pop_cached_state(new_mode)
         if cached is not None:
-            self.camera.center = cached.center
-            self.camera.zoom = cached.zoom
-            self.camera.angles = cached.angles
+            self.scene.camera.center = cached.center
+            self.scene.camera.zoom = cached.zoom
+            self.scene.camera.angles = cached.angles
         else:
             # First time in this mode — use fit_to_view defaults
             self.fit_to_view()
-            self.camera._cache_state(new_mode)
+            self.scene.camera._cache_state(new_mode)
         self._previous_ndisplay = new_mode
 
     def _get_scene_parameters(
@@ -585,8 +598,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Calculate the zoom such that the minimum of the bounding box fits the canvas."""
         bounding_box = self._calculate_bounding_box(
             extent=extent,
-            view_direction=self.camera.view_direction,
-            up_direction=self.camera.up_direction,
+            view_direction=self.scene.camera.view_direction,
+            up_direction=self.scene.camera.up_direction,
         )
         return scale_factor * np.min(
             self.canvas.viewbox_size(self.layers) / bounding_box
@@ -730,8 +743,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 layer.update_highlight_visibility(False)
             self.help = ''
             self.cursor.style = CursorStyle.STANDARD
-            self.camera.mouse_pan = True
-            self.camera.mouse_zoom = True
+            self.scene.camera.mouse_pan = True
+            self.scene.camera.mouse_zoom = True
         else:
             active_layer.update_transform_box_visibility(True)
             active_layer.update_highlight_visibility(True)
@@ -742,8 +755,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.camera.mouse_pan = active_layer.mouse_pan
-            self.camera.mouse_zoom = active_layer.mouse_zoom
+            self.scene.camera.mouse_pan = active_layer.mouse_pan
+            self.scene.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
     def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
@@ -781,12 +794,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _update_mouse_pan(self, event):
         """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
-            self.camera.mouse_pan = event.mouse_pan
+            self.scene.camera.mouse_pan = event.mouse_pan
 
     def _update_mouse_zoom(self, event):
         """Set the viewer interactive mouse zoom"""
         if event.source is self.layers.selection.active:
-            self.camera.mouse_zoom = event.mouse_zoom
+            self.scene.camera.mouse_zoom = event.mouse_zoom
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
