@@ -1,9 +1,8 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import numpy as np
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QWidget,
+)
 from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -11,12 +10,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
-
-    from napari.layers import Labels
 
 
 class QtBrushSizeSliderControl(QtWidgetControlsBase):
@@ -28,8 +23,8 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Labels]
-        A list of napari Labels layers.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
 
     Attributes
     ----------
@@ -41,12 +36,10 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
 
     _layer: Labels
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
+    def __init__(self, parent: QWidget, layer: Labels) -> None:
+        super().__init__(parent, layer)
         # Setup layer
-        self._layers = layers
-        for layer in self._layers:
-            layer.events.brush_size.connect(self._on_brush_size_change)
+        self._layer.events.brush_size.connect(self._on_brush_size_change)
 
         # Setup widgets
         sld = QLabeledSlider(Qt.Orientation.Horizontal)
@@ -54,8 +47,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        for layer in self._layers:
-            connect_setattr(sld.valueChanged, layer, 'brush_size')
+        connect_setattr(sld.valueChanged, self._layer, 'brush_size')
         self.brush_size_slider = sld
         self._on_brush_size_change()
 
@@ -64,7 +56,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
     def _on_brush_size_change(self) -> None:
         """Receive layer model brush size change event and update the slider."""
         with qt_signals_blocked(self.brush_size_slider):
-            value = self._layers[0].brush_size
+            value = self._layer.brush_size
             value = np.maximum(1, int(value))
             if value > self.brush_size_slider.maximum():
                 self.brush_size_slider.setMaximum(int(value))

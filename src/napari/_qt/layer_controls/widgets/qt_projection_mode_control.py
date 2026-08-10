@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtWidgets import QComboBox, QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -9,10 +5,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
 
 
 class QtProjectionModeControl(QtWidgetControlsBase):
@@ -24,8 +18,8 @@ class QtProjectionModeControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Image | napari.layers.Points | napari.layers.Vectors]
-        A list of Image, Points and Vectors napari layers.
+    layer : napari.layers.Image | napari.layers.Points | napari.layers.Vectors
+        An instance of an Image, Points or Vectors napari layer.
 
     Attributes
     ----------
@@ -35,33 +29,24 @@ class QtProjectionModeControl(QtWidgetControlsBase):
         Label for the projection mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent, layers)
+    def __init__(
+        self, parent: QWidget, layer: Image | Points | Vectors
+    ) -> None:
+        super().__init__(parent, layer)
         # Setup layer
-        self._layers = layers
-        for layer in self._layers:
-            layer.events.projection_mode.connect(
-                self._on_projection_mode_change
-            )
+        self._layer.events.projection_mode.connect(
+            self._on_projection_mode_change
+        )
 
         # Setup widgets
-        proj_modes = [
-            i.lower()
-            for i in set.intersection(
-                *(
-                    set(layer._projectionclass.__members__)
-                    for layer in self._layers
-                )
-            )
-        ]
+        proj_modes = [i.value for i in self._layer._projectionclass]
         self.projection_combobox = QComboBox(parent)
         self.projection_combobox.addItems(proj_modes)
-        for layer in self._layers:
-            connect_setattr(
-                self.projection_combobox.currentTextChanged,
-                layer,
-                'projection_mode',
-            )
+        connect_setattr(
+            self.projection_combobox.currentTextChanged,
+            self._layer,
+            'projection_mode',
+        )
 
         self._on_projection_mode_change()
 
@@ -70,7 +55,7 @@ class QtProjectionModeControl(QtWidgetControlsBase):
     def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):
             self.projection_combobox.setCurrentText(
-                str(self._layers[0].projection_mode)
+                str(self._layer.projection_mode)
             )
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

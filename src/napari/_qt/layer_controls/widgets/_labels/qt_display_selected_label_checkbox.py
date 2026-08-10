@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -12,10 +8,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from napari.layers import Labels
 
 
 class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
@@ -27,8 +21,8 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Labels]
-        A list of napari Labels layers.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
 
     Attributes
     ----------
@@ -38,28 +32,26 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         Label for the layer should show only currently selected label chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Labels) -> None:
+        super().__init__(parent, layer)
         # Setup widgets
         selected_color_checkbox = QCheckBox()
         selected_color_checkbox.setToolTip('Display only selected label')
-        selected_color_checkbox.setChecked(self._layers[0].show_selected_label)
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'show_selected_label',
-                    selected_color_checkbox,
-                    'setChecked',
-                )
-            )
-            connect_setattr(
-                selected_color_checkbox.stateChanged,
-                layer,
+        selected_color_checkbox.setChecked(self._layer.show_selected_label)
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
                 'show_selected_label',
-                convert_fun=checked_to_bool,
+                selected_color_checkbox,
+                'setChecked',
             )
+        )
+        connect_setattr(
+            selected_color_checkbox.stateChanged,
+            layer,
+            'show_selected_label',
+            convert_fun=checked_to_bool,
+        )
         self.selected_color_checkbox = selected_color_checkbox
 
         self.selected_color_checkbox_label = QtWrappedLabel('show\nselected:')

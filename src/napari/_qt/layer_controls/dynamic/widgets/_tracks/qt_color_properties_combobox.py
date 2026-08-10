@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QWidget
 
-from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
+from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )

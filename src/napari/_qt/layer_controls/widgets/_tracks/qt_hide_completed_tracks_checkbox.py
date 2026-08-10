@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -12,10 +8,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from napari.layers import Tracks
 
 
 class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
@@ -27,8 +21,8 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Tracks]
-        A list of napari Tracks layers.
+    layer : napari.layers.Tracks
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -38,28 +32,26 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
         Label for showing the option checkbox.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
+        super().__init__(parent, layer)
         # Setup layer
 
         # Setup widgets
         self.hide_completed_tracks_checkbox = QCheckBox()
-        for layer in self._layers:
-            self._callbacks.append(
-                attr_to_settr(
-                    layer,
-                    'hide_completed_tracks',
-                    self.hide_completed_tracks_checkbox,
-                    'setChecked',
-                )
-            )
-            connect_setattr(
-                self.hide_completed_tracks_checkbox.stateChanged,
-                layer,
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
                 'hide_completed_tracks',
-                convert_fun=checked_to_bool,
+                self.hide_completed_tracks_checkbox,
+                'setChecked',
             )
+        )
+        connect_setattr(
+            self.hide_completed_tracks_checkbox.stateChanged,
+            layer,
+            'hide_completed_tracks',
+            convert_fun=checked_to_bool,
+        )
 
         self.hide_completed_tracks_checkbox_label = QtWrappedLabel(
             'hide completed:'

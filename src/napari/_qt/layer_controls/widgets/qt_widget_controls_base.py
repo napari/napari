@@ -6,13 +6,12 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
+from napari.layers.base.base import Layer
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
-
-    from napari.layers.base.base import Layer
 
     _QtABCMeta = ABCMeta
 
@@ -47,14 +46,14 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Layer]
-        A list of napari layers.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
+    def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent)
         # Setup layer
-        self._layers = layers
+        self._layer = layer
         # Track registered callbacks (defined via `attr_to_settr` for example)
         # so it is possible to disconnect them when the widget is being closed/deleted.
         # Arguments of callbacks are hard to track; Any is the best we can do here.
@@ -75,12 +74,11 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
 
     def disconnect_widget_controls(self) -> None:
         """
-        Disconnect layers from widget controls.
+        Disconnect layer from widget controls.
         """
-        for layer in self._layers:
-            disconnect_events(layer.events, self)
-            for callback in self._callbacks:
-                disconnect_events(layer.events, callback)
+        disconnect_events(self._layer.events, self)
+        for callback in self._callbacks:
+            disconnect_events(self._layer.events, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()

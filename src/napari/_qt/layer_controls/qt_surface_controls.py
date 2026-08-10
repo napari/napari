@@ -47,9 +47,7 @@ class QtSurfaceControls(QtBaseImageControls):
 
         self._on_surface_coloring_change()
 
-    def _on_surface_coloring_change(
-        self,
-    ) -> None:
+    def _on_surface_coloring_change(self) -> None:
         """Disable scalar-color controls when direct vertex colors are active."""
         enabled = self.layer.vertex_colors is None
         for control in (

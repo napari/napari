@@ -309,7 +309,7 @@ class QtDynamicLayerControls(QFrame):
 
         Parameters
         ----------
-        wrapper : napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base.QtWidgetControlsBase
+        wrapper : napari._qt.layer_controls.dynamic..widgets.qt_widget_controls_base.QtWidgetControlsBase
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
         """

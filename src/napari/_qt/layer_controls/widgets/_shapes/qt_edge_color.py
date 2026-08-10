@@ -1,6 +1,6 @@
-from __future__ import annotations
+from typing import Optional
 
-from typing import TYPE_CHECKING, Optional
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -9,12 +9,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers import Shapes
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
-
-    from napari.layers import Shapes
 
 
 class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
@@ -26,8 +22,8 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Shapes]
-        A list of napari Shapes layers.
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
     toolip : str
         String to use for the tooltip of the edge color edit widget.
 
@@ -42,27 +38,22 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
     _layer: Shapes
 
     def __init__(
-        self,
-        parent: QWidget,
-        layers: list[Shapes],
-        tooltip: Optional[str] = None,
+        self, parent: QWidget, layer: Shapes, tooltip: Optional[str] = None
     ) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+        super().__init__(parent, layer)
         # Setup widgets
         self.edge_color_edit = QColorSwatchEdit(
-            initial_color=self._layers[0].current_edge_color,
+            initial_color=self._layer.current_edge_color,
             tooltip=tooltip,
         )
-        for layer in self._layers:
-            connect_setattr(
-                self.edge_color_edit.color_changed,
-                layer,
-                'current_edge_color',
-            )
-        self._callbacks.append(  # @lorenzo: does this trigger the widget to change? in that case I only do it for the first layer no? -> yes, @margot check other files and change there
+        connect_setattr(
+            self.edge_color_edit.color_changed,
+            self._layer,
+            'current_edge_color',
+        )
+        self._callbacks.append(
             attr_to_settr(
-                self._layers[0],
+                self._layer,
                 'current_edge_color',
                 self.edge_color_edit,
                 'setColor',

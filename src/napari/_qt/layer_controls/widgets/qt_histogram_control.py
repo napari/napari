@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from qtpy.QtWidgets import (
     QSizePolicy,
@@ -15,6 +15,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
+from napari.layers import Image
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -22,12 +23,11 @@ if TYPE_CHECKING:
     from napari._qt.widgets.qt_histogram_settings import (
         QtHistogramSettingsWidget,
     )
-    from napari.layers import Image, Surface
 
 
 class QtHistogramControl(QtWidgetControlsBase):
     """
-    Histogram control widget for IntensityMixin layers.
+    Histogram control widget for Image layers.
 
     This widget provides the lazily-created inline histogram content that is
     shown or hidden via the histogram button on the contrast limits control.
@@ -36,8 +36,8 @@ class QtHistogramControl(QtWidgetControlsBase):
     ----------
     parent : QWidget
         Parent widget, typically QtBaseImageControls.
-    layers : list[Image | Surface]
-        The napari Image or Surface layers.
+    layer : Image
+        The napari Image layer.
 
     Attributes
     ----------
@@ -51,8 +51,8 @@ class QtHistogramControl(QtWidgetControlsBase):
         Widget for histogram mode and log scale controls.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
-        super().__init__(parent, layers)
+    def __init__(self, parent: QWidget, layer: Image) -> None:
+        super().__init__(parent, layer)
 
         # Persistent container — always in the form layout, shown/hidden
         # via button toggle, never inserted/removed at runtime.
@@ -73,15 +73,14 @@ class QtHistogramControl(QtWidgetControlsBase):
         self.content_widget.setLayout(self._content_layout)
 
         # Bridge API-enabled changes to UI visibility.
-        for layer in self._layers:
-            layer.histogram.events.enabled.connect(
-                self._on_histogram_enabled_changed
-            )
+        layer.histogram.events.enabled.connect(
+            self._on_histogram_enabled_changed
+        )
 
     def _on_histogram_enabled_changed(self) -> None:
         """Show/hide histogram when enabled changes via the API."""
-
-        if self._layers[0].histogram.enabled:
+        layer = cast(Image, self._layer)
+        if layer.histogram.enabled:
             self.ensure_content()
             self.content_widget.show()
             self.content_widget.setSizePolicy(
@@ -101,7 +100,7 @@ class QtHistogramControl(QtWidgetControlsBase):
             return
 
         self.histogram_content = QtHistogramContentWidget(
-            layer=self._layers[0],
+            cast(Image, self._layer),
             parent=self.content_widget,
         )
         self._content_layout.addWidget(self.histogram_content)
@@ -115,8 +114,7 @@ class QtHistogramControl(QtWidgetControlsBase):
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect event handlers and clean up."""
-        for layer in self._layers:
-            disconnect_events(layer.histogram.events, self)
+        disconnect_events(cast(Image, self._layer).histogram.events, self)
         super().disconnect_widget_controls()
         if self.histogram_content is not None:
             self.histogram_content.cleanup()

@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QSlider,
@@ -13,10 +9,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from napari.layers import Tracks
 
 
 class QtHeadLengthSliderControl(QtWidgetControlsBase):
@@ -28,8 +22,8 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Tracks]
-        A list of napari Tracks layers.
+    layer : napari.layers.Tracks
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -39,32 +33,30 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
         Label for the head length chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
+        super().__init__(parent, layer)
         # Setup layer
-        for layer in self._layers:
-            layer.events.head_length.connect(self._on_head_length_change)
+        self._layer.events.head_length.connect(self._on_head_length_change)
 
         # Setup widgets
         # slider for track head length
         self.head_length_slider = QSlider(Qt.Orientation.Horizontal)
         self.head_length_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.head_length_slider.setMinimum(0)
-        self.head_length_slider.setMaximum(self._layers[0]._max_length)
+        self.head_length_slider.setMaximum(self._layer._max_length)
         self.head_length_slider.setSingleStep(1)
-        for layer in self._layers:
-            connect_setattr(
-                self.head_length_slider.valueChanged, layer, 'head_length'
-            )
+        connect_setattr(
+            self.head_length_slider.valueChanged, self._layer, 'head_length'
+        )
+
         self.head_length_slider_label = QtWrappedLabel('head length:')
 
     def _on_head_length_change(self) -> None:
         """Receive layer model track line width change event and update slider."""
         with qt_signals_blocked(self.head_length_slider):
-            value = self._layers[0].head_length
+            value = self._layer.head_length
             if value > self.head_length_slider.maximum():
-                self.head_length_slider.setMaximum(self._layers[0]._max_length)
+                self.head_length_slider.setMaximum(self._layer._max_length)
             self.head_length_slider.setValue(value)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:

@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import numpy as np
 from qtpy.QtWidgets import QComboBox, QWidget
 
@@ -10,10 +6,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Image, Labels
 from napari.utils.misc import human_readable_size
-
-if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
 
 
 def _format_level_label(
@@ -52,8 +46,8 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
     ----------
     parent : QWidget
         Parent widget.
-    layer : list[napari.layers.Layer]
-        A list of napari layers.
+    layer : Image | Labels
+        A napari layer with multiscale data (Image or Labels).
 
     Attributes
     ----------
@@ -63,33 +57,24 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         Label for the resolution combobox.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Image | Labels) -> None:
+        super().__init__(parent, layer)
+        self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
-        if all(
-            layer.multiscale
-            and np.array_equal(
-                layer.level_shapes, self._layers[0].level_shapes
-            )
-            for layer in self._layers
-        ):
+        if layer.multiscale:
             self._update_level_labels()
             self.level_combobox.currentIndexChanged.connect(
                 self._on_combobox_changed
             )
-            for layer in self._layers:
-                layer.events.locked_data_level.connect(
-                    self._on_locked_data_level_change
-                )
-                layer.events.data.connect(
-                    self._update_level_labels
-                )  # TODO: should this connection also happen when data is not multiscale
-                layer.events.set_data.connect(self._update_auto_label)
+            self._layer.events.locked_data_level.connect(
+                self._on_locked_data_level_change
+            )
+            self._layer.events.data.connect(self._update_level_labels)
+            self._layer.events.set_data.connect(self._update_auto_label)
             self.level_combobox.show()
             self.level_label.show()
         else:
@@ -102,9 +87,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             self.level_combobox.clear()
             self.level_combobox.addItem('Auto', None)
 
-            if all(layer.multiscale for layer in self._layers):
-                shapes = self._layers[0].level_shapes
-                itemsize = self._layers[0].dtype.itemsize
+            if self._layer.multiscale:
+                shapes = self._layer.level_shapes
+                itemsize = self._layer.dtype.itemsize
                 for i, shape in enumerate(shapes):
                     # Calculate size using full shape
                     nbytes = int(np.prod(shape) * itemsize)
@@ -113,7 +98,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                     self.level_combobox.addItem(label, i)
 
             # Reflect current locked state
-            locked = getattr(self._layers[0], '_locked_data_level', None)
+            locked = getattr(self._layer, '_locked_data_level', None)
             if locked is not None:
                 # +1 because index 0 is "Auto"
                 self.level_combobox.setCurrentIndex(locked + 1)
@@ -124,7 +109,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
 
     def _update_auto_label(self) -> None:
         """Update the 'Auto' entry to show the currently rendered level."""
-        label = f'Auto ({self._layers[0].data_level})'
+        label = f'Auto ({self._layer.data_level})'
         if self.level_combobox.itemText(0) != label:
             self.level_combobox.setItemText(0, label)
 
@@ -138,12 +123,11 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             "Auto" (``None``); higher indices map to resolution levels.
         """
         level = self.level_combobox.itemData(index)
-        for layer in self._layers:
-            layer.locked_data_level = level
+        self._layer.locked_data_level = level
 
     def _on_locked_data_level_change(self) -> None:
         """Sync the combobox when locked_data_level is set programmatically."""
-        locked = self._layers[0].locked_data_level
+        locked = self._layer.locked_data_level
         with qt_signals_blocked(self.level_combobox):
             if locked is not None:
                 self.level_combobox.setCurrentIndex(locked + 1)

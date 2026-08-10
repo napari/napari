@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import numpy as np
 from qtpy.QtWidgets import (
     QDoubleSpinBox,
@@ -13,9 +9,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import attr_to_settr
-
-if TYPE_CHECKING:
-    from napari.layers import Vectors
+from napari.layers import Vectors
 
 
 class QtWidthSpinBoxControl(QtWidgetControlsBase):
@@ -27,8 +21,8 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Vectors]
-        A list of napari Vectors layers.
+    layer : napari.layers.Vectors
+        An instance of a napari Vectors layer.
 
     Attributes
     ----------
@@ -38,9 +32,8 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         Label for the edge width of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Vectors) -> None:
+        super().__init__(parent, layer)
         # Setup widgets
         # line width in pixels
         self.width_spinbox = QDoubleSpinBox()
@@ -48,13 +41,11 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.setSingleStep(0.1)
         self.width_spinbox.setMinimum(0.01)
         self.width_spinbox.setMaximum(np.inf)
-        self.width_spinbox.setValue(self._layers[0].edge_width)
+        self.width_spinbox.setValue(self._layer.edge_width)
         self.width_spinbox.valueChanged.connect(self.change_width)
         self._callbacks.append(
             attr_to_settr(
-                self._layers[
-                    0
-                ],  # @lorenzo: either this is wrong or all the others are wrong. usually I loop but I think I should take first
+                self._layer,
                 'edge_width',
                 self.width_spinbox,
                 'setValue',
@@ -69,8 +60,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         value : float
             Line width of vectors.
         """
-        for layer in self._layers:
-            layer.edge_width = value
+        self._layer.edge_width = value
         self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()
@@ -100,21 +90,20 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         Label for line length of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Vectors) -> None:
+        super().__init__(parent, layer)
         # Setup widgets
         # line length
         self.length_spinbox = QDoubleSpinBox()
         self.length_spinbox.setKeyboardTracking(False)
         self.length_spinbox.setSingleStep(0.1)
-        self.length_spinbox.setValue(self._layers[0].length)
+        self.length_spinbox.setValue(self._layer.length)
         self.length_spinbox.setMinimum(0.1)
         self.length_spinbox.setMaximum(np.inf)
         self.length_spinbox.valueChanged.connect(self.change_length)
         self._callbacks.append(
             attr_to_settr(
-                self._layers[0],
+                self._layer,
                 'length',
                 self.length_spinbox,
                 'setValue',
@@ -130,8 +119,7 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         value : float
             Length of vectors.
         """
-        for layer in self._layers:
-            layer.length = value
+        self._layer.length = value
         self.length_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()

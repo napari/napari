@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
@@ -12,10 +8,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import checked_to_bool
+from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from napari.layers import Tracks
 
 
 class QtIdCheckBoxControl(QtWidgetControlsBase):
@@ -27,8 +21,8 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Tracks]
-        A list of napari Tracks layers.
+    layer : napari.layers.Tracks
+        An instance of a napari Tracks layer.
 
     Attributes
     ----------
@@ -38,21 +32,19 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
         Label for showing the id chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Tracks) -> None:
+        super().__init__(parent, layer)
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_id` attribute)
 
         # Setup widgets
         self.id_checkbox = QCheckBox()
-        for layer in self._layers:
-            connect_setattr(
-                self.id_checkbox.stateChanged,
-                layer,
-                'display_id',
-                convert_fun=checked_to_bool,
-            )
+        connect_setattr(
+            self.id_checkbox.stateChanged,
+            layer,
+            'display_id',
+            convert_fun=checked_to_bool,
+        )
 
         self.id_checkbox_label = QtWrappedLabel('show ID:')
 

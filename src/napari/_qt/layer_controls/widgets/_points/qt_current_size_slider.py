@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 import contextlib
-from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QWidget,
+)
 from superqt import QLabeledSlider
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
@@ -12,12 +12,8 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Points
 from napari.utils.events.event_utils import connect_setattr
-
-if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
-
-    from napari.layers import Points
 
 
 class QtCurrentSizeSliderControl(QtWidgetControlsBase):
@@ -29,8 +25,8 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Points]
-        A list of napari Points layers.
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
 
     Attributes
     ----------
@@ -40,14 +36,11 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Points]) -> None:
-        super().__init__(parent, layers)
+    def __init__(self, parent: QWidget, layer: Points) -> None:
+        super().__init__(parent, layer)
         # Setup layer
-        self._layers = layers
-
-        for layer in self._layers:
-            layer.events.size.connect(self._on_current_size_change)
-            layer.events.current_size.connect(self._on_current_size_change)
+        self._layer.events.size.connect(self._on_current_size_change)
+        self._layer.events.current_size.connect(self._on_current_size_change)
 
         # Setup widgets
         sld = QLabeledSlider(Qt.Orientation.Horizontal)
@@ -56,32 +49,25 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         )
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(1)
-        max_value = int(
-            np.max(
-                [
-                    layer.size.max()
-                    for layer in self._layers
-                    if layer.size.size
-                ],
-                initial=100,
-            )
-        )
+        if self._layer.size.size:
+            max_value = max(100, int(np.max(self._layer.size)) + 1)
+        else:
+            max_value = 100
         sld.setMaximum(max_value)
         sld.setSingleStep(1)
-        value = self._layers[0].current_size
+        value = self._layer.current_size
         sld.setValue(int(value))
         self.size_slider = sld
-        for layer in self._layers:
-            connect_setattr(
-                self.size_slider.valueChanged, layer, 'current_size'
-            )
+        connect_setattr(
+            self.size_slider.valueChanged, self._layer, 'current_size'
+        )
 
         self.size_slider_label = QtWrappedLabel('point size:')
 
     def _on_current_size_change(self) -> None:
         """Receive layer model size change event and update point size slider."""
         with qt_signals_blocked(self.size_slider):
-            value = self._layers[0].current_size
+            value = self._layer.current_size
             min_val = min(value) if isinstance(value, list) else value
             max_val = max(value) if isinstance(value, list) else value
             if min_val < self.size_slider.minimum():

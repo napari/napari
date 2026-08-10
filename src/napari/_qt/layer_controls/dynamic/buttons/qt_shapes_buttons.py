@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from napari._qt.layer_controls.qt_layer_buttons_base import QtLayerButtons
+from napari._qt.layer_controls.dynamic.buttons.qt_layer_buttons_base import (
+    QtLayerButtons,
+)
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.shapes._shapes_constants import Mode
 from napari.utils.action_manager import action_manager

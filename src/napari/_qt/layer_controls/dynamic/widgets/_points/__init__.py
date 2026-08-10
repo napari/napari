@@ -1,10 +1,10 @@
-from napari._qt.layer_controls.widgets._points.qt_border_color import (
+from napari._qt.layer_controls.dynamic.widgets._points.qt_border_color import (
     QtBorderColorControl,
 )
-from napari._qt.layer_controls.widgets._points.qt_current_size_slider import (
+from napari._qt.layer_controls.dynamic.widgets._points.qt_current_size_slider import (
     QtCurrentSizeSliderControl,
 )
-from napari._qt.layer_controls.widgets._points.qt_symbol_combobox import (
+from napari._qt.layer_controls.dynamic.widgets._points.qt_symbol_combobox import (
     QtSymbolComboBoxControl,
 )
 

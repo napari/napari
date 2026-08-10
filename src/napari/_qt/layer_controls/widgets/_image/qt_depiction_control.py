@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -16,11 +12,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
+from napari.layers import Image
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
-
-if TYPE_CHECKING:
-    from napari.layers import Image
 
 
 class PlaneNormalButtons(QWidget):
@@ -80,8 +74,8 @@ class QtDepictionControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layers : list[napari.layers.Image]
-        A list of napari Image layers.
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
 
     Attributes
     ----------
@@ -99,22 +93,20 @@ class QtDepictionControl(QtWidgetControlsBase):
         Label for the plane normal thickness value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, parent: QWidget, layer: Image) -> None:
+        super().__init__(parent, layer)
         # Setup layer
-        for layer in self._layers:
-            layer.events.depiction.connect(self._on_depiction_change)
-            layer.plane.events.thickness.connect(
-                self._on_plane_thickness_change
-            )
+        self._layer.events.depiction.connect(self._on_depiction_change)
+        self._layer.plane.events.thickness.connect(
+            self._on_plane_thickness_change
+        )
 
         # Setup widgets
         self.depiction_combobox = QComboBox(parent)
         depiction_options = [d.value for d in VolumeDepiction]
         self.depiction_combobox.addItems(depiction_options)
         index = self.depiction_combobox.findText(
-            self._layers[0].depiction, Qt.MatchFlag.MatchFixedString
+            self._layer.depiction, Qt.MatchFlag.MatchFixedString
         )
         self.depiction_combobox.setCurrentIndex(index)
         self.depiction_combobox.currentTextChanged.connect(
@@ -132,36 +124,31 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider.setFocusPolicy(Qt.NoFocus)
         self.plane_thickness_slider.setMinimum(1)
         self.plane_thickness_slider.setMaximum(50)
-        self.plane_thickness_slider.setValue(self._layers[0].plane.thickness)
+        self.plane_thickness_slider.setValue(self._layer.plane.thickness)
         self.plane_thickness_slider.valueChanged.connect(
             self.change_plane_thickness
         )
         self.plane_thickness_label = QtWrappedLabel('plane thickness:')
-        self._update_plane_parameter_visibility()
 
     def change_depiction(self, text: str) -> None:
-        for layer in self._layers:
-            layer.depiction = text
+        self._layer.depiction = text
         self._update_plane_parameter_visibility()
 
     def change_plane_thickness(self, value: float) -> None:
-        for layer in self._layers:
-            layer.plane.thickness = value
+        self._layer.plane.thickness = value
 
     def _on_depiction_change(self) -> None:
         """Receive layer model depiction change event and update combobox."""
         with qt_signals_blocked(self.depiction_combobox):
             index = self.depiction_combobox.findText(
-                self._layers[0].depiction, Qt.MatchFlag.MatchFixedString
+                self._layer.depiction, Qt.MatchFlag.MatchFixedString
             )
             self.depiction_combobox.setCurrentIndex(index)
             self._update_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self) -> None:
-        with qt_signals_blocked(self.plane_thickness_slider):
-            self.plane_thickness_slider.setValue(
-                self._layers[0].plane.thickness
-            )
+        with self._layer.plane.events.blocker():
+            self.plane_thickness_slider.setValue(self._layer.plane.thickness)
 
     def _on_display_change_hide(self) -> None:
         self.depiction_combobox.hide()
@@ -173,12 +160,12 @@ class QtDepictionControl(QtWidgetControlsBase):
 
     def _update_plane_parameter_visibility(self) -> None:
         """Hide plane rendering controls if they aren't needed."""
-        depiction = VolumeDepiction(self._layers[0].depiction)
+        depiction = VolumeDepiction(self._layer.depiction)
         # TODO: Better way to handle the ndisplay value?
         visible = (
             depiction == VolumeDepiction.PLANE
             and self.parent().ndisplay == 3
-            and self._layers[0].ndim >= 3
+            and self._layer.ndim >= 3
         )
         self.plane_normal_buttons.setVisible(visible)
         self.plane_normal_label.setVisible(visible)
