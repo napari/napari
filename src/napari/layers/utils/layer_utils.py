@@ -18,7 +18,6 @@ import numpy as np
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -190,10 +189,7 @@ def register_layer_attr_action(
             first_variable_name = next(iter(sig.parameters))
         except StopIteration as e:
             raise RuntimeError(
-                trans._(
-                    'If actions has no arguments there is no way to know what to set the attribute to.',
-                    deferred=True,
-                ),
+                'If actions has no arguments there is no way to know what to set the attribute to.',
             ) from e
 
         @functools.wraps(func)
@@ -395,7 +391,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     if in_kind == 'b':
         return data.astype(out_dtype) * 255
     if in_kind == 'f':
-        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        image_out = np.multiply(data, out_max)
         np.rint(image_out, out=image_out)
         np.clip(image_out, 0, out_max, out=image_out)
         image_out = np.nan_to_num(image_out, copy=False)
@@ -409,7 +405,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
                 out_dtype
             )
 
-        np.maximum(data, 0, out=data, dtype=data.dtype)
+        np.maximum(data, 0, out=data)
         if data.dtype == np.int8:
             return (data * 2).astype(np.uint8)
         if data.max() < out_max:
@@ -498,10 +494,7 @@ def validate_properties(
         expected_len = lens[0]
     if any(v != expected_len for v in lens):
         raise ValueError(
-            trans._(
-                'the number of items must be equal for all properties',
-                deferred=True,
-            )
+            'the number of items must be equal for all properties'
         )
 
     return {k: np.asarray(v) for k, v in properties.items()}
@@ -530,12 +523,7 @@ def _coerce_current_properties_value(
     """
     if isinstance(value, np.ndarray | list | tuple):
         if len(value) != 1:
-            raise ValueError(
-                trans._(
-                    'current_properties values should have length 1.',
-                    deferred=True,
-                )
-            )
+            raise ValueError('current_properties values should have length 1.')
         coerced_value = np.asarray(value)
     else:
         coerced_value = np.array([value])
@@ -575,10 +563,12 @@ def compute_multiscale_level(
     """Computed desired level of the multiscale given requested field of view.
 
     The level of the multiscale should be the lowest resolution such that
-    the requested shape is above the shape threshold. By passing a shape
-    threshold corresponding to the shape of the canvas on the screen this
+    the requested shape exceeds the shape threshold in the dimensions that
+    contribute to level selection. Dimensions that already fit within the
+    canvas or are not downsampled across pyramid levels are ignored. By
+    passing a shape threshold corresponding to the size of the canvas, this
     ensures that we have at least one data pixel per screen pixel, but no
-    more than we need.
+    more than necessary.
 
     Parameters
     ----------
@@ -595,13 +585,26 @@ def compute_multiscale_level(
     level : int
         Level of the multiscale to be viewing.
     """
+
     # Scale shape by downsample factors
     scaled_shape = requested_shape / downsample_factors
 
-    # Find the highest level (lowest resolution) allowed
-    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    level = locations[-1][0] if len(locations) > 0 else 0
-    return level
+    # Find the highest level (lowest resolution) allowed, ignoring dimensions
+    # that already fit within the canvas or are not downsampled.
+    exceeds_threshold = requested_shape > shape_threshold
+    is_downsampled = np.any(downsample_factors > 1, axis=0)
+    active_dims = exceeds_threshold & is_downsampled
+
+    if not np.any(active_dims):
+        return 0
+
+    locations = np.flatnonzero(
+        np.all(
+            (scaled_shape > shape_threshold)[:, active_dims],
+            axis=1,
+        )
+    )
+    return int(locations[-1]) if locations.size else 0
 
 
 def compute_multiscale_level_and_corners(
@@ -677,11 +680,7 @@ def coerce_affine(
         affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
-            trans._(
-                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
-                deferred=True,
-                dtype=type(affine),
-            )
+            f'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {type(affine)}'
         )
     if name is not None:
         affine.name = name
@@ -753,11 +752,8 @@ def get_extent_world(
     """
     if centered is not None:
         warnings.warn(
-            trans._(
-                'The `centered` argument is deprecated. '
-                'Extents are now always centered on data points.',
-                deferred=True,
-            ),
+            'The `centered` argument is deprecated. '
+            'Extents are now always centered on data points.',
             stacklevel=2,
         )
 
@@ -1048,20 +1044,12 @@ def _validate_feature_defaults(
         extra_defaults = default_columns - value_columns
         if len(extra_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults contain some extra columns not in feature values: {extra_defaults}',
-                    deferred=True,
-                    extra_defaults=extra_defaults,
-                )
+                f'Feature defaults contain some extra columns not in feature values: {extra_defaults}'
             )
         missing_defaults = value_columns - default_columns
         if len(missing_defaults) > 0:
             raise ValueError(
-                trans._(
-                    'Feature defaults is missing some columns in feature values: {missing_defaults}',
-                    deferred=True,
-                    missing_defaults=missing_defaults,
-                )
+                f'Feature defaults is missing some columns in feature values: {missing_defaults}'
             )
         # Convert to series first to capture the per-column dtype from values,
         # since the DataFrame initializer does not support passing multiple dtypes.

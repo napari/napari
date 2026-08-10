@@ -7,7 +7,6 @@ import numpy as np
 
 from napari.utils.colormaps import Colormap
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers.utils.color_manager import ColorManager
@@ -55,17 +54,14 @@ def is_color_mapped(color, properties):
         return False
 
     raise ValueError(
-        trans._(
-            'face_color should be the name of a color, an array of colors, or the name of an property',
-            deferred=True,
-        )
+        'face_color should be the name of a color, an array of colors, or the name of an property'
     )
 
 
 def map_property(
     prop: np.ndarray,
     colormap: Colormap,
-    contrast_limits: None | tuple[float, float] = None,
+    contrast_limits: tuple[float, float] | None = None,
 ) -> tuple[Array, tuple[float, float]]:
     """Apply a colormap to a property
 

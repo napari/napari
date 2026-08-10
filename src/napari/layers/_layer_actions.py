@@ -16,7 +16,6 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.components import LayerList
@@ -27,7 +26,7 @@ def _duplicate_layer(ll: LayerList, *, name: str = '') -> None:
 
     for lay in list(ll.selection):
         data, state, type_str = lay.as_layer_data_tuple()
-        state['name'] = trans._('{name} copy', name=lay.name)
+        state['name'] = f'{lay.name} copy'
         with layer_source(parent=lay):
             new = Layer.create(deepcopy(data), state, type_str)
         ll.insert(ll.index(lay) + 1, new)
@@ -83,12 +82,7 @@ def _convert(ll: LayerList, type_: str) -> None:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:
             warnings.warn(
-                trans._(
-                    'projection mode "{mode}" is not compatible with {type_} layers. Falling back to "none".',
-                    mode=state['projection_mode'],
-                    type_=type_.title(),
-                    deferred=True,
-                ),
+                f'projection mode "{state["projection_mode"]}" is not compatible with {type_.title()} layers. Falling back to "none".',
                 category=UserWarning,
                 stacklevel=1,
             )
@@ -185,10 +179,7 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
 
     if not isinstance(layer, Labels):
         raise NotImplementedError(
-            trans._(
-                'Data type conversion only implemented for labels',
-                deferred=True,
-            )
+            'Data type conversion only implemented for labels'
         )
 
     target_dtype = np.dtype(mode)
@@ -197,10 +188,7 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
         or np.max(layer.data) > np.iinfo(target_dtype).max
     ):
         raise AssertionError(
-            trans._(
-                'Labeling contains values outside of the target data type range.',
-                deferred=True,
-            )
+            'Labeling contains values outside of the target data type range.'
         )
 
     layer.data = layer.data.astype(np.dtype(mode))
@@ -212,9 +200,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
         return
     if not isinstance(layer, Image):
         raise NotImplementedError(
-            trans._(
-                'Projections are only implemented for images', deferred=True
-            )
+            'Projections are only implemented for images'
         )
 
     # this is not the desired behavior for coordinate-based layers
@@ -271,10 +257,7 @@ def _toggle_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'colorbar'):
             raise NotImplementedError(
-                trans._(
-                    'Colorbar is only implemented for Images and Surfaces',
-                    deferred=True,
-                )
+                'Colorbar is only implemented for Images and Surfaces'
             )
         layer.colorbar.visible = not layer.colorbar.visible
 
@@ -283,10 +266,7 @@ def _toggle_face_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'face_colorbar'):
             raise NotImplementedError(
-                trans._(
-                    'Face Colorbar is only implemented for Points',
-                    deferred=True,
-                )
+                'Face Colorbar is only implemented for Points'
             )
         layer.face_colorbar.visible = not layer.face_colorbar.visible
 
@@ -295,10 +275,7 @@ def _toggle_border_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'border_colorbar'):
             raise NotImplementedError(
-                trans._(
-                    'Border Colorbar is only implemented for Points',
-                    deferred=True,
-                )
+                'Border Colorbar is only implemented for Points'
             )
         layer.border_colorbar.visible = not layer.border_colorbar.visible
 
