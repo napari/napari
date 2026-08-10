@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -148,7 +149,7 @@ class QtReaderDialog(QDialog):
 def handle_gui_reading(
     paths: list[str],
     qt_viewer,
-    stack: bool | list[list[str]],
+    stack: bool | list[list[str | Path]],
     plugin_name: str | None = None,
     error: ReaderPluginError | None = None,
     plugin_override: bool = False,
