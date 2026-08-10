@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from qtpy.QtWidgets import QFormLayout
+
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets import (
     QtColormapControl,
@@ -55,8 +57,10 @@ class QtBaseImageControls(QtLayerControls):
             # Insert the histogram content widget into the form layout once.
             # It starts hidden and is shown/hidden by the histogram button
             # toggle — never inserted/removed at runtime.
-            self.layout().insertRow(
-                self.layout().rowCount() - 1,
+            layout = self.layout()
+            assert isinstance(layout, QFormLayout)
+            layout.insertRow(
+                layout.rowCount() - 1,
                 self._histogram_control.content_widget,
             )
         self._colormap_control = QtColormapControl(self, layer)
