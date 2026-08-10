@@ -250,21 +250,12 @@ QtDimSliderWidget > QLineEdit {
 /* ------------- Guided viewer tour ------------- */
 
 #qt_viewer_tour_tooltip {
-  background: {{ background }};
   border: 1px solid {{ foreground }};
   border-radius: 5px;
 }
 
-#qt_viewer_tour_tooltip QLabel {
-  color: {{ text }};
-  background: transparent;
-  border: none;
-}
-
 #qt_viewer_tour_tooltip QPushButton {
   background: {{ secondary }};
-  color: {{ text }};
-  border: none;
   border-radius: 3px;
   padding: 5px 12px;
 }
