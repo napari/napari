@@ -49,13 +49,13 @@ def test_angles():
     viewer.dims.ndim = 3
     viewer.dims.ndisplay = 3
 
-    viewer.camera.angles = (0, 0, 0)
+    viewer.scene.camera.angles = (0, 0, 0)
 
     _assert_quat_equal(
         axes_view.node.camera._quaternion, Quaternion(0.707, 0.707, 0, 0)
     )
 
-    viewer.camera.angles = (-45, 0, -45)
+    viewer.scene.camera.angles = (-45, 0, -45)
 
     _assert_quat_equal(
         axes_view.node.camera._quaternion,
@@ -65,7 +65,7 @@ def test_angles():
     # we have z flip by default
     assert axes_view.node.camera.flip == (False, False, True)
     # changing flip affects flip and quaternion
-    viewer.camera.orientation = ('away', 'down', 'right')
+    viewer.scene.camera.orientation = ('away', 'down', 'right')
     axes_view.node.camera.flip = (False, False, False)
     _assert_quat_equal(
         axes_view.node.camera._quaternion,

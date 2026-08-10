@@ -56,7 +56,7 @@ viewer.dims.set_point(0, time_point)
 
 # latitude goes from -90 (south, down) to 90 (north, up),
 # so we make sure that the camera vertical axis points up.
-viewer.camera.orientation2d = ('up', 'right')
+viewer.scene.camera.orientation2d = ('up', 'right')
 viewer.canvas.overlays.scale_bar.visible = True
 
 # fill the frame
