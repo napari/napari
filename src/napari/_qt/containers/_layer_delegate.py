@@ -41,7 +41,6 @@ from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
     QEvent,
-    QModelIndex,
     QPoint,
     QRect,
     QSize,
@@ -67,7 +66,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from qtpy import QtCore
-    from qtpy.QtCore import QAbstractItemModel
+    from qtpy.QtCore import QAbstractItemModel, QModelIndex
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
@@ -221,7 +220,6 @@ class LayerDelegate(QStyledItemDelegate):
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> QRect:
         """Return the QRect for the lock icon."""
-        from qtpy.QtCore import QRect
 
         rect = option.rect
         icon_size = 16
