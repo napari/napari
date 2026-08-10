@@ -30,8 +30,8 @@ class Scene(EventedModel):
     #       thinks EventedDictNamespace[AxesOverlay] is not a subtype
     #       of EventedDictNamespace[SceneOverlay]. This will not be necessary
     #       as soon as we add any other overlay
-    overlays: EventedDictNamespace[SceneOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(  # type: ignore
+    overlays: EventedDictNamespace[SceneOverlay] = Field(  # type: ignore[ty:invalid-assignment]
+        default_factory=lambda: EventedDictNamespace(
             {
                 'axes': AxesOverlay(),
             }
