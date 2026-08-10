@@ -474,8 +474,8 @@ def test_edge_color_cycle_default():
 
     assert layer.edge_color_mode == 'cycle'
     assert len(np.unique(layer.edge_color, axis=0)) > 1
-    
-    
+
+
 def test_switching_edge_color_mode_back_to_direct():
     """Setting the mode to direct takes the layer out of a feature mapping.
 
