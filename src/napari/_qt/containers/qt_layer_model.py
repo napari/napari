@@ -29,6 +29,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if not index.isValid():
             return None
         layer = self.getItem(index)
+        assert isinstance(layer, Layer)
         layer_loaded = layer._slicing_state.loaded
         # Playback with async slicing causes flickering between the thumbnail
         # and loading animation in some cases due quick changes in the loaded
@@ -82,22 +83,20 @@ class QtLayerListModel(QtListModel[Layer]):
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
+        layer = self.getItem(index)
+        assert isinstance(layer, Layer)
         if role == Qt.ItemDataRole.CheckStateRole:
             # The item model stores a Qt.CheckState enum value that can be
             # partially checked, but we only use the unchecked and checked
             # to correspond to the layer's visibility.
             # https://doc.qt.io/qt-5/qt.html#CheckState-enum
-            self.getItem(index).visible = (
-                Qt.CheckState(value) == Qt.CheckState.Checked
-            )
+            layer.visible = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == LockedRole:
-            self.getItem(index).locked = (
-                LayerLock.ALL if value else LayerLock.NONE
-            )
+            layer.locked = LayerLock.ALL if value else LayerLock.NONE
             self.dataChanged.emit(index, index, [LockedRole])
             return True
         elif role == Qt.ItemDataRole.EditRole:
-            self.getItem(index).name = value
+            layer.name = value
             role = Qt.ItemDataRole.DisplayRole
         else:
             return super().setData(index, value, role=role)
