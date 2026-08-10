@@ -86,13 +86,7 @@ def test_home_view_matches_base_directions(orientation):
     ],
 )
 def test_single_angle_rotation_axis(angle_index, axis_component):
-    """A single nonzero angle must rotate the camera about the expected axis.
-
-    Each Euler angle rotates the camera about a specific displayed dimension:
-    rx about the depth (dim0), ry about the vertical (dim1), and rz about the
-    horizontal (dim2) axis. The ``axis_component`` is the index of that axis in
-    napari (zyx) coordinates.
-    """
+    """A single nonzero angle must rotate the camera about the expected axis."""
     orientation = ('towards', 'down', 'right')
 
     def camera_basis(angles):
