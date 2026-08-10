@@ -343,8 +343,27 @@ def resolve_tour_target(qt_window: _QtMainWindow, name: str) -> QWidget | None:
     return widget.native
 
 
-def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
+def build_viewer_tour(
+    window: _QtMainWindow,
+    *,
+    sample: tuple[str, str] | None = ('napari', 'balls_3d'),
+) -> GuidedTour:
+    """Build napari's built-in guided viewer tour.
+
+    Parameters
+    ----------
+    window : _QtMainWindow
+        The main window to build the tour for.
+    sample : tuple[str, str] | None, default: ('napari', 'balls_3d')
+        Plugin and sample names to load via ``viewer.open_sample`` if the
+        viewer has no layers yet, so the dims-slider step has something to
+        show. Pass a different ``(plugin, sample)`` pair to demo the tour
+        against other data, or ``None`` to skip loading sample data
+        entirely (e.g. when the viewer already has data loaded).
+    """
     viewer = window._qt_viewer.viewer
+    if sample is not None and not viewer.layers:
+        viewer.open_sample(*sample)
 
     def target(name: str) -> Callable[[], QWidget | None]:
         return partial(resolve_tour_target, window, name)

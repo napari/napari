@@ -198,11 +198,7 @@ def test_tour_current_step_unchanged_when_target_becomes_hidden(qtbot):
 def test_start_viewer_tour():
     tour = mock.Mock()
     qt_window = SimpleNamespace(_viewer_tour=None)
-    viewer = SimpleNamespace(layers=[], open_sample=mock.Mock())
-    window = SimpleNamespace(
-        _qt_window=qt_window,
-        _qt_viewer=SimpleNamespace(viewer=viewer),
-    )
+    window = SimpleNamespace(_qt_window=qt_window)
 
     with mock.patch(
         'napari._qt._qapp_model.qactions._help.build_viewer_tour',
@@ -211,7 +207,6 @@ def test_start_viewer_tour():
         _start_viewer_tour(window)
         _start_viewer_tour(window)
 
-    viewer.open_sample.assert_called_once_with('napari', 'balls_3d')
     mock_build_tour.assert_called_once_with(qt_window)
     tour.finished.connect.assert_called_once()
     tour.start.assert_called_once()
@@ -219,3 +214,46 @@ def test_start_viewer_tour():
 
     tour.finished.connect.call_args.args[0]()
     assert qt_window._viewer_tour is None
+
+
+def test_start_viewer_tour_accepts_custom_tour():
+    custom_tour = mock.Mock()
+    qt_window = SimpleNamespace(_viewer_tour=None)
+    window = SimpleNamespace(_qt_window=qt_window)
+
+    with mock.patch(
+        'napari._qt._qapp_model.qactions._help.build_viewer_tour',
+    ) as mock_build_tour:
+        _start_viewer_tour(window, tour=custom_tour)
+
+    mock_build_tour.assert_not_called()
+    custom_tour.finished.connect.assert_called_once()
+    custom_tour.start.assert_called_once()
+    assert qt_window._viewer_tour is custom_tour
+
+
+@pytest.mark.parametrize(
+    ('has_layers', 'pass_sample', 'expect_loaded'),
+    [
+        (False, True, True),  # no layers, sample given -> loads it
+        (True, True, False),  # layers already present -> skips loading
+        (False, False, False),  # sample=None -> never loads
+    ],
+)
+def test_build_viewer_tour_sample(
+    make_napari_viewer, tmp_plugin, has_layers, pass_sample, expect_loaded
+):
+    @tmp_plugin.contribute.sample_data(key='fake')
+    def _generate_fake_data():
+        return [(np.zeros((4, 4, 4)), {'name': 'fake'})]
+
+    viewer = make_napari_viewer()
+    if has_layers:
+        viewer.add_image(np.zeros((4, 4)))
+    n_layers_before = len(viewer.layers)
+
+    sample = (tmp_plugin.name, 'fake') if pass_sample else None
+    build_viewer_tour(viewer.window._qt_window, sample=sample)
+
+    n_new_layers = len(viewer.layers) - n_layers_before
+    assert (n_new_layers > 0) is expect_loaded
