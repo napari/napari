@@ -58,9 +58,13 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.dims.events.axis_labels.connect(
             self._on_labels_text_change
         )
-        self.viewer.camera.events.angles.connect(self._on_angles_change)
-        self.viewer.camera.events.orientation.connect(self._on_angles_change)
-        self.viewer.camera.events.orientation2d.connect(self._on_angles_change)
+        self.viewer.scene.camera.events.angles.connect(self._on_angles_change)
+        self.viewer.scene.camera.events.orientation.connect(
+            self._on_angles_change
+        )
+        self.viewer.scene.camera.events.orientation2d.connect(
+            self._on_angles_change
+        )
 
         self.reset()
 
@@ -107,7 +111,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         # ensure camera flip is the same as napari camera
         ndisplay = self.viewer.dims.ndisplay
         flipped_axes = _get_vispy_flipped_axes(
-            self.viewer.camera.orientation, ndisplay=ndisplay
+            self.viewer.scene.camera.orientation, ndisplay=ndisplay
         )
         self.node.camera.flip = list(flipped_axes)
 
@@ -122,7 +126,7 @@ class VispyFloatingAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             )
         else:
             quat = napari_angles_to_vispy_quat(
-                self.viewer.camera.angles, flipped_axes
+                self.viewer.scene.camera.angles, flipped_axes
             )
             self.node.camera.set_state(
                 _quaternion=quat,
