@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
-from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter, QPen
+from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -14,7 +14,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.theme import get_theme
 from napari.utils.translations import trans
 
 if TYPE_CHECKING:
@@ -161,11 +160,10 @@ class _TourTooltip(QFrame):
 
 
 class _TourOverlay(QWidget):
-    def __init__(self, parent: QWidget, *, accent_color: str) -> None:
+    def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._spotlight: QRect | None = None
-        self._accent_color = accent_color
 
     def set_spotlight(self, rect: QRect | None) -> None:
         self._spotlight = rect
@@ -196,26 +194,18 @@ class _TourOverlay(QWidget):
             rect.height(),
             overlay,
         )
-        pen = QPen(QColor(self._accent_color), 2)
-        painter.setPen(pen)
-        painter.drawRect(rect)
 
 
 class GuidedTour(QObject):
     finished = Signal()
 
-    def __init__(
-        self, steps: list[TourStep], parent_window: QWidget, *, theme_name: str
-    ) -> None:
+    def __init__(self, steps: list[TourStep], parent_window: QWidget) -> None:
         super().__init__(parent_window)
         self._steps = steps
         self._window: QWidget | None = parent_window
         self._current = 0
         self._active = False
-        theme = get_theme(theme_name).to_rgb_dict()
-        self._overlay = _TourOverlay(
-            parent_window, accent_color=theme['primary']
-        )
+        self._overlay = _TourOverlay(parent_window)
         self._tooltip = _TourTooltip(parent_window)
         self._tooltip.next_clicked.connect(self._on_next)
         self._tooltip.back_clicked.connect(self._on_back)
@@ -374,5 +364,4 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
             ),
         ],
         window,
-        theme_name=qt_viewer.viewer.theme,
     )
