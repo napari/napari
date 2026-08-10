@@ -455,7 +455,5 @@ def test_multiscale_to_singlescale_projection(mode):
     assert multiscale_layer.data_level == 1
     assert np.array_equal(
         projected_layer.data,
-        getattr(np, mode)(
-            multiscale_layer.data[multiscale_layer.data_level], axis=0
-        ),
+        getattr(np, mode)(multiscale_layer.data[0], axis=0),
     )
