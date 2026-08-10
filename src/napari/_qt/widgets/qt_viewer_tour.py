@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
@@ -24,12 +25,19 @@ if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
 
 
+class TourAnchor(Enum):
+    LEFT = 'left'
+    RIGHT = 'right'
+    ABOVE = 'above'
+    BELOW = 'below'
+
+
 @dataclass(frozen=True)
 class TourStep:
     target: Callable[[], QWidget | None]
     title: str
     body: str
-    anchor: str = 'right'
+    anchor: TourAnchor = TourAnchor.RIGHT
     skip: Callable[[], bool] = lambda: False
 
 
@@ -137,17 +145,19 @@ class _TourTooltip(QFrame):
             return
         super().keyPressEvent(event)
 
-    def place(self, target_rect: QRect, anchor: str, bounds: QRect) -> None:
+    def place(
+        self, target_rect: QRect, anchor: TourAnchor, bounds: QRect
+    ) -> None:
         gap = 12
         w, h = self.width(), self.height()
-        if anchor == 'left':
+        if anchor == TourAnchor.LEFT:
             x, y = target_rect.left() - w - gap, target_rect.top()
-        elif anchor == 'above':
+        elif anchor == TourAnchor.ABOVE:
             x, y = (
                 target_rect.center().x() - w // 2,
                 target_rect.top() - h - gap,
             )
-        elif anchor == 'below':
+        elif anchor == TourAnchor.BELOW:
             x, y = (
                 target_rect.center().x() - w // 2,
                 target_rect.bottom() + gap,
@@ -311,7 +321,7 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                     'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
                     'and reopen this tour from Help any time.'
                 ),
-                anchor='below',
+                anchor=TourAnchor.BELOW,
             ),
             TourStep(
                 target=lambda: qt_viewer.dockLayerList,
@@ -340,7 +350,7 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 body=trans._(
                     'Use these for grid mode, 2D/3D display, axis order, and resetting the camera with the home button.'
                 ),
-                anchor='above',
+                anchor=TourAnchor.ABOVE,
             ),
             TourStep(
                 target=lambda: qt_viewer.dims,
@@ -348,7 +358,7 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 body=trans._(
                     'Extra dimensions show up here. Move through slices, or press play on a slider to animate along that axis.'
                 ),
-                anchor='above',
+                anchor=TourAnchor.ABOVE,
                 skip=lambda: (
                     qt_viewer.viewer.dims.ndim
                     <= qt_viewer.viewer.dims.ndisplay
@@ -360,7 +370,7 @@ def build_viewer_tour(window: _QtMainWindow) -> GuidedTour:
                 body=trans._(
                     'The status bar reports cursor position, values under the mouse, and small context-sensitive hints while you interact.'
                 ),
-                anchor='above',
+                anchor=TourAnchor.ABOVE,
             ),
         ],
         window,
