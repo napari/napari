@@ -12,7 +12,12 @@ from qtpy.QtWidgets import QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
-from napari._qt.widgets.qt_viewer_tour import _TourTooltip, build_viewer_tour
+from napari._qt.widgets.qt_viewer_tour import (
+    GuidedTour,
+    TourStep,
+    _TourTooltip,
+    build_viewer_tour,
+)
 
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
@@ -76,6 +81,37 @@ def test_tour_skips_dims_step_without_extra_dims(
         index = tour._seek(index + 1, 1)
 
     assert ('Dimension sliders' in titles) is expect_dims_step
+
+
+def test_tour_skips_missing_target(qtbot):
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.resize(640, 480)
+    window.show()
+
+    first = QWidget(window)
+    first.setGeometry(0, 0, 50, 50)
+    first.show()
+    last = QWidget(window)
+    last.setGeometry(60, 0, 50, 50)
+    last.show()
+
+    tour = GuidedTour(
+        [
+            TourStep(target=lambda: first, title='First', body=''),
+            TourStep(target=lambda: None, title='Missing', body=''),
+            TourStep(target=lambda: last, title='Last', body=''),
+        ],
+        window,
+    )
+    qtbot.addWidget(tour._tooltip)
+    qtbot.addWidget(tour._overlay)
+    tour.start()
+    qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'First')
+
+    tour._on_next()
+    assert tour._steps[tour._current].title == 'Last'
+    tour.close_tour()
 
 
 def test_start_viewer_tour():

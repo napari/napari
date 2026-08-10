@@ -260,9 +260,13 @@ class GuidedTour(QObject):
             self._show_step(self._current)
         return super().eventFilter(watched, event)
 
+    @staticmethod
+    def _is_available(step: TourStep) -> bool:
+        return not step.skip() and step.target() is not None
+
     def _seek(self, index: int, direction: int) -> int | None:
         while 0 <= index < len(self._steps):
-            if not self._steps[index].skip():
+            if self._is_available(self._steps[index]):
                 return index
             index += direction
         return None
@@ -287,7 +291,9 @@ class GuidedTour(QObject):
         target = step.target()
         if target is None or not target.isVisible():
             return
-        visible = [i for i, s in enumerate(self._steps) if not s.skip()]
+        visible = [
+            i for i, s in enumerate(self._steps) if self._is_available(s)
+        ]
         top_left = target.mapTo(self._window, QPoint(0, 0))
         rect = QRect(top_left, target.size())
         self._overlay.setGeometry(self._window.rect())
