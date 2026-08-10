@@ -103,8 +103,8 @@ viewer.add_vectors(
   edge_width=3,
 )
 
-viewer.camera.angles = (0,0,-97)
-viewer.camera.orientation = ('away','up','right')
+viewer.scene.camera.angles = (0,0,-97)
+viewer.scene.camera.orientation = ('away','up','right')
 viewer.dims.current_step = (11,199, 124, 124)
 viewer.fit_to_view()
 

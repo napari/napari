@@ -10,6 +10,7 @@ from napari.layers.utils.layer_utils import (
     calc_data_range,
     coerce_current_properties,
     compute_multiscale_level,
+    convert_to_uint8,
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     get_current_properties,
@@ -561,3 +562,22 @@ def test_register_label_attr_action(monkeypatch):
     monkeypatch.setattr(time, 'time', lambda: 2)
     assert handler.release_key('K')
     assert foo.value == 0
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    [
+        '>f4',  # big-endian float32 (non-native on little-endian machines)
+        '>i2',  # big-endian int16  (non-native on little-endian machines)
+    ],
+)
+def test_convert_to_uint8_non_native_byte_order(dtype):
+    """convert_to_uint8 must not raise TypeError for non-native-endian arrays.
+
+    np.multiply and np.maximum reject byte-order-qualified dtype arguments.
+    Passing dtype=data.dtype to either ufunc when data has a non-native byte
+    order raises TypeError. See https://github.com/napari/napari/issues/9144.
+    """
+    data = np.arange(6, dtype=dtype).reshape(2, 3)
+    result = convert_to_uint8(data)
+    assert result.dtype == np.uint8
