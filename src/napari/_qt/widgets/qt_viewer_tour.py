@@ -286,11 +286,11 @@ class GuidedTour(QObject):
     def _show_step(self, index: int) -> None:
         if self._window is None:
             return
-        self._current = index
         step = self._steps[index]
         target = step.target()
         if target is None or not target.isVisible():
             return
+        self._current = index
         visible = [
             i for i, s in enumerate(self._steps) if self._is_available(s)
         ]

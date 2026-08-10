@@ -114,6 +114,37 @@ def test_tour_skips_missing_target(qtbot):
     tour.close_tour()
 
 
+def test_tour_current_step_unchanged_when_target_becomes_hidden(qtbot):
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.resize(640, 480)
+    window.show()
+
+    first = QWidget(window)
+    first.setGeometry(0, 0, 50, 50)
+    first.show()
+    second = QWidget(window)
+    second.setGeometry(60, 0, 50, 50)
+    second.show()
+
+    tour = GuidedTour(
+        [
+            TourStep(target=lambda: first, title='First', body=''),
+            TourStep(target=lambda: second, title='Second', body=''),
+        ],
+        window,
+    )
+    qtbot.addWidget(tour._tooltip)
+    qtbot.addWidget(tour._overlay)
+    tour.start()
+    qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'First')
+
+    second.hide()
+    tour._on_next()
+    assert tour._steps[tour._current].title == 'First'
+    tour.close_tour()
+
+
 def test_start_viewer_tour():
     tour = mock.Mock()
     qt_window = SimpleNamespace(_viewer_tour=None)
