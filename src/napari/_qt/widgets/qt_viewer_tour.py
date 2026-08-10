@@ -42,7 +42,7 @@ class TourStep:
     skip: Callable[[], bool] = lambda: False
 
 
-_TOOLTIP_MAX_WIDTH = 420
+_TOOLTIP_WIDTH = 340
 
 
 class _TourTooltip(QFrame):
@@ -95,11 +95,8 @@ class _TourTooltip(QFrame):
         layout = self.layout()
         if layout is None:
             return
-        parent = self.parentWidget()
-        window_width = parent.width() if parent is not None else 900
-        width = min(_TOOLTIP_MAX_WIDTH, max(280, window_width // 3))
-        self.setFixedWidth(width)
-        self.setFixedHeight(layout.heightForWidth(width))
+        self.setFixedWidth(_TOOLTIP_WIDTH)
+        self.setFixedHeight(layout.heightForWidth(_TOOLTIP_WIDTH))
         layout.activate()
 
     def set_content(
