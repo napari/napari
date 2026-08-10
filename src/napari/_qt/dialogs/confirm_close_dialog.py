@@ -37,7 +37,7 @@ class ConfirmCloseDialog(QDialog):
             text = (
                 'Do you want to close the application? '
                 f"('{QKeySequence('Ctrl+Q').toString(QKeySequence.SequenceFormat.NativeText)}' to confirm). "
-                'This will close all Qt Windows in this process{extra_info}'
+                f'This will close all Qt Windows in this process{extra_info}'
             )
             close_btn.setObjectName('error_icon_btn')
             close_btn.setShortcut(QKeySequence('Ctrl+Q'))
