@@ -42,6 +42,12 @@ def test_colormap(name):
     np.testing.assert_almost_equal(colors, vispy_colors, decimal=6)
 
 
+def test_nan_colormap_maps_nan_to_red():
+    np.testing.assert_array_equal(
+        AVAILABLE_COLORMAPS['nan'].map(np.nan), [[1.0, 0.0, 0.0, 1.0]]
+    )
+
+
 def test_increment_unnamed_colormap():
     # test that unnamed colormaps are incremented
     names = [
