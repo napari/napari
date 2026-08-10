@@ -263,6 +263,10 @@ class Shapes(Layer):
         ``drawing_started`` and ``drawing_finished`` events fire at its
         boundaries. Unlike ``mode`` (which stays on an ``add_*`` value before,
         during and after a draw) this tracks the actual construction window.
+
+        .. versionadded:: 0.9.0
+            ``is_creating`` and the ``drawing_started`` / ``drawing_finished``
+            events were added in 0.9.0.
     mode : Mode
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1321,6 +1325,8 @@ class Shapes(Layer):
         stays on an ``add_*`` value before, during and after a draw, this
         tracks the actual construction window. The ``drawing_started`` and
         ``drawing_finished`` events fire at its boundaries.
+
+        .. versionadded:: 0.9.0
         """
         return self._is_creating
 
