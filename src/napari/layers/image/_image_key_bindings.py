@@ -39,22 +39,28 @@ def auto_contrast_once(layer: Image) -> None:
     layer.reset_contrast_limits()
 
 
+# TODO: how to make these 4 actions only work for `Selection[Image]`?
+#       Doesn't work cause Selection[Image] is technically not a subtype
+#       of `Selection[Layer]`...
 @register_image_action('Orient plane normal along z-axis')
 def orient_plane_normal_along_z(layers: Selection[Layer]) -> None:
     for layer in layers:
-        orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
+        if isinstance(layer, Image):
+            orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
 
 
 @register_image_action('Orient plane normal along y-axis')
 def orient_plane_normal_along_y(layers: Selection[Layer]) -> None:
     for layer in layers:
-        orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
+        if isinstance(layer, Image):
+            orient_plane_normal_around_cursor(layer, plane_normal=(0, 1, 0))
 
 
 @register_image_action('Orient plane normal along x-axis')
 def orient_plane_normal_along_x(layers: Selection[Layer]) -> None:
     for layer in layers:
-        orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
+        if isinstance(layer, Image):
+            orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
 @register_image_action(
@@ -95,9 +101,10 @@ def orient_plane_normal_along_view_direction_no_gen(
     if viewer is None or viewer.dims.ndisplay != 3:
         return
     for layer in layers:
-        layer.plane.normal = layer._world_to_displayed_data_normal(
-            viewer.camera.view_direction, [-3, -2, -1]
-        )
+        if isinstance(layer, Image):
+            layer.plane.normal = layer._world_to_displayed_data_normal(
+                viewer.camera.view_direction, [-3, -2, -1]
+            )
 
 
 # register the non-generator without a keybinding
