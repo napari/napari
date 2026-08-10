@@ -236,7 +236,7 @@ def test_histogram_widget_responds_to_viewer_theme_toggle(
     layer = viewer.add_image(
         np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
     )
-    controls = viewer.window._qt_viewer.controls.widgets[layer]
+    controls = viewer.window._qt_viewer.controls.panels[layer]
     controls._histogram_control.ensure_content()
     widget = controls._histogram_control.histogram_widget
     assert widget is not None
@@ -267,8 +267,8 @@ def test_two_image_layers_independent_histograms(qtbot, make_napari_viewer):
     assert layer_a.histogram is not layer_b.histogram
 
     # Each has its own controls with histogram
-    controls_a = viewer.window._qt_viewer.controls.widgets[layer_a]
-    controls_b = viewer.window._qt_viewer.controls.widgets[layer_b]
+    controls_a = viewer.window._qt_viewer.controls.panels[layer_a]
+    controls_b = viewer.window._qt_viewer.controls.panels[layer_b]
     assert controls_a._histogram_control is not None
     assert controls_b._histogram_control is not None
     assert controls_a._histogram_control is not controls_b._histogram_control
@@ -288,7 +288,7 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
     """
     viewer = make_napari_viewer()
     layer = viewer.add_image(np.random.rand(10, 10))
-    controls = viewer.window._qt_viewer.controls.widgets[layer]
+    controls = viewer.window._qt_viewer.controls.panels[layer]
     control = controls._histogram_control
     assert control is not None
 
