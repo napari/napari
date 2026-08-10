@@ -1446,7 +1446,7 @@ class VispyCanvas:
         if raw_spacing > safe_spacing:
             warnings.warn(
                 f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
+                f'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
                 'becoming too small. Consider using a smaller spacing value or '
                 'increasing the canvas size.',
                 UserWarning,
