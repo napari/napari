@@ -91,21 +91,15 @@ class _TourTooltip(QFrame):
         layout.addLayout(nav)
 
     def _update_size(self) -> None:
+        layout = self.layout()
+        if layout is None:
+            return
         parent = self.parentWidget()
         window_width = parent.width() if parent is not None else 900
         width = min(_TOOLTIP_MAX_WIDTH, max(280, window_width // 3))
         self.setFixedWidth(width)
-        layout = self.layout()
-        if layout is None:
-            return
-        margins = layout.contentsMargins()
-        content_width = width - margins.left() - margins.right()
-        self._title.setFixedWidth(content_width)
-        self._body.setFixedWidth(content_width)
-        self._title.setFixedHeight(self._title.heightForWidth(content_width))
-        self._body.setFixedHeight(self._body.heightForWidth(content_width))
+        self.setFixedHeight(layout.heightForWidth(width))
         layout.activate()
-        self.setFixedHeight(layout.sizeHint().height())
 
     def set_content(
         self, title: str, body: str, step: int, total: int
