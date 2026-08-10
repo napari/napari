@@ -61,12 +61,10 @@ class Camera(EventedModel):
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
-        The angles are Euler rotations about the three displayed dimensions: rx
-        rotates the camera about the depth axis (dim0, axis -3), ry about the
-        vertical axis (dim1, axis -2), and rz about the horizontal axis (dim2,
-        axis -1), applied in that order and right-handed (counterclockwise when
-        looking along the axis toward the viewer). With all angles zero the
-        camera shows the home view.
+        The angles rotate the camera about the three displayed dimensions: rx
+        about the depth axis (dim0), ry about the vertical axis (dim1), and rz
+        about the horizontal axis (dim2), in that order. With all angles zero
+        the camera shows the home view.
         Euler angles in 3D do not uniquely represent an orientation, so
         different angle triplets can produce the same view.
         Stored or returned angle values may differ from those that were set,

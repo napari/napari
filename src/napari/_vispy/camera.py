@@ -58,14 +58,12 @@ def _get_vispy_flipped_axes(
 def _quaternion_to_matrix(
     quat: Quaternion,
 ) -> np.ndarray:
-    """Return the rotation matrix that VisPy derives from a quaternion.
+    """Return the rotation matrix rendered by a VisPy quaternion.
 
-    VisPy builds its 3D camera rotation from the quaternion axis-angle and
-    applies it with ``transforms.rotate``, passing the vector part permuted as
-    ``(x, z, y)`` and using a transposed (row-vector) matrix. The result is
-    exactly ``Rotation.from_rotvec(theta * (x, z, y)).as_matrix().T``, where
-    ``theta`` is the quaternion rotation angle. See #8281 for the historical
-    origin of this quirk.
+    VisPy derives its rotation from the quaternion axis-angle, permuting the
+    vector part as ``(x, z, y)`` and using a transposed (row-vector) matrix,
+    i.e. ``Rotation.from_quat((x, z, y, w)).as_matrix().T``. See #8281 for
+    the origin of this quirk.
 
     Parameters
     ----------
@@ -80,44 +78,21 @@ def _quaternion_to_matrix(
     from scipy.spatial.transform import Rotation
 
     w, x, y, z = quat.w, quat.x, quat.y, quat.z
-    theta = 2 * np.arccos(np.clip(w, -1, 1))
-    norm = np.sqrt(x * x + y * y + z * z)
-    rotvec = np.array([x, z, y], dtype=float)
-    if norm:
-        rotvec *= theta / norm
-    return Rotation.from_rotvec(rotvec).as_matrix().T
+    return Rotation.from_quat([x, z, y, w]).as_matrix().T
 
 
 def _matrix_to_quaternion(
     matrix: np.ndarray,
 ) -> Quaternion:
-    """Return the VisPy quaternion that renders as the given rotation matrix.
+    """Return the VisPy quaternion rendering as the given rotation matrix.
 
     The inverse of :func:`_quaternion_to_matrix`.
-
-    Parameters
-    ----------
-    matrix : np.ndarray
-        The (3, 3) rotation matrix in VisPy (xyz) coordinates.
-
-    Returns
-    -------
-    vispy.util.quaternion.Quaternion
-        The VisPy quaternion rendering as ``matrix``.
     """
     from scipy.spatial.transform import Rotation
 
-    rotvec = Rotation.from_matrix(matrix.T).as_rotvec()
-    theta = np.linalg.norm(rotvec)
-    if theta == 0:
-        return Quaternion(1, 0, 0, 0)
-    x, z, y = rotvec / theta
-    return Quaternion(
-        np.cos(theta / 2),
-        x * np.sin(theta / 2),
-        y * np.sin(theta / 2),
-        z * np.sin(theta / 2),
-    )
+    qx, qy, qz, qw = Rotation.from_matrix(matrix.T).as_quat()
+    # VisPy uses the vector part permuted as (x, z, y).
+    return Quaternion(qw, qx, qz, qy)
 
 
 def _directions_to_vispy_quat(
@@ -129,19 +104,16 @@ def _directions_to_vispy_quat(
         HorizontalAxisOrientation,
     ],
 ) -> Quaternion:
-    """Return the VisPy quaternion rendering the given directions.
+    """Return the VisPy quaternion rendering the given view and up directions.
 
-    The VisPy 3D camera matrix has the right, view, and up directions as rows
-    (in VisPy xyz coordinates), with each direction flipped according to the
-    camera flips. The quaternion is then extracted so that VisPy renders
-    exactly these directions.
+    The VisPy camera matrix rows are the right, view, and up directions, in
+    VisPy (xyz) coordinates and flipped according to the camera flips.
     """
     flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
     factors = np.where(flipped_axes, -1, 1)
-    # VisPy uses xyz coordinates; napari uses zyx, hence the reversed order.
+    # Napari uses zyx coordinates; VisPy uses xyz, hence the reversal.
     view_row = factors * np.asarray(view_direction)[::-1]
     up_row = factors * np.asarray(up_direction)[::-1]
-    # The right row closes the basis as a proper rotation.
     matrix = np.stack([np.cross(view_row, up_row), view_row, up_row])
     return _matrix_to_quaternion(matrix)
 
@@ -154,12 +126,11 @@ def napari_angles_to_vispy_quat(
         HorizontalAxisOrientation,
     ],
 ) -> Quaternion:
-    """Convert napari camera angles to a VisPy quaternion.
+    """Return the VisPy quaternion rendering the given napari camera angles.
 
     The conversion goes through the napari view and up directions (see
     ``napari.utils.camera_orientations``), so that VisPy renders exactly the
-    camera orientation described by the napari camera model. The orientation
-    determines how the directions are flipped to build the VisPy camera matrix.
+    camera orientation described by the napari camera model.
 
     Parameters
     ----------
@@ -189,11 +160,11 @@ def vispy_quat_to_napari_angles(
         HorizontalAxisOrientation,
     ],
 ) -> tuple[float, float, float]:
-    """Convert a VisPy quaternion to napari camera angles.
+    """Return the napari camera angles rendered by the given VisPy quaternion.
 
-    The view and up directions rendered by VisPy are recovered from the
-    rotation matrix and converted back to angles with the napari convention
-    (see ``napari.utils.camera_orientations``).
+    The rendered view and up directions are recovered from the rotation matrix
+    and converted with the napari convention (see
+    ``napari.utils.camera_orientations``).
 
     Parameters
     ----------
