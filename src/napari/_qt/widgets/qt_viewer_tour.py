@@ -320,9 +320,7 @@ _BUILTIN_TOUR_TARGETS: dict[str, Callable[[_QtMainWindow], QWidget | None]] = {
 }
 
 
-def resolve_tour_target(
-    qt_window: _QtMainWindow, name: str
-) -> QWidget | None:
+def resolve_tour_target(qt_window: _QtMainWindow, name: str) -> QWidget | None:
     """Resolve a tour step target by name.
 
     Checks napari's built-in viewer regions first (``'canvas'``,
