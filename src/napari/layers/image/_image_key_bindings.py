@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import napari
 from napari.layers.base._base_constants import Mode
-from napari.layers.base.base import Layer
 from napari.layers.image.image import Image
 from napari.layers.utils.interactivity_utils import (
     orient_plane_normal_around_cursor,
@@ -52,7 +51,7 @@ def orient_plane_normal_along_y(layer: Image) -> None:
 
 
 @register_image_action('Orient plane normal along x-axis')
-def orient_plane_normal_along_x(layer: Layer) -> None:
+def orient_plane_normal_along_x(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(0, 0, 1))
 
 
