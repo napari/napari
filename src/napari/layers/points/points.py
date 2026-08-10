@@ -76,7 +76,6 @@ if TYPE_CHECKING:
 
     from napari.components.dims import Dims
 
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 _OUT_SLICE_DISP_WARNING_MSG = (
     'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
