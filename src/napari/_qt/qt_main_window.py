@@ -140,7 +140,7 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
-        self._qt_viewer = QtViewer(
+        self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
         )
         self._quit_app = False
