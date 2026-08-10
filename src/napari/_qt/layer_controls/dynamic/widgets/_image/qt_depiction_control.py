@@ -17,7 +17,12 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.layers.image._image_constants import VolumeDepiction
-from napari.utils.action_manager import action_manager
+from napari.layers.image._image_key_bindings import (
+    orient_plane_normal_along_view_direction_no_gen,
+    orient_plane_normal_along_x,
+    orient_plane_normal_along_y,
+    orient_plane_normal_along_z,
+)
 
 if TYPE_CHECKING:
     from napari.layers import Image
@@ -38,8 +43,9 @@ class PlaneNormalButtons(QWidget):
         Button which orients a plane normal along the camera view direction.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, layers: list[Image], parent=None) -> None:
         super().__init__(parent=parent)
+        self._layers = layers
         self.setLayout(QHBoxLayout())
         self.layout().setSpacing(2)
         self.layout().setContentsMargins(0, 0, 0, 0)
@@ -48,27 +54,31 @@ class PlaneNormalButtons(QWidget):
         self.y_button = QPushButton('y')
         self.z_button = QPushButton('z')
         self.oblique_button = QPushButton('oblique')
-        action_manager.bind_button(
-            'napari:orient_plane_normal_along_z',
-            self.z_button,
-        )
-        action_manager.bind_button(
-            'napari:orient_plane_normal_along_y',
-            self.y_button,
-        )
-        action_manager.bind_button(
-            'napari:orient_plane_normal_along_x',
-            self.x_button,
-        )
-        action_manager.bind_button(
-            'napari:orient_plane_normal_along_view_direction_no_gen',
-            self.oblique_button,
-        )
+        self.x_button.clicked.connect(self.update_plane_normal_x)
+        self.y_button.clicked.connect(self.update_plane_normal_y)
+        self.z_button.clicked.connect(self.update_plane_normal_z)
+        self.oblique_button.clicked.connect(self.update_plane_normal_oblique)
 
         self.layout().addWidget(self.x_button)
         self.layout().addWidget(self.y_button)
         self.layout().addWidget(self.z_button)
         self.layout().addWidget(self.oblique_button)
+
+    def update_plane_normal_x(self):
+        for layer in self._layers:
+            orient_plane_normal_along_x(layer)
+
+    def update_plane_normal_y(self):
+        for layer in self._layers:
+            orient_plane_normal_along_y(layer)
+
+    def update_plane_normal_z(self):
+        for layer in self._layers:
+            orient_plane_normal_along_z(layer)
+
+    def update_plane_normal_oblique(self):
+        for layer in self._layers:
+            orient_plane_normal_along_view_direction_no_gen(layer)
 
 
 class QtDepictionControl(QtWidgetControlsBase):
@@ -123,7 +133,10 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.depiction_label = QtWrappedLabel('depiction:')
 
         # plane controls
-        self.plane_normal_buttons = PlaneNormalButtons(parent)
+
+        self.plane_normal_buttons = PlaneNormalButtons(
+            parent=parent, layers=self._layers
+        )
         self.plane_normal_label = QtWrappedLabel('plane normal:')
 
         self.plane_thickness_slider = QLabeledDoubleSlider(
