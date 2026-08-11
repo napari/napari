@@ -264,14 +264,17 @@ class GridCanvas(EventedModel):
             return []
         return [i for i, layer in enumerate(layers) if layer.visible]
 
-    def _viewbox_groups(self, layers: Sequence,) -> tuple[dict[int, int], list[int]]:
+    def _viewbox_groups(
+        self,
+        layers: Sequence,
+    ) -> tuple[dict[int, int], list[int]]:
         """Return the viewbox grouping for the given layers.
 
         Parameters
         ----------
         layers : Sequence | None
             List of layers that need to be placed in the grid.
-        
+
         Returns
         -------
         group_of : dict[int, int]

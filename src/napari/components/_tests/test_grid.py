@@ -149,10 +149,10 @@ def test_hidden_layers_negative_stride_two():
     """
     grid = GridCanvas(enabled=True, stride=-2)
     layers = [
-        mock_layer(visible=True),   # 0
-        mock_layer(visible=True),   # 1
-        mock_layer(visible=True),   # 2
-        mock_layer(visible=True),   # 3
+        mock_layer(visible=True),  # 0
+        mock_layer(visible=True),  # 1
+        mock_layer(visible=True),  # 2
+        mock_layer(visible=True),  # 3
         mock_layer(visible=False),  # 4 hidden
     ]
     # All 5 layers keep their slot → 3 occupied viewboxes → (2, 2) grid
@@ -172,11 +172,11 @@ def test_hidden_layers_negative_stride_two():
 
     # Layers 1 and 3 hidden: 0 and 2 must NOT stack either
     layers_2 = [
-        mock_layer(visible=True),   # 0
+        mock_layer(visible=True),  # 0
         mock_layer(visible=False),  # 1 hidden
-        mock_layer(visible=True),   # 2
+        mock_layer(visible=True),  # 2
         mock_layer(visible=False),  # 3 hidden
-        mock_layer(visible=True),   # 4
+        mock_layer(visible=True),  # 4
     ]
     assert grid.actual_shape(layers_2) == (2, 2)
     # Same fixed grouping: group 0 = {4,3}, group 1 = {2,1}, group 2 = {0}
@@ -284,6 +284,7 @@ def test_effective_indices():
     assert grid._effective_indices([]) == []
     # None → empty list
     assert grid._effective_indices() == []
+
 
 def test_hidden_layers_with_stride_equal_visible_count():
     """Test stride=n with n visible + invisible layers ->  shape (1, 1).
