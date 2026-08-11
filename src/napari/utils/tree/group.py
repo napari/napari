@@ -72,8 +72,8 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         new._list.extend(iterable)
         return new
 
-    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:
-        return super().__getitem__(key)
+    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # pyrefly: ignore [bad-override]
+        return super().__getitem__(key)  # pyrefly: ignore [bad-return]
 
     def __delitem__(self, key: MaybeNestedIndex) -> None:
         """Remove item at ``key``, and unparent."""
@@ -93,7 +93,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Return True, indicating that this ``Node`` is a ``Group``."""
         return True
 
-    def __contains__(self, other: object) -> bool:
+    def __contains__(self, other: object) -> bool:  # pyrefly: ignore [bad-override-param-name]
         """Return true if ``other`` appears anywhere under this group."""
         return any(item is other for item in self.traverse())
 
@@ -105,7 +105,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         if not leaves_only:
             yield obj  # type: ignore[ty:invalid-yield]
         for child in obj:  # type: ignore[ty:not-iterable]
-            yield from child.traverse(leaves_only)
+            yield from child.traverse(leaves_only)  # pyrefly: ignore [invalid-yield]
 
     def _render(self) -> list[str]:
         """Recursively return list of strings that can render ascii tree."""

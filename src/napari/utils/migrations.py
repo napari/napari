@@ -230,7 +230,7 @@ class _DeprecatingDict(UserDict[str, Any]):
         key = self._maybe_rename_key(key)
         return self.data.__getitem__(key)
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:  # pyrefly: ignore [bad-override-param-name]
         key = self._maybe_rename_key(key)
         return self.data.__setitem__(key, value)
 

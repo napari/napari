@@ -119,7 +119,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, 'key'):
-            event.key = self.key(event.source)
+            event.key = self.key(event.source)  # pyrefly: ignore [missing-attribute]
 
         # re-emit with this object's EventEmitter
         self.events(event)

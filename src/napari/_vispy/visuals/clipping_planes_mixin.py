@@ -30,7 +30,7 @@ class ClippingPlanesMixin:
     def __init__(self: _PVisual, *args, font_info: FontInfo, **kwargs) -> None:
         clip_filter = PlanesClipper()
         self._clip_filter = clip_filter
-        self.font_info = font_info
+        self.font_info = font_info  # pyrefly: ignore [missing-attribute]
         super().__init__(*args, **kwargs)
 
         self.attach(clip_filter)

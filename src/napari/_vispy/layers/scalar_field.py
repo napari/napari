@@ -46,7 +46,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
         **kwargs,
     ) -> None:
         # Use custom node from caller, or our standard image/volume nodes.
-        self._layer_node = layer_node_class(
+        self._layer_node = layer_node_class(  # pyrefly: ignore [bad-instantiation]
             node, texture_format=texture_format
         )
 

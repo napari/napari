@@ -94,7 +94,7 @@ class ItemMimeData(QMimeData):
         self, items: Sequence[ItemType], indices: Sequence[int]
     ) -> None:
         super().__init__()
-        self.items = items
+        self.items = items  # pyrefly: ignore [invalid-type-var]
         self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))

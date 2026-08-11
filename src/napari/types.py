@@ -132,7 +132,7 @@ def _register_types_with_magicgui():
     from napari.utils import _magicgui as _mgui
 
     for type_ in (LayerDataTuple, list[LayerDataTuple]):
-        register_type(
+        register_type(  # pyrefly: ignore [no-matching-overload]
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )

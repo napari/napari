@@ -210,7 +210,7 @@ QPROCESSORS: dict[object, Callable] = {
 }
 
 # Add future and LayerData processors for each layer type.
-for t in types._LayerData.__args__:
+for t in types._LayerData.__args__:  # pyrefly: ignore [missing-attribute]
     QPROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
     QPROCESSORS[Future[t]] = partial(

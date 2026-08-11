@@ -80,7 +80,7 @@ class QtHistogramWidget(QWidget):
         self.histogram_visual.parent = self.view.scene
 
         self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)
+        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # pyrefly: ignore [missing-attribute]
         # Disable viewbox interaction to prevent accidental pan/zoom
         self.view.interactive = False
 
@@ -154,7 +154,7 @@ class QtHistogramWidget(QWidget):
         worker = cast(
             GeneratorWorker,
             create_worker(
-                self._histogram.compute,
+                self._histogram.compute,  # pyrefly: ignore [bad-argument-type]
                 _progress={'desc': 'Computing histogram'},
             ),
         )
@@ -279,8 +279,8 @@ class QtHistogramWidget(QWidget):
                 bin_edges=bin_edges,
                 counts=counts,
                 gamma=gamma,
-                clims=clims,
-                data_range=clims_range,
+                clims=clims,  # pyrefly: ignore [bad-argument-type]
+                data_range=clims_range,  # pyrefly: ignore [bad-argument-type]
             )
             self.canvas.update()
         finally:

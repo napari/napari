@@ -477,12 +477,12 @@ class HistogramModel(EventedModel):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
         # as-is for the progressive sampler in _compute_chunked_progressive.
         if self._has_chunks(data):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Last resort: cast to numpy.  Guard against accidentally
         # materializing a very large object (contiguous h5py) by

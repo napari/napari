@@ -50,7 +50,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._basetypes: tuple[type[_T], ...] = (
             tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
-        self._lookup = lookup.copy()
+        self._lookup = lookup.copy()  # pyrefly: ignore [invalid-type-var]
         self.extend(data)
 
     def __len__(self) -> int:

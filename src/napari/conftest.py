@@ -334,37 +334,37 @@ def qt_viewer_(
 
     def patched_controls(self):
         if self._controls is None:
-            self._controls = original_controls(self)
+            self._controls = original_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._controls, before_close_func=hide_widget)
         return self._controls
 
     def patched_layers(self):
         if self._layers is None:
-            self._layers = original_layers(self)
+            self._layers = original_layers(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layers, before_close_func=hide_widget)
         return self._layers
 
     def patched_layer_buttons(self):
         if self._layersButtons is None:
-            self._layersButtons = original_layer_buttons(self)
+            self._layersButtons = original_layer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
         return self._layersButtons
 
     def patched_viewer_buttons(self):
         if self._viewerButtons is None:
-            self._viewerButtons = original_viewer_buttons(self)
+            self._viewerButtons = original_viewer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
         return self._viewerButtons
 
     def patched_dock_layer_list(self):
         if self._dockLayerList is None:
-            self._dockLayerList = original_dock_layer_list(self)
+            self._dockLayerList = original_dock_layer_list(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
         return self._dockLayerList
 
     def patched_dock_layer_controls(self):
         if self._dockLayerControls is None:
-            self._dockLayerControls = original_dock_layer_controls(self)
+            self._dockLayerControls = original_dock_layer_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockLayerControls, before_close_func=hide_widget
             )
@@ -372,13 +372,13 @@ def qt_viewer_(
 
     def patched_dock_console(self):
         if self._dockConsole is None:
-            self._dockConsole = original_dock_console(self)
+            self._dockConsole = original_dock_console(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
         return self._dockConsole
 
     def patched_dock_performance(self):
         if self._dockPerformance is None:
-            self._dockPerformance = original_dock_performance(self)
+            self._dockPerformance = original_dock_performance(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockPerformance, before_close_func=hide_widget
             )
@@ -685,7 +685,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
         """
         if 'coverage' in sys.modules:
             # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
-            sys.settrace(threading._trace_hook)
+            sys.settrace(threading._trace_hook)  # pyrefly: ignore [missing-attribute]
         self._base_run()
 
     def init_with_trace(self, *args, **kwargs):

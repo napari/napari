@@ -400,7 +400,8 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             data_ = self._yaml_dump(data)
         elif str(path).endswith('.json'):
             data_ = json.dumps(
-                data, default=_json_encode(self.model_config['json_encoders'])
+                data,
+                default=_json_encode(self.model_config['json_encoders']),  # pyrefly: ignore [bad-argument-type]
             )
         else:
             raise NotImplementedError(

@@ -83,7 +83,7 @@ def map_property(
     normalized_properties = np.interp(prop, contrast_limits, (0, 1))
     mapped_properties = colormap.map(normalized_properties)
 
-    return mapped_properties, contrast_limits
+    return mapped_properties, contrast_limits  # pyrefly: ignore [bad-return]
 
 
 def _validate_colormap_mode(color_manager: ColorManager) -> None:

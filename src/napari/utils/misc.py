@@ -39,7 +39,7 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)
+        return packaging.version.LegacyVersion(v)  # pyrefly: ignore [missing-attribute]
 
 
 def running_as_constructor_app() -> bool:
@@ -204,7 +204,7 @@ def ensure_sequence_of_iterables(
 
 def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back
+    frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
     try:
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}

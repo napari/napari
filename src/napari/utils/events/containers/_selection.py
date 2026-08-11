@@ -166,7 +166,7 @@ class Selection(EventedSet[_T]):
         dict_schema: DictSchema | TypedDictSchema
         if args:
             item_schema = handler.generate_schema(args[0])
-            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])  # type: ignore
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
             current_schema = core_schema.union_schema(
                 [item_schema, core_schema.none_schema()]
             )

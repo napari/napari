@@ -31,8 +31,8 @@ class Overlay(EventedModel):
 
     model_config = EventedModel.model_config | ConfigDict(
         validate_assignment=True,
-        allow_property_setters=True,
-        guess_property_dependencies=True,
+        allow_property_setters=True,  # pyrefly: ignore [unexpected-keyword]
+        guess_property_dependencies=True,  # pyrefly: ignore [unexpected-keyword]
     )
 
     visible: bool = False

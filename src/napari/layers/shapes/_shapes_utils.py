@@ -63,11 +63,11 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None
+        return points, None, None  # pyrefly: ignore [bad-return]
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # pyrefly: ignore [bad-return]
     return np.empty((0, 2), dtype=points.dtype), None, None
 
 
@@ -107,7 +107,7 @@ def _fan_triangulation(
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles
+    return vertices, triangles  # pyrefly: ignore [bad-return]
 
 
 def inside_boxes(boxes):
@@ -461,7 +461,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # pyrefly: ignore [bad-return]
 
 
 def rectangle_to_box(
@@ -722,7 +722,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         )
         edge_tri = triangulate_edge(polygon_vertices, closed=True)
-        return face_tri, edge_tri
+        return face_tri, edge_tri  # pyrefly: ignore [bad-return]
 
     if _triangulate_dispatch.is_convex(data2d):
         vertices, triangles = _fan_triangulation(data2d)
@@ -894,7 +894,7 @@ def triangulate_face_triangle(
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray, TriangleArray]:
-    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')  # pyrefly: ignore [not-callable]
     vertices = res['vertices']
     raw_triangles = res['triangles']
     # triangle's constrained Delaunay triangulation

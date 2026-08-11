@@ -674,7 +674,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)
+        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
     except TypeError:
         return None
     if chunk_size <= 0:
