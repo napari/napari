@@ -13,6 +13,7 @@ import contextily as ctx
 import geopandas as gpd
 import pandas as pd
 import zarr
+from requests.exceptions import HTTPError
 
 import napari
 
@@ -52,7 +53,7 @@ bounds = gpd.GeoSeries(corners.to_crs(3857).geometry).total_bounds
 # fails, perhaps because CI is spamming the API, fall back on napari test data.
 try:
     bg_map, bg_extent = ctx.bounds2img(*bounds, zoom=13)
-except ConnectionError:
+except (ConnectionError, HTTPError):
     bg_map = zarr.open('https://data.napari.dev/prague-map.zarr')
     bg_extent = (
             1599674.1279521685, 1609458.067572671,
@@ -74,7 +75,7 @@ bounds_map_wgs84 = gpd.GeoSeries(
 # display the background map in napari
 viewer = napari.Viewer()
 viewer.scene.camera.orientation2d = 'up','right'
-viewer.floating_axes.visible = True
+viewer.canvas.overlays.axes.visible = True
 viewer.dims.axis_labels = 'lat','lon'
 viewer.window.add_plugin_dock_widget('napari', 'Features table widget')
 
