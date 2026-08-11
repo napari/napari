@@ -21,7 +21,11 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     HorizontalObjectSchemaWidget,
 )
 from napari.settings import NapariSettings, get_settings
-from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.settings._constants import (
+    BrushSizeOnMouseModifiers,
+    LabelDTypes,
+    PlaybackUnit,
+)
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
 
@@ -153,6 +157,37 @@ def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
     for enum_value in enum_setting_class:
         setattr(settings.application, enum_setting_name, enum_value)
         assert enum_widget.state == enum_value
+
+
+def test_playback_rate_mode_rows(qtbot, pref):
+    """Only the speed row matching the playback rate mode is shown."""
+    app_page = pref._stack.currentWidget().widget().widget
+    layout = app_page.layout()
+    fps_widget = app_page.widgets['playback_fps']
+    cycle_widget = app_page.widgets['playback_cycle_seconds']
+    settings = pref._settings
+
+    # In the default fps mode only the fps row is visible.
+    assert settings.application.playback_unit == PlaybackUnit.FRAMES_PER_SECOND
+    assert not fps_widget.isHidden()
+    assert cycle_widget.isHidden()
+    assert layout.labelForField(cycle_widget).isHidden()
+
+    # Changing the mode via the settings object swaps the visible row.
+    settings.application.playback_unit = PlaybackUnit.SECONDS_PER_CYCLE
+    assert fps_widget.isHidden()
+    assert layout.labelForField(fps_widget).isHidden()
+    assert not cycle_widget.isHidden()
+    assert not layout.labelForField(cycle_widget).isHidden()
+
+    # Changing the mode via the dropdown widget swaps it back.
+    unit_widget = app_page.widgets['playback_unit']
+    unit_widget.setCurrentIndex(
+        unit_widget.findData(PlaybackUnit.FRAMES_PER_SECOND.value)
+    )
+    assert settings.application.playback_unit == PlaybackUnit.FRAMES_PER_SECOND
+    assert not fps_widget.isHidden()
+    assert cycle_widget.isHidden()
 
 
 def test_highlight_widget(qtbot, pref):
