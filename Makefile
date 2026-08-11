@@ -3,9 +3,9 @@
 typestubs:
 	tox -e typestub
 
-# run the ty type checker via tox
+# run the pyrefly type checker via tox
 typecheck:
-	tox -e ty
+	tox -e pyrefly
 
 check-manifest:
 	tox -e check-manifest

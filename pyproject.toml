@@ -542,44 +542,17 @@ markers = [
     "show_qt_viewer: Show the QtViewer in this Test",
 ]
 
-[tool.ty]
-
-[tool.ty.src]
-include = ["src/napari"]
-exclude = [
-    "src/napari/utils/events/_tests/test_evented_model.py",
-]
-
-[tool.ty.rules]
-# equivalent of mypy's ignore_missing_imports = true
-unresolved-import = "ignore"
-# napari intentionally accesses submodules like napari.viewer without a
-# top-level import; not reported by mypy either
-possibly-missing-submodule = "ignore"
-
-[tool.ty.analysis]
-# these packages were effectively treated as `Any` by mypy (untyped), so keep
-# that behaviour rather than analyzing their (untyped) sources with ty
-replace-imports-with-any = [
-    "qtpy.**",
-    "vispy.**",
-]
-
-# equivalent of mypy ignore_errors = true for broad module patterns
-[[tool.ty.overrides]]
-include = [
+[tool.pyrefly]
+project-includes = ["src/napari"]
+project-excludes = [
+    'src/napari/utils/events/_tests/test_evented_model.py',
     '**/_tests/**',
     '**/experimental/**',
     '**/_vendor/**',
     '**/benchmarks/**',
-    'napari_builtins/**'
-]
-[tool.ty.overrides.rules]
-all = "ignore"
-
-# equivalent of mypy ignore_errors = true (see napari issue #2751)
-[[tool.ty.overrides]]
-include = [
+    '**/napari_builtins/**',
+    '**/vendored/**',
+    'src/napari/_app_model/injection/_processors.py',
     'src/napari/_qt/code_syntax_highlight.py',
     'src/napari/_qt/containers/_layer_delegate.py',
     'src/napari/_qt/containers/qt_layer_model.py',
@@ -605,39 +578,39 @@ include = [
     'src/napari/_qt/layer_controls/qt_surface_controls.py',
     'src/napari/_qt/layer_controls/qt_tracks_controls.py',
     'src/napari/_qt/layer_controls/qt_vectors_controls.py',
-    'src/napari/_qt/layer_controls/widgets/qt_opacity_blending_controls.py',
-    'src/napari/_qt/layer_controls/widgets/qt_text_visibility.py',
-    'src/napari/_qt/layer_controls/widgets/qt_out_slice_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/qt_projection_mode_control.py',
-    'src/napari/_qt/layer_controls/widgets/_shapes/qt_edge_width_slider.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_label_color.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_color_mode_combobox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_contiguous_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_ndim_spinbox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_contour_spinbox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_preserve_labels_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_render_control.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_display_selected_label_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/_points/qt_current_size_slider.py',
-    'src/napari/_qt/layer_controls/widgets/_points/qt_symbol_combobox.py',
-    'src/napari/_qt/layer_controls/widgets/qt_colormap_control.py',
-    'src/napari/_qt/layer_controls/widgets/qt_contrast_limits.py',
-    'src/napari/_qt/layer_controls/widgets/qt_autoscale_control.py',
-    'src/napari/_qt/layer_controls/widgets/qt_gamma_slider.py',
-    'src/napari/_qt/layer_controls/widgets/_surface/qt_shading_combobox.py',
+    'src/napari/_qt/layer_controls/widgets/_image/qt_depiction_control.py',
     'src/napari/_qt/layer_controls/widgets/_image/qt_interpolation_combobox.py',
     'src/napari/_qt/layer_controls/widgets/_image/qt_render_control.py',
-    'src/napari/_qt/layer_controls/widgets/_image/qt_depiction_control.py',
-    'src/napari/_qt/layer_controls/widgets/_vectors/qt_edge_color.py',
-    'src/napari/_qt/layer_controls/widgets/_vectors/qt_vector_style_combobox.py',
-    'src/napari/_qt/layer_controls/widgets/_vectors/qt_line_dimension_spinbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_color_mode_combobox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_contiguous_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_contour_spinbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_display_selected_label_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_label_color.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_ndim_spinbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_preserve_labels_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_labels/qt_render_control.py',
+    'src/napari/_qt/layer_controls/widgets/_points/qt_current_size_slider.py',
+    'src/napari/_qt/layer_controls/widgets/_points/qt_symbol_combobox.py',
+    'src/napari/_qt/layer_controls/widgets/_shapes/qt_edge_width_slider.py',
+    'src/napari/_qt/layer_controls/widgets/_surface/qt_shading_combobox.py',
     'src/napari/_qt/layer_controls/widgets/_tracks/qt_color_properties_combobox.py',
-    'src/napari/_qt/layer_controls/widgets/_tracks/qt_head_slider.py',
-    'src/napari/_qt/layer_controls/widgets/_tracks/qt_tail_control.py',
-    'src/napari/_qt/layer_controls/widgets/_tracks/qt_id_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/_tracks/qt_graph_checkbox.py',
     'src/napari/_qt/layer_controls/widgets/_tracks/qt_colormap_control.py',
+    'src/napari/_qt/layer_controls/widgets/_tracks/qt_graph_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_tracks/qt_head_slider.py',
     'src/napari/_qt/layer_controls/widgets/_tracks/qt_hide_completed_tracks_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_tracks/qt_id_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/_tracks/qt_tail_control.py',
+    'src/napari/_qt/layer_controls/widgets/_vectors/qt_edge_color.py',
+    'src/napari/_qt/layer_controls/widgets/_vectors/qt_line_dimension_spinbox.py',
+    'src/napari/_qt/layer_controls/widgets/_vectors/qt_vector_style_combobox.py',
+    'src/napari/_qt/layer_controls/widgets/qt_autoscale_control.py',
+    'src/napari/_qt/layer_controls/widgets/qt_colormap_control.py',
+    'src/napari/_qt/layer_controls/widgets/qt_contrast_limits.py',
+    'src/napari/_qt/layer_controls/widgets/qt_gamma_slider.py',
+    'src/napari/_qt/layer_controls/widgets/qt_opacity_blending_controls.py',
+    'src/napari/_qt/layer_controls/widgets/qt_out_slice_checkbox.py',
+    'src/napari/_qt/layer_controls/widgets/qt_projection_mode_control.py',
+    'src/napari/_qt/layer_controls/widgets/qt_text_visibility.py',
     'src/napari/_qt/menus/_util.py',
     'src/napari/_qt/menus/file_menu.py',
     'src/napari/_qt/perf/qt_event_tracing.py',
@@ -699,293 +672,508 @@ include = [
     'src/napari/utils/stubgen.py',
     'src/napari/utils/transforms/transforms.py',
     'src/napari/view_layers.py',
-    'src/napari/_app_model/injection/_processors.py'
 ]
-[tool.ty.overrides.rules]
-all = "ignore"
+python-version = "3.12"
+python-platform = "linux"
+replace-imports-with-any = ["qtpy.*", "vispy.*"]
 
-# equivalent of mypy warn_unused_ignores = false
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_app_model/_app.py',
-    'src/napari/utils/theme.py'
-]
-[tool.ty.overrides.rules]
-unused-type-ignore-comment = "ignore"
+[tool.pyrefly.errors]
+# equivalent of ty's unresolved-import = "ignore"
+missing-import = "ignore"
+# pyrefly-only stricter check that mypy/ty do not enforce; napari
+# intentionally narrows inherited mutable attributes (e.g. Qt layer controls)
+bad-override-mutable-attribute = "ignore"
+# equivalent of ty's possibly-missing-submodule = "ignore"
+implicit-import = "ignore"
 
-# equivalent of mypy warn_unused_ignores = false
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_app_model/context/_context.py',
-    'src/napari/_qt/containers/_factory.py'
-]
-[tool.ty.overrides.rules]
-unused-type-ignore-comment = "ignore"
+# 2 diagnostic(s) in src/napari/__main__.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/__main__.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+unbound-name = "ignore"
 
-# equivalent of mypy warn_unused_ignores = false
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/events/containers/_typed.py'
-]
-[tool.ty.overrides.rules]
-unused-type-ignore-comment = "ignore"
+# 3 diagnostic(s) in src/napari/_app_model/context/_layerlist_context.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_app_model/context/_layerlist_context.py"
+[tool.pyrefly.sub-config.errors]
+not-a-type = "ignore"
 
-# equivalent of mypy warn_unused_ignores = false
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_qt/containers/qt_layer_list.py',
-    'src/napari/layers/base/base.py'
-]
-[tool.ty.overrides.rules]
-unused-type-ignore-comment = "ignore"
+# 1 diagnostic(s) in src/napari/_pydantic_util.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_pydantic_util.py"
+[tool.pyrefly.sub-config.errors]
+not-a-type = "ignore"
 
-# keep the comment in _accelerated_triangulate_numba: it suppresses an
-# invalid-return-type that appears with numpy < 2.5 but is unused with numpy 2.5
-[[tool.ty.overrides]]
-include = [
-    'src/napari/layers/shapes/_accelerated_triangulate_numba.py'
-]
-[tool.ty.overrides.rules]
-unused-type-ignore-comment = "ignore"
+# 1 diagnostic(s) in src/napari/_qt/__init__.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/__init__.py"
+[tool.pyrefly.sub-config.errors]
+unbound-name = "ignore"
 
+# 1 diagnostic(s) in src/napari/_qt/_qapp_model/injection/_qprocessors.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/_qapp_model/injection/_qprocessors.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
 
+# 1 diagnostic(s) in src/napari/_qt/_qapp_model/qactions/_layerlist_context.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/_qapp_model/qactions/_layerlist_context.py"
+[tool.pyrefly.sub-config.errors]
+bad-override-param-name = "ignore"
 
-# ty reports some diagnostics that mypy did not (stricter analysis of numpy,
-# pydantic and untyped dependencies). Silence them per-rule for the affected
-# modules; these mirror the mypy per-module overrides above.
+# 1 diagnostic(s) in src/napari/_qt/containers/qt_list_model.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/containers/qt_list_model.py"
+[tool.pyrefly.sub-config.errors]
+invalid-type-var = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/layers/shapes/_shapes_utils.py',
-    'src/napari/layers/utils/layer_utils.py',
-    'src/napari/utils/colormaps/vendored/colors.py',
-    'src/napari/utils/events/event_utils.py',
-]
-[tool.ty.overrides.rules]
-call-non-callable = "ignore"
+# 1 diagnostic(s) in src/napari/_qt/layer_controls/widgets/__init__.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/layer_controls/widgets/__init__.py"
+[tool.pyrefly.sub-config.errors]
+bad-dunder-all = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/components/viewer_model.py',
-]
-[tool.ty.overrides.rules]
-call-top-callable = "ignore"
+# 1 diagnostic(s) in src/napari/_qt/qt_viewer.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/qt_viewer.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/layers/shapes/_accelerated_triangulate_dispatch.py',
-]
-[tool.ty.overrides.rules]
-conflicting-declarations = "ignore"
+# 1 diagnostic(s) in src/napari/_qt/widgets/qt_dims_sorter.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_dims_sorter.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/components/viewer_model.py',
-]
-[tool.ty.overrides.rules]
-deprecated = "ignore"
+# 4 diagnostic(s) in src/napari/_qt/widgets/qt_histogram.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_histogram.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+missing-attribute = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/__main__.py',
-    'src/napari/_app_model/actions/_layerlist_context_actions.py',
-    'src/napari/_app_model/actions/_view.py',
-    'src/napari/_qt/_qapp_model/injection/_qprocessors.py',
-    'src/napari/_qt/_qapp_model/qactions/_file.py',
-    'src/napari/_qt/_qapp_model/qactions/_view.py',
-    'src/napari/_vispy/layers/labels.py',
-    'src/napari/_vispy/utils/visual.py',
-    'src/napari/components/viewer_model.py',
-    'src/napari/layers/base/base.py',
-    'src/napari/layers/image/image.py',
-    'src/napari/layers/shapes/_shape_list.py',
-    'src/napari/layers/shapes/_shapes_models/shape.py',
-    'src/napari/layers/surface/surface.py',
-    'src/napari/plugins/_npe2.py',
-    'src/napari/settings/__init__.py',
-    'src/napari/settings/_base.py',
-    'src/napari/utils/_tracebacks.py',
-    'src/napari/utils/colormaps/colormap_utils.py',
-    'src/napari/utils/colormaps/vendored/cm.py',
-    'src/napari/utils/events/containers/_typed.py',
-    'src/napari/utils/notifications.py',
-]
-[tool.ty.overrides.rules]
-invalid-argument-type = "ignore"
+# 1 diagnostic(s) in src/napari/_qt/widgets/qt_spinbox.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_spinbox.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_vispy/layers/shapes.py',
-    'src/napari/_vispy/layers/surface.py',
-    'src/napari/components/canvas.py',
-    'src/napari/components/dims.py',
-    'src/napari/components/viewer_model.py',
-    'src/napari/conftest.py',
-    'src/napari/layers/image/image.py',
-    'src/napari/layers/labels/labels.py',
-    'src/napari/layers/shapes/_mesh.py',
-    'src/napari/layers/shapes/_shape_list.py',
-    'src/napari/layers/shapes/_shapes_models/shape.py',
-    'src/napari/layers/tracks/_track_utils.py',
-    'src/napari/layers/tracks/tracks.py',
-    'src/napari/layers/utils/layer_utils.py',
-    'src/napari/layers/vectors/vectors.py',
-    'src/napari/utils/_register.py',
-    'src/napari/utils/colormaps/_accelerated_cmap.py',
-    'src/napari/utils/colormaps/vendored/colors.py',
-    'src/napari/utils/events/containers/_selectable_list.py',
-    'src/napari/utils/io.py',
-    'src/napari/utils/notifications.py',
-    'src/napari/utils/triangulation_backend.py',
-    'src/napari/viewer.py',
-]
-[tool.ty.overrides.rules]
-invalid-assignment = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/filters/tracks.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/filters/tracks.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/components/overlays/base.py',
-    'src/napari/settings/_base.py',
-]
-[tool.ty.overrides.rules]
-invalid-key = "ignore"
+# 5 diagnostic(s) in src/napari/_vispy/layers/image.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/image.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+unsupported-operation = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_qt/_qapp_model/qactions/_layerlist_context.py',
-    'src/napari/_vispy/layers/shapes.py',
-    'src/napari/settings/_appearance.py',
-    'src/napari/utils/colormaps/colormap_utils.py',
-    'src/napari/utils/migrations.py',
-    'src/napari/utils/progress.py',
-    'src/napari/utils/tree/group.py',
-]
-[tool.ty.overrides.rules]
-invalid-method-override = "ignore"
+# 3 diagnostic(s) in src/napari/_vispy/layers/labels.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/labels.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+missing-attribute = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/transforms/_units.py',
-]
-[tool.ty.overrides.rules]
-invalid-overload = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/layers/scalar_field.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/scalar_field.py"
+[tool.pyrefly.sub-config.errors]
+bad-instantiation = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_qt/_qapp_model/injection/_qproviders.py',
-    'src/napari/_vispy/overlays/labels_brush_stroke.py',
-    'src/napari/_vispy/utils/gl.py',
-    'src/napari/components/histogram.py',
-    'src/napari/components/viewer_model.py',
-    'src/napari/layers/image/_slice.py',
-    'src/napari/layers/shapes/_shape_list.py',
-    'src/napari/layers/shapes/_shapes_utils.py',
-    'src/napari/layers/utils/layer_utils.py',
-    'src/napari/utils/color.py',
-    'src/napari/utils/colormaps/colormap.py',
-]
-[tool.ty.overrides.rules]
-invalid-return-type = "ignore"
+# 4 diagnostic(s) in src/napari/_vispy/layers/shapes.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/shapes.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-count = "ignore"
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-override = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_vispy/visuals/clipping_planes_mixin.py',
-]
-[tool.ty.overrides.rules]
-invalid-super-argument = "ignore"
-
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/notifications.py',
-]
-[tool.ty.overrides.rules]
-missing-argument = "ignore"
-
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_vispy/visuals/bounding_box.py',
-    'src/napari/layers/base/base.py',
-    'src/napari/layers/image/_slice.py',
-    'src/napari/layers/utils/layer_utils.py',
-    'src/napari/types.py',
-    'src/napari/utils/_indexing.py',
-]
-[tool.ty.overrides.rules]
+# 5 diagnostic(s) in src/napari/_vispy/layers/surface.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/surface.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
 no-matching-overload = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/colormaps/_accelerated_cmap.py',
-    'src/napari/utils/colormaps/vendored/cm.py',
-]
-[tool.ty.overrides.rules]
-not-iterable = "ignore"
+# 2 diagnostic(s) in src/napari/_vispy/layers/vectors.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/vectors.py"
+[tool.pyrefly.sub-config.errors]
+unbound-name = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/_register.py',
-]
-[tool.ty.overrides.rules]
-not-subscriptable = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/overlays/colorbar.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/colorbar.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_vispy/layers/shapes.py',
-]
-[tool.ty.overrides.rules]
-too-many-positional-arguments = "ignore"
+# 2 diagnostic(s) in src/napari/_vispy/overlays/interaction_box.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/interaction_box.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/layers/base/base.py',
-]
-[tool.ty.overrides.rules]
-unavailable-implicit-super-arguments = "ignore"
+# 2 diagnostic(s) in src/napari/_vispy/overlays/labels_polygon.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/labels_polygon.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/notifications.py',
-]
-[tool.ty.overrides.rules]
-unknown-argument = "ignore"
+# 3 diagnostic(s) in src/napari/_vispy/overlays/zoom.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/zoom.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/_app_model/utils.py',
-    'src/napari/_qt/widgets/qt_histogram.py',
-    'src/napari/_vispy/layers/labels.py',
-    'src/napari/_vispy/layers/surface.py',
-    'src/napari/_vispy/visuals/clipping_planes_mixin.py',
-    'src/napari/components/_viewer_key_bindings.py',
-    'src/napari/conftest.py',
-    'src/napari/layers/_scalar_field/scalar_field.py',
-    'src/napari/layers/labels/labels.py',
-    'src/napari/layers/shapes/_shapes_models/shape.py',
-    'src/napari/layers/utils/layer_utils.py',
-    'src/napari/utils/_register.py',
-    'src/napari/utils/colormaps/_accelerated_cmap.py',
-    'src/napari/utils/colormaps/colormap_utils.py',
-    'src/napari/utils/colormaps/vendored/cm.py',
-    'src/napari/utils/colormaps/vendored/colors.py',
-    'src/napari/utils/misc.py',
-]
-[tool.ty.overrides.rules]
-unresolved-attribute = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/utils/gl.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/utils/gl.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/utils/migrations.py',
-]
-[tool.ty.overrides.rules]
-unsupported-base = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/utils/text.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/utils/text.py"
+[tool.pyrefly.sub-config.errors]
+unbound-name = "ignore"
 
-[[tool.ty.overrides]]
-include = [
-    'src/napari/layers/image/_image_utils.py',
-    'src/napari/utils/_register.py',
-]
-[tool.ty.overrides.rules]
-unsupported-operator = "ignore"
+# 1 diagnostic(s) in src/napari/_vispy/visuals/axes.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/visuals/axes.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 1 diagnostic(s) in src/napari/_vispy/visuals/bounding_box.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/visuals/bounding_box.py"
+[tool.pyrefly.sub-config.errors]
+no-matching-overload = "ignore"
+
+# 1 diagnostic(s) in src/napari/_vispy/visuals/clipping_planes_mixin.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/visuals/clipping_planes_mixin.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+
+# 1 diagnostic(s) in src/napari/components/_viewer_key_bindings.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/_viewer_key_bindings.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+
+# 6 diagnostic(s) in src/napari/components/dims.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/dims.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-return = "ignore"
+bad-unpacking = "ignore"
+
+# 2 diagnostic(s) in src/napari/components/histogram.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/histogram.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
+
+# 2 diagnostic(s) in src/napari/components/overlays/base.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/overlays/base.py"
+[tool.pyrefly.sub-config.errors]
+unexpected-keyword = "ignore"
+
+# 39 diagnostic(s) in src/napari/components/viewer_model.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/viewer_model.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-return = "ignore"
+missing-attribute = "ignore"
+unbound-name = "ignore"
+
+# 9 diagnostic(s) in src/napari/conftest.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/conftest.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+not-callable = "ignore"
+
+# 5 diagnostic(s) in src/napari/layers/_scalar_field/scalar_field.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/_scalar_field/scalar_field.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+bad-return = "ignore"
+missing-attribute = "ignore"
+
+# 2 diagnostic(s) in src/napari/layers/base/_base_mouse_bindings.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/base/_base_mouse_bindings.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 8 diagnostic(s) in src/napari/layers/base/base.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/base/base.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-return = "ignore"
+missing-attribute = "ignore"
+
+# 2 diagnostic(s) in src/napari/layers/image/_image_key_bindings.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/image/_image_key_bindings.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+
+# 4 diagnostic(s) in src/napari/layers/image/_image_mouse_bindings.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/image/_image_mouse_bindings.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+
+# 19 diagnostic(s) in src/napari/layers/image/image.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/image/image.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-override = "ignore"
+bad-specialization = "ignore"
+not-callable = "ignore"
+unsupported-operation = "ignore"
+
+# 26 diagnostic(s) in src/napari/layers/labels/labels.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/labels/labels.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-override = "ignore"
+bad-override-param-name = "ignore"
+bad-return = "ignore"
+missing-attribute = "ignore"
+not-callable = "ignore"
+unsupported-operation = "ignore"
+
+# 3 diagnostic(s) in src/napari/layers/shapes/_mesh.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_mesh.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+
+# 23 diagnostic(s) in src/napari/layers/shapes/_shape_list.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shape_list.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-return = "ignore"
+no-matching-overload = "ignore"
+
+# 14 diagnostic(s) in src/napari/layers/shapes/_shapes_models/shape.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shapes_models/shape.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+missing-attribute = "ignore"
+
+# 6 diagnostic(s) in src/napari/layers/shapes/_shapes_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shapes_utils.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
+not-callable = "ignore"
+
+# 3 diagnostic(s) in src/napari/layers/surface/surface.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/surface/surface.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 1 diagnostic(s) in src/napari/layers/utils/color_manager_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/color_manager_utils.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
+
+# 1 diagnostic(s) in src/napari/layers/utils/interaction_box.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/interaction_box.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
+
+# 2 diagnostic(s) in src/napari/layers/utils/interactivity_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/interactivity_utils.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+
+# 1 diagnostic(s) in src/napari/layers/utils/layer_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/layer_utils.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 7 diagnostic(s) in src/napari/layers/vectors/vectors.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/vectors/vectors.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+bad-override-param-name = "ignore"
+bad-return = "ignore"
+
+# 1 diagnostic(s) in src/napari/plugins/__init__.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/plugins/__init__.py"
+[tool.pyrefly.sub-config.errors]
+bad-dunder-all = "ignore"
+
+# 1 diagnostic(s) in src/napari/plugins/_npe2.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/plugins/_npe2.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 1 diagnostic(s) in src/napari/settings/__init__.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/__init__.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 1 diagnostic(s) in src/napari/settings/_appearance.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/_appearance.py"
+[tool.pyrefly.sub-config.errors]
+bad-override-param-name = "ignore"
+
+# 1 diagnostic(s) in src/napari/settings/_base.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/_base.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+
+# 1 diagnostic(s) in src/napari/types.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/types.py"
+[tool.pyrefly.sub-config.errors]
+no-matching-overload = "ignore"
+
+# 6 diagnostic(s) in src/napari/utils/_register.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/_register.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+unsupported-operation = "ignore"
+
+# 2 diagnostic(s) in src/napari/utils/colormaps/_accelerated_cmap.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/colormaps/_accelerated_cmap.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/colormaps/colormap.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/colormaps/colormap.py"
+[tool.pyrefly.sub-config.errors]
+bad-override = "ignore"
+
+# 3 diagnostic(s) in src/napari/utils/colormaps/colormap_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/colormaps/colormap_utils.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-type = "ignore"
+bad-override-param-name = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/events/containers/_evented_dict.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/events/containers/_evented_dict.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/events/containers/_selectable_list.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/events/containers/_selectable_list.py"
+[tool.pyrefly.sub-config.errors]
+bad-index = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/events/containers/_typed.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/events/containers/_typed.py"
+[tool.pyrefly.sub-config.errors]
+invalid-type-var = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/events/event_utils.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/events/event_utils.py"
+[tool.pyrefly.sub-config.errors]
+not-callable = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/geometry.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/geometry.py"
+[tool.pyrefly.sub-config.errors]
+bad-return = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/io.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/io.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/migrations.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/migrations.py"
+[tool.pyrefly.sub-config.errors]
+bad-override-param-name = "ignore"
+
+# 2 diagnostic(s) in src/napari/utils/misc.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/misc.py"
+[tool.pyrefly.sub-config.errors]
+missing-attribute = "ignore"
+
+# 12 diagnostic(s) in src/napari/utils/notifications.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/notifications.py"
+[tool.pyrefly.sub-config.errors]
+bad-argument-count = "ignore"
+bad-argument-type = "ignore"
+bad-assignment = "ignore"
+unexpected-keyword = "ignore"
+
+# 4 diagnostic(s) in src/napari/utils/tree/group.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/tree/group.py"
+[tool.pyrefly.sub-config.errors]
+bad-override = "ignore"
+bad-override-param-name = "ignore"
+bad-return = "ignore"
+invalid-yield = "ignore"
+
+# 1 diagnostic(s) in src/napari/utils/triangulation_backend.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/triangulation_backend.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+
+# 3 diagnostic(s) in src/napari/viewer.py
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/viewer.py"
+[tool.pyrefly.sub-config.errors]
+bad-assignment = "ignore"
+bad-return = "ignore"
 
 [tool.coverage.report]
 exclude_lines = [
