@@ -778,7 +778,7 @@ module = [
     "napari._vispy.layers.scalar_field",
     "napari._vispy.layers.tracks",
     "napari._vispy.layers.vectors",
-    "napari._vispy.overlays.axes",
+    "napari._vispy.overlays.scene_axes",
     "napari._vispy.overlays.interaction_box",
     "napari._vispy.overlays.labels_brush_stroke",
     "napari._vispy.overlays.labels_polygon",
