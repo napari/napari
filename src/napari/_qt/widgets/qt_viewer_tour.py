@@ -435,6 +435,8 @@ def build_viewer_tour(
                 title='Viewer buttons',
                 body=(
                     'Use these for grid mode, 2D/3D display, axis order, and resetting the camera with the home button.'
+                    ' Many UI elements have an indicator in the lower-right meaning that they can be right-clicked'
+                    ' for advanced functionality.'
                 ),
                 anchor=TourAnchor.ABOVE,
             ),
