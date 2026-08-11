@@ -323,7 +323,7 @@ class QtDims(QWidget):
             warnings.warn('Refusing to play a hidden axis')
 
     @Slot()
-    def stop(self):
+    def stop(self) -> None:
         """Stop axis animation and wait for its thread to finish."""
         self._animation_thread._stop()
         self._animation_thread.wait()

@@ -101,53 +101,27 @@ class ColormapDict(UserDict[str, Colormap]):
         return colormap.name
 
 
-matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = {
-    'viridis': 'viridis',
-    'magma': 'magma',
-    'inferno': 'inferno',
-    'plasma': 'plasma',
-    'hsv': 'hsv',
-    'turbo': 'turbo',
-    'twilight': 'twilight',
-    'twilight_shifted': 'twilight shifted',
-    'gist_earth': 'gist earth',
-    'PiYG': 'PiYG',
+# leaving for backward compat, and to have an exposed subset of colormaps
+# if we use cmap_d instead, the GUI will show all of them.
+matplotlib_colormaps = {
+    k: k
+    for k in (
+        'viridis',
+        'magma',
+        'inferno',
+        'plasma',
+        'hsv',
+        'turbo',
+        'twilight',
+        'twilight_shifted',
+        'gist_earth',
+        'PiYG',
+    )
 }
-_MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
-    v: k for k, v in matplotlib_colormaps.items()
-}
-
 # some colormaps use BaseColormap and custom mapping functions instead of
 # standard colors/controls, so they are broken in napari
 _VISPY_COLORMAPS = {
     k: v for k, v in get_colormaps().items() if isinstance(v, VispyColormap)
-}
-_VISPY_COLORMAP_NAMES = {
-    'autumn': 'autumn',
-    'blues': 'blues',
-    'cool': 'cool',
-    'greens': 'greens',
-    'reds': 'reds',
-    'spring': 'spring',
-    'summer': 'summer',
-    'light_blues': 'light blues',
-    'orange': 'orange',
-    'viridis': 'viridis',
-    'coolwarm': 'coolwarm',
-    'PuGr': 'PuGr',
-    'GrBu': 'GrBu',
-    'GrBu_d': 'GrBu_d',
-    'RdBu': 'RdBu',
-    'cubehelix': 'cubehelix',
-    'single_hue': 'single hue',
-    'hsl': 'hsl',
-    'husl': 'husl',
-    'diverging': 'diverging',
-    'RdYeBuCy': 'RdYeBuCy',
-}
-
-_VISPY_COLORMAP_NAMES_REVERSE = {
-    v: k for k, v in _VISPY_COLORMAP_NAMES.items()
 }
 
 _PRIMARY_COLORS = {
@@ -219,7 +193,7 @@ DISCONTINUOUS_COLORMAPS = {
         name='nan',
         display_name='NaN',
         colors=[[0.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
-        bad_color=[1.0, 0.0, 0.0, 1.0],
+        nan_color=[1.0, 0.0, 0.0, 1.0],
     ),
 }
 
@@ -281,7 +255,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
 
     return Colormap(
         name=name,
-        display_name=name,
+        display_name=name.replace('_', ' '),
         colors=colormap.colors.rgba,
         controls=colormap._controls,
         interpolation=colormap.interpolation,
@@ -662,18 +636,16 @@ def vispy_or_mpl_colormap(name) -> Colormap:
     else:
         try:
             mpl_cmap = cmap_d[name]
-            display_name = _MATPLOTLIB_COLORMAP_NAMES.get(name, name)
+            display_name = name.replace('_', ' ')
         except KeyError as e:
-            suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
-                name
-            ) or _VISPY_COLORMAP_NAMES_REVERSE.get(name)
-            if suggestion:
+            all_colormaps = set(cmap_d).union(_VISPY_COLORMAPS)
+            non_display_name = name.replace(' ', '_')
+            if non_display_name in all_colormaps:
                 raise KeyError(
-                    f'Colormap "{name}" not found in either vispy or matplotlib but you might want to use "{suggestion}".'
+                    f'Colormap "{name}" not found in either vispy or matplotlib but you might want to use "{non_display_name}".'
                 ) from e
 
-            colormaps = set(_VISPY_COLORMAPS).union(set(cmap_d))
-            options = ', '.join(sorted(f'"{cm}"' for cm in colormaps))
+            options = ', '.join(sorted(f'"{cm}"' for cm in all_colormaps))
             raise KeyError(
                 f'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {options}'
             ) from e
@@ -686,9 +658,7 @@ def vispy_or_mpl_colormap(name) -> Colormap:
 
 
 # A dictionary mapping names to VisPy colormap objects
-ALL_COLORMAPS = {
-    k: vispy_or_mpl_colormap(k) for k in _MATPLOTLIB_COLORMAP_NAMES
-}
+ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(VISPY_OLD_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)

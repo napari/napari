@@ -36,6 +36,8 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup layer

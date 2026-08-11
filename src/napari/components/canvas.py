@@ -46,6 +46,9 @@ class OverlayTiling(EventedModel):
     top_left: Orientation = Orientation.VERTICAL
     top_center: Orientation = Orientation.VERTICAL
     top_right: Orientation = Orientation.HORIZONTAL
+    middle_left: Orientation = Orientation.HORIZONTAL
+    middle_center: Orientation = Orientation.VERTICAL
+    middle_right: Orientation = Orientation.HORIZONTAL
     bottom_left: Orientation = Orientation.HORIZONTAL
     bottom_center: Orientation = Orientation.VERTICAL
     bottom_right: Orientation = Orientation.VERTICAL
