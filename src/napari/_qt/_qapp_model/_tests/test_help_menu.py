@@ -188,7 +188,7 @@ def test_build_viewer_tour_reveals_hidden_dock_for_its_step(
 
     tour.start()
     qtbot.waitUntil(
-        lambda: tour._steps[tour._current].title == 'Welcome to the viewer'
+        lambda: tour._steps[tour._current].title == 'Welcome to napari'
     )
 
     _advance_tour_until(tour, 'Layer list', qtbot)
@@ -218,7 +218,7 @@ def test_build_viewer_tour_reveals_dock_hidden_mid_tour(
     qtbot.addWidget(tour._overlay)
     tour.start()
     qtbot.waitUntil(
-        lambda: tour._steps[tour._current].title == 'Welcome to the viewer'
+        lambda: tour._steps[tour._current].title == 'Welcome to napari'
     )
 
     qt_viewer.dockLayerList.hide()
