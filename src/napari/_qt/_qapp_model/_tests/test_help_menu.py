@@ -149,6 +149,36 @@ def test_tour_escape_closes_regardless_of_focus(qtbot):
     qtbot.waitUntil(lambda: not tour._active)
 
 
+def test_build_viewer_tour_shows_and_restores_hidden_docks(
+    make_napari_viewer,
+):
+    """Hidden layer_list/layer_controls used to freeze Next/Back entirely."""
+    viewer = make_napari_viewer(show=True)
+    qt_viewer = viewer.window._qt_viewer
+    qt_viewer.dockLayerList.hide()
+    qt_viewer.dockLayerControls.hide()
+
+    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    assert qt_viewer.dockLayerList.isVisible()
+    assert qt_viewer.dockLayerControls.isVisible()
+
+    tour.finished.emit()
+    assert not qt_viewer.dockLayerList.isVisible()
+    assert not qt_viewer.dockLayerControls.isVisible()
+
+
+def test_build_viewer_tour_leaves_visible_docks_alone(make_napari_viewer):
+    viewer = make_napari_viewer(show=True)
+    qt_viewer = viewer.window._qt_viewer
+    assert qt_viewer.dockLayerList.isVisible()
+    assert qt_viewer.dockLayerControls.isVisible()
+
+    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    tour.finished.emit()
+    assert qt_viewer.dockLayerList.isVisible()
+    assert qt_viewer.dockLayerControls.isVisible()
+
+
 @pytest.mark.parametrize(
     ('shape', 'expect_dims_step'),
     [((4, 4), False), ((4, 4, 4), True)],

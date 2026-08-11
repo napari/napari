@@ -382,14 +382,23 @@ def build_viewer_tour(
         against other data, or ``None`` to skip loading sample data
         entirely (e.g. when the viewer already has data loaded).
     """
-    viewer = window._qt_viewer.viewer
+    qt_viewer = window._qt_viewer
+    viewer = qt_viewer.viewer
     if sample is not None and not viewer.layers:
         viewer.open_sample(*sample)
 
     def target(name: str) -> Callable[[], QWidget | None]:
         return partial(resolve_tour_target, window, name)
 
-    return GuidedTour(
+    # Steps targeting a hidden dock widget would otherwise freeze the tour:
+    # Next/Back silently no-op once a step's target isn't visible. Show any
+    # that are hidden for the tour, and restore their prior state after.
+    docks = (qt_viewer.dockLayerList, qt_viewer.dockLayerControls)
+    hidden_docks = [dock for dock in docks if not dock.isVisible()]
+    for dock in hidden_docks:
+        dock.show()
+
+    tour = GuidedTour(
         [
             TourStep(
                 target=target('canvas'),
@@ -460,3 +469,11 @@ def build_viewer_tour(
         ],
         window,
     )
+    if hidden_docks:
+
+        def _restore_docks() -> None:
+            for dock in hidden_docks:
+                dock.hide()
+
+        tour.finished.connect(_restore_docks)
+    return tour
