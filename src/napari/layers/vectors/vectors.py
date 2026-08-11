@@ -300,6 +300,9 @@ class Vectors(Layer):
                 else self._feature_table.currents()
             ),
         )
+        self._edge.events.color_mode.connect(
+            lambda _event: self.events.edge_color_mode()
+        )
 
         # now that everything is set up, make the layer visible (if set to visible)
         self.refresh()
@@ -589,7 +592,6 @@ class Vectors(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: str | ColorMode):
         edge_color_mode = ColorMode(edge_color_mode)
-        old_mode = self._edge.color_mode
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge.color_mode = edge_color_mode
@@ -627,8 +629,6 @@ class Vectors(Layer):
                 )
 
             self._edge.color_mode = edge_color_mode
-        if self._edge.color_mode != old_mode:
-            self.events.edge_color_mode()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
