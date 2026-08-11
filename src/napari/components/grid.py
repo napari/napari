@@ -266,7 +266,7 @@ class GridCanvas(EventedModel):
 
     def _viewbox_groups(
         self,
-        layers: Sequence,
+        layers: Sequence | None = None,
     ) -> tuple[dict[int, int], list[int]]:
         """Return the viewbox grouping for the given layers.
 
