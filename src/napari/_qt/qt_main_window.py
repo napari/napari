@@ -749,7 +749,6 @@ class Window:
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
-        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
