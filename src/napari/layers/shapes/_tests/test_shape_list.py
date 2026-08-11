@@ -207,6 +207,46 @@ def test_inside():
     assert shape_list.inside((0.5, 0.5)) == 1
 
 
+@pytest.mark.parametrize(
+    ('slice_key', 'expected'),
+    [
+        ((0.9,), 1),  # within half a slice of shape2: drawn, so pickable
+        ((0.5,), None),  # half way between shape1 and shape2: neither is drawn
+        ((1.5,), None),
+    ],
+)
+def test_inside_with_fractional_slice_key(slice_key, expected):
+    """A planar shape is pickable exactly when `_update_displayed` draws it."""
+    shape_list = ShapeList()
+    shape_list.add(
+        [
+            Polygon(np.array([[0, 0, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1]])),
+            Polygon(np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]])),
+        ]
+    )
+    shape_list.slice_key = slice_key
+
+    npt.assert_array_equal(
+        shape_list._visible_shapes_indices,
+        np.flatnonzero(shape_list._displayed),
+    )
+    assert shape_list.inside((0.5, 0.5)) == expected
+
+
+def test_visible_shapes_spanning_slices_are_not_widened():
+    """A spanning shape covers its own slices, not half of the next one."""
+    shape_list = ShapeList()
+    shape_list.add(
+        Polygon(np.array([[0, 0, 0], [0, 1, 0], [1, 1, 1], [1, 0, 1]]))
+    )
+
+    shape_list.slice_key = (-0.4,)
+    assert shape_list._visible_shapes == []
+
+    shape_list.slice_key = (1,)
+    assert len(shape_list._visible_shapes) == 1
+
+
 def test_visible_shapes_4d():
     """Test _visible_shapes with 4D data like those from OME-Zarr/OMERO."""
     shape1 = Polygon(
