@@ -22,7 +22,6 @@ from napari._qt.widgets.qt_viewer_tour import (
     build_viewer_tour,
     resolve_tour_target,
 )
-from napari._tests.utils import skip_local_popups
 
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
@@ -168,67 +167,125 @@ def _advance_tour_until(tour, title, qtbot):
         qtbot.waitUntil(lambda before=before: tour._current != before)
 
 
-@skip_local_popups
-def test_build_viewer_tour_reveals_hidden_dock_for_its_step(
-    make_napari_viewer, qtbot
-):
-    """A hidden layer_list/layer_controls used to freeze Next/Back once the
-    tour reached that step."""
-    viewer = make_napari_viewer(show=True)
-    qt_viewer = viewer.window._qt_viewer
-    qt_viewer.dockLayerList.hide()
-    qt_viewer.dockLayerControls.hide()
+def _reveal(widget, shown):
+    """Mirror build_viewer_tour's reveal() helper: show widget if hidden,
+    tracking it so callers can verify/restore, without touching a real
+    QtViewer/dock widget (which trips an unrelated leak-detection issue
+    in napari's test fixtures when hidden then closed, even on CI)."""
 
-    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    def _ensure_visible():
+        if widget.isVisible():
+            return False
+        shown.append(widget)
+        widget.show()
+        return True
+
+    return _ensure_visible
+
+
+def test_tour_reveals_hidden_target_for_its_step(qtbot):
+    """A hidden step target used to freeze Next/Back once the tour reached
+    that step."""
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.resize(640, 480)
+    window.show()
+
+    layer_list = QWidget(window)
+    layer_list.setGeometry(0, 0, 50, 50)
+    layer_controls = QWidget(window)
+    layer_controls.setGeometry(60, 0, 50, 50)
+    shown = []
+
+    tour = GuidedTour(
+        [
+            TourStep(target=lambda: window, title='Welcome', body=''),
+            TourStep(
+                target=lambda: layer_list,
+                title='Layer list',
+                body='',
+                ensure_visible=_reveal(layer_list, shown),
+            ),
+            TourStep(
+                target=lambda: layer_controls,
+                title='Layer controls',
+                body='',
+                ensure_visible=_reveal(layer_controls, shown),
+            ),
+        ],
+        window,
+    )
+    def _restore() -> None:
+        for w in shown:
+            w.hide()
+
+    tour.finished.connect(_restore)
     qtbot.addWidget(tour._tooltip)
     qtbot.addWidget(tour._overlay)
     # not revealed yet -- only happens once the relevant step is shown
-    assert not qt_viewer.dockLayerList.isVisible()
-    assert not qt_viewer.dockLayerControls.isVisible()
+    assert not layer_list.isVisible()
+    assert not layer_controls.isVisible()
 
     tour.start()
-    qtbot.waitUntil(
-        lambda: tour._steps[tour._current].title == 'Welcome to napari'
-    )
+    qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'Welcome')
 
     _advance_tour_until(tour, 'Layer list', qtbot)
-    assert qt_viewer.dockLayerList.isVisible()
-    assert not qt_viewer.dockLayerControls.isVisible()
+    assert layer_list.isVisible()
+    assert not layer_controls.isVisible()
 
     _advance_tour_until(tour, 'Layer controls', qtbot)
-    assert qt_viewer.dockLayerControls.isVisible()
+    assert layer_controls.isVisible()
 
     tour.close_tour()
-    assert not qt_viewer.dockLayerList.isVisible()
-    assert not qt_viewer.dockLayerControls.isVisible()
+    assert not layer_list.isVisible()
+    assert not layer_controls.isVisible()
 
 
-@skip_local_popups
-def test_build_viewer_tour_reveals_dock_hidden_mid_tour(
-    make_napari_viewer, qtbot
-):
-    """Hiding a dock partway through the tour, after its step already
-    passed, used to still freeze the tour once the relevant step came up
-    again -- the dock was only ever checked once, up front."""
-    viewer = make_napari_viewer(show=True)
-    qt_viewer = viewer.window._qt_viewer
+def test_tour_reveals_target_hidden_mid_tour(qtbot):
+    """Hiding a step's target partway through the tour, after its step
+    already passed, used to still freeze the tour once that step came up
+    again -- the target was only ever checked once, up front."""
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.resize(640, 480)
+    window.show()
 
-    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    layer_list = QWidget(window)
+    layer_list.setGeometry(0, 0, 50, 50)
+    layer_list.show()
+    shown = []
+
+    tour = GuidedTour(
+        [
+            TourStep(target=lambda: window, title='Welcome', body=''),
+            TourStep(
+                target=lambda: layer_list,
+                title='Layer list',
+                body='',
+                ensure_visible=_reveal(layer_list, shown),
+            ),
+        ],
+        window,
+    )
+
+    def _restore() -> None:
+        for w in shown:
+            w.hide()
+
+    tour.finished.connect(_restore)
     qtbot.addWidget(tour._tooltip)
     qtbot.addWidget(tour._overlay)
     tour.start()
-    qtbot.waitUntil(
-        lambda: tour._steps[tour._current].title == 'Welcome to napari'
-    )
+    qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'Welcome')
 
-    qt_viewer.dockLayerList.hide()
-    assert not qt_viewer.dockLayerList.isVisible()
+    layer_list.hide()
+    assert not layer_list.isVisible()
 
     _advance_tour_until(tour, 'Layer list', qtbot)
-    assert qt_viewer.dockLayerList.isVisible()
+    assert layer_list.isVisible()
 
     tour.close_tour()
-    assert not qt_viewer.dockLayerList.isVisible()
+    assert not layer_list.isVisible()
 
 
 def test_build_viewer_tour_leaves_visible_docks_alone(make_napari_viewer):
