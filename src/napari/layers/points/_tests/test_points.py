@@ -1342,6 +1342,24 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_color_cycle_default(attribute):
+    """Cycle mode without an explicit cycle still distinguishes the categories.
+
+    The default used to be a single white, which made the mode a no-op: every category
+    mapped to the same color, and picking "cycle" in the layer controls turned the whole
+    layer white.
+    """
+    layer = Points(
+        np.zeros((6, 2)),
+        features={'point_type': np.array(['A', 'B', 'C'] * 2)},
+        **{f'{attribute}_color': 'point_type'},
+    )
+
+    assert getattr(layer, f'{attribute}_color_mode') == 'cycle'
+    assert len(np.unique(getattr(layer, f'{attribute}_color'), axis=0)) > 1
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
