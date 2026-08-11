@@ -17,8 +17,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -114,11 +112,9 @@ class _TourTooltip(QFrame):
         self._title.setText(title)
         self._body.setText(body)
         self._counter.setText(f'{step}/{total}')
-        self._back.setText(trans._('(P)revious'))
-        self._skip.setText(trans._('(Esc) Skip'))
-        self._next.setText(
-            trans._('(N) Finish') if step == total else trans._('(N)ext')
-        )
+        self._back.setText('(P)revious')
+        self._skip.setText('(Esc) Skip')
+        self._next.setText('(N) Finish' if step == total else '(N)ext')
         self._back.setVisible(step > 1)
         self._skip.setVisible(step < total)
         self._update_size()
@@ -391,8 +387,8 @@ def build_viewer_tour(
         [
             TourStep(
                 target=target('canvas'),
-                title=trans._('Welcome to the viewer'),
-                body=trans._(
+                title='Welcome to the viewer',
+                body=(
                     'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
                     'and reopen this tour from Help any time.'
                 ),
@@ -400,37 +396,37 @@ def build_viewer_tour(
             ),
             TourStep(
                 target=target('layer_list'),
-                title=trans._('Layer list'),
-                body=trans._(
+                title='Layer list',
+                body=(
                     'Layers live here. Select one to edit it, rename it inline, change visibility, or reorder by dragging.'
                 ),
             ),
             TourStep(
                 target=target('layer_buttons'),
-                title=trans._('Layer buttons'),
-                body=trans._(
+                title='Layer buttons',
+                body=(
                     'These create or delete layers. They are the quickest way to add points, shapes, or labels on top of your data.'
                 ),
             ),
             TourStep(
                 target=target('layer_controls'),
-                title=trans._('Layer controls'),
-                body=trans._(
+                title='Layer controls',
+                body=(
                     'The active layer decides what appears here. Different layer types expose different controls for appearance and editing.'
                 ),
             ),
             TourStep(
                 target=target('viewer_buttons'),
-                title=trans._('Viewer buttons'),
-                body=trans._(
+                title='Viewer buttons',
+                body=(
                     'Use these for grid mode, 2D/3D display, axis order, and resetting the camera with the home button.'
                 ),
                 anchor=TourAnchor.ABOVE,
             ),
             TourStep(
                 target=target('dims'),
-                title=trans._('Dimension sliders'),
-                body=trans._(
+                title='Dimension sliders',
+                body=(
                     'Extra dimensions show up here. Move through slices, or press play on a slider to animate along that axis.'
                 ),
                 anchor=TourAnchor.ABOVE,
@@ -438,8 +434,8 @@ def build_viewer_tour(
             ),
             TourStep(
                 target=target('status_bar'),
-                title=trans._('Status bar'),
-                body=trans._(
+                title='Status bar',
+                body=(
                     'The status bar reports cursor position, values under the mouse, and small context-sensitive hints while you interact.'
                 ),
                 anchor=TourAnchor.ABOVE,
