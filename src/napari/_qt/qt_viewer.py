@@ -217,7 +217,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[ty:invalid-argument-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
