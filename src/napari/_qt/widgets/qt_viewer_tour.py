@@ -395,10 +395,19 @@ def build_viewer_tour(
                 target=target('canvas'),
                 title='Welcome to the viewer',
                 body=(
-                    'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
-                    'and reopen this tour from Help any time.'
+                    'You can interact with the viewer during this tour. '
+                    'Hovering over many UI elements will show tooltips.'
                 ),
                 anchor=TourAnchor.CENTER,
+            ),
+            TourStep(
+                target=target('canvas'),
+                title='Explore the canvas',
+                body=(
+                    'The viewer canvas shows your layers. Drag to pan and scroll to zoom. '
+                    'Reopen this tour from Help any time.'
+                ),
+                anchor=TourAnchor.BELOW,
             ),
             TourStep(
                 target=target('layer_list'),

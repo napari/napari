@@ -98,15 +98,14 @@ def test_tour_tooltip_center_anchor(qtbot):
     assert abs(placed_center.y() - target_center.y()) <= 1
 
 
-def test_build_viewer_tour_canvas_step_is_centered(make_napari_viewer):
+def test_build_viewer_tour_first_step_is_centered(make_napari_viewer):
     viewer = make_napari_viewer()
     qt_window = viewer.window._qt_window
     tour = build_viewer_tour(qt_window, sample=None)
 
-    canvas = qt_window._qt_viewer.canvas.native
-    canvas_steps = [s for s in tour._steps if s.target() is canvas]
-    assert len(canvas_steps) == 1
-    assert canvas_steps[0].anchor == TourAnchor.CENTER
+    first_step = tour._steps[0]
+    assert first_step.target() is qt_window._qt_viewer.canvas.native
+    assert first_step.anchor == TourAnchor.CENTER
 
 
 def test_tour_tooltip_next_back_shortcuts(qtbot):
