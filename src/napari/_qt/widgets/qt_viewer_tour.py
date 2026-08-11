@@ -55,7 +55,6 @@ class _TourTooltip(QFrame):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setObjectName('qt_viewer_tour_tooltip')
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 14, 14, 14)
@@ -78,15 +77,12 @@ class _TourTooltip(QFrame):
         self._nav.addWidget(self._counter)
         self._nav.addStretch()
         self._back = QPushButton()
-        self._back.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._back.clicked.connect(self.back_clicked)
         self._nav.addWidget(self._back)
         self._next = QPushButton()
-        self._next.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._next.clicked.connect(self.next_clicked)
         self._nav.addWidget(self._next)
         self._skip = QPushButton()
-        self._skip.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._skip.clicked.connect(self.skip_clicked)
         self._nav.addWidget(self._skip)
         layout.addLayout(self._nav)
@@ -113,35 +109,12 @@ class _TourTooltip(QFrame):
         self._title.setText(title)
         self._body.setText(body)
         self._counter.setText(f'{step}/{total}')
-        self._back.setText('(P)revious')
+        self._back.setText('Previous')
         self._skip.setText('(Esc) Skip')
-        self._next.setText('(N) Finish' if step == total else '(N)ext')
+        self._next.setText('Finish' if step == total else 'Next')
         self._back.setVisible(step > 1)
         self._skip.setVisible(step < total)
         self._update_size()
-
-    def keyPressEvent(self, event: QKeyEvent | None) -> None:
-        # Escape is handled globally by GuidedTour.eventFilter, since
-        # other widgets (e.g. the canvas) unconditionally accept key
-        # events and would otherwise prevent it from reaching here.
-        if event is None:
-            return
-        if event.key() in (
-            Qt.Key.Key_N,
-            Qt.Key.Key_Right,
-            Qt.Key.Key_Enter,
-            Qt.Key.Key_Return,
-        ):
-            self.next_clicked.emit()
-            return
-        if event.key() in (
-            Qt.Key.Key_P,
-            Qt.Key.Key_Left,
-            Qt.Key.Key_Backspace,
-        ):
-            self.back_clicked.emit()
-            return
-        super().keyPressEvent(event)
 
     def place(
         self, target_rect: QRect, anchor: TourAnchor, bounds: QRect
@@ -233,7 +206,6 @@ class GuidedTour(QObject):
         self._overlay.raise_()
         self._tooltip.show()
         self._tooltip.raise_()
-        self._tooltip.setFocus()
         app = QApplication.instance()
         if app is not None:
             app.installEventFilter(self)

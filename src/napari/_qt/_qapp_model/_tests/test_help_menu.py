@@ -108,16 +108,24 @@ def test_build_viewer_tour_first_step_is_centered(make_napari_viewer):
     assert first_step.anchor == TourAnchor.CENTER
 
 
-def test_tour_tooltip_next_back_shortcuts(qtbot):
+def test_tour_tooltip_next_back_are_click_only(qtbot):
+    """N/P keybinds were dropped as confusingly focus-dependent; clicking
+    the buttons is the only way to navigate now (Escape stays global)."""
     parent = QWidget()
     qtbot.addWidget(parent)
     tooltip = _TourTooltip(parent)
     qtbot.addWidget(tooltip)
+    tooltip.set_content('Title', 'Body.', 2, 5)
+
+    with qtbot.assertNotEmitted(tooltip.next_clicked):
+        qtbot.keyPress(tooltip, Qt.Key.Key_N)
+    with qtbot.assertNotEmitted(tooltip.back_clicked):
+        qtbot.keyPress(tooltip, Qt.Key.Key_P)
 
     with qtbot.waitSignal(tooltip.next_clicked, timeout=1000):
-        qtbot.keyPress(tooltip, Qt.Key.Key_N)
+        qtbot.mouseClick(tooltip._next, Qt.MouseButton.LeftButton)
     with qtbot.waitSignal(tooltip.back_clicked, timeout=1000):
-        qtbot.keyPress(tooltip, Qt.Key.Key_P)
+        qtbot.mouseClick(tooltip._back, Qt.MouseButton.LeftButton)
 
 
 def test_tour_escape_closes_regardless_of_focus(qtbot):
