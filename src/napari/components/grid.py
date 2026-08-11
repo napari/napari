@@ -78,9 +78,13 @@ class GridCanvas(EventedModel):
             return (1, 1)
 
         n_row, n_column = self.shape
-        n_grid_squares = np.ceil(
-            len(self._effective_indices(layers)) / abs(self.stride)
-        ).astype(int)
+
+        # Number of viewboxes is the number of stride-groups that contain at
+        # least one visible layer. Stacking within a viewbox is determined by
+        # original indices (see _viewbox_groups), while groups with no visible
+        # layers are omitted so hidden layers never leave empty viewboxes.
+        _, occupied = self._viewbox_groups(layers)
+        n_grid_squares = len(occupied)
 
         if n_row == -1 and n_column == -1:
             n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
@@ -128,14 +132,11 @@ class GridCanvas(EventedModel):
 
         n_row, n_column = self.actual_shape(layers)
 
-        # Adjust for forward or reverse ordering
-        adj_i = (
-            effective_indices.index(index)
-            if self.stride > 0
-            else len(effective_indices) - effective_indices.index(index) - 1
-        )
+        # Map this layer's viewbox group to its linear position among the
+        # occupied groups (groups with no visible layer are compacted away).
+        group_of, occupied = self._viewbox_groups(layers)
+        adj_i = occupied.index(group_of[index])
 
-        adj_i = adj_i // abs(self.stride)
         adj_i = adj_i % (n_row * n_column)
         i_row = adj_i // n_column
         i_column = adj_i % n_column
@@ -253,11 +254,42 @@ class GridCanvas(EventedModel):
         return spacing
 
     def _effective_indices(self, layers: Sequence | None = None) -> list[int]:
-        """Return a list of original layer indices that are "active" in the grid."""
+        """Return indices of layers that are active (visible) in the grid.
+
+        Only visible layers occupy grid viewboxes, so hidden layers never
+        create empty viewboxes. Stacking within a viewbox is still determined
+        by each layer's original index and the stride sign.
+        """
         if layers is None:
             return []
-        if abs(self.stride) >= 2:
-            return list(range(len(layers)))
-        if abs(self.stride) == 1:
-            return [i for i, layer in enumerate(layers) if layer.visible]
-        return list(range(len(layers)))
+        return [i for i, layer in enumerate(layers) if layer.visible]
+
+    def _viewbox_groups(self, layers: Sequence,) -> tuple[dict[int, int], list[int]]:
+        """Return the viewbox grouping for the given layers.
+
+        Parameters
+        ----------
+        layers : Sequence | None
+            List of layers that need to be placed in the grid.
+        
+        Returns
+        -------
+        group_of : dict[int, int]
+            Maps each layer index to its viewbox group. Positive stride uses
+            contiguous ranges of original indices (``i // stride``) so toggling
+            visibility never moves a layer. Negative stride follows napari's
+            reference behavior of reversing the sequence, then packing
+            ``stride`` layers per viewbox (``(len(layers) - 1 - i) // stride``)
+            so hidden layers never collapse or re-pack visible layers.
+        occupied : list[int]
+            Sorted viewbox groups that contain at least one visible layer.
+        """
+        stride = abs(self.stride)
+        n = len(layers)
+        if self.stride > 0:
+            group_of = {i: i // stride for i in range(n)}
+        else:
+            group_of = {i: (n - 1 - i) // stride for i in range(n)}
+        visible = self._effective_indices(layers)
+        occupied = sorted({group_of[i] for i in visible})
+        return group_of, occupied
