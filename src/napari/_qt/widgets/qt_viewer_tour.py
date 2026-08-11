@@ -40,7 +40,9 @@ class TourStep:
     body: str
     anchor: TourAnchor = TourAnchor.RIGHT
     skip: Callable[[], bool] = lambda: False
-    ensure_visible: Callable[[], None] = lambda: None
+    # Returns whether it actually revealed something new, so callers can
+    # wait for layout to settle before reading the target's geometry.
+    ensure_visible: Callable[[], bool] = lambda: False
 
 
 _TOOLTIP_WIDTH = 340
@@ -287,7 +289,14 @@ class GuidedTour(QObject):
         if self._window is None:
             return
         step = self._steps[index]
-        step.ensure_visible()
+        if step.ensure_visible():
+            # Revealing a hidden dock doesn't settle its final layout
+            # geometry synchronously (QMainWindowLayout needs an event-loop
+            # pass to reflow neighboring docks), so mapTo()/size() read
+            # right now could be stale. Defer by one tick, same as the
+            # initial _show_step call in start().
+            QTimer.singleShot(0, lambda: self._show_step(index))
+            return
         target = step.target()
         if target is None or not target.isVisible():
             return
@@ -372,12 +381,14 @@ def build_viewer_tour(
     # finishes.
     shown_docks: list[QWidget] = []
 
-    def reveal(dock: Callable[[], QWidget]) -> Callable[[], None]:
-        def _ensure_visible() -> None:
+    def reveal(dock: Callable[[], QWidget]) -> Callable[[], bool]:
+        def _ensure_visible() -> bool:
             widget = dock()
-            if not widget.isVisible():
-                shown_docks.append(widget)
-                widget.show()
+            if widget.isVisible():
+                return False
+            shown_docks.append(widget)
+            widget.show()
+            return True
 
         return _ensure_visible
 
