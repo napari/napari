@@ -13,8 +13,9 @@ from napari._app_model import get_app_model
 from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
-    toggle_action_details,
+    toggle_actions,
 )
+from napari._app_model.constants import MenuId
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -46,7 +47,7 @@ def check_view_menu_visibility(viewer, qtbot):
 
 @pytest.mark.parametrize(
     ('action_id', 'action_title', 'attribute_path'),
-    toggle_action_details,
+    toggle_actions[MenuId.VIEW_SCALEBAR],
 )
 def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     """
@@ -322,7 +323,7 @@ def test_toggle_activity_dock(make_napari_viewer):
 def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
     """Test toggle layer tooltips"""
     make_napari_viewer()
-    action_id = 'napari.window.view.toggle_layer_tooltips'
+    action_id = 'napari.window.toggle_layer_tooltips'
     app = get_app_model()
 
     # Check initial layer tooltip visibility settings state (False)
@@ -345,29 +346,29 @@ def test_zoom_actions(make_napari_viewer):
     viewer.add_image(np.ones((10, 10, 10)))
 
     # get initial zoom state
-    initial_zoom = viewer.camera.zoom
+    initial_zoom = viewer.scene.camera.zoom
 
     # Check zoom in action
-    app.commands.execute_command('napari.viewer.camera.zoom_in')
-    assert viewer.camera.zoom == pytest.approx(1.5 * initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_in')
+    assert viewer.scene.camera.zoom == pytest.approx(1.5 * initial_zoom)
 
     # Check zoom out action
-    app.commands.execute_command('napari.viewer.camera.zoom_out')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_out')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
-    viewer.camera.zoom = 2
+    viewer.scene.camera.zoom = 2
     # Check reset zoom action
-    app.commands.execute_command('napari.viewer.fit_to_view')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.fit_to_view')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
     # Check that angle is preserved
     viewer.dims.ndisplay = 3
-    viewer.camera.angles = (90, 0, 0)
-    viewer.camera.zoom = 2
-    app.commands.execute_command('napari.viewer.fit_to_view')
+    viewer.scene.camera.angles = (90, 0, 0)
+    viewer.scene.camera.zoom = 2
+    app.commands.execute_command('napari.scene.fit_to_view')
     # Zoom should be reset, but angle unchanged
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
-    assert viewer.camera.angles == (90, 0, 0)
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
+    assert viewer.scene.camera.angles == (90, 0, 0)
 
 
 @pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])

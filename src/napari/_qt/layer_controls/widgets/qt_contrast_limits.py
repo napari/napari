@@ -86,11 +86,7 @@ class _QDoubleRangeSlider(QDoubleRangeSlider):
 
 
 class QContrastLimitsPopup(QtPopup):
-    """Popup for contrast limits with histogram visualization.
-
-    Unlike the simple QRangeSliderPopup, this uses a vertical layout
-    to stack the slider, histogram, and controls vertically.
-    """
+    """Popup for contrast limits with histogram visualization."""
 
     def __init__(
         self,
@@ -362,7 +358,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Widget to wrap push buttons related with the layer auto-contrast funtionality.
     auto_scale_buttons_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the auto-contrast functionality widget.
-    clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
+    clim_popup : QContrastLimitsPopup
         Popup widget launching the contrast range slider.
     contrast_limits_slider : _QDoubleRangeSlider
         Slider controlling current constrast limits of the layer.
