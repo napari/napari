@@ -827,10 +827,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self._layer_slicer._force_sync = not event.value
 
     def _calc_status_from_cursor(
-        self,
+        self, view_direction: np.ndarray | None = None
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
+        if view_direction is None:
+            view_direction = self.scene.camera.calculate_nd_view_direction(
+                self.dims.ndim, self.dims.displayed
+            )
         coord2val: dict[str, list[str]] = {}
         coord_str = ''
         status_str = ''
@@ -847,7 +851,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -861,7 +865,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             status = active.get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -879,7 +883,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 continue
             status = layer.get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -912,9 +916,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return status_str, tooltip_text
 
-    def update_status_from_cursor(self):
+    def update_status_from_cursor(
+        self, view_direction: np.ndarray | None = None
+    ):
         """Update the status and tooltip from the cursor position."""
-        status = self._calc_status_from_cursor()
+        status = self._calc_status_from_cursor(view_direction)
         if status is not None:
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:

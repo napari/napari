@@ -109,6 +109,59 @@ def test_calculate_view_direction_nd():
     assert np.allclose(view_direction[[0, 2, 4]], (-1, 0, 0))
 
 
+def test_calculate_view_direction_with_fov():
+    """View direction at the canvas center is the camera view direction."""
+    camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=1)
+    for perspective in (0, 30, 60):
+        camera.perspective = perspective
+        view_direction = camera.calculate_nd_view_direction(
+            ndim=3,
+            dims_displayed=[0, 1, 2],
+            canvas_position=(300, 300),
+            canvas_size=(600, 600),
+        )
+        assert np.allclose(view_direction, camera.view_direction)
+
+
+def test_calculate_view_direction_with_fov_off_center():
+    """View direction off-center accounts for the field of view."""
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), perspective=60, zoom=1)
+    # default view direction is (-1, 0, 0), so moving right of center
+    # tilts the view direction towards +z
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=3,
+        dims_displayed=[0, 1, 2],
+        canvas_position=(450, 300),
+        canvas_size=(600, 600),
+    )
+    assert np.allclose(view_direction, (-0.96076892, 0, 0.27735010), atol=1e-5)
+
+    # zoom should not change the view direction
+    camera.zoom = 2.5
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=3,
+        dims_displayed=[0, 1, 2],
+        canvas_position=(450, 300),
+        canvas_size=(600, 600),
+    )
+    assert np.allclose(view_direction, (-0.96076892, 0, 0.27735010), atol=1e-5)
+
+
+def test_calculate_view_direction_with_fov_nd():
+    """nD view direction with fov is embedded in the displayed dims."""
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), perspective=60, zoom=1)
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=4,
+        dims_displayed=[0, 2, 3],
+        canvas_position=(450, 300),
+        canvas_size=(600, 600),
+    )
+    assert len(view_direction) == 4
+    assert np.allclose(
+        view_direction[[0, 2, 3]], (-0.96076892, 0, 0.27735010), atol=1e-5
+    )
+
+
 @pytest.mark.parametrize(
     ('orientation', 'expected_handedness'),
     list(

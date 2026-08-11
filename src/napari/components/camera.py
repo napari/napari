@@ -202,9 +202,19 @@ class Camera(EventedModel):
         self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: tuple[int, ...]
+        self,
+        ndim: int,
+        dims_displayed: tuple[int, ...],
+        canvas_position: tuple[float, float] | None = None,
+        canvas_size: tuple[int, int] | None = None,
     ) -> npt.NDArray[np.float64] | None:
         """Calculate the nD view direction vector of the camera.
+
+        When ``canvas_position`` and ``canvas_size`` are given and the camera
+        uses a perspective projection, the view direction is calculated for the
+        ray going from the eye through that canvas position (accounting for the
+        field of view). Otherwise, the view direction is that of the center of
+        the view.
 
         Parameters
         ----------
@@ -212,6 +222,13 @@ class Camera(EventedModel):
             Number of dimensions in which to embed the 3D view vector.
         dims_displayed : Tuple[int]
             Dimensions in which to embed the 3D view vector.
+        canvas_position : tuple of float, optional
+            Position in the canvas in pixels, as ``(x, y)`` where ``x`` is the
+            column and ``y`` is the row. If ``None``, the view direction is
+            calculated for the center of the canvas.
+        canvas_size : tuple of int, optional
+            Size of the canvas in pixels, as ``(height, width)``. Only used when
+            ``canvas_position`` is given.
 
         Returns
         -------
@@ -221,8 +238,62 @@ class Camera(EventedModel):
         if len(dims_displayed) != 3:
             return None
         view_direction_nd = np.zeros(ndim)
-        view_direction_nd[list(dims_displayed)] = self.view_direction
+        if (
+            canvas_position is not None
+            and canvas_size is not None
+            and self.perspective > 0
+        ):
+            view_direction = self._view_direction_at(
+                canvas_position, canvas_size
+            )
+        else:
+            view_direction = np.asarray(self.view_direction)
+        view_direction_nd[list(dims_displayed)] = view_direction
         return view_direction_nd
+
+    def _view_direction_at(
+        self,
+        canvas_position: tuple[float, float],
+        canvas_size: tuple[int, int],
+    ) -> npt.NDArray[np.float64]:
+        """Calculate the view direction of the ray from the eye through a canvas position.
+
+        Parameters
+        ----------
+        canvas_position : tuple of float
+            Position in the canvas in pixels, as ``(x, y)`` where ``x`` is the
+            column and ``y`` is the row.
+        canvas_size : tuple of int
+            Size of the canvas in pixels, as ``(height, width)``.
+
+        Returns
+        -------
+        view_direction : np.ndarray
+            Normalized 3D view direction vector in scene coordinates, in the
+            world coordinate system of the three displayed dimensions.
+        """
+        x, y = canvas_position
+        h, w = canvas_size
+
+        view_direction = np.asarray(self.view_direction)
+        up_direction = np.asarray(self.up_direction)
+        # vector pointing to the right of the canvas, in scene coordinates
+        right_direction = np.cross(view_direction, up_direction)
+
+        # distance of the eye from the center of the view, in world
+        # coordinates. This matches the perspective projection used by
+        # vispy, combined with the zoom-to-scale factor relation
+        # (see napari/_vispy/camera.py).
+        dist = h / (2 * self.zoom * np.tan(np.radians(self.perspective) / 2))
+
+        # offset of the canvas position from the canvas center, in world
+        # coordinates
+        dx = (x - w / 2) / self.zoom
+        dy = (y - h / 2) / self.zoom
+
+        # ray direction from the eye through the canvas position
+        ray = dist * view_direction + dx * right_direction - dy * up_direction
+        return ray / np.linalg.norm(ray)
 
     def calculate_nd_up_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
