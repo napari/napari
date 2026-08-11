@@ -759,17 +759,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
-    def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
-        """Combine layerlist axis labels onto the current dims labels.
-
-        Replaces dims axis label at indices where layers axis labels exist.
-        """
-        updated_axis_labels = list(self.dims.axis_labels)
-        for pos, label in enumerate(self.layers.axis_labels):
-            if label != str(pos - self.dims.ndim):
-                updated_axis_labels[pos] = label
-        return tuple(updated_axis_labels)
-
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
@@ -780,7 +769,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
-            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels()
+            self.dims.axis_labels = self.layers.axis_labels
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
