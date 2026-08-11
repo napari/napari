@@ -287,6 +287,9 @@ class GridCanvas(EventedModel):
         occupied : list[int]
             Sorted viewbox groups that contain at least one visible layer.
         """
+        if layers is None:
+            return {}, []
+
         stride = abs(self.stride)
         n = len(layers)
         if self.stride > 0:
