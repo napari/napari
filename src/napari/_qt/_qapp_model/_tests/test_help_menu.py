@@ -215,6 +215,7 @@ def test_tour_reveals_hidden_target_for_its_step(qtbot):
         ],
         window,
     )
+
     def _restore() -> None:
         for w in shown:
             w.hide()
