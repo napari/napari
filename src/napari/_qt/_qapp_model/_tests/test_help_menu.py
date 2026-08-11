@@ -7,7 +7,7 @@ from unittest import mock
 import numpy as np
 import pytest
 import requests
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QRect, Qt
 from qtpy.QtWidgets import QApplication, QLabel, QWidget
 
 from napari._app_model import get_app_model
@@ -16,6 +16,7 @@ from napari._qt.widgets.qt_viewer_tour import (
     _BUILTIN_TOUR_TARGETS,
     _TOOLTIP_WIDTH,
     GuidedTour,
+    TourAnchor,
     TourStep,
     _TourTooltip,
     build_viewer_tour,
@@ -53,6 +54,7 @@ def test_about_action(make_napari_viewer, action_id):
 
 
 def test_tour_tooltip_widens_for_long_nav_labels(qtbot):
+    """A fixed width sized for English labels could crop longer translations."""
     parent = QWidget()
     qtbot.addWidget(parent)
     tooltip = _TourTooltip(parent)
@@ -79,7 +81,35 @@ def test_tour_tooltip_widens_for_long_nav_labels(qtbot):
     assert tooltip.width() == _TOOLTIP_WIDTH
 
 
-def test_tour_tooltip_keyboard_shortcuts(qtbot):
+def test_tour_tooltip_center_anchor(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    tooltip = _TourTooltip(parent)
+    qtbot.addWidget(tooltip)
+    tooltip.set_content('Title', 'Body.', 1, 5)
+
+    target_rect = QRect(100, 200, 1000, 800)
+    bounds = QRect(0, 0, 2000, 1500)
+    tooltip.place(target_rect, TourAnchor.CENTER, bounds)
+
+    placed_center = tooltip.geometry().center()
+    target_center = target_rect.center()
+    assert abs(placed_center.x() - target_center.x()) <= 1
+    assert abs(placed_center.y() - target_center.y()) <= 1
+
+
+def test_build_viewer_tour_canvas_step_is_centered(make_napari_viewer):
+    viewer = make_napari_viewer()
+    qt_window = viewer.window._qt_window
+    tour = build_viewer_tour(qt_window, sample=None)
+
+    canvas = qt_window._qt_viewer.canvas.native
+    canvas_steps = [s for s in tour._steps if s.target() is canvas]
+    assert len(canvas_steps) == 1
+    assert canvas_steps[0].anchor == TourAnchor.CENTER
+
+
+def test_tour_tooltip_next_back_shortcuts(qtbot):
     parent = QWidget()
     qtbot.addWidget(parent)
     tooltip = _TourTooltip(parent)
@@ -92,6 +122,7 @@ def test_tour_tooltip_keyboard_shortcuts(qtbot):
 
 
 def test_tour_escape_closes_regardless_of_focus(qtbot):
+    """Esc used to require the tooltip to have focus to close the tour."""
     window = QWidget()
     qtbot.addWidget(window)
     window.resize(640, 480)

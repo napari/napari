@@ -30,6 +30,7 @@ class TourAnchor(Enum):
     RIGHT = 'right'
     ABOVE = 'above'
     BELOW = 'below'
+    CENTER = 'center'
 
 
 @dataclass(frozen=True)
@@ -158,6 +159,11 @@ class _TourTooltip(QFrame):
             x, y = (
                 target_rect.center().x() - w // 2,
                 target_rect.bottom() + gap,
+            )
+        elif anchor == TourAnchor.CENTER:
+            x, y = (
+                target_rect.center().x() - w // 2,
+                target_rect.center().y() - h // 2,
             )
         else:
             x, y = target_rect.right() + gap, target_rect.top()
@@ -392,7 +398,7 @@ def build_viewer_tour(
                     'The viewer canvas shows your layers. Drag to pan, scroll to zoom, '
                     'and reopen this tour from Help any time.'
                 ),
-                anchor=TourAnchor.BELOW,
+                anchor=TourAnchor.CENTER,
             ),
             TourStep(
                 target=target('layer_list'),
