@@ -34,7 +34,6 @@ from napari.utils.events.containers._typed import (
 )
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents
-from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -121,12 +120,7 @@ class EventedList(TypedMutableSequence[_T]):
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError(
-                    trans._(
-                        'Can only assign an iterable to slice',
-                        deferred=True,
-                    )
-                )
+                raise TypeError('Can only assign an iterable to slice')
             value = list(
                 value
             )  # make sure we don't empty generators and reuse them
@@ -137,12 +131,7 @@ class EventedList(TypedMutableSequence[_T]):
                 indices = list(range(*key.indices(len(self))))
                 if not len(value) == len(indices):
                     raise ValueError(
-                        trans._(
-                            'attempt to assign sequence of size {size} to extended slice of size {slice_size}',
-                            deferred=True,
-                            size=len(value),
-                            slice_size=len(indices),
-                        )
+                        f'attempt to assign sequence of size {len(value)} to extended slice of size {len(indices)}'
                     )
                 for i, v in zip(indices, value, strict=False):
                     self.__setitem__(i, v)
@@ -169,14 +158,7 @@ class EventedList(TypedMutableSequence[_T]):
             return [(self, self.index(key))]
 
         valid = {int, slice}.union(set(self._lookup))
-        raise TypeError(
-            trans._(
-                'Deletion index must be {valid!r}, got {dtype}',
-                deferred=True,
-                valid=valid,
-                dtype=type(key),
-            )
-        )
+        raise TypeError(f'Deletion index must be {valid!r}, got {type(key)}')
 
     def __delitem__(self, key: Index) -> None:
         # delete from the end
@@ -316,12 +298,7 @@ class EventedList(TypedMutableSequence[_T]):
             The destination for sources.
         """
         if isinstance(dest_index, slice):
-            raise TypeError(
-                trans._(
-                    'Destination index may not be a slice',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Destination index may not be a slice')
 
         to_move: list[int] = []
         for idx in sources:
@@ -331,11 +308,7 @@ class EventedList(TypedMutableSequence[_T]):
                 to_move.append(idx)
             else:
                 raise TypeError(
-                    trans._(
-                        'Can only move integer or slice indices, not {t}',
-                        deferred=True,
-                        t=type(idx),
-                    )
+                    f'Can only move integer or slice indices, not {type(idx)}'
                 )
 
         to_move = list(dict.fromkeys(to_move))

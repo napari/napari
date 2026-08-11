@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.geometry import MeshData
@@ -8,6 +12,9 @@ from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.visuals.surface import SurfaceVisual
 from napari.utils.colormaps.colormap_utils import _napari_cmap_to_vispy
 
+if TYPE_CHECKING:
+    from napari.layers import Surface
+
 
 class VispySurfaceLayer(VispyBaseLayer):
     """Vispy view for the surface layer.
@@ -16,6 +23,8 @@ class VispySurfaceLayer(VispyBaseLayer):
     lighting direction and lighting color. More information can be found
     here https://github.com/vispy/vispy/blob/main/vispy/visuals/mesh.py
     """
+
+    layer: Surface
 
     def __init__(self, layer, font_info: FontInfo, **kwargs) -> None:
         node = SurfaceVisual(font_info=font_info)
@@ -55,24 +64,19 @@ class VispySurfaceLayer(VispyBaseLayer):
         faces = None
         vertex_values = None
         vertex_colors = None
-        if len(self.layer._data_view) and len(self.layer._view_faces):
+        if len(self.layer._view_vertices) and len(self.layer._view_faces):
             # Offsetting so pixels now centered
             # coerce to float to solve vispy/vispy#2007
             # reverse order to get zyx instead of xyz
             vertices = np.asarray(
-                self.layer._data_view[:, ::-1], dtype=np.float32
+                self.layer._view_vertices[:, ::-1], dtype=np.float32
             )
             # due to above xyz>zyx, also reverse order of faces to fix
             # handedness of normals
             faces = self.layer._view_faces[:, ::-1]
 
-            values = self.layer._view_vertex_values
-            if len(values):
-                vertex_values = values
-
-            colors = self.layer._view_vertex_colors
-            if len(colors):
-                vertex_colors = colors
+            vertex_values = self.layer._view_vertex_values
+            vertex_colors = self.layer._view_vertex_colors
 
         # making sure the vertex data is 3D prevents shape errors with
         # attached filters, instead of trying to attach/detach each time
@@ -114,18 +118,23 @@ class VispySurfaceLayer(VispyBaseLayer):
         # when setting up the TextureFilter so napari users can load images
         # for textures normally
         # https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
-        if self.layer._has_texture and self._texture_filter is None:
+        has_tex = (
+            self.layer.texture is not None
+            and self.layer.texcoords is not None
+            and self.layer._slicing_state._view_texcoords is not None
+        )
+        if has_tex and self._texture_filter is None:
             self._texture_filter = TextureFilter(
                 np.flipud(self.layer.texture),
-                self.layer.texcoords,
+                self.layer._view_texcoords,
             )
             self.node.attach(self._texture_filter)
-        elif self.layer._has_texture:
+        elif has_tex:
             self._texture_filter.texture = np.flipud(self.layer.texture)
-            self._texture_filter.texcoords = self.layer.texcoords
+            self._texture_filter.texcoords = self.layer._view_texcoords
 
         if self._texture_filter is not None:
-            self._texture_filter.enabled = self.layer._has_texture
+            self._texture_filter.enabled = has_tex
             self.node.update()
 
     def _on_colormap_change(self):
@@ -221,3 +230,4 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_wireframe_color_change()
         self._on_face_normals_change()
         self._on_vertex_normals_change()
+        self._on_camera_move()

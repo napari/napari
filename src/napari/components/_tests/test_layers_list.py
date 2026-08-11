@@ -432,10 +432,6 @@ def test_layers_save_selected(builtins, tmpdir, layer_data_and_types):
 
 
 # the layers fixture is defined in napari/conftest.py
-# TODO: this warning filter can be removed when a new version
-# of napari-svg includes the following PR:
-# https://github.com/napari/napari-svg/pull/38
-@pytest.mark.filterwarnings('ignore:edge_:FutureWarning')
 def test_layers_save_svg(tmpdir, layers, napari_svg_name):
     """Test saving all layer data to an svg."""
     pm = npe2.PluginManager.instance()
@@ -783,3 +779,43 @@ def test_remove_selected_all_locked():
     layers.selection = {layer}
     layers.remove_selected()
     assert len(layers) == 1
+
+
+@pytest.mark.parametrize(
+    ('layer_specs', 'expected_labels', 'expected_ndim'),
+    [
+        ([], ('-2', '-1'), 2),  # no layers
+        ([((5, 5), None)], ('-2', '-1'), 2),  # unnanotated single layer
+        ([((5, 5), ('y', 'x'))], ('y', 'x'), 2),  # annotated single layer
+        (
+            [((2, 3, 4, 5), None), ((4, 5), ('y', 'x'))],
+            ('-4', '-3', 'y', 'x'),
+            4,
+        ),  # single annotated wins and is aligned
+        (
+            [((3, 4, 5), ('z', 'y', 'x')), ((4, 5), ('a', 'b'))],
+            ('z', 'y', 'x'),
+            3,
+        ),  # longest annotated wins
+        (
+            [((4, 5), ('y0', 'x0')), ((4, 5), ('y1', 'x1'))],
+            ('y1', 'x1'),
+            2,
+        ),  # topmost equally long annotated wins
+    ],
+)
+def test_layerlist_axis_labels(
+    # layer specs: list of (shape, axis_labels) tuples for image layers
+    layer_specs: list[tuple[tuple[int, ...], tuple[str, ...] | None]],
+    expected_labels: tuple[str, ...],
+    expected_ndim: int,
+):
+    """
+    Check that axis labels are set properly.
+    """
+    layers = LayerList(
+        Image(np.zeros(shape), axis_labels=labels)
+        for shape, labels in layer_specs
+    )
+    assert layers.axis_labels == expected_labels
+    assert layers.ndim == expected_ndim

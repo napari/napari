@@ -51,6 +51,7 @@ from napari.layers.shapes._shapes_utils import (
     validate_num_vertices,
 )
 from napari.layers.shapes.shape_types import BoxArray
+from napari.layers.utils.color_manager import DEFAULT_COLOR_CYCLE
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
     map_property,
@@ -79,14 +80,11 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from itertools import cycle
 
     import pandas as pd
-
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
 class Shapes(Layer):
@@ -485,12 +483,7 @@ class Shapes(Layer):
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError(
-                    trans._(
-                        'Shape dimensions must be equal to ndim',
-                        deferred=True,
-                    )
-                )
+                raise ValueError('Shape dimensions must be equal to ndim')
             ndim = data_ndim
 
         super().__init__(
@@ -809,10 +802,7 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for face_color dropped',
-                    deferred=True,
-                ),
+                'property used for face_color dropped',
                 RuntimeWarning,
             )
 
@@ -821,10 +811,7 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for edge_color dropped',
-                    deferred=True,
-                ),
+                'property used for edge_color dropped',
                 RuntimeWarning,
             )
 
@@ -1038,7 +1025,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1096,7 +1083,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> None | tuple[float, float]:
+    def face_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1104,7 +1091,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -1151,20 +1138,11 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
+                        f'_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Shapes.properties to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
+                        f'There must be a valid Shapes.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -1173,10 +1151,7 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
@@ -1227,7 +1202,7 @@ class Shapes(Layer):
         if isinstance(width, list):
             if not len(width) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             widths = width
@@ -1256,7 +1231,7 @@ class Shapes(Layer):
         if isinstance(z_index, list):
             if not len(z_index) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             z_indices = z_index
@@ -1312,16 +1287,6 @@ class Shapes(Layer):
             if unique_edge_width is not None:
                 with self.block_update_properties():
                     self.current_edge_width = unique_edge_width
-
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(
-                    v[selected_data_indices]
-                )
-
-            if all(p is not None for p in unique_properties.values()):
-                with self.block_update_properties():
-                    self.current_properties = unique_properties
 
         self._set_highlight()
 
@@ -1612,10 +1577,7 @@ class Shapes(Layer):
             return False
 
         raise ValueError(
-            trans._(
-                'Should be the name of a color, an array of colors, or the name of a property',
-                deferred=True,
-            )
+            'Should be the name of a color, an array of colors, or the name of a property'
         )
 
     def _get_state(self) -> dict[str, Any]:
@@ -1659,7 +1621,7 @@ class Shapes(Layer):
         return state
 
     @property
-    def _indices_view(self):
+    def _view_indices(self):
         return np.where(self._data_view._displayed)[0]
 
     @property
@@ -1674,7 +1636,7 @@ class Shapes(Layer):
         # This may be triggered when the string encoding instance changed,
         # in which case it has no cached values, so generate them here.
         self.text.string._apply(self.features)
-        return self.text.view_text(self._indices_view)
+        return self.text.view_text(self._view_indices)
 
     @property
     def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
@@ -1694,7 +1656,7 @@ class Shapes(Layer):
 
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
-            self._data_view.data[i] for i in self._indices_view
+            self._data_view.data[i] for i in self._view_indices
         ]
 
         # get the coordinates for the dimensions being displayed
@@ -1712,7 +1674,7 @@ class Shapes(Layer):
     def _view_text_color(self) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
         self.text.color._apply(self.features)
-        return self.text._view_color(self._indices_view)
+        return self.text._view_color(self._view_indices)
 
     @property
     def mode(self):
@@ -2420,8 +2382,10 @@ class Shapes(Layer):
 
         This is often needed when calculating screen-space sizes and distances
         of vertices for interactivity (rescaling, adding vertices, etc).
+        We use only the magnitude of the layer scale, because sizes and
+        distances must remain positive.
         """
-        return self.scale_factor / self.scale[-1]
+        return self.scale_factor / abs(self.scale[-1])
 
     @property
     def _normalized_vertex_radius(self):
@@ -2733,15 +2697,13 @@ class Shapes(Layer):
                     if len(vertices) <= 3 and prev_vertices > 3:
                         # https://github.com/napari/napari/issues/7903
                         show_warning(
-                            trans._(
-                                'Polygons must have three or more vertices. '
-                                'Lasso polygons are simplified using the '
-                                'RDP algorithm, which may cause polygons '
-                                'smaller than RDP epsilon to disappear. If  '
-                                'you face issues drawing small polygons, '
-                                'try reducing napari > Settings > '
-                                'Experimental > RDP epsilon. '
-                            ),
+                            'Polygons must have three or more vertices. '
+                            'Lasso polygons are simplified using the '
+                            'RDP algorithm, which may cause polygons '
+                            'smaller than RDP epsilon to disappear. If  '
+                            'you face issues drawing small polygons, '
+                            'try reducing napari > Settings > '
+                            'Experimental > RDP epsilon. ',
                         )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
@@ -3108,7 +3070,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, None | np.ndarray]:
+    ) -> tuple[float | int | None, np.ndarray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 

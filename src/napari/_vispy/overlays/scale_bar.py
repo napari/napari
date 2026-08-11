@@ -10,7 +10,6 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.notifications import show_warning
 
@@ -47,12 +46,12 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
         self.overlay.events.visible.connect(self._on_rendering_change)
 
-        self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
-        self.viewer.events.theme.connect(self._on_rendering_change)
+        self.viewer.scene.camera.events.zoom.connect(
+            self._on_size_or_zoom_change
+        )
         self.viewer.dims.events.order.connect(self._on_unit_change)
         self.viewer.dims.events.ndisplay.connect(self._on_unit_change)
-
-        get_settings().appearance.events.theme.connect(
+        self.viewer.canvas.events.background_color.connect(
             self._on_rendering_change
         )
 
@@ -61,9 +60,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_unit_change(self):
         # NOTE: this is also called by VispyCanvas when layer units are updated
         #       so it doesn't need to be connected to events for that
-        if self.overlay.unit is not None:
-            unit = pint.get_application_registry()(self.overlay.unit)
-        elif self.viewer.layers.units is not None:
+        if self.viewer.layers.units is not None:
             units = np.array(self.viewer.layers.units)[
                 list(self.viewer.dims.displayed)
             ]
@@ -141,7 +138,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Update length based on scale bar size and zoom."""
 
         # If scale has not changed, do not redraw
-        scale = 1 / self.viewer.camera.zoom
+        scale = 1 / self.viewer.scene.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale
