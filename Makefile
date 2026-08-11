@@ -1,7 +1,7 @@
 .PHONY: typestubs pre watch dist settings-schema
 
 typestubs:
-	python -m napari.utils.stubgen
+	tox -e typestub
 
 # note: much faster to run mypy as daemon,
 # dmypy run -- ...
@@ -10,8 +10,7 @@ typecheck:
 	tox -e mypy
 
 check-manifest:
-	pip install -U check-manifest
-	check-manifest
+	tox -e check-manifest
 
 dist: typestubs check-manifest
 	pip install -U build
@@ -21,7 +20,7 @@ settings-schema:
 	python -m napari.settings._napari_settings
 
 pre:
-	pre-commit run -a
+	prek run -a
 
 # If the first argument is "watch"...
 ifeq (watch,$(firstword $(MAKECMDGOALS)))

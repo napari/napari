@@ -78,7 +78,7 @@ viewer.dims.set_point(0, np.datetime64('2013-03-10T18:00:00.000000000'))
 
 # latitude goes from -90 (south, down) to 90 (north, up),
 # so we make sure that the camera vertical axis points up.
-viewer.camera.orientation2d = ('up', 'right')
+viewer.scene.camera.orientation2d = ('up', 'right')
 
 # fill the frame
 viewer.reset_view(margin=0)

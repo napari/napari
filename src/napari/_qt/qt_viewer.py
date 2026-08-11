@@ -10,13 +10,17 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
 )
 from weakref import WeakSet, ref
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
-from qtpy.QtGui import QGuiApplication, QImage
+from qtpy.QtGui import (
+    QGuiApplication,
+    QImage,
+)
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from superqt import ensure_main_thread
 
@@ -59,15 +63,35 @@ from napari.utils.notifications import show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
     from npe2.manifest.contributions import WriterContribution
+    from qtpy.QtGui import (
+        QCloseEvent,
+        QDragEnterEvent,
+        QDropEvent,
+        QHideEvent,
+        QKeyEvent,
+        QShowEvent,
+    )
 
     from napari._qt.layer_controls import QtLayerControlsContainer
+    from napari._vispy.layers.base import VispyBaseLayer
     from napari.components import ViewerModel
     from napari.utils.events import Event
+
+_LayerTypeName = Literal[
+    'graph',
+    'image',
+    'labels',
+    'points',
+    'shapes',
+    'surface',
+    'tracks',
+    'vectors',
+]
 
 
 def _npe2_decode_selected_filter(
@@ -127,7 +151,7 @@ class QtViewer(QSplitter):
         A remote manager processing commands from remote clients and sending out messages when polled.
     """
 
-    _instances = WeakSet()
+    _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
 
     def __init__(
         self,
@@ -141,24 +165,25 @@ class QtViewer(QSplitter):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         QCoreApplication.setAttribute(
-            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+            Qt.ApplicationAttribute.AA_UseStyleSheetPropagationInWidgetStyles,
+            True,
         )
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self._controls = None
-        self._layers = None
-        self._layersButtons = None
-        self._viewerButtons = None
+        self._controls: QtLayerControlsContainer | None = None
+        self._layers: QtLayerList | None = None
+        self._layersButtons: QtLayerButtons | None = None
+        self._viewerButtons: QtViewerButtons | None = None
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
-        self._console_backlog = []
-        self._console = None
+        self._console_backlog: list[dict[str, Any]] = []
+        self._console: QtConsole | None = None
 
-        self._dockLayerList = None
-        self._dockLayerControls = None
-        self._dockConsole = None
-        self._dockPerformance = None
+        self._dockLayerList: QtViewerDockWidget | None = None
+        self._dockLayerControls: QtViewerDockWidget | None = None
+        self._dockConsole: QtViewerDockWidget | None = None
+        self._dockPerformance: QtViewerDockWidget | None = None
         self._show_welcome_screen = show_welcome_screen
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
@@ -192,7 +217,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -209,7 +234,7 @@ class QtViewer(QSplitter):
         self.setAcceptDrops(True)
 
         # Create the experimental QtPool for the monitor.
-        self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+        self._qt_poll = _create_qt_poll(self, self.viewer.scene.camera)
 
         # Create the experimental RemoteManager for the monitor.
         self._remote_manager = _create_remote_manager(
@@ -231,11 +256,14 @@ class QtViewer(QSplitter):
         for layer in self.viewer.layers:
             self._add_layer(layer)
 
-    def showEvent(self, event):
+        # set up welcome screen
+        self._set_welcome_visible(False)
+
+    def showEvent(self, event: QShowEvent | None) -> None:
         super().showEvent(event)
         self._update_welcome_screen()
 
-    def hideEvent(self, event):
+    def hideEvent(self, event: QHideEvent | None) -> None:
         super().hideEvent(event)
 
     @property
@@ -244,14 +272,14 @@ class QtViewer(QSplitter):
         return self._show_welcome_screen
 
     @show_welcome_screen.setter
-    def show_welcome_screen(self, value: bool):
+    def show_welcome_screen(self, value: bool) -> None:
         self._show_welcome_screen = value
         self._update_welcome_screen()
 
     @staticmethod
     def _update_dask_cache_settings(
-        dask_setting: DaskSettings | Event = None,
-    ):
+        dask_setting: DaskSettings | Event | None = None,
+    ) -> None:
         """Update dask cache to match settings."""
         if not dask_setting:
             return
@@ -349,27 +377,27 @@ class QtViewer(QSplitter):
         return self._dockConsole
 
     @property
-    def dockPerformance(self) -> QtViewerDockWidget:
+    def dockPerformance(self) -> QtViewerDockWidget | None:
         if self._dockPerformance is None:
             self._dockPerformance = self._create_performance_dock_widget()
         return self._dockPerformance
 
     @property
-    def layer_to_visual(self):
+    def layer_to_visual(self) -> dict[Layer, VispyBaseLayer[Layer]]:
         """Mapping of Napari layer to Vispy layer. Added for backward compatibility"""
         return self.canvas.layer_to_visual
 
-    def _leave_canvas(self):
+    def _leave_canvas(self) -> None:
         """disable status on canvas leave"""
         self.viewer.status = ''
         self.viewer.mouse_over_canvas = False
 
-    def _enter_canvas(self):
+    def _enter_canvas(self) -> None:
         """enable status on canvas enter"""
         self.viewer.status = 'Ready'
         self.viewer.mouse_over_canvas = True
 
-    def _update_welcome_screen(self):
+    def _update_welcome_screen(self) -> None:
         """Update welcome screen display based on layer count."""
         show_welcome = (
             self._show_welcome_screen
@@ -378,18 +406,18 @@ class QtViewer(QSplitter):
         )
         self._set_welcome_visible(show_welcome)
 
-    def _ensure_connect(self):
+    def _ensure_connect(self) -> None:
         # lazy load console
         id(self.console)
 
-    def _bind_shortcuts(self):
+    def _bind_shortcuts(self) -> None:
         """Bind shortcuts stored in SETTINGS to actions."""
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
+                action_manager.bind_shortcut(action, str(shortcut))
 
-    def _create_performance_dock_widget(self):
+    def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
         """Create the dock widget that shows performance metrics."""
         if perf.perf_config is not None:
             return QtViewerDockWidget(
@@ -400,7 +428,7 @@ class QtViewer(QSplitter):
             )
         return None
 
-    def _weakref_if_possible(self, obj):
+    def _weakref_if_possible(self, obj: object) -> ref | object:
         """Create a weakref to obj.
 
         Parameters
@@ -420,13 +448,14 @@ class QtViewer(QSplitter):
         weakref or object
             Returns a weakref if possible.
         """
+        newref: ref | object
         try:
             newref = ref(obj)
         except TypeError:
             newref = obj
         return newref
 
-    def _unwrap_if_weakref(self, value):
+    def _unwrap_if_weakref(self, value: ref | object) -> object | None:
         """Return value or if that is weakref the object referenced by value.
 
         Parameters
@@ -442,7 +471,9 @@ class QtViewer(QSplitter):
         unwrapped = value() if isinstance(value, ref) else value
         return unwrapped
 
-    def add_to_console_backlog(self, variables):
+    def add_to_console_backlog(
+        self, variables: dict | str | list | tuple
+    ) -> None:
         """Save variables for pushing to console when it is instantiated.
 
         This function will create weakrefs when possible to avoid holding on to
@@ -459,6 +490,7 @@ class QtViewer(QSplitter):
             callers frame.
         """
         if isinstance(variables, str | list | tuple):
+            vlist: Sequence[str]
             if isinstance(variables, str):
                 vlist = variables.split()
             else:
@@ -483,7 +515,7 @@ class QtViewer(QSplitter):
         self.console_backlog.append(new_dict)
 
     @property
-    def console_backlog(self):
+    def console_backlog(self) -> list[dict[str, Any]]:
         """List: items to push to console when instantiated."""
         return self._console_backlog
 
@@ -523,7 +555,10 @@ class QtViewer(QSplitter):
                     {'napari': napari, 'action_manager': action_manager}
                 )
                 with CallerFrame(_in_napari) as c:
-                    if c.frame.f_globals.get('__name__', '') == '__main__':
+                    if (
+                        c.frame is not None
+                        and c.frame.f_globals.get('__name__', '') == '__main__'
+                    ):
                         console.push({'np': np})
                 for i in self.console_backlog:
                     # recover weak refs
@@ -551,7 +586,7 @@ class QtViewer(QSplitter):
             return None
 
     @property
-    def console(self):
+    def console(self) -> QtConsole | None:
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             self.console = self._get_console()
@@ -559,14 +594,14 @@ class QtViewer(QSplitter):
         return self._console
 
     @console.setter
-    def console(self, console):
+    def console(self, console: QtConsole | None) -> None:
         self._console = console
         if console is not None:
-            self.dockConsole.setWidget(console)
+            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
             console.setParent(self.dockConsole)
 
     @ensure_main_thread
-    def _on_slice_ready(self, event):
+    def _on_slice_ready(self, event: Event) -> None:
         """Callback connected to `viewer._layer_slicer.events.ready`.
 
         Provides updates after slicing using the slice response data.
@@ -580,7 +615,7 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._slicing_state._update_slice_response(response)
+                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
                 layer._slicing_state._update_loaded_slice_id(
@@ -597,7 +632,7 @@ class QtViewer(QSplitter):
                     extent=True,
                 )
 
-    def _on_active_change(self):
+    def _on_active_change(self) -> None:
         """When active layer changes change keymap handler."""
         self._key_map_handler.keymap_providers = (
             [self.viewer]
@@ -605,7 +640,7 @@ class QtViewer(QSplitter):
             else [self.viewer.layers.selection.active, self.viewer]
         )
 
-    def _on_add_layer_change(self, event):
+    def _on_add_layer_change(self, event: Event) -> None:
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -616,7 +651,7 @@ class QtViewer(QSplitter):
         layer = event.value
         self._add_layer(layer)
 
-    def _update_camera_depth(self):
+    def _update_camera_depth(self) -> None:
         """When the layer extents change, update the camera depth.
 
         The camera depth is the difference between the near clipping plane
@@ -661,7 +696,7 @@ class QtViewer(QSplitter):
         for camera in [self.canvas.camera] + self.canvas.grid_cameras:
             camera._3D_camera.depth_value = min(128 * diameter, max_depth)
 
-    def _add_layer(self, layer):
+    def _add_layer(self, layer: Layer) -> None:
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -687,7 +722,7 @@ class QtViewer(QSplitter):
 
         self.canvas.add_layer_visual_mapping(layer, vispy_layer)
 
-    def _remove_invalid_chars(self, selected_layer_name):
+    def _remove_invalid_chars(self, selected_layer_name: str) -> str:
         """Removes invalid characters from selected layer name to suggest a filename.
 
         Parameters
@@ -741,7 +776,7 @@ class QtViewer(QSplitter):
         suggested_name = selected_layer_name.translate(translation_table)
         return suggested_name
 
-    def _save_layers_dialog(self, selected=False):
+    def _save_layers_dialog(self, selected: bool = False) -> None:
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
 
         Parameters
@@ -788,9 +823,9 @@ class QtViewer(QSplitter):
             ),  # directory in PyQt, dir in PySide
             filter=ext_str,
             options=(
-                QFileDialog.DontUseNativeDialog
+                QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
-                else QFileDialog.Options()
+                else QFileDialog.Option(0)
             ),
         )
         logging.getLogger('napari').debug(
@@ -800,15 +835,22 @@ class QtViewer(QSplitter):
         )
 
         if filename:
-            writer = _npe2_decode_selected_filter(
-                ext_str, selected_filter, writers
+            writer = (
+                _npe2_decode_selected_filter(ext_str, selected_filter, writers)
+                if ext_str
+                else None
             )
             with warnings.catch_warnings(record=True) as wa:
                 saved = self.viewer.layers.save(
                     filename, selected=selected, _writer=writer
                 )
                 logging.getLogger('napari').debug('Saved %s', saved)
-                error_messages = '\n'.join(str(x.message.args[0]) for x in wa)
+                error_messages = '\n'.join(
+                    str(x.message.args[0])
+                    if isinstance(x.message, Warning)
+                    else str(x.message)
+                    for x in wa
+                )
 
             if not saved:
                 raise OSError(
@@ -819,7 +861,7 @@ class QtViewer(QSplitter):
 
     def screenshot(
         self,
-        path: str | None = None,
+        path: str | Path | None = None,
         flash: bool = True,
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
@@ -859,8 +901,7 @@ class QtViewer(QSplitter):
             )
         )
         if path is not None:
-            imsave(path, img)
-
+            imsave(str(path), img)
         return img
 
     def _screenshot(
@@ -916,8 +957,8 @@ class QtViewer(QSplitter):
             if ndisplay == 3:
                 scene_size = self.viewer._calculate_bounding_box(
                     extent=extent,
-                    view_direction=self.viewer.camera.view_direction,
-                    up_direction=self.viewer.camera.up_direction,
+                    view_direction=self.viewer.scene.camera.view_direction,
+                    up_direction=self.viewer.scene.camera.up_direction,
                 )
 
             # adjust size by the scale, to return the size in real pixels
@@ -941,7 +982,9 @@ class QtViewer(QSplitter):
             return img
 
     @contextlib.contextmanager
-    def resize_canvas(self, size: tuple[int, int] | None, scale: float):
+    def resize_canvas(
+        self, size: tuple[int, int] | None, scale: float
+    ) -> Iterator[None]:
         """Temporarily, safely, resize the canvas
 
         Parameters
@@ -953,15 +996,15 @@ class QtViewer(QSplitter):
         """
         canvas = self.canvas
         prev_size = canvas.size
-        camera = self.viewer.camera
+        camera = self.viewer.scene.camera
         old_center = camera.center
         old_zoom = camera.zoom
         if size is not None:
-            size = np.asarray(size) / self.devicePixelRatio()
+            size_arr = np.asarray(size) / self.devicePixelRatio()
         else:
-            size = np.asarray(prev_size)
-        size = (size * scale).astype(np.int64)
-        canvas.size = tuple(size)
+            size_arr = np.asarray(prev_size)
+        size_arr = (size_arr * scale).astype(np.int64)
+        canvas.size = tuple(size_arr)
         try:
             yield
         finally:
@@ -969,7 +1012,7 @@ class QtViewer(QSplitter):
             camera.center = old_center
             camera.zoom = old_zoom
 
-    def clipboard(self, flash=True):
+    def clipboard(self, flash: bool = True) -> None:
         """Take a screenshot of the currently displayed screen and copy the
         image to the clipboard.
 
@@ -980,13 +1023,15 @@ class QtViewer(QSplitter):
             the screenshot was captured.
         """
         cb = QGuiApplication.clipboard()
+        if cb is None:
+            return
         cb.setImage(self._screenshot(flash))
 
-    def _screenshot_dialog(self):
+    def _screenshot_dialog(self) -> None:
         """Save screenshot of current display, default .png"""
         hist = get_save_history()
         dial = ScreenshotDialog(self.screenshot, self, hist[0], hist)
-        if dial.exec_():
+        if dial.exec():
             update_save_history(dial.selectedFiles()[0])
 
     def _open_file_dialog_uni(self, caption: str) -> list[str]:
@@ -997,7 +1042,7 @@ class QtViewer(QSplitter):
         hist = get_open_history()
         dlg.setHistory(hist)
 
-        open_kwargs = {
+        open_kwargs: dict[str, Any] = {
             'parent': self,
             'caption': caption,
         }
@@ -1008,11 +1053,13 @@ class QtViewer(QSplitter):
             open_kwargs['directory'] = hist[0]
 
         if in_ipython():
-            open_kwargs['options'] = QFileDialog.DontUseNativeDialog
+            open_kwargs['options'] = QFileDialog.Option.DontUseNativeDialog
 
         return dlg.getOpenFileNames(**open_kwargs)[0]
 
-    def _open_files_dialog(self, choose_plugin=False, stack=False):
+    def _open_files_dialog(
+        self, choose_plugin: bool = False, stack: bool = False
+    ) -> None:
         """Add files from the menubar."""
         filenames = self._open_file_dialog_uni('Select file(s)...')
 
@@ -1020,11 +1067,13 @@ class QtViewer(QSplitter):
             self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
             update_open_history(filenames[0])
 
-    def _open_files_dialog_as_stack_dialog(self, choose_plugin=False):
+    def _open_files_dialog_as_stack_dialog(
+        self, choose_plugin: bool = False
+    ) -> None:
         """Add files as a stack, from the menubar."""
         return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
 
-    def _open_folder_dialog(self, choose_plugin=False):
+    def _open_folder_dialog(self, choose_plugin: bool = False) -> None:
         """Add a folder of files from the menubar."""
         dlg = QFileDialog()
         hist = get_open_history()
@@ -1035,9 +1084,9 @@ class QtViewer(QSplitter):
             'Select folder...',
             hist[0],  # home dir by default
             (
-                QFileDialog.DontUseNativeDialog
+                QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
-                else QFileDialog.Options()
+                else QFileDialog.Option(0)
             ),
         )
 
@@ -1048,12 +1097,12 @@ class QtViewer(QSplitter):
     def _qt_open(
         self,
         filenames: list[str],
-        stack: bool | list[list[str]],
+        stack: bool | list[list[str | Path]],
         choose_plugin: bool = False,
         plugin: str | None = None,
-        layer_type: str | None = None,
-        **kwargs,
-    ):
+        layer_type: _LayerTypeName | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Open files, potentially popping reader dialog for plugin selection.
 
         Call ViewerModel.open and catch errors that could
@@ -1100,7 +1149,7 @@ class QtViewer(QSplitter):
         except MultipleReaderError:
             handle_gui_reading(filenames, self, stack, **kwargs)
 
-    def toggle_console_visibility(self, event=None):
+    def toggle_console_visibility(self, event: Event | None = None) -> None:
         """Toggle console visible and not visible.
 
         Imports the console the first time it is requested.
@@ -1144,7 +1193,7 @@ class QtViewer(QSplitter):
         """
         self._welcome_widget.set_welcome_visible(visible)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:
         """Called whenever a key is pressed.
 
         Parameters
@@ -1152,12 +1201,14 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        if event is None:
+            return
         self.canvas._scene_canvas._backend._keyEvent(
             self.canvas._scene_canvas.events.key_press, event
         )
         event.accept()
 
-    def keyReleaseEvent(self, event):
+    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:
         """Called whenever a key is released.
 
         Parameters
@@ -1165,12 +1216,14 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        if event is None:
+            return
         self.canvas._scene_canvas._backend._keyEvent(
             self.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:
         """Ignore event if not dragging & dropping a file or URL to open.
 
         Using event.ignore() here allows the event to pass through the
@@ -1182,38 +1235,46 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QDragEvent
             Event from the Qt context.
         """
-        if event.mimeData().hasUrls():
+        if event is None:
+            return
+        mime = event.mimeData()
+        if mime is not None and mime.hasUrls():
             self._set_drag_status()
             event.accept()
         else:
             event.ignore()
 
-    def _set_drag_status(self):
+    def _set_drag_status(self) -> None:
         """Set dedicated status message when dragging files into viewer"""
         self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
 
-    def _image_from_clipboard(self):
+    def _image_from_clipboard(self) -> None:
         """Insert image from clipboard as a new layer if clipboard contains an image or link."""
         cb = QGuiApplication.clipboard()
-        if cb.mimeData().hasImage():
+        if cb is None:
+            return
+        mime = cb.mimeData()
+        if mime is None:
+            return
+        if mime.hasImage():
             image = cb.image()
             if image.isNull():
                 return
             arr = QImg2array(image)
             self.viewer.add_image(arr)
             return
-        if cb.mimeData().hasUrls():
+        if mime.hasUrls():
             show_info('No image in clipboard, trying to open link instead.')
             self._open_from_list_of_urls_data(
-                cb.mimeData().urls(), stack=False, choose_plugin=False
+                mime.urls(), stack=False, choose_plugin=False
             )
             return
-        if cb.mimeData().hasText():
+        if mime.hasText():
             show_info(
                 'No image in clipboard, trying to parse text in clipboard as a link.'
             )
             url_list = []
-            for line in cb.mimeData().text().split('\n'):
+            for line in mime.text().split('\n'):
                 url = QUrl(line.strip())
                 if url.isEmpty():
                     continue
@@ -1229,7 +1290,7 @@ class QtViewer(QSplitter):
                 return
         show_info('No image or link in clipboard.')
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent | None) -> None:
         """Add local files and web URLS with drag and drop.
 
         For each file, attempt to open with existing associated reader
@@ -1243,6 +1304,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QDropEvent
             Event from the Qt context.
         """
+        if event is None:
+            return
         shift_down = (
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.ShiftModifier
@@ -1251,15 +1314,18 @@ class QtViewer(QSplitter):
             QGuiApplication.keyboardModifiers()
             & Qt.KeyboardModifier.AltModifier
         )
+        mime = event.mimeData()
+        if mime is None:
+            return
         self._open_from_list_of_urls_data(
-            event.mimeData().urls(),
+            mime.urls(),
             stack=bool(shift_down),
             choose_plugin=bool(alt_down),
         )
 
     def _open_from_list_of_urls_data(
         self, urls_list: list[QUrl], stack: bool, choose_plugin: bool
-    ):
+    ) -> None:
         filenames = []
         for url in urls_list:
             if url.isLocalFile():
@@ -1274,7 +1340,7 @@ class QtViewer(QSplitter):
             choose_plugin=choose_plugin,
         )
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent | None) -> None:
         """Cleanup and close.
 
         Parameters
@@ -1293,16 +1359,17 @@ class QtViewer(QSplitter):
         self.dims.stop()
         self.canvas.delete()
         if self._console is not None:
-            self.console.close()
+            self._console.close()
         self.dockConsole.deleteLater()
-        event.accept()
+        if event is not None:
+            event.accept()
 
     def export_rois(
         self,
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
         scale: float = 1.0,
-    ):
+    ) -> list[np.ndarray]:
         """Export the given rectangular rois to specified file paths.
 
         For each shape, moves the camera to the center of the shape
@@ -1360,7 +1427,7 @@ class QtViewer(QSplitter):
             )
 
         screenshot_list = []
-        camera = self.viewer.camera
+        camera = self.viewer.scene.camera
         start_camera_center = camera.center
         start_camera_zoom = camera.zoom
         canvas = self.canvas
@@ -1371,7 +1438,7 @@ class QtViewer(QSplitter):
 
         for index, roi in enumerate(rois):
             center_coord, height, width = get_center_bbox(roi)
-            camera.center = center_coord
+            camera.center = (float(center_coord[0]), float(center_coord[1]))
             canvas.size = (int(height / step), int(width / step))
 
             camera.zoom = 1 / step
@@ -1390,7 +1457,7 @@ class QtViewer(QSplitter):
         self,
         path: str | None = None,
         scale: float = 1,
-        flash=True,
+        flash: bool = True,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -1468,7 +1535,9 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
     return qt_poll
 
 
-def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
+def _create_remote_manager(
+    layers: LayerList, qt_poll: QtPoll | None
+) -> RemoteManager | None:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters
@@ -1499,13 +1568,15 @@ def _create_remote_manager(layers: LayerList, qt_poll) -> RemoteManager | None:
     monitor.run_command_event.connect(manager.process_command)
 
     # QtPoll should pool the RemoteManager and the Monitor.
+    # config.monitor is True here, so qt_poll was created by the caller.
+    assert qt_poll is not None
     qt_poll.events.poll.connect(manager.on_poll)
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
 
 
-def _in_napari(n: int, frame: FrameType):
+def _in_napari(n: int, frame: FrameType) -> bool:
     """
     Determines whether we are in napari by looking at:
         1) the frames modules names:
