@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter
 from qtpy.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -123,10 +124,10 @@ class _TourTooltip(QFrame):
         self._update_size()
 
     def keyPressEvent(self, event: QKeyEvent | None) -> None:
+        # Escape is handled globally by GuidedTour.eventFilter, since
+        # other widgets (e.g. the canvas) unconditionally accept key
+        # events and would otherwise prevent it from reaching here.
         if event is None:
-            return
-        if event.key() == Qt.Key.Key_Escape:
-            self.skip_clicked.emit()
             return
         if event.key() in (
             Qt.Key.Key_N,
@@ -231,7 +232,9 @@ class GuidedTour(QObject):
         self._tooltip.show()
         self._tooltip.raise_()
         self._tooltip.setFocus()
-        self._window.installEventFilter(self)
+        app = QApplication.instance()
+        if app is not None:
+            app.installEventFilter(self)
         start_index = self._seek(0, 1)
         if start_index is None:
             self.close_tour()
@@ -242,7 +245,9 @@ class GuidedTour(QObject):
         if not self._active or self._window is None:
             return
         self._active = False
-        self._window.removeEventFilter(self)
+        app = QApplication.instance()
+        if app is not None:
+            app.removeEventFilter(self)
         self._tooltip.next_clicked.disconnect(self._on_next)
         self._tooltip.back_clicked.disconnect(self._on_back)
         self._tooltip.skip_clicked.disconnect(self.close_tour)
@@ -264,6 +269,20 @@ class GuidedTour(QObject):
             return super().eventFilter(watched, event)
         if watched is self._window and event.type() == QEvent.Type.Resize:
             self._show_step(self._current)
+        elif event.type() == QEvent.Type.KeyPress:
+            # Escape always closes the tour, regardless of which widget has
+            # focus: viewer widgets like the canvas unconditionally accept
+            # key events, so Escape never reaches the tooltip's own
+            # keyPressEvent unless the tooltip itself is focused. Other
+            # nav shortcuts (N/P/Backspace/...) stay tooltip-focus-only
+            # since, unlike Escape, they collide with real viewer shortcuts.
+            key_event = event
+            if (
+                isinstance(key_event, QKeyEvent)
+                and key_event.key() == Qt.Key.Key_Escape
+            ):
+                self.close_tour()
+                return True
         return super().eventFilter(watched, event)
 
     @staticmethod

@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import requests
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QApplication, QLabel, QWidget
 
 from napari._app_model import get_app_model
 from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
@@ -89,8 +89,34 @@ def test_tour_tooltip_keyboard_shortcuts(qtbot):
         qtbot.keyPress(tooltip, Qt.Key.Key_N)
     with qtbot.waitSignal(tooltip.back_clicked, timeout=1000):
         qtbot.keyPress(tooltip, Qt.Key.Key_P)
-    with qtbot.waitSignal(tooltip.skip_clicked, timeout=1000):
-        qtbot.keyPress(tooltip, Qt.Key.Key_Escape)
+
+
+def test_tour_escape_closes_regardless_of_focus(qtbot):
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.resize(640, 480)
+    window.show()
+
+    other_widget = QWidget(window)
+    other_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    other_widget.setGeometry(0, 0, 50, 50)
+    other_widget.show()
+
+    tour = GuidedTour(
+        [TourStep(target=lambda: other_widget, title='Only', body='')],
+        window,
+    )
+    qtbot.addWidget(tour._tooltip)
+    qtbot.addWidget(tour._overlay)
+    tour.start()
+    qtbot.waitUntil(lambda: tour._steps[tour._current].title == 'Only')
+
+    # Escape should close the tour even when some other widget -- not the
+    # tooltip -- has keyboard focus.
+    other_widget.setFocus()
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is other_widget)
+    qtbot.keyPress(other_widget, Qt.Key.Key_Escape)
+    qtbot.waitUntil(lambda: not tour._active)
 
 
 @pytest.mark.parametrize(
