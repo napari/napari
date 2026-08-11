@@ -17,6 +17,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.utils.theme import get_theme
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -376,6 +378,8 @@ def build_viewer_tour(
     if sample is not None and not viewer.layers:
         viewer.open_sample(*sample)
 
+    link_color = get_theme(viewer.theme).to_rgb_dict()['current']
+
     def target(name: str) -> Callable[[], QWidget | None]:
         return partial(resolve_tour_target, window, name)
 
@@ -479,7 +483,8 @@ def build_viewer_tour(
                 title="That's the tour",
                 body=(
                     'Explore at your own pace, and check out the '
-                    f'<a href="{HELP_URLS["getting_started"]}">napari user guide</a> '
+                    f'<a href="{HELP_URLS["getting_started"]}" style="color: {link_color};">'
+                    'napari user guide</a> '
                     'whenever you want to go deeper.'
                 ),
                 anchor=TourAnchor.CENTER,
