@@ -72,6 +72,7 @@ class _TourTooltip(QFrame):
 
         self._body = QLabel()
         self._body.setWordWrap(True)
+        self._body.setOpenExternalLinks(True)
         layout.addWidget(self._body)
 
         self._nav = QHBoxLayout()
@@ -365,6 +366,11 @@ def build_viewer_tour(
         against other data, or ``None`` to skip loading sample data
         entirely (e.g. when the viewer already has data loaded).
     """
+    # Deferred to avoid a circular import: _help.py imports build_viewer_tour
+    # at module level, so importing HELP_URLS from it at this module's own
+    # top level would form a cycle.
+    from napari._qt._qapp_model.qactions._help import HELP_URLS
+
     qt_viewer = window._qt_viewer
     viewer = qt_viewer.viewer
     if sample is not None and not viewer.layers:
@@ -399,10 +405,11 @@ def build_viewer_tour(
         [
             TourStep(
                 target=target('canvas'),
-                title='Welcome to the viewer',
+                title='Welcome to napari',
                 body=(
-                    'You can interact with the viewer during this tour. '
-                    'Hovering over many UI elements will show tooltips.'
+                    "This quick tour walks you through the viewer's main pieces. "
+                    'You can interact with the viewer the whole time, and reopen '
+                    'this tour from Help any time.'
                 ),
                 anchor=TourAnchor.CENTER,
             ),
@@ -410,8 +417,7 @@ def build_viewer_tour(
                 target=target('canvas'),
                 title='Explore the canvas',
                 body=(
-                    'The viewer canvas shows your layers. Drag to pan and scroll to zoom. '
-                    'Reopen this tour from Help any time.'
+                    'The viewer canvas shows your layers. Drag to pan and scroll to zoom.'
                 ),
                 anchor=TourAnchor.BELOW,
             ),
@@ -435,7 +441,9 @@ def build_viewer_tour(
                 target=target('layer_controls'),
                 title='Layer controls',
                 body=(
-                    'The active layer decides what appears here. Different layer types expose different controls for appearance and editing.'
+                    'The active layer decides what appears here. You will always find opacity and '
+                    'blending controls, plus extra options specific to that layer type, for example '
+                    'contrast limits for images or colors for points.'
                 ),
                 ensure_visible=reveal_layer_controls,
             ),
@@ -465,6 +473,16 @@ def build_viewer_tour(
                     'The status bar reports cursor position, values under the mouse, and small context-sensitive hints while you interact.'
                 ),
                 anchor=TourAnchor.ABOVE,
+            ),
+            TourStep(
+                target=target('canvas'),
+                title="That's the tour",
+                body=(
+                    'Explore at your own pace, and check out the '
+                    f'<a href="{HELP_URLS["getting_started"]}">napari user guide</a> '
+                    'whenever you want to go deeper.'
+                ),
+                anchor=TourAnchor.CENTER,
             ),
         ],
         window,
