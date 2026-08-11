@@ -40,6 +40,7 @@ class TourStep:
     body: str
     anchor: TourAnchor = TourAnchor.RIGHT
     skip: Callable[[], bool] = lambda: False
+    ensure_visible: Callable[[], None] = lambda: None
 
 
 _TOOLTIP_WIDTH = 340
@@ -286,6 +287,7 @@ class GuidedTour(QObject):
         if self._window is None:
             return
         step = self._steps[index]
+        step.ensure_visible()
         target = step.target()
         if target is None or not target.isVisible():
             return
@@ -362,13 +364,25 @@ def build_viewer_tour(
     def target(name: str) -> Callable[[], QWidget | None]:
         return partial(resolve_tour_target, window, name)
 
-    # Steps targeting a hidden dock widget would otherwise freeze the tour:
-    # Next/Back silently no-op once a step's target isn't visible. Show any
-    # that are hidden for the tour, and restore their prior state after.
-    docks = (qt_viewer.dockLayerList, qt_viewer.dockLayerControls)
-    hidden_docks = [dock for dock in docks if not dock.isVisible()]
-    for dock in hidden_docks:
-        dock.show()
+    # A step whose target lives in a hidden dock would otherwise freeze the
+    # tour: Next/Back silently no-op once a step's target isn't visible.
+    # Reveal the relevant dock right as its step is about to be shown
+    # (rather than up front), so a dock hidden *during* the tour is caught
+    # too, and restore whichever docks we ended up revealing once the tour
+    # finishes.
+    shown_docks: list[QWidget] = []
+
+    def reveal(dock: Callable[[], QWidget]) -> Callable[[], None]:
+        def _ensure_visible() -> None:
+            widget = dock()
+            if not widget.isVisible():
+                shown_docks.append(widget)
+                widget.show()
+
+        return _ensure_visible
+
+    reveal_layer_list = reveal(lambda: qt_viewer.dockLayerList)
+    reveal_layer_controls = reveal(lambda: qt_viewer.dockLayerControls)
 
     tour = GuidedTour(
         [
@@ -396,6 +410,7 @@ def build_viewer_tour(
                 body=(
                     'Layers live here. Select one to edit it, rename it inline, change visibility, or reorder by dragging.'
                 ),
+                ensure_visible=reveal_layer_list,
             ),
             TourStep(
                 target=target('layer_buttons'),
@@ -403,6 +418,7 @@ def build_viewer_tour(
                 body=(
                     'These create or delete layers. They are the quickest way to add points, shapes, or labels on top of your data.'
                 ),
+                ensure_visible=reveal_layer_list,
             ),
             TourStep(
                 target=target('layer_controls'),
@@ -410,6 +426,7 @@ def build_viewer_tour(
                 body=(
                     'The active layer decides what appears here. Different layer types expose different controls for appearance and editing.'
                 ),
+                ensure_visible=reveal_layer_controls,
             ),
             TourStep(
                 target=target('viewer_buttons'),
@@ -441,11 +458,10 @@ def build_viewer_tour(
         ],
         window,
     )
-    if hidden_docks:
 
-        def _restore_docks() -> None:
-            for dock in hidden_docks:
-                dock.hide()
+    def _restore_docks() -> None:
+        for dock in shown_docks:
+            dock.hide()
 
-        tour.finished.connect(_restore_docks)
+    tour.finished.connect(_restore_docks)
     return tour

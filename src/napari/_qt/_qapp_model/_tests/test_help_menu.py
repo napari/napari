@@ -157,22 +157,59 @@ def test_tour_escape_closes_regardless_of_focus(qtbot):
     qtbot.waitUntil(lambda: not tour._active)
 
 
-def test_build_viewer_tour_shows_and_restores_hidden_docks(
+def test_build_viewer_tour_reveals_hidden_dock_for_its_step(
     make_napari_viewer,
 ):
-    """Hidden layer_list/layer_controls used to freeze Next/Back entirely."""
+    """A hidden layer_list/layer_controls used to freeze Next/Back once the
+    tour reached that step."""
     viewer = make_napari_viewer(show=True)
     qt_viewer = viewer.window._qt_viewer
     qt_viewer.dockLayerList.hide()
     qt_viewer.dockLayerControls.hide()
 
     tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    # not revealed yet -- only happens once the relevant step is shown
+    assert not qt_viewer.dockLayerList.isVisible()
+    assert not qt_viewer.dockLayerControls.isVisible()
+
+    index = tour._seek(0, 1)
+    while tour._steps[index].title != 'Layer list':
+        index = tour._seek(index + 1, 1)
+    tour._show_step(index)
     assert qt_viewer.dockLayerList.isVisible()
+    assert not qt_viewer.dockLayerControls.isVisible()
+
+    index = tour._seek(index + 1, 1)
+    while tour._steps[index].title != 'Layer controls':
+        index = tour._seek(index + 1, 1)
+    tour._show_step(index)
     assert qt_viewer.dockLayerControls.isVisible()
 
     tour.finished.emit()
     assert not qt_viewer.dockLayerList.isVisible()
     assert not qt_viewer.dockLayerControls.isVisible()
+
+
+def test_build_viewer_tour_reveals_dock_hidden_mid_tour(make_napari_viewer):
+    """Hiding a dock partway through the tour, after its step already
+    passed, used to still freeze the tour once the relevant step came up
+    again -- the dock was only ever checked once, up front."""
+    viewer = make_napari_viewer(show=True)
+    qt_viewer = viewer.window._qt_viewer
+
+    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    index = tour._seek(0, 1)
+    while tour._steps[index].title != 'Layer list':
+        index = tour._seek(index + 1, 1)
+
+    qt_viewer.dockLayerList.hide()
+    assert not qt_viewer.dockLayerList.isVisible()
+
+    tour._show_step(index)
+    assert qt_viewer.dockLayerList.isVisible()
+
+    tour.finished.emit()
+    assert not qt_viewer.dockLayerList.isVisible()
 
 
 def test_build_viewer_tour_leaves_visible_docks_alone(make_napari_viewer):
