@@ -137,28 +137,28 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.vertical_combo
     assert (
         viewer_buttons.vertical_combo.currentEnum()
-        == viewer.camera.orientation[1]
+        == viewer.scene.camera.orientation[1]
     )
     assert viewer_buttons.horizontal_combo
     assert (
         viewer_buttons.horizontal_combo.currentEnum()
-        == viewer.camera.orientation[2]
+        == viewer.scene.camera.orientation[2]
     )
-    assert viewer.camera.handedness.value == 'right'
+    assert viewer.scene.camera.handedness.value == 'right'
 
     viewer_buttons.vertical_combo.setCurrentEnum(VerticalAxisOrientation.UP)
     viewer_buttons.horizontal_combo.setCurrentEnum(
         HorizontalAxisOrientation.LEFT
     )
-    assert viewer.camera.orientation[1].value == 'up'
-    assert viewer.camera.orientation[2].value == 'left'
-    assert viewer.camera.orientation2d[0].value == 'up'
-    assert viewer.camera.orientation2d[1].value == 'left'
+    assert viewer.scene.camera.orientation[1].value == 'up'
+    assert viewer.scene.camera.orientation[2].value == 'left'
+    assert viewer.scene.camera.orientation2d[0].value == 'up'
+    assert viewer.scene.camera.orientation2d[1].value == 'left'
 
     # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(3)
-    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 3
+    assert viewer.scene.camera.zoom == viewer_buttons.zoom.value() == 3
 
     # toggle ndisplay to be able to trigger ndisplay==3 popup
     viewer.dims.ndisplay = 2 + (viewer.dims.ndisplay == 2)
@@ -175,17 +175,17 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert viewer_buttons.depth_combo
     assert (
         viewer_buttons.depth_combo.currentEnum()
-        == viewer.camera.orientation[0]
+        == viewer.scene.camera.orientation[0]
     )
     assert viewer_buttons.vertical_combo
     assert (
         viewer_buttons.vertical_combo.currentEnum()
-        == viewer.camera.orientation[1]
+        == viewer.scene.camera.orientation[1]
     )
     assert viewer_buttons.horizontal_combo
     assert (
         viewer_buttons.horizontal_combo.currentEnum()
-        == viewer.camera.orientation[2]
+        == viewer.scene.camera.orientation[2]
     )
     # check the values set by testing 2D orientation popup are inherited
     assert (
@@ -196,7 +196,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
         viewer_buttons.horizontal_combo.currentEnum()
         == HorizontalAxisOrientation.LEFT
     )
-    assert viewer.camera.handedness.value == 'right'
+    assert viewer.scene.camera.handedness.value == 'right'
     assert (
         viewer_buttons.orientation_help_symbol.objectName()
         == 'righthand_label'
@@ -208,24 +208,28 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.horizontal_combo.setCurrentEnum(
         HorizontalAxisOrientation.RIGHT
     )
-    assert viewer.camera.handedness.value == 'left'
+    assert viewer.scene.camera.handedness.value == 'left'
     assert (
         viewer_buttons.orientation_help_symbol.objectName() == 'lefthand_label'
     )
     assert 'left-handed' in viewer_buttons.orientation_help_symbol.toolTip()
-    assert viewer.camera.orientation[0].value == 'away'
-    assert viewer.camera.orientation[1].value == 'down'
-    assert viewer.camera.orientation[2].value == 'right'
+    assert viewer.scene.camera.orientation[0].value == 'away'
+    assert viewer.scene.camera.orientation[1].value == 'down'
+    assert viewer.scene.camera.orientation[2].value == 'right'
 
     # check perspective slider change affects viewer camera perspective
     assert viewer_buttons.perspective
     viewer_buttons.perspective.setValue(5)
-    assert viewer.camera.perspective == viewer_buttons.perspective.value() == 5
+    assert (
+        viewer.scene.camera.perspective
+        == viewer_buttons.perspective.value()
+        == 5
+    )
 
     # check zoom slider change affects viewer camera zoom
     assert viewer_buttons.zoom
     viewer_buttons.zoom.setValue(5)
-    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 5
+    assert viewer.scene.camera.zoom == viewer_buttons.zoom.value() == 5
 
     # check viewer camera rotation value affects camera angles
     assert viewer_buttons.rz
@@ -235,7 +239,7 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     viewer_buttons.ry.setValue(45)
     viewer_buttons.rx.setValue(0)
     assert (
-        viewer.camera.angles
+        viewer.scene.camera.angles
         == (
             viewer_buttons.rz.value(),
             viewer_buttons.ry.value(),
@@ -250,9 +254,9 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
 
     # check viewer camera perspective value affects perspective popup slider
     # initial value
-    viewer.camera.perspective = 10
-    viewer.camera.zoom = 2
-    viewer.camera.angles = (0, 0, 90)
+    viewer.scene.camera.perspective = 10
+    viewer.scene.camera.zoom = 2
+    viewer.scene.camera.angles = (0, 0, 90)
     viewer_buttons.ndisplayButton.customContextMenuRequested.emit(QPoint())
     for widget in QApplication.topLevelWidgets():
         if isinstance(widget, QtPopup):
@@ -260,15 +264,17 @@ def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     assert perspective_popup
     assert viewer_buttons.perspective
     assert (
-        viewer.camera.perspective == viewer_buttons.perspective.value() == 10
+        viewer.scene.camera.perspective
+        == viewer_buttons.perspective.value()
+        == 10
     )
     assert viewer_buttons.zoom
-    assert viewer.camera.zoom == viewer_buttons.zoom.value() == 2
+    assert viewer.scene.camera.zoom == viewer_buttons.zoom.value() == 2
     assert viewer_buttons.rz
     assert viewer_buttons.ry
     assert viewer_buttons.rx
     assert (
-        viewer.camera.angles
+        viewer.scene.camera.angles
         == (
             viewer_buttons.rz.value(),
             viewer_buttons.ry.value(),
