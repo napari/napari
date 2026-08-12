@@ -197,7 +197,7 @@ def deprecated_class_name(
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
     _OldClass.__qualname__ = previous_name
-    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore [attr-defined]
+    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore
 
     return _OldClass
 
@@ -230,7 +230,7 @@ class _DeprecatingDict(UserDict[str, Any]):
         key = self._maybe_rename_key(key)
         return self.data.__getitem__(key)
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:  # pyrefly: ignore [bad-override-param-name]
         key = self._maybe_rename_key(key)
         return self.data.__setitem__(key, value)
 

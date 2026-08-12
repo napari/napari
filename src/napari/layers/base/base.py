@@ -529,7 +529,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     }
     events: EmitterGroup
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(
         self,
         data,
         ndim,
@@ -609,7 +609,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if translate is None:
             translate = [0] * ndim
         self._initial_affine = coerce_affine(
-            affine, ndim=ndim, name='physical2world'
+            affine,  # pyrefly: ignore [bad-argument-type]
+            ndim=ndim,
+            name='physical2world',
         )
         self._transforms: TransformChain[Affine] = TransformChain(
             [
@@ -637,7 +639,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.experimental_clipping_planes = experimental_clipping_planes
+        self.experimental_clipping_planes = experimental_clipping_planes  # pyrefly: ignore [bad-argument-type]
 
         # circular import
         from napari.components.overlays.bounding_box import BoundingBoxOverlay
@@ -736,8 +738,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         mode = self._modeclass(mode_in)
         # Sub-classes can have their own Mode enum, so need to get members
         # from the specific mode class set on this layer.
-        PAN_ZOOM = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
-        TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+        PAN_ZOOM = self._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
+        TRANSFORM = self._modeclass.TRANSFORM  # pyrefly: ignore [missing-attribute]
         assert mode is not None
 
         if not self.editable or not self.visible:
@@ -775,7 +777,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     def update_transform_box_visibility(self, visible):
         if 'transform_box' in self._overlays:
-            TRANSFORM = self._modeclass.TRANSFORM  # type: ignore[attr-defined]
+            TRANSFORM = self._modeclass.TRANSFORM  # pyrefly: ignore [missing-attribute]
             self._overlays['transform_box'].visible = (
                 self.mode == TRANSFORM and visible
             )
@@ -961,7 +963,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self.mode = self._visible_mode
         else:
             self._visible_mode = self.mode
-            self.mode = self._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+            self.mode = self._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
 
     @property
     def editable(self) -> bool:
@@ -1015,7 +1017,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def axis_labels(self, axis_labels: Sequence[str] | None) -> None:
         prev = self._transforms['data2physical'].axis_labels
         # mypy bug https://github.com/python/mypy/issues/3004
-        self._transforms['data2physical'].axis_labels = axis_labels  # type: ignore[assignment]
+        self._transforms['data2physical'].axis_labels = axis_labels
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
 
@@ -1033,7 +1035,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def units(self, units: Sequence[pint.Unit | str] | None) -> None:
         prev = self.units
         # mypy bug https://github.com/python/mypy/issues/3004
-        self._transforms['data2physical'].units = units  # type: ignore[assignment]
+        self._transforms['data2physical'].units = units
         if self.units != prev:
             self._clear_extent()
             self.refresh(extent=False)
@@ -1427,7 +1429,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
     @property
     def bounding_box(self) -> BoundingBoxOverlay:
-        return self._overlays['bounding_box']  # type: ignore[return-value]
+        return self._overlays['bounding_box']  # pyrefly: ignore [bad-return]
 
     @property
     def name_overlay(self) -> Overlay:
@@ -1579,7 +1581,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':
             self._value = value
-        return value
+        return value  # pyrefly: ignore [bad-return]
 
     def _get_value_3d(
         self,

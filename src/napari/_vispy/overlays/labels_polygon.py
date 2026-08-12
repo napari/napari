@@ -158,7 +158,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             self._set_color((1, 0, 0, 0))
         else:
             self._set_color(
-                layer._selected_color.tolist()[:3] + [layer.opacity]
+                layer._selected_color.tolist()[:3] + [layer.opacity]  # pyrefly: ignore [missing-attribute]
             )
 
     @_only_when_enabled
@@ -168,7 +168,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             return
 
         pos = self._get_mouse_coordinates(event)
-        self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]
+        self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]  # pyrefly: ignore [missing-attribute]
 
     @_only_when_enabled
     def _on_mouse_press(self, layer, event):

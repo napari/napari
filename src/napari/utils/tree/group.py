@@ -72,17 +72,17 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         new._list.extend(iterable)
         return new
 
-    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # type: ignore[override]
-        return super().__getitem__(key)
+    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # pyrefly: ignore [bad-override]
+        return super().__getitem__(key)  # pyrefly: ignore [bad-return]
 
     def __delitem__(self, key: MaybeNestedIndex) -> None:
         """Remove item at ``key``, and unparent."""
         if isinstance(key, int | tuple):
             self[key].parent = None
         else:
-            for item in self[key]:  # type: ignore[union-attr]
+            for item in self[key]:  # type: ignore[ty:not-iterable]
                 item.parent = None
-        super().__delitem__(key)  # type: ignore[arg-type]
+        super().__delitem__(key)  # type: ignore[ty:invalid-argument-type]
 
     def insert(self, index: int, value: NodeType) -> None:
         """Insert ``value`` as child of this group at position ``index``."""
@@ -93,7 +93,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Return True, indicating that this ``Node`` is a ``Group``."""
         return True
 
-    def __contains__(self, other: object) -> bool:
+    def __contains__(self, other: object) -> bool:  # pyrefly: ignore [bad-override-param-name]
         """Return true if ``other`` appears anywhere under this group."""
         return any(item is other for item in self.traverse())
 
@@ -103,9 +103,9 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield obj  # type: ignore[misc]
-        for child in obj:  # type: ignore[attr-defined]
-            yield from child.traverse(leaves_only)
+            yield obj  # type: ignore[ty:invalid-yield]
+        for child in obj:  # type: ignore[ty:not-iterable]
+            yield from child.traverse(leaves_only)  # pyrefly: ignore [invalid-yield]
 
     def _render(self) -> list[str]:
         """Recursively return list of strings that can render ascii tree."""

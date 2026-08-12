@@ -7,7 +7,7 @@ from npe2 import (
 from napari.plugins import _npe2
 from napari.settings import get_settings
 
-__all__ = ('menu_item_template', 'plugin_manager')
+__all__ = ('menu_item_template', 'plugin_manager')  # pyrefly: ignore [bad-dunder-all]
 
 from napari.utils.theme import _install_npe2_themes
 

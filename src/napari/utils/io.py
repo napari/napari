@@ -211,7 +211,7 @@ def _patched_viewer_new():
         Viewer.__init__ = _saved_init
         return _saved_new(cls)
 
-    Viewer.__new__ = patched_new
+    Viewer.__new__ = patched_new  # pyrefly: ignore [bad-assignment]
     Viewer.__init__ = patched_init
     try:
         yield

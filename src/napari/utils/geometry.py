@@ -556,7 +556,7 @@ def point_in_quadrilateral_2d(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    return in_triangles.sum() >= 1
+    return in_triangles.sum() >= 1  # pyrefly: ignore [bad-return]
 
 
 def line_in_quadrilateral_3d(

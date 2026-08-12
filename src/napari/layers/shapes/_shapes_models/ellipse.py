@@ -89,7 +89,7 @@ class Ellipse(Shape):
         self._face_vertices = vertices
         self._face_triangles = triangles
         # The data displayed are in this case the four corners
-        self._box = rectangle_to_box(self.data_displayed)  # type: ignore[arg-type]
+        self._box = rectangle_to_box(self.data_displayed)  # type: ignore[ty:invalid-argument-type]
 
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'

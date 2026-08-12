@@ -201,7 +201,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
 
     def _on_contrast_limits_change(self) -> None:
         self.node.clim = _coerce_contrast_limits(
-            self.layer.contrast_limits
+            self.layer.contrast_limits  # pyrefly: ignore [bad-argument-type]
         ).contrast_limits
         # cutoffs must be updated after clims, so we can set them to the new values
         self._update_mip_minip_cutoff()
@@ -221,8 +221,8 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
                 cmin, cmax = self.layer.contrast_limits_range
-                self.node.threshold = (self.layer.iso_threshold - cmin) / (
-                    cmax - cmin
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (  # pyrefly: ignore [unsupported-operation]
+                    cmax - cmin  # pyrefly: ignore [unsupported-operation]
                 )
             else:
                 self.node.threshold = self.layer.iso_threshold

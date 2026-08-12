@@ -329,7 +329,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)
+            self._contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -397,7 +397,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._slicing_state._view_texcoords
 
     def _calc_data_range(self, mode='data'):
-        return calc_data_range(self.vertex_values)
+        return calc_data_range(self.vertex_values)  # pyrefly: ignore [bad-argument-type]
 
     @property
     def dtype(self) -> np.dtype:
@@ -846,7 +846,7 @@ class _SurfaceSlicingState(_LayerSlicingState):
             vertex_colors=self.layer.vertex_colors,
             texcoords=self.layer.texcoords,
             data_slice=data_slice,
-            projection_mode=self.layer.projection_mode,
+            projection_mode=self.layer.projection_mode,  # pyrefly: ignore [bad-argument-type]
         )
 
     def _update_slice_response(self, response: _SurfaceSliceResponse) -> None:

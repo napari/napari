@@ -222,7 +222,7 @@ def toggle_console_visibility(qt_viewer: QtViewer) -> None:
     else:
         # old action_manager path :( :(, where
         # toggle_console_visibility is treated as bound method...
-        qt_viewer.window._qt_viewer.toggle_console_visibility()  # type: ignore[attr-defined]
+        qt_viewer.window._qt_viewer.toggle_console_visibility()
 
 
 @register_viewer_action('Press and hold for move camera mode')
@@ -236,7 +236,7 @@ def hold_for_pan_zoom(viewer: ViewerModel) -> Generator[None, None, None]:
     # but they should all have a PAN_ZOOM value. At the time of writing
     # these enums do not share a base class or protocol, so ignore the
     # attribute check for now.
-    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # type: ignore[attr-defined]
+    pan_zoom = selected_layer._modeclass.PAN_ZOOM  # pyrefly: ignore [missing-attribute]
     if previous_mode != pan_zoom:
         selected_layer.mode = pan_zoom
         yield

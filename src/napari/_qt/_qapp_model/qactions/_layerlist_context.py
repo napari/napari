@@ -38,7 +38,7 @@ def _numpy_to_list(d: dict) -> dict:
 
 
 class UnitsEncoder(json.JSONEncoder):
-    def default(self, obj: Any) -> Any:
+    def default(self, obj: Any) -> Any:  # pyrefly: ignore [bad-override-param-name]
         if isinstance(obj, np.ndarray):
             obj = obj.tolist()
         if isinstance(obj, pint.Unit):

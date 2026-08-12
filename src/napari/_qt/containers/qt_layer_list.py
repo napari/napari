@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
+from qtpy.QtCore import QSortFilterProxyModel, Qt
 
 from napari._qt._qapp_model.qactions._layerlist_context import (
     is_valid_spatial_in_clipboard,
@@ -16,8 +16,8 @@ from napari._qt.containers.qt_list_view import QtListView
 from napari.layers import Layer
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtGui import QKeyEvent
+    from qtpy.QtWidgets import QWidget
 
     from napari.components.layerlist import LayerList
 

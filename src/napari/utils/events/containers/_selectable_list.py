@@ -83,7 +83,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
-            self.selection.add(self[new])
+            self.selection.add(self[new])  # pyrefly: ignore [bad-index]
 
     def move_selected(self, index: int, insert: int) -> None:
         """Reorder list by moving the item at index and inserting it

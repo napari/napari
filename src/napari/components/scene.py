@@ -31,7 +31,7 @@ class Scene(EventedModel):
     #       of EventedDictNamespace[SceneOverlay]. This will not be necessary
     #       as soon as we add any other overlay
     overlays: EventedDictNamespace[SceneOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(  # type: ignore
+        default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
             }

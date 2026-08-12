@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  mypy:
+  pyrefly:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,5 +24,5 @@ jobs:
         run: |
           pip install tox
 
-      - name: Run mypy on typed modules
-        run: tox -e mypy
+      - name: Run pyrefly on typed modules
+        run: tox -e pyrefly

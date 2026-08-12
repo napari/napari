@@ -22,7 +22,7 @@ class QtSpinBox(QSpinBox):
         self, value: str | None, pos: int
     ) -> tuple[QValidator.State, str, int]:
         if value == str(self.prohibit):
-            return QValidator.State.Invalid, value, pos
+            return QValidator.State.Invalid, value, pos  # pyrefly: ignore [bad-return]
         return super().validate(value, pos)
 
     def stepBy(self, steps: int) -> None:

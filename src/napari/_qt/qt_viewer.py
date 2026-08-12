@@ -217,7 +217,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[ty:invalid-argument-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -597,7 +597,7 @@ class QtViewer(QSplitter):
     def console(self, console: QtConsole | None) -> None:
         self._console = console
         if console is not None:
-            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
+            self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
     @ensure_main_thread
@@ -1004,7 +1004,7 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
-        canvas.size = tuple(size_arr)
+        canvas.size = tuple(size_arr)  # pyrefly: ignore [bad-argument-type]
         try:
             yield
         finally:
