@@ -73,6 +73,7 @@ class GridCanvas(EventedModel):
         """
         if (
             not self.enabled  # grid is off
+            or not layers # no layers
             or not self._effective_indices(layers)  # no visible layers
         ):
             return (1, 1)
@@ -287,8 +288,6 @@ class GridCanvas(EventedModel):
         occupied : list[int]
             Sorted viewbox groups that contain at least one visible layer.
         """
-        if layers is None:
-            return {}, []
 
         stride = abs(self.stride)
         n = len(layers)
