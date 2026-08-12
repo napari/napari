@@ -79,7 +79,8 @@ _TYPE_MAP: dict[str, type] = {
 
 def _build_single_config_model(
     configuration: ConfigurationContribution,
-    plugin_name: str,
+    conf_identifier: str,
+    conf_title: str,
 ) -> type[EventedModel]:
 
     fields: dict[str, Any] = {}
@@ -95,18 +96,18 @@ def _build_single_config_model(
 
         field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
 
-        field_name = _snake_identifier(key, plugin_name)
+        field_name = _snake_identifier(key)
 
         fields[field_name] = (
             field_type,
             Field(**field_kwargs),
         )
     model = create_model(
-        _snake_identifier(configuration.title),
+        _snake_identifier(conf_identifier),
         __base__=EventedModel,
         **fields,
     )
-    model.display = configuration.title  # type: ignore[attr-defined]
+    model.display = conf_title  # type: ignore[attr-defined]
     return model
 
 
@@ -129,15 +130,15 @@ def plugin_configuration_generator(
         plug.name: plug.contributions for plug in plugins if plug.contributions
     }
     configurations = {
-        plug: conf.configuration
+        plug: conf.configurations
         for plug, conf in plugin_contr.items()
-        if conf.configuration
+        if conf.configurations
     }
     plugin_settings: dict[str, type[PluginPreferences]] = {}
     for plugin_name, configuration in configurations.items():
         models = [
-            _build_single_config_model(conf, plugin_name)
-            for conf in configuration
+            _build_single_config_model(conf, conf_name, conf.title)
+            for conf_name, conf in configuration.items()
         ]
         fields: dict[str, Any] = {}
 
