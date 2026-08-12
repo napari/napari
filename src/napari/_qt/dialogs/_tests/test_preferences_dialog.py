@@ -117,6 +117,21 @@ def test_add_plugin(reset_plugin_settings, mock_pm, pref):
     pref._rebuild_dialog()
 
 
+def test_plugin_settings_restored_on_cancel(
+    reset_plugin_settings, mock_pm, pref
+):
+    settings = get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()  # snapshot plugin settings (defaults)
+
+    settings.reader.lazy = True
+    assert settings.reader.lazy is True
+
+    pref.reject()
+
+    # Cancel reverts plugin settings, like it reverts napari's own settings
+    assert settings.reader.lazy is False
+
+
 def test_dask_widget(qtbot, pref):
     dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
     def_dask_enabled = True

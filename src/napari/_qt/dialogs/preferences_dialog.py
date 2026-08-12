@@ -96,6 +96,10 @@ class PreferencesDialog(QDialog):
         self._starting_values = self._settings.model_dump(
             exclude={'schema_version'}
         )
+        self._starting_plugin_values = {
+            name: plugin.model_dump()
+            for name, plugin in self._plugin_settings.items()
+        }
 
         self._list.clear()
         while self._stack.count():
@@ -337,6 +341,8 @@ class PreferencesDialog(QDialog):
     def reject(self):
         """Restores the settings in place when dialog was launched."""
         self._settings.update(self._starting_values)
+        for name, values in self._starting_plugin_values.items():
+            self._plugin_settings[name].update(values)
         super().reject()
 
 
