@@ -141,9 +141,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_histogram_control import (
 from napari._qt.layer_controls.dynamic.widgets.qt_multiscale_level_control import (
     QtMultiscaleLevelControl,
 )
-from napari._qt.layer_controls.dynamic.widgets.qt_out_slice_checkbox import (
-    QtOutSliceCheckBoxControl,
-)
 from napari._qt.layer_controls.dynamic.widgets.qt_projection_mode_control import (
     QtProjectionModeControl,
 )
@@ -177,7 +174,6 @@ controls_dict = {
         QtGammaSliderControl,
         QtColormapControl,
     ),
-    Points | Vectors: (QtOutSliceCheckBoxControl,),
     Points | Shapes: (
         QtTextVisibilityControl,
         QtFaceColorControl,
