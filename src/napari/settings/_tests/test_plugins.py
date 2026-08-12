@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from npe2._pytest_plugin import TestPluginManager
 from napari.settings._plugin_config_generator import (
     _build_single_config_model,
-    _snake_identifier,
     plugin_configuration_generator,
 )
 
@@ -30,34 +29,18 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-def test_snake_identifier():
-    assert (
-        _snake_identifier('demoplugin.value1.value2', 'demoplugin')
-        == 'value1_value2'
-    )
-    assert (
-        _snake_identifier('Demo Configuration for widget 1')
-        == 'demo_configuration_for_widget_1'
-    )
-    # keys may be namespaced with the plugin name using a different separator
-    # than the plugin name itself ('my_plugin.' in the key vs 'my-plugin')
-    assert (
-        _snake_identifier('my_plugin.reader.lazy', 'my-plugin')
-        == 'reader_lazy'
-    )
-
-
 def test_single_config(mock_pm: 'TestPluginManager'):
     configs = mock_pm.get_manifest(PLUGIN_NAME).contributions.configurations
     assert len(configs) == 2
     assert configs['reader'].title == 'Reading with something'
     assert configs['reader'].properties['lazy'].type == 'boolean'
 
-    model = _build_single_config_model(
-        configs['writer'], configs['writer'].title, PLUGIN_NAME
-    )
-    assert len(model.model_fields) == 2
-    # model/field names must be valid Python identifiers so the parent
-    # preferences model can be built (pydantic < 2.9 raises otherwise)
-    assert all(name.isidentifier() for name in model.model_fields)
-    str(plugin_configuration_generator(mock_pm)['my-plugin'])
+    model = _build_single_config_model(configs['writer'], 'writer')
+    # generated field names are the manifest property keys, verbatim
+    assert set(model.model_fields) == set(configs['writer'].properties)
+
+    plugin_prefs = plugin_configuration_generator(mock_pm)['my-plugin']
+    # the model class name is a valid identifier even when the plugin name
+    # (a PEP-508 package name like 'my-plugin') is not
+    assert plugin_prefs.__name__.isidentifier()
+    str(plugin_prefs)
