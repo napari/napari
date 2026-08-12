@@ -21,13 +21,13 @@ def test_selected_data_in_view():
     # View at z=0: only shape 0 is in view.
     dims.set_point(0, 0)
     layer._slice_dims(dims)
-    assert list(layer._indices_view) == [0]
+    assert list(layer._view_indices) == [0]
     assert layer._selected_data_in_view == [0]
 
     # View at z=1: only shape 1 is in view (selection is unchanged).
     dims.set_point(0, 1)
     layer._slice_dims(dims)
-    assert list(layer._indices_view) == [1]
+    assert list(layer._view_indices) == [1]
     assert layer._selected_data_in_view == [1]
 
     # View at z=0.5: no shapes in view.
@@ -128,7 +128,7 @@ def test_interaction_box_tracks_current_slice_multiselect():
     slices, the interaction box (``_selected_box``) used for handle
     hit-testing must follow the shape that is in view on the current slice.
     Previously it lagged one slice behind because ``_set_view_slice`` rebuilt
-    it inside a batched update, before ``_indices_view`` reflected the new
+    it inside a batched update, before ``_view_indices`` reflected the new
     slice, leaving the previous slice's box hoverable as a phantom highlight.
     """
     viewer = ViewerModel()
