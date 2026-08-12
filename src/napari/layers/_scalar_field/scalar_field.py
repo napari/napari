@@ -28,6 +28,7 @@ from napari.layers.utils._slice_input import (
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
+    expand_corners_to_chunk_boundaries,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
@@ -40,7 +41,6 @@ from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -242,9 +242,7 @@ class ScalarFieldBase(Layer, ABC):
             data = list(data)
 
         if getattr(data, 'ndim', 2) < 2:
-            raise ValueError(
-                trans._('Image data must have at least 2 dimensions.')
-            )
+            raise ValueError('Image data must have at least 2 dimensions.')
 
         # Determine if data is a multiscale
         self._data_raw = data
@@ -285,10 +283,7 @@ class ScalarFieldBase(Layer, ABC):
             depiction=Event,
             locked_data_level=Event,
             interpolation=WarningEmitter(
-                trans._(
-                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
-                    deferred=True,
-                ),
+                "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                 type_name='select',
             ),
             interpolation2d=Event,
@@ -516,6 +511,9 @@ class ScalarFieldBase(Layer, ABC):
             )
             if any(s == 0 for s in display_shape):
                 return
+            corners = expand_corners_to_chunk_boundaries(
+                corners, self.data[level], displayed_axes
+            )
             # Only update when level changes or
             # when new view is outside current corner_pixels
             if (
@@ -785,7 +783,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | None | tuple[int, int | None]:
+    ) -> int | tuple[int, int | None] | None:
         """Get the first non-background value encountered along a ray.
 
         Parameters

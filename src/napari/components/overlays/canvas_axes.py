@@ -3,7 +3,7 @@ from napari.components.overlays.base import CanvasOverlay
 from napari.layers.base._base_constants import Blending
 
 
-class FloatingAxesOverlay(CanvasOverlay):
+class CanvasAxesOverlay(CanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner.
 
     Attributes
