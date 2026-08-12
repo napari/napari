@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, overload
 
 from napari.settings._base import (
     _NOT_SET,
+    _NotSetType,
 )
 from napari.settings._napari_settings import (
     CURRENT_SCHEMA_VERSION,
@@ -76,14 +77,28 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 _PLUGIN_PREFERENCES: dict[str, PluginPreferences] = {}
 
 
+@overload
+def get_plugin_settings(
+    plugin: None = None,
+    path_dir: Path | str | _NotSetType | None = _NOT_SET,
+) -> dict[str, PluginPreferences]: ...
+
+
+@overload
+def get_plugin_settings(
+    plugin: str,
+    path_dir: Path | str | _NotSetType | None = _NOT_SET,
+) -> PluginPreferences: ...
+
+
 def get_plugin_settings(
     plugin: str | None = None,
-    path_dir=_NOT_SET,
+    path_dir: Path | str | _NotSetType | None = _NOT_SET,
 ) -> dict[str, PluginPreferences] | PluginPreferences:
     global _PLUGIN_PREFERENCES
 
     if not _PLUGIN_PREFERENCES:
-        if path_dir is _NOT_SET:
+        if isinstance(path_dir, _NotSetType):
             path_dir = Path(user_config_dir())
         elif path_dir is not None:
             path_dir = Path(path_dir).resolve()
@@ -94,7 +109,7 @@ def get_plugin_settings(
             )
             _PLUGIN_PREFERENCES[key] = model(config_path=config_path)
 
-    elif path_dir is not _NOT_SET:
+    elif not isinstance(path_dir, _NotSetType):
         import inspect
 
         curframe = inspect.currentframe()
