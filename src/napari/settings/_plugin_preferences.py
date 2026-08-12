@@ -11,18 +11,16 @@ from pydantic_settings import (
 )
 
 from napari.settings._base import (
+    EventedConfigFileSettings,
     _NotSetType,
     _remove_empty_dicts,
 )
-from napari.settings._general_settings import GeneralSettings
 from napari.utils._platformdirs import user_config_dir
 
 _PL_CFG_PATH = os.getenv('NAPARI_CONFIG', user_config_dir())
 
 
-class PluginPreferences(
-    GeneralSettings
-):  # Should become parent class of NapariSettings and this class should become empty class
+class PluginPreferences(EventedConfigFileSettings):
     model_config = SettingsConfigDict(
         env_prefix='napari_',
         nested_model_default_partial_update=True,

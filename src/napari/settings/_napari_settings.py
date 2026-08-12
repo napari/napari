@@ -1,14 +1,20 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
 from napari.settings._appearance import AppearanceSettings
 from napari.settings._application import ApplicationSettings
+from napari.settings._base import (
+    _NOT_SET,
+    EventedConfigFileSettings,
+    _NotSetType,
+    _remove_empty_dicts,
+)
 from napari.settings._experimental import ExperimentalSettings
 from napari.settings._fields import Version
-from napari.settings._general_settings import GeneralSettings
 from napari.settings._plugins import PluginsSettings
 from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils._base import _DEFAULT_CONFIG_PATH
@@ -18,7 +24,7 @@ _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 CURRENT_SCHEMA_VERSION = Version(0, 9, 0)
 
 
-class NapariSettings(GeneralSettings):
+class NapariSettings(EventedConfigFileSettings):
     """Schema for napari settings."""
 
     # 1. If you want to *change* the default value of a current option, you need to
@@ -27,6 +33,10 @@ class NapariSettings(GeneralSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
+    schema_version: Version = Field(
+        CURRENT_SCHEMA_VERSION,
+        description='Napari settings schema version.',
+    )
 
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
@@ -72,6 +82,35 @@ class NapariSettings(GeneralSettings):
         extra='ignore',
         populate_by_name=True,
     )
+
+    def __init__(
+        self, config_path: Path | _NotSetType | None = _NOT_SET, **values: Any
+    ) -> None:
+        super().__init__(config_path, **values)
+        self._maybe_migrate()
+
+    def _save_dict(self, **kwargs: dict[Any, Any]) -> dict[str, Any]:
+        # we always want schema_version written to the settings.yaml
+        # TODO: is there a better way to always include schema version?
+        return {
+            'schema_version': self.schema_version,
+            **super()._save_dict(**kwargs),
+        }
+
+    def __str__(self) -> str:
+        out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
+        data = self.model_dump(exclude_defaults=True)
+        out += self._yaml_dump(_remove_empty_dicts(data))
+        return out
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def _maybe_migrate(self) -> None:
+        if self.schema_version < CURRENT_SCHEMA_VERSION:
+            from napari.settings._migrations import do_migrations
+
+            do_migrations(self)
 
 
 if __name__ == '__main__':

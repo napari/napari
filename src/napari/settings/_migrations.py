@@ -12,10 +12,10 @@ from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils.triangulation_backend import TriangulationBackend
 
 if TYPE_CHECKING:
-    from napari.settings._general_settings import GeneralSettings
+    from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: list[Migrator] = []
-MigratorF = Callable[['GeneralSettings'], None]
+MigratorF = Callable[['NapariSettings'], None]
 
 
 class Migrator(NamedTuple):
@@ -26,8 +26,8 @@ class Migrator(NamedTuple):
     run: MigratorF
 
 
-def do_migrations(model: GeneralSettings):
-    """Migrate (update) a GeneralSettings model in place."""
+def do_migrations(model: NapariSettings):
+    """Migrate (update) a NapariSettings model in place."""
     for migration in sorted(_MIGRATORS, key=lambda m: m.from_):
         if model.schema_version == migration.from_:
             with mutation_allowed(model):
@@ -51,7 +51,7 @@ def do_migrations(model: GeneralSettings):
 
 
 @contextmanager
-def mutation_allowed(obj: GeneralSettings):
+def mutation_allowed(obj: NapariSettings):
     """Temporarily allow mutations on an immutable model."""
     config = obj.model_config
     prev, config['frozen'] = config.get('frozen', False), False
@@ -64,16 +64,16 @@ def mutation_allowed(obj: GeneralSettings):
 def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
     """Decorate function as migrating settings from v `from_` to v `to_`.
 
-    A migrator should mutate a `GeneralSettings` model from schema version
+    A migrator should mutate a `NapariSettings` model from schema version
     `from_` to schema version `to_` (in place).
 
     Parameters
     ----------
     from_ : str
-        GeneralSettings.schema_version version that this migrator expects as
+        NapariSettings.schema_version version that this migrator expects as
         input
     to_ : str
-        GeneralSettings.schema_version version after this migrator has been
+        NapariSettings.schema_version version after this migrator has been
         executed.
 
     Returns
@@ -92,7 +92,7 @@ def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
 
 
 @migrator('0.3.0', '0.4.0')
-def v030_v040(model: GeneralSettings):
+def v030_v040(model: NapariSettings):
     """Migrate from v0.3.0 to v0.4.0.
 
     Prior to v0.4.0, npe2 plugins were automatically added to disabled plugins.
@@ -106,7 +106,7 @@ def v030_v040(model: GeneralSettings):
 
 
 @migrator('0.4.0', '0.5.0')
-def v040_050(model: GeneralSettings):
+def v040_050(model: NapariSettings):
     """Migrate from v0.4.0 to v0.5.0
 
     Prior to 0.5.0 existing preferences may have reader extensions
@@ -138,7 +138,7 @@ def _swap_ctrl_cmd(keybinding):
 
 
 @migrator('0.5.0', '0.6.0')
-def v050_060(model: GeneralSettings):
+def v050_060(model: NapariSettings):
     """Migrate from v0.5.0 to v0.6.0.
 
     In #5103 we went from using our own keybinding model to using app-model's.
@@ -176,7 +176,7 @@ def v050_060(model: GeneralSettings):
 
 
 @migrator('0.6.0', '0.7.0')
-def v060_070(model: GeneralSettings):
+def v060_070(model: NapariSettings):
     """Migrate from v0.6.0 to v0.7.0.
 
     In #7627 we updated the default value of the npe2 shim, which bumped the
