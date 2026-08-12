@@ -14,7 +14,7 @@ from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
+    from napari.layers import Layer
 
 class GridCanvas(EventedModel):
     """Grid for canvas.
@@ -51,7 +51,7 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     spacing: GridSpacing = 0.0
 
-    def actual_shape(self, layers: Sequence | None = None) -> tuple[int, int]:
+    def actual_shape(self, layers: Sequence[Layer] | None = None) -> tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -63,7 +63,7 @@ class GridCanvas(EventedModel):
 
         Parameters
         ----------
-        layers : Sequence | None
+        layers : Sequence[Layer] | None
             List of layers that need to be placed in the grid.
 
         Returns
@@ -101,7 +101,7 @@ class GridCanvas(EventedModel):
         return (int(n_row), int(n_column))
 
     def position(
-        self, index: int, layers: Sequence | None = None
+        self, index: int, layers: Sequence[Layer] | None = None
     ) -> tuple[int, int]:
         """Return the position of a given linear index in the grid, or (-1, -1) if the layer is hidden/excluded.
 
@@ -111,7 +111,7 @@ class GridCanvas(EventedModel):
         ----------
         index : int
             Position of current layer in layer list.
-        layers : Sequence | None
+        layers : Sequence[Layer] | None
             List of layers that need to be placed in the grid.
 
         Returns
@@ -145,7 +145,7 @@ class GridCanvas(EventedModel):
         return (int(i_row), int(i_column))
 
     def contents_at(
-        self, position: tuple[int, int], layers: Sequence | None = None
+        self, position: tuple[int, int], layers: Sequence[Layer] | None = None
     ) -> tuple[int, ...]:
         """Return the indices contained in the viewbox at the given position.
 
@@ -169,13 +169,13 @@ class GridCanvas(EventedModel):
         )
 
     def iter_viewboxes(
-        self, layers: Sequence | None = None
+        self, layers: Sequence[Layer] | None = None
     ) -> Iterator[tuple[tuple[int, int], tuple[int, ...]]]:
         """Iterate over each viewbox and its contained indices.
 
         Parameters
         ----------
-        layers : Sequence | None
+        layers : Sequence[Layer] | None
             List of layers that need to be placed in the grid.
 
         Yields
@@ -191,7 +191,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence[Layer] | None = None,
     ) -> int:
         """Compute the spacing between viewboxes in canvas pixels.
 
@@ -230,7 +230,7 @@ class GridCanvas(EventedModel):
     def _compute_canvas_spacing_raw(
         self,
         canvas_size: tuple[int, int] | np.ndarray,
-        layers: Sequence | None = None,
+        layers: Sequence[Layer] | None = None,
     ) -> int:
         """Compute the raw spacing between viewboxes in canvas pixels.
 
@@ -254,7 +254,7 @@ class GridCanvas(EventedModel):
 
         return spacing
 
-    def _effective_indices(self, layers: Sequence | None = None) -> list[int]:
+    def _effective_indices(self, layers: Sequence[Layer] | None = None) -> list[int]:
         """Return indices of layers that are active (visible) in the grid.
 
         Only visible layers occupy grid viewboxes, so hidden layers never
@@ -267,13 +267,13 @@ class GridCanvas(EventedModel):
 
     def _viewbox_groups(
         self,
-        layers: Sequence
+        layers: Sequence[Layer]
     ) -> tuple[dict[int, int], list[int]]:
         """Return the viewbox grouping for the given layers.
 
         Parameters
         ----------
-        layers : Sequence | None
+        layers : Sequence[Layer] | None
             List of layers that need to be placed in the grid.
 
         Returns
