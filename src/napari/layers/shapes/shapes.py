@@ -1256,7 +1256,7 @@ class Shapes(Layer):
         # Drop a stale hover value if the hovered shape is no longer in view.
         if (
             self._value[0] is not None
-            and self._value[0] not in self._indices_view
+            and self._value[0] not in self._view_indices
         ):
             self._value = (None, None)
 
@@ -1641,8 +1641,8 @@ class Shapes(Layer):
         highlights (interaction box, vertices, and outlines) are only drawn for
         the shapes visible in the current slice.
         """
-        indices_view = set(self._indices_view.tolist())
-        return [i for i in self.selected_data if i in indices_view]
+        view_indices = set(self._view_indices.tolist())
+        return [i for i in self.selected_data if i in view_indices]
 
     @property
     def _view_text(self) -> np.ndarray:
@@ -2441,7 +2441,7 @@ class Shapes(Layer):
         # the set of shapes *in view* changes, so the highlight state must be
         # refreshed. This is done after the batched update exits: inside the
         # batch ``_data_view._displayed`` is not yet updated, so
-        # ``_indices_view`` would still report the previous view and the
+        # ``_view_indices`` would still report the previous view and the
         # interaction box would lag one step behind. The redraw itself is
         # triggered by the refresh that wraps slicing (``_refresh_sync``).
         if view_changed:
@@ -2565,7 +2565,7 @@ class Shapes(Layer):
             # Only consider the hovered shape if it is in view and not already
             # selected (selected shapes are highlighted via selected_in_view).
             value = self._value[0]
-            if value is not None and value not in self._indices_view:
+            if value is not None and value not in self._view_indices:
                 value = None
             if value in selected_in_view:
                 value = None
