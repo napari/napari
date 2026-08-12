@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from warnings import warn
 
-import numexpr
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -42,6 +41,19 @@ from superqt import QToggleSwitch
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.utils.history import get_save_history
 from napari.utils.misc import in_ipython
+
+# pandas pd.eval does not fully support numexpr syntax, for some reason (e.g:
+# the "where" function is unrecognized). Use numexpr directly if possible,
+# falling back to the "python" engine of pandas
+try:
+    import numexpr
+
+    eval_func = numexpr.evaluate
+    eval_docs_link = 'https://numexpr.readthedocs.io/en/latest/user_guide.html#supported-operators'
+except ModuleNotFoundError:
+    eval_func = pd.eval
+    eval_docs_link = 'https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.eval.html#pandas.eval'
+
 
 if TYPE_CHECKING:
     import napari
@@ -1319,9 +1331,7 @@ class FeaturesTable(QWidget):
                     else:
                         value = np.nan
                 else:
-                    # pandas pd.eval does not fully support numexpr syntax, for some reason (e.g:
-                    # the "where" function is unrecognized). Use numexpr directly.
-                    value = numexpr.evaluate(expr, local_dict=layer.features)
+                    value = eval_func(expr, local_dict=layer.features)
                     # NOTE: numexpr does not support working with strings and numbers are the same time,
                     # so something like "where(x > 5, 'good', 'bad')" will fail. One needs to use numbers,
                     # or just do it in python :P
@@ -1511,9 +1521,9 @@ class AddColumnDialog(QDialog):
         layout.addWidget(QLabel('Column Name:'))
         layout.addWidget(self.col_name_input)
 
-        numexpr_docs_link = 'https://numexpr.readthedocs.io/en/latest/user_guide.html#supported-operators'
+        # TODO: this link color cannot be set via theme reliably, it seems...
         expr_label = QLabel(
-            f'Column Expression (<a href={numexpr_docs_link}>syntax</a>):'
+            f'Column Expression (<a href={eval_docs_link}">syntax</a>):'
         )
         expr_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
