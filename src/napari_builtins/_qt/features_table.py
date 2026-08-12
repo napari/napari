@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from warnings import warn
 
+import numexpr
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -562,7 +563,8 @@ class DelegateCategorical(QStyledItemDelegate):
     def setEditorData(self, editor: QWidget, index: QModelIndex):
         if isinstance(editor, QComboBox):
             value = index.model().data(index, Qt.ItemDataRole.EditRole)
-            i = editor.findText(value)
+            # NOTE: we convert to str cause categorical data may not actually be str
+            i = editor.findText(str(value))
             if i >= 0:
                 editor.setCurrentIndex(i)
         else:
@@ -1284,12 +1286,12 @@ class FeaturesTable(QWidget):
 
     def _add_column(self):
         model = self.table.model().sourceModel()
-        df = model.df
+        all_features = model.df
 
         base_name = 'new_column'
         col_name = base_name
         i = 1
-        while col_name in df.columns:
+        while col_name in all_features.columns:
             col_name = f'{base_name}_{i}'
             i += 1
 
@@ -1303,13 +1305,27 @@ class FeaturesTable(QWidget):
 
         try:
             for layer in self._selected_layers:
-                value = layer.features.eval(expr)
-                if dtype != 'float' and value is None:
-                    # TODO: this should be fancier (actually accept nan value) but requires
-                    #       a lot more work to get editors and column types to behave
-                    raise ValueError(  # noqa: TRY301
-                        'NA values are not yet supported for non-float columns'
-                    )
+                if expr == 'None':
+                    if dtype == 'object':
+                        value = None
+                    if dtype == 'str':
+                        value = ''
+                    elif dtype != 'float':
+                        # TODO: this should be fancier (actually accept nan value) but requires
+                        #       a lot more work to get editors and column types to behave
+                        raise ValueError(  # noqa: TRY301
+                            'NA values are not yet supported for non-float columns'
+                        )
+                    else:
+                        value = np.nan
+                else:
+                    # pandas pd.eval does not fully support numexpr syntax, for some reason (e.g:
+                    # the "where" function is unrecognized). Use numexpr directly.
+                    value = numexpr.evaluate(expr, local_dict=layer.features)
+                    # NOTE: numexpr does not support working with strings and numbers are the same time,
+                    # so something like "where(x > 5, 'good', 'bad')" will fail. One needs to use numbers,
+                    # or just do it in python :P
+
                 layer.features[col_name] = pd.Series(
                     value, index=layer.features.index, dtype=dtype
                 )
@@ -1324,7 +1340,7 @@ class FeaturesTable(QWidget):
             QMessageBox.warning(
                 self,
                 'Invalid Expression or Dtype',
-                f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}\n\nFalling back to None.",
+                f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}",
             )
             for layer in self._selected_layers:
                 if col_name in layer.features:
@@ -1495,9 +1511,9 @@ class AddColumnDialog(QDialog):
         layout.addWidget(QLabel('Column Name:'))
         layout.addWidget(self.col_name_input)
 
-        pd_docs_link = 'https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.eval.html#pandas.DataFrame.eval'
+        numexpr_docs_link = 'https://numexpr.readthedocs.io/en/latest/user_guide.html#supported-operators'
         expr_label = QLabel(
-            f'Column Expression (<a href={pd_docs_link}>syntax</a>):'
+            f'Column Expression (<a href={numexpr_docs_link}>syntax</a>):'
         )
         expr_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
