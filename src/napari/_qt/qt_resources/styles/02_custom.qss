@@ -23,8 +23,8 @@ QStatusBar {
 /* ------------- Window separator --------- */
 
 QMainWindow::separator {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   padding: 2px;
   border: none;
   background-color: {{ background }};
