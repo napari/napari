@@ -48,12 +48,14 @@ def test_snake_identifier():
 
 
 def test_single_config(mock_pm: 'TestPluginManager'):
-    configs = mock_pm.get_manifest(PLUGIN_NAME).contributions.configuration
+    configs = mock_pm.get_manifest(PLUGIN_NAME).contributions.configurations
     assert len(configs) == 2
-    assert configs[0].title == 'Demo Configuration for widget 1'
-    assert configs[0].properties['my_plugin.reader.lazy'].type == 'boolean'
+    assert configs['reader'].title == 'Reading with something'
+    assert configs['reader'].properties['lazy'].type == 'boolean'
 
-    model = _build_single_config_model(configs[0], PLUGIN_NAME)
+    model = _build_single_config_model(
+        configs['writer'], configs['writer'].title, PLUGIN_NAME
+    )
     assert len(model.model_fields) == 2
     # model/field names must be valid Python identifiers so the parent
     # preferences model can be built (pydantic < 2.9 raises otherwise)
