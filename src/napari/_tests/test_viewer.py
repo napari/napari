@@ -479,7 +479,7 @@ def test_axis_labels(
 
 def test_axis_labels_after_data(make_napari_viewer, qtbot):
     """
-    Check that axis labels persist after adding data in different ways.
+    Dims axis labels mirror the layer list once layers are added (gh-9357).
     """
     original_labels = ('z', 'y', 'x')
     viewer = make_napari_viewer(axis_labels=original_labels)
@@ -488,18 +488,21 @@ def test_axis_labels_after_data(make_napari_viewer, qtbot):
 
     # Add data with same dimensionality as viewer
     _ = viewer.add_image(np.random.random((10, 12, 12)))
-    assert viewer.dims.axis_labels == original_labels
+    assert viewer.dims.axis_labels == ('-3', '-2', '-1')
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
 
     # Add data with lower dimensionality than viewer
     _ = viewer.add_image(np.random.random((10, 12)))
-    assert viewer.dims.axis_labels == original_labels
+    assert viewer.dims.axis_labels == ('-3', '-2', '-1')
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
 
     # Add data with lower dimensionality than viewer,
     # with different axis labels
     data_labels = ('i', 'j')
     assert data_labels != original_labels
     _ = viewer.add_image(np.random.random((10, 12)), axis_labels=data_labels)
-    assert viewer.dims.axis_labels == ('z', 'i', 'j')
+    assert viewer.dims.axis_labels == ('-3', 'i', 'j')
+    assert viewer.dims.axis_labels == viewer.layers.axis_labels
 
 
 def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
