@@ -459,6 +459,7 @@ def build_viewer_tour(
                     ' Many UI elements have an indicator in the lower-right meaning that they can be right-clicked'
                     ' for advanced functionality.'
                 ),
+                ensure_visible=reveal_layer_list,
                 anchor=TourAnchor.ABOVE,
             ),
             TourStep(
