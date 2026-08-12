@@ -14,7 +14,9 @@ from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
+
     from napari.layers import Layer
+
 
 class GridCanvas(EventedModel):
     """Grid for canvas.
@@ -51,7 +53,9 @@ class GridCanvas(EventedModel):
     enabled: bool = False
     spacing: GridSpacing = 0.0
 
-    def actual_shape(self, layers: Sequence[Layer] | None = None) -> tuple[int, int]:
+    def actual_shape(
+        self, layers: Sequence[Layer] | None = None
+    ) -> tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -73,7 +77,7 @@ class GridCanvas(EventedModel):
         """
         if (
             not self.enabled  # grid is off
-            or not layers # no layers
+            or not layers  # no layers
             or not self._effective_indices(layers)  # no visible layers
         ):
             return (1, 1)
@@ -254,7 +258,9 @@ class GridCanvas(EventedModel):
 
         return spacing
 
-    def _effective_indices(self, layers: Sequence[Layer] | None = None) -> list[int]:
+    def _effective_indices(
+        self, layers: Sequence[Layer] | None = None
+    ) -> list[int]:
         """Return indices of layers that are active (visible) in the grid.
 
         Only visible layers occupy grid viewboxes, so hidden layers never
@@ -266,8 +272,7 @@ class GridCanvas(EventedModel):
         return [i for i, layer in enumerate(layers) if layer.visible]
 
     def _viewbox_groups(
-        self,
-        layers: Sequence[Layer]
+        self, layers: Sequence[Layer]
     ) -> tuple[dict[int, int], list[int]]:
         """Return the viewbox grouping for the given layers.
 
