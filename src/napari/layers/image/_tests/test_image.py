@@ -1010,15 +1010,16 @@ _OOB_TRANSLATE_DATA = np.random.default_rng(0).uniform(500, 1000, (3, 6, 6))
     ],
     ids=['dask', 'xarray'],
 )
-def test_contrast_limits_non_numpy_out_of_bounds_translate(
-    data, make_napari_viewer
-):
+def test_contrast_limits_non_numpy_out_of_bounds_translate(data):
     """Regression test for https://github.com/napari/napari/issues/8755."""
-    viewer = make_napari_viewer()
     scale = [0.3, 0.1, 0.1]
     translate = [1.0, 0.0, 0.0]
 
-    layer = viewer.add_image(data, scale=scale, translate=translate)
+    layer = Image(data, scale=scale, translate=translate)
+    assert layer._slice.empty
+    assert layer._should_calc_clims
+
+    layer._slice_dims(Dims(ndim=3, point=(1.0, 0.0, 0.0)))
     ref = Image(_OOB_TRANSLATE_DATA, scale=scale, translate=translate)
 
     npt.assert_allclose(layer.contrast_limits, ref.contrast_limits)
