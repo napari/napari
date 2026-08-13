@@ -49,16 +49,15 @@ def _model_name(plugin_name: str) -> str:
     """Derive a valid Python identifier from a plugin name for the pydantic model.
 
     Manifest ``name`` values are validated by npe2 as PEP-508 package names
-    (which may contain ``-`` and ``.``), not as Python identifiers — e.g.
-    ``'my-plugin'`` is a legal plugin name.  The generated pydantic class name
-    must still be a valid identifier (older pydantic versions fail on invalid
-    model names), so the name is sanitized for the class name only.  This does
-    NOT affect attribute/field names, which come verbatim from npe2-validated
-    keys.
+    (which may contain ``-`` and ``.``, and may start with a digit), not as
+    Python identifiers — e.g. ``'9lives'`` is a legal plugin name.  The
+    generated pydantic class name must still be a valid identifier (older
+    pydantic versions fail on invalid model names), so the name is sanitized
+    for the class name only, prefixing ``_`` when it starts with a digit.  This
+    does NOT affect attribute/field names, which come verbatim from
+    npe2-validated keys.
     """
     name = re.sub(r'\W+', '_', plugin_name).strip('_')
-    if not name:
-        name = 'plugin'
     if name[0].isdigit():
         name = f'_{name}'
     return name
@@ -80,9 +79,6 @@ def _build_single_config_model(
     fields: dict[str, Any] = {}
 
     for key, props in configuration.properties.items():
-        if props.type is None:
-            continue
-
         data = {k: getattr(props, k) for k in props.model_fields_set}
         data.pop('type', None)
 
