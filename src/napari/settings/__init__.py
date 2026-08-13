@@ -76,6 +76,20 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 _PLUGIN_PREFERENCES: dict[str, PluginPreferences] = {}
 
 
+def _clear_plugin_settings_cache(*_args, **_kwargs) -> None:
+    """Invalidate the plugin-settings cache.
+
+    `get_plugin_settings` caches _PLUGIN_PREFERENCES i.e. only
+    builds it on first call.
+
+    This utility clears the dict so that the next call forces a
+    rebuild of the plugin-settings cache.
+
+    Used when plugins are enabled/disabled or in tests.
+    """
+    _PLUGIN_PREFERENCES.clear()
+
+
 def get_plugin_settings(
     plugin: str | None = None,
     path_dir=_NOT_SET,
