@@ -16,15 +16,32 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import ConfigurationContribution
 
 # npe2 declares constraints using JSON Schema names; translate them to the
-# equivalent pydantic ``Field`` kwargs.  All other keys (``title``, ``default``,
-# ``description``, ``enum``, ...) are passed through unchanged and end up in
-# ``json_schema_extra``.
-# TODO: Check if this correctly is used by the widgets
+# equivalent pydantic ``Field`` kwargs (``maximum`` -> ``le``, etc.).
 VALUE_TRANSLATOR = {
     'maximum': 'le',
     'minimum': 'ge',
     'exclusive_maximum': 'lt',
     'exclusive_minimum': 'gt',
+}
+
+# The pydantic ``Field`` kwargs we may pass through, after ``VALUE_TRANSLATOR``.
+# Anything else npe2 puts on a ``ConfigurationProperty`` (``enum``,
+# ``is_multiline``, ``enum_descriptions``, ``schema_``, ...) is settings-UI
+# metadata: it is not a valid ``Field`` kwarg, so it is routed to
+# ``json_schema_extra`` instead (where it stays visible in the model's JSON
+# schema for the Preferences widgets) rather than triggering pydantic's
+# deprecation warning for extra keyword arguments.
+_FIELD_KWARGS = {
+    'default',
+    'title',
+    'description',
+    'gt',
+    'ge',
+    'lt',
+    'le',
+    'multiple_of',
+    'min_length',
+    'max_length',
 }
 
 
@@ -69,7 +86,21 @@ def _build_single_config_model(
         data = {k: getattr(props, k) for k in props.model_fields_set}
         data.pop('type', None)
 
-        field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
+        field_kwargs = {
+            VALUE_TRANSLATOR.get(k, k): v
+            for k, v in data.items()
+            if VALUE_TRANSLATOR.get(k, k) in _FIELD_KWARGS
+        }
+        extra = {
+            k: v
+            for k, v in data.items()
+            if VALUE_TRANSLATOR.get(k, k) not in _FIELD_KWARGS
+        }
+        if extra:
+            field_kwargs['json_schema_extra'] = {
+                **field_kwargs.get('json_schema_extra', {}),
+                **extra,
+            }
 
         fields[key] = (
             props.python_type,
