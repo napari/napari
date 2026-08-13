@@ -69,9 +69,31 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         else:
             # otherwise create a new one
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **_events
+                source=self,
+                auto_connect=False,
+                _connect_children=True,
+                **_events,
             )
         super().__init__(data, basetype)
+
+    def first_callback_connect(self) -> None:
+        """When the first callback is connected to `self.events`,
+        connect to all child emitters.
+        """
+        for item in self._dict.values():
+            self._connect_child_emitters(item)
+
+    def last_callback_disconnect(self) -> None:
+        """When the last callback is disconnected from `self.events`, disconnect
+        from all child emitters.
+        """
+        if self.events.callbacks:
+            # to not disconnect child emitters if there are
+            # still callbacks connected to this emitter
+            return
+
+        for item in self._dict.values():
+            self._disconnect_child_emitters(item)
 
     def __setitem__(self, key: _K, value: _T) -> None:
         old = self._dict.get(key)
@@ -81,7 +103,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.adding(key=key)
             super().__setitem__(key, value)
             self.events.added(key=key, value=value)
-            self._connect_child_emitters(value)
+            if self.events.callbacks:
+                self._connect_child_emitters(value)
         else:
             self.events.changing(key=key)
             super().__setitem__(key, value)
@@ -96,13 +119,14 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _reemit_child_event(self, event: Event) -> None:
         """An item in the dict emitted an event.  Re-emit with key"""
         if not hasattr(event, 'key'):
-            event.key = self.key(event.source)
+            event.key = self.key(event.source)  # type: ignore[attr-defined]
 
         # re-emit with this object's EventEmitter
         self.events(event)
 
     def _reemit_child_event_psygnal(self, event: EmissionInfo) -> None:
         source = event.signal.instance
+        key: _K | str | None
         if event.path:
             key = f'{self.key(source)}.{event.path}'
         else:
@@ -122,7 +146,9 @@ class EventedDict(TypedMutableMapping[_K, _T]):
     def _connect_child_emitters(self, child: _T) -> None:
         """Connect all events from the child to be re-emitted."""
         if isinstance(child, PsygnalModel):
-            child.events.connect(self._reemit_child_event_psygnal)
+            child.events.all.connect(
+                self._reemit_child_event_psygnal, unique=True
+            )
         elif isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
             if child.events.source is None:
@@ -135,3 +161,37 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             if v is value or v == value:
                 return k
         return None
+
+
+class EventedDictNamespace(EventedDict[str, _T]):
+    """An evented dict that also exposes its elements as a simple namespace.
+
+    Needs keys to be str.
+    """
+
+    def __getattr__(self, name: str) -> _T:
+        # we need some special cases cause they are accessed before full initialization
+        if name == 'events':
+            raise AttributeError(name)
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    def __setattr__(self, name: str, value: _T) -> None:
+        # we need some special cases cause they are accessed before full initialization
+        if (
+            name in ('events', '_dict', '_basetypes')
+            or name in super().__dir__()
+        ):
+            super().__setattr__(name, value)
+        else:
+            self[name] = value
+
+    def __dir__(self) -> list[str]:
+        # provides autocompletion including the magical attributes computed from keys
+        # unless they are private
+        return sorted(
+            set(super().__dir__())
+            | {k for k in self.keys() if not k.startswith('_')}
+        )

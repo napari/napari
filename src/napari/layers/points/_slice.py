@@ -16,18 +16,17 @@ class _PointSliceResponse:
     Attributes
     ----------
     indices : array like
-        Indices of the sliced Points data.
-    scale: array like or none
-        Used to scale the sliced points for visualization.
-        Should be broadcastable to indices.
+        Indices of the visible points.
+    size: array like
+        Sizes of the visible points, rescaled if necessary.
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
     request_id : int
         The identifier of the request from which this was generated.
     """
 
-    indices: np.ndarray = field(repr=False)
-    scale: Any = field(repr=False)
+    indices: npt.NDArray = field(repr=False)
+    size: npt.NDArray = field(repr=False)
     slice_input: _SliceInput
     request_id: int
 
@@ -53,6 +52,8 @@ class _PointSliceRequest:
         The slicing coordinates and margins in data space.
     size : array like
         Size of each point. This is used in calculating visibility.
+    shown : array like
+        Boolean array indicating if each point should be shown.
     others
         See the corresponding attributes in `Layer` and `Points`.
     """
@@ -61,16 +62,16 @@ class _PointSliceRequest:
     data: Any = field(repr=False)
     data_slice: _ThickNDSlice = field(repr=False)
     projection_mode: PointsProjectionMode
-    size: Any = field(repr=False)
-    out_of_slice_display: bool = field(repr=False)
+    size: npt.NDArray = field(repr=False)
+    shown: npt.NDArray = field(repr=False)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _PointSliceResponse:
         # Return early if no data
         if len(self.data) == 0:
             return _PointSliceResponse(
-                indices=np.array([], dtype=int),
-                scale=np.empty(0),
+                indices=np.empty(0, dtype=int),
+                size=np.empty(0, dtype=float),
                 slice_input=self.slice_input,
                 request_id=self.id,
             )
@@ -80,28 +81,28 @@ class _PointSliceRequest:
             # If we want to display everything, then use all indices.
             # scale is only impacted by not displayed data, therefore 1
             return _PointSliceResponse(
-                indices=np.arange(len(self.data), dtype=int),
-                scale=1,
+                indices=np.arange(self.data.shape[0], dtype=int),
+                size=self.size,
                 slice_input=self.slice_input,
                 request_id=self.id,
             )
 
-        slice_indices, scale = self._get_slice_data(not_disp)
+        indices, size = self._get_slice_data(not_disp)
 
         return _PointSliceResponse(
-            indices=slice_indices,
-            scale=scale,
+            indices=indices,
+            size=size,
             slice_input=self.slice_input,
             request_id=self.id,
         )
 
-    def _get_slice_data(self, not_disp: list[int]) -> tuple[npt.NDArray, int]:
-        data = self.data[:, not_disp]
-        scale = 1
+    def _get_slice_data(
+        self, not_disp: list[int]
+    ) -> tuple[npt.NDArray, npt.NDArray]:
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
-        if self.projection_mode == 'none':
+        if self.projection_mode == PointsProjectionMode.NONE:
             low = point.copy()
             high = point.copy()
         else:
@@ -114,27 +115,66 @@ class _PointSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
-        inside_slice = np.all((data >= low) & (data <= high), axis=1)
-        slice_indices = np.where(inside_slice)[0].astype(int)
+        data_not_disp = self.data[:, not_disp]
+        inside_slice = np.all(
+            (data_not_disp >= low) & (data_not_disp <= high), axis=1
+        )
+        visible = np.where(inside_slice & self.shown)[0].astype(int)
 
-        if self.out_of_slice_display and self.slice_input.ndim > 2:
-            sizes = self.size[:, np.newaxis] / 2
+        if not visible.size:
+            return (
+                np.empty(0, dtype=int),
+                np.empty(0, dtype=float),
+            )
 
-            # add out of slice points with progressively lower sizes
-            dist_from_low = np.abs(data - low)
-            dist_from_high = np.abs(data - high)
-            distances = np.minimum(dist_from_low, dist_from_high)
-            # anything inside the slice is at distance 0
-            distances[inside_slice] = 0
+        size = self.size[visible]
 
-            # display points that "spill" into the slice
-            matches = np.all(distances <= sizes, axis=1)
-            if not np.any(matches):
-                return np.empty(0, dtype=int), 1
-            size_match = sizes[matches]
-            # rescale size of spilling points based on how much they do
-            scale_per_dim = (size_match - distances[matches]) / size_match
-            scale = np.prod(scale_per_dim, axis=1)
-            slice_indices = np.where(matches)[0].astype(int)
+        if self.projection_mode in (
+            PointsProjectionMode.RESCALE_LINEAR,
+            PointsProjectionMode.RESCALE_SPHERICAL,
+        ):
+            # our rescaling is relative to the center of the slice, in each dimension
+            dist_from_point = data_not_disp[visible] - point
+            if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
+                # linear rescaling, closest to the old out_of_slice_display implementation
 
-        return slice_indices, scale
+                # margins can be different, so we need to treat low/high distance independently
+                slice_end = np.where(
+                    dist_from_point < 0, low - point, high - point
+                )
+                # we multiply the scales from each dimension into a single one
+                scale = np.prod(1 - dist_from_point / slice_end, axis=1)
+                size = size * scale
+            elif (
+                self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
+            ):
+                # This follows a spherical decay, meaning that while a point's poisition
+                # may be in the slice, if the sphere centered on it does not intersect
+                # the center of the slice, it will be discarded
+
+                # the length of the radius segment cut by the intersection with the
+                # slice center (per dimension) is dist_from_point. When bigger than size
+                # in any dimension, then there is no intersection!
+                radius = size / 2
+                radius_segment = np.abs(dist_from_point)
+
+                # discard points whose radius is bigger than the distance to the slice
+                # (no intersection between the sphere and the slice center)
+                valid = np.all(radius_segment < radius[:, None], axis=1)
+                radius_segment = radius_segment[valid]
+                radius = radius[valid]
+
+                # reduce to one dimension by getting the ndimensional "in slice portion"
+                # of the point, and multiplying them together
+                out_of_slice_portion = np.prod(
+                    1 - (radius_segment / radius[:, None])
+                )
+                radius_segment = (1 - out_of_slice_portion) * radius
+
+                # radius of the "disc"
+                disc_radius = np.sqrt(radius**2 - radius_segment**2)
+                size = disc_radius * 2
+
+                visible = visible[valid]
+
+        return visible, size
