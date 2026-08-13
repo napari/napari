@@ -161,6 +161,70 @@ def mock_app_model():
             init_qactions.cache_clear()
 
 
+@pytest.fixture
+def plugin_settings(npe2pm, tmp_path, monkeypatch):
+    """Make `napari.settings.get_plugin_settings` fresh for each test.
+
+    Clears the `_PLUGIN_PREFERENCES` cache and swaps in a version of
+    the `get_plugin_settings` with tmp_path as the default `path_dir`.
+
+    This depends on npe2's `npe2pm` fixture, so plugin discovery is
+    blocked and any plugins you register only exist for this test.
+
+    It also connects `_clear_plugin_settings_cache` to `npe2pm`'s
+    `plugins_registered` and `enablement_changed` signals for the duration
+    of the test to allow dynamic registration/enablement during testing.
+
+    Examples
+    --------
+    >>> def test_my_settings(plugin_settings, npe2pm):
+    ...     if 'example-plugin' not in npe2pm:
+    ...         npe2pm.register(
+    ...             PluginManifest.from_distribution('example-plugin')
+    ...         )
+    ...     from napari.settings import get_plugin_settings
+    ...     s = get_plugin_settings('example-plugin')
+    ...     assert s.reader.max_size_mb == 512 # default value
+    ...     s.reader.max_size_mb = 1024  # auto-saves under tmp_path
+    ...     assert 'max_size_mb: 1024' in s.config_path.read_text()
+    """
+    from napari import settings as napari_settings
+    from napari.settings._base import _NOT_SET, _NotSetType
+
+    npe2pm.events.plugins_registered.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+
+    original_get_plugin_settings = napari_settings.get_plugin_settings
+
+    def _get_plugin_settings(plugin=None, path_dir=_NOT_SET):
+        # `path_dir` can only be set once - set it to this test's tmp_path
+        if (
+            isinstance(path_dir, _NotSetType)
+            and not napari_settings._PLUGIN_PREFERENCES
+        ):
+            path_dir = tmp_path
+        return original_get_plugin_settings(plugin, path_dir=path_dir)
+
+    monkeypatch.setattr(
+        napari_settings, 'get_plugin_settings', _get_plugin_settings
+    )
+
+    yield
+
+    npe2pm.events.plugins_registered.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+
+
 @pytest.fixture(autouse=True)
 def _disable_qt_warnings(monkeypatch):
     try:

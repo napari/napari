@@ -285,6 +285,18 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
+@pytest.fixture(autouse=True)
+def plugin_settings_(plugin_settings):
+    """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.
+
+    Without this, whichever test happens to call `get_plugin_settings`
+    first (e.g. by constructing a `PreferencesDialog`) would populate and
+    freeze `_PLUGIN_PREFERENCES` for the rest of the session, against the
+    real user config directory.
+    """
+    return plugin_settings
+
+
 @pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
