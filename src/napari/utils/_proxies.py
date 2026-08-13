@@ -161,7 +161,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
-    def __call__(self, *args, **kwargs):  # type: ignore [no-untyped-def]
+    def __call__(self, *args, **kwargs):
         # if a PublicOnlyProxy is callable, then when we call it we:
         # - unwrap the arguments, to avoid performance issues detailed in
         #   PublicOnlyProxy.__setattr__,

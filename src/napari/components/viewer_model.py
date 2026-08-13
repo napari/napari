@@ -327,7 +327,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> CanvasAxesOverlay:
-        return self.canvas.overlays.axes  # type: ignore[return-value]
+        return self.canvas.overlays.axes
 
     @property
     @deprecated(
@@ -338,7 +338,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        return self.canvas.overlays.scale_bar
 
     @property
     @deprecated(
@@ -349,7 +349,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        return self.canvas.overlays.text
 
     @property
     @deprecated(

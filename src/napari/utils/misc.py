@@ -39,7 +39,7 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
+        return packaging.version.LegacyVersion(v)
 
 
 def running_as_constructor_app() -> bool:

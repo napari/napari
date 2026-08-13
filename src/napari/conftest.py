@@ -316,14 +316,14 @@ def qt_viewer_(
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
-    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
-    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
-    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
-    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
 
     def hide_widget(widget):
         widget.hide()

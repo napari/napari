@@ -63,7 +63,7 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None  # type: ignore[return-value]
+        return points, None, None
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
@@ -107,7 +107,7 @@ def _fan_triangulation(
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles  # type: ignore[return-value]
+    return vertices, triangles
 
 
 def inside_boxes(boxes):
@@ -722,7 +722,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         )
         edge_tri = triangulate_edge(polygon_vertices, closed=True)
-        return face_tri, edge_tri  # type: ignore[return-value]
+        return face_tri, edge_tri
 
     if _triangulate_dispatch.is_convex(data2d):
         vertices, triangles = _fan_triangulation(data2d)
@@ -1041,7 +1041,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         index_d = i * tube_points + jp
 
         indices.extend(
-            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[arg-type]
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[ty:invalid-argument-type]
         )
     triangles = np.array(indices, dtype=np.uint32)
 

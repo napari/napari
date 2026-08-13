@@ -318,7 +318,7 @@ class Labels(ScalarFieldBase):
 
     _drag_modes: ClassVar[
         dict[Mode, Callable[[Labels, Event], Generator | None]]
-    ] = {  # type: ignore[assignment]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -332,7 +332,7 @@ class Labels(ScalarFieldBase):
 
     _move_modes: ClassVar[
         dict[StringEnum, Callable[[Labels, Event], None]]
-    ] = {  # type: ignore[assignment]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -342,7 +342,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -649,10 +649,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         data = self._ensure_int_labels(data)
-        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
+        ScalarFieldBase.data.fset(self, data)
         self.events.features()
 
     @property
@@ -879,7 +879,7 @@ class Labels(ScalarFieldBase):
     @mode.setter
     def mode(self, mode):
         # See https://github.com/python/mypy/issues/16426 for type ignore reason
-        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
+        Layer.mode.fset(self, mode)
 
     def _mode_setter_helper(self, mode):
         mode = super()._mode_setter_helper(mode)
