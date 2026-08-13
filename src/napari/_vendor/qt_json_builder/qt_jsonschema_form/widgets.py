@@ -1,10 +1,9 @@
 from functools import partial
 from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
-from packaging.version import parse as parse_version
 import os
 
-from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
+from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
@@ -21,14 +20,13 @@ if TYPE_CHECKING:
     from .form import WidgetBuilder
 
 
-QT_GE_66 = parse_version(QT_VERSION) >= parse_version("6.6.0")
-
-
 class SchemaWidgetMixin:
     on_changed = Signal()
 
-    VALID_COLOUR = '#ffffff'
+    # fallback colours when no napari theme is available (e.g. headless)
     INVALID_COLOUR = '#f6989d'
+    INVALID_TEXT_COLOUR = '#8f8f8f'
+    INVALID_TEXT_OPACITY = 178  # ~70% opacity
 
     def __init__(
         self,
@@ -42,6 +40,16 @@ class SchemaWidgetMixin:
         self.schema = schema
         self.ui_schema = ui_schema
         self.widget_builder = widget_builder
+        self._error: Exception | None = None
+        self._appearance = None
+        try:
+            from napari.settings import get_settings
+
+            self._appearance = get_settings().appearance
+            self._appearance.events.theme.connect(self._on_theme_changed)
+            self.destroyed.connect(self._disconnect_theme)
+        except Exception:
+            pass
 
         self.on_changed.connect(lambda _: self.clear_error())
         self.configure()
@@ -65,21 +73,48 @@ class SchemaWidgetMixin:
     def clear_error(self):
         self._set_valid_state(None)
 
-    def _set_valid_state(self, error: Exception = None):
-        palette = self.palette()
-        colour = QtGui.QColor()
-        if QT_GE_66:
-            colour.fromString(
-                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-            )
-        else:
-            colour.setNamedColor(
-                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-            )
-        palette.setColor(self.backgroundRole(), colour)
+    def _current_theme(self):
+        if self._appearance is None:
+            return None
+        from napari.utils.theme import get_theme
 
-        self.setPalette(palette)
-        self.setToolTip("" if error is None else error.message)  # TODO
+        return get_theme(self._appearance.theme)
+
+    def _error_colour(self) -> str:
+        theme = self._current_theme()
+        if theme is None:
+            return self.INVALID_COLOUR
+        return theme.to_rgb_dict()['error']
+
+    def _error_text_colour(self) -> str:
+        """Return a muted colour for the validation message text."""
+        theme = self._current_theme()
+        if theme is None:
+            return self.INVALID_TEXT_COLOUR
+        from napari.utils.theme import opacity
+
+        return opacity(theme.text, self.ERROR_TEXT_OPACITY)
+
+    def _set_valid_state(self, error: Exception | None = None):
+        self._error = error
+        if error is None:
+            # restore the theme-applied (QSS) styling
+            self.setStyleSheet('')
+            self.setToolTip('')
+        else:
+            # an inline stylesheet wins over napari's app-level stylesheet, so
+            # the invalid background stays visible under any theme
+            self.setStyleSheet(f'background-color: {self._error_colour()};')
+            self.setToolTip(error.message)
+
+    def _on_theme_changed(self, *args) -> None:
+        """Re-apply validation styling using the new theme's colours."""
+        self._set_valid_state(self._error)
+
+    def _disconnect_theme(self, *args) -> None:
+        """Disconnect the theme callback when the widget is destroyed."""
+        if self._appearance is not None:
+            self._appearance.events.theme.disconnect(self._on_theme_changed)
 
 
 class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
@@ -688,6 +723,9 @@ class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
 
 
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
+    # left indent (px) for per-field error labels, roughly a tab's width
+    ERROR_LABEL_INDENT = 20
+
     def __init__(
         self,
         schema: dict,
@@ -696,9 +734,17 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
+        # per-field labels showing the validation message (see handle_error)
+        self.error_labels: dict[str, QtWidgets.QLabel] = {}
         self.widgets = self.populate_from_schema(
             schema, ui_schema, widget_builder
         )
+
+    def _on_theme_changed(self, *args) -> None:
+        """Re-apply validation styling for this object and its error labels."""
+        super()._on_theme_changed(*args)
+        for label in getattr(self, 'error_labels', {}).values():
+            label.setStyleSheet(self._error_label_stylesheet())
 
     @state_property
     def state(self) -> dict:
@@ -709,12 +755,33 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         for name, value in state.items():
             self.widgets[name].state = value
 
+    def _error_label_stylesheet(self) -> str:
+        """Stylesheet for per-field error labels: muted theme text."""
+        return f'color: {self._error_text_colour()};'
+
+    def _new_error_label(self, name: str) -> QtWidgets.QLabel:
+        label = QtWidgets.QLabel()
+        label.setWordWrap(True)
+        label.setIndent(20)  # roughly a tab width
+        label.setStyleSheet(self._error_label_stylesheet())
+        label.hide()
+        self.error_labels[name] = label
+        return label
+
     def handle_error(self, path: Tuple[str], err: Exception):
         name, *tail = path
         self.widgets[name].handle_error(tail, err)
+        label = self.error_labels.get(name)
+        if label is not None:
+            label.setText(err.message)
+            label.show()
 
     def widget_on_changed(self, name: str, value):
         self.state[name] = value
+        label = self.error_labels.get(name)
+        if label is not None:
+            label.clear()
+            label.hide()
         self.on_changed.emit(self.state)
 
     def setDescription(self, description: str):
@@ -758,6 +825,7 @@ class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
             layout.addWidget(label)
             layout.addWidget(widget)
             widgets[name] = widget
+            layout.addWidget(self._new_error_label(name))
 
         return widgets
 
@@ -789,6 +857,7 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
             else:
                 layout.addRow(label, widget)
             widgets[name] = widget
+            layout.addRow(self._new_error_label(name))
 
         return widgets
 
@@ -833,32 +902,15 @@ class FormWidget(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
-        self.error_widget = QtWidgets.QGroupBox()
-        self.error_widget.setTitle("Errors")
-        self.error_layout = QtWidgets.QVBoxLayout()
-        self.error_widget.setLayout(self.error_layout)
-        self.error_widget.hide()
-
-        layout.addWidget(self.error_widget)
+        # intentional divergence from upstream qt_json_builder: the "Errors"
+        # group box is dropped; validation feedback is shown per-field via
+        # ``SchemaWidgetMixin.handle_error``
         layout.addWidget(widget)
 
         self.widget = widget
 
     def display_errors(self, errors: List[Exception]):
-        self.error_widget.show()
-
-        layout = self.error_widget.layout()
-        while True:
-            item = layout.takeAt(0)
-            if not item:
-                break
-            item.widget().deleteLater()
-
-        for err in errors:
-            widget = QtWidgets.QLabel(
-                f"<b>.{'.'.join(err.path)}</b> {err.message}"
-            )
-            layout.addWidget(widget)
+        pass
 
     def clear_errors(self):
-        self.error_widget.hide()
+        pass
