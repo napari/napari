@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Any, overload
+from typing import Any, NoReturn, overload
 
 from napari.settings._base import (
     _NOT_SET,
     _NotSetType,
 )
 from napari.settings._napari_settings import (
+    _CFG_PATH,
     CURRENT_SCHEMA_VERSION,
     NapariSettings,
 )
@@ -13,7 +14,6 @@ from napari.settings._plugin_config_generator import (
     PluginPreferences,
     plugin_configuration_generator,
 )
-from napari.utils._platformdirs import user_config_dir
 
 __all__ = [
     'CURRENT_SCHEMA_VERSION',
@@ -36,6 +36,19 @@ SETTINGS = _SettingsProxy()
 # private global object
 # will be populated on first call of get_settings
 _SETTINGS: NapariSettings | None = None
+
+
+def _raise_path_set_twice() -> NoReturn:
+    """Raise when a settings path is provided more than once per session."""
+    import inspect
+
+    curframe = inspect.currentframe()
+    # frames: [this helper, get_settings/get_plugin_settings, ...real caller]
+    calframe = inspect.getouterframes(curframe, 2)
+    raise RuntimeError(
+        'The path can only be set once per session. '
+        f'Settings called from {calframe[2][3]}'
+    )
 
 
 def get_settings(path=_NOT_SET) -> NapariSettings:
@@ -63,13 +76,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
             path = Path(path).resolve() if path is not None else None
         _SETTINGS = NapariSettings(config_path=path)
     elif path is not _NOT_SET:
-        import inspect
-
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        raise RuntimeError(
-            f'The path can only be set once per session. Settings called from {calframe[1][3]}'
-        )
+        _raise_path_set_twice()
 
     return _SETTINGS
 
@@ -113,7 +120,9 @@ def get_plugin_settings(
 
     if not _PLUGIN_PREFERENCES:
         if isinstance(path_dir, _NotSetType):
-            path_dir = Path(user_config_dir())
+            # same directory as napari's own settings file (``_CFG_PATH``), so
+            # plugin settings honor ``NAPARI_CONFIG`` exactly like napari's do
+            path_dir = Path(_CFG_PATH).parent if _CFG_PATH else None
         elif path_dir is not None:
             path_dir = Path(path_dir).resolve()
 
@@ -124,14 +133,7 @@ def get_plugin_settings(
             _PLUGIN_PREFERENCES[key] = model(config_path=config_path)
 
     elif not isinstance(path_dir, _NotSetType):
-        import inspect
-
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        raise RuntimeError(
-            f'The path can only be set once per session. '
-            f'Settings called from {calframe[1][3]}'
-        )
+        _raise_path_set_twice()
 
     if plugin is not None:
         try:

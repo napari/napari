@@ -15,6 +15,11 @@ from napari._pydantic_util import get_inner_type
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
+# Captured at import time, before the autouse ``plugin_settings`` fixture
+# monkeypatches it; used to exercise the real default-path branch of
+# ``get_plugin_settings`` (the fixture redirects the default path to tmp_path).
+_ORIGINAL_GET_PLUGIN_SETTINGS = settings.get_plugin_settings
+
 
 @pytest.fixture
 def test_settings(tmp_path):
@@ -565,3 +570,66 @@ def test_get_plugin_settings_unknown_plugin(
 
     with pytest.raises(KeyError):
         settings.get_plugin_settings('does-not-exist')
+
+
+def test_get_plugin_settings_default_path_dir(
+    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+):
+    """With no ``path_dir``, plugin settings default to the directory of
+    napari's own settings file (``_CFG_PATH``, honoring ``NAPARI_CONFIG``).
+
+    The autouse ``plugin_settings`` fixture redirects the default path to
+    ``tmp_path``; this test bypasses that wrapper to exercise the real default
+    path resolution.
+    """
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+    monkeypatch.setattr(settings, '_CFG_PATH', str(tmp_path / 'settings.yaml'))
+    monkeypatch.setattr(
+        settings, 'get_plugin_settings', _ORIGINAL_GET_PLUGIN_SETTINGS
+    )
+
+    s = settings.get_plugin_settings()
+
+    assert s['test-plugin'].config_path.parent == tmp_path
+
+
+def test_get_plugin_settings_default_path_dir_disabled(
+    monkeypatch, test_settings_2, reset_plugin_settings
+):
+    """An empty ``NAPARI_CONFIG`` disables on-disk plugin settings."""
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+    monkeypatch.setattr(settings, '_CFG_PATH', '')
+    monkeypatch.setattr(
+        settings, 'get_plugin_settings', _ORIGINAL_GET_PLUGIN_SETTINGS
+    )
+
+    s = settings.get_plugin_settings()
+
+    assert s['test-plugin'].config_path is None
+
+
+def test_plugin_preferences_str(
+    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+):
+    """``str(plugin_preferences)`` shows only non-default values."""
+    monkeypatch.setattr(
+        settings,
+        'plugin_configuration_generator',
+        lambda: test_settings_2,
+    )
+
+    prefs = settings.get_plugin_settings(path_dir=tmp_path)['test-plugin']
+
+    # defaults are excluded from the string representation
+    assert 'demo' not in str(prefs)
+
+    prefs.display_name = 'renamed'
+    assert 'renamed' in str(prefs)
