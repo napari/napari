@@ -23,11 +23,6 @@ if TYPE_CHECKING:
 class SchemaWidgetMixin:
     on_changed = Signal()
 
-    # fallback colours when no napari theme is available (e.g. headless)
-    INVALID_COLOUR = '#f6989d'
-    INVALID_TEXT_COLOUR = '#8f8f8f'
-    INVALID_TEXT_OPACITY = 178  # ~70% opacity
-
     def __init__(
         self,
         schema: dict,
@@ -41,15 +36,6 @@ class SchemaWidgetMixin:
         self.ui_schema = ui_schema
         self.widget_builder = widget_builder
         self._error: Exception | None = None
-        self._appearance = None
-        try:
-            from napari.settings import get_settings
-
-            self._appearance = get_settings().appearance
-            self._appearance.events.theme.connect(self._on_theme_changed)
-            self.destroyed.connect(self._disconnect_theme)
-        except Exception:
-            pass
 
         self.on_changed.connect(lambda _: self.clear_error())
         self.configure()
@@ -73,48 +59,16 @@ class SchemaWidgetMixin:
     def clear_error(self):
         self._set_valid_state(None)
 
-    def _current_theme(self):
-        if self._appearance is None:
-            return None
-        from napari.utils.theme import get_theme
-
-        return get_theme(self._appearance.theme)
-
-    def _error_colour(self) -> str:
-        theme = self._current_theme()
-        if theme is None:
-            return self.INVALID_COLOUR
-        return theme.to_rgb_dict()['error']
-
-    def _error_text_colour(self) -> str:
-        """Return a muted colour for the validation message text."""
-        theme = self._current_theme()
-        if theme is None:
-            return self.INVALID_TEXT_COLOUR
-        from napari.utils.theme import opacity
-
-        return opacity(theme.text, self.INVALID_TEXT_OPACITY)
-
     def _set_valid_state(self, error: Exception | None = None):
         self._error = error
-        if error is None:
-            # restore the theme-applied (QSS) styling
-            self.setStyleSheet('')
-            self.setToolTip('')
-        else:
-            # an inline stylesheet wins over napari's app-level stylesheet, so
-            # the invalid background stays visible under any theme
-            self.setStyleSheet(f'background-color: {self._error_colour()};')
-            self.setToolTip(error.message)
+        self.setProperty('invalid', error is not None)
+        self._repolish()
+        self.setToolTip('' if error is None else error.message)
 
-    def _on_theme_changed(self, *args) -> None:
-        """Re-apply validation styling using the new theme's colours."""
-        self._set_valid_state(self._error)
-
-    def _disconnect_theme(self, *args) -> None:
-        """Disconnect the theme callback when the widget is destroyed."""
-        if self._appearance is not None:
-            self._appearance.events.theme.disconnect(self._on_theme_changed)
+    def _repolish(self) -> None:
+        """Re-evaluate the app stylesheet for this widget."""
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
@@ -740,12 +694,6 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
             schema, ui_schema, widget_builder
         )
 
-    def _on_theme_changed(self, *args) -> None:
-        """Re-apply validation styling for this object and its error labels."""
-        super()._on_theme_changed(*args)
-        for label in getattr(self, 'error_labels', {}).values():
-            label.setStyleSheet(self._error_label_stylesheet())
-
     @state_property
     def state(self) -> dict:
         return {k: w.state for k, w in self.widgets.items()}
@@ -755,15 +703,14 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         for name, value in state.items():
             self.widgets[name].state = value
 
-    def _error_label_stylesheet(self) -> str:
-        """Stylesheet for per-field error labels: muted theme text."""
-        return f'color: {self._error_text_colour()};'
-
     def _new_error_label(self, name: str) -> QtWidgets.QLabel:
         label = QtWidgets.QLabel()
         label.setWordWrap(True)
-        label.setIndent(20)  # roughly a tab width
-        label.setStyleSheet(self._error_label_stylesheet())
+        label.setIndent(self.ERROR_LABEL_INDENT)  # roughly a tab width
+        # coloured by ``03_validation.qss`` via `QLabel[invalid-msg="true"]`
+        label.setProperty('invalid-msg', True)
+        label.style().unpolish(label)
+        label.style().polish(label)
         label.hide()
         self.error_labels[name] = label
         return label
