@@ -14,6 +14,8 @@ from docstring_parser.numpydoc import parse as parse_docstring
 import napari
 from napari import Viewer, layers as module
 from napari._tests.utils import check_viewer_functioning
+from napari.layers import Image
+from napari.utils._test_utils import validate_match_signature
 from napari.utils.misc import camel_to_snake
 
 layers = []
@@ -181,3 +183,11 @@ def test_imshow_with_viewer(qtbot, make_napari_viewer):
     view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
+
+
+def test_add_image_consistency():
+    validate_match_signature(
+        Image,
+        napari.imshow,
+        {'channel_axis', 'title', 'show', 'viewer', 'ndisplay', 'order'},
+    )

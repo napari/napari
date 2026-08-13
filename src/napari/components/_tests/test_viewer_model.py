@@ -18,6 +18,7 @@ from napari.layers.shapes._tests.conftest import (
     ten_four_corner,  # noqa: F401
 )  # import to not put this data in top level conftest.py
 from napari.settings import get_settings
+from napari.utils._test_utils import validate_match_signature
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
 
@@ -1349,3 +1350,9 @@ def test_new_labels_axis_labels_inheritance_on_single_selection():
     viewer._new_labels()
     assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
     assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels
+
+
+def test_add_image_consistency():
+    validate_match_signature(
+        Image, ViewerModel.add_image, {'self', 'channel_axis'}
+    )
