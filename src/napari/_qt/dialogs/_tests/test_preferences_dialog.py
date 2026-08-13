@@ -132,6 +132,36 @@ def test_plugin_settings_restored_on_cancel(
     assert settings.reader.lazy is False
 
 
+def test_plugin_settings_saved_on_accept(
+    reset_plugin_settings, mock_pm, pref, qtbot
+):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    with qtbot.waitSignal(pref.finished):
+        pref.accept()
+
+    # OK persists plugin settings to their own config file
+    assert 'lazy: true' in settings.config_path.read_text()
+
+
+def test_plugin_settings_restore_defaults(
+    reset_plugin_settings, mock_pm, pref, monkeypatch
+):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    monkeypatch.setattr(
+        QMessageBox,
+        'question',
+        lambda *a, **k: QMessageBox.StandardButton.RestoreDefaults,
+    )
+    pref._restore_default_dialog()
+
+    # Restore defaults resets plugin settings, like it resets napari's own
+    assert settings.reader.lazy is False
+
+
 def test_dask_widget(qtbot, pref):
     dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
     def_dask_enabled = True
