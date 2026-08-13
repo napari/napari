@@ -93,7 +93,7 @@ class SchemaWidgetMixin:
             return self.INVALID_TEXT_COLOUR
         from napari.utils.theme import opacity
 
-        return opacity(theme.text, self.ERROR_TEXT_OPACITY)
+        return opacity(theme.text, self.INVALID_TEXT_OPACITY)
 
     def _set_valid_state(self, error: Exception | None = None):
         self._error = error
