@@ -39,8 +39,10 @@ from qtpy.QtWidgets import (
 from superqt import QToggleSwitch
 
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
+from napari.utils._magicgui import find_viewer_ancestor
 from napari.utils.history import get_save_history
 from napari.utils.misc import in_ipython
+from napari.utils.tips import _link_color
 
 # pandas pd.eval does not fully support numexpr syntax, for some reason (e.g:
 # the "where" function is unrecognized). Use numexpr directly if possible,
@@ -1521,10 +1523,11 @@ class AddColumnDialog(QDialog):
         layout.addWidget(QLabel('Column Name:'))
         layout.addWidget(self.col_name_input)
 
-        # TODO: this link color cannot be set via theme reliably, it seems...
-        expr_label = QLabel(
-            f'Column Expression (<a href={eval_docs_link}">syntax</a>):'
+        theme = (
+            viewer.theme if (viewer := find_viewer_ancestor(self)) else None
         )
+        eval_docs_link_html = f'<a href="{eval_docs_link}" style="color: {_link_color(theme)};">click here for syntax</a>'
+        expr_label = QLabel(f'Column Expression ({eval_docs_link_html}):')
         expr_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextBrowserInteraction
         )
