@@ -15,73 +15,50 @@ if TYPE_CHECKING:
     from npe2 import PluginManager
     from npe2.manifest.contributions import ConfigurationContribution
 
-
-def _snake_identifier(name: str, plugin_name: str | None = None) -> str:
-    """
-    Convert free-form text into a valid snake_case Python identifier.
-
-    Used to derive pydantic field/model names from npe2 configuration keys and
-    titles, which are free-form text that must become valid Python identifiers
-    (they are used both as the name of the generated model and as field names
-    on the plugin preferences model).
-
-    If ``plugin_name`` is given, a leading ``<plugin_name>.`` namespace is
-    stripped from the key.  Plugin names and configuration keys may use
-    different separators (e.g. ``'my-plugin'`` vs ``'my_plugin.reader.lazy'``),
-    so the prefix is compared after normalizing separators.
-
-    Examples
-    --------
-    >>> _snake_identifier('my_plugin.someSetting', 'my_plugin')
-    'some_setting'
-    >>> _snake_identifier('my_plugin.reader.lazy', 'my-plugin')
-    'reader_lazy'
-    >>> _snake_identifier('Demo Configuration for widget 1')
-    'demo_configuration_for_widget_1'
-    """
-    if plugin_name:
-        # configuration keys are commonly namespaced with the plugin name;
-        # compare the two after splitting on non-alphanumeric runs so that
-        # '-' and '_' separators are treated the same
-        parts = re.split(r'[^0-9a-zA-Z]+', name)
-        plugin_parts = re.split(r'[^0-9a-zA-Z]+', plugin_name)
-        if parts[: len(plugin_parts)] == plugin_parts:
-            name = '.'.join(parts[len(plugin_parts) :])
-
-    # camelCase -> snake_case (e.g. someSetting -> some_Setting)
-    name = re.sub(r'(?<!^)(?=[A-Z])', '_', name)
-    # any run of non-alphanumeric characters is a separator
-    name = re.sub(r'[^0-9a-zA-Z]+', '_', name)
-    name = re.sub(r'_+', '_', name).strip('_').lower()
-    if not name:
-        name = 'settings'
-    if name[0].isdigit():
-        name = f'_{name}'
-    return name
-
-
+# npe2 declares constraints using JSON Schema names; translate them to the
+# equivalent pydantic ``Field`` kwargs.  All other keys (``title``, ``default``,
+# ``description``, ``enum``, ...) are passed through unchanged and end up in
+# ``json_schema_extra``.
+# TODO: Check if this correctly is used by the widgets
 VALUE_TRANSLATOR = {
     'maximum': 'le',
     'minimum': 'ge',
     'exclusive_maximum': 'lt',
     'exclusive_minimum': 'gt',
 }
-# npe2 coerces configuration property types to JSON Schema type names
-# (see ``npe2.manifest.contributions._json_schema``), so only those four
-# need mapping
-_TYPE_MAP: dict[str, type] = {
-    'boolean': bool,
-    'integer': int,
-    'number': float,
-    'string': str,
-}
+
+
+def _model_name(plugin_name: str) -> str:
+    """Derive a valid Python identifier from a plugin name for the pydantic model.
+
+    Manifest ``name`` values are validated by npe2 as PEP-508 package names
+    (which may contain ``-`` and ``.``), not as Python identifiers — e.g.
+    ``'my-plugin'`` is a legal plugin name.  The generated pydantic class name
+    must still be a valid identifier (older pydantic versions fail on invalid
+    model names), so the name is sanitized for the class name only.  This does
+    NOT affect attribute/field names, which come verbatim from npe2-validated
+    keys.
+    """
+    name = re.sub(r'\W+', '_', plugin_name).strip('_')
+    if not name:
+        name = 'plugin'
+    if name[0].isdigit():
+        name = f'_{name}'
+    return name
 
 
 def _build_single_config_model(
     configuration: ConfigurationContribution,
     conf_identifier: str,
-    conf_title: str,
 ) -> type[EventedModel]:
+    """Build an :class:`EventedModel` for a single configuration category.
+
+    npe2 guarantees that configuration and property keys are valid, non-reserved
+    Python identifiers that don't start with an underscore (see
+    ``npe2.manifest._validators.configuration_key``), and uses them verbatim as
+    attribute names on the generated settings model, so no normalization is
+    needed here.
+    """
 
     fields: dict[str, Any] = {}
 
@@ -90,65 +67,54 @@ def _build_single_config_model(
             continue
 
         data = {k: getattr(props, k) for k in props.model_fields_set}
-
-        type_name = data.pop('type')
-        field_type = _TYPE_MAP.get(type_name)
+        data.pop('type', None)
 
         field_kwargs = {VALUE_TRANSLATOR.get(k, k): v for k, v in data.items()}
 
-        field_name = _snake_identifier(key)
-
-        fields[field_name] = (
-            field_type,
+        fields[key] = (
+            props.python_type,
             Field(**field_kwargs),
         )
-    model = create_model(
-        _snake_identifier(conf_identifier),
+    return create_model(
+        conf_identifier,
         __base__=EventedModel,
         **fields,
     )
-    model.display = conf_title  # type: ignore[attr-defined]
-    return model
 
 
 def plugin_configuration_generator(
     plugin_manager: PluginManager | None = None,
 ) -> dict[str, type[PluginPreferences]]:
-    if not plugin_manager:
+    """Build a plugin-preferences model class for each plugin with configurations."""
+    if plugin_manager is None:
         from npe2 import PluginManager
 
         pm = PluginManager.instance()
         pm.discover()
     else:
         pm = plugin_manager
+    # exclude disabled plugins, consistent with the rest of napari
     plugins = sorted(
-        pm.iter_manifests(),
+        pm.iter_manifests(disabled=False),
         key=lambda x: x.name,
     )
     display_names = {plugin.name: plugin.display_name for plugin in plugins}
-    plugin_contr = {
-        plug.name: plug.contributions for plug in plugins if plug.contributions
-    }
     configurations = {
-        plug: conf.configurations
-        for plug, conf in plugin_contr.items()
-        if conf.configurations
+        plug.name: plug.contributions.configurations
+        for plug in plugins
+        if plug.contributions.configurations
     }
     plugin_settings: dict[str, type[PluginPreferences]] = {}
     for plugin_name, configuration in configurations.items():
-        models = [
-            _build_single_config_model(conf, conf_name, conf.title)
-            for conf_name, conf in configuration.items()
-        ]
         fields: dict[str, Any] = {}
-
-        for model in models:
-            fields[model.__name__] = (
+        for conf_name, conf in configuration.items():
+            model = _build_single_config_model(conf, conf_name)
+            fields[conf_name] = (
                 model,
-                Field(default_factory=model, title=model.display),  # type: ignore[attr-defined]
+                Field(default_factory=model, title=conf.title),
             )
         plugin_settings[plugin_name] = create_model(
-            f'{plugin_name} Preferences',
+            _model_name(plugin_name),
             __base__=PluginPreferences,
             **fields,
         )
