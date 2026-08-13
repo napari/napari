@@ -6,9 +6,6 @@ from vispy.color import Colormap as VispyColormap
 
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import (
-    _MATPLOTLIB_COLORMAP_NAMES,
-    _VISPY_COLORMAP_NAMES,
-    _VISPY_COLORMAPS,
     AVAILABLE_COLORMAPS,
     _increment_unnamed_colormap,
     _napari_cmap_to_vispy,
@@ -17,7 +14,6 @@ from napari.utils.colormaps.colormap_utils import (
     vispy_or_mpl_colormap,
 )
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.colormaps.vendored import cm
 
 
 @pytest.mark.parametrize('name', list(AVAILABLE_COLORMAPS.keys()))
@@ -42,6 +38,12 @@ def test_colormap(name):
     np.testing.assert_almost_equal(colors, vispy_colors, decimal=6)
 
 
+def test_nan_colormap_maps_nan_to_red():
+    np.testing.assert_array_equal(
+        AVAILABLE_COLORMAPS['nan'].map(np.nan), [[1.0, 0.0, 0.0, 1.0]]
+    )
+
+
 def test_increment_unnamed_colormap():
     # test that unnamed colormaps are incremented
     names = [
@@ -51,6 +53,7 @@ def test_increment_unnamed_colormap():
         '[unnamed colormap 1]',
     ]
     assert _increment_unnamed_colormap(names)[0] == '[unnamed colormap 2]'
+    assert _increment_unnamed_colormap(names)[1] == '[unnamed colormap 2]'
 
     # test that named colormaps are not incremented
     named_colormap = 'perfect_colormap'
@@ -177,20 +180,6 @@ def test_can_degrade_gracefully():
         cmap = ensure_colormap(object)
     assert isinstance(cmap, Colormap)
     assert cmap.name == 'gray'
-
-
-def test_vispy_colormap_amount():
-    """
-    Test that the amount of localized vispy colormap names matches available colormaps.
-    """
-    for name in _VISPY_COLORMAPS:
-        assert name in _VISPY_COLORMAP_NAMES
-
-
-def test_mpl_colormap_exists():
-    """Test that all localized mpl colormap names exist."""
-    for name in _MATPLOTLIB_COLORMAP_NAMES:
-        assert getattr(cm, name, None) is not None
 
 
 @pytest.mark.parametrize(

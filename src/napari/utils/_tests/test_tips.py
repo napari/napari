@@ -15,7 +15,7 @@ from napari.utils.tips import _link_color, format_tip, urls_to_html
             'press ⌘K to jump',
         ),
         ('{Space} or {Alt}', '␣ or Alt', '␣ or Alt', '␣ or ⌥'),  # multiple
-        ('{napari.viewer.fit_to_view}', 'Ctrl+0', 'Ctrl+0', '⌘0'),  # appmodel
+        ('{napari.scene.fit_to_view}', 'Ctrl+0', 'Ctrl+0', '⌘0'),  # appmodel
         ('{napari:reset_view}', 'Ctrl+R', 'Ctrl+R', '⌘R'),  # action manager
     ],
 )
