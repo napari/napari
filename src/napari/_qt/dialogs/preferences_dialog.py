@@ -64,7 +64,8 @@ class PreferencesDialog(QDialog):
         # Layout
         left_layout = QVBoxLayout()
         left_layout.addWidget(self._list)
-        left_layout.addStretch()
+        # add a little breathing room between the list and the action buttons
+        left_layout.addSpacing(self._button_restore.sizeHint().height())
         left_layout.addWidget(self._button_restore)
         left_layout.addWidget(self._button_cancel)
         left_layout.addWidget(self._button_ok)
