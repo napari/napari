@@ -16,6 +16,7 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from napari.components import LayerList
@@ -208,27 +209,16 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # before opening up to other layer types, this line should be updated.
 
     if layer.multiscale:
-        # This evaluates if the multi-resolution pyramid is kept after removing
-        # the projected axis and assigns multiscale data if structure is
-        # conserved.
+        # This evaluates if there is a conventional multi-resolution pyramid.
+        data = tuple(
+            getattr(np, mode)(level_data, axis=axis, keepdims=False)
+            for level_data in layer.data
+        )
         resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
         resulting_sizes = np.prod(resulting_shapes, axis=1)
-        if np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
-            data = tuple(
-                getattr(np, mode)(level_data, axis=axis, keepdims=False)
-                for level_data in layer.data
-            )
-        # If the pyramid is broken, then project current level
-        else:
-            data = (
-                getattr(
-                    np,
-                    mode,
-                )(
-                    layer.data[0],
-                    axis=axis,
-                    keepdims=False,
-                ),
+        if not np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
+            show_warning(
+                'Projection warning: unconventional pyramid\nThe projected multiscale image layer resulted in an unconventional multi-resolution pyramid.'
             )
     else:
         data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
@@ -259,6 +249,9 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
             'rendering': layer.rendering,
         }
     )
+    if isinstance(layer, Image) and layer.multiscale:
+        meta['multiscale'] = True
+
     new = Layer.create(data, meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
