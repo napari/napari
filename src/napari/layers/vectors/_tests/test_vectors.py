@@ -9,7 +9,6 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
-from napari.layers.vectors._vectors_constants import VectorsProjectionMode
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
