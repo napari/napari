@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter
@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 
     from napari._qt.qt_main_window import Window, _QtMainWindow
 
-    TourParent = Window | QWidget
-    TourViewerWindow = Window | _QtMainWindow
+    TourParent: TypeAlias = Window | QWidget
+    TourViewerWindow: TypeAlias = Window | _QtMainWindow
 
 
 class TourAnchor(Enum):
