@@ -1352,7 +1352,7 @@ def test_new_labels_axis_labels_inheritance_on_single_selection():
 
 
 def test_dims_axis_labels_reset_to_default_when_layer_resets():
-    """Dims labels follow a layer back to default values (gh-9537)."""
+    """Dims labels follow a layer back to default values (gh-9357)."""
     viewer = ViewerModel()
     layer = viewer.add_image(np.zeros((4, 4, 4, 4)))
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
@@ -1366,7 +1366,7 @@ def test_dims_axis_labels_reset_to_default_when_layer_resets():
 
 
 def test_dims_axis_labels_default_when_all_layers_default():
-    """Non-default layer labels win until every layer is abck to the default."""
+    """Non-default layer labels win until every layer is back to the default."""
     viewer = ViewerModel()
     layer0 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
     layer1 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
