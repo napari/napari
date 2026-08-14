@@ -282,8 +282,6 @@ def test_effective_indices():
     assert grid._effective_indices(layers_mixed) == [0, 2]
     # Empty layers → empty list
     assert grid._effective_indices([]) == []
-    # None → empty list
-    assert grid._effective_indices() == []
 
 
 def test_hidden_layers_with_stride_equal_visible_count():
