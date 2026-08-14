@@ -208,7 +208,9 @@ def _as_main_window(window: TourViewerWindow) -> _QtMainWindow:
 class GuidedTour(QObject):
     finished = Signal()
 
-    def __init__(self, steps: list[TourStep], parent_window: TourParent) -> None:
+    def __init__(
+        self, steps: list[TourStep], parent_window: TourParent
+    ) -> None:
         parent_window = _as_qt_window(parent_window)
         super().__init__(parent_window)
         self._steps = steps
@@ -350,7 +352,9 @@ _BUILTIN_TOUR_TARGETS: dict[str, Callable[[_QtMainWindow], QWidget | None]] = {
 }
 
 
-def resolve_tour_target(qt_window: TourViewerWindow, name: str) -> QWidget | None:
+def resolve_tour_target(
+    qt_window: TourViewerWindow, name: str
+) -> QWidget | None:
     """Resolve a tour step target by name.
 
     Checks napari's built-in viewer regions first (``'canvas'``,
