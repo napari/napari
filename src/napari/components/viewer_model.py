@@ -205,6 +205,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
     _layer_list_scroll_progress: float = 0
+    # True if any layer had custom axis labels the last time layers changed
+    _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -759,17 +761,39 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
+    def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
+        """Combine layerlist axis labels onto the current dims labels.
+
+        Replaces dims axis label at indices where layers axis labels exist.
+        """
+        updated_axis_labels = list(self.dims.axis_labels)
+        for pos, label in enumerate(self.layers.axis_labels):
+            if label != str(pos - self.dims.ndim):
+                updated_axis_labels[pos] = label
+        return tuple(updated_axis_labels)
+
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
+            self._layers_had_custom_axis_labels = False
         else:
             ranges = self.layers._ranges
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
-            self.dims.axis_labels = self.layers.axis_labels
+            layers_are_default = all(
+                layer._has_default_axis_labels() for layer in self.layers
+            )
+            if self._layers_had_custom_axis_labels and layers_are_default:
+                # All layers are back to default, so reset the stale dims labels
+                self.dims.axis_labels = self.layers.axis_labels
+            else:
+                self.dims.axis_labels = (
+                    self._merge_dims_and_layers_axis_labels()
+                )
+            self._layers_had_custom_axis_labels = not layers_are_default
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
