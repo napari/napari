@@ -9,6 +9,7 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.layers.vectors._vectors_constants import VectorsProjectionMode
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
@@ -737,6 +738,34 @@ def test_world_data_extent():
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_thick_slicing():
+    coords = np.array([[[0, 0, 0], [3, 3, 3]], [[10, 0, 0], [-3, -3, -3]]])
+    layer = Vectors(coords)
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_indices, [0])
+
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
+
+    layer.projection_mode = VectorsProjectionMode.FADE
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+        )
+    )
+
+    assert np.array_equal(layer._view_indices, [0])
+    assert np.array_equal(layer._view_alphas, [0.5])
+
+    # test without thickness
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
 
 def test_empty_data_from_tuple():
