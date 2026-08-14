@@ -170,7 +170,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-        self.dims = QtDims(self.viewer.dims)
+        self.dims: QtDims = QtDims(self.viewer.dims)
         self._controls: QtLayerControlsContainer | None = None
         self._layers: QtLayerList | None = None
         self._layersButtons: QtLayerButtons | None = None
@@ -194,7 +194,7 @@ class QtViewer(QSplitter):
         main_layout.setSpacing(0)
 
         # This dictionary holds the corresponding vispy visual for each layer
-        self.canvas = canvas_class(
+        self.canvas: VispyCanvas = canvas_class(
             viewer=viewer,
             parent=main_widget,
             font_manager=self._font_manager,
