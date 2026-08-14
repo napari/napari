@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QFont, QKeyEvent, QPainter
@@ -24,7 +24,10 @@ if TYPE_CHECKING:
 
     from qtpy.QtGui import QPaintEvent
 
-    from napari._qt.qt_main_window import _QtMainWindow
+    from napari._qt.qt_main_window import Window, _QtMainWindow
+
+    TourParent = Window | QWidget
+    TourViewerWindow = Window | _QtMainWindow
 
 
 class TourAnchor(Enum):
@@ -188,10 +191,25 @@ class _TourOverlay(QWidget):
         )
 
 
+def _as_qt_window(window: TourParent) -> QWidget:
+    qt_window = getattr(window, '_qt_window', window)
+    if not isinstance(qt_window, QWidget):
+        raise TypeError('Tour window must be a napari Window or QWidget.')
+    return qt_window
+
+
+def _as_main_window(window: TourViewerWindow) -> _QtMainWindow:
+    qt_window = getattr(window, '_qt_window', window)
+    if not hasattr(qt_window, '_qt_viewer'):
+        raise TypeError('Tour needs a napari window.')
+    return cast('_QtMainWindow', qt_window)
+
+
 class GuidedTour(QObject):
     finished = Signal()
 
-    def __init__(self, steps: list[TourStep], parent_window: QWidget) -> None:
+    def __init__(self, steps: list[TourStep], parent_window: TourParent) -> None:
+        parent_window = _as_qt_window(parent_window)
         super().__init__(parent_window)
         self._steps = steps
         self._window: QWidget | None = parent_window
@@ -332,7 +350,7 @@ _BUILTIN_TOUR_TARGETS: dict[str, Callable[[_QtMainWindow], QWidget | None]] = {
 }
 
 
-def resolve_tour_target(qt_window: _QtMainWindow, name: str) -> QWidget | None:
+def resolve_tour_target(qt_window: TourViewerWindow, name: str) -> QWidget | None:
     """Resolve a tour step target by name.
 
     Checks napari's built-in viewer regions first (``'canvas'``,
@@ -341,6 +359,7 @@ def resolve_tour_target(qt_window: _QtMainWindow, name: str) -> QWidget | None:
     ``window.dock_widgets``, so a plugin can target a widget it docked by
     the name it registered it under, without reaching into ``qt_viewer``.
     """
+    qt_window = _as_main_window(qt_window)
     builtin = _BUILTIN_TOUR_TARGETS.get(name)
     if builtin is not None:
         return builtin(qt_window)
@@ -351,7 +370,7 @@ def resolve_tour_target(qt_window: _QtMainWindow, name: str) -> QWidget | None:
 
 
 def build_viewer_tour(
-    window: _QtMainWindow,
+    window: TourViewerWindow,
     *,
     sample: tuple[str, str] | None = ('napari', 'balls_3d'),
 ) -> GuidedTour:
@@ -359,8 +378,8 @@ def build_viewer_tour(
 
     Parameters
     ----------
-    window : _QtMainWindow
-        The main window to build the tour for.
+    window : napari._qt.qt_main_window.Window or qtpy.QtWidgets.QWidget
+        The napari window to build the tour for.
     sample : tuple[str, str] | None, default: ('napari', 'balls_3d')
         Plugin and sample names to load via ``viewer.open_sample`` if the
         viewer has no layers yet, so the dims-slider step has something to
@@ -373,6 +392,7 @@ def build_viewer_tour(
     # top level would form a cycle.
     from napari._qt._qapp_model.qactions._help import HELP_URLS
 
+    window = _as_main_window(window)
     qt_viewer = window._qt_viewer
     viewer = qt_viewer.viewer
     if sample is not None and not viewer.layers:

@@ -15,10 +15,12 @@ from napari._qt._qapp_model.qactions._help import HELP_URLS, _start_viewer_tour
 from napari._qt.widgets.qt_viewer_tour import (
     _BUILTIN_TOUR_TARGETS,
     _TOOLTIP_WIDTH,
+    _TourTooltip,
+)
+from napari.qt import (
     GuidedTour,
     TourAnchor,
     TourStep,
-    _TourTooltip,
     build_viewer_tour,
     resolve_tour_target,
 )
@@ -101,7 +103,7 @@ def test_tour_tooltip_center_anchor(qtbot):
 def test_build_viewer_tour_first_step_is_centered(make_napari_viewer):
     viewer = make_napari_viewer()
     qt_window = viewer.window._qt_window
-    tour = build_viewer_tour(qt_window, sample=None)
+    tour = build_viewer_tour(viewer.window, sample=None)
 
     first_step = tour._steps[0]
     assert first_step.target() is qt_window._qt_viewer.canvas.native
@@ -295,7 +297,7 @@ def test_build_viewer_tour_leaves_visible_docks_alone(make_napari_viewer):
     assert qt_viewer.dockLayerList.isVisible()
     assert qt_viewer.dockLayerControls.isVisible()
 
-    tour = build_viewer_tour(viewer.window._qt_window, sample=None)
+    tour = build_viewer_tour(viewer.window, sample=None)
     tour.finished.emit()
     assert qt_viewer.dockLayerList.isVisible()
     assert qt_viewer.dockLayerControls.isVisible()
@@ -310,7 +312,7 @@ def test_tour_skips_dims_step_without_extra_dims(
 ):
     viewer = make_napari_viewer()
     viewer.add_image(np.zeros(shape))
-    tour = build_viewer_tour(viewer.window._qt_window)
+    tour = build_viewer_tour(viewer.window)
 
     titles = []
     index = tour._seek(0, 1)
@@ -323,22 +325,20 @@ def test_tour_skips_dims_step_without_extra_dims(
 
 def test_resolve_tour_target_builtins(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
-    qt_window = viewer.window._qt_window
 
     for name in _BUILTIN_TOUR_TARGETS:
-        assert resolve_tour_target(qt_window, name) is not None
+        assert resolve_tour_target(viewer.window, name) is not None
 
-    assert resolve_tour_target(qt_window, 'nonexistent') is None
+    assert resolve_tour_target(viewer.window, 'nonexistent') is None
 
 
 def test_resolve_tour_target_plugin_dock_widget(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
-    qt_window = viewer.window._qt_window
 
     label = QLabel('hello')
     viewer.window.add_dock_widget(label, name='My Plugin Widget')
 
-    assert resolve_tour_target(qt_window, 'My Plugin Widget') is label
+    assert resolve_tour_target(viewer.window, 'My Plugin Widget') is label
 
 
 def test_tour_skips_missing_target(qtbot):
@@ -461,7 +461,7 @@ def test_build_viewer_tour_sample(
     n_layers_before = len(viewer.layers)
 
     sample = (tmp_plugin.name, 'fake') if pass_sample else None
-    build_viewer_tour(viewer.window._qt_window, sample=sample)
+    build_viewer_tour(viewer.window, sample=sample)
 
     n_new_layers = len(viewer.layers) - n_layers_before
     assert (n_new_layers > 0) is expect_loaded
