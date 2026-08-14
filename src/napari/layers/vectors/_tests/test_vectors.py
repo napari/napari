@@ -9,6 +9,7 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.layers.vectors._vectors_constants import VectorsProjectionMode
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
@@ -739,30 +740,32 @@ def test_world_data_extent():
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Vectors(data)
-    assert layer.out_of_slice_display is False
+def test_thick_slicing():
+    coords = np.array([[[0, 0, 0], [3, 3, 3]], [[10, 0, 0], [-3, -3, -3]]])
+    layer = Vectors(coords)
 
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_indices, [0])
 
-    layer = Vectors(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
-    shape = (10, 2, 4)
-    data = 20 * np.random.random(shape)
-    layer = Vectors(data)
-    assert layer.out_of_slice_display is False
+    layer.projection_mode = VectorsProjectionMode.FADE
 
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+        )
+    )
 
-    layer = Vectors(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
+    assert np.array_equal(layer._view_indices, [0])
+    assert np.array_equal(layer._view_alphas, [0.5])
+
+    # test without thickness
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
 
 def test_empty_data_from_tuple():
