@@ -160,8 +160,6 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
-        if not layers:
-            return ()
         return tuple(
             i
             for i in range(len(layers))
@@ -261,8 +259,6 @@ class GridCanvas(EventedModel):
         create empty viewboxes. Stacking within a viewbox is still determined
         by each layer's original index and the stride sign.
         """
-        if layers is None:
-            return []
         return [i for i, layer in enumerate(layers) if layer.visible]
 
     def _viewbox_groups(
