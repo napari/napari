@@ -4,29 +4,17 @@ from napari._qt.qt_resources import get_current_stylesheet, get_stylesheet
 from napari._qt.qt_viewer import QtViewer
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
 from napari._qt.widgets.qt_viewer_buttons import QtViewerButtons
-from napari._qt.widgets.qt_viewer_tour import (
-    GuidedTour,
-    TourAnchor,
-    TourStep,
-    build_viewer_tour,
-    resolve_tour_target,
-)
 from napari.qt.threading import create_worker, thread_worker
 
 __all__ = (
-    'GuidedTour',
     'QtToolTipLabel',
     'QtViewer',
     'QtViewerButtons',
-    'TourAnchor',
-    'TourStep',
     'Window',
-    'build_viewer_tour',
     'create_worker',
     'get_current_stylesheet',
     'get_qapp',
     'get_stylesheet',
-    'resolve_tour_target',
     'run',
     'thread_worker',
 )

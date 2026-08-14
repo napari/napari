@@ -67,6 +67,7 @@ dependencies = [
     "pywin32 ; platform_system == 'Windows'",
     "PyYAML>=6.0",
     "qtpy>=2.4.0",
+    "qt-tour>=0.2.0",
     "scikit-image[data]>=0.20.0",
     "scipy>=1.14.0",
     "superqt>=0.7.8",
