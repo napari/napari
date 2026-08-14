@@ -137,7 +137,9 @@ class QtPopup(QDialog):
         self.setGeometry(left, top, width, height)
 
     def keyPressEvent(self, event):
-        """Close window on return, else pass event through to super class.
+        """Ignore return, else pass event through to super class.
+
+        A popup is dismissed with Escape or by clicking away from it.
 
         Parameters
         ----------
@@ -145,6 +147,5 @@ class QtPopup(QDialog):
             Event from the Qt context.
         """
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.close()
             return
         super().keyPressEvent(event)
