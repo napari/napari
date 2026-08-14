@@ -10,13 +10,13 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import AxesOverlay
+    from napari.components.overlays import SceneAxesOverlay
 
 
-class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
+class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Axes indicating world coordinate origin and orientation."""
 
-    overlay: AxesOverlay
+    overlay: SceneAxesOverlay
     node: Axes
 
     def __init__(
@@ -41,7 +41,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.arrows.connect(self._on_data_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
-        self.viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self.viewer.scene.camera.events.zoom.connect(self._on_zoom_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
         self.viewer.dims.events.range.connect(self._on_data_change)
         self.viewer.dims.events.ndisplay.connect(self._on_data_change)
@@ -80,7 +80,7 @@ class VispyAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.text.text = axis_labels
 
     def _on_zoom_change(self):
-        scale = 1 / self.viewer.camera.zoom
+        scale = 1 / self.viewer.scene.camera.zoom
 
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:

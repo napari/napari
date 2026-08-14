@@ -589,9 +589,10 @@ class Vectors(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: str | ColorMode):
         edge_color_mode = ColorMode(edge_color_mode)
+        old_mode = self._edge.color_mode
 
         if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
+            self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
@@ -626,7 +627,8 @@ class Vectors(Layer):
                 )
 
             self._edge.color_mode = edge_color_mode
-        self.events.edge_color_mode()
+        if self._edge.color_mode != old_mode:
+            self.events.edge_color_mode()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
