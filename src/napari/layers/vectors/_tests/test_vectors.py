@@ -477,12 +477,13 @@ def test_edge_color_cycle_default():
     assert len(np.unique(layer.edge_color, axis=0)) > 1
 
 
-def test_switching_edge_color_mode_back_to_direct():
-    """Setting the mode to direct takes the layer out of a feature mapping.
+def test_switching_edge_color_mode_fires_edge_color_event():
+    """Switching modes moves the layer in and out of a feature mapping.
 
-    The setter used to assign an attribute nothing reads (`_edge_color_mode`), so the
-    layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
-    switch as expected.
+    The direct setter used to assign an attribute nothing reads (`_edge_color_mode`), so
+    the layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
+    switch as expected. Switching back to colormap remaps every color, so it also has to
+    emit `edge_color` or the renderers keep drawing the stale ones.
     """
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
@@ -496,6 +497,15 @@ def test_switching_edge_color_mode_back_to_direct():
     layer.edge_color_mode = 'direct'
 
     assert layer.edge_color_mode == 'direct'
+
+    layer.edge_color = 'yellow'
+    events = []
+    layer.events.edge_color.connect(events.append)
+
+    layer.edge_color_mode = 'colormap'
+
+    assert len(events) == 1
+    assert len(np.unique(layer.edge_color, axis=0)) == 6
 
 
 def test_setting_the_current_edge_color_mode_does_not_emit():
