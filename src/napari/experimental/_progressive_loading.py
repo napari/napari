@@ -67,13 +67,15 @@ from napari.utils import progress
 # environments (no Qt backend) — the tests and pure-data helpers
 # (chunk_slices, chunk_priority_*, VirtualData) remain usable.
 try:
-    from qtpy.QtCore import QTimer
+    from qtpy.QtCore import QCoreApplication, QEvent, QTimer
 
     # the implementation module, not the public ``napari.qt.threading``
     # re-export: import-linter forbids ``napari.qt`` in import chains
     # reachable from ``napari.components``
     from napari._qt.qthreading import thread_worker
 except ImportError:
+    QCoreApplication = None  # type: ignore[assignment,misc]
+    QEvent = None  # type: ignore[assignment,misc]
     QTimer = None  # type: ignore[assignment,misc]
 
     def thread_worker(func=None, **kwargs):  # type: ignore[misc]
@@ -1036,6 +1038,27 @@ class ProgressiveLoader:
         get_settings().experimental.async_ = async_
         with contextlib.suppress(AttributeError):
             self._viewer._layer_slicer._force_sync = force_sync
+        # A slice that finished on the worker thread just before the switch
+        # above may have queued QtViewer._on_slice_ready through superqt's
+        # ensure_main_thread wrapper.  The queued CallCallable owns the
+        # QtViewer until its MetaCall runs, which leaks the whole viewer when
+        # close() is immediately followed by viewer teardown.  Wait for all
+        # slice workers, then deliver those already-posted callbacks while the
+        # viewer is still alive.
+        with contextlib.suppress(AttributeError, TimeoutError):
+            self._viewer._layer_slicer.wait_until_idle(timeout=5)
+        if QCoreApplication is not None and QEvent is not None:
+            with contextlib.suppress(
+                ImportError, AttributeError, RuntimeError
+            ):
+                from superqt.utils._ensure_thread import CallCallable
+
+                qt_viewer = self._viewer.window._qt_viewer
+                for call in tuple(CallCallable.instances):
+                    if qt_viewer in call._args:
+                        QCoreApplication.sendPostedEvents(
+                            call, QEvent.Type.MetaCall
+                        )
 
     # -- view tracking --
 

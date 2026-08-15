@@ -916,6 +916,37 @@ def test_close_restores_synchronous_slicing(
     assert viewer._layer_slicer._force_sync
 
 
+def test_close_drains_pending_slice_callback(
+    qtbot,
+    make_napari_viewer,
+    multiscale_arrays,
+):
+    """Closing the last loader releases queued main-thread callbacks."""
+    from types import SimpleNamespace
+
+    from superqt.utils._ensure_thread import CallCallable
+
+    viewer = make_napari_viewer()
+    layer = add_progressive_loading_image(multiscale_arrays, viewer=viewer)
+    loader = layer.metadata['progressive_loader']
+    _wait_for_idle_loader(qtbot, loader)
+    qt_viewer = viewer.window._qt_viewer
+
+    # Calling the decorated slot off the GUI thread posts a CallCallable
+    # whose args retain qt_viewer until its MetaCall is delivered.
+    thread = threading.Thread(
+        target=qt_viewer._on_slice_ready,
+        args=(SimpleNamespace(value={}),),
+    )
+    thread.start()
+    thread.join()
+    assert any(qt_viewer in call._args for call in CallCallable.instances)
+
+    loader.close()
+
+    assert all(qt_viewer not in call._args for call in CallCallable.instances)
+
+
 def test_async_slicing_kept_while_another_progressive_layer_lives(
     qtbot,
     make_napari_viewer,
