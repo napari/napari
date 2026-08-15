@@ -50,12 +50,18 @@ import dask.array as da
 import numpy as np
 import pytest
 
-pytest.importorskip('qtpy', reason='requires Qt backend')
+qtpy = pytest.importorskip('qtpy', reason='requires Qt backend')
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == 'darwin' and os.environ.get('CI') == 'true',
-    reason='Progressive loading tests hang on macOS CI (no real display)',
-)
+pytestmark = [
+    pytest.mark.skipif(
+        sys.platform == 'darwin' and os.environ.get('CI') == 'true',
+        reason='Progressive loading tests hang on macOS CI (no real display)',
+    ),
+    pytest.mark.skipif(
+        qtpy.API_NAME.startswith('PySide'),
+        reason='QTimer wedge under pytest with PySide6; see #9067',
+    ),
+]
 
 from napari.experimental._progressive_loading import (  # noqa: E402
     _chunk_id,
