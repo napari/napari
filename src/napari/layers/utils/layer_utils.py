@@ -1256,6 +1256,12 @@ def _unique_element(array: Array) -> Any | None:
     if len(array) == 0:
         return None
     el = array[0]
+    if isinstance(el, (list, tuple, np.ndarray)):
+        # Container-valued elements (e.g. list-valued features) can't be
+        # meaningfully compared for uniqueness via elementwise `!=`, and
+        # are mutable/unhashable, so there's nothing to say about their
+        # uniqueness. Treat them as always non-unique.
+        return None
     if np.any(array[1:] != el):
         return None
     return el
