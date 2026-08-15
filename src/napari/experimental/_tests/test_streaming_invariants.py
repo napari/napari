@@ -240,7 +240,7 @@ def test_camera_move_does_no_sync_read_on_gui_thread(
 
         # a pan to unfetched territory through the debounced camera
         # path. The camera hooks are invoked directly rather than by
-        # writing viewer.camera.*: on a headless viewer that write
+        # writing viewer.scene.camera.*: on a headless viewer that write
         # intermittently wedges Qt's timer dispatch on macOS, and the
         # corner_pixels update is what the draw loop would derive from
         # the camera anyway.

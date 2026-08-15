@@ -290,7 +290,7 @@ def test_auto_level_3d_follows_zoom(
     _wait_for_idle_loader(qtbot, loader)
 
     # zoomed far out: coarsest level
-    viewer.camera.zoom = 0.01
+    viewer.scene.camera.zoom = 0.01
     qtbot.waitUntil(lambda: layer.data_level == 2, timeout=10000)
     # the resolution selector still reads "Auto" to the user: the level
     # was driven without emitting locked_data_level events
@@ -298,7 +298,7 @@ def test_auto_level_3d_follows_zoom(
     _wait_for_idle_loader(qtbot, loader)
 
     # zoomed in: finest level
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     assert len(loader._data[0].loaded_chunks) > 0
@@ -318,7 +318,7 @@ def test_auto_level_3d_respects_user_pin(
 
     layer.locked_data_level = 2
     assert loader._user_locked
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     loader._check()
     # auto mode must not override the user's pin
     assert layer.data_level == 2
@@ -341,7 +341,7 @@ def test_auto_level_3d_released_in_2d(
     viewer.dims.ndisplay = 3
     layer = add_progressive_loading_image(multiscale_3d_arrays, viewer=viewer)
     loader = layer.metadata['progressive_loader']
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     qtbot.waitUntil(lambda: loader._auto_locked is not None, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
 
@@ -366,7 +366,7 @@ def test_auto_level_3d_can_be_disabled(
         auto_level_3d=False,
     )
     loader = layer.metadata['progressive_loader']
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     loader._check()
     # napari's 3D behavior: coarsest level
     assert layer.data_level == len(multiscale_3d_arrays) - 1
@@ -395,7 +395,7 @@ def test_zoom_target_level_respects_memory_budget(
     # tiled to 32^3 minimum) and level 1 (32^3) exceed the byte budget;
     # level 2 (16^3) fits. (Zoomed in, the viewport bound can make finer
     # levels affordable - see test_zoom_target_respects_chunk_budget.)
-    viewer.camera.zoom = 0.1
+    viewer.scene.camera.zoom = 0.1
     assert loader._zoom_target_level_3d() == 2
     loader.close()
 
@@ -460,14 +460,14 @@ def test_zoom_target_level_3d_uninitialized_camera(
     real_viewer = loader._viewer
     for bad_zoom in (float('nan'), float('inf'), 0.0):
         loader._viewer = SimpleNamespace(
-            camera=SimpleNamespace(zoom=bad_zoom),
+            scene=SimpleNamespace(camera=SimpleNamespace(zoom=bad_zoom)),
             dims=real_viewer.dims,
         )
         assert loader._zoom_target_level_3d() == coarsest
     loader._viewer = real_viewer
 
     # camera in a valid state: zoom-driven selection resumes
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     loader.close()
@@ -485,7 +485,7 @@ def test_auto_level_3d_survives_selector_echo(
     viewer.dims.ndisplay = 3
     layer = add_progressive_loading_image(multiscale_3d_arrays, viewer=viewer)
     loader = layer.metadata['progressive_loader']
-    viewer.camera.zoom = 0.01
+    viewer.scene.camera.zoom = 0.01
     qtbot.waitUntil(lambda: loader._auto_locked is not None, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
 
@@ -494,7 +494,7 @@ def test_auto_level_3d_survives_selector_echo(
     assert not loader._user_locked
 
     # auto mode still follows the zoom afterwards
-    viewer.camera.zoom = 50.0
+    viewer.scene.camera.zoom = 50.0
     qtbot.waitUntil(lambda: layer.data_level == 0, timeout=10000)
     _wait_for_idle_loader(qtbot, loader)
     loader.close()
@@ -822,7 +822,7 @@ def test_zoom_target_respects_chunk_budget(
     # Prevent new fetch passes without destroying the viewer reference
     # (_zoom_target_level_3d needs self._viewer alive for camera state).
     loader._closed = True
-    viewer.camera.zoom = 0.1  # zoomed out: viewport covers the volume
+    viewer.scene.camera.zoom = 0.1  # zoomed out: viewport covers the volume
     target = loader._zoom_target_level_3d()
     # level 0 = 4^3 = 64 chunks > 8; level 1 = 2^3 = 8 chunks fits
     assert target >= 1

@@ -361,8 +361,8 @@ class ShortcutEditor(QWidget):
         # show warning message
         message = (
             f'The keybinding <b>{new_shortcut}</b> is already assigned to:'
-            '{conflicting_actions_string}'
-            'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.'
+            f'{conflicting_actions_string}'
+            f'Change or clear conflicting shortcuts before assigning <b>{new_shortcut}</b> to this one.'
         )
         self._show_warning(conflicting_rows[0], message)
 

@@ -283,7 +283,7 @@ def test_canvas_draw_sets_camera_view_direction(make_napari_viewer):
     viewer.window._qt_viewer.canvas.on_draw(None)
 
     np.testing.assert_allclose(
-        image._camera_view_direction, viewer.camera.view_direction
+        image._camera_view_direction, viewer.scene.camera.view_direction
     )
     assert not hasattr(points, '_camera_view_direction')
     # the direction is usable in data space for the displayed axes

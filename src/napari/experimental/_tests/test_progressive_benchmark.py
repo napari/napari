@@ -154,7 +154,7 @@ def test_progressive_bench_zoom_pan(qtbot, make_napari_viewer, monkeypatch):
     # scripted session: zoom toward the view center through several
     # level switches, then pan by half a viewport at depth
     moves: list[tuple[str, float | tuple[int, int]]] = [
-        ('zoom', float(viewer.camera.zoom) * 2**i) for i in range(1, 9)
+        ('zoom', float(viewer.scene.camera.zoom) * 2**i) for i in range(1, 9)
     ]
     moves += [('pan', d) for d in ((0, 1), (1, 0), (0, -1), (1, 1))]
 
@@ -163,14 +163,14 @@ def test_progressive_bench_zoom_pan(qtbot, make_napari_viewer, monkeypatch):
         ticks.clear()
         start = time.perf_counter()
         if kind == 'zoom':
-            viewer.camera.zoom = arg
+            viewer.scene.camera.zoom = arg
             label = f'zoom x{arg / moves[0][1] * 2:g}'
         else:
-            span = max(viewer.canvas.size) / viewer.camera.zoom
-            center = np.asarray(viewer.camera.center, dtype=float)
+            span = max(viewer.canvas.size) / viewer.scene.camera.zoom
+            center = np.asarray(viewer.scene.camera.center, dtype=float)
             center[1] += arg[0] * span * 0.5
             center[2] += arg[1] * span * 0.5
-            viewer.camera.center = tuple(center)
+            viewer.scene.camera.center = tuple(center)
             label = f'pan {arg}'
 
         t_content = None

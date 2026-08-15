@@ -832,9 +832,9 @@ class ProgressiveLoader:
             # fast (non-debounced) path: suspend streaming work the
             # moment interaction starts, so drag frames stay free of
             # uploads, slice cascades and fetch GIL pressure
-            (viewer.camera.events, self._on_interaction),
+            (viewer.scene.camera.events, self._on_interaction),
             (viewer.dims.events.current_step, self._on_dims_step_change),
-            (viewer.camera.events, self._debounced_check),
+            (viewer.scene.camera.events, self._debounced_check),
             (viewer.dims.events.current_step, self._debounced_check),
             # fast path first: cap the crop to the driver's 3D texture
             # limit before anything re-slices for the new display mode,
@@ -1190,7 +1190,7 @@ class ProgressiveLoader:
         layer = self._layer
         if self._viewer is None:
             return len(self._data) - 1
-        zoom = float(self._viewer.camera.zoom)
+        zoom = float(self._viewer.scene.camera.zoom)
         displayed = list(layer._slice_input.displayed)
         n_levels = len(self._data)
 
@@ -1283,7 +1283,7 @@ class ProgressiveLoader:
         smaller extent than the screen-plane axes so the tile tracks the
         rotated frustum.
         """
-        camera = self._viewer.camera
+        camera = self._viewer.scene.camera
         camera_center = np.asarray(camera.center, dtype=float)
         if not np.all(np.isfinite(camera_center)):
             return None
@@ -2365,7 +2365,7 @@ class ProgressiveLoader:
             self._on_fetch_finished(generation)
 
     def _prioritize_3d(self, level, keys, interval):
-        camera = self._viewer.camera
+        camera = self._viewer.scene.camera
         factors = np.asarray(self._data._scale_factors[level])
         displayed = list(self._layer._slice_input.displayed)[-3:]
         if len(displayed) < 3:
