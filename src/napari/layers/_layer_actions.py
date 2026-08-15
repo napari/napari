@@ -196,7 +196,7 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
     layer.data = layer.data.astype(np.dtype(mode))
 
 
-def _project_data(data, *, axis: int, mode: str) -> ArrayLike:
+def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:
     if hasattr(data, '__module__') and data.__module__.startswith('zarr'):
         import dask.array as da
 
