@@ -217,7 +217,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
         resulting_sizes = np.prod(resulting_shapes, axis=1)
         if not np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
             show_warning(
-                'Projection warning: unconventional pyramid\nThe projected multiscale image layer resulted in an unconventional multi-resolution pyramid.'
+                'Projection warning: A pyramid with non-decreasing level shapes was created.\nSome multiscale image writers and formats might not be compatible with this type of layer. Try extracting independent data-levels for export if errors occur.'
             )
     else:
         data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)

@@ -464,4 +464,4 @@ def test_unconventional_multiscale_projection(mode, monkeypatch):
         )
 
     assert len(warnings) == 1
-    assert 'unconventional' in warnings[0]
+    assert 'Projection warning' in warnings[0]
