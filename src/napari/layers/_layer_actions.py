@@ -20,6 +20,7 @@ from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from napari.components import LayerList
+    from napari.types import ArrayLike
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = '') -> None:
@@ -195,6 +196,15 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
     layer.data = layer.data.astype(np.dtype(mode))
 
 
+def _project_data(data, *, axis: int, mode: str) -> ArrayLike:
+    if hasattr(data, '__module__') and data.__module__.startswith('zarr'):
+        import dask.array as da
+
+        data = da.from_array(data)
+
+    return getattr(np, mode)(data, axis=axis, keepdims=False)
+
+
 def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     layer = ll.selection.active
     if not layer:
@@ -210,7 +220,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
 
     if layer.multiscale:
         data = tuple(
-            getattr(np, mode)(level_data, axis=axis, keepdims=False)
+            _project_data(level_data, axis=axis, mode=mode)
             for level_data in layer.data
         )
         resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
@@ -220,7 +230,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
                 'Projection warning: A pyramid with non-decreasing level shapes was created.\nSome multiscale image writers and formats might not be compatible with this type of layer. Try extracting independent data-levels for export if errors occur.'
             )
     else:
-        data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
+        data = (_project_data(layer.data, axis=axis, mode=mode),)
 
     # Get the meta-data of the layer, but without transforms,
     # the transforms are updated bellow as projection of transforms
