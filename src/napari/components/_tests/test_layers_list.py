@@ -5,13 +5,14 @@ import npe2
 import numpy as np
 import numpy.testing as npt
 import pytest
-from pint import get_application_registry
+from pint import UnitRegistry, get_application_registry
 
 from napari.components import LayerList
 from napari.layers import Image
 from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
 
 REG = get_application_registry()
+OTHER_REG = UnitRegistry()
 
 
 def test_empty_layers_list():
@@ -628,6 +629,49 @@ def test_update_units_in_layer():
     layer_n.units = ('nm', 'nm')
     npt.assert_almost_equal(layer_list.extent.step, (500, 500))
     assert layer_list.extent.units == layer_n.units
+
+
+@pytest.mark.parametrize(
+    ('from_units', 'to_units'),
+    [
+        ((REG.um, REG.um), (REG.um, REG.um)),
+        ((REG.um, REG.um), (REG.s, REG.um, REG.um)),
+    ],
+)
+def test_convert_scale_between_matching_units_returns_input(
+    from_units, to_units
+):
+    scale = np.array([1, 2], dtype=np.float32)
+
+    converted = LayerList._convert_scale_between_units(
+        scale, from_units, to_units
+    )
+
+    assert converted is scale
+
+
+@pytest.mark.parametrize(
+    ('from_units', 'to_units', 'expected'),
+    [
+        ((REG.um, REG.um), (REG.nm, REG.nm), [1000, 2000]),
+        (
+            (OTHER_REG.um, OTHER_REG.um),
+            (REG.um, REG.um),
+            [1, 2],
+        ),
+    ],
+)
+def test_convert_scale_between_different_units(
+    from_units, to_units, expected
+):
+    scale = np.array([1, 2], dtype=np.float32)
+
+    converted = LayerList._convert_scale_between_units(
+        scale, from_units, to_units
+    )
+
+    npt.assert_array_equal(converted, expected)
+    assert converted is not scale
 
 
 def test_incompatible_units():
