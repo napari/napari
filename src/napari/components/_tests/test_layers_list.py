@@ -661,9 +661,7 @@ def test_convert_scale_between_matching_units_returns_input(
         ),
     ],
 )
-def test_convert_scale_between_different_units(
-    from_units, to_units, expected
-):
+def test_convert_scale_between_different_units(from_units, to_units, expected):
     scale = np.array([1, 2], dtype=np.float32)
 
     converted = LayerList._convert_scale_between_units(
