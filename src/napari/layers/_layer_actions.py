@@ -209,7 +209,6 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # before opening up to other layer types, this line should be updated.
 
     if layer.multiscale:
-        # This evaluates if there is a conventional multi-resolution pyramid.
         data = tuple(
             getattr(np, mode)(level_data, axis=axis, keepdims=False)
             for level_data in layer.data
