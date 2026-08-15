@@ -465,3 +465,27 @@ def test_unconventional_multiscale_projection(mode, monkeypatch):
 
     assert len(warnings) == 1
     assert 'Projection warning' in warnings[0]
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_zarr_projection_is_lazy(mode):
+    import dask.array as da
+
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+
+    zarr_data = tuple(zarr.array(array) for array in data)
+    ll = LayerList([Image(data=zarr_data, multiscale=True)])
+
+    _project(ll, mode=mode)
+
+    projected_data = ll[-1].data
+    assert all(isinstance(level, da.Array) for level in projected_data)
+    for projected, original in zip(projected_data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected.compute(), getattr(np, mode)(original, axis=0)
+        )
