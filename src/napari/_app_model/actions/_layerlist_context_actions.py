@@ -303,6 +303,19 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
+    Action(
+        id='napari.layer.edge_colorbar',
+        title='Edge Colorbar',
+        callback=_layer_actions._toggle_edge_colorbar,
+        menus=[MenuId.LAYERS_CONTEXT_VISUALIZATION, MenuId.LAYERS_MEASURE],
+        enablement=(
+            (LLSCK.num_selected_layers > 0)
+            & LLSCK.all_selected_layers_support_edge_colorbar
+        ),
+        toggled=ToggleRule(
+            get_current=_layer_actions._are_edge_colorbars_visible
+        ),
+    ),
 ]
 
 for _dtype in (

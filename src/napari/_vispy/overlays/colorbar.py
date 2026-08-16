@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
-    from napari.layers import Image, Surface
+    from napari.layers import Image, Shapes, Surface
     from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
@@ -64,9 +64,33 @@ class ColorManagerWrapper:
         return self.color_manager.continuous_colormap
 
 
+class ShapesColorWrapper:
+    def __init__(self, layer: Shapes, attribute: str):
+        self.layer = layer
+        self.attribute = attribute
+
+    @property
+    def contrast_limits(self) -> tuple[float, float] | None:
+        if getattr(self.layer, f'{self.attribute}_color_mode') != 'colormap':
+            return None
+        return getattr(self.layer, f'{self.attribute}_contrast_limits')
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return np.float32
+
+    @property
+    def gamma(self) -> float:
+        return 1
+
+    @property
+    def colormap(self) -> Colormap:
+        return getattr(self.layer, f'{self.attribute}_colormap')
+
+
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
-    layer: Image | Surface
+    layer: Image | Shapes | Surface
 
     def __init__(
         self,
@@ -92,6 +116,12 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color_manager.events.continuous_colormap.connect(
                 self._on_colormap_change
             )
+        elif self.overlay.layer_attribute is not None:
+            attribute = self.overlay_attribute
+            self.source_wrapper = ShapesColorWrapper(self.layer, attribute)
+            color_event = getattr(self.layer.events, f'{attribute}_color')
+            color_event.connect(self._on_data_change)
+            color_event.connect(self._on_colormap_change)
         else:
             self.source_wrapper = IntensityLayerWrapper(self.layer)
 
