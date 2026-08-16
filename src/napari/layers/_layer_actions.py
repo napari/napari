@@ -200,7 +200,7 @@ def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:
     if hasattr(data, '__module__') and data.__module__.startswith('zarr'):
         import dask.array as da
 
-        data = da.from_array(data)
+        data = da.from_zarr(data)
 
     return getattr(np, mode)(data, axis=axis, keepdims=False)
 
