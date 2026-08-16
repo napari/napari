@@ -197,6 +197,8 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
 
 
 def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:
+	# zarr doesn't support the mode computations
+	# dask does  via __array_function__ , so wrap with dask to keep this lazy
     if hasattr(data, '__module__') and data.__module__.startswith('zarr'):
         import dask.array as da
 
