@@ -13,6 +13,7 @@ from napari._tests.utils import (
 )
 from napari.components import ViewerModel
 from napari.components.dims import Dims
+from napari.components.overlays import ColorBarOverlay
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.utils._text_constants import Anchor
@@ -2808,3 +2809,24 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_shapes_colorbar_overlays_registered():
+    """Shapes exposes face and edge colorbar overlays with correct attributes."""
+
+    layer = Shapes([np.array([[0, 0], [0, 10], [10, 10], [10, 0]])])
+
+    assert isinstance(layer.face_colorbar, ColorBarOverlay)
+    assert isinstance(layer.edge_colorbar, ColorBarOverlay)
+    assert layer.face_colorbar.layer_attribute == 'face'
+    assert layer.edge_colorbar.layer_attribute == 'edge'
+    # colorbars are hidden until explicitly toggled on
+    assert layer.face_colorbar.visible is False
+    assert layer.edge_colorbar.visible is False
+
+
+def test_shapes_colorbar_layer_attribute_frozen():
+    """The layer_attribute tying a colorbar to edge/face cannot be reassigned."""
+    layer = Shapes([np.array([[0, 0], [0, 10], [10, 10], [10, 0]])])
+    with pytest.raises(ValidationError):
+        layer.face_colorbar.layer_attribute = 'edge'
