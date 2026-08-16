@@ -478,13 +478,18 @@ def test_zarr_projection_is_lazy(mode):
         np.arange(2 * 4 * 4).reshape(2, 4, 4),
     )
 
-    zarr_data = tuple(zarr.array(array) for array in data)
+    zarr_data = tuple(zarr.array(array, chunks=(1, 2, 2)) for array in data)
     ll = LayerList([Image(data=zarr_data, multiscale=True)])
 
     _project(ll, mode=mode)
 
     projected_data = ll[-1].data
     assert all(isinstance(level, da.Array) for level in projected_data)
+
+    if mode != 'median':
+        for projected_level in projected_data:
+            assert projected_level.chunksize == (2, 2)
+
     for projected, original in zip(projected_data, data, strict=True):
         np.testing.assert_array_equal(
             projected.compute(), getattr(np, mode)(original, axis=0)
