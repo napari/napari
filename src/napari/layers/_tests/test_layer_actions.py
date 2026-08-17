@@ -414,3 +414,54 @@ def make_three_layer_layerlist():
     layer_list.append(Image(np.random.rand(8, 8, 8)))
 
     return layer_list
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_projection(mode):
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+    assert np.array_equal(
+        projected_layer.data[0], getattr(np, mode)(data[0], axis=0)
+    )
+    assert np.array_equal(
+        projected_layer.data[1], getattr(np, mode)(data[1], axis=0)
+    )
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_unconventional_multiscale_projection(mode, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 8 * 8).reshape(2, 8, 8),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+
+    for projected, original in zip(projected_layer.data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected,
+            getattr(np, mode)(original, axis=0),
+        )
+
+    assert len(warnings) == 1
+    assert 'Projection warning' in warnings[0]

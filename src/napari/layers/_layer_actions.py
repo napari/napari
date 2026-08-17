@@ -16,6 +16,7 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from napari.components import LayerList
@@ -206,7 +207,20 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
+
+    if layer.multiscale:
+        data = tuple(
+            getattr(np, mode)(level_data, axis=axis, keepdims=False)
+            for level_data in layer.data
+        )
+        resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
+        resulting_sizes = np.prod(resulting_shapes, axis=1)
+        if not np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
+            show_warning(
+                'Projection warning: A pyramid with non-decreasing level shapes was created.\nSome multiscale image writers and formats might not be compatible with this type of layer. Try extracting independent data-levels for export if errors occur.'
+            )
+    else:
+        data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
 
     # Get the meta-data of the layer, but without transforms,
     # the transforms are updated bellow as projection of transforms
@@ -234,6 +248,9 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
             'rendering': layer.rendering,
         }
     )
+    if isinstance(layer, Image) and layer.multiscale:
+        meta['multiscale'] = True
+
     new = Layer.create(data, meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
