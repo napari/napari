@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-class QtLabelRenderControl(QtWidgetControlsBase):
+class QtLabelRenderingControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the layer attribute for
     the method to render the labels and Qt widgets.
@@ -39,7 +39,7 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         Combobox to control gradient method when isosurface rendering is selected.
     iso_gradient_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
-    render_combobox : superqt.QEnumComboBox
+    rendering_combobox : superqt.QEnumComboBox
         Combobox to control current label render method.
     render_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the way labels should be rendered chooser widget.
@@ -59,14 +59,14 @@ class QtLabelRenderControl(QtWidgetControlsBase):
             )
 
         # Setup widgets
-        render_combobox = QEnumComboBox(enum_class=LabelsRendering)
-        render_combobox.setCurrentEnum(
+        rendering_combobox = QEnumComboBox(enum_class=LabelsRendering)
+        rendering_combobox.setCurrentEnum(
             LabelsRendering(self._layers[0].rendering)
         )
-        self.render_combobox = render_combobox
+        self.rendering_combobox = rendering_combobox
         for layer in self._layers:
             connect_setattr(
-                render_combobox.currentEnumChanged, layer, 'rendering'
+                rendering_combobox.currentEnumChanged, layer, 'rendering'
             )
         self.render_combobox_label = QtWrappedLabel('rendering:')
 
@@ -92,8 +92,8 @@ class QtLabelRenderControl(QtWidgetControlsBase):
         """Receive layer model rendering change event and update dropdown menu."""
         rendering_mode = LabelsRendering(self._layers[0].rendering)
 
-        with qt_signals_blocked(self.render_combobox):
-            self.render_combobox.setCurrentEnum(rendering_mode)
+        with qt_signals_blocked(self.rendering_combobox):
+            self.rendering_combobox.setCurrentEnum(rendering_mode)
 
         with qt_signals_blocked(self.iso_gradient_combobox):
             self.iso_gradient_combobox.setEnabled(
@@ -108,19 +108,19 @@ class QtLabelRenderControl(QtWidgetControlsBase):
             )
 
     def _on_display_change_hide(self):
-        self.render_combobox.hide()
+        self.rendering_combobox.hide()
         self.render_combobox_label.hide()
         self.iso_gradient_combobox.hide()
         self.iso_gradient_combobox_label.hide()
 
     def _on_display_change_show(self):
-        self.render_combobox.show()
+        self.rendering_combobox.show()
         self.render_combobox_label.show()
         self.iso_gradient_combobox.show()
         self.iso_gradient_combobox_label.show()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.render_combobox_label, self.render_combobox),
+            (self.render_combobox_label, self.rendering_combobox),
             (self.iso_gradient_combobox_label, self.iso_gradient_combobox),
         ]

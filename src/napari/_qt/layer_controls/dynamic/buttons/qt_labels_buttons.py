@@ -53,6 +53,7 @@ class QtLabelsButtons(QtLayerButtons):
 
     def __init__(self, layer) -> None:
         super().__init__(layer)
+        layer.events.n_edit_dimensions.connect(self._set_polygon_tool_state)
 
         # Setup buttons
         # shuffle colormap button

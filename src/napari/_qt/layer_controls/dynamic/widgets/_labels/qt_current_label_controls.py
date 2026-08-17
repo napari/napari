@@ -20,7 +20,6 @@ from napari._qt.utils import attr_to_settr, qt_signals_blocked
 from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
-from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -164,7 +163,6 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
         self.new_label_button = QPushButton()
         self.new_label_button.setText('new')
         self.new_label_button.setObjectName('newLabelButton')
-        action_manager.bind_button('napari:new_label', self.new_label_button)
         self.new_label_button.clicked.connect(self._on_button_click)
 
         self.label_color_label = QtWrappedLabel('label:')
@@ -190,7 +188,8 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
             layer.selected_label = value
         self.selection_spinbox.clearFocus()
         # TODO: decouple
-        self.parent().setFocus()
+        if self.parent() is not None:
+            self.parent().setFocus()
 
     def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""

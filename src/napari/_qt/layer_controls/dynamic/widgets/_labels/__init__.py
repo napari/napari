@@ -22,8 +22,8 @@ from napari._qt.layer_controls.dynamic.widgets._labels.qt_ndim_spinbox import (
 from napari._qt.layer_controls.dynamic.widgets._labels.qt_preserve_labels_checkbox import (
     QtPreserveLabelsCheckBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_render_control import (
-    QtLabelRenderControl,
+from napari._qt.layer_controls.dynamic.widgets._labels.qt_rendering_control import (
+    QtLabelRenderingControl,
 )
 
 __all__ = [
@@ -33,7 +33,7 @@ __all__ = [
     'QtContourSpinBoxControl',
     'QtCurrentLabelControls',
     'QtDisplaySelectedLabelCheckBoxControl',
-    'QtLabelRenderControl',
+    'QtLabelRenderingControl',
     'QtNdimSpinBoxControl',
     'QtPreserveLabelsCheckBoxControl',
 ]

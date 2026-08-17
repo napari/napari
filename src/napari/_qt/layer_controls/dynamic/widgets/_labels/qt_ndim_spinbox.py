@@ -76,15 +76,14 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         self.ndim_spinbox.clearFocus()
 
         # TODO: Check how to decouple this
-        self.parent().setFocus()
+        if (p := self.parent()) is not None:
+            p.setFocus()
 
     def _on_n_edit_dimensions_change(self) -> None:
         """Receive layer model n-dim mode change event and update the checkbox."""
         with qt_signals_blocked(self.ndim_spinbox):
             value = self._layers[0].n_edit_dimensions
             self.ndim_spinbox.setValue(int(value))
-            # TODO: Check how to decouple this
-            self.parent()._on_ndisplay_changed()  # this syncs the polygon tool button
 
     def _on_data_change(self) -> None:
         self.ndim_spinbox.setMaximum(self._layers[0].ndim)

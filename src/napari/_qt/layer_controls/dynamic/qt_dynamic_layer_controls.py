@@ -69,8 +69,8 @@ from napari._qt.layer_controls.dynamic.widgets._labels.qt_ndim_spinbox import (
 from napari._qt.layer_controls.dynamic.widgets._labels.qt_preserve_labels_checkbox import (
     QtPreserveLabelsCheckBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_render_control import (
-    QtLabelRenderControl,
+from napari._qt.layer_controls.dynamic.widgets._labels.qt_rendering_control import (
+    QtLabelRenderingControl,
 )
 from napari._qt.layer_controls.dynamic.widgets._points.qt_border_color import (
     QtBorderColorControl,
@@ -193,7 +193,7 @@ controls_dict = {
         QtCurrentLabelControls,
         QtNdimSpinBoxControl,
         QtPreserveLabelsCheckBoxControl,
-        QtLabelRenderControl,
+        QtLabelRenderingControl,
     ),
     Image: (
         QtDepictionControl,
@@ -377,7 +377,7 @@ class QtDynamicLayerControls(QFrame):
             else:
                 rendering_image._on_display_change_hide()
 
-        rendering_labels = self.findChild(QtLabelRenderControl)
+        rendering_labels = self.findChild(QtLabelRenderingControl)
         if rendering_labels is not None:
             if self._ndisplay == 3:
                 rendering_labels._on_display_change_show()
