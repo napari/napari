@@ -41,10 +41,6 @@ from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
-from napari.components.overlays import (
-    AxesOverlay,
-    FloatingAxesOverlay,
-)
 from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -103,7 +99,12 @@ if TYPE_CHECKING:
 
     from napari.components.camera import Camera
     from napari.components.grid import GridCanvas
-    from napari.components.overlays import ScaleBarOverlay, TextOverlay
+    from napari.components.overlays import (
+        CanvasAxesOverlay,
+        ScaleBarOverlay,
+        SceneAxesOverlay,
+        TextOverlay,
+    )
 
 
 DEFAULT_THEME = 'dark'
@@ -205,6 +206,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
     _layer_list_scroll_progress: float = 0
+    # True if any layer had custom axis labels the last time layers changed
+    _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -314,20 +317,26 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ),
         stacklevel=2,
     )
-    def axes(self) -> AxesOverlay:
+    def axes(self) -> SceneAxesOverlay:
         return self.scene.overlays.axes  # type: ignore[return-value]
 
     @property
     @deprecated(
-        'viewer.floating_axes is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.floating_axes instead.',
+        (
+            'viewer.floating_axes is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.axes instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
-    def floating_axes(self) -> FloatingAxesOverlay:
-        return self.canvas.overlays.floating_axes  # type: ignore[return-value]
+    def floating_axes(self) -> CanvasAxesOverlay:
+        return self.canvas.overlays.axes  # type: ignore[return-value]
 
     @property
     @deprecated(
-        'viewer.scale_bar is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.scale_bar instead.',
+        (
+            'viewer.scale_bar is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.scale_bar instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
@@ -335,7 +344,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.text_overlay is a deprecated attribute since 0.8.1. Use viewer.canvas.overlays.text instead.',
+        (
+            'viewer.text_overlay is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.text instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
@@ -343,7 +355,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        'viewer.grid is a deprecated attribute since 0.8.1. Use viewer.canvas.grid instead.',
+        (
+            'viewer.grid is a deprecated attribute since 0.9.0. Use viewer.canvas.grid instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:
@@ -774,13 +789,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
+            self._layers_had_custom_axis_labels = False
         else:
             ranges = self.layers._ranges
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
-            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels()
+            layers_are_default = all(
+                layer._has_default_axis_labels() for layer in self.layers
+            )
+            if self._layers_had_custom_axis_labels and layers_are_default:
+                # All layers are back to default, so reset the stale dims labels
+                self.dims.axis_labels = self.layers.axis_labels
+            else:
+                self.dims.axis_labels = (
+                    self._merge_dims_and_layers_axis_labels()
+                )
+            self._layers_had_custom_axis_labels = not layers_are_default
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
