@@ -364,11 +364,7 @@ class QtDynamicLayerControls(QFrame):
         """
         depiction = self.findChild(QtDepictionControl)
         if depiction is not None:
-            depiction._update_plane_parameter_visibility()
-            if self._ndisplay == 3:
-                depiction._on_display_change_show()
-            else:
-                depiction._on_display_change_hide()
+            depiction._change_ndisplay(self._ndisplay)
 
         interpolation = self.findChild(QtInterpolationComboBoxControl)
         if interpolation is not None:

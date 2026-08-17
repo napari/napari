@@ -48,9 +48,12 @@ class QtImageRenderControl(QtWidgetControlsBase):
         Label for the attenuation slider widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Image]
+
+    def __init__(
+        self, layers: list[Image], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.rendering.connect(self._on_rendering_change)

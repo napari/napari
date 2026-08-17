@@ -38,10 +38,14 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image]
+
+    def __init__(
+        self, layers: list[Image], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
+        self._ndisplay = 2
         # Setup layer
-        self._layers = layers
         for layer in self._layers:
             layer.events.interpolation2d.connect(self._on_interpolation_change)
             layer.events.interpolation3d.connect(self._on_interpolation_change)
@@ -71,7 +75,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
         """
         # TODO: Better way to handle the ndisplay value?
         for layer in self._layers:
-            if self.parent().ndisplay == 2:
+            if self._ndisplay == 2:
                 layer.interpolation2d = text
             else:
                 layer.interpolation3d = text
@@ -92,6 +96,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             self.interpolation_combobox.setCurrentText(interp_string)
 
     def _update_interpolation_combo(self, ndisplay: int) -> None:
+        self._ndisplay = ndisplay
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
             self._layers[0].interpolation2d

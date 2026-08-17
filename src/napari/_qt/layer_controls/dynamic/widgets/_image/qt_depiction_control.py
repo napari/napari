@@ -43,12 +43,15 @@ class PlaneNormalButtons(QWidget):
         Button which orients a plane normal along the camera view direction.
     """
 
-    def __init__(self, layers: list[Image], parent=None) -> None:
+    def __init__(
+        self, layers: list[Image], parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent=parent)
         self._layers = layers
-        self.setLayout(QHBoxLayout())
-        self.layout().setSpacing(2)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        layout.setSpacing(2)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.x_button = QPushButton('x')
         self.y_button = QPushButton('y')
@@ -59,10 +62,10 @@ class PlaneNormalButtons(QWidget):
         self.z_button.clicked.connect(self.update_plane_normal_z)
         self.oblique_button.clicked.connect(self.update_plane_normal_oblique)
 
-        self.layout().addWidget(self.x_button)
-        self.layout().addWidget(self.y_button)
-        self.layout().addWidget(self.z_button)
-        self.layout().addWidget(self.oblique_button)
+        layout.addWidget(self.x_button)
+        layout.addWidget(self.y_button)
+        layout.addWidget(self.z_button)
+        layout.addWidget(self.oblique_button)
 
     def update_plane_normal_x(self):
         for layer in self._layers:
@@ -109,9 +112,13 @@ class QtDepictionControl(QtWidgetControlsBase):
         Label for the plane normal thickness value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Image]
+
+    def __init__(
+        self, layers: list[Image], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers=layers, parent=parent)
+        self._ndisplay = 2
         # Setup layer
         for layer in self._layers:
             layer.events.depiction.connect(self._on_depiction_change)
@@ -142,7 +149,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider = QLabeledDoubleSlider(
             Qt.Orientation.Horizontal, parent
         )
-        self.plane_thickness_slider.setFocusPolicy(Qt.NoFocus)
+        self.plane_thickness_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plane_thickness_slider.setMinimum(1)
         self.plane_thickness_slider.setMaximum(50)
         self.plane_thickness_slider.setValue(self._layers[0].plane.thickness)
@@ -151,6 +158,14 @@ class QtDepictionControl(QtWidgetControlsBase):
         )
         self.plane_thickness_label = QtWrappedLabel('plane thickness:')
         self._update_plane_parameter_visibility()
+
+    def _change_ndisplay(self, ndisplay: int) -> None:
+        self._ndisplay = ndisplay
+        self._update_plane_parameter_visibility()
+        if self._ndisplay == 3:
+            self._on_display_change_show()
+        else:
+            self._on_display_change_hide()
 
     def change_depiction(self, text: str) -> None:
         for layer in self._layers:
@@ -190,7 +205,7 @@ class QtDepictionControl(QtWidgetControlsBase):
         # TODO: Better way to handle the ndisplay value?
         visible = (
             depiction == VolumeDepiction.PLANE
-            and self.parent().ndisplay == 3
+            and self._ndisplay == 3
             and self._layers[0].ndim >= 3
         )
         self.plane_normal_buttons.setVisible(visible)

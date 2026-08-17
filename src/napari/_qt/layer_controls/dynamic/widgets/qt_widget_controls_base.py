@@ -51,8 +51,10 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         A list of napari layers.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent)
+    def __init__(
+        self, layers: list[Layer], parent: QObject | None = None
+    ) -> None:
+        super().__init__(parent=parent)
         # Setup layer
         self._layers = layers
         # Track registered callbacks (defined via `attr_to_settr` for example)
