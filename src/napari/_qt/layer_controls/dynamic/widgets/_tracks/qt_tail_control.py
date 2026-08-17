@@ -63,7 +63,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
             )
 
         self.tail_length_slider_label = QtWrappedLabel('tail length:')
-
+        self._layers[0].events.tail_length.connect(self._on_tail_length_change)
         self._on_tail_length_change()
 
     def _on_tail_length_change(self) -> None:
@@ -100,9 +100,12 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
         Label for the tail width chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Tracks]
+
+    def __init__(
+        self, layers: list[Tracks], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.tail_width.connect(self._on_tail_width_change)
@@ -157,9 +160,12 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
         Label for showing the tails chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Tracks]
+
+    def __init__(
+        self, layers: list[Tracks], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_tail` attribute)
 
@@ -174,7 +180,12 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
                 convert_fun=checked_to_bool,
             )
 
+        self._layers[0].events.display_tail.connect(self._set_display_tail)
         self.tail_checkbox_label = QtWrappedLabel('tail:')
+
+    def _set_display_tail(self) -> None:
+        """Receive layer model track line width change event and update checkbox."""
+        self.tail_checkbox.setChecked(self._layers[0].display_tail)
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.tail_checkbox_label, self.tail_checkbox)]

@@ -32,7 +32,7 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    id_checkbox : qtpy.QtWidgets.QCheckBox
+    display_id_checkbox : qtpy.QtWidgets.QCheckBox
         Checkbox controlling if id of the layer should be shown.
     id_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for showing the id chooser widget.
@@ -48,16 +48,20 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
         # NOTE(arl): there are no events fired for changing checkbox (layer `display_id` attribute)
 
         # Setup widgets
-        self.id_checkbox = QCheckBox()
+        self.display_id_checkbox = QCheckBox()
         for layer in self._layers:
             connect_setattr(
-                self.id_checkbox.stateChanged,
+                self.display_id_checkbox.stateChanged,
                 layer,
                 'display_id',
                 convert_fun=checked_to_bool,
             )
+        self._layers[0].events.display_id.connect(self.update_display_id)
 
         self.id_checkbox_label = QtWrappedLabel('show ID:')
 
+    def update_display_id(self) -> None:
+        self.display_id_checkbox.setChecked(self._layers[0].display_id)
+
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.id_checkbox_label, self.id_checkbox)]
+        return [(self.id_checkbox_label, self.display_id_checkbox)]
