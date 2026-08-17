@@ -17,8 +17,8 @@ __all__ = (
     '_XarrayProps',
     '_check_xarray',
     '_coord_metadata',
+    '_data_dims',
     '_datetime_metadata',
-    '_get_xr_axis_labels',
     '_get_xr_metadata',
     '_get_xr_scale',
     '_get_xr_translate',
@@ -86,9 +86,15 @@ def _check_xarray(data: ArrayLike) -> _XarrayProps:
     return _XarrayProps()
 
 
-def _get_xr_axis_labels(data: xr.DataArray | xr.Variable) -> tuple[str, ...]:
-    """Infer axis labels from xarray dims."""
-    return tuple(str(d) for d in data.dims)
+def _data_dims(
+    data: xr.DataArray | xr.Variable,
+    rgb: bool = False,
+) -> tuple[str, ...]:
+    """Return the data's dims, possibly excluding the trailing RGB axis."""
+    dims = list(data.dims)
+    if rgb:
+        dims.pop()
+    return tuple(dims)
 
 
 # time units, from largest to smallest, mapped to their length in
@@ -171,30 +177,37 @@ def _coord_metadata(
     return _CoordMetadata(scale=1.0, translate=0.0, unit=None)
 
 
-def _get_xr_scale(data: xr.DataArray) -> list[float]:
-    """Infer scale from coordinate spacing.
+def _get_xr_scale(
+    data: xr.DataArray,
+    dims: tuple[str, ...],
+) -> list[float]:
+    """Infer scale from coordinate spacing for the given dims.
 
     Numeric coordinates give the spacing between the first two values;
     ``datetime64`` coordinates give real-time units (see
     :func:`_datetime_metadata`); single-element or string coordinates fall
     back to 1.0 (index/pixel space).
     """
-    return [_coord_metadata(data.coords[d].values).scale for d in data.dims]
+    return [_coord_metadata(data.coords[d].values).scale for d in dims]
 
 
-def _get_xr_translate(data: xr.DataArray) -> list[float]:
-    """Infer translate (offset) from coordinates.
+def _get_xr_translate(
+    data: xr.DataArray,
+    dims: tuple[str, ...],
+) -> list[float]:
+    """Infer translate (offset) from coordinates for the given dims.
 
     Numeric coordinates give the first value; ``datetime64`` coordinates
     give the offset in the derived time unit, anchored at the ``datetime64``
     epoch; string coordinates fall back to 0.0.
     """
-    return [
-        _coord_metadata(data.coords[d].values).translate for d in data.dims
-    ]
+    return [_coord_metadata(data.coords[d].values).translate for d in dims]
 
 
-def _get_xr_units(data: xr.DataArray) -> list[str | None]:
+def _get_xr_units(
+    data: xr.DataArray,
+    dims: tuple[str, ...],
+) -> list[str | None]:
     """Read units from coordinate attrs, validating against pint.
 
     Uses the CF convention (``coord.attrs['units']``).  Strings that pint
@@ -216,7 +229,7 @@ def _get_xr_units(data: xr.DataArray) -> list[str | None]:
     from napari.utils.transforms._units import get_unit_from_name
 
     units: list[str | None] = []
-    for dim in data.dims:
+    for dim in dims:
         coord = data.coords[dim]
         if np.issubdtype(coord.values.dtype, np.datetime64):
             # scale/translate are derived from the datetime spacing, so the
@@ -237,6 +250,7 @@ def _get_xr_units(data: xr.DataArray) -> list[str | None]:
 def _get_xr_metadata(
     data: ArrayLike,
     *,
+    rgb: bool = False,
     axis_labels: tuple[str, ...] | None = None,
     scale: list[float] | None = None,
     translate: list[float] | None = None,
@@ -250,20 +264,26 @@ def _get_xr_metadata(
     Any field passed in as ``None`` is inferred from *data* where possible;
     explicitly provided values pass through unchanged.
 
+    rgb : bool, optional
+        If True, the trailing axis is treated as the RGB/RGBA color axis and
+        excluded from the inferred metadata. This is *not* equivalent to
+        `channel_axis` because that is sliced out before layer init.
+
     Note: Only ``axis_labels``s inferred for ``Variable``-like objects,
     which have no coordinates.
     """
     props = _check_xarray(data)
-    if props.has_dims and axis_labels is None:
-        axis_labels = _get_xr_axis_labels(
-            cast('xr.DataArray | xr.Variable', data)
-        )
-    if props.has_coords:
-        data_array = cast('xr.DataArray', data)
-        if scale is None:
-            scale = _get_xr_scale(data_array)
-        if translate is None:
-            translate = _get_xr_translate(data_array)
-        if units is None:
-            units = _get_xr_units(data_array)
+    if props.has_dims:
+        data_xr = cast('xr.DataArray | xr.Variable', data)
+        dims = _data_dims(data_xr, rgb)
+        if axis_labels is None:
+            axis_labels = dims
+        if props.has_coords:
+            data_array = cast('xr.DataArray', data)
+            if scale is None:
+                scale = _get_xr_scale(data_array, dims)
+            if translate is None:
+                translate = _get_xr_translate(data_array, dims)
+            if units is None:
+                units = _get_xr_units(data_array, dims)
     return _XarrayMetadata(axis_labels, scale, translate, units)
