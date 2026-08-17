@@ -1374,3 +1374,135 @@ def test_drag_start_selection(
         pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
+
+
+def _press(layer, position, pos, button=1, double_click=False):
+    event_type = 'mouse_double_click' if double_click else 'mouse_press'
+    event = read_only_mouse_event(
+        type=event_type, position=position, pos=np.array(pos), button=button
+    )
+    if double_click:
+        mouse_double_click_callbacks(layer, event)
+    else:
+        mouse_press_callbacks(layer, event)
+
+
+def _move(layer, position, pos):
+    event = read_only_mouse_event(
+        type='mouse_move', position=position, pos=np.array(pos)
+    )
+    mouse_move_callbacks(layer, event)
+
+
+def _draw_vertices(layer, positions, move=True):
+    """Place one vertex per position with the click-per-vertex tools.
+
+    `move` mirrors a real gesture, where the cursor travels between clicks. The
+    tools also have to cope with two clicks and no move in between, which is
+    what `move=False` exercises.
+    """
+    for i, position in enumerate(positions):
+        pos = (float(i + 1), float(i + 1))
+        _press(layer, position, pos)
+        if move:
+            _move(layer, position, pos)
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_polyline'])
+@pytest.mark.parametrize('move', [True, False])
+def test_right_click_removes_last_placed_vertex(
+    mode, move, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+    layer.mode = mode
+
+    _draw_vertices(layer, [(0, 0), (0, 10), (10, 10)], move=move)
+    before = layer.data[-1].copy()
+
+    # Away from every placed vertex: adding one here would be visible in the
+    # comparison below, where adding one on top of the last would not.
+    _press(layer, (5, 5), (9.0, 9.0), button=2)
+
+    assert layer._is_creating
+    assert len(layer.data) == n_shapes + 1
+    # The final vertex tracks the cursor, so the placed vertex before it is the
+    # one a right click takes back.
+    np.testing.assert_array_equal(
+        layer.data[-1], np.delete(before, -2, axis=0)
+    )
+
+    # The surviving final vertex still follows the cursor.
+    _move(layer, (7, 3), (20.0, 20.0))
+    np.testing.assert_allclose(layer.data[-1][-1], (7, 3))
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_polyline'])
+def test_right_click_past_first_vertex_discards_shape(
+    mode, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+    layer.mode = mode
+
+    _draw_vertices(layer, [(0, 0), (0, 10), (10, 10)])
+
+    for i in range(len(layer.data[-1])):
+        _press(layer, (10, 10), (9.0 - i, 9.0 - i), button=2)
+        if not layer._is_creating:
+            break
+
+    assert not layer._is_creating
+    assert not layer._is_moving
+    assert len(layer.data) == n_shapes
+    assert len(layer.selected_data) == 0
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_polyline'])
+def test_right_double_click_removes_a_vertex(mode, create_known_shapes_layer):
+    layer, _n_shapes, _ = create_known_shapes_layer
+    layer.mode = mode
+
+    _draw_vertices(layer, [(0, 0), (0, 10), (10, 10), (10, 0)])
+    before = layer.data[-1].copy()
+
+    # A canvas double click arrives as a press followed by a double-click
+    # event, so both clicks have to take a vertex back.
+    _press(layer, (5, 5), (9.0, 9.0), button=2)
+    _press(layer, (5, 5), (9.0, 9.0), button=2, double_click=True)
+
+    assert layer._is_creating
+    np.testing.assert_array_equal(
+        layer.data[-1], np.delete(before, [-3, -2], axis=0)
+    )
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_polyline'])
+def test_vertex_can_be_placed_again_after_removal(
+    mode, create_known_shapes_layer
+):
+    """A right click must not block the next click where the cursor already is."""
+    layer, _n_shapes, _ = create_known_shapes_layer
+    layer.mode = mode
+
+    _draw_vertices(layer, [(0, 0), (0, 10), (10, 10)])
+    n_vertices = len(layer.data[-1])
+
+    _press(layer, (5, 5), (9.0, 9.0), button=2)
+    assert len(layer.data[-1]) == n_vertices - 1
+
+    # The canvas position of the most recent click is what the duplicate-click
+    # guard holds, and a removal must not leave it holding one.
+    _press(layer, (0, 10), (3.0, 3.0))
+    assert len(layer.data[-1]) == n_vertices
+
+
+@pytest.mark.parametrize('mode', ['add_polygon', 'add_polyline'])
+def test_right_click_before_drawing_does_nothing(
+    mode, create_known_shapes_layer
+):
+    layer, n_shapes, _ = create_known_shapes_layer
+    layer.mode = mode
+
+    _press(layer, (5, 5), (9.0, 9.0), button=2)
+
+    assert not layer._is_creating
+    assert len(layer.data) == n_shapes
