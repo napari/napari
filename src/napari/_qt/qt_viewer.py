@@ -70,7 +70,6 @@ if TYPE_CHECKING:
     from npe2.manifest.contributions import WriterContribution
     from qtpy.QtGui import (
         QCloseEvent,
-        QDragEnterEvent,
         QDropEvent,
         QHideEvent,
         QKeyEvent,
@@ -207,7 +206,6 @@ class QtViewer(QSplitter):
         self._welcome_widget = QtWelcomeWidget(
             self.canvas.native, viewer=self.viewer, tips=tips
         )
-        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
         self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
         main_layout.addWidget(self.canvas.native, stretch=1)
@@ -386,16 +384,6 @@ class QtViewer(QSplitter):
     def layer_to_visual(self) -> dict[Layer, VispyBaseLayer[Layer]]:
         """Mapping of Napari layer to Vispy layer. Added for backward compatibility"""
         return self.canvas.layer_to_visual
-
-    def _leave_canvas(self) -> None:
-        """disable status on canvas leave"""
-        self.viewer.status = ''
-        self.viewer.mouse_over_canvas = False
-
-    def _enter_canvas(self) -> None:
-        """enable status on canvas enter"""
-        self.viewer.status = 'Ready'
-        self.viewer.mouse_over_canvas = True
 
     def _update_welcome_screen(self) -> None:
         """Update welcome screen display based on layer count."""
@@ -1222,31 +1210,6 @@ class QtViewer(QSplitter):
             self.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
-
-    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:
-        """Ignore event if not dragging & dropping a file or URL to open.
-
-        Using event.ignore() here allows the event to pass through the
-        parent widget to its child widget, otherwise the parent widget
-        would catch the event and not pass it on to the child widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QDragEvent
-            Event from the Qt context.
-        """
-        if event is None:
-            return
-        mime = event.mimeData()
-        if mime is not None and mime.hasUrls():
-            self._set_drag_status()
-            event.accept()
-        else:
-            event.ignore()
-
-    def _set_drag_status(self) -> None:
-        """Set dedicated status message when dragging files into viewer"""
-        self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
 
     def _image_from_clipboard(self) -> None:
         """Insert image from clipboard as a new layer if clipboard contains an image or link."""
