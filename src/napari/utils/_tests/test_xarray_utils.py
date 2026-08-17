@@ -6,7 +6,6 @@ from napari.utils._xarray_utils import (
     _check_xarray,
     _coord_metadata,
     _CoordMetadata,
-    _get_xr_axis_labels,
     _get_xr_metadata,
     _get_xr_scale,
     _get_xr_translate,
@@ -72,21 +71,6 @@ class TestCheckXarray:
     )
     def test_props(self, data, expected):
         assert _check_xarray(data) == expected
-
-
-class TestGetXrAxisLabels:
-    """_get_xr_axis_labels: labels inferred from xarray dims."""
-
-    @pytest.mark.parametrize(
-        'data',
-        [
-            xr.DataArray(np.ones((3, 4)), dims=['y', 'x']),
-            xr.Variable(('y', 'x'), np.ones((3, 4))),
-        ],
-        ids=['dataarray', 'variable'],
-    )
-    def test_labels(self, data):
-        assert _get_xr_axis_labels(data) == ('y', 'x')
 
 
 class TestCoordMetadata:
@@ -228,7 +212,7 @@ class TestGetXrScale:
     )
     def test_scale(self, data_array_factory, coords, shape, expected):
         data_array = data_array_factory(shape, ['y', 'x'], coords)
-        assert _get_xr_scale(data_array) == expected
+        assert _get_xr_scale(data_array, data_array.dims) == expected
 
 
 class TestGetXrTranslate:
@@ -260,7 +244,7 @@ class TestGetXrTranslate:
     )
     def test_translate(self, data_array_factory, coords, shape, expected):
         data_array = data_array_factory(shape, ['y', 'x'], coords)
-        assert _get_xr_translate(data_array) == expected
+        assert _get_xr_translate(data_array, data_array.dims) == expected
 
 
 class TestGetXrUnits:
@@ -306,7 +290,7 @@ class TestGetXrUnits:
     )
     def test_from_attrs(self, data_array_factory, coords, expected):
         data_array = data_array_factory((3, 4), ['y', 'x'], coords)
-        assert _get_xr_units(data_array) == expected
+        assert _get_xr_units(data_array, data_array.dims) == expected
 
     @pytest.mark.parametrize(
         ('values', 'expected_unit'),
@@ -352,7 +336,10 @@ class TestGetXrUnits:
         data_array = data_array_factory(
             (3, 4), ['y', 'x'], {'y': values, 'x': [0, 2, 4, 6]}
         )
-        assert _get_xr_units(data_array) == [expected_unit, None]
+        assert _get_xr_units(data_array, data_array.dims) == [
+            expected_unit,
+            None,
+        ]
 
     def test_datetime_units_attr_ignored(self, data_array_factory):
         """A units attr on a datetime coord is ignored to match its scale."""
@@ -375,8 +362,8 @@ class TestGetXrUnits:
             },
         )
         # scale is 6 (hours); the unit must be 'hour', not the 'days' attr
-        assert _get_xr_scale(data_array) == [6.0, 2.0]
-        assert _get_xr_units(data_array) == ['hour', None]
+        assert _get_xr_scale(data_array, data_array.dims) == [6.0, 2.0]
+        assert _get_xr_units(data_array, data_array.dims) == ['hour', None]
 
     def test_datetime_nat_has_no_unit(self, data_array_factory):
         """NaT timestamps degrade to index space with no unit."""
@@ -385,7 +372,7 @@ class TestGetXrUnits:
             ['y', 'x'],
             {'y': _dt(['2013-01-01', 'NaT', '2013-01-03']), 'x': [0, 2, 4, 6]},
         )
-        assert _get_xr_units(data_array) == [None, None]
+        assert _get_xr_units(data_array, data_array.dims) == [None, None]
 
     def test_registered_cf_aliases(self, monkeypatch, data_array_factory):
         """CF aliases registered in the pint registry are recognized.
@@ -409,7 +396,10 @@ class TestGetXrUnits:
                 'x': ('x', [0, 1, 2, 3], {'units': 'degrees_east'}),
             },
         )
-        assert _get_xr_units(data_array) == ['degrees_north', 'degrees_east']
+        assert _get_xr_units(data_array, data_array.dims) == [
+            'degrees_north',
+            'degrees_east',
+        ]
 
 
 class TestGetXrMetadata:
@@ -447,6 +437,46 @@ class TestGetXrMetadata:
         )
         meta = _get_xr_metadata(
             data_array,
+            axis_labels=('row', 'col'),
+            scale=[3.0, 3.0],
+            translate=[1.0, 1.0],
+            units=['mm', 'mm'],
+        )
+        assert meta == _XarrayMetadata(
+            axis_labels=('row', 'col'),
+            scale=[3.0, 3.0],
+            translate=[1.0, 1.0],
+            units=['mm', 'mm'],
+        )
+
+    def test_rgb_excludes_color_axis(self, data_array_factory):
+        """rgb excludes the trailing color axis from all inferred fields."""
+        data_array = data_array_factory(
+            (3, 4, 3),
+            ['y', 'x', 'channel'],
+            {
+                'y': ('y', [0, 5, 10], {'units': 'microns'}),
+                'x': [0, 2, 4, 6],
+                'channel': [0, 1, 2],
+            },
+        )
+        assert _get_xr_metadata(data_array, rgb=True) == _XarrayMetadata(
+            axis_labels=('y', 'x'),
+            scale=[5.0, 2.0],
+            translate=[0.0, 0.0],
+            units=['microns', None],
+        )
+
+    def test_rgb_explicit_overrides_win(self, data_array_factory):
+        """Explicit metadata still wins when rgb is set."""
+        data_array = data_array_factory(
+            (3, 4, 3),
+            ['y', 'x', 'channel'],
+            {'y': [0, 5, 10], 'x': [0, 2, 4, 6], 'channel': [0, 1, 2]},
+        )
+        meta = _get_xr_metadata(
+            data_array,
+            rgb=True,
             axis_labels=('row', 'col'),
             scale=[3.0, 3.0],
             translate=[1.0, 1.0],
