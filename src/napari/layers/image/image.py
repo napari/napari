@@ -302,6 +302,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             )
         if rgb is None:
             rgb = guess_rgb(data_shape)
+
         self.rgb = rgb
         super().__init__(
             data,
@@ -328,6 +329,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             visible=visible,
         )
 
+        self.rgb = rgb
         self._colormap = ensure_colormap(colormap)
         self._gamma = gamma
         self._interpolation2d = Interpolation.NEAREST
