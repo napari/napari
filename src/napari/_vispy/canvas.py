@@ -1439,10 +1439,12 @@ class VispyCanvas:
         """
         # TODO: this should be all handled on the grid model ideally, using validators
         raw_spacing = self.viewer.canvas.grid._compute_canvas_spacing_raw(
-            self._scene_canvas.size
+            self._scene_canvas.size,
+            layers=self.viewer.layers,
         )
         safe_spacing = self.viewer.canvas.grid._compute_canvas_spacing(
-            self._scene_canvas.size
+            self._scene_canvas.size,
+            layers=self.viewer.layers,
         )
 
         if raw_spacing > safe_spacing:

@@ -9,6 +9,7 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.layers.vectors._vectors_constants import VectorsProjectionMode
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
@@ -476,12 +477,13 @@ def test_edge_color_cycle_default():
     assert len(np.unique(layer.edge_color, axis=0)) > 1
 
 
-def test_switching_edge_color_mode_back_to_direct():
-    """Setting the mode to direct takes the layer out of a feature mapping.
+def test_switching_edge_color_mode_fires_edge_color_event():
+    """Switching modes moves the layer in and out of a feature mapping.
 
-    The setter used to assign an attribute nothing reads (`_edge_color_mode`), so the
-    layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
-    switch as expected.
+    The direct setter used to assign an attribute nothing reads (`_edge_color_mode`), so
+    the layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
+    switch as expected. Switching back to colormap remaps every color, so it also has to
+    emit `edge_color` or the renderers keep drawing the stale ones.
     """
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
@@ -495,6 +497,15 @@ def test_switching_edge_color_mode_back_to_direct():
     layer.edge_color_mode = 'direct'
 
     assert layer.edge_color_mode == 'direct'
+
+    layer.edge_color = 'yellow'
+    events = []
+    layer.events.edge_color.connect(events.append)
+
+    layer.edge_color_mode = 'colormap'
+
+    assert len(events) == 1
+    assert len(np.unique(layer.edge_color, axis=0)) == 6
 
 
 def test_setting_the_current_edge_color_mode_does_not_emit():
@@ -737,6 +748,34 @@ def test_world_data_extent():
     layer = Vectors(np.array(data))
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_thick_slicing():
+    coords = np.array([[[0, 0, 0], [3, 3, 3]], [[10, 0, 0], [-3, -3, -3]]])
+    layer = Vectors(coords)
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_indices, [0])
+
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
+
+    layer.projection_mode = VectorsProjectionMode.FADE
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+        )
+    )
+
+    assert np.array_equal(layer._view_indices, [0])
+    assert np.array_equal(layer._view_alphas, [0.5])
+
+    # test without thickness
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
 
 def test_empty_data_from_tuple():
