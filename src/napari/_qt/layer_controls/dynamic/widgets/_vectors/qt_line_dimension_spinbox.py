@@ -40,7 +40,9 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
 
     _layers: list[Vectors]
 
-    def __init__(self, layers: list[Vectors], parent: QWidget) -> None:
+    def __init__(
+        self, layers: list[Vectors], parent: QWidget | None = None
+    ) -> None:
         super().__init__(layers, parent)
         # Setup widgets
         # line width in pixels
@@ -72,7 +74,8 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
             layer.edge_width = value
         self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
-        self.parent().setFocus()
+        if self.parent() is not None:
+            self.parent().setFocus()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.width_spinbox_label, self.width_spinbox)]
@@ -99,9 +102,13 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         Label for line length of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Vectors]
+
+    def __init__(
+        self, layers: list[Vectors], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
+
         # Setup widgets
         # line length
         self.length_spinbox = QDoubleSpinBox()
@@ -133,7 +140,8 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
             layer.length = value
         self.length_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
-        self.parent().setFocus()
+        if self.parent() is not None:
+            self.parent().setFocus()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [(self.length_spinbox_label, self.length_spinbox)]

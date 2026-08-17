@@ -137,6 +137,13 @@ def tracks_data() -> TrackDataDict:
     return {'data': data, 'properties': properties}
 
 
+@pytest.fixture
+def vectors_data() -> np.ndarray[
+    tuple[int, Literal[2], Literal[2]], np.dtype[np.float32]
+]:
+    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)
+
+
 @pytest.fixture(
     params=[
         'image',

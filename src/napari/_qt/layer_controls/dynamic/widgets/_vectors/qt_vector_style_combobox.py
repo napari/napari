@@ -41,7 +41,9 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
 
     _layers: list[Vectors]
 
-    def __init__(self, layers: list[Vectors], parent: QWidget) -> None:
+    def __init__(
+        self, layers: list[Vectors], parent: QWidget | None = None
+    ) -> None:
         super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:

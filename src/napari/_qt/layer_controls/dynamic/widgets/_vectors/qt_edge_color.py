@@ -49,7 +49,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
 
     _layers: list[Vectors]
 
-    def __init__(self, layers: list[Vectors], parent: QWidget) -> None:
+    def __init__(
+        self, layers: list[Vectors], parent: QWidget | None = None
+    ) -> None:
         super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
@@ -76,9 +78,6 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.color_feature_box.addItems(self._layers[0].features.columns)
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
-        )
-        self.color_feature_box.setCurrentText(
-            self._layers[0]._edge.color_properties.name
         )
 
         # vector direct color mode adjustment and widget

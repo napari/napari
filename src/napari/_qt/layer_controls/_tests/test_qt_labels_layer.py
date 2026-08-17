@@ -66,7 +66,7 @@ def test_changing_layer_show_selected_label_updates_check_box(
 def test_rendering_combobox(make_labels_controls):
     """Changing the model attribute should update the view"""
     layer, qtctrl = make_labels_controls()
-    combo = qtctrl._render_control.rendering_combobox
+    combo = qtctrl._render_control.render_combobox
     opts = {combo.itemText(i) for i in range(combo.count())}
     rendering_options = {'translucent', 'iso_categorical'}
     assert opts == rendering_options
