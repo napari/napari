@@ -20,17 +20,7 @@ if TYPE_CHECKING:
     import pytest
     from pytestqt.qtbot import QtBot
 
-    from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
-        QtWidgetControlsBase,
-    )
-
-
-def add_controls_to_qtbot(
-    qtbot: QtBot, container: QtWidgetControlsBase
-) -> None:
-    for label, widget in container.get_widget_controls():
-        qtbot.add_widget(widget)
-        qtbot.add_widget(label)
+    from napari._qt.layer_controls.dynamic._tests.conftest import QtWrap
 
 
 class TestPlaneNormalButtons:
@@ -95,15 +85,15 @@ class TestPlaneNormalButtons:
 
 
 class TestQtDepictionControl:
-    def test_init(self, qtbot: QtBot) -> None:
+    def test_init(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtDepictionControl(layers=[img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
-    def test_update_depiction(self, qtbot: QtBot) -> None:
+    def test_update_depiction(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtDepictionControl(layers=[img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         assert img.depiction == 'volume'
         assert control.depiction_combobox.currentText() == 'volume'
@@ -114,10 +104,10 @@ class TestQtDepictionControl:
         control.depiction_combobox.setCurrentText('volume')
         assert img.depiction == 'volume'
 
-    def test_update_plane_thickness(self, qtbot: QtBot) -> None:
+    def test_update_plane_thickness(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtDepictionControl(layers=[img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         assert img.plane.thickness == 1
         assert control.plane_thickness_slider.value() == 1
@@ -128,10 +118,10 @@ class TestQtDepictionControl:
         control.plane_thickness_slider.setValue(3)
         assert img.plane.thickness == 3
 
-    def test_change_ndisplay(self, qtbot: QtBot) -> None:
+    def test_change_ndisplay(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtDepictionControl(layers=[img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         assert control._ndisplay == 2
         assert not control.depiction_combobox.isVisible()
@@ -144,15 +134,15 @@ class TestQtDepictionControl:
 
 
 class TestQtInterpolationComboBoxControl:
-    def test_init(self, qtbot: QtBot) -> None:
+    def test_init(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtInterpolationComboBoxControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
-    def test_update_interpolation_2d(self, qtbot: QtBot) -> None:
+    def test_update_interpolation_2d(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtInterpolationComboBoxControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         control._update_interpolation_combo(2)
 
@@ -165,10 +155,10 @@ class TestQtInterpolationComboBoxControl:
         control.interpolation_combobox.setCurrentText('nearest')
         assert img.interpolation2d == 'nearest'
 
-    def test_update_interpolation_3d(self, qtbot: QtBot) -> None:
+    def test_update_interpolation_3d(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((5, 10, 10), dtype=np.uint8))
         control = QtInterpolationComboBoxControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         control._update_interpolation_combo(3)
 
@@ -183,15 +173,15 @@ class TestQtInterpolationComboBoxControl:
 
 
 class TestQtImageRenderControl:
-    def test_init(self, qtbot: QtBot) -> None:
+    def test_init(self, qt_wrap: QtWrap) -> None:
         layers = [Image(data=np.zeros((10, 10), dtype=np.uint8))]
         control = QtImageRenderControl(layers)
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
-    def test_change_rendering(self, qtbot: QtBot) -> None:
+    def test_change_rendering(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtImageRenderControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         assert img.rendering == 'mip'
         assert control.render_combobox.currentText() == 'mip'
@@ -202,10 +192,10 @@ class TestQtImageRenderControl:
         control.render_combobox.setCurrentText('additive')
         assert img.rendering == 'additive'
 
-    def test_change_contrast_limits(self, qtbot: QtBot) -> None:
+    def test_change_contrast_limits(self, qt_wrap: QtWrap) -> None:
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtImageRenderControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         assert img.contrast_limits_range == [0, 255]
         assert control.iso_threshold_slider.minimum() == 0
@@ -215,11 +205,11 @@ class TestQtImageRenderControl:
         assert control.iso_threshold_slider.minimum() == 10
         assert control.iso_threshold_slider.maximum() == 20
 
-    def test_change_visibility(self, qtbot: QtBot) -> None:
+    def test_change_visibility(self, qt_wrap: QtWrap) -> None:
         # Test behavior when ndisplay changed
         img = Image(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtImageRenderControl([img])
-        add_controls_to_qtbot(qtbot, control)
+        qt_wrap.add_control(control)
 
         control._on_display_change_show()
         assert control.render_combobox.isVisible()
