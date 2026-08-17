@@ -265,7 +265,8 @@ class _ScalarFieldSliceRequest:
             tile_to_data = Affine(
                 name='tile2data', linear_matrix=np.eye(ndim), ndim=ndim
             )
-        data = np.transpose(data, order)
+            data = np.transpose(data, order)
+
         image = _ScalarFieldView.from_view(data)
         return _ScalarFieldSliceResponse(
             image=image,
