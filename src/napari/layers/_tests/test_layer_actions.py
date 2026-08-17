@@ -440,7 +440,7 @@ def test_multiscale_projection(mode):
 @pytest.mark.parametrize(
     'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
 )
-def test_unconventional_multiscale_projection(mode, monkeypatch):
+def test_nondecreasing_pyramid_multiscale_projection(mode, monkeypatch):
     warnings = []
     monkeypatch.setattr(
         'napari.layers._layer_actions.show_warning',
