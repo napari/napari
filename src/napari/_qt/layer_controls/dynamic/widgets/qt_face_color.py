@@ -46,7 +46,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         parent: QWidget | None = None,
         tooltip: Optional[str] = None,
     ) -> None:
-        super().__init__(parent, layers)
+        super().__init__(layers, parent)
         # Setup widgets
         self.face_color_edit = QColorSwatchEdit(
             initial_color=self._layers[0].current_face_color,

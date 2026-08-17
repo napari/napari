@@ -53,7 +53,9 @@ class QtHistogramControl(QtWidgetControlsBase):
 
     _layers: list[Image | Surface]
 
-    def __init__(self, layers: list[Image | Surface], parent: QWidget) -> None:
+    def __init__(
+        self, layers: list[Image | Surface], parent: QWidget | None = None
+    ) -> None:
         super().__init__(layers, parent)
 
         # Persistent container — always in the form layout, shown/hidden

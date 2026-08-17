@@ -393,7 +393,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
     _layers: list[Image | Surface]
 
-    def __init__(self, layers: list[Image | Surface], parent: QWidget) -> None:
+    def __init__(
+        self, layers: list[Image | Surface], parent: QWidget | None = None
+    ) -> None:
         super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
@@ -462,7 +464,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.histogram_button = None
         if len(self._layers) == 1:
             self.histogram_button = QtModePushButton(
-                self._layers,
+                self._layers[0],
                 'histogram',
                 tooltip=(
                     'Left click to toggle histogram in layer controls.\n'
