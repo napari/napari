@@ -460,6 +460,34 @@ class TestXarrayMetadataInit:
         assert str(layer.units[1]) == 'millimeter'
         assert str(layer.units[2]) == 'pixel'
 
+    @pytest.mark.parametrize(
+        ('rgb', 'expected_ndim', 'expected_axis_labels'),
+        [
+            (None, 2, ('y', 'x')),
+            (True, 2, ('y', 'x')),
+            (False, 3, ('y', 'x', 'channel')),
+        ],
+    )
+    def test_xarray_rgb_metadata(
+        self, rgb, expected_ndim, expected_axis_labels
+    ):
+        """RGB channel dimensions are excluded only when rgb is enabled."""
+        data = xr.DataArray(
+            np.zeros((64, 64, 3)),
+            dims=['y', 'x', 'channel'],
+            coords={
+                'y': np.arange(64),
+                'x': np.arange(64),
+                'channel': np.arange(3),
+            },
+        )
+        layer = Image(data, rgb=rgb)
+        assert layer.ndim == expected_ndim
+        assert layer.axis_labels == expected_axis_labels
+        assert len(layer.scale) == expected_ndim
+        assert len(layer.translate) == expected_ndim
+        assert len(layer.units) == expected_ndim
+
     def test_xarray_labels_gets_metadata(self):
         """Labels inherits axis_labels from DataArray dims (no coords)."""
         data = xr.DataArray(
