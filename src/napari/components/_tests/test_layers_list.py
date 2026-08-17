@@ -638,16 +638,15 @@ def test_update_units_in_layer():
         ((REG.um, REG.um), (REG.s, REG.um, REG.um)),
     ],
 )
-def test_convert_scale_between_matching_units_returns_input(
-    from_units, to_units
-):
+def test_convert_scale_between_matching_units(from_units, to_units):
     scale = np.array([1, 2], dtype=np.float32)
 
     converted = LayerList._convert_scale_between_units(
         scale, from_units, to_units
     )
 
-    assert converted is scale
+    npt.assert_array_equal(converted, scale)
+    assert converted is not scale
 
 
 @pytest.mark.parametrize(

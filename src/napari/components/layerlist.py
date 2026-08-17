@@ -452,8 +452,7 @@ class LayerList(SelectableEventedList[Layer]):
         Returns
         -------
         np.ndarray
-            Converted scale. May be ``scale`` itself when units already match;
-            callers must not modify it in place.
+            Converted scale.
         """
         clipped_target_units = to_units[-len(from_units) :]
         try:
@@ -462,7 +461,7 @@ class LayerList(SelectableEventedList[Layer]):
             # Units from separate registries can still be converted.
             matching_units = False
         if matching_units:
-            return scale
+            return np.array(scale)
         return np.array(
             [
                 (s * u).to(cu).magnitude
