@@ -302,7 +302,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             )
         if rgb is None:
             rgb = guess_rgb(data_shape)
-
+        self.rgb = rgb
         super().__init__(
             data,
             affine=affine,
@@ -316,7 +316,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             multiscale=multiscale,
             name=name,
             ndim=len(data_shape) - 1 if rgb else len(data_shape),
-            rgb=rgb,
             opacity=opacity,
             plane=plane,
             projection_mode=projection_mode,

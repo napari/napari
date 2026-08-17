@@ -137,9 +137,6 @@ class ScalarFieldBase(Layer, ABC):
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
-    rgb : bool, optional
-        Whether the data has an implicit trailing RGB/RGBA color axis that is
-        not a layer dimension.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
@@ -232,7 +229,6 @@ class ScalarFieldBase(Layer, ABC):
         plane=None,
         projection_mode='none',
         rendering='mip',
-        rgb=False,
         rotate=None,
         scale=None,
         shear=None,
@@ -260,7 +256,6 @@ class ScalarFieldBase(Layer, ABC):
         if ndim is None:
             ndim = len(data.shape)
         self._data = data
-        self.rgb = rgb  # Level shapes (Image._get_level_shapes) read ``self.rgb`` during init
 
         # Xarray metadata inference is a no-op if data is not xarray-like
         # and is only done for args that are None, so explicitly provided
@@ -270,6 +265,7 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
+        rgb = len(xr_source.shape) != ndim
         xr_metadata = _get_xr_metadata(
             xr_source,
             rgb=rgb,
