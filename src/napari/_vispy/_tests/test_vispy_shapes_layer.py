@@ -2,7 +2,70 @@ import numpy as np
 
 from napari._vispy.layers.shapes import VispyShapesLayer
 from napari._vispy.utils.qt_font import FontInfo
+from napari.components import Dims
 from napari.layers import Shapes
+
+SQUARE = np.array([[0, 0], [0, 10], [10, 10], [10, 0]])
+
+
+def test_empty_shape_faces_are_hidden_until_data_is_added():
+    layer = Shapes()
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+
+    assert not vispy_layer.node.shape_faces.visible
+
+    layer.add(SQUARE)
+    assert vispy_layer.node.shape_faces.visible
+
+    layer.data = []
+    assert not vispy_layer.node.shape_faces.visible
+
+
+def test_shape_faces_are_hidden_only_while_the_slice_is_empty():
+    shape = np.pad(SQUARE, ((0, 0), (1, 0)))
+    layer = Shapes(shape)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+
+    assert vispy_layer.node.shape_faces.visible
+
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert not vispy_layer.node.shape_faces.visible
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert vispy_layer.node.shape_faces.visible
+
+
+def test_shape_highlights_are_hidden_until_a_shape_is_selected():
+    layer = Shapes(SQUARE)
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+    highlight_nodes = (
+        vispy_layer.node.shape_highlights,
+        vispy_layer.node.highlight_lines,
+        vispy_layer.node.highlight_vertices,
+    )
+
+    assert [node.visible for node in highlight_nodes] == [False, False, False]
+
+    layer.mode = 'select'
+    layer.selected_data = {0}
+    assert [node.visible for node in highlight_nodes] == [True, True, True]
+
+    layer.selected_data = set()
+    assert [node.visible for node in highlight_nodes] == [False, False, False]
+
+
+def test_shape_text_is_hidden_when_no_text_is_visible():
+    layer = Shapes(text={'string': {'constant': 'label'}})
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+    text_node = vispy_layer._get_text_node()
+
+    assert not text_node.visible
+
+    layer.add(SQUARE)
+    assert text_node.visible
+
+    layer.text.visible = False
+    assert not text_node.visible
 
 
 def test_remove_selected_with_derived_text():
