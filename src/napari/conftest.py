@@ -129,7 +129,7 @@ def tracks_data() -> TrackDataDict:
         [[0, 0, 0, 0], [0, 1, 0, 20], [1, 0, 10, 0], [1, 1, 10, 10]],
         dtype=np.float32,
     )
-    properties = {
+    properties: dict[Literal['track_id', 'time', 'speed'], list[int]] = {
         'track_id': [0, 0, 1, 1],
         'time': [0, 1, 0, 1],
         'speed': [50, 30, 20, 10],
