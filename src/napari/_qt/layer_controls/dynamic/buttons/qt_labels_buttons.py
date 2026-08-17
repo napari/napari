@@ -59,7 +59,7 @@ class QtLabelsButtons(QtLayerButtons):
         self.colormap_update = QtModePushButton(
             layer,
             'shuffle',
-            slot=self.changeColor,
+            slot=self.change_color,
             tooltip='Shuffle colors',
         )
 
@@ -113,6 +113,15 @@ class QtLabelsButtons(QtLayerButtons):
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.
 
+        Available modes for labels layer are:
+        * PAN_ZOOM
+        * TRANSFORM
+        * PICK
+        * PAINT
+        * ERASE
+        * FILL
+        * POLYGON
+
         Parameters
         ----------
         event : napari.utils.event.Event
@@ -121,12 +130,12 @@ class QtLabelsButtons(QtLayerButtons):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, FILL
-            or TRANSFORM
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, FILL,
+            TRANSFORM or POLYGON.
         """
         super()._on_mode_change(event)
 
-    def changeColor(self):
+    def change_color(self):
         """Change colormap of the label layer."""
         self.layer.new_colormap()
 

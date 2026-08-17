@@ -43,7 +43,7 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypedDict
 from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
@@ -104,6 +104,37 @@ def layer_data_and_types():
         layer.name + e for layer, e in zip(layers, extensions, strict=False)
     ]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture
+def surface_data() -> tuple[
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    np.ndarray[tuple[int], np.dtype[np.int32]],
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+]:
+    data = np.array([[0, 0], [0, 20], [10, 0], [10, 10]], dtype=np.float32)
+    faces = np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32)
+    values = np.linspace(0, 1, len(data), dtype=np.float32)
+    return (data, faces, values)
+
+
+class TrackDataDict(TypedDict):
+    data: np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]]
+    properties: dict[Literal['track_id', 'time', 'speed'], list]
+
+
+@pytest.fixture
+def tracks_data() -> TrackDataDict:
+    data = np.array(
+        [[0, 0, 0, 0], [0, 1, 0, 20], [1, 0, 10, 0], [1, 1, 10, 10]],
+        dtype=np.float32,
+    )
+    properties = {
+        'track_id': [0, 0, 1, 1],
+        'time': [0, 1, 0, 1],
+        'speed': [50, 30, 20, 10],
+    }
+    return {'data': data, 'properties': properties}
 
 
 @pytest.fixture(

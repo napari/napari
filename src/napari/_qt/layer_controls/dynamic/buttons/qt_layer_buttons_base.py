@@ -16,6 +16,8 @@ from napari.layers.base._base_constants import Mode
 from napari.utils.action_manager import action_manager
 
 if TYPE_CHECKING:
+    from qtpy.QtCore import QEvent, QObject
+
     from napari.layers.base.base import Layer
 
 
@@ -96,6 +98,7 @@ class QtLayerButtons(QGridLayout):
         self.setSpacing(4)
 
     def changeProjectionMode(self, text):
+        # Looks unused
         with self.layer.events.blocker(self._on_projection_mode_change):
             self.layer.projection_mode = text
 
@@ -217,7 +220,7 @@ class QtLayerButtons(QGridLayout):
             self.layer.editable and self.layer.visible and self.ndisplay == 2,
         )
 
-    def eventFilter(self, qobject, event):
+    def eventFilter(self, qobject: QObject, event: QEvent):
         """
         Event filter implementation to handle the Alt + Left mouse click interaction to
         reset the layer transform.
@@ -227,29 +230,30 @@ class QtLayerButtons(QGridLayout):
         """
         if (
             qobject == self.transform_button
-            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.type() == QMouseEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             result = QMessageBox.warning(
-                self,
+                self.parentWidget(),
                 'Reset transform',
                 'Are you sure you want to reset transforms?',
-                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
-            if result == QMessageBox.Yes:
+            if result == QMessageBox.StandardButton.Yes:
                 self.layer._reset_affine()
                 return True
         return super().eventFilter(qobject, event)
 
 
 class QtMultiLayerButtons(QGridLayout):
-    """Super simple shim for whhen multiple layers are selected.
+    """Super simple shim for when multiple layers are selected.
 
-    Effectively does nothing, but shows the pan zoom button.
+    Effectively does nothing but shows the pan zoom button.
     """
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: Layer) -> None:
         super().__init__()
         self.button_group = QButtonGroup(self)
         btn = QtModeRadioButton(layer, 'pan', None, checked=True)
