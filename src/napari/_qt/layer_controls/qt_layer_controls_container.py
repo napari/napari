@@ -92,7 +92,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
         self.empty_widget.setObjectName('empty_controls_widget')
-        self.panels = {}
+        self.widgets = {}
         self.panel = None  # dynamic controls
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)
@@ -111,7 +111,7 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the new dimensionality value at `event.value`.
         """
-        for panel in self.panels.values():
+        for panel in self.widgets.values():
             if panel is not self.empty_widget:
                 panel.ndisplay = event.value
 
@@ -127,7 +127,7 @@ class QtLayerControlsContainer(QStackedWidget):
         the gap by forwarding ``event.value`` (the new theme) to any
         histogram widgets that have been lazily created.
         """
-        for widget in self.panels.values():
+        for widget in self.widgets.values():
             histogram_control = getattr(widget, '_histogram_control', None)
             if histogram_control is None:
                 continue
@@ -165,7 +165,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if not selection:
             self.setCurrentWidget(self.empty_widget)
         elif selection.active is not None and not always_dynamic:
-            controls = self.panels[selection.active]
+            controls = self.widgets[selection.active]
             self.setCurrentWidget(controls)
         else:
             # ordered list of layers in selection
@@ -192,7 +192,7 @@ class QtLayerControlsContainer(QStackedWidget):
         controls = create_qt_layer_controls(layer)
         controls.ndisplay = self.viewer.dims.ndisplay
         self.addWidget(controls)
-        self.panels[layer] = controls
+        self.widgets[layer] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -206,9 +206,9 @@ class QtLayerControlsContainer(QStackedWidget):
         if always_dynamic:
             return
         layer = event.value
-        controls = self.panels[layer]
+        controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.hide()
         controls.deleteLater()
         controls = None
-        del self.panels[layer]
+        del self.widgets[layer]
