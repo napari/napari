@@ -7,12 +7,12 @@ import gc
 import warnings
 from functools import partial
 from itertools import zip_longest
-from types import MethodType
 from typing import TYPE_CHECKING, Any
 from weakref import WeakSet
 
 import numpy as np
 from OpenGL.error import GLError
+from psygnal import Signal
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -61,36 +61,16 @@ if TYPE_CHECKING:
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    entered_canvas = Signal()
+    exited_canvas = Signal()
 
-        orig_enterEvent = self.native.enterEvent
-        orig_leaveEvent = self.native.leaveEvent
+    def enterEvent(self, event):
+        self.entered_canvas()
+        super().enterEvent(event)
 
-        def _qtviewer(widget):
-            parent = widget.parentWidget()
-            while parent is not None:
-                if hasattr(parent, '_enter_canvas') and hasattr(
-                    parent, '_leave_canvas'
-                ):
-                    return parent
-                parent = parent.parentWidget()
-            return None
-
-        def enterEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._enter_canvas()
-            orig_enterEvent(event)
-
-        def leaveEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._leave_canvas()
-            orig_leaveEvent(event)
-
-        self.native.enterEvent = MethodType(enterEvent, self.native)
-        self.native.leaveEvent = MethodType(leaveEvent, self.native)
+    def leaveEvent(self, event):
+        self.exited_canvas()
+        super().leaveEvent(event)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
@@ -546,9 +526,6 @@ class VispyCanvas:
         -------
         None
         """
-        if event.pos is None:
-            return
-
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
@@ -556,6 +533,7 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
+        self.viewer.cursor.canvas_position = event.pos
         self.viewer.cursor.viewbox = grid_coords
 
         if viewbox is None:

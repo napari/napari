@@ -366,6 +366,14 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        # catch enter/leave events for the canvas and update status accordingly
+        if source is self._qt_viewer.canvas._scene_canvas.native:
+            if event.type() == QEvent.Type.Enter:
+                # TODO: anything to do here?
+                pass
+            elif event.type() == QEvent.Type.Leave:
+                self.update_status_and_tooltip(('', ''))
+                self._qt_viewer.viewer.cursor.canvas_position = None
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
