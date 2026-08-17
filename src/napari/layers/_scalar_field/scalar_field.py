@@ -959,18 +959,27 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # as it directly gives us the size of the "bounding rectangle" containing the slice
         # in world coordinates.
         extent = self.layer._extent_world_augmented[:, plane_axes]
-        span = np.ceil(extent[1] - extent[0]).astype(int) + 1
-        shape = (max(int(span[0]), 1), max(int(span[1]), 1))
+        span_world = extent[1] - extent[0]
+
+        # # Estimate how many data pixels correspond to one world unit on each
+        # # displayed axis so we do not undersample when world scale is small.
+        displayed_step_world = self.layer._extent_augmented.step[list(plane_axes)]
+        print(displayed_step_world)
+        displayed_density = 1.0 / displayed_step_world
+
+        span_in_samples = np.ceil(span_world * displayed_density).astype(int) + 1
+        shape = (max(int(span_in_samples[0]), 1), max(int(span_in_samples[1]), 1))
 
         # This is essential to allow the slice to be correctly displayed on screen by Vispy.
-        # `tile_to_world` is a translation that contains:
+        # `tile_to_world` contains:
         #   1. the top-left corner of the slice (not setting this not only makes the slice
         #      be ill-centered, but some parts of it also do not display at all)
         origin = np.array(self.layer._extent_world_augmented[0], dtype=float)
         #   2. the information that is normally contained in _ThickNDSlice.point, i.e
         #      the position of the slider in the viewer (not setting this makes the sliders
         #      unresponsive)
-        for ax in slice_input.not_displayed:
+        not_displayed = slice_input.not_displayed
+        for ax in not_displayed:
             origin[ax] = slice_input.world_slice.point[ax]
 
         tile_to_world = Affine(
@@ -978,10 +987,17 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             linear_matrix=np.eye(self.layer.ndim),
             translate=origin,
         )
+        # Map one tile pixel step to the corresponding world distance so
+        # displayed sampling density remains consistent under scaling.
+        tile_to_world.linear_matrix[plane_axes[0], plane_axes[0]] = (
+            displayed_step_world[0]
+        )
+        tile_to_world.linear_matrix[plane_axes[1], plane_axes[1]] = (
+            displayed_step_world[1]
+        )
 
         # For affine slicing, margins are defined in world coordinates
         # before being mapped to data by tile_to_data during actual slicing.
-        not_displayed = slice_input.not_displayed
         world_slice_not_disp = slice_input.world_slice[
             not_displayed
         ].as_array()
