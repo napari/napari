@@ -38,10 +38,12 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
+    _layers: list[Points | Shapes]
+
     def __init__(
         self,
-        parent: QWidget,
         layers: list[Points | Shapes],
+        parent: QWidget | None = None,
         tooltip: Optional[str] = None,
     ) -> None:
         super().__init__(parent, layers)
@@ -65,7 +67,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
                 'setColor',
             )
         )
-        if hasattr(layer, '_face'):
+        if hasattr(self._layers[0], '_face'):
             # Handle Points layer case
             self._callbacks.append(
                 attr_to_settr(

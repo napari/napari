@@ -63,8 +63,10 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         Label for the resolution combobox.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent, layers)
+    def __init__(
+        self, layers: list[Layer], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         self._layers = layers
 
         self.level_combobox = QComboBox(parent)

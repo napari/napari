@@ -39,9 +39,12 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Labels]
+
+    def __init__(
+        self, layers: list[Labels], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.colormap.connect(self._on_colormap_change)

@@ -39,10 +39,12 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         Label for the layer contour thickness chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Labels]
 
+    def __init__(
+        self, layers: list[Labels], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup widgets
         self.contour_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(self._layers[0]))

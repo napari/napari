@@ -38,8 +38,10 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         Label for the gamma chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image | Surface]
+
+    def __init__(self, layers: list[Image | Surface], parent: QWidget) -> None:
+        super().__init__(layers, parent)
 
         # Setup gamma slider - exactly like opacity slider
         sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)

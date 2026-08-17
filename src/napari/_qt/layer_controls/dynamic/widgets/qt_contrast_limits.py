@@ -391,8 +391,10 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image | Surface]
+
+    def __init__(self, layers: list[Image | Surface], parent: QWidget) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.contrast_limits.connect(

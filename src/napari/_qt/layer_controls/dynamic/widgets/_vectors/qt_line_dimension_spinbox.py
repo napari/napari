@@ -38,9 +38,10 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         Label for the edge width of vectors chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Vectors]
+
+    def __init__(self, layers: list[Vectors], parent: QWidget) -> None:
+        super().__init__(layers, parent)
         # Setup widgets
         # line width in pixels
         self.width_spinbox = QDoubleSpinBox()

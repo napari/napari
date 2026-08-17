@@ -36,8 +36,12 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         Label for the text visibility widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Points | Shapes]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Points | Shapes]
+
+    def __init__(
+        self, layers: list[Points | Shapes], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.text.events.visible.connect(self._on_text_visibility_change)

@@ -51,8 +51,10 @@ class QtHistogramControl(QtWidgetControlsBase):
         Widget for histogram mode and log scale controls.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image | Surface]
+
+    def __init__(self, layers: list[Image | Surface], parent: QWidget) -> None:
+        super().__init__(layers, parent)
 
         # Persistent container — always in the form layout, shown/hidden
         # via button toggle, never inserted/removed at runtime.

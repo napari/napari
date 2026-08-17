@@ -38,9 +38,12 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         Label for the layer should show only currently selected label chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Labels]
+
+    def __init__(
+        self, layers: list[Labels], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup widgets
         selected_color_checkbox = QCheckBox()
         selected_color_checkbox.setToolTip('Display only selected label')

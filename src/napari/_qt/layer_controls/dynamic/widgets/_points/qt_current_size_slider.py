@@ -40,10 +40,12 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Points]) -> None:
-        super().__init__(parent, layers)
-        # Setup layer
-        self._layers = layers
+    _layers: list[Points]
+
+    def __init__(
+        self, layers: list[Points], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
 
         for layer in self._layers:
             layer.events.size.connect(self._on_current_size_change)

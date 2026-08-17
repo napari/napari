@@ -131,8 +131,12 @@ class QtColormapControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Image | Surface]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image | Surface]
+
+    def __init__(
+        self, layers: list[Image | Surface], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.colormap.connect(self._on_colormap_change)

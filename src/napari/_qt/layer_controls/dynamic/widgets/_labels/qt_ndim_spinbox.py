@@ -38,9 +38,12 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
         Label for the number of editable dimensions chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Labels]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Labels]
+
+    def __init__(
+        self, layers: list[Labels], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.n_edit_dimensions.connect(

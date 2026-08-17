@@ -12,7 +12,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
+    from napari.layers.base.base import Image, Points, Vectors
 
 
 class QtProjectionModeControl(QtWidgetControlsBase):
@@ -35,10 +35,15 @@ class QtProjectionModeControl(QtWidgetControlsBase):
         Label for the projection mode chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Image | Points | Vectors]
+
+    def __init__(
+        self,
+        layers: list[Image | Points | Vectors],
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
-        self._layers = layers
         for layer in self._layers:
             layer.events.projection_mode.connect(
                 self._on_projection_mode_change

@@ -37,8 +37,12 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
         Label for the shading value chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Surface]) -> None:
-        super().__init__(parent, layers)
+    _layers: list[Surface]
+
+    def __init__(
+        self, layers: list[Surface], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         self._layers = layers
         # Setup layer
         for layer in self._layers:

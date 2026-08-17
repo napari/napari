@@ -54,8 +54,8 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         Label for the opacity slider widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Layer]) -> None:
-        super().__init__(parent, layers)
+    def __init__(self, layers: list[Layer], parent: QWidget) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.blending.connect(self._on_blending_change)

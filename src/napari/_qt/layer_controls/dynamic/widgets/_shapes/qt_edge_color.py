@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -39,15 +39,15 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
         Label for the current edge color chooser widget.
     """
 
-    _layer: Shapes
+    _layers: list[Shapes]
 
     def __init__(
         self,
-        parent: QWidget,
         layers: list[Shapes],
-        tooltip: Optional[str] = None,
+        parent: QWidget | None = None,
+        tooltip: str | None = None,
     ) -> None:
-        super().__init__(parent, layers)
+        super().__init__(layers, parent)
         self._layers = layers
         # Setup widgets
         self.edge_color_edit = QColorSwatchEdit(

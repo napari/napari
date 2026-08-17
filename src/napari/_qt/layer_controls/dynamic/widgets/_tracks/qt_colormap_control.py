@@ -35,9 +35,12 @@ class QtColormapComboBoxControl(QtWidgetControlsBase):
         Label for the colormap chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Tracks]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Tracks]
+
+    def __init__(
+        self, layers: list[Tracks], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.colormap.connect(self._on_colormap_change)

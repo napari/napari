@@ -39,11 +39,10 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
         Label for vector_style value chooser widget.
     """
 
-    _layer: Vectors
+    _layers: list[Vectors]
 
-    def __init__(self, parent: QWidget, layers: list[Vectors]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    def __init__(self, layers: list[Vectors], parent: QWidget) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.vector_style.connect(self._on_vector_style_change)

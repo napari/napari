@@ -40,9 +40,12 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
         Label for the current edge width widget.
     """
 
-    def __init__(self, parent: QWidget, layers: list[Shapes]) -> None:
-        super().__init__(parent, layers)
-        self._layers = layers
+    _layers: list[Shapes]
+
+    def __init__(
+        self, layers: list[Shapes], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
         # Setup layer
         for layer in self._layers:
             layer.events.edge_width.connect(self._on_edge_width_change)
