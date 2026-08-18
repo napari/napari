@@ -82,16 +82,7 @@ def mock_pm(npe2pm: 'TestPluginManager'):
         yield npe2pm
 
 
-@pytest.fixture
-def reset_plugin_settings():
-    import napari.settings as settings
-
-    settings._PLUGIN_PREFERENCES.clear()
-    yield
-    settings._PLUGIN_PREFERENCES.clear()
-
-
-def test_prefdialog_populated(reset_plugin_settings, pref):
+def test_prefdialog_populated(pref):
     subfields = filter(
         lambda f: (
             isinstance(ff := get_inner_type(f.annotation), type)
@@ -105,7 +96,7 @@ def test_prefdialog_populated(reset_plugin_settings, pref):
     assert pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
 
 
-def test_add_plugin(reset_plugin_settings, mock_pm, pref):
+def test_add_plugin(mock_pm, pref):
     assert len(get_plugin_settings()) == len(
         plugin_configuration_generator(mock_pm)
     )
@@ -117,9 +108,7 @@ def test_add_plugin(reset_plugin_settings, mock_pm, pref):
     pref._rebuild_dialog()
 
 
-def test_plugin_settings_restored_on_cancel(
-    reset_plugin_settings, mock_pm, pref
-):
+def test_plugin_settings_restored_on_cancel(mock_pm, pref):
     settings = get_plugin_settings('my-plugin')
     pref._rebuild_dialog()  # snapshot plugin settings (defaults)
 
@@ -132,9 +121,7 @@ def test_plugin_settings_restored_on_cancel(
     assert settings.reader.lazy is False
 
 
-def test_plugin_settings_saved_on_accept(
-    reset_plugin_settings, mock_pm, pref, qtbot
-):
+def test_plugin_settings_saved_on_accept(mock_pm, pref, qtbot):
     settings = get_plugin_settings('my-plugin')
     settings.reader.lazy = True
 
@@ -145,9 +132,7 @@ def test_plugin_settings_saved_on_accept(
     assert 'lazy: true' in settings.config_path.read_text()
 
 
-def test_plugin_settings_restore_defaults(
-    reset_plugin_settings, mock_pm, pref, monkeypatch
-):
+def test_plugin_settings_restore_defaults(mock_pm, pref, monkeypatch):
     settings = get_plugin_settings('my-plugin')
     settings.reader.lazy = True
 

@@ -241,6 +241,15 @@ def _fresh_settings(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def reset_plugin_settings():
+    import napari.settings as settings
+
+    settings._PLUGIN_PREFERENCES.clear()
+    yield
+    settings._PLUGIN_PREFERENCES.clear()
+
+
+@pytest.fixture(autouse=True)
 def _auto_shutdown_dask_threadworkers():
     """
     This automatically shutdown dask thread workers.
