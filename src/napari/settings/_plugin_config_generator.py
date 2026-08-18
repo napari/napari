@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from pydantic import (
+    AfterValidator,
     Field,
     create_model,
 )
@@ -12,6 +13,8 @@ from napari.settings._plugin_preferences import PluginPreferences
 from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from npe2 import PluginManager
     from npe2.manifest.contributions import ConfigurationContribution
 
@@ -30,7 +33,9 @@ VALUE_TRANSLATOR = {
 # metadata: it is not a valid ``Field`` kwarg, so it is routed to
 # ``json_schema_extra`` instead (where it stays visible in the model's JSON
 # schema for the Preferences widgets) rather than triggering pydantic's
-# deprecation warning for extra keyword arguments.
+# deprecation warning for extra keyword arguments.  ``enum`` additionally gets
+# an ``AfterValidator`` (see ``_build_single_config_model``) so that out-of-enum
+# values are rejected at runtime.
 _FIELD_KWARGS = {
     'default',
     'title',
@@ -63,6 +68,20 @@ def _model_name(plugin_name: str) -> str:
     return name
 
 
+def _enum_validator(enum: list) -> Callable[[Any], Any]:
+    """Return a validator that enforces membership in ``enum``."""
+
+    def _validate(value: Any) -> Any:
+        if value not in enum:
+            raise ValueError(
+                f'value {value!r} is not one of the allowed enum values '
+                f'{enum!r}'
+            )
+        return value
+
+    return _validate
+
+
 def _build_single_config_model(
     configuration: ConfigurationContribution,
     conf_identifier: str,
@@ -82,6 +101,19 @@ def _build_single_config_model(
         data = {k: getattr(props, k) for k in props.model_fields_set}
         data.pop('type', None)
 
+        # ``enum`` is both settings-UI metadata (renders a dropdown) and a
+        # validation constraint. ``enum`` stays in ``data`` so it is routed to
+        # ``json_schema_extra`` for the dropdown widget; membership in it is
+        # enforced by an explicit ``AfterValidator`` (the generated models
+        # inherit ``EventedModel``'s ``validate_assignment``, so out-of-enum
+        # values are rejected on assignment).
+        field_type = props.python_type
+        if data.get('enum'):
+            field_type = Annotated[
+                props.python_type,
+                AfterValidator(_enum_validator(data['enum'])),
+            ]
+
         field_kwargs = {
             VALUE_TRANSLATOR.get(k, k): v
             for k, v in data.items()
@@ -99,7 +131,7 @@ def _build_single_config_model(
             }
 
         fields[key] = (
-            props.python_type,
+            field_type,
             Field(**field_kwargs),
         )
     return create_model(

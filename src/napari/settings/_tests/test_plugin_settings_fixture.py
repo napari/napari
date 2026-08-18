@@ -10,6 +10,7 @@ mid-test are picked up.
 
 from textwrap import dedent
 
+import pytest
 from npe2 import PluginManifest
 
 PLUGIN_A = PluginManifest(
@@ -81,21 +82,29 @@ def test_fixture_end_to_end(plugin_settings, npe2pm):
 
 
 def test_enum_property(plugin_settings, npe2pm):
+    from pydantic import ValidationError
+
     from napari.settings import get_plugin_settings
 
     npe2pm.register(PLUGIN_A)
     s = get_plugin_settings('plugin-a')
 
     assert s.reader.colormap == 'gray'  # manifest default
-    # `enum` is settings-UI metadata: it stays in the model's JSON schema
-    # (the Preferences widgets read it from there) but must not be passed to
-    # pydantic `Field()` as an (invalid) kwarg.
+    # `enum` renders a dropdown in the Preferences UI, so it must stay visible
+    # in the model's JSON schema for the widget builder to pick it up.
     schema = type(s.reader).model_json_schema()
     assert schema['properties']['colormap']['enum'] == [
         'gray',
         'green',
         'viridis',
     ]
+
+    # `enum` is also a validation constraint: out-of-enum values are rejected
+    # on assignment (the generated model inherits `validate_assignment`).
+    with pytest.raises(ValidationError):
+        s.reader.colormap = 'hot'
+    s.reader.colormap = 'green'
+    assert s.reader.colormap == 'green'
 
 
 def test_dynamic_registration_invalidates_cache(plugin_settings, npe2pm):
