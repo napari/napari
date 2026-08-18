@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from pydantic import (
     AfterValidator,
@@ -177,5 +177,11 @@ def plugin_configuration_generator(
             __base__=PluginPreferences,
             **fields,
         )
-        plugin_settings[plugin_name].display_name = display_names[plugin_name]
+        # ``display_name`` is plugin metadata (not a settings field): it is set
+        # on the dynamically-created model class so the Preferences dialog can
+        # read it off each instance. ``cast`` is needed because mypy cannot
+        # know about attributes added to a class generated at runtime.
+        cast(Any, plugin_settings[plugin_name]).display_name = display_names[
+            plugin_name
+        ]
     return plugin_settings
