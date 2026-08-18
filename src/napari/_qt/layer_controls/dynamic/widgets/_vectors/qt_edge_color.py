@@ -76,6 +76,10 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.edge_feature_label = QtWrappedLabel('edge feature:')
         self.color_feature_box = QComboBox(parent)
         self.color_feature_box.addItems(self._layers[0].features.columns)
+        if self._layers[0]._edge.color_properties is not None:
+            self.color_feature_box.setCurrentText(
+                self._layers[0]._edge.color_properties.name
+            )
         self.color_feature_box.currentTextChanged.connect(
             self.change_edge_color_feature
         )
