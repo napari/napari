@@ -226,6 +226,7 @@ class QtDynamicLayerControls(QFrame):
 
         self._ndisplay: int = 2
         self._layers = layers
+        self._controls = []
 
         self.setObjectName('layer')
         self.setMouseTracking(True)
@@ -263,7 +264,7 @@ class QtDynamicLayerControls(QFrame):
         warn_layout.addStretch(1)
         warn_layout.addWidget(warn_icon)
         warn_layout.addStretch(1)
-        warn_widget.setAttribute(Qt.WA_TranslucentBackground)
+        warn_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         layout.addRow('experimental!', warn_widget)
         self._on_surface_coloring_change()
         self._on_ndisplay_changed()
@@ -281,6 +282,7 @@ class QtDynamicLayerControls(QFrame):
             An instance of a `QtWidgetControlsBase` subclass that setups
             widgets for a layer attribute.
         """
+        self._controls.append(wrapper)
         controls = wrapper.get_widget_controls()
 
         for label_text, control_widget in controls:
@@ -294,6 +296,8 @@ class QtDynamicLayerControls(QFrame):
     @ndisplay.setter
     def ndisplay(self, ndisplay: int) -> None:
         self._ndisplay = ndisplay
+        if isinstance(self.buttons, QtLayerButtons):
+            self.buttons.ndisplay = ndisplay
         self._on_ndisplay_changed()
 
     def _on_ndisplay_changed(self) -> None:
@@ -302,29 +306,8 @@ class QtDynamicLayerControls(QFrame):
         This is needed because some layer controls may have options that are specific
         to 2D or 3D visualization only like the transform mode button.
         """
-        depiction = self.findChild(QtDepictionControl)
-        if depiction is not None:
-            depiction._change_ndisplay(self._ndisplay)
-
-        interpolation = self.findChild(QtInterpolationComboBoxControl)
-        if interpolation is not None:
-            interpolation._update_interpolation_combo(self.ndisplay)
-
-        rendering_image = self.findChild(QtImageRenderControl)
-        if rendering_image is not None:
-            rendering_image._change_ndisplay(self._ndisplay)
-
-        rendering_labels = self.findChild(QtLabelRenderingControl)
-        if rendering_labels is not None:
-            rendering_labels._change_ndisplay(self._ndisplay)
-
-        label_buttons = self.findChild(QtLabelsButtons)
-        if label_buttons is not None:
-            label_buttons._set_polygon_tool_state()
-
-        buttons = self.findChild(QtLayerButtons)
-        if buttons is not None:
-            buttons.ndisplay = self.ndisplay
+        for control in self._controls:
+            control._change_ndisplay(self._ndisplay)
 
     def _on_surface_coloring_change(
         self,

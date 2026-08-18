@@ -144,7 +144,7 @@ class TestQtInterpolationComboBoxControl:
         control = QtInterpolationComboBoxControl([img])
         qt_wrap.add_control(control)
 
-        control._update_interpolation_combo(2)
+        control._change_ndisplay(2)
 
         assert img.interpolation2d == 'nearest'
         assert control.interpolation_combobox.currentText() == 'nearest'
@@ -160,7 +160,7 @@ class TestQtInterpolationComboBoxControl:
         control = QtInterpolationComboBoxControl([img])
         qt_wrap.add_control(control)
 
-        control._update_interpolation_combo(3)
+        control._change_ndisplay(3)
 
         assert img.interpolation3d == 'linear'
         assert control.interpolation_combobox.currentText() == 'linear'

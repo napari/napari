@@ -95,7 +95,7 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
                 self.interpolation_combobox.addItem(interp_string)
             self.interpolation_combobox.setCurrentText(interp_string)
 
-    def _update_interpolation_combo(self, ndisplay: int) -> None:
+    def _change_ndisplay(self, ndisplay: int) -> None:
         self._ndisplay = ndisplay
         interp_names = [i.value for i in Interpolation.view_subset()]
         interp = (
