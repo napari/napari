@@ -12,9 +12,15 @@ from napari._qt.layer_controls.dynamic.widgets import QtOpacityBlendingControls
 def test_dynamic_controls_creation(layers, qtbot):
     for n_layers in range(1, 4):
         for selected_layers in combinations(layers, n_layers):
-            # reset opacity for next round
+            callbacks = {lay: [] for lay in layers}
             for layer in layers:
+                # reset opacity for next round
                 layer.opacity = 1
+                # count callbacks to make sure we don't leak
+                callbacks[layer].extend(layer.events.callbacks)
+                for emitter in layer.events.emitters.values():
+                    callbacks[layer].extend(emitter.callbacks)
+
             controls = QtDynamicLayerControls(selected_layers)
             qtbot.addWidget(controls)
 
@@ -36,3 +42,12 @@ def test_dynamic_controls_creation(layers, qtbot):
                 else:
                     # make sure we don't affect other layers
                     assert layer.opacity == 1
+
+            controls.close()
+            # ensure that closing the controls removes all callbacks
+            for layer in layers:
+                new_callbacks = []
+                new_callbacks.extend(layer.events.callbacks)
+                for emitter in layer.events.emitters.values():
+                    new_callbacks.extend(emitter.callbacks)
+                assert set(new_callbacks) == set(callbacks[layer])

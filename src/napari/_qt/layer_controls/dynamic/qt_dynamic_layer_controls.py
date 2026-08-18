@@ -286,15 +286,16 @@ class QtDynamicLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.setLayout(LayerFormLayout(self))
+        layout = LayerFormLayout(self)
+        self.setLayout(layout)
 
         if len(layers) == 1:
             for layer_type, buttons_class in buttons_dict.items():
                 if isinstance(layers[0], layer_type):
-                    self.layout().addRow(buttons_class(layers[0]))
+                    self.buttons = buttons_class(layers[0])
         else:
-            buttons = QtMultiLayerButtons(layers[0])
-            self.layout().addRow(buttons)
+            self.buttons = QtMultiLayerButtons(layers[0])
+        layout.addRow(self.buttons)
 
         for layer_type, controls in controls_dict.items():
             if all(isinstance(layer, layer_type) for layer in self._layers):
@@ -319,7 +320,7 @@ class QtDynamicLayerControls(QFrame):
         warn_layout.addWidget(warn_icon)
         warn_layout.addStretch(1)
         warn_widget.setAttribute(Qt.WA_TranslucentBackground)
-        self.layout().addRow('experimental!', warn_widget)
+        layout.addRow('experimental!', warn_widget)
         self._on_surface_coloring_change()
         self._on_ndisplay_changed()
 
@@ -408,17 +409,19 @@ class QtDynamicLayerControls(QFrame):
             disconnect_method()
 
     def deleteLater(self):
+        disconnect_events(self._layers[0].events, self.buttons)
         for layer in self._layers:
             disconnect_events(layer.events, self)
-            for child in self.children():
-                self._disconnect_child_widget_controls(child)
-            super().deleteLater()
+        for child in self.children():
+            self._disconnect_child_widget_controls(child)
+        super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
+        disconnect_events(self._layers[0].events, self.buttons)
         for layer in self._layers:
             disconnect_events(layer.events, self)
-            for child in self.children():
-                self._disconnect_child_widget_controls(child)
-                getattr(child, 'close', lambda: None)()
-            super().close()
+        for child in self.children():
+            self._disconnect_child_widget_controls(child)
+            getattr(child, 'close', lambda: None)()
+        super().close()
