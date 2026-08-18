@@ -341,11 +341,6 @@ class QtDynamicLayerControls(QFrame):
         for label_text, control_widget in controls:
             self.layout().addRow(label_text, control_widget)
 
-    def changeProjectionMode(self, text):
-        for layer in self._layers:
-            with layer.events.blocker(self._on_projection_mode_change):
-                layer.projection_mode = text
-
     @property
     def ndisplay(self) -> int:
         """The number of dimensions displayed in the canvas."""

@@ -97,11 +97,6 @@ class QtLayerButtons(QGridLayout):
         self.setColumnStretch(0, 1)
         self.setSpacing(4)
 
-    def changeProjectionMode(self, text):
-        # Looks unused
-        with self.layer.events.blocker(self._on_projection_mode_change):
-            self.layer.projection_mode = text
-
     def _radio_button(
         self,
         layer,
