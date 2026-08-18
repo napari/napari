@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path  # noqa: TC003
+from typing import ClassVar
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
@@ -23,6 +24,7 @@ class PluginPreferences(EventedConfigFileSettings):
         populate_by_name=True,
     )
     config_path: Path | _NotSetType | None = Field(None, exclude=True)
+    display_name: ClassVar[str] = ''
 
     def __str__(self) -> str:
         out = 'PluginSettings (defaults excluded)\n' + 34 * '-' + '\n'

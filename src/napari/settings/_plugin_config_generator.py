@@ -107,7 +107,7 @@ def _build_single_config_model(
         # enforced by an explicit ``AfterValidator`` (the generated models
         # inherit ``EventedModel``'s ``validate_assignment``, so out-of-enum
         # values are rejected on assignment).
-        field_type = props.python_type
+        field_type: Any = props.python_type
         if data.get('enum'):
             field_type = Annotated[
                 props.python_type,
