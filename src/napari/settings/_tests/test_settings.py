@@ -514,15 +514,6 @@ def test_settings_2():
     }
 
 
-@pytest.fixture
-def reset_plugin_settings():
-    import napari.settings as settings
-
-    settings._PLUGIN_PREFERENCES.clear()
-    yield
-    settings._PLUGIN_PREFERENCES.clear()
-
-
 def test_get_plugin_settings(
     tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
 ):
