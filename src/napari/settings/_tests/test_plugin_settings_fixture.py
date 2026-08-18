@@ -8,6 +8,8 @@ The ``plugin_settings`` fixture (in ``napari.utils._testsupport``) makes
 mid-test are picked up.
 """
 
+from textwrap import dedent
+
 from npe2 import PluginManifest
 
 PLUGIN_A = PluginManifest(
@@ -116,19 +118,19 @@ def test_register_accepts_string_path(plugin_settings, npe2pm, tmp_path):
     # a hand-written manifest, as a real plugin would ship it
     manifest_path = tmp_path / 'napari.yaml'
     manifest_path.write_text(
-        """
-name: plugin-c
-display_name: Plugin C
-contributions:
-  configurations:
-    reader:
-      title: Reader settings
-      properties:
-        lazy:
-          type: boolean
-          default: false
-          title: Load lazily
-"""
+        dedent("""\
+            name: plugin-c
+            display_name: Plugin C
+            contributions:
+              configurations:
+                reader:
+                  title: Reader settings
+                  properties:
+                    lazy:
+                      type: boolean
+                      default: false
+                      title: Load lazily
+            """)
     )
     npe2pm.register(str(manifest_path))
     assert get_plugin_settings('plugin-c').reader.lazy is False
