@@ -150,12 +150,55 @@ class TestQContrastLimitsPopup:
         widget = QContrastLimitsPopup([image])
         qtbot.add_widget(widget)
         assert widget.slider.decimals() == 0
+        assert not widget._needs_content_on_show
 
     def test_init_float_image(self, qtbot: QtBot) -> None:
         image = Image(np.zeros((10, 10), dtype=np.float32))
         widget = QContrastLimitsPopup([image])
         qtbot.add_widget(widget)
         assert widget.slider.decimals() > 0
+
+    def test_need_content_on_show(self, qtbot: QtBot) -> None:
+        """Check that the histogram content is created on show and not before.
+
+        Also check cleanup procedure.
+        """
+        image = Image(np.zeros((10, 10), dtype=np.uint8))
+        image.histogram.enabled = True
+        widget = QContrastLimitsPopup([image])
+        qtbot.add_widget(widget)
+
+        assert widget._needs_content_on_show
+        assert widget.histogram_content is None
+        assert '_on_external_histogram_enabled' not in {
+            x[1]
+            for x in image.histogram.events.enabled.callbacks
+            if isinstance(x, tuple)
+        }
+
+        widget.show()
+
+        assert not widget._needs_content_on_show
+        assert '_on_external_histogram_enabled' in {
+            x[1]
+            for x in image.histogram.events.enabled.callbacks
+            if isinstance(x, tuple)
+        }
+        hc = widget.histogram_content
+        assert hc is not None
+        widget._ensure_histogram_content()
+        assert widget.histogram_content is hc, (
+            'Histogram content should not be recreated on second call'
+        )
+
+        widget._cleanup()
+
+        assert widget.histogram_content is None
+        assert '_on_external_histogram_enabled' not in {
+            x[1]
+            for x in image.histogram.events.enabled.callbacks
+            if isinstance(x, tuple)
+        }
 
     def test_reset_contrast_limits(self, qtbot: QtBot) -> None:
         image = Image(
