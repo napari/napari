@@ -94,11 +94,33 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
 
-        assert np.all(image.contrast_limits == [0, 255])
-        assert np.all(control.contrast_limits_slider.value() == (0, 255))
+        np.testing.assert_array_equal(image.contrast_limits, [0, 255])
+        np.testing.assert_array_equal(
+            control.contrast_limits_slider.value(), (0, 255)
+        )
 
         control.contrast_limits_slider.setValue((50, 200))
-        assert np.all(image.contrast_limits == [50, 200])
+        np.testing.assert_array_equal(image.contrast_limits, [50, 200])
+
+        image.contrast_limits = (10, 20)
+        np.testing.assert_array_equal(image.contrast_limits, (10, 20))
+
+        image.contrast_limits_range = (20, 40)
+        np.testing.assert_array_equal(image.contrast_limits_range, (20, 40))
+        np.testing.assert_array_equal(image.contrast_limits, (20, 40))
+
+    def test_change_autocontrast(self, qt_wrap: QtWrap) -> None:
+        image = Image(np.zeros((10, 10), dtype=np.uint8))
+        control = QtContrastLimitsControl([image])
+        qt_wrap.add_control(control)
+
+        np.testing.assert_array_equal(image.contrast_limits, [0, 255])
+        np.testing.assert_array_equal(
+            control.contrast_limits_slider.value(), (0, 255)
+        )
+
+        control.contrast_limits_slider.setValue((50, 200))
+        np.testing.assert_array_equal(image.contrast_limits, [50, 200])
 
     def test_spawn_popup(self, qt_wrap: QtWrap) -> None:
         surface = Surface(
@@ -112,6 +134,14 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         control.show_clim_popup()
+        control.clim_popup.hide()  # so it doesn't show when testing
+
+    def test_histogram_button(self, qt_wrap: QtWrap) -> None:
+        image = Image(np.zeros((10, 10), dtype=np.uint8))
+        control = QtContrastLimitsControl([image])
+        qt_wrap.add_control(control)
+
+        control.histogram_button.click()
 
 
 class TestQContrastLimitsPopup:

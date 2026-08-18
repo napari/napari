@@ -489,7 +489,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
             layers=self._layers,
-            parent=self.contrast_limits_slider,
+            parent=self.contrast_limits_slider.parent(),
         )
         self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
