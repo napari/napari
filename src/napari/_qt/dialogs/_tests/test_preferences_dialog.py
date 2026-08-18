@@ -1,6 +1,4 @@
 import sys
-from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
 import numpy.testing as npt
 import pytest
@@ -29,9 +27,6 @@ from napari.settings._plugin_config_generator import (
 )
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
-
-if TYPE_CHECKING:
-    from npe2._pytest_plugin import TestPluginManager
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
 
@@ -64,17 +59,6 @@ def pref(qtbot):
         'napari:toggle_selected_visibility'
     ] == [KeyBinding.from_str('U')]
     return dlg
-
-
-@pytest.fixture
-def mock_pm(npe2pm: 'TestPluginManager', manifest_path: str):
-    from napari.plugins import _initialize_plugins
-
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=manifest_path):
-        yield npe2pm
 
 
 def test_prefdialog_populated(pref):

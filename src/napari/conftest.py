@@ -294,6 +294,17 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
+@pytest.fixture
+def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    mock_reg = MagicMock()
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=manifest_path):
+        yield npe2pm
+
+
 @pytest.fixture(autouse=True)
 def plugin_settings_(plugin_settings):
     """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.

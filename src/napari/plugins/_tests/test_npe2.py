@@ -18,17 +18,6 @@ PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
 PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
 
 
-@pytest.fixture
-def mock_pm(npe2pm: 'TestPluginManager', manifest_path: str):
-    from napari.plugins import _initialize_plugins
-
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=manifest_path):
-        yield npe2pm
-
-
 def test_read_no_stack(mock_pm: 'TestPluginManager'):
     _, reader_name = _npe2.read(['some.fzzy'], stack=False)
     mock_pm.commands.get.assert_called_once_with(f'{PLUGIN_NAME}.some_reader')

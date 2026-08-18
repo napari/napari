@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
-import pytest
 from npe2 import PluginManifest
 
 if TYPE_CHECKING:
@@ -12,17 +10,6 @@ from napari.settings._plugin_config_generator import (
 )
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
-
-
-@pytest.fixture
-def mock_pm(npe2pm: 'TestPluginManager', manifest_path: str):
-    from napari.plugins import _initialize_plugins
-
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=manifest_path):
-        yield npe2pm
 
 
 def test_single_config(mock_pm: 'TestPluginManager'):
