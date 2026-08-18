@@ -211,9 +211,9 @@ class TestQtImageRenderControl:
         control = QtImageRenderControl([img])
         qt_wrap.add_control(control)
 
-        control._on_display_change_show()
+        control._change_ndisplay(3)
         assert control.render_combobox.isVisible()
-        control._on_display_change_hide()
+        control._change_ndisplay(2)
         assert not control.render_combobox.isVisible()
-        control._on_display_change_show()
+        control._change_ndisplay(3)
         assert control.render_combobox.isVisible()

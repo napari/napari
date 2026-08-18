@@ -367,17 +367,11 @@ class QtDynamicLayerControls(QFrame):
 
         rendering_image = self.findChild(QtImageRenderControl)
         if rendering_image is not None:
-            if self._ndisplay == 3:
-                rendering_image._on_display_change_show()
-            else:
-                rendering_image._on_display_change_hide()
+            rendering_image._change_ndisplay(self._ndisplay)
 
         rendering_labels = self.findChild(QtLabelRenderingControl)
         if rendering_labels is not None:
-            if self._ndisplay == 3:
-                rendering_labels._on_display_change_show()
-            else:
-                rendering_labels._on_display_change_hide()
+            rendering_labels._change_ndisplay(self._ndisplay)
 
         label_buttons = self.findChild(QtLabelsButtons)
         if label_buttons is not None:

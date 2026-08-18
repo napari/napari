@@ -163,9 +163,11 @@ class QtDepictionControl(QtWidgetControlsBase):
         self._ndisplay = ndisplay
         self._update_plane_parameter_visibility()
         if self._ndisplay == 3:
-            self._on_display_change_show()
+            self.depiction_combobox.show()
+            self.depiction_label.show()
         else:
-            self._on_display_change_hide()
+            self.depiction_combobox.hide()
+            self.depiction_label.hide()
 
     def change_depiction(self, text: str) -> None:
         for layer in self._layers:
@@ -191,18 +193,9 @@ class QtDepictionControl(QtWidgetControlsBase):
                 self._layers[0].plane.thickness
             )
 
-    def _on_display_change_hide(self) -> None:
-        self.depiction_combobox.hide()
-        self.depiction_label.hide()
-
-    def _on_display_change_show(self) -> None:
-        self.depiction_combobox.show()
-        self.depiction_label.show()
-
     def _update_plane_parameter_visibility(self) -> None:
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self._layers[0].depiction)
-        # TODO: Better way to handle the ndisplay value?
         visible = (
             depiction == VolumeDepiction.PLANE
             and self._ndisplay == 3

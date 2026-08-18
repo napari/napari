@@ -107,17 +107,17 @@ class QtLabelRenderingControl(QtWidgetControlsBase):
                 IsoCategoricalGradientMode(self._layers[0].iso_gradient_mode)
             )
 
-    def _on_display_change_hide(self):
-        self.rendering_combobox.hide()
-        self.render_combobox_label.hide()
-        self.iso_gradient_combobox.hide()
-        self.iso_gradient_combobox_label.hide()
-
-    def _on_display_change_show(self):
-        self.rendering_combobox.show()
-        self.render_combobox_label.show()
-        self.iso_gradient_combobox.show()
-        self.iso_gradient_combobox_label.show()
+    def _change_ndisplay(self, ndisplay: int) -> None:
+        if ndisplay == 3:
+            self.rendering_combobox.show()
+            self.render_combobox_label.show()
+            self.iso_gradient_combobox.show()
+            self.iso_gradient_combobox_label.show()
+        else:
+            self.rendering_combobox.hide()
+            self.render_combobox_label.hide()
+            self.iso_gradient_combobox.hide()
+            self.iso_gradient_combobox_label.hide()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [

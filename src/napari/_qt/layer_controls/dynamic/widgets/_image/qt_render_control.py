@@ -147,18 +147,18 @@ class QtImageRenderControl(QtWidgetControlsBase):
             self.iso_threshold_slider.setMinimum(cmin)
             self.iso_threshold_slider.setMaximum(cmax)
 
-    def _on_display_change_hide(self):
-        self.iso_threshold_slider.hide()
-        self.iso_threshold_label.hide()
-        self.attenuation_slider.hide()
-        self.attenuation_label.hide()
-        self.render_combobox.hide()
-        self.render_label.hide()
-
-    def _on_display_change_show(self):
-        self.render_combobox.show()
-        self.render_label.show()
-        self._update_rendering_parameter_visibility()
+    def _change_ndisplay(self, ndisplay: int) -> None:
+        if ndisplay == 3:
+            self.render_combobox.show()
+            self.render_label.show()
+            self._update_rendering_parameter_visibility()
+        else:
+            self.iso_threshold_slider.hide()
+            self.iso_threshold_label.hide()
+            self.attenuation_slider.hide()
+            self.attenuation_label.hide()
+            self.render_combobox.hide()
+            self.render_label.hide()
 
     def _update_rendering_parameter_visibility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
