@@ -70,6 +70,7 @@ class TestQtImageButtons:
         event = QMouseEvent(
             QMouseEvent.Type.MouseButtonRelease,
             QPointF(buttons.transform_button.rect().center()),
+            QPointF(buttons.transform_button.rect().center()),
             Qt.MouseButton.LeftButton,
             Qt.MouseButton.LeftButton,
             Qt.KeyboardModifier.AltModifier,
