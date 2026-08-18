@@ -19,7 +19,7 @@ from napari._qt.layer_controls.dynamic.widgets import (
 from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
     QContrastLimitsPopup,
 )
-from napari.layers import Image, Points
+from napari.layers import Image, Points, Surface
 
 if TYPE_CHECKING:
     import pytest
@@ -99,6 +99,19 @@ class TestQtContrastLimitsControl:
 
         control.contrast_limits_slider.setValue((50, 200))
         assert np.all(image.contrast_limits == [50, 200])
+
+    def test_spawn_popup(self, qt_wrap: QtWrap) -> None:
+        surface = Surface(
+            (
+                np.array([[0, 0], [1, 1]]),
+                np.array([0, 1, 0]),
+                np.array([0, 1, 2]),
+            )
+        )
+        control = QtContrastLimitsControl([surface])
+        qt_wrap.add_control(control)
+
+        control.show_clim_popup()
 
 
 class TestQContrastLimitsPopup:
