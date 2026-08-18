@@ -323,6 +323,17 @@ def tmp_plugin(npe2pm_: TestPluginManager):
 
 
 @pytest.fixture
+def manifest_path() -> str:
+    path_to = (
+        Path(__file__)
+        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+        .resolve()
+    )
+    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+    return str(path_to)
+
+
+@pytest.fixture
 def viewer_model() -> ViewerModel:
     from napari.components import ViewerModel
 

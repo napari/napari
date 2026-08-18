@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
@@ -13,20 +12,16 @@ from napari.settings._plugin_config_generator import (
 )
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
-MANIFEST_PATH = (
-    Path(__file__).parent.parent.parent
-    / 'plugins/_tests/_sample_manifest.yaml'
-)
 
 
 @pytest.fixture
-def mock_pm(npe2pm: 'TestPluginManager'):
+def mock_pm(npe2pm: 'TestPluginManager', manifest_path: str):
     from napari.plugins import _initialize_plugins
 
     _initialize_plugins.cache_clear()
     mock_reg = MagicMock()
     npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
+    with npe2pm.tmp_plugin(manifest=manifest_path):
         yield npe2pm
 
 

@@ -514,9 +514,7 @@ def test_settings_2():
     }
 
 
-def test_get_plugin_settings(
-    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
-):
+def test_get_plugin_settings(tmp_path, monkeypatch, test_settings_2):
     monkeypatch.setattr(
         settings,
         'plugin_configuration_generator',
@@ -534,7 +532,7 @@ def test_get_plugin_settings(
 
 
 def test_get_plugin_settings_path_set_twice(
-    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+    tmp_path, monkeypatch, test_settings_2
 ):
     monkeypatch.setattr(
         settings,
@@ -549,7 +547,7 @@ def test_get_plugin_settings_path_set_twice(
 
 
 def test_get_plugin_settings_unknown_plugin(
-    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+    tmp_path, monkeypatch, test_settings_2
 ):
     monkeypatch.setattr(
         settings,
@@ -564,7 +562,7 @@ def test_get_plugin_settings_unknown_plugin(
 
 
 def test_get_plugin_settings_default_path_dir(
-    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
+    tmp_path, monkeypatch, test_settings_2
 ):
     """With no ``path_dir``, plugin settings default to the directory of
     napari's own settings file (``_CFG_PATH``, honoring ``NAPARI_CONFIG``).
@@ -589,7 +587,7 @@ def test_get_plugin_settings_default_path_dir(
 
 
 def test_get_plugin_settings_default_path_dir_disabled(
-    monkeypatch, test_settings_2, reset_plugin_settings
+    monkeypatch, test_settings_2
 ):
     """An empty ``NAPARI_CONFIG`` disables on-disk plugin settings."""
     monkeypatch.setattr(
@@ -607,9 +605,7 @@ def test_get_plugin_settings_default_path_dir_disabled(
     assert s['test-plugin'].config_path is None
 
 
-def test_plugin_preferences_str(
-    tmp_path, monkeypatch, test_settings_2, reset_plugin_settings
-):
+def test_plugin_preferences_str(tmp_path, monkeypatch, test_settings_2):
     """``str(plugin_preferences)`` shows only non-default values."""
     monkeypatch.setattr(
         settings,
