@@ -458,7 +458,7 @@ nibabel==5.4.2
     # via nilearn
 nilearn==0.14.0
     # via napari (pyproject.toml:docs)
-npe2==0.9.0rc0
+npe2==0.9.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
