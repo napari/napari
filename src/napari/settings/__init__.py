@@ -116,6 +116,35 @@ def get_plugin_settings(
     plugin: str | None = None,
     path_dir: Path | str | _NotSetType | None = _NOT_SET,
 ) -> dict[str, PluginPreferences] | PluginPreferences:
+    """Get settings for all plugins, or for a single plugin.
+    Plugin settings are declared by plugins in their manifest under
+    ``contributions.configurations``. Each plugin's settings are persisted
+    to their own file (e.g. ``<config dir>/<plugin-name>.yaml``), stored in
+    the same directory as napari's own settings file, and are auto-saved
+    whenever a value changes.
+    Parameters
+    ----------
+    plugin : str, optional
+        The name of the plugin whose settings should be returned. If
+        omitted, a mapping of all plugin settings keyed by plugin name
+        is returned.
+    path_dir : Path, str, optional
+        The directory in which plugin settings files are stored. If not
+        provided, defaults to the directory containing napari's own
+        settings file (honoring ``NAPARI_CONFIG``). The path can only be
+        set once per session.
+    Returns
+    -------
+    PluginPreferences or dict of PluginPreferences
+        The settings for the requested plugin, or a mapping of all plugin
+        settings keyed by plugin name.
+    Examples
+    --------
+    >>> from napari.settings import get_plugin_settings
+    >>> settings = get_plugin_settings('my-plugin')
+    >>> settings.reader.lazy
+    False
+    """
     global _PLUGIN_PREFERENCES
 
     if not _PLUGIN_PREFERENCES:
