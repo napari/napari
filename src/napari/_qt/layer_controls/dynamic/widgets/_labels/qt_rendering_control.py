@@ -41,7 +41,7 @@ class QtLabelRenderingControl(QtWidgetControlsBase):
         Label for the chooser widget of the gradient to use when labels are using isosurface rendering.
     rendering_combobox : superqt.QEnumComboBox
         Combobox to control current label render method.
-    render_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    rendering_combobox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the way labels should be rendered chooser widget.
     """
 
@@ -68,7 +68,7 @@ class QtLabelRenderingControl(QtWidgetControlsBase):
             connect_setattr(
                 rendering_combobox.currentEnumChanged, layer, 'rendering'
             )
-        self.render_combobox_label = QtWrappedLabel('rendering:')
+        self.rendering_combobox_label = QtWrappedLabel('rendering:')
 
         iso_gradient_combobox = QEnumComboBox(
             enum_class=IsoCategoricalGradientMode
@@ -110,17 +110,17 @@ class QtLabelRenderingControl(QtWidgetControlsBase):
     def _change_ndisplay(self, ndisplay: int) -> None:
         if ndisplay == 3:
             self.rendering_combobox.show()
-            self.render_combobox_label.show()
+            self.rendering_combobox_label.show()
             self.iso_gradient_combobox.show()
             self.iso_gradient_combobox_label.show()
         else:
             self.rendering_combobox.hide()
-            self.render_combobox_label.hide()
+            self.rendering_combobox_label.hide()
             self.iso_gradient_combobox.hide()
             self.iso_gradient_combobox_label.hide()
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
         return [
-            (self.render_combobox_label, self.rendering_combobox),
+            (self.rendering_combobox_label, self.rendering_combobox),
             (self.iso_gradient_combobox_label, self.iso_gradient_combobox),
         ]
