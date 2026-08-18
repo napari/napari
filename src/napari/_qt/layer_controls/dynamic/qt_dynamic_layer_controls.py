@@ -132,9 +132,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
 from napari._qt.layer_controls.dynamic.widgets.qt_face_color import (
     QtFaceColorControl,
 )
-from napari._qt.layer_controls.dynamic.widgets.qt_gamma_slider import (
-    QtGammaSliderControl,
-)
 from napari._qt.layer_controls.dynamic.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
@@ -171,7 +168,6 @@ controls_dict = {
     IntensityVisualizationMixin: (
         QtContrastLimitsControl,
         QtHistogramControl,
-        QtGammaSliderControl,
         QtColormapControl,
     ),
     Points | Shapes: (
@@ -392,7 +388,6 @@ class QtDynamicLayerControls(QFrame):
         )
         for cls in (
             QtContrastLimitsControl,
-            QtGammaSliderControl,
             QtColormapControl,
         ):
             control = self.findChild(cls)

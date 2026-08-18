@@ -505,3 +505,19 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
 
 def checked_to_bool(value: Qt.CheckState) -> bool:
     return Qt.CheckState(value) == Qt.CheckState.Checked
+
+
+def set_mixed_value_style(wdg, enabled: bool):
+    """Set widget "mixed_value" state, which will render differently.
+
+    Sets the property in a nested way to all children, to ensure it reaches
+    every widget that needs to use this information. This is necessary for
+    things like superqt LabeledSlider, which is actually not a QSlider,
+    but contains one instead.
+    """
+    wdg.setProperty('mixed_value', enabled)
+    wdg.style().unpolish(wdg)
+    wdg.style().polish(wdg)
+    wdg.update()
+    for child in wdg.findChildren(QWidget):
+        set_mixed_value_style(child, enabled)
