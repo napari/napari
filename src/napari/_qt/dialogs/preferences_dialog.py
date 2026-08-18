@@ -51,7 +51,9 @@ class PreferencesDialog(QDialog):
         self._list = QListWidget(self)
         self._list.setObjectName('Preferences')
         self._list.currentRowChanged.connect(self._stack.setCurrentIndex)
-        self._list.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self._list.setVerticalScrollMode(
+            QAbstractItemView.ScrollMode.ScrollPerPixel
+        )
         # Set up buttons
         self._button_cancel = QPushButton('Cancel')
         self._button_cancel.clicked.connect(self.reject)
@@ -116,7 +118,11 @@ class PreferencesDialog(QDialog):
             ):
                 self._add_page(field_name, field_info)
         item = QListWidgetItem('----Plugin Preferences----')
-        item.setFlags(item.flags() & ~Qt.ItemIsSelectable & ~Qt.ItemIsEnabled)
+        item.setFlags(
+            item.flags()
+            & ~Qt.ItemFlag.ItemIsSelectable
+            & ~Qt.ItemFlag.ItemIsEnabled
+        )
         self._list.addItem(item)
         self._stack.addWidget(QWidget())
 
