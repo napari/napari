@@ -9,6 +9,8 @@ T = TypeVar('T', bound=QtWidgetControlsBase)
 
 
 class QtWrap:
+    """Tiny wrapper to easily add layer controls to to qtbot and properly delete them."""
+
     def __init__(self, qtbot: QtBot) -> None:
         self._qtbot = qtbot
         self._controls = []
