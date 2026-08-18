@@ -24,6 +24,9 @@ from napari._pydantic_util import get_inner_type
 if TYPE_CHECKING:
     from qtpy.QtGui import QCloseEvent, QKeyEvent, QResizeEvent
 
+    from napari._vendor.qt_json_builder import widgets
+    from napari.settings._base import EventedConfigFileSettings
+
 
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
@@ -204,7 +207,13 @@ class PreferencesDialog(QDialog):
         self._list.addItem(name)
         self._stack.addWidget(page_scrollarea)
 
-    def _widget_builder(self, schema, values, name, schema_object):
+    def _widget_builder(
+        self,
+        schema: dict,
+        values: dict,
+        name: str,
+        schema_object: 'EventedConfigFileSettings',
+    ) -> 'widgets.SchemaWidgetMixin':
         """Creates a widget using a widget based on the schema."""
         from napari._vendor.qt_json_builder.qt_jsonschema_form import (
             WidgetBuilder,
@@ -243,7 +252,10 @@ class PreferencesDialog(QDialog):
         return form
 
     def _get_page_dict(
-        self, field_name: str, field_info: FieldInfo, settings_object: dict
+        self,
+        field_name: str,
+        field_info: FieldInfo,
+        settings_object: 'EventedConfigFileSettings',
     ) -> tuple[dict, dict]:
         """Provides the schema, set of values for each setting, and the
         properties for each setting."""
