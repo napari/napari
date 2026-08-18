@@ -13,7 +13,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.utils.misc import human_readable_size
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Layer
+    from napari.layers import Image, Labels
 
 
 def _format_level_label(
@@ -63,11 +63,12 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         Label for the resolution combobox.
     """
 
+    _layers: list[Image | Labels]
+
     def __init__(
-        self, layers: list[Layer], parent: QWidget | None = None
+        self, layers: list[Image | Labels], parent: QWidget | None = None
     ) -> None:
         super().__init__(layers, parent)
-        self._layers = layers
 
         self.level_combobox = QComboBox(parent)
         self.level_label = QtWrappedLabel('resolution:')

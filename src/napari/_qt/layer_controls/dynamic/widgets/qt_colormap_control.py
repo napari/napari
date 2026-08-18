@@ -161,9 +161,12 @@ class QtColormapControl(QtWidgetControlsBase):
             colormap_layout.addWidget(QLabel('RGB'))
             self.colormap_combobox.setVisible(False)
             self.colorbar_label.setVisible(False)
-        else:
-            colormap_layout.addWidget(self.colorbar_label)
-            colormap_layout.addWidget(self.colormap_combobox, stretch=1)
+
+        # we always need to add the colorbar label and combobox to the layout,
+        # even if they are hidden, to allow proper cleanup on close
+        colormap_layout.addWidget(self.colorbar_label)
+        colormap_layout.addWidget(self.colormap_combobox, stretch=1)
+
         colormap_layout.addStretch(1)
         self.colormapWidget = QWidget()
         self.colormapWidget.setLayout(colormap_layout)
@@ -214,7 +217,7 @@ class QtColormapControl(QtWidgetControlsBase):
         from napari._qt.utils import get_color
         from napari.utils.colormaps.colormap_utils import ensure_colormap
 
-        color = get_color(self.parent(), mode='hex')
+        color = get_color(parent=self.colorbar_label, mode='hex')
         if color:
             colormap = ensure_colormap(color)
             for layer in self._layers:

@@ -164,21 +164,11 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.setContentsMargins(0, 5, 0, 0)
         button_layout.setSpacing(5)
 
-        def reset():
-            for layer in self._layers:
-                layer.reset_contrast_limits()
-                layer.contrast_limits_range = layer.contrast_limits
-                decimals_ = range_to_decimals(
-                    layer.contrast_limits_range, layer.dtype
-                )
-                self.slider.setDecimals(decimals_)
-                self.slider.setSingleStep(10**-decimals_)
-
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')
         reset_btn.setToolTip('Autoscale contrast to data range')
         reset_btn.setFixedWidth(45)
-        reset_btn.clicked.connect(reset)
+        reset_btn.clicked.connect(self._reset)
         button_layout.addWidget(reset_btn)
 
         # the "full range" button doesn't do anything if it's not an
@@ -231,6 +221,17 @@ class QContrastLimitsPopup(QtPopup):
         # Capture frame height WITHOUT histogram (baseline)
         self._layout.activate()
         self._frame_base_height = self.frame.sizeHint().height()
+
+    def _reset(self):
+        for layer in self._layers:
+            layer.reset_contrast_limits()
+            layer.contrast_limits_range = layer.contrast_limits
+            decimals_ = range_to_decimals(
+                layer.contrast_limits_range, layer.dtype
+            )
+            self.slider.setDecimals(decimals_)
+            self.slider.setSingleStep(10**-decimals_)
+            self.slider.setRange(*layer.contrast_limits_range)
 
     def showEvent(self, event):
         """Create histogram content lazily on first show to avoid PySide6
