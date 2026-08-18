@@ -6,6 +6,8 @@ contributions:
       title: Hello World
     - id: my-plugin.some_reader
       title: Some Reader
+    - id: my-plugin.some_reader_none
+      title: Some Reader None
     - id: my-plugin.my_writer
       title: Image Writer
     - id: my-plugin.generate_random_data
@@ -15,6 +17,9 @@ contributions:
   readers:
     - command: my-plugin.some_reader
       filename_patterns: ["*.fzy", "*.fzzy"]
+      accepts_directories: true
+    - command: my-plugin.some_reader_none
+      filename_patterns: [ "*.nfzy", "*.nfzzy" ]
       accepts_directories: true
   writers:
     - command: my-plugin.my_writer
