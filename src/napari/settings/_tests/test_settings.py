@@ -15,11 +15,6 @@ from napari._pydantic_util import get_inner_type
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
-# Captured at import time, before the autouse ``plugin_settings`` fixture
-# monkeypatches it; used to exercise the real default-path branch of
-# ``get_plugin_settings`` (the fixture redirects the default path to tmp_path).
-_ORIGINAL_GET_PLUGIN_SETTINGS = settings.get_plugin_settings
-
 
 @pytest.fixture
 def test_settings(tmp_path):
@@ -567,9 +562,9 @@ def test_get_plugin_settings_default_path_dir(
     """With no ``path_dir``, plugin settings default to the directory of
     napari's own settings file (``_CFG_PATH``, honoring ``NAPARI_CONFIG``).
 
-    The autouse ``plugin_settings`` fixture redirects the default path to
-    ``tmp_path``; this test bypasses that wrapper to exercise the real default
-    path resolution.
+    The autouse ``plugin_settings`` fixture already redirects the default path
+    to ``tmp_path``; this test overrides ``_CFG_PATH`` again to exercise the
+    real default-path resolution logic.
     """
     monkeypatch.setattr(
         settings,
@@ -577,9 +572,6 @@ def test_get_plugin_settings_default_path_dir(
         lambda: test_settings_2,
     )
     monkeypatch.setattr(settings, '_CFG_PATH', str(tmp_path / 'settings.yaml'))
-    monkeypatch.setattr(
-        settings, 'get_plugin_settings', _ORIGINAL_GET_PLUGIN_SETTINGS
-    )
 
     s = settings.get_plugin_settings()
 
@@ -596,9 +588,6 @@ def test_get_plugin_settings_default_path_dir_disabled(
         lambda: test_settings_2,
     )
     monkeypatch.setattr(settings, '_CFG_PATH', '')
-    monkeypatch.setattr(
-        settings, 'get_plugin_settings', _ORIGINAL_GET_PLUGIN_SETTINGS
-    )
 
     s = settings.get_plugin_settings()
 

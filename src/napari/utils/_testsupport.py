@@ -165,8 +165,11 @@ def mock_app_model():
 def plugin_settings(npe2pm, tmp_path, monkeypatch):
     """Make `napari.settings.get_plugin_settings` fresh for each test.
 
-    Clears the `_PLUGIN_PREFERENCES` cache and swaps in a version of
-    the `get_plugin_settings` with tmp_path as the default `path_dir`.
+    Clears the `_PLUGIN_SETTINGS` cache and redirects the default plugin
+    settings directory to this test's `tmp_path` (by patching `_CFG_PATH`,
+    the same variable `get_plugin_settings` uses to locate napari's own
+    settings file), so plugin settings are never read from or written to
+    the real config directory.
 
     This depends on npe2's `npe2pm` fixture, so plugin discovery is
     blocked and any plugins you register only exist for this test.
@@ -189,7 +192,6 @@ def plugin_settings(npe2pm, tmp_path, monkeypatch):
     ...     assert 'max_size_mb: 1024' in s.config_path.read_text()
     """
     from napari import settings as napari_settings
-    from napari.settings._base import _NOT_SET, _NotSetType
 
     npe2pm.events.plugins_registered.connect(
         napari_settings._clear_plugin_settings_cache
@@ -198,20 +200,9 @@ def plugin_settings(npe2pm, tmp_path, monkeypatch):
         napari_settings._clear_plugin_settings_cache
     )
     napari_settings._clear_plugin_settings_cache()
-
-    original_get_plugin_settings = napari_settings.get_plugin_settings
-
-    def _get_plugin_settings(plugin=None, path_dir=_NOT_SET):
-        # `path_dir` can only be set once - set it to this test's tmp_path
-        if (
-            isinstance(path_dir, _NotSetType)
-            and not napari_settings._PLUGIN_PREFERENCES
-        ):
-            path_dir = tmp_path
-        return original_get_plugin_settings(plugin, path_dir=path_dir)
-
+    # redirect the default plugin-settings directory to this test's tmp_path
     monkeypatch.setattr(
-        napari_settings, 'get_plugin_settings', _get_plugin_settings
+        napari_settings, '_CFG_PATH', str(tmp_path / 'settings.yaml')
     )
 
     yield
