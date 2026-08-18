@@ -32,7 +32,7 @@ mypy==2.3.0
     # via -r resources/requirements_mypy.in
 mypy-extensions==1.1.0
     # via mypy
-npe2==0.8.3
+npe2==0.9.0
     # via -r resources/requirements_mypy.in
 numpy==2.5.2
     # via -r resources/requirements_mypy.in
