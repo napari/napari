@@ -7,121 +7,65 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.layer_controls.dynamic.buttons.qt_image_buttons import (
+from napari._qt.layer_controls.dynamic.buttons import (
     QtImageButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_labels_buttons import (
     QtLabelsButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_layer_buttons_base import (
     QtLayerButtons,
     QtMultiLayerButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_points_buttons import (
     QtPointsButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_shapes_buttons import (
     QtShapesButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_surface_buttons import (
     QtSurfaceButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_tracks_buttons import (
     QtTracksButtons,
-)
-from napari._qt.layer_controls.dynamic.buttons.qt_vectors_buttons import (
     QtVectorsButtons,
 )
 from napari._qt.layer_controls.dynamic.widgets import (
     QtOpacityBlendingControls,
     QtWidgetControlsBase,
 )
-from napari._qt.layer_controls.dynamic.widgets._image.qt_depiction_control import (
+from napari._qt.layer_controls.dynamic.widgets._image import (
     QtDepictionControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._image.qt_interpolation_combobox import (
+    QtImageRenderControl,
     QtInterpolationComboBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._image.qt_render_control import (
-    QtImageRenderControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_brush_size_slider import (
+from napari._qt.layer_controls.dynamic.widgets._labels import (
     QtBrushSizeSliderControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_color_mode_combobox import (
     QtColorModeComboBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_contiguous_checkbox import (
     QtContiguousCheckBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_contour_spinbox import (
     QtContourSpinBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_current_label_controls import (
     QtCurrentLabelControls,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_display_selected_label_checkbox import (
     QtDisplaySelectedLabelCheckBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_ndim_spinbox import (
+    QtLabelRenderingControl,
     QtNdimSpinBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_preserve_labels_checkbox import (
     QtPreserveLabelsCheckBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._labels.qt_rendering_control import (
-    QtLabelRenderingControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._points.qt_border_color import (
+from napari._qt.layer_controls.dynamic.widgets._points import (
     QtBorderColorControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._points.qt_current_size_slider import (
     QtCurrentSizeSliderControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._points.qt_symbol_combobox import (
     QtSymbolComboBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._shapes.qt_edge_color import (
+from napari._qt.layer_controls.dynamic.widgets._shapes import (
     QtEdgeColorControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._shapes.qt_edge_width_slider import (
     QtEdgeWidthSliderControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._surface.qt_shading_combobox import (
+from napari._qt.layer_controls.dynamic.widgets._surface import (
     QtShadingComboBoxControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_color_properties_combobox import (
-    QtColorPropertiesComboBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_colormap_control import (
+from napari._qt.layer_controls.dynamic.widgets._tracks import (
     QtColormapComboBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_graph_checkbox import (
+    QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_head_slider import (
     QtHeadLengthSliderControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_hide_completed_tracks_checkbox import (
     QtHideCompletedTracksCheckBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_id_checkbox import (
     QtIdCheckBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._tracks.qt_tail_control import (
     QtTailDisplayCheckBoxControl,
     QtTailLengthSliderControl,
     QtTailWidthSliderControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._vectors.qt_edge_color import (
+from napari._qt.layer_controls.dynamic.widgets._vectors import (
     QtEdgeColorFeatureControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._vectors.qt_line_dimension_spinbox import (
     QtLengthSpinBoxControl,
-    QtWidthSpinBoxControl,
-)
-from napari._qt.layer_controls.dynamic.widgets._vectors.qt_vector_style_combobox import (
     QtVectorStyleComboBoxControl,
+    QtWidthSpinBoxControl,
 )
 from napari._qt.layer_controls.dynamic.widgets.qt_colormap_control import (
     QtColormapControl,
