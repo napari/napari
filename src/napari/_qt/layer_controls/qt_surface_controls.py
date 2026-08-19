@@ -10,6 +10,7 @@ from napari._qt.layer_controls.widgets import (
 )
 from napari._qt.layer_controls.widgets._surface import QtShadingComboBoxControl
 from napari._qt.utils import set_widgets_enabled_with_opacity
+from napari.layers.utils._color_manager_constants import ColorMode
 
 if TYPE_CHECKING:
     import napari.layers
@@ -49,7 +50,10 @@ class QtSurfaceControls(QtBaseImageControls):
 
     def _on_surface_coloring_change(self) -> None:
         """Disable scalar-color controls when direct vertex colors are active."""
-        enabled = self.layer.vertex_colors is None
+        # Enable colormap/contrast controls only when using COLORMAP mode
+        # (coloring vertices by a continuous feature). Disable for DIRECT mode
+        # (explicit RGBA colors) or CYCLE mode (categorical colors).
+        enabled = self.layer._vertex.color_mode == ColorMode.COLORMAP
         for control in (
             self._contrast_limits_control,
             self._gamma_slider_control,
