@@ -1356,3 +1356,31 @@ def test_new_labels_axis_labels_inheritance_on_single_selection():
     viewer._new_labels()
     assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
     assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels
+
+
+def test_dims_axis_labels_reset_to_default_when_layer_resets():
+    """Dims labels follow a layer back to default values (gh-9357)."""
+    viewer = ViewerModel()
+    layer = viewer.add_image(np.zeros((4, 4, 4, 4)))
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
+
+    layer.axis_labels = ['Z', 'c', 'Y', 'x']
+    assert viewer.dims.axis_labels == ('Z', 'c', 'Y', 'x')
+
+    # returning the layer to default must reset dims
+    layer.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
+
+
+def test_dims_axis_labels_default_when_all_layers_default():
+    """Non-default layer labels win until every layer is back to the default."""
+    viewer = ViewerModel()
+    layer0 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
+    layer1 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
+    assert viewer.dims.axis_labels == tuple('tzyx')
+
+    layer1.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == tuple('tzyx')  # other layer still wins
+
+    layer0.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
