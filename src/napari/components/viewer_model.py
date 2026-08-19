@@ -159,6 +159,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
+    canvas : napari.components.canvas.Canvas
+        The canvas model, controlling grid mode and canvas overlays.
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -169,6 +171,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         List of contained layers.
     mouse_over_canvas: bool
         Indicating whether the mouse cursor is on the viewer canvas.
+    scene : napari.components.scene.Scene
+        The scene model, controlling the camera and scene overlays.
     theme: str
         Name of the Napari theme of the viewer
     title: str
@@ -307,6 +311,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def camera(self) -> Camera:
+        """The camera model controlling the view of the scene.
+
+        Deprecated since 0.9.0; use ``viewer.scene.camera`` instead.
+        """
         return self.scene.camera
 
     @property
@@ -318,6 +326,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def axes(self) -> SceneAxesOverlay:
+        """The overlay controlling the display of the scene axes.
+
+        Deprecated since 0.9.0; use ``viewer.scene.overlays.axes`` instead.
+        """
         return self.scene.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -329,6 +341,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> CanvasAxesOverlay:
+        """The overlay controlling the display of the canvas axes.
+
+        Deprecated since 0.9.0; use ``viewer.canvas.overlays.axes`` instead.
+        """
         return self.canvas.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -340,6 +356,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
+        """The overlay controlling the display of the scale bar.
+
+        Deprecated since 0.9.0; use ``viewer.canvas.overlays.scale_bar`` instead.
+        """
         return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
     @property
@@ -351,6 +371,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
+        """The overlay controlling the display of text on the canvas.
+
+        Deprecated since 0.9.0; use ``viewer.canvas.overlays.text`` instead.
+        """
         return self.canvas.overlays.text  # type: ignore[return-value]
 
     @property
@@ -362,6 +386,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:
+        """The model controlling the display of the grid mode.
+
+        Deprecated since 0.9.0; use ``viewer.canvas.grid`` instead.
+        """
         return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
