@@ -245,8 +245,6 @@ class QtDynamicLayerControls(QFrame):
         for layer_type, controls in controls_dict.items():
             if all(isinstance(layer, layer_type) for layer in self._layers):
                 for control in controls:
-                    if control is QtHistogramControl and len(self._layers) > 1:
-                        continue
                     self._add_widget_controls(
                         control(parent=self, layers=layers)
                     )
