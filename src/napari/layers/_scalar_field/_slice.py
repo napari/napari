@@ -392,14 +392,17 @@ class _ScalarFieldSliceRequest:
             for ax in non_displayed:
                 left = max(float(data_slice.margin_left[ax]), 0.0)
                 right = max(float(data_slice.margin_right[ax]), 0.0)
-                left = -int(np.ceil(left)) # should we round instead of ceil ?
-                right = int(np.ceil(right)) # should we round instead of ceil ?
+                left = -int(np.ceil(left))  # should we round instead of ceil ?
+                right = int(
+                    np.ceil(right)
+                )  # should we round instead of ceil ?
                 margins_left.append(left)
                 margins_right.append(right)
 
         projection_axes = tuple(range(2, 2 + len(non_displayed)))
         slab_shape = tuple(
-            right - left + 1 for left, right in zip(margins_left, margins_right, strict=False)
+            right - left + 1
+            for left, right in zip(margins_left, margins_right, strict=False)
         )
 
         output_shape = (*shape, *slab_shape)
@@ -408,9 +411,9 @@ class _ScalarFieldSliceRequest:
         linear = data_slice.tile_to_data.linear_matrix
         matrix = linear[:, output_axes]
         offset = data_slice.tile_to_data.translate.copy()
-        # add the left margins to go from output_shape indices (0 to right - left) to the actual data indices (left to right) 
+        # add the left margins to go from output_shape indices (0 to right - left) to the actual data indices (left to right)
         for left, ax in zip(margins_left, non_displayed, strict=False):
-            offset += linear[:, ax] * left # and transform them to data space!
+            offset += linear[:, ax] * left  # and transform them to data space!
 
         if self.rgb and data.ndim == self.slice_input.ndim + 1:
             sampled_channels = []

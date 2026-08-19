@@ -988,11 +988,18 @@ class ScalarFieldSlicingState(_LayerSlicingState):
 
         # # Estimate how many data pixels correspond to one world unit on each
         # # displayed axis so we do not undersample when world scale is small.
-        displayed_step_world = self.layer._extent_augmented.step[list(plane_axes)]
+        displayed_step_world = self.layer._extent_augmented.step[
+            list(plane_axes)
+        ]
         displayed_density = 1.0 / displayed_step_world
 
-        span_in_samples = np.ceil(span_world * displayed_density).astype(int) + 1
-        shape = (max(int(span_in_samples[0]), 1), max(int(span_in_samples[1]), 1))
+        span_in_samples = (
+            np.ceil(span_world * displayed_density).astype(int) + 1
+        )
+        shape = (
+            max(int(span_in_samples[0]), 1),
+            max(int(span_in_samples[1]), 1),
+        )
 
         # This is essential to allow the slice to be correctly displayed on screen by Vispy.
         # `tile_to_world` contains:
