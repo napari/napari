@@ -32,6 +32,8 @@ class LabelsPolygonOverlay(SceneOverlay):
     completion_radius : int | float
         Defines the radius from the first polygon vertex within which
         the drawing process can be completed by a left double-click.
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
         If the overlay is visible or not.
     opacity : float

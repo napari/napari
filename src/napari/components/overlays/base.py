@@ -75,7 +75,7 @@ class TiledCanvasOverlay(CanvasOverlay):
     Canvas overlays live in canvas space; they do not live in the 2- or 3-dimensional
     scene being rendered, but in the 2D space of the screen.
     Tiled canvas overlays are not rendered freely on the canvas: they are tiled
-    around the edges.
+    around the edges in predetermined positions.
 
     Attributes
     ----------

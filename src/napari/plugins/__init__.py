@@ -5,7 +5,7 @@ from npe2 import (
 )
 
 from napari.plugins import _npe2
-from napari.settings import get_settings
+from napari.settings import _clear_plugin_settings_cache, get_settings
 
 __all__ = ('menu_item_template', 'plugin_manager')
 
@@ -33,7 +33,9 @@ def _initialize_plugins() -> None:
     _npe2pm.events.enablement_changed.connect(
         _npe2.on_plugin_enablement_change
     )
+    _npe2pm.events.enablement_changed.connect(_clear_plugin_settings_cache)
     _npe2pm.events.plugins_registered.connect(_npe2.on_plugins_registered)
+    _npe2pm.events.plugins_registered.connect(_clear_plugin_settings_cache)
     _npe2pm.discover(include_npe1=True)
 
     # Disable plugins listed as disabled in settings, or detected in npe2
