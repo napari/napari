@@ -17,9 +17,6 @@ from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
 from napari._qt.layer_controls.widgets.qt_opacity_blending_controls import (
     QtOpacityBlendingControls,
 )
-from napari._qt.layer_controls.widgets.qt_out_slice_checkbox import (
-    QtOutSliceCheckBoxControl,
-)
 from napari._qt.layer_controls.widgets.qt_projection_mode_control import (
     QtProjectionModeControl,
 )
@@ -39,7 +36,6 @@ __all__ = [
     'QtInterpolationComboBoxControl',
     'QtMultiscaleLevelControl',
     'QtOpacityBlendingControls',
-    'QtOutSliceCheckBoxControl',
     'QtProjectionModeControl',
     'QtTextVisibilityControl',
     'QtWidgetControlsBase',
