@@ -32,10 +32,6 @@ def draw(layer, event):
     eraser
     """
 
-    # Do not allow drawing while adjusting the brush size with the mouse
-    if layer.cursor == 'circle_frozen':
-        return
-
     # In PAINT mode the right button (and any click during an active stroke) is
     # reserved for the encircle-and-fill brush stroke handled by the
     # brush_stroke overlay.
@@ -78,52 +74,35 @@ def pick(layer, event):
     )
 
 
-class BrushSizeOnMouseMove:
-    """Enables changing the brush size by moving the mouse while holding down the specified modifiers
+modifiers = BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
 
-    When hold down specified modifiers and move the mouse,
-    the callback will adjust the brush size based on the direction of the mouse movement.
-    Moving the mouse right will increase the brush size, while moving it left will decrease it.
-    The amount of change is proportional to the distance moved by the mouse.
 
-    Parameters
-    ----------
-    min_brush_size : int
-        The minimum brush size.
+def _on_modifiers_change():
+    global modifiers
+    modifiers_setting = (
+        get_settings().application.brush_size_on_mouse_move_modifiers
+    )
+    modifiers = modifiers_setting.value.split('+')
 
-    """
 
-    def __init__(self, min_brush_size: int = 1):
-        self.min_brush_size = min_brush_size
-        self.init_pos = None
-        self.init_brush_size = None
+def resize_brush_on_mouse_move(layer, event):
+    if not all(modifier in event.modifiers for modifier in modifiers):
+        return
 
-    def __call__(self, layer, event):
-        if all(
-            modifier in event.modifiers
-            for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
-        ):
-            pos = event.pos  # position in the canvas coordinates (x, y)
+    min_brush_size = 1
+    start_pos = event.pos
+    start_brush_size = layer.brush_size
 
-            if self.init_pos is None:
-                self.init_pos = pos
-                self.init_brush_size = layer.brush_size
-                layer.cursor = 'circle_frozen'
-            else:
-                brush_size_delta = round(
-                    (pos[0] - self.init_pos[0]) / event.camera_zoom
-                )
-                new_brush_size = self.init_brush_size + brush_size_delta
+    layer._is_resizing_brush = True
+    yield
 
-                bounded_brush_size = max(new_brush_size, self.min_brush_size)
-                layer.brush_size = bounded_brush_size
-        else:
-            self.init_pos = None
-            if layer.cursor == 'circle_frozen':
-                layer.cursor = 'circle'
-
-    def _on_modifiers_change(self):
-        modifiers_setting = (
-            get_settings().application.brush_size_on_mouse_move_modifiers
+    while event.type == 'mouse_move':
+        brush_size_delta = round(
+            (event.pos[0] - start_pos[0]) / event.camera_zoom
         )
-        self.modifiers = modifiers_setting.value.split('+')
+        new_brush_size = start_brush_size + brush_size_delta
+
+        bounded_brush_size = max(new_brush_size, min_brush_size)
+        layer.brush_size = bounded_brush_size
+
+    layer._is_resizing_brush = False

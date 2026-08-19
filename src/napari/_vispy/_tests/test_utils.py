@@ -1,11 +1,7 @@
 import numpy as np
-import pytest
-from pydantic import ValidationError
 from qtpy.QtCore import Qt
 
-from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
-from napari.components._viewer_constants import CursorStyle
 
 
 def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
@@ -51,24 +47,55 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
 
 def test_set_cursor(make_napari_viewer):
     viewer = make_napari_viewer()
-    viewer.cursor.style = CursorStyle.SQUARE.value
-    viewer.cursor.size = 10
+    labels_layer = viewer.add_labels(np.zeros((10, 10), dtype=int))
+
+    # The labels layer uses the standard cursor by default
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
-        == Qt.CursorShape.BitmapCursor
+        == Qt.CursorShape.ArrowCursor
     )
+    assert not viewer.canvas.overlays._brush_circle.visible
 
-    viewer.cursor.size = 5
-    assert (
-        viewer.window._qt_viewer.canvas.cursor.shape()
-        == QtCursorVisual['cross'].value
-    )
+    # use a known zoom so that brush size equals cursor size
+    viewer.scene.camera.zoom = 1
 
-    viewer.cursor.style = CursorStyle.CIRCLE.value
-    viewer.cursor.size = 100
-
+    # Paint mode uses a blank cursor and shows the brush circle overlay
+    labels_layer.mode = 'paint'
     assert viewer.canvas.overlays._brush_circle.visible
-    assert viewer.canvas.overlays._brush_circle.size == viewer.cursor.size
+    assert (
+        viewer.canvas.overlays._brush_circle.size
+        == labels_layer._get_brush_world_size()
+    )
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.BlankCursor
+    )
 
-    with pytest.raises(ValidationError):
-        viewer.cursor.style = 'invalid'
+    # A brush that is too small falls back to the standard cursor
+    labels_layer.brush_size = 0
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.ArrowCursor
+    )
+    assert not viewer.canvas.overlays._brush_circle.visible
+
+    # A normal sized brush shows the blank cursor and the overlay again
+    labels_layer.brush_size = 20
+    assert viewer.canvas.overlays._brush_circle.visible
+    assert viewer.canvas.overlays._brush_circle.size == 20
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.BlankCursor
+    )
+
+    # A brush that is larger than the canvas falls back to the standard cursor
+    viewer.scene.camera.zoom = 100
+    assert (
+        viewer.canvas.overlays._brush_circle.size
+        > min(*viewer.canvas.size) - 4
+    )
+    assert not viewer.canvas.overlays._brush_circle.visible
+    assert (
+        viewer.window._qt_viewer.canvas.cursor.shape()
+        == Qt.CursorShape.ArrowCursor
+    )

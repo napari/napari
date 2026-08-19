@@ -355,12 +355,6 @@ class Points(Layer):
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes: ClassVar[dict[Mode, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.ADD: 'crosshair',
-        Mode.SELECT: 'standard',
-    }
 
     # TODO  write better documentation for border_color and face_color
 

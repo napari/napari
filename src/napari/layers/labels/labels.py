@@ -35,9 +35,9 @@ from napari.layers.labels._labels_constants import (
     Mode,
 )
 from napari.layers.labels._labels_mouse_bindings import (
-    BrushSizeOnMouseMove,
     draw,
     pick,
+    resize_brush_on_mouse_move,
 )
 from napari.layers.labels._labels_utils import (
     expand_slice,
@@ -328,28 +328,16 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
-
     _move_modes: ClassVar[
         dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {  # type: ignore[assignment]
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
-        Mode.PAINT: brush_size_on_mouse_move,
+        Mode.PAINT: resize_brush_on_mouse_move,
         Mode.FILL: no_op,
-        Mode.ERASE: brush_size_on_mouse_move,
+        Mode.ERASE: resize_brush_on_mouse_move,
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
-    }
-
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.PICK: 'cross',
-        Mode.PAINT: 'circle',
-        Mode.FILL: 'cross',
-        Mode.ERASE: 'circle',
-        Mode.POLYGON: 'cross',
     }
 
     _history_limit = 100
@@ -426,8 +414,8 @@ class Labels(ScalarFieldBase):
         )
 
         self.events.add(
-            brush_shape=Event,
             brush_size=Event,
+            brush_size_is_canvas=Event,
             colormap=Event,
             contiguous=Event,
             contour=Event,
@@ -442,10 +430,9 @@ class Labels(ScalarFieldBase):
             show_selected_label=Event,
         )
 
-        from napari.components.overlays.labels_brush_stroke import (
+        from napari.components.overlays import (
+            BrushCircleOverlay,
             LabelsBrushStrokeOverlay,
-        )
-        from napari.components.overlays.labels_polygon import (
             LabelsPolygonOverlay,
         )
 
@@ -453,6 +440,7 @@ class Labels(ScalarFieldBase):
             {
                 'polygon': LabelsPolygonOverlay(visible=True),
                 'brush_stroke': LabelsBrushStrokeOverlay(visible=True),
+                'brush_circle': BrushCircleOverlay(),
             }
         )
 
@@ -464,6 +452,8 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
+        self._brush_size_is_canvas = False
+        self._is_resizing_brush = False
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
@@ -578,23 +568,33 @@ class Labels(ScalarFieldBase):
 
     @property
     def brush_size(self):
-        """float: Size of the paint in world coordinates."""
+        """float: Size of the paint brush.
+
+        If brush_size_is_canvas is True, this is considered to be in canvas
+        coordinates, otherwise it's in data coordinates.
+        """
         return self._brush_size
 
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
 
-    def _calculate_cursor_size(self) -> int:
-        # Convert from brush size in data coordinates to
-        # cursor size in world coordinates
-        scale = self._data_to_world.scale
-        min_scale = np.min(
-            [abs(scale[d]) for d in self._slice_input.displayed]
-        )
-        return abs(self.brush_size * min_scale)
+    @property
+    def brush_size_canvas(self):
+        if self.brush_size_is_canvas:
+            return self._brush_size
+        return self._brush_size
+
+    @property
+    def brush_size_is_canvas(self) -> bool:
+        """Whether the brush size is considered to be in canvas pixels instead."""
+        return self._brush_size_is_canvas
+
+    @brush_size_is_canvas.setter
+    def brush_size_is_canvas(self, value: bool) -> None:
+        self._brush_size_is_canvas = bool(value)
+        self.events.brush_size_is_canvas()
 
     def new_colormap(self, seed: int | None = None):
         if seed is None:
@@ -888,8 +888,6 @@ class Labels(ScalarFieldBase):
 
         self._overlays['polygon'].enabled = mode == Mode.POLYGON
         self._overlays['brush_stroke'].enabled = mode == Mode.PAINT
-        if mode in {Mode.PAINT, Mode.ERASE}:
-            self.cursor_size = self._calculate_cursor_size()
 
         return mode
 

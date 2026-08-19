@@ -16,7 +16,7 @@ def test_paint(MouseEvent):
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
     layer.brush_size = 10
-    assert layer.cursor_size == 10
+    assert layer._get_brush_world_size() == 10
 
     layer.mode = 'paint'
     layer.selected_label = 3

@@ -1504,10 +1504,10 @@ def test_ndim_paint():
     )
 
 
-def test_cursor_size_with_negative_scale():
+def test_brush_world_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
-    assert layer.cursor_size > 0
+    assert layer._get_brush_world_size() > 0
 
 
 def test_large_label_values():
