@@ -91,6 +91,7 @@ class _ScalarFieldSliceResponse:
     slice_input: _SliceInput
     request_id: int
     empty: bool = False
+    is_affine_slice: bool = False
 
     @classmethod
     def make_empty(
@@ -176,6 +177,7 @@ class _ScalarFieldSliceResponse:
             slice_input=self.slice_input,
             request_id=self.request_id,
             empty=self.empty,
+            is_affine_slice=self.is_affine_slice,
         )
 
 
@@ -274,6 +276,7 @@ class _ScalarFieldSliceRequest:
             tile_to_data=tile_to_data,
             slice_input=self.slice_input,
             request_id=self.id,
+            is_affine_slice=isinstance(self.data_slice, _ThickNDAffineSlice),
         )
 
     def _call_multi_scale(self) -> _ScalarFieldSliceResponse:
