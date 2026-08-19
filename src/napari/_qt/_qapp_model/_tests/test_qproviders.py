@@ -12,6 +12,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_active_layer,
     _provide_active_layer_list,
     _provide_qt_viewer_or_raise,
+    _provide_selected_layers,
     _provide_viewer,
     _provide_viewer_or_raise,
     _provide_window_or_raise,
@@ -141,3 +142,23 @@ def test_provide_layer_list(
     assert isinstance(provided_layers, LayerList)
     assert provided_layers[0] is layer_a
     assert provided_layers[1] is layer_b
+
+
+def test_provide_selected_layers(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+) -> None:
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
+    s1 = viewer_model.add_layer(Shapes())
+    viewer_model.add_layer(Shapes())
+    s3 = viewer_model.add_layer(Shapes())
+
+    viewer_model.layers.selection = [s1, s3]
+
+    selected_layers = _provide_selected_layers()
+    assert selected_layers is not None
+    assert len(selected_layers) == 2
+    assert s1 in selected_layers
+    assert s3 in selected_layers
