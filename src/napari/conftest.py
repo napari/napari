@@ -324,6 +324,29 @@ def npe2pm_(npe2pm, monkeypatch):
 
 
 @pytest.fixture
+def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    mock_reg = MagicMock()
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=manifest_path):
+        yield npe2pm
+
+
+@pytest.fixture(autouse=True)
+def plugin_settings_(plugin_settings):
+    """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.
+
+    Without this, whichever test happens to call `get_plugin_settings`
+    first (e.g. by constructing a `PreferencesDialog`) would populate and
+    freeze `_PLUGIN_PREFERENCES` for the rest of the session, against the
+    real user config directory.
+    """
+    return plugin_settings
+
+
+@pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
@@ -337,6 +360,17 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
+
+
+@pytest.fixture
+def manifest_path() -> str:
+    path_to = (
+        Path(__file__)
+        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+        .resolve()
+    )
+    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+    return str(path_to)
 
 
 @pytest.fixture
