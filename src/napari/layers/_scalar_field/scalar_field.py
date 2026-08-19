@@ -30,12 +30,13 @@ from napari.layers.utils._slice_input import (
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
+    expand_corners_to_chunk_boundaries,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils._xarray_utils import _get_xr_metadata
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
@@ -204,7 +205,6 @@ class ScalarFieldBase(Layer, ABC):
         `True`.
     """
 
-    _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
     _level_materializer: Callable[[int], np.ndarray] | None
@@ -256,6 +256,28 @@ class ScalarFieldBase(Layer, ABC):
         if ndim is None:
             ndim = len(data.shape)
         self._data = data
+
+        # Xarray metadata inference is a no-op if data is not xarray-like
+        # and is only done for args that are None, so explicitly provided
+        # values pass through unchanged.
+        xr_source = (
+            data[0]
+            if isinstance(data, (list, tuple, MultiScaleData))
+            else data
+        )
+        rgb = len(xr_source.shape) != ndim
+        xr_metadata = _get_xr_metadata(
+            xr_source,
+            rgb=rgb,
+            axis_labels=axis_labels,
+            scale=scale,
+            translate=translate,
+            units=units,
+        )
+        axis_labels = xr_metadata.axis_labels
+        scale = xr_metadata.scale
+        translate = xr_metadata.translate
+        units = xr_metadata.units
 
         super().__init__(
             data,
@@ -512,6 +534,9 @@ class ScalarFieldBase(Layer, ABC):
             )
             if any(s == 0 for s in display_shape):
                 return
+            corners = expand_corners_to_chunk_boundaries(
+                corners, self.data[level], displayed_axes
+            )
             # Only update when level changes or
             # when new view is outside current corner_pixels
             if (

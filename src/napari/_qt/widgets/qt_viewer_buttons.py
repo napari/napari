@@ -379,7 +379,7 @@ class QtViewerButtons(QFrame):
         """Add 3D camera controls to the popup."""
         self.perspective = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.perspective,
+            value=self.viewer.scene.camera.perspective,
             value_range=(0, 90),
             callback=self._update_perspective,
         )
@@ -391,7 +391,7 @@ class QtViewerButtons(QFrame):
 
         self.rz = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[0],
+            value=self.viewer.scene.camera.angles[0],
             value_range=(-180, 180),
             callback=self._update_first_camera_angle,
         )
@@ -400,14 +400,14 @@ class QtViewerButtons(QFrame):
         # this is a known complication of calculation with Euler angles
         self.ry = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[1],
+            value=self.viewer.scene.camera.angles[1],
             value_range=(-89, 89),
             callback=self._update_second_camera_angle,
         )
 
         self.rx = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.angles[2],
+            value=self.viewer.scene.camera.angles[2],
             value_range=(-180, 180),
             callback=self._update_third_camera_angle,
         )
@@ -439,7 +439,7 @@ class QtViewerButtons(QFrame):
         """Add shared camera controls to the popup."""
         self.zoom = labeled_double_slider(
             parent=popup,
-            value=self.viewer.camera.zoom,
+            value=self.viewer.scene.camera.zoom,
             value_range=(0.01, 100),
             decimals=2,
             callback=self._update_zoom,
@@ -485,14 +485,14 @@ class QtViewerButtons(QFrame):
         self.vertical_combo = enum_combobox(
             parent=popup,
             enum_class=VerticalAxisOrientation,
-            current_enum=self.viewer.camera.orientation[1],
+            current_enum=self.viewer.scene.camera.orientation[1],
             callback=self._update_verical_axis_orientation,
         )
 
         self.horizontal_combo = enum_combobox(
             parent=popup,
             enum_class=HorizontalAxisOrientation,
-            current_enum=self.viewer.camera.orientation[2],
+            current_enum=self.viewer.scene.camera.orientation[2],
             callback=self._update_horizontal_axis_orientation,
         )
 
@@ -508,7 +508,7 @@ class QtViewerButtons(QFrame):
             self.depth_combo = enum_combobox(
                 parent=popup,
                 enum_class=DepthAxisOrientation,
-                current_enum=self.viewer.camera.orientation[0],
+                current_enum=self.viewer.scene.camera.orientation[0],
                 callback=self._update_depth_axis_orientation,
             )
 
@@ -521,7 +521,7 @@ class QtViewerButtons(QFrame):
                 text='',  # updated dynamically
             )
             self._update_handedness_help_symbol()
-            self.viewer.camera.events.orientation.connect(
+            self.viewer.scene.camera.events.orientation.connect(
                 self._update_handedness_help_symbol
             )
 
@@ -533,7 +533,7 @@ class QtViewerButtons(QFrame):
 
     def _update_handedness_help_symbol(self, event=None) -> None:
         """Update the handedness symbol based on the camera orientation."""
-        handedness = self.viewer.camera.handedness
+        handedness = self.viewer.scene.camera.handedness
         tooltip_text = (
             'Controls the orientation of the depth, vertical, and horizontal camera axes.\n'
             'Default is right-handed (towards, down, right).\n'
@@ -556,10 +556,10 @@ class QtViewerButtons(QFrame):
         """Add synced camera toggle to the popup."""
         row = grid_layout.rowCount()
         self.camera_synced_checkbox = QCheckBox('Sync 2D/3D camera', popup)
-        self.camera_synced_checkbox.setChecked(self.viewer.camera.synced)
+        self.camera_synced_checkbox.setChecked(self.viewer.scene.camera.synced)
         self.camera_synced_checkbox.stateChanged.connect(
             lambda checked: setattr(
-                self.viewer.camera, 'synced', bool(checked)
+                self.viewer.scene.camera, 'synced', bool(checked)
             )
         )
         synced_help_symbol = help_tooltip(
@@ -620,9 +620,9 @@ class QtViewerButtons(QFrame):
             HorizontalAxisOrientation,
         )
         axis_to_update = axes.index(orientation_type)
-        new_orientation = list(self.viewer.camera.orientation)
+        new_orientation = list(self.viewer.scene.camera.orientation)
         new_orientation[axis_to_update] = orientation_type(orientation_value)
-        self.viewer.camera.orientation = tuple(new_orientation)
+        self.viewer.scene.camera.orientation = tuple(new_orientation)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
@@ -635,9 +635,9 @@ class QtViewerButtons(QFrame):
             New angle value.
         """
 
-        angles = list(self.viewer.camera.angles)
+        angles = list(self.viewer.scene.camera.angles)
         angles[idx] = value
-        self.viewer.camera.angles = tuple(angles)
+        self.viewer.scene.camera.angles = tuple(angles)
 
     def _update_zoom(self, value: float) -> None:
         """Update the camera zoom.
@@ -648,7 +648,7 @@ class QtViewerButtons(QFrame):
             New camera.zoom value.
         """
 
-        self.viewer.camera.zoom = value
+        self.viewer.scene.camera.zoom = value
 
     def _update_perspective(self, value: float) -> None:
         """Update the camera perspective.
@@ -659,7 +659,7 @@ class QtViewerButtons(QFrame):
             New camera.perspective value.
         """
 
-        self.viewer.camera.perspective = value
+        self.viewer.scene.camera.perspective = value
 
     def _open_roll_popup(self):
         """Open a grid popup to manually order the dimensions"""
