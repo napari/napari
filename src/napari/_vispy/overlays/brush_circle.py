@@ -68,6 +68,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
     def _on_mouse_move(self, event: Event) -> None:
         self._last_mouse_pos = event.pos
+        self._set_position(event.pos)
 
     def _set_position(self, pos: tuple[int, int]) -> None:
         if not self.layer._is_resizing_brush:

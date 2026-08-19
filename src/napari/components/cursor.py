@@ -23,7 +23,7 @@ class Cursor(EventedModel):
 
     # fields
     position: tuple[float, ...] = (1.0, 1.0)
-    canvas_position: tuple[float, float] | None = None
+    canvas_position: tuple[int, int] = (1, 1)
     viewbox: tuple[int, int] | None = None
     _view_direction: np.ndarray | None = None
 
