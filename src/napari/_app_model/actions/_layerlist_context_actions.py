@@ -342,7 +342,9 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             title=f'{mode} projection',
             callback=partial(_layer_actions._project, mode=mode),
             enablement=_ACTIVE_IMAGE_ND,
-            menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
+            menus=[
+                {'id': MenuId.LAYERS_CONTEXT_PROJECT, 'when': _ACTIVE_IMAGE_ND}
+            ],
         )
     )
 
@@ -354,6 +356,8 @@ LAYERLIST_CONTEXT_ACTIONS.append(
         title='Drop first axis',
         callback=_layer_actions._project_points,
         enablement=_ACTIVE_POINTS_ND,
-        menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
+        menus=[
+            {'id': MenuId.LAYERS_CONTEXT_PROJECT, 'when': _ACTIVE_POINTS_ND}
+        ],
     )
 )
