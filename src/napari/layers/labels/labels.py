@@ -581,12 +581,6 @@ class Labels(ScalarFieldBase):
         self.events.brush_size()
 
     @property
-    def brush_size_canvas(self):
-        if self.brush_size_is_canvas:
-            return self._brush_size
-        return self._brush_size
-
-    @property
     def brush_size_is_canvas(self) -> bool:
         """Whether the brush size is considered to be in canvas pixels instead."""
         return self._brush_size_is_canvas
