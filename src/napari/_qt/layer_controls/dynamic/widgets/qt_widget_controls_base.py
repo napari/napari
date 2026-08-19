@@ -61,6 +61,7 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         # so it is possible to disconnect them when the widget is being closed/deleted.
         # Arguments of callbacks are hard to track; Any is the best we can do here.
         self._callbacks: list[Callable[[Any], None]] = []
+        self._ndisplay: int = 2
 
     @abstractmethod
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
@@ -83,6 +84,17 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
             disconnect_events(layer.events, self)
             for callback in self._callbacks:
                 disconnect_events(layer.events, callback)
+
+    def _change_ndisplay(self, ndisplay: int) -> None:
+        """
+        Change the ndisplay value for the widget controls.
+
+        Parameters
+        ----------
+        ndisplay : int
+            The new ndisplay value.
+        """
+        self._ndisplay = ndisplay
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()

@@ -26,7 +26,11 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked, set_mixed_value_style
+from napari._qt.utils import (
+    qt_signals_blocked,
+    set_mixed_value_style,
+    set_widgets_enabled_with_opacity,
+)
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events import disconnect_events
@@ -533,24 +537,30 @@ class QtContrastLimitsControl(
 
         # Histogram toggle button — added alongside the slider via a
         # wrapper widget in get_widget_controls().
-        self.histogram_button = None
-        if len(self._layers) == 1:
-            self.histogram_button = QtModePushButton(
-                self._layers[0],
-                'histogram',
-                tooltip=(
-                    'Left click to toggle histogram in layer controls.\n'
-                    'Right click to open histogram popup.'
-                ),
-            )
-            self.histogram_button.setCheckable(True)
-            self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.histogram_button = QtModePushButton(
+            self._layers[0],
+            'histogram',
+            # tooltip=(
+            #     'Left click to toggle histogram in layer controls.\n'
+            #     'Right click to open histogram popup.'
+            # ),
+        )
+        # TODO: histogram is broken and needs fixing; for now we disable it
+        #       for the dynamic panel
+        self.histogram_button.setToolTip(
+            'Histogram is currently broken with dynamic layer controls.\n'
+            'To use it, ensure that you select only a single layer and that you\n'
+            'have disabled the dynamic layer controls experimental setting.'
+        )
+        self.histogram_button.setCheckable(True)
+        self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._clim_layout.addWidget(self.histogram_button)
+        set_widgets_enabled_with_opacity(self, [self.histogram_button], False)
+        if False:  # to keep the code around while we fix histogram
             self.histogram_button.toggled.connect(
                 self._on_histogram_button_toggled
             )
             self.histogram_button.installEventFilter(self)
-            self._clim_layout.addWidget(self.histogram_button)
-
             # Sync button checked state when ``enabled`` changes via the API
             for layer in self._layers:
                 layer.histogram.events.enabled.connect(
