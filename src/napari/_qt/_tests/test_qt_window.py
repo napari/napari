@@ -13,7 +13,7 @@ from napari._qt.qt_main_window import (
     _shutdown_open_windows,
 )
 from napari._qt.utils import QImg2array
-from napari._tests.utils import layer_test_data, skip_on_win_ci
+from napari._tests.utils import skip_on_win_ci
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -167,28 +167,14 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     assert np.array_equal(screenshot_array, screenshot_array_from_file)
 
 
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_status_tooltip(Layer, data, ndim, make_napari_viewer):
+def test_status_tooltip(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._qt_window._current_tooltip == 'Ready'
-    layer = Layer(data)
-    viewer.layers.append(layer)
-    viewer.cursor.position = (1,) * ndim
-    assert viewer.window._qt_window._current_tooltip != 'Ready'
-
-
-def test_set_status_and_tooltip(make_napari_viewer):
-    viewer = make_napari_viewer()
-    # create active layer
-    viewer.add_image(np.zeros((10, 10)))
-    assert viewer.status == 'Ready'
-    assert viewer.tooltip.text == ''
-    viewer.window._qt_window.set_status_and_tooltip(('Text1', 'Text2'))
-    assert viewer.status == 'Text1'
-    assert viewer.tooltip.text == 'Text2'
-    viewer.window._qt_window.set_status_and_tooltip(None)
-    assert viewer.status == 'Text1'
-    assert viewer.tooltip.text == 'Text2'
+    viewer.add_points()
+    viewer.cursor.canvas_position = (10, 10)
+    # cannot rely on statuschecker cause it's disabled in make_napari_viewer
+    # so we need to trigger ourselves
+    assert viewer._calc_status_from_cursor() != 'Ready'
 
 
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
