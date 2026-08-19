@@ -34,6 +34,7 @@ from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
+from napari.utils._xarray_utils import _get_xr_metadata
 from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
@@ -255,6 +256,28 @@ class ScalarFieldBase(Layer, ABC):
         if ndim is None:
             ndim = len(data.shape)
         self._data = data
+
+        # Xarray metadata inference is a no-op if data is not xarray-like
+        # and is only done for args that are None, so explicitly provided
+        # values pass through unchanged.
+        xr_source = (
+            data[0]
+            if isinstance(data, (list, tuple, MultiScaleData))
+            else data
+        )
+        rgb = len(xr_source.shape) != ndim
+        xr_metadata = _get_xr_metadata(
+            xr_source,
+            rgb=rgb,
+            axis_labels=axis_labels,
+            scale=scale,
+            translate=translate,
+            units=units,
+        )
+        axis_labels = xr_metadata.axis_labels
+        scale = xr_metadata.scale
+        translate = xr_metadata.translate
+        units = xr_metadata.units
 
         super().__init__(
             data,
