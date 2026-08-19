@@ -47,7 +47,7 @@ def draw(layer, event):
 
     # on press
     with layer.block_history():
-        layer._draw(new_label, coordinates, coordinates)
+        layer._draw(new_label, coordinates, coordinates, event.camera_zoom)
         yield
 
         last_cursor_coord = coordinates
@@ -55,7 +55,12 @@ def draw(layer, event):
         while event.type == 'mouse_move':
             coordinates = mouse_event_to_labels_coordinate(layer, event)
             if coordinates is not None or last_cursor_coord is not None:
-                layer._draw(new_label, last_cursor_coord, coordinates)
+                layer._draw(
+                    new_label,
+                    last_cursor_coord,
+                    coordinates,
+                    event.camera_zoom,
+                )
             last_cursor_coord = coordinates
             yield
 

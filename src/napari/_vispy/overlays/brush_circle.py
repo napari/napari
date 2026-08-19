@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
@@ -39,6 +38,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._last_mouse_pos = None
 
         self.layer.events.brush_size.connect(self._on_size_change)
+        self.layer.events.brush_size_is_canvas.connect(self._on_size_change)
         self.viewer.camera.events.zoom.connect(self._on_size_change)
         self.viewer.events.mouse_over_canvas.connect(
             self._on_mouse_over_canvas
@@ -58,15 +58,10 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._set_position(self.viewer.cursor.canvas_position)
 
     def _on_size_change(self, event: Event | None = None) -> None:
-        brush_size = self.layer.brush_size
         if self.layer.brush_size_is_canvas:
-            size = brush_size
+            size = self.layer.brush_size
         else:
-            world_scale = self.layer._data_to_world.scale
-            displayed = self.layer._slice_input.displayed
-            min_scale = np.min([abs(world_scale[d]) for d in displayed])
-            world_size = brush_size * min_scale
-            size = self.viewer.scene.camera.zoom * world_size
+            size = self.layer._get_brush_size_canvas(self.viewer.camera.zoom)
         self._white_circle.radius = size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 

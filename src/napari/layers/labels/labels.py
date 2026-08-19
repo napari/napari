@@ -570,8 +570,8 @@ class Labels(ScalarFieldBase):
     def brush_size(self):
         """float: Size of the paint brush.
 
-        If brush_size_is_canvas is True, this is considered to be in canvas
-        coordinates, otherwise it's in data coordinates.
+        If brush_size_is_canvas is False, this is considered to be in data
+        pixels, otherwise it's in canvas pixels.
         """
         return self._brush_size
 
@@ -589,6 +589,22 @@ class Labels(ScalarFieldBase):
     def brush_size_is_canvas(self, value: bool) -> None:
         self._brush_size_is_canvas = bool(value)
         self.events.brush_size_is_canvas()
+
+    def _get_brush_size_canvas(self, zoom):
+        if self.brush_size_is_canvas:
+            return self._brush_size
+        world_scale = self._data_to_world.scale
+        displayed = self._slice_input.displayed
+        min_scale = np.min([abs(world_scale[d]) for d in displayed])
+        return self.brush_size * min_scale * zoom
+
+    def _get_brush_size_data(self, zoom):
+        if not self.brush_size_is_canvas:
+            return self._brush_size
+        world_scale = self._data_to_world.scale
+        displayed = self._slice_input.displayed
+        min_scale = np.min([abs(world_scale[d]) for d in displayed])
+        return self.brush_size / min_scale / zoom
 
     def new_colormap(self, seed: int | None = None):
         if seed is None:
@@ -1393,7 +1409,7 @@ class Labels(ScalarFieldBase):
             return self.selected_label
         return self.colormap.background_value
 
-    def _draw(self, new_label, last_cursor_coord, coordinates):
+    def _draw(self, new_label, last_cursor_coord, coordinates, zoom):
         """Paint into coordinates, accounting for mode and cursor movement.
 
         The draw operation depends on the current mode of the layer.
@@ -1409,8 +1425,10 @@ class Labels(ScalarFieldBase):
         """
         if coordinates is None:
             return
+
+        brush_size = self._get_brush_size_data(zoom)
         interp_coord = interpolate_coordinates(
-            last_cursor_coord, coordinates, self.brush_size
+            last_cursor_coord, coordinates, brush_size
         )
         for c in interp_coord:
             if (
@@ -1419,9 +1437,9 @@ class Labels(ScalarFieldBase):
             ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False)
+                self.paint(c, new_label, refresh=False, brush_size=brush_size)
             elif self._mode == Mode.FILL:
-                self.fill(c, new_label, refresh=False)
+                self.fill(c, new_label, refresh=False, brush_size=brush_size)
         self._partial_labels_refresh()
 
     def paint(
@@ -1429,6 +1447,7 @@ class Labels(ScalarFieldBase):
         coord: Sequence[float],
         new_label: int,
         refresh: bool = True,
+        brush_size: int = 10,
     ) -> None:
         """Paint over existing labels with a new label.
 
@@ -1452,7 +1471,7 @@ class Labels(ScalarFieldBase):
         self._validate_non_painted_coord(slice_coord, dims_to_paint)
 
         brush_info = self._get_brush_mask_and_bbox(
-            slice_coord, dims_to_paint, shape
+            slice_coord, dims_to_paint, shape, brush_size=brush_size
         )
 
         if brush_info is None:
@@ -1472,6 +1491,7 @@ class Labels(ScalarFieldBase):
         coord: Sequence[float],
         dims_to_paint: list[int],
         shape: list[int],
+        brush_size: int = 10,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
         """Compute the mask and bounding box for a brush painting operation.
 
@@ -1506,7 +1526,7 @@ class Labels(ScalarFieldBase):
             coord_paint = np.array(coord)
 
         # Ensure circle doesn't have spurious point on edge by keeping radius as 0.5
-        radius = np.floor(self.brush_size / 2) + 0.5
+        radius = np.floor(brush_size / 2) + 0.5
 
         # Radius in pixels for each dimension (accounting for scale)
         # Use floor to match old sphere_indices behavior: points where dist <= radius
