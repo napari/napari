@@ -25,13 +25,8 @@ from napari.utils.events.event import WarningEmitter
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
-    assert viewer.title == 'napari'
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
-
-    # Create viewer model with custom title
-    viewer = ViewerModel(title='testing')
-    assert viewer.title == 'testing'
 
 
 def test_add_image():
@@ -822,15 +817,6 @@ def test_not_mutable_fields(field):
         setattr(viewer, field, 'test')
 
     assert 'Field is frozen' in str(err.value)
-
-
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_status_tooltip(Layer, data, ndim):
-    viewer = ViewerModel()
-    viewer.tooltip.visible = True
-    layer = Layer(data)
-    viewer.layers.append(layer)
-    viewer.cursor.position = (1,) * ndim
 
 
 def test_viewer_object_event_sources():

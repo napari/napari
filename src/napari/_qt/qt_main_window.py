@@ -202,12 +202,15 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        self._current_tooltip = ''
+        self._current_tooltip = 'Ready'
         self.status_thread = StatusChecker(viewer, parent=self)
         self.status_thread.status_and_tooltip_changed.connect(
-            self.update_status_and_tooltip
+            self.set_status_and_tooltip
         )
         viewer.cursor.events.position.connect(
+            self.status_thread.trigger_status_update
+        )
+        viewer.cursor.events.canvas_position.connect(
             self.status_thread.trigger_status_update
         )
         viewer.layers.selection.events.active.connect(
@@ -273,7 +276,7 @@ class _QtMainWindow(QMainWindow):
         self.status_thread.terminate()
         super().hideEvent(event)
 
-    def update_status_and_tooltip(
+    def set_status_and_tooltip(
         self, status_and_tooltip: tuple[str | dict, str] | None
     ):
         if status_and_tooltip is None:
@@ -297,7 +300,7 @@ class _QtMainWindow(QMainWindow):
 
     def _set_drag_help(self) -> None:
         """Set dedicated help message when dragging files into viewer."""
-        self.update_status_and_tooltip(('Ready', ''))
+        self.set_status_and_tooltip(('Ready', ''))
         self.statusBar().setHelpText(
             'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
         )
@@ -372,7 +375,6 @@ class _QtMainWindow(QMainWindow):
                 # TODO: anything to do here?
                 pass
             elif event.type() == QEvent.Type.Leave:
-                self.update_status_and_tooltip(('', ''))
                 self._qt_viewer.viewer.cursor.canvas_position = None
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
