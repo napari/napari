@@ -124,7 +124,9 @@ def _active_type(s: LayerSel) -> str | None:
 
 
 def _active_ndim(s: LayerSel) -> int | None:
-    return getattr(s.active.data, 'ndim', None) if s.active else None
+    # Use `layer.ndim`, not `data.ndim`: it already excludes the RGB channel
+    # axis and reflects point/shape coordinates.
+    return s.active.ndim if s.active else None
 
 
 def _active_shape(s: LayerSel) -> tuple[int, ...] | None:
@@ -165,21 +167,20 @@ def _same_type(s: LayerSel) -> bool:
 
 
 def _active_is_image_nd(s: LayerSel) -> bool:
-    _activ_ndim = _active_ndim(s)
+    active_ndim = _active_ndim(s)
     return (
         _active_type(s) == 'image'
-        and _activ_ndim is not None
-        and (_activ_ndim > 3 or ((_activ_ndim) > 2 and not _is_rgb(s)))
+        and active_ndim is not None
+        and active_ndim > 2
     )
 
 
 def _active_is_points_nd(s: LayerSel) -> bool:
-    # Use `layer.ndim` (coordinate count): points keep data in an (N, D) array,
-    # so `data.ndim` is always 2.
+    active_ndim = _active_ndim(s)
     return (
         _active_type(s) == 'points'
-        and s.active is not None
-        and s.active.ndim > 2
+        and active_ndim is not None
+        and active_ndim > 2
     )
 
 
