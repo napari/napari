@@ -1027,6 +1027,9 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         # potentially sheared or rotated (as is the case if an orthogonal shear/rotation is
         # applied in the plane displayed on the canvas).
         tile_to_data = world_to_data.compose(tile_to_world)
+        # layer._transforms looks up its first element by the name 'tile2data' (this is
+        # important e.g. to draw polygons on a labels layer, see VispyLabelsPolygonOverlay).
+        tile_to_data.name = 'tile2data'
         return _ThickNDAffineSlice(
             tile_to_data=tile_to_data,
             shape=shape,
