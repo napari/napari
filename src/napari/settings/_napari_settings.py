@@ -10,6 +10,7 @@ from napari.settings._application import ApplicationSettings
 from napari.settings._base import (
     _NOT_SET,
     EventedConfigFileSettings,
+    _NotSetType,
     _remove_empty_dicts,
 )
 from napari.settings._experimental import ExperimentalSettings
@@ -17,7 +18,6 @@ from napari.settings._fields import Version
 from napari.settings._plugins import PluginsSettings
 from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils._base import _DEFAULT_CONFIG_PATH
-from napari.utils.translations import trans
 
 _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
@@ -35,36 +35,36 @@ class NapariSettings(EventedConfigFileSettings):
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Version = Field(
         CURRENT_SCHEMA_VERSION,
-        description=trans._('Napari settings schema version.'),
+        description='Napari settings schema version.',
     )
 
     application: ApplicationSettings = Field(
         default_factory=ApplicationSettings,
-        title=trans._('Application'),
-        description=trans._('Main application settings.'),
+        title='Application',
+        description='Main application settings.',
     )
     appearance: AppearanceSettings = Field(
         default_factory=AppearanceSettings,
-        title=trans._('Appearance'),
-        description=trans._('User interface appearance settings.'),
+        title='Appearance',
+        description='User interface appearance settings.',
         frozen=True,
     )
     plugins: PluginsSettings = Field(
         default_factory=PluginsSettings,
-        title=trans._('Plugins'),
-        description=trans._('Plugins settings.'),
+        title='Plugins',
+        description='Plugins settings.',
         frozen=True,
     )
     shortcuts: ShortcutsSettings = Field(
         default_factory=ShortcutsSettings,
-        title=trans._('Shortcuts'),
-        description=trans._('Shortcut settings.'),
+        title='Shortcuts',
+        description='Shortcut settings.',
         frozen=True,
     )
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
-        title=trans._('Experimental'),
-        description=trans._('Experimental settings.'),
+        title='Experimental',
+        description='Experimental settings.',
         frozen=True,
     )
 
@@ -83,11 +83,13 @@ class NapariSettings(EventedConfigFileSettings):
         populate_by_name=True,
     )
 
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+    def __init__(
+        self, config_path: Path | _NotSetType | None = _NOT_SET, **values: Any
+    ) -> None:
         super().__init__(config_path, **values)
         self._maybe_migrate()
 
-    def _save_dict(self, **kwargs):
+    def _save_dict(self, **kwargs: dict[Any, Any]) -> dict[str, Any]:
         # we always want schema_version written to the settings.yaml
         # TODO: is there a better way to always include schema version?
         return {
@@ -95,16 +97,16 @@ class NapariSettings(EventedConfigFileSettings):
             **super()._save_dict(**kwargs),
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
         data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def _maybe_migrate(self):
+    def _maybe_migrate(self) -> None:
         if self.schema_version < CURRENT_SCHEMA_VERSION:
             from napari.settings._migrations import do_migrations
 

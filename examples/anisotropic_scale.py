@@ -50,7 +50,7 @@ viewer.layers['no scale'].bounding_box.visible = True
 viewer.layers['with scale'].bounding_box.line_color = 'green'
 viewer.layers['with scale'].bounding_box.visible = True
 
-viewer.camera.angles = (-45, 0, -60)
+viewer.scene.camera.angles = (-45, 0, -60)
 viewer.fit_to_view()
 
 if __name__ == '__main__':

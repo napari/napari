@@ -11,4 +11,4 @@ def test_scale_bar_fixed_length_and_units():
     """Test creating scale bar object with fixed length"""
     scale_bar = ScaleBarOverlay(length=50)
     assert scale_bar.length == 50
-    assert scale_bar.unit == 'pixel'
+    assert scale_bar.unit is None

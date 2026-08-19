@@ -1,3 +1,4 @@
+import copy
 import importlib
 from collections import defaultdict
 from itertools import product
@@ -230,6 +231,27 @@ def test_direct_label_colormap_simple(direct_label_colormap):
     np.testing.assert_array_equal(
         color_dict[0], direct_label_colormap.color_dict[None]
     )
+
+
+def test_direct_label_colormap_deepcopy_after_map(direct_label_colormap):
+    """A rendered DirectLabelColormap must still be deep-copyable.
+
+    Once ``map`` has run, the numba backend caches a ``typed.Dict`` in a
+    private attribute. That object cannot be pickled/deep-copied, which broke
+    ``copy.deepcopy`` of the colormap (e.g. from napari-animation capturing
+    layer state). See the regression: the copy must be independent and map
+    identically.
+    """
+    values = np.array([0, 1, 2, 3, 12, 7], dtype=np.int32)
+    expected = direct_label_colormap.map(values)  # populates the cache
+
+    cmap_copy = copy.deepcopy(direct_label_colormap)
+
+    assert cmap_copy is not direct_label_colormap
+    np.testing.assert_array_equal(cmap_copy.map(values), expected)
+    # the rebuildable caches must be independent objects, not shared
+    assert cmap_copy._cache_other is not direct_label_colormap._cache_other
+    assert cmap_copy._cache_mapping is not direct_label_colormap._cache_mapping
 
 
 def test_direct_label_colormap_selection(direct_label_colormap):

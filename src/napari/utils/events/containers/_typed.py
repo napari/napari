@@ -2,15 +2,11 @@ import logging
 from collections.abc import Callable, Iterable, MutableSequence, Sequence
 from typing import (
     Any,
+    Self,
     TypeVar,
     Union,
     overload,
 )
-
-# change on import from typing when drop python 3.10 support
-from typing_extensions import Self
-
-from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +78,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __setitem__(self, key, value):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError(
-                    trans._(
-                        'Can only assign an iterable to slice',
-                        deferred=True,
-                    )
-                )
+                raise TypeError('Can only assign an iterable to slice')
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
@@ -155,12 +146,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             isinstance(e, t) for t in self._basetypes
         ):
             raise TypeError(
-                trans._(
-                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
-                    deferred=True,
-                    dtype=type(e),
-                    basetypes=self._basetypes,
-                )
+                f'Cannot add object with type {type(e)!r} to TypedList expecting type {self._basetypes!r}'
             )
         return e
 
@@ -229,13 +215,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             if v is value or v == value:
                 return i
 
-        raise ValueError(
-            trans._(
-                '{value!r} is not in list',
-                deferred=True,
-                value=value,
-            )
-        )
+        raise ValueError(f'{value!r} is not in list')
 
     def _iter_indices(
         self, start: int = 0, stop: int | None = None
