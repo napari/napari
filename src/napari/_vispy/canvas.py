@@ -390,6 +390,11 @@ class VispyCanvas:
     def _on_active_layer_change(self, event=None) -> None:
         """Track the active layer and rewire its mode event to refresh the cursor."""
         if self._active_layer is not None:
+            brush_overlay = self._active_layer._overlays.get(
+                '_brush_circle', None
+            )
+            if brush_overlay:
+                brush_overlay.visible = False
             self._active_layer.events.mode.disconnect(self._on_cursor)
         self._active_layer = self.viewer.layers.selection.active
         if self._active_layer is not None:
@@ -398,15 +403,16 @@ class VispyCanvas:
 
     def _on_cursor(self) -> None:
         """Create a QCursor based on the active layer mode and brush overlay."""
-        brush_overlay = self.viewer.canvas.overlays._brush_circle
         layer = self.viewer.layers.selection.active
         if layer is None:
-            brush_overlay.visible = False
             self.cursor = QtCursorVisual['standard'].value
             return
 
         cursor = get_cursor_style(layer)
+        brush_overlay = layer._overlays.get('_brush_circle', None)
         if cursor == 'circle':
+            if not brush_overlay:
+                raise RuntimeError('unreachable')
             brush_overlay = layer._overlays['brush_circle']
             size = layer.brush_size
             # make sure the circle fits within the current canvas
@@ -422,10 +428,12 @@ class VispyCanvas:
                 self.cursor = QtCursorVisual.blank()
 
         elif cursor == 'crosshair':
-            brush_overlay.visible = False
+            if brush_overlay:
+                brush_overlay.visible = False
             self.cursor = QtCursorVisual.crosshair()
         else:
-            brush_overlay.visible = False
+            if brush_overlay:
+                brush_overlay.visible = False
             self.cursor = QtCursorVisual[cursor].value
 
     def delete(self) -> None:

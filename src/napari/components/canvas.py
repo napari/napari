@@ -8,7 +8,6 @@ from pydantic import Field
 
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
-    BrushCircleOverlay,
     CanvasAxesOverlay,
     CanvasOverlay,
     CurrentSliceOverlay,
@@ -82,7 +81,6 @@ class Canvas(EventedModel):
             {
                 'scale_bar': ScaleBarOverlay(),
                 'text': TextOverlay(),
-                '_brush_circle': BrushCircleOverlay(),
                 '_zoom_box': ZoomOverlay(),
                 'current_slice': CurrentSliceOverlay(),
                 'axes': CanvasAxesOverlay(),
