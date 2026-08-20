@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
-from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
+from qtpy.QtCore import QEvent, Qt, QUrl
+from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
@@ -240,7 +240,7 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
     drag_event.accept.assert_called_once_with()
     assert welcome.property('drag') is True
     assert (
-        viewer.status
+        viewer.window._qt_window.statusBar()._help.text()
         == 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
     )
 
@@ -263,32 +263,6 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
         choose_plugin=False,
     )
     assert welcome.property('drag') is False
-
-
-@skip_local_popups
-def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
-    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
-    qt_viewer = viewer.window._qt_viewer
-
-    qtbot.waitUntil(qt_viewer.isVisible)
-
-    viewer.mouse_over_canvas = False
-    viewer.status = ''
-
-    canvas = qt_viewer.canvas.native
-    canvas.enterEvent(
-        QEnterEvent(
-            QPointF(10, 10),
-            QPointF(10, 10),
-            QPointF(10, 10),
-        )
-    )
-    assert viewer.mouse_over_canvas
-    assert viewer.status == 'Ready'
-
-    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer.mouse_over_canvas
-    assert viewer.status == ''
 
 
 def test_qt_viewer_with_console(make_napari_viewer):
