@@ -1031,7 +1031,7 @@ def test_get_status_text():
     viewer.mouse_over_canvas = False
     assert viewer._calc_status_from_cursor() is None
     viewer.mouse_over_canvas = True
-    assert viewer._calc_status_from_cursor() == ('Ready', '')
+    assert viewer._calc_status_from_cursor() == (' » [empty]', '')
     viewer.cursor.position = (1, 2)
     viewer.add_labels(
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
