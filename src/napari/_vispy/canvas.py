@@ -12,7 +12,6 @@ from weakref import WeakSet
 
 import numpy as np
 from OpenGL.error import GLError
-from psygnal import Signal
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
@@ -60,17 +59,6 @@ if TYPE_CHECKING:
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
-
-    entered_canvas = Signal()
-    exited_canvas = Signal()
-
-    def enterEvent(self, event):
-        self.entered_canvas()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.exited_canvas()
-        super().leaveEvent(event)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
