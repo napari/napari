@@ -866,14 +866,20 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+            if not status['value']:
+                # 'coordinates' is the one used by the status bar itself
+                status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
 
         # Otherwise, return the layer status of multiple selected layers
-        # or gridded layers if no selection. If no selection and no grid, return nothing.
+        # or gridded layers if no selection. If no selection and no grid, all layers are used.
         if selection:
-            layers = list(selection)[::-1]
+            layers = [
+                layer for layer in self.layers[::-1] if layer in selection
+            ]
         elif self.canvas.grid.enabled:
             if self.cursor.viewbox is None:
+                # should never happen, but better safe than sorry
                 return None
             layers = [
                 self.layers[idx]
@@ -881,14 +887,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     self.canvas.grid.contents_at(
                         self.cursor.viewbox, self.layers
                     ),
-                    reverse=True,
+                    reverse=self.canvas.grid.stride > 0,
                 )
             ]
         else:
-            return None
+            layers = self.layers[::-1]
 
-        coord2val: dict[str, list[str]] = {}
-        coord_str = ''
+        statuses: list[str] = []
+        coords = ''
         for layer in layers:
             if not layer.visible or not layer._slicing_state._loaded:
                 continue
@@ -899,33 +905,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            separator = '    '
-            emphasis = separator if layer is active else ''
-            coord_str = f'{status["coords"]} » '
-            if status['value'] != '':
-                if coord_str not in coord2val:
-                    coord2val[coord_str] = []
-                coord2val[coord_str].append(
-                    f'{layer.name}: {status["value"]}{emphasis}'
-                )
-        if coord2val:
-            if not self.canvas.grid.enabled:
-                # use a single coordinate system
-                values = list(itertools.chain(*coord2val.values()))
-                key = next(iter(coord2val))  # choose arbitrary coordinate
-                coord2val = {key: values}
-            status_strs = [
-                key + separator.join(values)
-                for key, values in coord2val.items()
-            ]
-            status_str = separator.join(status_strs)
-        elif coord_str and not self.canvas.grid.enabled:
-            status_str = coord_str + '[empty]'
-        elif self.canvas.grid.enabled:
-            status_str = '[empty]'
-        else:
-            status_str = 'Ready'
+            if not coords or not layer._use_integer_coords_in_status():
+                # we prioritize float coords if any layer wants them
+                coords = status['coords']
+            if status['value']:
+                statuses.append(f'{layer.name}: {status["value"]}')
 
+        separator = '    '
+        values = '[empty]' if not statuses else separator.join(statuses)
+
+        status_str = f'{coords} » {values}'
         return status_str, ''
 
     def update_status_from_cursor(self):
