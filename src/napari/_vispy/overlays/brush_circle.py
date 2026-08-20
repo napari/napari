@@ -58,10 +58,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._set_position(self.viewer.cursor.canvas_position)
 
     def _on_size_change(self, event: Event | None = None) -> None:
-        if self.layer.brush_size_is_canvas:
-            size = self.layer.brush_size
-        else:
-            size = self.layer._get_brush_size_canvas(self.viewer.camera.zoom)
+        size = self.layer._get_brush_size_canvas(self.viewer.camera.zoom)
         self._white_circle.radius = size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 

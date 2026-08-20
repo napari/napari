@@ -592,7 +592,7 @@ class Labels(ScalarFieldBase):
 
     def _get_brush_size_canvas(self, zoom):
         if self.brush_size_is_canvas:
-            return self._brush_size
+            return self.brush_size
         world_scale = self._data_to_world.scale
         displayed = self._slice_input.displayed
         min_scale = np.min([abs(world_scale[d]) for d in displayed])
@@ -1409,7 +1409,7 @@ class Labels(ScalarFieldBase):
             return self.selected_label
         return self.colormap.background_value
 
-    def _draw(self, new_label, last_cursor_coord, coordinates, zoom):
+    def _draw(self, new_label, last_cursor_coord, coordinates, zoom=None):
         """Paint into coordinates, accounting for mode and cursor movement.
 
         The draw operation depends on the current mode of the layer.
@@ -1426,7 +1426,12 @@ class Labels(ScalarFieldBase):
         if coordinates is None:
             return
 
+        if self.brush_size_is_canvas and zoom is None:
+            raise RuntimeError(
+                'When drawing, zoom must be provided if brush_size_is_canvas is True'
+            )
         brush_size = self._get_brush_size_data(zoom)
+
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, brush_size
         )
@@ -1437,9 +1442,9 @@ class Labels(ScalarFieldBase):
             ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False, brush_size=brush_size)
+                self.paint(c, new_label, refresh=False, zoom=zoom)
             elif self._mode == Mode.FILL:
-                self.fill(c, new_label, refresh=False, brush_size=brush_size)
+                self.fill(c, new_label, refresh=False)
         self._partial_labels_refresh()
 
     def paint(
@@ -1447,7 +1452,7 @@ class Labels(ScalarFieldBase):
         coord: Sequence[float],
         new_label: int,
         refresh: bool = True,
-        brush_size: int = 10,
+        zoom: float | None = None,
     ) -> None:
         """Paint over existing labels with a new label.
 
@@ -1464,6 +1469,12 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        if self.brush_size_is_canvas and zoom is None:
+            raise RuntimeError(
+                'When drawing, zoom must be provided if brush_size_is_canvas is True'
+            )
+        brush_size = self._get_brush_size_data(zoom)
+
         self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
