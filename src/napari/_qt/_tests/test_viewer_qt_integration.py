@@ -203,10 +203,10 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
         side_effect=choose_tip,
     ):
         view.set_welcome_tips(tips)
-        assert welcome._tip_label.text() == 'Did you know?\nfirst tip'
+        assert welcome._tip_label.text() == 'Did you know?<br>first tip'
 
         view._set_welcome_visible(True)
-        assert welcome._tip_label.text() == 'Did you know?\nsecond tip'
+        assert welcome._tip_label.text() == 'Did you know?<br>second tip'
 
 
 def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
@@ -223,7 +223,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         welcome.refresh()
         assert (
             welcome._tip_label.text()
-            == 'Did you know?\nOpen files with Ctrl+O.'
+            == 'Did you know?<br>Open files with Ctrl+O.'
         )
 
     with patch(
@@ -237,7 +237,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         )
         assert (
             welcome._tip_label.text()
-            == 'Did you know?\nOpen files with Cmd+O.'
+            == 'Did you know?<br>Open files with Cmd+O.'
         )
 
 

@@ -784,7 +784,10 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
             label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
-            if len(schema['properties']) == 1:
+            # render a label unless the property explicitly has an empty title
+            # (intentional divergence from upstream qt_json_builder, which
+            # suppressed the label for any single-property schema)
+            if sub_schema.get('title') == '':
                 layout.addRow(widget)
             else:
                 layout.addRow(label, widget)
