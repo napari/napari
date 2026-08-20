@@ -844,34 +844,22 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     ) -> tuple[str | Dict, str] | None:
         if not self.mouse_over_canvas:
             return None
-        coord2val: dict[str, list[str]] = {}
-        coord_str = ''
-        status_str = ''
-        tooltip_text = ''
+
         selection = self.layers.selection
         active = selection.active
-        # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
-        # Compute the tooltip first since it is always needed.
-        if (
-            self.tooltip.visible
-            and active is not None
-            and active._slicing_state._loaded
-        ):
-            tooltip_text = active._get_tooltip_text(
-                np.asarray(self.cursor.position),
-                view_direction=self.cursor._view_direction,
-                dims_displayed=list(self.dims.displayed),
-                world=True,
-            )
+        # If there is a single selected layer, calculate status using "the classic way".
+        if active is not None and active._slicing_state._loaded:
+            if self.tooltip.visible:
+                tooltip_text = active._get_tooltip_text(
+                    np.asarray(self.cursor.position),
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
+                )
+            else:
+                tooltip_text = ''
 
-        # If there is an active layer and a single selection, calculate status using "the classic way".
-        # Then return the status and the tooltip.
-        if (
-            active is not None
-            and active._slicing_state._loaded
-            and len(selection) < 2
-        ):
             status = active.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -881,15 +869,30 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             return status, tooltip_text
 
         # Otherwise, return the layer status of multiple selected layers
-        # or gridded layers as well as the tooltip.
-        for layer in self.layers[::-1]:
-            if (
-                not layer.visible
-                or layer.opacity == 0
-                or not layer._slicing_state._loaded
-                or (layer not in selection and not self.canvas.grid.enabled)
-            ):
+        # or gridded layers if no selection. If no selection and no grid, return nothing.
+        if selection:
+            layers = list(selection)[::-1]
+        elif self.canvas.grid.enabled:
+            if self.cursor.viewbox is None:
+                return None
+            layers = [
+                self.layers[idx]
+                for idx in sorted(
+                    self.canvas.grid.contents_at(
+                        self.cursor.viewbox, self.layers
+                    ),
+                    reverse=True,
+                )
+            ]
+        else:
+            return None
+
+        coord2val: dict[str, list[str]] = {}
+        coord_str = ''
+        for layer in layers:
+            if not layer.visible or not layer._slicing_state._loaded:
                 continue
+
             status = layer.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -923,7 +926,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         else:
             status_str = 'Ready'
 
-        return status_str, tooltip_text
+        return status_str, ''
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
