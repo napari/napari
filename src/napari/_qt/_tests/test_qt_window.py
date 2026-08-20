@@ -167,16 +167,6 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     assert np.array_equal(screenshot_array, screenshot_array_from_file)
 
 
-def test_status_tooltip(make_napari_viewer):
-    viewer = make_napari_viewer()
-    assert viewer.window._qt_window._current_tooltip == 'Ready'
-    viewer.add_points()
-    viewer.cursor.canvas_position = (10, 10)
-    # cannot rely on statuschecker cause it's disabled in make_napari_viewer
-    # so we need to trigger ourselves
-    assert viewer._calc_status_from_cursor() != 'Ready'
-
-
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
 def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     """Test that we can add a plugin dock widget to the viewer."""
