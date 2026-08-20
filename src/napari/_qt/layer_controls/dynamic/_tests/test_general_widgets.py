@@ -9,7 +9,6 @@ from napari._qt.layer_controls.dynamic.widgets import (
     QtColormapControl,
     QtContrastLimitsControl,
     QtFaceColorControl,
-    QtGammaSliderControl,
     QtHistogramControl,
     QtMultiscaleLevelControl,
     QtOpacityBlendingControls,
@@ -108,6 +107,16 @@ class TestQtContrastLimitsControl:
         image.contrast_limits_range = (20, 40)
         np.testing.assert_array_equal(image.contrast_limits_range, (20, 40))
         np.testing.assert_array_equal(image.contrast_limits, (20, 40))
+
+    def test_change_gamma(self, qt_wrap: QtWrap) -> None:
+        image = Image(np.zeros((10, 10), dtype=np.uint8))
+        control = QtContrastLimitsControl([image])
+        qt_wrap.add_control(control)
+
+        assert image.gamma == 1
+        assert control.gamma_slider.value() == 1
+        control.gamma_slider.setValue(0.5)
+        assert image.gamma == 0.5
 
     def test_change_autocontrast(self, qt_wrap: QtWrap) -> None:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
@@ -233,27 +242,6 @@ class TestQtFaceColorControl:
 
         points.current_face_color = 'blue'
         assert np.all(control.face_color_edit.color == (0, 0, 1, 1))
-
-
-class TestQtGammaSliderControl:
-    def test_init(self, qt_wrap: QtWrap) -> None:
-        image = Image(np.zeros((10, 10), dtype=np.uint8))
-        control = QtGammaSliderControl([image])
-        qt_wrap.add_control(control)
-
-    def test_update_gamma(self, qt_wrap: QtWrap) -> None:
-        image = Image(np.zeros((10, 10), dtype=np.uint8))
-        control = QtGammaSliderControl([image])
-        qt_wrap.add_control(control)
-
-        assert image.gamma == 1.0
-        assert control.gamma_slider.value() == 1.0
-
-        control.gamma_slider.setValue(2.0)
-        assert image.gamma == 2.0
-
-        image.gamma = 0.5
-        assert control.gamma_slider.value() == 0.5
 
 
 class TestQtHistogramControl:
