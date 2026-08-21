@@ -39,13 +39,15 @@ def compute_histogram(
     data = _get_data(layer, mode)
 
     if data is None or data.size == 0:
-        yield _make_empty()
+        empty = _make_empty()
+        yield empty['bin_edges'], empty['counts']
         return
 
     if getattr(layer, 'rgb', False):
         data = _sample_rgb_and_luminance(data, max_samples)
         if data.size == 0:
-            yield _make_empty()
+            empty = _make_empty()
+            yield empty['bin_edges'], empty['counts']
             return
 
     if mode == 'full' and _has_chunks(data):
@@ -71,7 +73,7 @@ def _make_empty():
     }
 
 
-def get_computed(layer: Any) -> dict[str, np.ndarray]:
+def _get_computed(layer: Any) -> dict[str, np.ndarray]:
     """Return the last computed histogram for *layer* (defaults if none)."""
     return layer.metadata.get('_computed_histogram', _make_empty())
 
@@ -351,9 +353,6 @@ def _compute_chunked_progressive(
     """Generator that yields ``(bin_edges, counts)`` after each chunk.
 
     Provides incremental histogram snapshots as each chunk is loaded.
-    The final yield updates ``layer.metadata['_computed_histogram']`` so
-    callers that skip intermediate results (e.g. the synchronous
-    ``compute`` path) still see consistent state.
     """
     n = min(max_samples, data.size)
     chunk_sizes = _chunk_sizes(data)

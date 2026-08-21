@@ -11,7 +11,7 @@ from vispy.scene import SceneCanvas
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
 from napari.utils.events.event_utils import disconnect_events
-from napari.utils.histogram import get_computed
+from napari.utils.histogram import _get_computed
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -176,7 +176,7 @@ class QtHistogramWidget(QWidget):
 
         self._updating = True
         try:
-            computed = get_computed(self.layer)
+            computed = _get_computed(self.layer)
             bin_edges = computed['bin_edges']
             counts = computed['counts']
 
