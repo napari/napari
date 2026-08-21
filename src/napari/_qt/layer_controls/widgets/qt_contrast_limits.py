@@ -188,21 +188,19 @@ class QContrastLimitsPopup(QtPopup):
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             button_layout.addWidget(range_btn)
 
-        # Histogram toggle checkbox.  The checkbox itself is always created
-        # (simple Qt widget, safe), but the QtHistogramContentWidget (vispy canvas)
-        # is deferred to _ensure_histogram_content() to avoid a PySide6 segfault when
-        # creating native GL widgets during __init__.
-        self._histogram_enabled_checkbox = QCheckBox('histogram')
-        self._histogram_enabled_checkbox.setChecked(
-            not self._contrast_control.histogram_button.isChecked()
-        )
-        self._histogram_enabled_checkbox.setToolTip(
-            'Show histogram in this popup'
-        )
-        self._histogram_enabled_checkbox.toggled.connect(
+        # Histogram toggle (label + checkbox), single layer only.  The checkbox
+        # itself is always created (simple Qt widget, safe); the
+        # QtHistogramContentWidget (vispy canvas) is deferred to
+        # _ensure_histogram_content() to avoid a PySide6 segfault when creating
+        # native GL widgets during __init__.
+        self._histogram_label = QLabel('histogram')
+        self._histogram_checkbox = QCheckBox()
+        self._histogram_checkbox.setToolTip('Show histogram in this popup')
+        self._histogram_checkbox.toggled.connect(
             self._on_popup_histogram_toggled
         )
-        button_layout.addWidget(self._histogram_enabled_checkbox)
+        button_layout.addWidget(self._histogram_label)
+        button_layout.addWidget(self._histogram_checkbox)
         self._needs_content_on_show = False
 
         button_layout.addStretch()
@@ -267,25 +265,25 @@ class QContrastLimitsPopup(QtPopup):
             parent=self,
         )
         self._layout.insertWidget(1, self.histogram_content)
-        if not self._histogram_enabled_checkbox.isChecked():
+        if not self._histogram_checkbox.isChecked():
             self.histogram_content.hide()
 
     def _set_histogram_visible(self, visible: bool) -> None:
-        """Show or hide the histogram content and resize the popup."""
+        """Show or hide the popup's histogram content and resize the popup."""
+        self._ensure_histogram_content()
+        if self.histogram_content is None:
+            return
         if visible:
-            self._ensure_histogram_content()
-            if self.histogram_content is None:
-                return
             h = self.histogram_content.sizeHint().height()
             self.histogram_content.show()
+            # this can be None in testing, so just skip
             if self._contrast_control is not None:
                 self._contrast_control._schedule_compute()
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
         else:
-            if self.histogram_content is not None:
-                self.histogram_content.hide()
+            self.histogram_content.hide()
             self.setFixedHeight(self._base_height())
 
     def _on_popup_histogram_toggled(self, visible: bool) -> None:
@@ -460,12 +458,12 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
-            self._layer,
-            self.parent(),
-            self,
+            layer=self._layer,
+            parent=self.parent(),
+            contrast_control=self,
         )
-        self.clim_popup.setParent(self.parent())
-        self.clim_popup.move_to('top', min_length=650)
+        if self.parent():
+            self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
 
     def _on_contrast_limits_change(self):
@@ -510,7 +508,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             and event.button() == Qt.MouseButton.RightButton
         ):
             self.histogram_button.setDown(False)
-            self.show_histogram_popup()
+            self.show_clim_popup()
             return True
         return super().eventFilter(obj, event)
 
@@ -528,10 +526,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
             )
             self._histogram_content_widget.hide()
-
-    def show_histogram_popup(self):
-        """Show the histogram popup widget."""
-        self.show_clim_popup()
 
     def ensure_content(self) -> None:
         """Lazily create the histogram content widget (vispy canvas)."""

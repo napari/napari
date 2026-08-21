@@ -167,9 +167,6 @@ class QtHistogramWidget(QWidget):
 
         Accepts an optional event argument so it can be connected directly
         to psygnal events without a wrapper.
-
-        Reads from ``layer.metadata['_computed_histogram']`` (written by the
-        compute) so this method never triggers a ``compute()`` itself.
         """
         if self._updating:
             return
