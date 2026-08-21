@@ -1,0 +1,21 @@
+[workspace]
+authors = ["napari developers"]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["win-64", "linux-64", "osx-arm64"]  # Mac Intel support is not available
+preview = ["pixi-build"]
+
+[package]
+version = "0.7.1.dev0" # keep in sync with `pyproject.toml`
+build = {
+  backend.name = "pixi-build-python",
+  config.ignore-pypi-mapping = false,
+}
+
+# there is no automatic mapping from `optional-dependencies`/`dependency-groups`
+# to `package.extra-dependencies`/`dependencies` yet,
+# ref. https://github.com/prefix-dev/pixi/issues/4764#issuecomment-4781239118
+[package.extra-dependencies.pyqt]
+pyqt6 = "*"
+
+[package.extra-dependencies.docs]
+# TODO: fill in docs deps
