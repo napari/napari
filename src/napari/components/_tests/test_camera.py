@@ -29,7 +29,7 @@ def test_camera():
 
 def test_calculate_view_direction_3d():
     """Check that view direction is calculated properly from camera angles."""
-    # simple case
+    # rx rotates about the depth axis, which leaves the home view unchanged
     camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=1)
     assert np.allclose(camera.view_direction, (-1, 0, 0))
 
@@ -80,7 +80,7 @@ def test_set_view_direction_3d():
     camera.set_view_direction(view_direction=view_direction)
     assert np.allclose(camera.view_direction, view_direction)
     assert np.allclose(
-        _normalize_angle(camera.angles), (180, -71.6, -147.7), atol=0.1
+        _normalize_angle(camera.angles), (180.0, -71.6, -147.7), atol=0.1
     )
 
 

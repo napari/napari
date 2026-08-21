@@ -2,6 +2,12 @@ import sys
 
 import numpy as np
 import pytest
+from hypothesis import given, settings, strategies as st
+
+from napari.utils.camera_orientations import (
+    up_direction_from_angles,
+    view_direction_from_angles,
+)
 
 
 def test_camera(make_napari_viewer):
@@ -272,3 +278,93 @@ def test_camera_orientation_3d(make_napari_viewer, qtbot):
     sshot_towards = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
 
     assert np.mean(sshot_towards) > np.mean(sshot_away)
+
+
+ORIENTATIONS = [
+    (depth, vertical, horizontal)
+    for depth in ['towards', 'away']
+    for vertical in ['down', 'up']
+    for horizontal in ['right', 'left']
+]
+
+ANGLES = st.tuples(
+    *[
+        st.floats(
+            min_value=-180,
+            max_value=180,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+        for _ in range(3)
+    ]
+)
+
+
+@pytest.fixture(scope='module')
+def arcball_camera(qapp):
+    from vispy import scene
+
+    canvas = scene.SceneCanvas(size=(100, 100), show=False)
+    try:
+        view = canvas.central_widget.add_view()
+        camera = scene.ArcballCamera(fov=0)
+        view.camera = camera
+        camera.set_range(x=(0, 10), y=(0, 10), z=(0, 10))
+        yield camera
+    finally:
+        canvas.close()
+
+
+@pytest.mark.filterwarnings('ignore:gimbal lock')
+@pytest.mark.parametrize('orientation', ORIENTATIONS)
+@given(angles=ANGLES)
+@settings(max_examples=20, deadline=None)
+def test_view_direction_correct_under_rotation(
+    orientation, angles, arcball_camera
+):
+    """Check that the napari direction math matches a real VisPy 3D camera."""
+    from napari._vispy.camera import (
+        _get_vispy_flipped_axes,
+        napari_angles_to_vispy_quat,
+    )
+
+    camera = arcball_camera
+    camera.flip = _get_vispy_flipped_axes(orientation, ndisplay=3)
+    camera.set_state(
+        _quaternion=napari_angles_to_vispy_quat(angles, orientation)
+    )
+    camera.view_changed()
+    matrix_inv = np.linalg.inv(camera.transform.matrix[:3, :3])
+    # VisPy uses xyz coordinates; napari uses zyx, hence the reversal.
+    view_direction = (-matrix_inv[:, 2])[::-1]
+    up_direction = (matrix_inv[:, 1])[::-1]
+    assert np.allclose(
+        view_direction_from_angles(angles, orientation),
+        view_direction,
+    )
+    assert np.allclose(
+        up_direction_from_angles(angles, orientation),
+        up_direction,
+    )
+
+
+@pytest.mark.parametrize('orientation', ORIENTATIONS)
+@given(angles=ANGLES)
+@settings(max_examples=50, deadline=None)
+def test_vispy_quat_roundtrip(qapp, orientation, angles):
+    """Check the vispy quaternion conversion inverts exactly."""
+    from napari._vispy.camera import (
+        napari_angles_to_vispy_quat,
+        vispy_quat_to_napari_angles,
+    )
+
+    quat = napari_angles_to_vispy_quat(angles, orientation)
+    recovered = vispy_quat_to_napari_angles(quat, orientation)
+    assert np.allclose(
+        view_direction_from_angles(recovered, orientation),
+        view_direction_from_angles(angles, orientation),
+    )
+    assert np.allclose(
+        up_direction_from_angles(recovered, orientation),
+        up_direction_from_angles(angles, orientation),
+    )

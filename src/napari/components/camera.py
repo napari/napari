@@ -14,6 +14,9 @@ from napari.utils.camera_orientations import (
     HorizontalAxisOrientationStr,
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
+    angles_from_view_direction,
+    up_direction_from_angles,
+    view_direction_from_angles,
 )
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
@@ -56,8 +59,10 @@ class Camera(EventedModel):
     zoom : float
         Scale from canvas pixels to world pixels.
     angles : 3-tuple
-        Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
-        Only used during 3D viewing.
+        Euler angles of camera when viewing in 3D, in degrees.
+        The angles rotate the camera about the three displayed dimensions,
+        in the same order as they appear in Dims.order.
+        With all angles zero, the camera shows the home view.
         Euler angles in 3D do not uniquely represent an orientation, so
         different angle triplets can produce the same view.
         Stored or returned angle values may differ from those that were set,
@@ -127,14 +132,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        from scipy.spatial.transform import Rotation as R
-
-        # once we're in scene-land, we pretend to be in xyz space (axes names don't
-        # mean anything after all...) which simplifies the logic a lot.
-        rotation = R.from_euler('xyz', self.angles, degrees=True)
-        # view direction is given by the z component, but flipping the sign.
-        # This is because the default view direction at angles (0, 0, 0) is (-1, 0, 0)
-        return tuple(-rotation.as_matrix()[0])
+        return view_direction_from_angles(self.angles, self.orientation)
 
     @property
     def up_direction(self) -> tuple[float, float, float]:
@@ -144,14 +142,7 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        from scipy.spatial.transform import Rotation as R
-
-        # once we're in scene-land, we pretend to be in xyz space (axes names don't
-        # mean anything after all...) which simplifies the logic a lot.
-        rotation = R.from_euler('xyz', self.angles, degrees=True)
-        # up direction is given by the y component, but flipping the sign.
-        # This is because the default up direction at angles (0, 0, 0) is (0, -1, 0)
-        return tuple(-rotation.as_matrix()[1])
+        return up_direction_from_angles(self.angles, self.orientation)
 
     def set_view_direction(
         self,
@@ -179,27 +170,9 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
-        from scipy.spatial.transform import Rotation as R
-
-        # project up onto view so we can remove the parallel component
-        projection = np.dot(up_direction, view_direction) * np.array(
-            view_direction
+        self.angles = angles_from_view_direction(
+            view_direction, up_direction, self.orientation
         )
-        up_direction_arr = np.asarray(up_direction) - projection
-
-        view_direction_arr = np.asarray(view_direction) / np.linalg.norm(
-            view_direction
-        )
-        up_direction_arr = up_direction_arr / np.linalg.norm(up_direction_arr)
-        right_direction = np.cross(up_direction_arr, view_direction_arr)
-
-        # once we're in scene-land, we pretend to be in xyz space (axes names don't
-        # mean anything after all...) which simplifies the logic a lot. We also
-        # flip all signs (see explanations in self.view_direction, and self.up_direction)
-        matrix = -np.array(
-            (view_direction_arr, up_direction_arr, right_direction)
-        )
-        self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]

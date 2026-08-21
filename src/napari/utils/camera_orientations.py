@@ -1,7 +1,26 @@
+"""Camera orientation helpers shared by the napari camera model.
+
+The camera orientation is given by three Euler angles (rx, ry, rz) in degrees
+that rotate the camera about the three displayed dimensions: the first angle
+about the depth axis (dim0), the second about the vertical axis (dim1), and
+the third about the horizontal axis (dim2), in that order. With all angles
+zero the camera shows the home view, where the view direction lies along the
+depth axis and up along the vertical axis, with signs given by the
+``orientation``.
+"""
+
+from __future__ import annotations
+
+import warnings
 from enum import auto
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+import numpy as np
 
 from napari.utils.misc import StringEnum
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 class VerticalAxisOrientation(StringEnum):
@@ -35,3 +54,126 @@ DEFAULT_ORIENTATION_TYPED = (
     HorizontalAxisOrientation.RIGHT,
 )
 DEFAULT_ORIENTATION = tuple(map(str, DEFAULT_ORIENTATION_TYPED))
+
+
+def _base_directions(
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Home-view camera view and up directions for the given orientation.
+
+    The horizontal orientation only affects how the renderer mirrors the
+    image, so only the view and up directions are returned.
+    """
+    depth, vertical, _ = orientation
+    view = np.array([-1 if str(depth) == 'towards' else 1, 0, 0], dtype=float)
+    up = np.array([0, -1 if str(vertical) == 'down' else 1, 0], dtype=float)
+    return view, up
+
+
+def _camera_rotation_matrix(
+    angles: tuple[float, float, float],
+) -> npt.NDArray[np.float64]:
+    """Return the camera rotation matrix for the given Euler angles.
+
+    The camera is rotated about the depth (dim0), vertical (dim1), and
+    horizontal (dim2) axes by the first, second, and third angles, in that
+    order.
+    """
+    from scipy.spatial.transform import Rotation as R
+
+    # scipy's 'XYZ' sequence rotates opposite to the napari convention.
+    return R.from_euler('XYZ', -np.asarray(angles), degrees=True).as_matrix()
+
+
+def view_direction_from_angles(
+    angles: tuple[float, float, float],
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> tuple[float, float, float]:
+    """Return the 3D view direction for the given angles.
+
+    The direction is in 3D scene coordinates (world coordinates of the three
+    displayed dimensions).
+    """
+    base_view, _ = _base_directions(orientation)
+    return tuple(_camera_rotation_matrix(angles) @ base_view)
+
+
+def up_direction_from_angles(
+    angles: tuple[float, float, float],
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> tuple[float, float, float]:
+    """Return the 3D up direction for the given angles.
+
+    The direction is in 3D scene coordinates (world coordinates of the three
+    displayed dimensions).
+    """
+    _, base_up = _base_directions(orientation)
+    return tuple(_camera_rotation_matrix(angles) @ base_up)
+
+
+def angles_from_view_direction(
+    view_direction: tuple[float, float, float],
+    up_direction: tuple[float, float, float],
+    orientation: tuple[
+        DepthAxisOrientation,
+        VerticalAxisOrientation,
+        HorizontalAxisOrientation,
+    ],
+) -> tuple[float, float, float]:
+    """Return camera Euler angles matching the given direction vectors.
+
+    The inverse of :func:`view_direction_from_angles` and
+    :func:`up_direction_from_angles`.
+
+    Parameters
+    ----------
+    view_direction : 3-tuple of float
+        The desired view direction in 3D scene coordinates.
+    up_direction : 3-tuple of float
+        A direction vector which will point upwards on the canvas. It must not
+        be parallel to the ``view_direction`` and does not need to be orthogonal
+        to it; it will be projected.
+    orientation : 3-tuple of str
+        The napari orientation, with depth, vertical, and horizontal components,
+        in napari (zyx) order.
+
+    Returns
+    -------
+    3-tuple of float
+        Euler angles (rx, ry, rz) of the camera in 3D viewing, in degrees.
+    """
+    from scipy.spatial.transform import Rotation as R
+
+    view = np.asarray(view_direction, dtype=float)
+    view = view / np.linalg.norm(view)
+    up = np.asarray(up_direction, dtype=float)
+    up = up - np.dot(up, view) * view
+    up = up / np.linalg.norm(up)
+
+    # The rotation maps the home-view basis onto the given view/up basis:
+    # ``rotation = camera_basis @ home_basis.T`` (bases are orthonormal).
+    base_view, base_up = _base_directions(orientation)
+    camera_basis = np.stack([view, up, np.cross(view, up)], axis=1)
+    home_basis = np.stack(
+        [base_view, base_up, np.cross(base_view, base_up)], axis=1
+    )
+    rotation = camera_basis @ home_basis.T
+
+    # scipy 'XYZ' reports the angles negated; gimbal-lock warnings here are
+    # expected and harmless.
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)
+        angles = R.from_matrix(rotation).as_euler('XYZ', degrees=True)
+    return tuple(-angles)
