@@ -802,6 +802,14 @@ def test_remove_selected_all_locked():
             ('y1', 'x1'),
             2,
         ),  # topmost equally long annotated wins
+        (
+            [
+                ((100, 100, 100), ('Z', 'y', 'X')),
+                ((100, 100, 100), ('-3', 'c', 'X')),
+            ],
+            ('Z', 'c', 'X'),
+            3,
+        ),  # labels merge per axis across layers
     ],
 )
 def test_layerlist_axis_labels(
