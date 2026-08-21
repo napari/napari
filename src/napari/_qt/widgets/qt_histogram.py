@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
-from napari._qt.qthreading import GeneratorWorker, create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
 from napari.utils.events.event_utils import disconnect_events
+from napari.utils.histogram import get_computed
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
@@ -58,7 +58,6 @@ class QtHistogramWidget(QWidget):
         self._appearance = get_settings().appearance
         self._updating = False
         self._cleaned_up: bool = False
-        self._compute_worker: GeneratorWorker | None = None
 
         theme = get_theme(self._appearance.theme)
 
@@ -90,17 +89,9 @@ class QtHistogramWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
-        # Connect model events to a single handler for sync/async dispatch.
-        self._histogram.events.counts.connect(self._on_model_event)
-        self._histogram.events.enabled.connect(self._on_model_event)
-        self._histogram.events.log_scale.connect(self._on_model_event)
-        self._histogram.events.mode.connect(self._on_model_event)
-        self._histogram.events.bins.connect(self._on_model_event)
-        self._histogram.events.max_samples.connect(self._on_model_event)
-
-        # Progressive partials are broadcast on a render-only channel so this
-        # view animates chunk-by-chunk even when another view owns the worker.
-        self._histogram.events.partial_computed.connect(self._update_histogram)
+        # Re-render on compute progress/completion and on layer visual changes.
+        self._histogram.events.updated.connect(self._update_histogram)
+        self._histogram.events.completed.connect(self._update_histogram)
 
         # Connect to layer events that affect visualization
         layer.events.gamma.connect(self._update_histogram)
@@ -117,13 +108,6 @@ class QtHistogramWidget(QWidget):
         self._apply_visual_style()
         self._update_histogram()
 
-    def _on_model_event(self) -> None:
-        """Respond to model property changes — re-render or trigger async compute."""
-        if self._histogram._dirty and self._histogram.enabled:
-            self._ensure_histogram_computed()
-        else:
-            self._update_histogram()
-
     def _on_theme_change(self, event: Event | None = None) -> None:
         """Update canvas and plot styling when the application theme changes.
 
@@ -138,74 +122,6 @@ class QtHistogramWidget(QWidget):
         )
         self._apply_visual_style(theme_name=theme_name)
         self.canvas.update()
-
-    def _ensure_histogram_computed(self, event: Event | None = None) -> None:
-        """Trigger histogram computation in a background thread.
-
-        At most one worker runs per model to avoid competing compute.
-        Others animate from ``partial_computed`` broadcasts.
-        """
-        if self._compute_worker is not None:
-            self._abort_worker(self._compute_worker)
-            self._compute_worker = None
-        elif self._histogram._compute_scheduled:
-            return
-
-        worker = cast(
-            GeneratorWorker,
-            create_worker(
-                self._histogram.compute,  # type: ignore[arg-type]
-                _progress={'desc': 'Computing histogram'},
-            ),
-        )
-        worker.yielded.connect(self._on_partial_histogram)
-        worker.finished.connect(self._on_async_compute_done)
-        self._compute_worker = worker
-        self._histogram._compute_scheduled = True
-        worker.start()
-
-    def _abort_worker(self, worker: GeneratorWorker) -> None:
-        """Stop a worker and reset model state for a replacement compute.
-
-        Disconnects our specific slots, leaving napari's built-in handlers
-        (task status, progress bar) attached so they fire normally when the
-        thread finishes.
-        """
-        worker.finished.disconnect(self._on_async_compute_done)
-        worker.yielded.disconnect(self._on_partial_histogram)
-        pbar = getattr(worker, 'pbar', None)
-        if pbar is not None:
-            pbar.close()
-        worker.quit()
-        self._histogram._computing = False
-        self._histogram._compute_scheduled = False
-
-    def _on_partial_histogram(
-        self, bins_counts: tuple[np.ndarray, np.ndarray]
-    ) -> None:
-        """Publish a partial histogram result and broadcast it to all views."""
-        if self._cleaned_up or not self._histogram._dirty:
-            return
-        bins, counts = bins_counts
-        self._histogram._bin_edges = bins
-        self._histogram._counts = counts
-        self._histogram.events.partial_computed()
-
-    def _on_async_compute_done(self, _: Any = None) -> None:
-        """Called on main thread when our background compute finishes.
-
-        Emits events.counts() on success; skips if still dirty (e.g. error)
-        to prevent infinite retry loops.
-        """
-        if self._cleaned_up:
-            return
-        self._compute_worker = None
-        self._histogram._compute_scheduled = False
-
-        if self._histogram._dirty:
-            return
-
-        self._histogram.events.counts()
 
     def _theme_rgba(
         self, color: Color, alpha: float = 1.0
@@ -252,24 +168,17 @@ class QtHistogramWidget(QWidget):
         Accepts an optional event argument so it can be connected directly
         to psygnal events without a wrapper.
 
-        Reads ``_bin_edges`` and ``_counts`` directly (the private
-        attributes) to guarantee this method never triggers a synchronous
-        ``compute()``.  The private attributes always hold the last
-        computed (or default) values, and callers always invoke this
-        method after a compute has completed.
+        Reads from ``layer.metadata['_computed_histogram']`` (written by the
+        compute) so this method never triggers a ``compute()`` itself.
         """
         if self._updating:
             return
 
         self._updating = True
         try:
-            if not self._histogram.enabled:
-                self.histogram_visual.set_data()
-                self.canvas.update()
-                return
-
-            bin_edges = self._histogram._bin_edges
-            counts = self._histogram._counts
+            computed = get_computed(self.layer)
+            bin_edges = computed['bin_edges']
+            counts = computed['counts']
 
             gamma = self.layer.gamma
             clims = self.layer.contrast_limits
@@ -290,37 +199,10 @@ class QtHistogramWidget(QWidget):
         """Disconnect event handlers and clean up resources."""
         self._cleaned_up = True
 
-        # Disconnect events first to prevent new computation triggers
-        # during teardown.  This also stops *this* widget from reacting to
-        # the counts() nudge emitted below, so only surviving views do.
+        # Disconnect events so this view stops reacting to compute updates.
         disconnect_events(self._histogram.events, self)
         disconnect_events(self.layer.events, self)
         disconnect_events(self._appearance.events, self)
 
-        # Abort the worker if we own one.  If the generator is between
-        # chunks it exits on the next iteration; if it's mid-chunk (blocking
-        # on I/O) the thread pool terminates it at shutdown — the
-        # _cleaned_up guard in _on_async_compute_done and
-        # _on_partial_histogram prevents stale callbacks either way.  Each
-        # view only ever holds its own worker, so there's no shared handle
-        # to reconcile.
-        owned_unfinished = False
-        worker = self._compute_worker
-        self._compute_worker = None
-        if worker is not None:
-            self._abort_worker(worker)
-            self._histogram._compute_scheduled = False
-            # If the compute had not finished (still dirty), our aborted
-            # worker will never emit counts(), so a surviving view must
-            # restart the load.
-            owned_unfinished = self._histogram._dirty
-
         self.histogram_visual.destroy()
         self.canvas.close()
-
-        # Nudge any surviving view (e.g. the inline histogram when the popup
-        # closes mid-load) to take over the compute we were driving.  Our
-        # own model-event subscriptions are already gone, so this reaches
-        # only other views — or no-one, harmlessly.
-        if owned_unfinished and self._histogram.enabled:
-            self._histogram.events.counts()
