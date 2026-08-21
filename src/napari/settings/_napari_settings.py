@@ -83,7 +83,7 @@ class NapariSettings(EventedConfigFileSettings):
         populate_by_name=True,
     )
 
-    def _connect_events(self):
+    def _connect_events(self) -> None:
         """Connects the events for the settings to their respective update functions."""
         self.application._connect_events()
         self.experimental._connect_events()

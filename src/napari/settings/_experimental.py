@@ -27,7 +27,7 @@ class PaletteFuzzySearch(StrEnum):
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
-    def _connect_events(self):
+    def _connect_events(self) -> None:
         """Connects the events for the triangulation and colormap backends to their respective update functions."""
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
