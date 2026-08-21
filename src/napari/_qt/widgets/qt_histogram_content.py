@@ -32,8 +32,6 @@ class QtHistogramContentWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         self.layer = layer
-        # Let the QSS rule `QWidget[foreground=true]` style this widget.
-        self.setProperty('foreground', 'true')
 
         layout = QVBoxLayout()
         layout.setContentsMargins(4, 4, 4, 4)

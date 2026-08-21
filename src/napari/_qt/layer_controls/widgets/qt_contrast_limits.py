@@ -434,6 +434,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
         # Hidden histogram content widget; created lazily on first toggle.
         self._histogram_content_widget = QWidget()
+        self._histogram_content_widget.setProperty('foreground', 'true')
         self._histogram_content_widget.hide()
         self._histogram_content_widget.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
