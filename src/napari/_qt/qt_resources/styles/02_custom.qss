@@ -669,3 +669,18 @@ QCommandLineEdit, QCommandList {
 QCommandList::item:selected {
   background-color: {{ primary }};
 }
+
+/* mixed_value widgets, warning color */
+
+QPushButton[mixed_value="true"] {
+  border: 1px solid {{ warning }};
+}
+
+/* Note that this works for special superqt sliders only if using the nested
+ * set_mixed_value_style() function */
+QSlider[mixed_value="true"]::handle:horizontal {
+  background-color: {{ warning }};
+}
+QSlider[mixed_value="true"]::handle:vertical {
+  background-color: {{ warning }};
+}
