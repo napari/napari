@@ -135,6 +135,7 @@ class TestQtContrastLimitsControl:
 
         control.show_clim_popup()
         control.clim_popup.hide()  # so it doesn't show when testing
+        qt_wrap._qtbot.add_widget(control.clim_popup)
 
     def test_histogram_button(self, qt_wrap: QtWrap) -> None:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
