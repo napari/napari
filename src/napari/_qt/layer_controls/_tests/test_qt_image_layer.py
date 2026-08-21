@@ -419,4 +419,6 @@ def test_popup_histogram_toggle(qtbot):
     qtbot.waitUntil(lambda: popup.histogram_content.isHidden())
     assert not popup._histogram_checkbox.isChecked()
 
+    # need to disconnect to stop the timer (otherwise dangling timer error)
+    qtctrl._contrast_limits_control.disconnect_widget_controls()
     popup.close()
