@@ -120,7 +120,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             return
 
         with qt_signals_blocked(self.color_mode_combobox):
-            mode = self._layer._edge.color_mode
+            mode = self._layer._color_manager.color_mode
             index = self.color_mode_combobox.findText(
                 mode, Qt.MatchFixedString
             )
@@ -131,17 +131,17 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     def _on_color_change(self):
         """Receive layer model edge color  change event & update dropdown."""
         if (
-            self._layer._edge.color_mode == ColorMode.DIRECT
+            self._layer._color_manager.color_mode == ColorMode.DIRECT
             and len(self._layer.data) > 0
         ):
             with qt_signals_blocked(self.color_edit):
                 self.color_edit.setColor(self._layer.color[0])
-        elif self._layer._edge.color_mode in (
+        elif self._layer._color_manager.color_mode in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
             with qt_signals_blocked(self.color_feature_box):
-                prop = self._layer._edge.color_properties.name
+                prop = self._layer._color_manager.color_properties.name
                 index = self.color_feature_box.findText(
                     prop, Qt.MatchFixedString
                 )

@@ -125,8 +125,8 @@ class VispyShapesLayer(VispyBaseLayer):
             vertices,
             size=size,
             face_color=face_color,
-            border_color=border_color,
-            border_width=width,
+            edge_color=border_color,
+            edge_width=width,
         )
 
         if pos is None or len(pos) == 0:

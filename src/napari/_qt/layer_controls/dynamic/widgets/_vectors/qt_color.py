@@ -72,9 +72,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         self.feature_label = QtWrappedLabel('edge feature:')
         self.color_feature_box = QComboBox(parent)
         self.color_feature_box.addItems(self._layers[0].features.columns)
-        if self._layers[0]._edge.color_properties is not None:
+        if self._layers[0]._color_manager.color_properties is not None:
             self.color_feature_box.setCurrentText(
-                self._layers[0]._edge.color_properties.name
+                self._layers[0]._color_manager.color_properties.name
             )
         self.color_feature_box.currentTextChanged.connect(
             self.change_color_feature
@@ -118,7 +118,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     def _on_color_mode_change(self):
         """Receive layer model edge color mode change event & update dropdown."""
         with qt_signals_blocked(self.color_mode_combobox):
-            mode = self._layers[0]._edge.color_mode
+            mode = self._layers[0]._color_manager.color_mode
             index = self.color_mode_combobox.findText(
                 mode, Qt.MatchFixedString
             )
@@ -129,17 +129,17 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     def _on_color_change(self):
         """Receive layer model edge color  change event & update dropdown."""
         if (
-            self._layers[0]._edge.color_mode == ColorMode.DIRECT
+            self._layers[0]._color_manager.color_mode == ColorMode.DIRECT
             and len(self._layers[0].data) > 0
         ):
             with qt_signals_blocked(self.color_edit):
                 self.color_edit.setColor(self._layers[0].color[0])
-        elif self._layers[0]._edge.color_mode in (
+        elif self._layers[0]._color_manager.color_mode in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
             with qt_signals_blocked(self.color_feature_box):
-                prop = self._layers[0]._edge.color_properties.name
+                prop = self._layers[0]._color_manager.color_properties.name
                 index = self.color_feature_box.findText(
                     prop, Qt.MatchFixedString
                 )

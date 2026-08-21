@@ -613,14 +613,14 @@ def test_switching_color_mode():
     )
 
     # there should not be an color_property
-    assert layer._edge.color_properties is None
+    assert layer._color_manager.color_properties is None
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in Vectors.properties is being automatically selected
     with pytest.warns(RuntimeWarning):
         layer.color_mode = 'colormap'
-    assert layer._edge.color_properties.name == next(iter(properties))
+    assert layer._color_manager.color_properties.name == next(iter(properties))
     np.testing.assert_allclose(layer.color[-1], [1, 1, 1, 1])
 
     # switch to color cycle
