@@ -455,6 +455,13 @@ class LayerList(SelectableEventedList[Layer]):
             Converted scale.
         """
         clipped_target_units = to_units[-len(from_units) :]
+        try:
+            matching_units = from_units == clipped_target_units
+        except ValueError:
+            # Units from separate registries can still be converted.
+            matching_units = False
+        if matching_units:
+            return np.array(scale)
         return np.array(
             [
                 (s * u).to(cu).magnitude
