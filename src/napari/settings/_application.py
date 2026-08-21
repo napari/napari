@@ -49,8 +49,8 @@ class DaskSettings(EventedModel):
 
 
 class ApplicationSettings(EventedModel):
-    def __init__(self, **kwargs: Any):
-        super().__init__(**kwargs)
+    def _connect_events(self):
+        """Connects the events for the application settings to their respective update functions."""
         # register callback to update brush size on mouse move modifiers
         self.events.brush_size_on_mouse_move_modifiers.connect(
             brush_size_on_mouse_move_modifiers_callback

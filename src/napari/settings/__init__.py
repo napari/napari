@@ -75,6 +75,8 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
         if path is not _NOT_SET:
             path = Path(path).resolve() if path is not None else None
         _SETTINGS = NapariSettings(config_path=path)
+        _SETTINGS._connect_events()
+
     elif path is not _NOT_SET:
         _raise_path_set_twice()
 
