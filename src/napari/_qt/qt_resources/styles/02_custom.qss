@@ -23,8 +23,8 @@ QStatusBar {
 /* ------------- Window separator --------- */
 
 QMainWindow::separator {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   padding: 2px;
   border: none;
   background-color: {{ background }};
@@ -243,6 +243,23 @@ QtDimSliderWidget > QLineEdit {
 
 #QtPopupFrame > QLabel {
   color: {{ text }};
+}
+
+/* ------------- Guided viewer tour ------------- */
+
+#qt_viewer_tour_tooltip {
+  border: 1px solid {{ foreground }};
+  border-radius: 5px;
+}
+
+#qt_viewer_tour_tooltip QPushButton {
+  background: {{ secondary }};
+  border-radius: 3px;
+  padding: 5px 12px;
+}
+
+#qt_viewer_tour_tooltip QPushButton:hover {
+  background: {{ primary }};
 }
 
 #playDirectionCheckBox::indicator {

@@ -89,7 +89,7 @@ fig.show()
 
 # next, draw the shape in napari
 viewer = napari.Viewer()
-viewer.camera.orientation2d = ('up', 'right')  # lat goes up, lon goes right
+viewer.scene.camera.orientation2d = ('up', 'right')  # lat goes up, lon goes right
 layer = viewer.add_shapes(
         za,
         shape_type=['polygon'],

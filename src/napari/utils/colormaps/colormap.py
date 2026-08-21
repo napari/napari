@@ -118,7 +118,7 @@ class Colormap(EventedModel):
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
                 'Control points must start with 0.0 and end with 1.0. '
-                'Got {v[0]} and {v[-1]}'
+                f'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
