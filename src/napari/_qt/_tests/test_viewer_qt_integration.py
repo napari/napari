@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
-from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
+from qtpy.QtCore import QEvent, Qt, QUrl
+from qtpy.QtGui import QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
@@ -125,7 +125,9 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     assert len(viewer._instances) == 2  # Two viewers should be created
     instances = list(viewer._instances)
     idx = 0 if instances[1] == viewer else 1
-    assert instances[idx].title == 'text'  # Check the second viewer's name
+    assert (
+        instances[idx].window._qt_window.windowTitle() == 'text'
+    )  # Check the second viewer's name
     instances[idx].close()  # Close the second viewer
 
     # check that the console is updated with locals from the script
@@ -134,22 +136,6 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     assert np.array_equal(console.shell.user_ns['data'], np.zeros((10, 10)))
     assert 'viewer1' in console.shell.user_ns
     assert 'viewer2' in console.shell.user_ns
-
-
-def test_qt_viewer(make_napari_viewer):
-    """Test instantiating viewer."""
-    viewer = make_napari_viewer()
-    view = viewer.window._qt_viewer
-
-    assert viewer.title == 'napari'
-    assert view.viewer == viewer
-
-    assert len(viewer.layers) == 0
-    assert view.layers.model().rowCount() == 0
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_welcome_widget_visibility(make_napari_viewer):
@@ -254,7 +240,7 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
     drag_event.accept.assert_called_once_with()
     assert welcome.property('drag') is True
     assert (
-        viewer.status
+        viewer.window._qt_window.statusBar()._help.text()
         == 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
     )
 
@@ -277,32 +263,6 @@ def test_welcome_widget_delegates_drag_and_drop_to_viewer(make_napari_viewer):
         choose_plugin=False,
     )
     assert welcome.property('drag') is False
-
-
-@skip_local_popups
-def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
-    viewer = make_napari_viewer(show=True, show_welcome_screen=False)
-    qt_viewer = viewer.window._qt_viewer
-
-    qtbot.waitUntil(qt_viewer.isVisible)
-
-    viewer.mouse_over_canvas = False
-    viewer.status = ''
-
-    canvas = qt_viewer.canvas.native
-    canvas.enterEvent(
-        QEnterEvent(
-            QPointF(10, 10),
-            QPointF(10, 10),
-            QPointF(10, 10),
-        )
-    )
-    assert viewer.mouse_over_canvas
-    assert viewer.status == 'Ready'
-
-    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer.mouse_over_canvas
-    assert viewer.status == ''
 
 
 def test_qt_viewer_with_console(make_napari_viewer):

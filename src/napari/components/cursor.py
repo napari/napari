@@ -38,6 +38,7 @@ class Cursor(EventedModel):
 
     # fields
     position: tuple[float, ...] = (1.0, 1.0)
+    canvas_position: tuple[int, int] | None = None
     viewbox: tuple[int, int] | None = None
     scaled: bool = True
     size: float = 1.0
