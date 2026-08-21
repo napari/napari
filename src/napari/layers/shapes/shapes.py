@@ -3387,3 +3387,9 @@ add_deprecated_property(
 add_deprecated_property(
     Shapes, 'edge_width', 'border_width', '0.11.0', '0.10.0'
 )
+add_deprecated_property(
+    Shapes, 'current_edge_color', 'current_border_color', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes, 'current_edge_width', 'current_border_width', '0.11.0', '0.10.0'
+)
