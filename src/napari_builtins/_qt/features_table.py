@@ -7,6 +7,7 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
+from pandas.errors import UndefinedVariableError
 from qtpy.QtCore import (
     QAbstractTableModel,
     QItemSelection,
@@ -23,9 +24,13 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
+    QHBoxLayout,
     QLabel,
-    QPushButton,
+    QLineEdit,
+    QMessageBox,
     QStyledItemDelegate,
     QTableView,
     QVBoxLayout,
@@ -33,12 +38,29 @@ from qtpy.QtWidgets import (
 )
 from superqt import QToggleSwitch
 
+from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
+from napari.utils._magicgui import find_viewer_ancestor
 from napari.utils.history import get_save_history
 from napari.utils.misc import in_ipython
+from napari.utils.tips import _link_color
+
+# pandas pd.eval does not fully support numexpr syntax, for some reason (e.g:
+# the "where" function is unrecognized). Use numexpr directly if possible,
+# falling back to the "python" engine of pandas
+try:
+    import numexpr
+
+    eval_func = numexpr.evaluate
+    eval_docs_link = 'https://numexpr.readthedocs.io/en/latest/user_guide.html#supported-operators'
+except ModuleNotFoundError:
+    eval_func = pd.eval
+    eval_docs_link = 'https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.eval.html#pandas.eval'
+
 
 if TYPE_CHECKING:
     import napari
     import napari.components
+    from napari.layers import Layer
 
 
 class PandasModel(QAbstractTableModel):
@@ -555,7 +577,8 @@ class DelegateCategorical(QStyledItemDelegate):
     def setEditorData(self, editor: QWidget, index: QModelIndex):
         if isinstance(editor, QComboBox):
             value = index.model().data(index, Qt.ItemDataRole.EditRole)
-            i = editor.findText(value)
+            # NOTE: we convert to str cause categorical data may not actually be str
+            i = editor.findText(str(value))
             if i >= 0:
                 editor.setCurrentIndex(i)
         else:
@@ -748,7 +771,7 @@ class FeaturesTable(QWidget):
         viewer: napari.viewer.ViewerModel,
     ) -> None:
         super().__init__()
-        self._selected_layers = []
+        self._selected_layers: list[Layer] = []
         self._selection_blocked = False
 
         self.viewer = viewer
@@ -760,19 +783,38 @@ class FeaturesTable(QWidget):
         self.setLayout(QVBoxLayout())
 
         self.info = QLabel('')
-        self.toggle = QToggleSwitch('editable')
         self.join_toggle = QToggleSwitch('shared columns only')
-        self.save = QPushButton('Save as CSV...')
+        self.editable_toggle = QToggleSwitch('editable.')
+        self.add_column_button = QtViewerPushButton(
+            'add_button',
+            tooltip='Add Column',
+            slot=self._add_column,
+        )
+        self.delete_column_button = QtViewerPushButton(
+            'delete_button',
+            tooltip='Delete Column',
+            slot=self._delete_column,
+        )
+        self.save_button = QtViewerPushButton(
+            'save',
+            tooltip='Save as CSV',
+            slot=self._on_save_clicked,
+        )
+
         self.table = PandasView()
         self.layout().addWidget(self.info)
-        self.layout().addWidget(self.toggle)
-        self.layout().addWidget(self.join_toggle)
-        self.layout().addWidget(self.save)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.join_toggle)
+        button_layout.addWidget(self.editable_toggle)
+        button_layout.addStretch()
+        button_layout.addWidget(self.add_column_button)
+        button_layout.addWidget(self.delete_column_button)
+        button_layout.addWidget(self.save_button)
+        self.layout().addLayout(button_layout)
         self.layout().addWidget(self.table)
 
-        self.toggle.toggled.connect(self._on_editable_change)
         self.join_toggle.toggled.connect(self._on_join_change)
-        self.save.clicked.connect(self._on_save_clicked)
+        self.editable_toggle.toggled.connect(self._on_editable_change)
 
         self.table.selectionModel().selectionChanged.connect(
             self._on_table_selection_changed
@@ -858,10 +900,14 @@ class FeaturesTable(QWidget):
 
             # Show widgets and update table
             self._on_features_change()
-            self.toggle.setVisible(True)
-            self.save.setVisible(True)
-            self.table.setVisible(True)
             self.join_toggle.setVisible(len(self._selected_layers) > 1)
+            self.editable_toggle.setVisible(True)
+            # sync edit buttons state
+            self._on_editable_change()
+            self.save_button.setVisible(True)
+            self.table.setVisible(True)
+
+            # update description label based on how many layers are selected
             if len(self._selected_layers) == 1:
                 self.info.setText(
                     f'Features of "{self._selected_layers[0].name}"'
@@ -876,10 +922,12 @@ class FeaturesTable(QWidget):
                 self.info.setText(f'Features of [{layer_names}]')
         else:
             # Hide widgets and show appropriate message
-            self.toggle.setVisible(False)
             self.join_toggle.setVisible(False)
-            self.save.setVisible(False)
+            self.editable_toggle.setVisible(False)
+            self.save_button.setVisible(False)
             self.table.setVisible(False)
+            self.add_column_button.setVisible(False)
+            self.delete_column_button.setVisible(False)
 
             # Determine message based on original selection
             if len(self.viewer.layers.selection) > 0:
@@ -952,7 +1000,10 @@ class FeaturesTable(QWidget):
         return df
 
     def _on_editable_change(self):
-        self.table.model().sourceModel().editable = self.toggle.isChecked()
+        editable = self.editable_toggle.isChecked()
+        self.table.model().sourceModel().editable = editable
+        self.add_column_button.setVisible(editable)
+        self.delete_column_button.setVisible(editable)
 
     def _on_join_change(self):
         """Update the table when join mode changes."""
@@ -1247,6 +1298,116 @@ class FeaturesTable(QWidget):
 
         return layer_positions[0] if layer_positions else None
 
+    def _add_column(self):
+        model = self.table.model().sourceModel()
+        all_features = model.df
+
+        base_name = 'new_column'
+        col_name = base_name
+        i = 1
+        while col_name in all_features.columns:
+            col_name = f'{base_name}_{i}'
+            i += 1
+
+        dialog = AddColumnDialog(self, default_name=col_name)
+        if dialog.exec_() != QDialog.Accepted:
+            return
+
+        col_name, expr, dtype = dialog.get_values()
+        if not col_name:
+            return
+
+        try:
+            for layer in self._selected_layers:
+                if expr == 'None':
+                    if dtype == 'object':
+                        value = None
+                    if dtype == 'str':
+                        value = ''
+                    elif dtype != 'float':
+                        # TODO: this should be fancier (actually accept nan value) but requires
+                        #       a lot more work to get editors and column types to behave
+                        raise ValueError(  # noqa: TRY301
+                            'NA values are not yet supported for non-float columns'
+                        )
+                    else:
+                        value = np.nan
+                else:
+                    value = eval_func(expr, local_dict=layer.features)
+                    # NOTE: numexpr does not support working with strings and numbers are the same time,
+                    # so something like "where(x > 5, 'good', 'bad')" will fail. One needs to use numbers,
+                    # or just do it in python :P
+
+                layer.features[col_name] = pd.Series(
+                    value, index=layer.features.index, dtype=dtype
+                )
+
+        except (
+            ValueError,
+            TypeError,
+            KeyError,
+            SyntaxError,
+            UndefinedVariableError,
+        ) as e:
+            QMessageBox.warning(
+                self,
+                'Invalid Expression or Dtype',
+                f"Could not add column '{col_name}':\n\nExpression: {expr}\nDtype: {dtype}\n\nError:\n{e}",
+            )
+            for layer in self._selected_layers:
+                if col_name in layer.features:
+                    del layer.features[col_name]
+        else:
+            # only if nothing went wrong
+            self._on_features_change()
+
+    def _delete_column(self):
+        model = self.table.model().sourceModel()
+        df = model.df
+
+        selection_model = self.table.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        if not selected_indexes:
+            QMessageBox.information(
+                self, 'No Column Selected', 'Please select a column to delete.'
+            )
+            return
+
+        selected_cols = sorted(
+            {idx.column() for idx in selected_indexes if idx.column() > 0}
+        )
+        if not selected_cols:
+            QMessageBox.warning(
+                self, 'Invalid Selection', 'Index column cannot be deleted.'
+            )
+            return
+
+        col_names = [df.columns[col - 1] for col in selected_cols]
+
+        msg = (
+            f'Are you sure you want to delete {len(col_names)} column(s)?\n'
+            + ', '.join(col_names)
+        )
+        reply = QMessageBox.question(
+            self,
+            'Delete Column',
+            msg,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        for layer in self._selected_layers:
+            layer.features.drop(
+                columns=col_names,
+                inplace=True,
+                errors='ignore',
+            )
+
+        self._on_features_change()
+
     def _on_save_clicked(self):
         dlg = QFileDialog()
         hist = get_save_history()
@@ -1337,3 +1498,55 @@ class FeaturesTable(QWidget):
         # Remove invalid characters
         suggested_name = selected_layer_name.translate(translation_table)
         return suggested_name
+
+
+class AddColumnDialog(QDialog):
+    def __init__(self, parent=None, default_name='new_column'):
+        super().__init__(parent)
+        self.setWindowTitle('Add Column')
+
+        self.col_name_input = QLineEdit(default_name)
+        self.expr_input = QLineEdit('None')
+        self.dtype_input = QComboBox()
+        self.dtype_input.setEditable(True)
+        self.dtype_input.addItems(
+            ['float', 'int', 'str', 'bool', 'object', 'category']
+        )
+
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel('Column Name:'))
+        layout.addWidget(self.col_name_input)
+
+        theme = (
+            viewer.theme if (viewer := find_viewer_ancestor(self)) else None
+        )
+        eval_docs_link_html = f'<a href="{eval_docs_link}" style="color: {_link_color(theme)};">click here for syntax</a>'
+        expr_label = QLabel(f'Column Expression ({eval_docs_link_html}):')
+        expr_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextBrowserInteraction
+        )
+        expr_label.setOpenExternalLinks(True)
+        layout.addWidget(expr_label)
+        layout.addWidget(self.expr_input)
+
+        layout.addWidget(QLabel('Column Dtype:'))
+        layout.addWidget(self.dtype_input)
+
+        layout.addWidget(self._buttons)
+        self.setLayout(layout)
+
+        self.resize(350, 150)
+
+    def get_values(self):
+        """Return a tuple: (column_name, expression, dtype)"""
+        return (
+            self.col_name_input.text().strip(),
+            self.expr_input.text().strip(),
+            self.dtype_input.currentText().strip(),
+        )
