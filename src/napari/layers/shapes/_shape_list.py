@@ -1858,17 +1858,22 @@ class ShapeList:
 
     @cached_property
     def _visible_shapes(self) -> list[tuple[int, Shape]]:
-        slice_key = self.slice_key
-        if len(slice_key):
-            return [
-                (i, s)
-                for i, s in enumerate(self.shapes)
-                if (
-                    np.all(s.slice_key[0] <= slice_key)
-                    and np.all(slice_key <= s.slice_key[1])
-                )
-            ]
-        return list(enumerate(self.shapes))
+        slice_key = np.asarray(self.slice_key)
+        if not len(slice_key) or not self.shapes:
+            return list(enumerate(self.shapes))
+        # This key is a real-valued data coordinate while a shape's is whole
+        # slices, so match `_update_displayed`'s half-slice tolerance where the
+        # shape does not span, and keep exact containment where it does.
+        lower, upper = self.slice_keys[:, 0], self.slice_keys[:, 1]
+        visible = np.all(
+            np.where(
+                lower == upper,
+                np.abs(slice_key - lower) < 0.5,
+                (lower <= slice_key) & (slice_key <= upper),
+            ),
+            axis=1,
+        )
+        return [(i, s) for i, s in enumerate(self.shapes) if visible[i]]
 
     @cached_property
     def _bounding_boxes(
