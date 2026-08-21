@@ -103,7 +103,8 @@ class QContrastLimitsPopup(QtPopup):
         self._layer = layer
         self._contrast_control = contrast_control
         self._cleaned_up = False
-        self._histogram_enabled_checkbox = None
+        self.histogram_content = None
+        self._frame_base_height = 0
 
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
@@ -191,10 +192,6 @@ class QContrastLimitsPopup(QtPopup):
         # (simple Qt widget, safe), but the QtHistogramContentWidget (vispy canvas)
         # is deferred to _ensure_histogram_content() to avoid a PySide6 segfault when
         # creating native GL widgets during __init__.
-        self._histogram_enabled_checkbox = None
-        self.histogram_content = None
-        self._frame_base_height: int = 0
-
         self._histogram_enabled_checkbox = QCheckBox('histogram')
         self._histogram_enabled_checkbox.setChecked(
             not self._contrast_control.histogram_button.isChecked()
@@ -430,21 +427,20 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.histogram_button.installEventFilter(self)
         self._clim_layout.addWidget(self.histogram_button)
 
-        # empty wrapper, will be populated on first toggle
+        # empty wrapper, will be populated on first toggle (otherwise
+        # it may segfault in some cases)
         self._histogram_content_widget = QWidget()
         self._histogram_content_widget.setProperty('foreground', 'true')
         self._histogram_content_widget.hide()
         self._histogram_content_widget.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
         )
-
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(4, 4, 4, 4)
+        content_layout.setSpacing(4)
+        self._histogram_content_widget.setLayout(content_layout)
         self._histogram_content = None
-        self._content_layout = QVBoxLayout()
-        self._content_layout.setContentsMargins(4, 4, 4, 4)
-        self._content_layout.setSpacing(4)
-        self._histogram_content_widget.setLayout(self._content_layout)
 
-        # timer to debounce lazy histogram computation
         self._compute_timer = QTimer()
         self._compute_timer.setSingleShot(True)
         self._compute_timer.timeout.connect(self._run_compute)
@@ -545,42 +541,50 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._layer,
             parent=self._histogram_content_widget,
         )
-        self._content_layout.addWidget(self._histogram_content)
+        self._histogram_content_widget.layout().addWidget(
+            self._histogram_content
+        )
 
     def _schedule_compute(self, event=None) -> None:
         """Debounce histogram recomputation via a single-shot timer."""
         self._compute_timer.start(_COMPUTE_DEBOUNCE_MS)
 
     def _run_compute(self) -> None:
-        """Run the async histogram compute (single worker, epoch-guarded)."""
+        """Run the async histogram compute."""
         if getattr(self, '_cleaned_up', False):
             return
         self._abort_worker()
         self._compute_epoch += 1
         epoch = self._compute_epoch
         worker = create_worker(
-            self._layer.histogram.compute_async, self._layer
+            self._layer.histogram._compute_async_no_events, self._layer
         )
+        # we fire events from here (and not within compute_async) because
+        # we want them to always be on the main thread
         worker.yielded.connect(lambda bc: self._on_yield(bc, epoch))
         worker.finished.connect(lambda: self._on_worker_done(epoch))
         self._worker = worker
         worker.start()
 
     def _on_yield(self, bin_counts: tuple, epoch: int) -> None:
-        """Write a progressive result and broadcast it to all views."""
+        """Write the latest result and emit ``updated`` on the main thread."""
         if getattr(self, '_cleaned_up', False) or epoch != self._compute_epoch:
             return
         bin_edges, counts = bin_counts
+        # Mirror the just-yielded chunk into metadata on the main thread before
+        # notifying listeners, so the visible data matches this update.
         self._layer.metadata['_computed_histogram'] = {
             'bin_edges': bin_edges,
             'counts': counts,
         }
+        self._layer.histogram.events.updated()
 
     def _on_worker_done(self, epoch: int) -> None:
-        """Finalize the compute broadcast once the worker finishes."""
+        """Emit ``completed`` on the main thread once the worker finishes."""
         if epoch != self._compute_epoch:
             return
         self._worker = None
+        self._layer.histogram.events.completed()
 
     def _abort_worker(self) -> None:
         """Stop any in-flight compute worker."""

@@ -113,6 +113,8 @@ class QContrastLimitsPopup(QtPopup):
         self._contrast_control = contrast_control
         self._cleaned_up = False
         self._histogram_enabled_checkbox = None
+        self.histogram_content = None
+        self._frame_base_height = 0
 
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
@@ -201,9 +203,6 @@ class QContrastLimitsPopup(QtPopup):
         # _ensure_histogram_content() to avoid a PySide6 segfault when
         # creating native GL widgets during __init__.
         if len(self._layers) == 1:
-            self.histogram_content = None
-            self._frame_base_height: int = 0
-
             self._histogram_enabled_checkbox = QCheckBox('histogram')
             self._histogram_enabled_checkbox.setChecked(False)
             self._histogram_enabled_checkbox.setToolTip(
@@ -463,11 +462,11 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._histogram_content_widget.setSizePolicy(
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
             )
+            content_layout = QVBoxLayout()
+            content_layout.setContentsMargins(4, 4, 4, 4)
+            content_layout.setSpacing(4)
+            self._histogram_content_widget.setLayout(content_layout)
             self._histogram_content = None
-            self._content_layout = QVBoxLayout()
-            self._content_layout.setContentsMargins(4, 4, 4, 4)
-            self._content_layout.setSpacing(4)
-            self._histogram_content_widget.setLayout(self._content_layout)
 
             self._compute_timer = QTimer()
             self._compute_timer.setSingleShot(True)
@@ -481,9 +480,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 layer.histogram.events.max_samples,
                 layer.histogram.events.mode,
                 layer.histogram.events.log_scale,
-            ):
-                ev.connect(self._schedule_compute)
-            for ev in (
                 layer.events.data,
                 layer.events.contrast_limits_range,
                 layer.events.set_data,
@@ -584,31 +580,37 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._layers[0],
             parent=self._histogram_content_widget,
         )
-        self._content_layout.addWidget(self._histogram_content)
+        self._histogram_content_widget.layout().addWidget(
+            self._histogram_content
+        )
 
     def _schedule_compute(self, event=None) -> None:
         """Debounce histogram recomputation via a single-shot timer."""
         self._compute_timer.start(_COMPUTE_DEBOUNCE_MS)
 
     def _run_compute(self) -> None:
-        """Run the async histogram compute (single worker, epoch-guarded)."""
+        """Run the async histogram compute."""
         if getattr(self, '_cleaned_up', False):
             return
         self._abort_worker()
         self._compute_epoch += 1
         epoch = self._compute_epoch
         layer = self._layers[0]
-        worker = create_worker(layer.histogram.compute_async, layer)
+        worker = create_worker(layer.histogram._compute_async_no_events, layer)
+        # we fire events from here (and not within compute_async) because
+        # we want them to always be on the main thread
         worker.yielded.connect(lambda bc: self._on_yield(bc, epoch))
         worker.finished.connect(lambda: self._on_worker_done(epoch))
         self._worker = worker
         worker.start()
 
     def _on_yield(self, bin_counts: tuple, epoch: int) -> None:
-        """Write a progressive result and broadcast it to all views."""
+        """Write the latest result and emit ``updated`` on the main thread."""
         if getattr(self, '_cleaned_up', False) or epoch != self._compute_epoch:
             return
         bin_edges, counts = bin_counts
+        # Mirror the just-yielded chunk into metadata on the main thread before
+        # notifying listeners, so the visible data matches this update.
         self._layers[0].metadata['_computed_histogram'] = {
             'bin_edges': bin_edges,
             'counts': counts,
@@ -616,7 +618,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self._layers[0].histogram.events.updated()
 
     def _on_worker_done(self, epoch: int) -> None:
-        """Finalize the compute broadcast once the worker finishes."""
+        """Emit ``completed`` on the main thread once the worker finishes."""
         if epoch != self._compute_epoch:
             return
         self._worker = None
