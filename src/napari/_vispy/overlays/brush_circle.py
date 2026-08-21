@@ -4,15 +4,17 @@ from typing import TYPE_CHECKING, Any
 
 from vispy.scene.visuals import Compound, Ellipse
 
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 
 if TYPE_CHECKING:
     from napari.components.overlays.brush_circle import BrushCircleOverlay
+    from napari.layers.labels import Labels
     from napari.utils.events import Event
 
 
-class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: BrushCircleOverlay
+    layer: Labels
 
     def __init__(self, **kwargs: Any) -> None:
         self._white_circle = Ellipse(
@@ -35,13 +37,15 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self._last_mouse_pos = None
 
-        self.overlay.events.size.connect(self._on_size_change)
-        self.node.events.canvas_change.connect(self._on_canvas_change)
+        self.layer.events.brush_size.connect(self._on_size_change)
+        self.layer.events.brush_size_is_canvas.connect(self._on_size_change)
+        self.viewer.camera.events.zoom.connect(self._on_size_change)
         self.viewer.events.mouse_over_canvas.connect(
             self._on_mouse_over_canvas
         )
         # no need to connect position, since that's in the base classes of CanvasOverlay
 
+        self.node.events.canvas_change.connect(self._on_canvas_change)
         self.reset()
 
         # manually connect this once and get the correct canvas
@@ -51,10 +55,11 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             )
 
     def _on_position_change(self, event: Event | None = None) -> None:
-        self._set_position(self.overlay.position)
+        self._set_position(self.viewer.cursor.canvas_position)
 
     def _on_size_change(self, event: Event | None = None) -> None:
-        self._white_circle.radius = self.overlay.size / 2
+        size = self.layer._get_brush_size_canvas(self.viewer.camera.zoom)
+        self._white_circle.radius = size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 
     def _on_visible_change(self) -> None:
@@ -66,11 +71,10 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def _on_mouse_move(self, event: Event) -> None:
         self._last_mouse_pos = event.pos
-        if self.overlay.visible:
-            self.overlay.position = event.pos.tolist()
+        self._set_position(event.pos)
 
     def _set_position(self, pos: tuple[int, int]) -> None:
-        if not self.overlay.position_is_frozen:
+        if not self.layer._is_resizing_brush:
             self.node.transform.translate = [pos[0], pos[1], 0, 0]
 
     def _on_canvas_change(self, event: Event) -> None:
@@ -88,7 +92,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self.node.visible = self.overlay.visible
         else:
             if self.overlay.visible:
-                self.node.visible = self.overlay.position_is_frozen
+                self.node.visible = self.layer._is_resizing_brush
             else:
                 self.node.visible = False
 

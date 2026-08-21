@@ -38,7 +38,7 @@ from napari.components._viewer_mouse_bindings import (
     layers_scroll,
 )
 from napari.components.canvas import Canvas
-from napari.components.cursor import Cursor, CursorStyle
+from napari.components.cursor import Cursor
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.scene import Scene
@@ -757,7 +757,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 layer.update_transform_box_visibility(False)
                 layer.update_highlight_visibility(False)
             self.help = ''
-            self.cursor.style = CursorStyle.STANDARD
             self.scene.camera.mouse_pan = True
             self.scene.camera.mouse_zoom = True
         else:
@@ -768,8 +767,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     layer.update_transform_box_visibility(False)
                     layer.update_highlight_visibility(False)
             self.help = active_layer.help
-            self.cursor.style = active_layer.cursor
-            self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
@@ -826,14 +823,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Set the viewer interactive mouse zoom"""
         if event.source is self.layers.selection.active:
             self.scene.camera.mouse_zoom = event.mouse_zoom
-
-    def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor.style = event.cursor
-
-    def _update_cursor_size(self, event):
-        """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor.size = event.cursor_size
 
     def _update_async(self, event: Event) -> None:
         """Set layer slicer to force synchronous if async is disabled."""
@@ -960,8 +949,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # to viewer.layers.events... and avoid direct viewer->layer connections
         layer.events.mouse_pan.connect(self._update_mouse_pan)
         layer.events.mouse_zoom.connect(self._update_mouse_zoom)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
         layer.events.units.connect(self._on_layers_change)
