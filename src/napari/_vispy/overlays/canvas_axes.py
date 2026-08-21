@@ -10,7 +10,10 @@ from napari._vispy.camera import (
     get_vispy_flipped_axes,
     napari_angles_to_vispy_quat,
 )
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    ViewerOverlayMixin,
+    VispyTiledCanvasOverlay,
+)
 from napari._vispy.visuals.axes import Axes
 from napari.utils.theme import get_theme
 
@@ -35,7 +38,7 @@ class _AxesScene(ViewBox):
         # self.axes.update_gl_state(depth_test=True)
 
 
-class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyTiledCanvasOverlay):
     """Axes indicating camera orientation, pinned to a canvas corner."""
 
     overlay: CanvasAxesOverlay

@@ -200,7 +200,7 @@ def test_tiling_canvas_overlays(qt_viewer):
     # check vertical tiling works on the bottom right
     viewer.canvas.overlays.scale_bar.position = 'bottom_right'
     viewer.canvas.overlays.text.position = 'bottom_right'
-    canvas._update_overlay_canvas_positions()
+    canvas._update_tiled_overlay_positions()
 
     np.testing.assert_almost_equal(
         vispy_text.node.transform.translate[0],
@@ -215,7 +215,7 @@ def test_tiling_canvas_overlays(qt_viewer):
 
     # move scale bar out of the way and check tiling is updated
     viewer.canvas.overlays.scale_bar.position = 'top_right'
-    canvas._update_overlay_canvas_positions()
+    canvas._update_tiled_overlay_positions()
     np.testing.assert_almost_equal(
         vispy_text.node.transform.translate[0],
         x_max - text_x_size,
@@ -229,7 +229,7 @@ def test_tiling_canvas_overlays(qt_viewer):
 
     # check horizontal tiling works on the top right
     viewer.canvas.overlays.text.position = 'top_right'
-    canvas._update_overlay_canvas_positions()
+    canvas._update_tiled_overlay_positions()
     np.testing.assert_almost_equal(
         vispy_text.node.transform.translate[0],
         x_max - text_x_size - scale_bar_x_size,

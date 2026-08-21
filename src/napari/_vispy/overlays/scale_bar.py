@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pint
 
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    ViewerOverlayMixin,
+    VispyTiledCanvasOverlay,
+)
 from napari._vispy.visuals.scale_bar import ScaleBar
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.notifications import show_warning
@@ -18,7 +21,7 @@ if TYPE_CHECKING:
     from napari.components.overlays import ScaleBarOverlay
 
 
-class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyScaleBarOverlay(ViewerOverlayMixin, VispyTiledCanvasOverlay):
     """Scale bar in world coordinates."""
 
     overlay: ScaleBarOverlay
