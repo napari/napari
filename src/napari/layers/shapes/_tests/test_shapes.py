@@ -184,19 +184,19 @@ def test_adding_properties(attribute):
 def test_colormap_scale_change():
     data = 20 * np.random.random(SHAPE_DIMS)
     properties = {'a': np.linspace(0, 1, 10), 'b': np.linspace(0, 100000, 10)}
-    layer = Shapes(data, properties=properties, edge_color='b')
+    layer = Shapes(data, properties=properties, border_color='b')
 
     assert not np.allclose(
-        layer.edge_color[0], layer.edge_color[1], atol=0.001
+        layer.border_color[0], layer.border_color[1], atol=0.001
     )
 
-    layer.edge_color = 'a'
+    layer.border_color = 'a'
 
     # note that VisPy colormaps linearly interpolate by default, so
     # non-rescaled colors are not identical, but they are closer than 24-bit
     # color precision can distinguish!
     assert not np.allclose(
-        layer.edge_color[0], layer.edge_color[1], atol=0.001
+        layer.border_color[0], layer.border_color[1], atol=0.001
     )
 
 
@@ -1262,30 +1262,34 @@ def test_changing_shapes(ten_four_corner, twenty_four_corner):
 
     # setting data with fewer shapes
     smaller_data = ten_four_corner[:5]
-    current_edge_color = layer._data_view.edge_color
-    current_edge_width = layer._data_view.edge_widths
+    current_border_color = layer._data_view.border_color
+    current_border_width = layer._data_view.border_widths
     current_face_color = layer._data_view.face_color
     current_z = layer._data_view.z_indices
 
     layer.data = smaller_data
     assert layer.nshapes == len(smaller_data)
-    assert np.allclose(layer._data_view.edge_color, current_edge_color[:5])
+    assert np.allclose(layer._data_view.border_color, current_border_color[:5])
     assert np.allclose(layer._data_view.face_color, current_face_color[:5])
-    assert np.allclose(layer._data_view.edge_widths, current_edge_width[:5])
+    assert np.allclose(
+        layer._data_view.border_widths, current_border_width[:5]
+    )
     assert np.allclose(layer._data_view.z_indices, current_z[:5])
 
     # setting data with added shapes
-    current_edge_color = layer._data_view.edge_color
-    current_edge_width = layer._data_view.edge_widths
+    current_border_color = layer._data_view.border_color
+    current_border_width = layer._data_view.border_widths
     current_face_color = layer._data_view.face_color
     current_z = layer._data_view.z_indices
 
     bigger_data = twenty_four_corner
     layer.data = bigger_data
     assert layer.nshapes == len(bigger_data)
-    assert np.allclose(layer._data_view.edge_color[:5], current_edge_color)
+    assert np.allclose(layer._data_view.border_color[:5], current_border_color)
     assert np.allclose(layer._data_view.face_color[:5], current_face_color)
-    assert np.allclose(layer._data_view.edge_widths[:5], current_edge_width)
+    assert np.allclose(
+        layer._data_view.border_widths[:5], current_border_width
+    )
     assert np.allclose(layer._data_view.z_indices[:5], current_z)
 
 
@@ -1741,7 +1745,7 @@ def test_switch_color_mode(attribute):
         layer_color, np.repeat([initial_color], SHAPE_DIM_0, axis=0)
     )
 
-    # there should not be an edge_color_property
+    # there should not be an border_color_property
     color_property = getattr(layer, f'_{attribute}_color_property')
     assert color_property == ''
 
@@ -1764,10 +1768,10 @@ def test_switch_color_mode(attribute):
     layer_color = transform_color(color_cycle * int(SHAPE_DIM_0 / 2))
     np.testing.assert_allclose(color, layer_color)
 
-    # switch back to direct, edge_colors shouldn't change
+    # switch back to direct, border_colors shouldn't change
     setattr(layer, f'{attribute}_color_mode', 'direct')
-    new_edge_color = getattr(layer, f'{attribute}_color')
-    np.testing.assert_allclose(new_edge_color, color)
+    new_border_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(new_border_color, color)
 
 
 @pytest.mark.parametrize('attribute', ['edge', 'face'])
@@ -1782,7 +1786,7 @@ def test_color_direct(attribute: str):
     current_color = getattr(layer, f'current_{attribute}_color')
     layer_color = getattr(layer, f'{attribute}_color')
     assert current_color == 'black'
-    assert len(layer.edge_color) == SHAPE_DIM_0
+    assert len(layer.border_color) == SHAPE_DIM_0
     np.testing.assert_allclose(color_array, layer_color)
 
     # With no data selected changing color has no effect
@@ -1936,7 +1940,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     }
     layer = Shapes(**shapes_kwargs)
 
-    # verify the current_edge_color is correct
+    # verify the current_border_color is correct
     expected_color = transform_color(color_cycle[0])
     current_color = getattr(layer, f'_current_{attribute}_color')
     np.testing.assert_allclose(current_color, expected_color)
@@ -1968,7 +1972,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
     and then calling Shapes.refresh_colors() performs the update and adds the
-    new value to the face/edge_color_cycle_map.
+    new value to the face/border_color_cycle_map.
     """
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
@@ -2107,69 +2111,69 @@ def test_add_colormap(attribute):
     assert layer_colormap.name == 'gray'
 
 
-def test_edge_width():
+def test_border_width():
     """Test setting edge width."""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
-    assert layer.current_edge_width == 1
-    assert len(layer.edge_width) == SHAPE_DIM_0
-    assert layer.edge_width == [1] * SHAPE_DIM_0
+    assert layer.current_border_width == 1
+    assert len(layer.border_width) == SHAPE_DIM_0
+    assert layer.border_width == [1] * SHAPE_DIM_0
 
     # With no data selected changing edge width has no effect
-    layer.current_edge_width = 2
-    assert layer.current_edge_width == 2
-    assert layer.edge_width == [1] * SHAPE_DIM_0
+    layer.current_border_width = 2
+    assert layer.current_border_width == 2
+    assert layer.border_width == [1] * SHAPE_DIM_0
 
     # Select data and change edge color of selection
     layer.selected_data = {0, 1}
-    assert layer.current_edge_width == 1
-    layer.current_edge_width = 3
-    assert layer.edge_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2)
+    assert layer.current_border_width == 1
+    layer.current_border_width = 3
+    assert layer.border_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = set()
-    layer.current_edge_width = 4
+    layer.current_border_width = 4
     layer.add(new_shape)
-    assert layer.edge_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2) + [4]
+    assert layer.border_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2) + [4]
 
     # Instantiate with custom edge width
-    layer = Shapes(data, edge_width=5)
-    assert layer.current_edge_width == 5
+    layer = Shapes(data, border_width=5)
+    assert layer.current_border_width == 5
 
     # Instantiate with custom edge width list
     width_list = [2, 3] * 5
-    layer = Shapes(data, edge_width=width_list)
-    assert layer.current_edge_width == 1
-    assert layer.edge_width == width_list
+    layer = Shapes(data, border_width=width_list)
+    assert layer.current_border_width == 1
+    assert layer.border_width == width_list
 
     # Add new shape and test its color
-    layer.current_edge_width = 4
+    layer.current_border_width = 4
     layer.add(new_shape)
-    assert len(layer.edge_width) == SHAPE_DIM_0 + 1
-    assert layer.edge_width == [*width_list, 4]
+    assert len(layer.border_width) == SHAPE_DIM_0 + 1
+    assert layer.border_width == [*width_list, 4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == SHAPE_DIM_0 - 1
-    assert len(layer.edge_width) == SHAPE_DIM_0 - 1
-    assert layer.edge_width == [width_list[1]] + width_list[3:] + [4]
+    assert len(layer.border_width) == SHAPE_DIM_0 - 1
+    assert layer.border_width == [width_list[1]] + width_list[3:] + [4]
 
     # Test setting edge width with number
-    layer.edge_width = 4
-    assert all(width == 4 for width in layer.edge_width)
+    layer.border_width = 4
+    assert all(width == 4 for width in layer.border_width)
 
     # Test setting edge width with list
     new_widths = [2] * 5 + [3] * 4
-    layer.edge_width = new_widths
-    assert layer.edge_width == new_widths
+    layer.border_width = new_widths
+    assert layer.border_width == new_widths
 
     # Test setting with incorrect size list throws error
     new_widths = [2, 3]
     with pytest.raises(ValueError, match='does not match number of shapes'):
-        layer.edge_width = new_widths
+        layer.border_width = new_widths
 
 
 def test_z_index():
@@ -2605,9 +2609,9 @@ def test_editing_4d():
     viewer.add_shapes(
         ndim=4,
         name='rois',
-        edge_color='red',
+        border_color='red',
         face_color=np.array([0, 0, 0, 0]),
-        edge_width=1,
+        border_width=1,
     )
 
     viewer.layers['rois'].add(

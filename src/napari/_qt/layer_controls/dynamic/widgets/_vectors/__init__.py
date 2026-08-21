@@ -1,4 +1,4 @@
-from napari._qt.layer_controls.dynamic.widgets._vectors.qt_edge_color import (
+from napari._qt.layer_controls.dynamic.widgets._vectors.qt_color import (
     QtEdgeColorFeatureControl,
 )
 from napari._qt.layer_controls.dynamic.widgets._vectors.qt_line_dimension_spinbox import (

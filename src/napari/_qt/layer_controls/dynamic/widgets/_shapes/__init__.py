@@ -1,7 +1,7 @@
-from napari._qt.layer_controls.dynamic.widgets._shapes.qt_edge_color import (
+from napari._qt.layer_controls.dynamic.widgets._shapes.qt_border_color import (
     QtEdgeColorControl,
 )
-from napari._qt.layer_controls.dynamic.widgets._shapes.qt_edge_width_slider import (
+from napari._qt.layer_controls.dynamic.widgets._shapes.qt_border_width_slider import (
     QtEdgeWidthSliderControl,
 )
 

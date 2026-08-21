@@ -17,7 +17,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = VectorsVisual(font_info=font_info)
         super().__init__(layer, node, font_info=font_info)
 
-        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.color.connect(self._on_data_change)
 
         self.reset()
         self._on_data_change()
@@ -26,7 +26,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         # Make meshes
         vertices, faces = generate_vector_meshes(
             self.layer._view_data,
-            self.layer.edge_width,
+            self.layer.width,
             self.layer.length,
             self.layer.vector_style,
         )

@@ -29,9 +29,9 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
 
     Attributes
     ----------
-    edge_color_edit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
+    border_color_edit : napari._qt.widgets.qt_color_swatch.QColorSwatchEdit
         ColorSwatchEdit controlling current edge color of the layer.
-    edge_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+    border_color_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the current edge color chooser widget.
     """
 
@@ -42,24 +42,24 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
     ) -> None:
         super().__init__(parent, layer)
         # Setup widgets
-        self.edge_color_edit = QColorSwatchEdit(
-            initial_color=self._layer.current_edge_color,
+        self.border_color_edit = QColorSwatchEdit(
+            initial_color=self._layer.current_border_color,
             tooltip=tooltip,
         )
         connect_setattr(
-            self.edge_color_edit.color_changed,
+            self.border_color_edit.color_changed,
             self._layer,
-            'current_edge_color',
+            'current_border_color',
         )
         self._callbacks.append(
             attr_to_settr(
                 self._layer,
-                'current_edge_color',
-                self.edge_color_edit,
+                'current_border_color',
+                self.border_color_edit,
                 'setColor',
             )
         )
-        self.edge_color_label = QtWrappedLabel('edge color:')
+        self.border_color_label = QtWrappedLabel('edge color:')
 
     def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
-        return [(self.edge_color_label, self.edge_color_edit)]
+        return [(self.border_color_label, self.border_color_edit)]

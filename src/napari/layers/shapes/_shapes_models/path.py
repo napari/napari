@@ -8,7 +8,7 @@ class Path(PolygonBase):
     ----------
     data : np.ndarray
         NxD array of vertices specifying the path.
-    edge_width : float
+    border_width : float
         thickness of lines and edges.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
@@ -21,7 +21,7 @@ class Path(PolygonBase):
         self,
         data,
         *,
-        edge_width=1,
+        border_width=1,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -29,7 +29,7 @@ class Path(PolygonBase):
     ) -> None:
         super().__init__(
             data,
-            edge_width=edge_width,
+            border_width=border_width,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,

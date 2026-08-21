@@ -507,7 +507,7 @@ def _direction_vec_and_half_length(
 
 
 @njit(cache=True, inline='always')
-def _generate_2D_edge_meshes_loop(
+def _generate_2D_border_meshes_loop(
     path: np.ndarray,
     closed: bool,
     cos_limit: float,
@@ -518,7 +518,7 @@ def _generate_2D_edge_meshes_loop(
     offsets: np.ndarray,
     triangles: np.ndarray,
 ) -> None:
-    """Main loop for :py:func:`generate_2D_edge_meshes`.
+    """Main loop for :py:func:`generate_2D_border_meshes`.
 
     Parameters
     ----------
@@ -605,7 +605,7 @@ def _cut_end_if_repetition(path: np.ndarray) -> np.ndarray:
 
 # Note: removing this decorator will double execution time.
 @njit(cache=True)
-def generate_2D_edge_meshes(
+def generate_2D_border_meshes(
     path: np.ndarray,
     closed: bool = False,
     limit: float = 3.0,
@@ -675,7 +675,7 @@ def generate_2D_edge_meshes(
     offsets = np.empty((point_count, 2), dtype=np.float32)
     triangles = np.empty((point_count - 2, 3), dtype=np.int32)
 
-    _generate_2D_edge_meshes_loop(
+    _generate_2D_border_meshes_loop(
         path,
         closed,
         cos_limit,
@@ -853,14 +853,14 @@ def reconstruct_polygons_from_edges(
         while not closed:
             found = False
             # Loop through edges incident to current_v.
-            for edge_idx in incident[current_v]:
-                if visited[edge_idx]:
+            for border_idx in incident[current_v]:
+                if visited[border_idx]:
                     continue
-                a = edges[edge_idx, 0]
-                b = edges[edge_idx, 1]
+                a = edges[border_idx, 0]
+                b = edges[border_idx, 1]
                 # Choose the vertex that is not the current one.
                 next_v = a if b == current_v else b
-                visited[edge_idx] = True
+                visited[border_idx] = True
                 if next_v == start_v:
                     closed = True
                 else:

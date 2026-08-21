@@ -54,7 +54,7 @@ def _sign_cross(x: np.ndarray, y: np.ndarray) -> npt.NDArray[np.int32]:
     raise ValueError(x.shape[1], y.shape[1])
 
 
-def generate_2D_edge_meshes_py(
+def generate_2D_border_meshes_py(
     path: npt.NDArray[np.float32],
     closed: bool = False,
     limit: float = 3,
@@ -280,8 +280,8 @@ def reconstruct_polygons_from_edges_py(
     """
     # Create an adjacency list representation from the edges
     adjacency = defaultdict(list)
-    for edge_ in edges:
-        v1, v2 = edge_
+    for border_ in edges:
+        v1, v2 = border_
         adjacency[v1].append(v2)
         adjacency[v2].append(v1)
 
