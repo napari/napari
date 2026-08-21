@@ -604,6 +604,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self._cleaned_up = True
         self._compute_timer.stop()
         self._abort_worker()
+        if self._histogram_content is not None:
+            self._histogram_content.cleanup()
+            self._histogram_content = None
         disconnect_events(self._layer.histogram.events, self)
         super().disconnect_widget_controls()
 
