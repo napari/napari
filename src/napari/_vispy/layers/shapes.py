@@ -7,7 +7,7 @@ from superqt.utils import qdebounced
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari._vispy.utils.text import update_text
+from napari._vispy.utils.text import _has_visible_text, update_text
 from napari._vispy.visuals.shapes import ShapesVisual
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
@@ -48,12 +48,16 @@ class VispyShapesLayer(VispyBaseLayer):
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
+        has_faces = (
+            vertices is not None and len(vertices) > 0 and len(faces) > 0
+        )
+
         # Note that the indices of the vertices need to be reversed to
         # go from numpy style to xyz
         if vertices is not None:
             vertices = vertices[:, ::-1]
 
-        if len(vertices) == 0 or len(faces) == 0:
+        if not has_faces:
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
@@ -68,6 +72,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.shape_faces.set_data(
             vertices=vertices, faces=faces, face_colors=colors
         )
+        self.node.shape_faces.visible = has_faces
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
@@ -93,7 +98,11 @@ class VispyShapesLayer(VispyBaseLayer):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
 
-        if vertices is None or len(vertices) == 0 or len(faces) == 0:
+        has_outline = (
+            vertices is not None and len(vertices) > 0 and len(faces) > 0
+        )
+
+        if not has_outline:
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
 
@@ -102,6 +111,7 @@ class VispyShapesLayer(VispyBaseLayer):
             faces=faces,
             color=self.layer._highlight_color,
         )
+        self.node.shape_highlights.visible = has_outline
 
         # Compute the location and properties of the vertices and box that
         # need to get rendered
@@ -115,7 +125,9 @@ class VispyShapesLayer(VispyBaseLayer):
 
         width = settings.appearance.highlight.highlight_thickness
 
-        if vertices is None or len(vertices) == 0:
+        has_vertices = vertices is not None and len(vertices) > 0
+
+        if not has_vertices:
             vertices = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
         else:
@@ -128,14 +140,18 @@ class VispyShapesLayer(VispyBaseLayer):
             edge_color=edge_color,
             edge_width=width,
         )
+        self.node.highlight_vertices.visible = has_vertices
 
-        if pos is None or len(pos) == 0:
+        has_box = pos is not None and len(pos) > 0
+
+        if not has_box:
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
             width = 0
 
         self.node.highlight_lines.set_data(
             pos=pos, color=edge_color, width=width
         )
+        self.node.highlight_lines.visible = has_box
 
     def _update_text(self, *, update_node=True):
         """Function to update the text node properties
@@ -145,7 +161,9 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self._get_text_node(), layer=self.layer)
+        text_node = self._get_text_node()
+        update_text(node=text_node, layer=self.layer)
+        text_node.visible = _has_visible_text(self.layer)
         if update_node:
             self.node.update()
 
