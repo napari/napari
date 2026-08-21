@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.utils import use_tabular_numerals
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -56,6 +57,16 @@ class ViewerStatusBar(QStatusBar):
             self._help,
         )
         self.addWidget(main_widget, 1)
+
+        for label in (
+            self._status,
+            self._layer_base,
+            self._source_type,
+            self._plugin_reader,
+            self._coordinates,
+            self._help,
+        ):
+            use_tabular_numerals(label)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
