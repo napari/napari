@@ -70,9 +70,9 @@ def test_rectangle_bounding_box():
     npt.assert_array_equal(
         shape.bounding_box, np.array([[9.5, 9.5], [20.5, 20.5]])
     )
-    shape.edge_width = 2
+    shape.border_width = 2
     npt.assert_array_equal(shape.bounding_box, np.array([[9, 9], [21, 21]]))
-    shape.edge_width = 4
+    shape.border_width = 4
     npt.assert_array_equal(shape.bounding_box, np.array([[8, 8], [22, 22]]))
 
 
@@ -177,7 +177,7 @@ def test_polygon(triangulation_backend):
         if triangulation_backend == TriangulationBackend.pure_python
         else (6, 2)
     )
-    assert shape._edge_vertices.shape == (16, 2)
+    assert shape._border_vertices.shape == (16, 2)
     assert shape._face_vertices.shape == expected_face
 
 
@@ -188,7 +188,7 @@ def test_polygon2():
 
     expected_face = (249, 2)
 
-    assert shape._edge_vertices.shape == (500, 2)
+    assert shape._border_vertices.shape == (500, 2)
     assert shape._face_vertices.shape == expected_face
 
 
@@ -196,7 +196,7 @@ def test_polygon3():
     data = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]])
     shape = Polygon(data, interpolation_order=3, ndisplay=3)
     # should get many vertices
-    assert shape._edge_vertices.shape == (2500, 3)
+    assert shape._border_vertices.shape == (2500, 3)
     # faces are not made for non-coplanar 3d stuff
     assert shape._face_vertices.shape == (0, 3)
 

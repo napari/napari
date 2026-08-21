@@ -26,7 +26,7 @@ class QtVectorsControls(QtLayerControls):
 
     Attributes
     ----------
-    _edge_color_feature_control : napari._qt.layer_controls.widgets._vectors.QtEdgeColorFeatureControl
+    _color_feature_control : napari._qt.layer_controls.widgets._vectors.QtEdgeColorFeatureControl
         Widget that wraps the widgets used to select vectors edge color mode, feature and color.
     _length_spinbox_control : napari._qt.layer_controls.widgets._vectors.QtLengthSpinBoxControl
         Widget that wraps a spinbox widget controlling length of vectors.
@@ -56,7 +56,5 @@ class QtVectorsControls(QtLayerControls):
             self, layer
         )
         self._add_widget_controls(self._vector_style_combobox_control)
-        self._edge_color_feature_control = QtEdgeColorFeatureControl(
-            self, layer
-        )
-        self._add_widget_controls(self._edge_color_feature_control)
+        self._color_feature_control = QtEdgeColorFeatureControl(self, layer)
+        self._add_widget_controls(self._color_feature_control)

@@ -102,8 +102,8 @@ def test_empty_vectors_with_features():
     vectors = Vectors(
         features={'a': np.empty(0, str)},
         feature_defaults={'a': 'x'},
-        edge_color='a',
-        edge_color_cycle=list('rgb'),
+        color='a',
+        color_cycle=list('rgb'),
     )
 
     vectors.data = np.concatenate((vectors.data, [[[0, 0], [1, 1]]]))
@@ -112,7 +112,7 @@ def test_empty_vectors_with_features():
     vectors.feature_defaults = {'a': 'z'}
     vectors.data = np.concatenate((vectors.data, [[[2, 2], [3, 3]]]))
 
-    assert_colors_equal(vectors.edge_color, list('rgb'))
+    assert_colors_equal(vectors.color, list('rgb'))
 
 
 def test_empty_vectors_with_property_choices():
@@ -128,7 +128,7 @@ def test_empty_vectors_with_property_choices():
     np.testing.assert_equal(layer.property_choices, property_choices)
 
 
-def test_empty_layer_with_edge_colormap():
+def test_empty_layer_with_colormap():
     """Test creating an empty layer where the edge color is a colormap"""
     shape = (0, 2, 2)
     data = np.empty(shape)
@@ -136,18 +136,18 @@ def test_empty_layer_with_edge_colormap():
     layer = Vectors(
         data=data,
         property_choices=default_properties,
-        edge_color='angle',
-        edge_colormap='gray',
+        color='angle',
+        colormap='gray',
     )
 
-    assert layer.edge_color_mode == 'colormap'
+    assert layer.color_mode == 'colormap'
 
-    # edge_color should remain empty when refreshing colors
+    # color should remain empty when refreshing colors
     layer.refresh_colors(update_color_mapping=True)
-    np.testing.assert_equal(layer.edge_color, np.empty((0, 4)))
+    np.testing.assert_equal(layer.color, np.empty((0, 4)))
 
 
-def test_empty_layer_with_edge_color_cycle():
+def test_empty_layer_with_color_cycle():
     """Test creating an empty layer where the edge color is a color cycle"""
     shape = (0, 2, 2)
     data = np.empty(shape)
@@ -155,14 +155,14 @@ def test_empty_layer_with_edge_color_cycle():
     layer = Vectors(
         data=data,
         property_choices=default_properties,
-        edge_color='vector_type',
+        color='vector_type',
     )
 
-    assert layer.edge_color_mode == 'cycle'
+    assert layer.color_mode == 'cycle'
 
-    # edge_color should remain empty when refreshing colors
+    # color should remain empty when refreshing colors
     layer.refresh_colors(update_color_mapping=True)
-    np.testing.assert_equal(layer.edge_color, np.empty((0, 4)))
+    np.testing.assert_equal(layer.color, np.empty((0, 4)))
 
 
 def test_random_3D_vectors():
@@ -220,7 +220,7 @@ def test_data_setter():
     layer = Vectors(data, properties=properties)
 
     assert len(layer.data) == n_vectors_0
-    assert len(layer.edge_color) == n_vectors_0
+    assert len(layer.color) == n_vectors_0
     assert len(layer.properties['prop_0']) == n_vectors_0
     assert len(layer.properties['prop_1']) == n_vectors_0
 
@@ -231,7 +231,7 @@ def test_data_setter():
     layer.data = data_1
 
     assert len(layer.data) == n_vectors_1
-    assert len(layer.edge_color) == n_vectors_1
+    assert len(layer.color) == n_vectors_1
     assert len(layer.properties['prop_0']) == n_vectors_1
     assert len(layer.properties['prop_1']) == n_vectors_1
 
@@ -242,7 +242,7 @@ def test_data_setter():
     layer.data = data_2
 
     assert len(layer.data) == n_vectors_2
-    assert len(layer.edge_color) == n_vectors_2
+    assert len(layer.color) == n_vectors_2
     assert len(layer.properties['prop_0']) == n_vectors_2
     assert len(layer.properties['prop_1']) == n_vectors_2
 
@@ -282,8 +282,8 @@ def test_adding_properties():
     layer.properties = properties
     np.testing.assert_equal(layer.properties, properties)
 
-    # removing a property that was the _edge_color_property should give a warning
-    layer.edge_color = 'vector_type'
+    # removing a property that was the _color_property should give a warning
+    layer.color = 'vector_type'
     properties_2 = {
         'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
     }
@@ -384,22 +384,22 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-def test_edge_width():
+def test_width():
     """Test setting edge width."""
     np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.edge_width == 1
+    assert layer.width == 1
 
-    layer.edge_width = 2
-    assert layer.edge_width == 2
+    layer.width = 2
+    assert layer.width == 2
 
-    layer = Vectors(data, edge_width=3)
-    assert layer.edge_width == 3
+    layer = Vectors(data, width=3)
+    assert layer.width == 3
 
 
-def test_invalid_edge_color():
+def test_invalid_color():
     """Test providing an invalid edge color raises an exception"""
     np.random.seed(0)
     shape = (10, 2, 2)
@@ -408,38 +408,38 @@ def test_invalid_edge_color():
     layer = Vectors(data)
 
     with pytest.raises(ValueError, match='should be the name of a color'):
-        layer.edge_color = 5
+        layer.color = 5
 
 
-def test_edge_color_direct():
+def test_color_direct():
     """Test setting edge color."""
     np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     np.testing.assert_allclose(
-        layer.edge_color, np.repeat([[1, 0, 0, 1]], data.shape[0], axis=0)
+        layer.color, np.repeat([[1, 0, 0, 1]], data.shape[0], axis=0)
     )
 
     # set edge color as an RGB array
-    layer.edge_color = [0, 0, 1]
+    layer.color = [0, 0, 1]
     np.testing.assert_allclose(
-        layer.edge_color, np.repeat([[0, 0, 1, 1]], data.shape[0], axis=0)
+        layer.color, np.repeat([[0, 0, 1, 1]], data.shape[0], axis=0)
     )
 
     # set edge color as an RGBA array
-    layer.edge_color = [0, 1, 0, 0.5]
+    layer.color = [0, 1, 0, 0.5]
     np.testing.assert_allclose(
-        layer.edge_color, np.repeat([[0, 1, 0, 0.5]], data.shape[0], axis=0)
+        layer.color, np.repeat([[0, 1, 0, 0.5]], data.shape[0], axis=0)
     )
 
     # set all edge colors directly
-    edge_colors = np.random.random((data.shape[0], 4))
-    layer.edge_color = edge_colors
-    np.testing.assert_allclose(layer.edge_color, edge_colors)
+    colors = np.random.random((data.shape[0], 4))
+    layer.color = colors
+    np.testing.assert_allclose(layer.color, colors)
 
 
-def test_edge_color_cycle():
+def test_color_cycle():
     """Test creating Vectors where edge color is set by a color cycle"""
     np.random.seed(0)
     shape = (10, 2, 2)
@@ -450,15 +450,15 @@ def test_edge_color_cycle():
     layer = Vectors(
         data,
         properties=properties,
-        edge_color='vector_type',
-        edge_color_cycle=color_cycle,
+        color='vector_type',
+        color_cycle=color_cycle,
     )
     np.testing.assert_equal(layer.properties, properties)
-    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
-    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
+    color_array = transform_color(color_cycle * int(shape[0] / 2))
+    np.testing.assert_array_equal(layer.color, color_array)
 
 
-def test_edge_color_cycle_default():
+def test_color_cycle_default():
     """Cycle mode without an explicit cycle still distinguishes the categories.
 
     The default used to be a single white, which made the mode a no-op: every category
@@ -470,57 +470,57 @@ def test_edge_color_cycle_default():
     layer = Vectors(
         data,
         features={'vector_type': np.array(['A', 'B', 'C'] * 2)},
-        edge_color='vector_type',
+        color='vector_type',
     )
 
-    assert layer.edge_color_mode == 'cycle'
-    assert len(np.unique(layer.edge_color, axis=0)) > 1
+    assert layer.color_mode == 'cycle'
+    assert len(np.unique(layer.color, axis=0)) > 1
 
 
-def test_switching_edge_color_mode_fires_edge_color_event():
+def test_switching_color_mode_fires_color_event():
     """Switching modes moves the layer in and out of a feature mapping.
 
-    The direct setter used to assign an attribute nothing reads (`_edge_color_mode`), so
+    The direct setter used to assign an attribute nothing reads (`_color_mode`), so
     the layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
     switch as expected. Switching back to colormap remaps every color, so it also has to
-    emit `edge_color` or the renderers keep drawing the stale ones.
+    emit `color` or the renderers keep drawing the stale ones.
     """
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
     layer = Vectors(
         data,
         features={'phase': np.linspace(-1, 1, 6)},
-        edge_color='phase',
+        color='phase',
     )
-    assert layer.edge_color_mode == 'colormap'
+    assert layer.color_mode == 'colormap'
 
-    layer.edge_color_mode = 'direct'
+    layer.color_mode = 'direct'
 
-    assert layer.edge_color_mode == 'direct'
+    assert layer.color_mode == 'direct'
 
-    layer.edge_color = 'yellow'
+    layer.color = 'yellow'
     events = []
-    layer.events.edge_color.connect(events.append)
+    layer.events.color.connect(events.append)
 
-    layer.edge_color_mode = 'colormap'
+    layer.color_mode = 'colormap'
 
     assert len(events) == 1
-    assert len(np.unique(layer.edge_color, axis=0)) == 6
+    assert len(np.unique(layer.color, axis=0)) == 6
 
 
-def test_setting_the_current_edge_color_mode_does_not_emit():
+def test_setting_the_current_color_mode_does_not_emit():
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
     layer = Vectors(data)
     heard = []
-    layer.events.edge_color_mode.connect(lambda event: heard.append(event))
+    layer.events.color_mode.connect(lambda event: heard.append(event))
 
-    layer.edge_color_mode = 'direct'
+    layer.color_mode = 'direct'
 
     assert heard == []
 
 
-def test_edge_color_colormap():
+def test_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)
     shape = (10, 2, 2)
@@ -530,35 +530,35 @@ def test_edge_color_colormap():
     layer = Vectors(
         data,
         properties=properties,
-        edge_color='angle',
-        edge_colormap='gray',
+        color='angle',
+        colormap='gray',
     )
     np.testing.assert_equal(layer.properties, properties)
-    assert layer.edge_color_mode == 'colormap'
-    edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
-    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
+    assert layer.color_mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
+    np.testing.assert_array_equal(layer.color, color_array)
 
-    # change the color cycle - edge_color should not change
-    layer.edge_color_cycle = ['red', 'blue']
-    np.testing.assert_array_equal(layer.edge_color, edge_color_array)
+    # change the color cycle - color should not change
+    layer.color_cycle = ['red', 'blue']
+    np.testing.assert_array_equal(layer.color, color_array)
 
     # adjust the clims
-    layer.edge_contrast_limits = (0, 3)
+    layer.contrast_limits = (0, 3)
     layer.refresh_colors(update_color_mapping=False)
-    np.testing.assert_allclose(layer.edge_color[-1], [0.5, 0.5, 0.5, 1])
+    np.testing.assert_allclose(layer.color[-1], [0.5, 0.5, 0.5, 1])
 
     # change the colormap
     new_colormap = 'viridis'
-    layer.edge_colormap = new_colormap
-    assert layer.edge_colormap.name == new_colormap
+    layer.colormap = new_colormap
+    assert layer.colormap.name == new_colormap
 
     # test adding a colormap with a vispy Colormap object
-    layer.edge_colormap = get_colormap('gray')
-    assert 'unnamed colormap' in layer.edge_colormap.name
+    layer.colormap = get_colormap('gray')
+    assert 'unnamed colormap' in layer.colormap.name
 
 
-def test_edge_color_map_non_numeric_property():
-    """Test setting edge_color as a color map of a
+def test_color_map_non_numeric_property():
+    """Test setting color as a color map of a
     non-numeric property raises an error
     """
     np.random.seed(0)
@@ -571,23 +571,23 @@ def test_edge_color_map_non_numeric_property():
     layer = Vectors(
         data,
         properties=properties,
-        edge_color=initial_color,
-        edge_color_cycle=color_cycle,
-        edge_colormap='gray',
+        color=initial_color,
+        color_cycle=color_cycle,
+        colormap='gray',
     )
     # layer should start out in direct edge color mode with all green vectors
-    assert layer.edge_color_mode == 'direct'
+    assert layer.color_mode == 'direct'
     np.testing.assert_allclose(
-        layer.edge_color, np.repeat([initial_color], shape[0], axis=0)
+        layer.color, np.repeat([initial_color], shape[0], axis=0)
     )
 
     # switching to colormap mode should raise an error because the 'vector_type' is non-numeric
-    layer.edge_color = 'vector_type'
+    layer.color = 'vector_type'
     with pytest.raises(TypeError):
-        layer.edge_color_mode = 'colormap'
+        layer.color_mode = 'colormap'
 
 
-def test_switching_edge_color_mode():
+def test_switching_color_mode():
     """Test transitioning between all color modes"""
     np.random.seed(0)
     shape = (10, 2, 2)
@@ -602,37 +602,37 @@ def test_switching_edge_color_mode():
     layer = Vectors(
         data,
         properties=properties,
-        edge_color=initial_color,
-        edge_color_cycle=color_cycle,
-        edge_colormap='gray',
+        color=initial_color,
+        color_cycle=color_cycle,
+        colormap='gray',
     )
     # layer should start out in direct edge color mode with all green vectors
-    assert layer.edge_color_mode == 'direct'
+    assert layer.color_mode == 'direct'
     np.testing.assert_allclose(
-        layer.edge_color, np.repeat([initial_color], shape[0], axis=0)
+        layer.color, np.repeat([initial_color], shape[0], axis=0)
     )
 
-    # there should not be an edge_color_property
-    assert layer._edge.color_properties is None
+    # there should not be an color_property
+    assert layer._color_manager.color_properties is None
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in Vectors.properties is being automatically selected
     with pytest.warns(RuntimeWarning):
-        layer.edge_color_mode = 'colormap'
-    assert layer._edge.color_properties.name == next(iter(properties))
-    np.testing.assert_allclose(layer.edge_color[-1], [1, 1, 1, 1])
+        layer.color_mode = 'colormap'
+    assert layer._color_manager.color_properties.name == next(iter(properties))
+    np.testing.assert_allclose(layer.color[-1], [1, 1, 1, 1])
 
     # switch to color cycle
-    layer.edge_color_mode = 'cycle'
-    layer.edge_color = 'vector_type'
-    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
-    np.testing.assert_allclose(layer.edge_color, edge_color_array)
+    layer.color_mode = 'cycle'
+    layer.color = 'vector_type'
+    color_array = transform_color(color_cycle * int(shape[0] / 2))
+    np.testing.assert_allclose(layer.color, color_array)
 
-    # switch back to direct, edge_colors shouldn't change
-    edge_colors = layer.edge_color
-    layer.edge_color_mode = 'direct'
-    np.testing.assert_allclose(layer.edge_color, edge_colors)
+    # switch back to direct, colors shouldn't change
+    colors = layer.color
+    layer.color_mode = 'direct'
+    np.testing.assert_allclose(layer.color, colors)
 
 
 def test_properties_color_mode_without_properties():
@@ -649,12 +649,12 @@ def test_properties_color_mode_without_properties():
     with pytest.raises(
         ValueError, match=r'must be a valid Vectors.properties'
     ):
-        layer.edge_color_mode = 'colormap'
+        layer.color_mode = 'colormap'
 
     with pytest.raises(
         ValueError, match=r'must be a valid Vectors.properties'
     ):
-        layer.edge_color_mode = 'cycle'
+        layer.color_mode = 'cycle'
 
 
 def test_length():

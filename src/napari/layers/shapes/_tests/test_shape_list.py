@@ -340,8 +340,8 @@ def test_edit_shape_pentagon(shape_li):
 def test_update_face_color(shape_li, new_color):
     """Test updating face color of shapes in ShapeList."""
     # Initial face color
-    initial_edge_color = shape_li.edge_color
-    assert initial_edge_color.shape == (4, 4)
+    initial_border_color = shape_li.border_color
+    assert initial_border_color.shape == (4, 4)
 
     # Update face color
     expected_color = np.array([[1, 0, 0, 1]] * 4)  # Red color
@@ -360,7 +360,7 @@ def test_update_face_color(shape_li, new_color):
     )
 
     # Check if the edge color remains unchanged
-    assert np.all(shape_li.edge_color == initial_edge_color)
+    assert np.all(shape_li.border_color == initial_border_color)
 
 
 @pytest.mark.parametrize(
@@ -371,7 +371,7 @@ def test_update_face_color(shape_li, new_color):
         np.array([[1, 0, 0, 1]] * 4),
     ],
 )
-def test_update_edge_color(shape_li, new_color):
+def test_update_border_color(shape_li, new_color):
     """Test updating edge color of shapes in ShapeList."""
     # Initial edge color
     initial_face_color = shape_li.face_color
@@ -379,9 +379,9 @@ def test_update_edge_color(shape_li, new_color):
 
     # Update edge color
     expected_color = np.array([[1, 0, 0, 1]] * 4)
-    shape_li.update_edge_colors(range(4), new_color)
+    shape_li.update_border_colors(range(4), new_color)
     # Check if the edge color has been updated
-    npt.assert_array_equal(shape_li.edge_color, expected_color)
+    npt.assert_array_equal(shape_li.border_color, expected_color)
     assert (
         np.count_nonzero(
             np.all(
@@ -435,7 +435,7 @@ def triangles_slice(simple_rectangle):
     triang = np.concatenate(
         [
             simple_rectangle._face_triangles,
-            simple_rectangle._edge_triangles
+            simple_rectangle._border_triangles
             + simple_rectangle.face_vertices_count,
         ]
     )

@@ -41,12 +41,12 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         self.width_spinbox.setSingleStep(0.1)
         self.width_spinbox.setMinimum(0.01)
         self.width_spinbox.setMaximum(np.inf)
-        self.width_spinbox.setValue(self._layer.edge_width)
+        self.width_spinbox.setValue(self._layer.width)
         self.width_spinbox.valueChanged.connect(self.change_width)
         self._callbacks.append(
             attr_to_settr(
                 self._layer,
-                'edge_width',
+                'width',
                 self.width_spinbox,
                 'setValue',
             )
@@ -60,7 +60,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         value : float
             Line width of vectors.
         """
-        self._layer.edge_width = value
+        self._layer.width = value
         self.width_spinbox.clearFocus()
         # TODO: Check other way to give focus without calling parent
         self.parent().setFocus()

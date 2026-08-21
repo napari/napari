@@ -28,9 +28,9 @@ class QtShapesControls(QtLayerControls):
 
     Attributes
     ----------
-    _edge_color_control : napari._qt.layer_controls.widgets._shapes.QtEdgeColorControl
+    _border_color_control : napari._qt.layer_controls.widgets._shapes.QtEdgeColorControl
         Widget that wraps a ColorSwatchEdit controlling current edge color of the layer.
-    _edge_width_slider_control : napari._qt.layer_controls.widgets._shapes.QtEdgeWidthSliderControl
+    _border_width_slider_control : napari._qt.layer_controls.widgets._shapes.QtEdgeWidthSliderControl
         Widget that wraps a slider controlling line edge width of layer.
     _face_color_control : napari._qt.layer_controls.widgets.QtFaceColorControl
         Widget that wraps a ColorSwatchEdit controlling current face color of the layer.
@@ -195,15 +195,17 @@ class QtShapesControls(QtLayerControls):
             layer,
             tooltip='Click to set the face color of currently selected shapes and any added afterwards.',
         )
-        self._edge_width_slider_control = QtEdgeWidthSliderControl(self, layer)
-        self._edge_color_control = QtEdgeColorControl(
+        self._border_width_slider_control = QtEdgeWidthSliderControl(
+            self, layer
+        )
+        self._border_color_control = QtEdgeColorControl(
             self,
             layer,
             tooltip='Click to set the edge color of currently selected shapes and any added afterwards',
         )
         self._add_widget_controls(self._face_color_control)
-        self._add_widget_controls(self._edge_color_control)
-        self._add_widget_controls(self._edge_width_slider_control)
+        self._add_widget_controls(self._border_color_control)
+        self._add_widget_controls(self._border_width_slider_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)
         self._add_widget_controls(self._text_visibility_control)
 

@@ -78,6 +78,10 @@ from napari.utils.colormaps.standardize_color import (
 )
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import (
+    add_deprecated_property,
+    deprecated_constructor_arg_by_attr,
+)
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 
@@ -115,24 +119,24 @@ class Shapes(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    edge_color : str, array-like
+    border_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    edge_color_cycle : np.ndarray, list
-        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+    border_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to border_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, napari.utils.Colormap
-        Colormap to set edge_color if a continuous attribute is used to set face_color.
-    edge_contrast_limits : None, (float, float)
+    border_colormap : str, napari.utils.Colormap
+        Colormap to set border_color if a continuous attribute is used to set face_color.
+    border_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    edge_width : float or list
-        Thickness of lines and edges. If a list is supplied it must be the
+    border_width : float or list
+        Thickness of lines and borders. If a list is supplied it must be the
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
@@ -235,19 +239,19 @@ class Shapes(Layer):
         For example usage, see /napari/examples/add_shapes_with_text.py.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
-    edge_color : str, array-like
+    border_color : str, array-like
         Color of the shape border. Numeric color values should be RGB(A).
     face_color : str, array-like
         Color of the shape face. Numeric color values should be RGB(A).
-    edge_width : (N, ) list of float
-        Edge width for each shape.
+    border_width : (N, ) list of float
+        Border width for each shape.
     z_index : (N, ) list of int
         z-index for each shape.
-    current_edge_width : float
-        Thickness of lines and edges of the next shape to be added or the
+    current_border_width : float
+        Thickness of lines and borders of the next shape to be added or the
         currently selected shape.
-    current_edge_color : str
-        Color of the edge of the next shape to be added or the currently
+    current_border_color : str
+        Color of the border of the next shape to be added or the currently
         selected shape.
     current_face_color : str
         Color of the face of the next shape to be added or the currently
@@ -357,11 +361,11 @@ class Shapes(Layer):
     _highlight_width = 1.5
 
     _face_color_property: str
-    _edge_color_property: str
+    _border_color_property: str
     _face_color_cycle: npt.NDArray
-    _edge_color_cycle: npt.NDArray
+    _border_color_cycle: npt.NDArray
     _face_color_mode: str
-    _edge_color_mode: str
+    _border_color_mode: str
 
     # If more shapes are present then they are randomly subsampled
     # in the thumbnail
@@ -437,6 +441,11 @@ class Shapes(Layer):
         Mode.PAN_ZOOM,
     }
 
+    @deprecated_constructor_arg_by_attr('edge_color')
+    @deprecated_constructor_arg_by_attr('edge_color_cycle')
+    @deprecated_constructor_arg_by_attr('edge_colormap')
+    @deprecated_constructor_arg_by_attr('edge_contrast_limits')
+    @deprecated_constructor_arg_by_attr('edge_width')
     def __init__(
         self,
         data=None,
@@ -446,11 +455,11 @@ class Shapes(Layer):
         axis_labels=None,
         blending='translucent',
         cache=True,
-        edge_color='#777777',
-        edge_color_cycle=None,
-        edge_colormap='viridis',
-        edge_contrast_limits=None,
-        edge_width=1,
+        border_color='#777777',
+        border_color_cycle=None,
+        border_colormap='viridis',
+        border_contrast_limits=None,
+        border_width=1,
         experimental_clipping_planes=None,
         face_color='white',
         face_color_cycle=None,
@@ -507,11 +516,11 @@ class Shapes(Layer):
         )
 
         self.events.add(
-            edge_width=Event,
-            edge_color=Event,
+            border_width=Event,
+            border_color=Event,
             face_color=Event,
             properties=Event,
-            current_edge_color=Event,
+            current_border_color=Event,
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
@@ -536,10 +545,10 @@ class Shapes(Layer):
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
         # value for itself
-        if np.isscalar(edge_width):
-            self._current_edge_width = edge_width
+        if np.isscalar(border_width):
+            self._current_border_width = border_width
         else:
-            self._current_edge_width = 1
+            self._current_border_width = 1
 
         self._data_view = ShapeList(ndisplay=self._slice_input.ndisplay)
         self._data_view.slice_key = np.array(self._data_slice.point)[
@@ -588,11 +597,11 @@ class Shapes(Layer):
         self._init_shapes(
             data,
             shape_type=shape_type,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            edge_color_cycle=edge_color_cycle,
-            edge_colormap=edge_colormap,
-            edge_contrast_limits=edge_contrast_limits,
+            border_width=border_width,
+            border_color=border_color,
+            border_color_cycle=border_color_cycle,
+            border_colormap=border_colormap,
+            border_contrast_limits=border_contrast_limits,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
             face_colormap=face_colormap,
@@ -602,16 +611,18 @@ class Shapes(Layer):
 
         # set the current_* properties
         if len(data) > 0:
-            self._current_edge_color = self.edge_color[-1]
+            self._current_border_color = self.border_color[-1]
             self._current_face_color = self.face_color[-1]
         elif len(data) == 0 and len(self.properties) > 0:
-            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
+            self._initialize_current_color_for_empty_layer(
+                border_color, 'border'
+            )
             self._initialize_current_color_for_empty_layer(face_color, 'face')
         elif len(data) == 0 and len(self.properties) == 0:
-            self._current_edge_color = transform_color_with_defaults(
+            self._current_border_color = transform_color_with_defaults(
                 num_entries=1,
-                colors=edge_color,
-                elem_name='edge_color',
+                colors=border_color,
+                elem_name='border_color',
                 default='black',
             )
             self._current_face_color = transform_color_with_defaults(
@@ -631,15 +642,15 @@ class Shapes(Layer):
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
     ):
-        """Initialize current_{edge,face}_color when starting with empty layer.
+        """Initialize current_{border,face}_color when starting with empty layer.
 
         Parameters
         ----------
         color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
+            The value for setting border or face_color
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
         """
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.DIRECT:
@@ -689,17 +700,17 @@ class Shapes(Layer):
         if shape_type is None:
             shape_type = self.shape_type
 
-        edge_widths = self._data_view.edge_widths
-        edge_color = self._data_view.edge_color
+        border_widths = self._data_view.border_widths
+        border_color = self._data_view.border_color
         face_color = self._data_view.face_color
         z_indices = self._data_view.z_indices
 
         # fewer shapes, trim attributes
         if self.nshapes > n_new_shapes:
             shape_type = shape_type[:n_new_shapes]
-            edge_widths = edge_widths[:n_new_shapes]
+            border_widths = border_widths[:n_new_shapes]
             z_indices = z_indices[:n_new_shapes]
-            edge_color = edge_color[:n_new_shapes]
+            border_color = border_color[:n_new_shapes]
             face_color = face_color[:n_new_shapes]
         # more shapes, add attributes
         elif self.nshapes < n_new_shapes:
@@ -708,12 +719,12 @@ class Shapes(Layer):
                 shape_type
                 + [get_default_shape_type(shape_type)] * n_shapes_difference
             )
-            edge_widths = edge_widths + [1] * n_shapes_difference
+            border_widths = border_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
-            edge_color = np.concatenate(
+            border_color = np.concatenate(
                 (
-                    edge_color,
-                    self._get_new_shape_color(n_shapes_difference, 'edge'),
+                    border_color,
+                    self._get_new_shape_color(n_shapes_difference, 'border'),
                 )
             )
             face_color = np.concatenate(
@@ -747,8 +758,8 @@ class Shapes(Layer):
         self._add_shapes(
             data,
             shape_type=shape_type,
-            edge_width=edge_widths,
-            edge_color=edge_color,
+            border_width=border_widths,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_indices,
             n_new_shapes=n_new_shapes,
@@ -806,12 +817,12 @@ class Shapes(Layer):
                 RuntimeWarning,
             )
 
-        if self._edge_color_property and (
-            self._edge_color_property not in self.features
+        if self._border_color_property and (
+            self._border_color_property not in self.features
         ):
-            self._edge_color_property = ''
+            self._border_color_property = ''
             warnings.warn(
-                'property used for edge_color dropped',
+                'property used for border_color dropped',
                 RuntimeWarning,
             )
 
@@ -878,38 +889,38 @@ class Shapes(Layer):
         return len(self._data_view.shapes)
 
     @property
-    def current_edge_width(self):
-        """float: Width of shape edges including lines and paths."""
-        return self._current_edge_width
+    def current_border_width(self):
+        """float: Width of shape borders including lines and paths."""
+        return self._current_border_width
 
-    @current_edge_width.setter
-    def current_edge_width(self, edge_width):
-        self._current_edge_width = edge_width
+    @current_border_width.setter
+    def current_border_width(self, border_width):
+        self._current_border_width = border_width
         if self._update_properties:
             # To avoid performance cost of repeated update calls, we batch the updates
             with self._data_view.batched_updates():
                 for i in self.selected_data:
-                    self._data_view.update_edge_width(i, edge_width)
-        self.events.edge_width()
+                    self._data_view.update_border_width(i, border_width)
+        self.events.border_width()
 
     @property
-    def current_edge_color(self):
-        """str: color of shape edges including lines and paths."""
-        hex_ = rgb_to_hex(self._current_edge_color)[0]
+    def current_border_color(self):
+        """str: color of shape borders including lines and paths."""
+        hex_ = rgb_to_hex(self._current_border_color)[0]
         return hex_to_name.get(hex_, hex_)
 
-    @current_edge_color.setter
-    def current_edge_color(self, edge_color):
-        self._current_edge_color = transform_color(edge_color)
+    @current_border_color.setter
+    def current_border_color(self, border_color):
+        self._current_border_color = transform_color(border_color)
         if self._update_properties:
             with self._data_view.batched_updates():
                 for i in self.selected_data:
-                    self._data_view.update_edge_color(
-                        i, self._current_edge_color
+                    self._data_view.update_border_color(
+                        i, self._current_border_color
                     )
-            self.events.edge_color()
+            self.events.border_color()
             self._update_thumbnail()
-        self.events.current_edge_color()
+        self.events.current_border_color()
 
     @property
     def current_face_color(self):
@@ -966,8 +977,8 @@ class Shapes(Layer):
         shape_inputs = zip(
             self._data_view.data,
             ensure_iterable(shape_type),
-            self._data_view.edge_widths,
-            self._data_view.edge_color,
+            self._data_view.border_widths,
+            self._data_view.border_color,
             self._data_view.face_color,
             self._data_view.z_indices,
             strict=False,
@@ -979,59 +990,59 @@ class Shapes(Layer):
         self._update_dims()
 
     @property
-    def edge_color(self):
+    def border_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
-        return self._data_view.edge_color
+        return self._data_view.border_color
 
-    @edge_color.setter
-    def edge_color(self, edge_color):
-        self._set_color(edge_color, 'edge')
-        self.events.edge_color()
+    @border_color.setter
+    def border_color(self, border_color):
+        self._set_color(border_color, 'border')
+        self.events.border_color()
         self._update_thumbnail()
 
     @property
-    def edge_color_cycle(self) -> np.ndarray:
-        """Union[list, np.ndarray] :  Color cycle for edge_color.
+    def border_color_cycle(self) -> np.ndarray:
+        """Union[list, np.ndarray] :  Color cycle for border_color.
 
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle.values
+        return self._border_color_cycle.values
 
-    @edge_color_cycle.setter
-    def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
-        self._set_color_cycle(np.asarray(edge_color_cycle), 'edge')
+    @border_color_cycle.setter
+    def border_color_cycle(self, border_color_cycle: list | np.ndarray):
+        self._set_color_cycle(np.asarray(border_color_cycle), 'border')
 
     @property
-    def edge_colormap(self) -> Colormap:
-        """Return the colormap to be applied to a property to get the edge color.
+    def border_colormap(self) -> Colormap:
+        """Return the colormap to be applied to a property to get the border color.
 
         Returns
         -------
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._edge_colormap
+        return self._border_colormap
 
-    @edge_colormap.setter
-    def edge_colormap(self, colormap: ValidColormapArg):
-        self._edge_colormap = ensure_colormap(colormap)
+    @border_colormap.setter
+    def border_colormap(self, colormap: ValidColormapArg):
+        self._border_colormap = ensure_colormap(colormap)
 
     @property
-    def edge_contrast_limits(self) -> tuple[float, float] | None:
+    def border_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float): contrast limits for mapping
-        the edge_color colormap property to 0 and 1
+        the border_color colormap property to 0 and 1
         """
-        return self._edge_contrast_limits
+        return self._border_contrast_limits
 
-    @edge_contrast_limits.setter
-    def edge_contrast_limits(
+    @border_contrast_limits.setter
+    def border_contrast_limits(
         self, contrast_limits: tuple[float, float] | None
     ):
-        self._edge_contrast_limits = contrast_limits
+        self._border_contrast_limits = contrast_limits
 
     @property
-    def edge_color_mode(self) -> str:
-        """str: Edge color setting mode
+    def border_color_mode(self) -> str:
+        """str: border color setting mode
 
         DIRECT (default mode) allows each shape color to be set arbitrarily
 
@@ -1039,11 +1050,11 @@ class Shapes(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return str(self._edge_color_mode)
+        return str(self._border_color_mode)
 
-    @edge_color_mode.setter
-    def edge_color_mode(self, edge_color_mode: str | ColorMode):
-        self._set_color_mode(edge_color_mode, 'edge')
+    @border_color_mode.setter
+    def border_color_mode(self, border_color_mode: str | ColorMode):
+        self._set_color_mode(border_color_mode, 'border')
 
     @property
     def face_color(self):
@@ -1112,16 +1123,16 @@ class Shapes(Layer):
         self._set_color_mode(face_color_mode, 'face')
 
     def _set_color_mode(self, color_mode: ColorMode | str, attribute: str):
-        """Set the face_color_mode or edge_color_mode property
+        """Set the face_color_mode or border_color_mode property
 
         Parameters
         ----------
         color_mode : str, ColorMode
-            The value for setting edge or face_color_mode. If color_mode is a string,
+            The value for setting border or face_color_mode. If color_mode is a string,
             it should be one of: 'direct', 'cycle', or 'colormap'
-        attribute : str in {'edge', 'face'}
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
+            Should be 'border' for border_colo_moder or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
 
@@ -1159,15 +1170,15 @@ class Shapes(Layer):
     def _set_color_cycle(
         self, color_cycle: np.ndarray | cycle, attribute: str
     ):
-        """Set the face_color_cycle or edge_color_cycle property
+        """Set the face_color_cycle or border_color_cycle property
 
         Parameters
         ----------
         color_cycle : (N, 4) or (N, 1) array
-            The value for setting edge or face_color_cycle
-        attribute : str in {'edge', 'face'}
+            The value for setting border or face_color_cycle
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
         """
         transformed_colors = transform_color_cycle(
             color_cycle=color_cycle,
@@ -1184,13 +1195,13 @@ class Shapes(Layer):
                 self.refresh_colors(update_color_mapping=True)
 
     @property
-    def edge_width(self):
-        """list of float: edge width for each shape."""
-        return self._data_view.edge_widths
+    def border_width(self):
+        """list of float: border width for each shape."""
+        return self._data_view.border_widths
 
-    @edge_width.setter
-    def edge_width(self, width):
-        """Set edge width of shapes using float or list of float.
+    @border_width.setter
+    def border_width(self, width):
+        """Set border width of shapes using float or list of float.
 
         If list of float, must be of equal length to n shapes
 
@@ -1210,7 +1221,7 @@ class Shapes(Layer):
             widths = [width for _ in range(self.nshapes)]
         with self._data_view.batched_updates():
             for i, width in enumerate(widths):
-                self._data_view.update_edge_width(i, width)
+                self._data_view.update_border_width(i, width)
 
     @property
     def z_index(self):
@@ -1276,26 +1287,26 @@ class Shapes(Layer):
                 with self.block_update_properties():
                     self.current_face_color = unique_face_color
 
-            selected_edge_colors = self._data_view._edge_color[
+            selected_border_colors = self._data_view._border_color[
                 selected_data_indices
             ]
             if (
-                unique_edge_color := _unique_element(selected_edge_colors)
+                unique_border_color := _unique_element(selected_border_colors)
             ) is not None:
                 with self.block_update_properties():
-                    self.current_edge_color = unique_edge_color
+                    self.current_border_color = unique_border_color
 
-            unique_edge_width = _unique_element(
+            unique_border_width = _unique_element(
                 np.array(
                     [
-                        self._data_view.shapes[i].edge_width
+                        self._data_view.shapes[i].border_width
                         for i in self.selected_data
                     ]
                 )
             )
-            if unique_edge_width is not None:
+            if unique_border_width is not None:
                 with self.block_update_properties():
-                    self.current_edge_width = unique_edge_width
+                    self.current_border_width = unique_border_width
 
         self._set_highlight()
 
@@ -1311,15 +1322,15 @@ class Shapes(Layer):
         self._private_is_moving = value
 
     def _set_color(self, color, attribute: str):
-        """Set the face_color or edge_color property
+        """Set the face_color or border_color property
 
         Parameters
         ----------
         color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
+            The value for setting border or face_color
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
         """
         if self._is_color_mapped(color):
             if guess_continuous(self.properties[color], feature_name=color):
@@ -1350,7 +1361,7 @@ class Shapes(Layer):
             color_event()
 
     def refresh_colors(self, update_color_mapping: bool = False):
-        """Calculate and update face and edge colors if using a cycle or color map
+        """Calculate and update face and border colors if using a cycle or color map
 
         Parameters
         ----------
@@ -1364,18 +1375,18 @@ class Shapes(Layer):
             Default value is False.
         """
         self._refresh_color('face', update_color_mapping)
-        self._refresh_color('edge', update_color_mapping)
+        self._refresh_color('border', update_color_mapping)
 
     def _refresh_color(
         self, attribute: str, update_color_mapping: bool = False
     ):
-        """Calculate and update face or edge colors if using a cycle or color map
+        """Calculate and update face or border colors if using a cycle or color map
 
         Parameters
         ----------
-        attribute : str  in {'edge', 'face'}
+        attribute : str  in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
         update_color_mapping : bool
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
@@ -1394,20 +1405,20 @@ class Shapes(Layer):
                 color_event()
 
     def _initialize_color(self, color, attribute: str, n_shapes: int):
-        """Get the face/edge colors the Shapes layer will be initialized with
+        """Get the face/border colors the Shapes layer will be initialized with
 
         Parameters
         ----------
         color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
+            The value for setting border or face_color
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
 
         Returns
         -------
         init_colors : (N, 4) array or str
-            The calculated values for setting edge or face_color
+            The calculated values for setting border or face_color
         """
         if self._is_color_mapped(color):
             if guess_continuous(self.properties[color], feature_name=color):
@@ -1438,13 +1449,13 @@ class Shapes(Layer):
         return init_colors
 
     def _map_color(self, attribute: str, update_color_mapping: bool = False):
-        """Calculate the mapping for face or edge colors if using a cycle or color map
+        """Calculate the mapping for face or border colors if using a cycle or color map
 
         Parameters
         ----------
-        attribute : str  in {'edge', 'face'}
+        attribute : str  in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
+            Should be 'border' for border_color or 'face' for face_color.
         update_color_mapping : bool
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
@@ -1457,7 +1468,7 @@ class Shapes(Layer):
         Returns
         -------
         colors : (N, 4) array or str
-            The calculated values for setting edge or face_color
+            The calculated values for setting border or face_color
         """
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.CYCLE:
@@ -1531,9 +1542,9 @@ class Shapes(Layer):
         adding : int
             the number of shapes that were added
             (and thus the number of color entries to add)
-        attribute : str in {'edge', 'face'}
+        attribute : str in {'border', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
+            Should be 'border' for border_color_mode or 'face' for face_color_mode.
 
         Returns
         -------
@@ -1599,11 +1610,11 @@ class Shapes(Layer):
         """
         state = self._get_base_state()
         face_color = self.face_color
-        edge_color = self.edge_color
+        border_color = self.border_color
         if not face_color.size:
             face_color = self._current_face_color
-        if not edge_color.size:
-            edge_color = self._current_edge_color
+        if not border_color.size:
+            border_color = self._current_border_color
         state.update(
             {
                 'ndim': self.ndim,
@@ -1613,15 +1624,15 @@ class Shapes(Layer):
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
-                'edge_width': self.edge_width,
+                'border_width': self.border_width,
                 'face_color': face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'face_colormap': self.face_colormap.model_dump(),
                 'face_contrast_limits': self.face_contrast_limits,
-                'edge_color': edge_color,
-                'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap.model_dump(),
-                'edge_contrast_limits': self.edge_contrast_limits,
+                'border_color': border_color,
+                'border_color_cycle': self.border_color_cycle,
+                'border_colormap': self.border_colormap.model_dump(),
+                'border_contrast_limits': self.border_contrast_limits,
                 'data': self.data,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
@@ -1768,8 +1779,8 @@ class Shapes(Layer):
         self,
         data,
         *,
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
     ):
@@ -1783,12 +1794,12 @@ class Shapes(Layer):
             the top-left and bottom-right corners.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -1816,8 +1827,8 @@ class Shapes(Layer):
         self.add(
             data,
             shape_type='rectangle',
-            edge_width=edge_width,
-            edge_color=edge_color,
+            border_width=border_width,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_index,
         )
@@ -1826,8 +1837,8 @@ class Shapes(Layer):
         self,
         data,
         *,
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
     ):
@@ -1841,12 +1852,12 @@ class Shapes(Layer):
             center position and radii magnitudes.
             Can be a 3-dimensional array for multiple shapes, or list of 2 or 4
             vertices for a single shape.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -1874,8 +1885,8 @@ class Shapes(Layer):
         self.add(
             data,
             shape_type='ellipse',
-            edge_width=edge_width,
-            edge_color=edge_color,
+            border_width=border_width,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_index,
         )
@@ -1884,8 +1895,8 @@ class Shapes(Layer):
         self,
         data,
         *,
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
     ):
@@ -1898,12 +1909,12 @@ class Shapes(Layer):
             in D dimensions representing a polygon. Can be a 3-dimensional array if
             polygons have same number of vertices, or a list of V vertices for a
             single polygon.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -1929,8 +1940,8 @@ class Shapes(Layer):
         self.add(
             data,
             shape_type='polygon',
-            edge_width=edge_width,
-            edge_color=edge_color,
+            border_width=border_width,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_index,
         )
@@ -1939,8 +1950,8 @@ class Shapes(Layer):
         self,
         data,
         *,
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
     ):
@@ -1952,12 +1963,12 @@ class Shapes(Layer):
             List of line data where each element is a (2, D) array of 2 vertices
             in D dimensions representing a line. Can be a 3-dimensional array for
             multiple shapes, or list of 2 vertices for a single shape.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -1985,8 +1996,8 @@ class Shapes(Layer):
         self.add(
             data,
             shape_type='line',
-            edge_width=edge_width,
-            edge_color=edge_color,
+            border_width=border_width,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_index,
         )
@@ -1995,8 +2006,8 @@ class Shapes(Layer):
         self,
         data,
         *,
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
     ):
@@ -2009,12 +2020,12 @@ class Shapes(Layer):
             in D dimensions representing a path. Can be a 3-dimensional array
             if all paths have same number of vertices, or a list of V vertices
             for a single path.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -2040,8 +2051,8 @@ class Shapes(Layer):
         self.add(
             data,
             shape_type='path',
-            edge_width=edge_width,
-            edge_color=edge_color,
+            border_width=border_width,
+            border_color=border_color,
             face_color=face_color,
             z_index=z_index,
         )
@@ -2051,8 +2062,8 @@ class Shapes(Layer):
         data,
         *,
         shape_type='rectangle',
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
         gui=False,
@@ -2073,12 +2084,12 @@ class Shapes(Layer):
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes. Overridden by data shape_type, if present.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -2113,8 +2124,8 @@ class Shapes(Layer):
             self._add_shapes(
                 data,
                 shape_type=shape_type,
-                edge_width=edge_width,
-                edge_color=edge_color,
+                border_width=border_width,
+                border_color=border_color,
                 face_color=face_color,
                 z_index=z_index,
                 n_new_shapes=n_new_shapes,
@@ -2134,11 +2145,11 @@ class Shapes(Layer):
         data,
         *,
         shape_type='rectangle',
-        edge_width=None,
-        edge_color=None,
-        edge_color_cycle,
-        edge_colormap,
-        edge_contrast_limits,
+        border_width=None,
+        border_color=None,
+        border_color_cycle,
+        border_colormap,
+        border_contrast_limits,
         face_color=None,
         face_color_cycle,
         face_colormap,
@@ -2161,12 +2172,12 @@ class Shapes(Layer):
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes. Overriden by data shape_type, if present.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -2188,15 +2199,15 @@ class Shapes(Layer):
 
         n_shapes = number_of_shapes(data)
         with self.block_update_properties():
-            self._edge_color_property = ''
-            self.edge_color_cycle_map = {}
-            self.edge_colormap = edge_colormap
-            self._edge_contrast_limits = edge_contrast_limits
-            if edge_color_cycle is None:
-                edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
-            self.edge_color_cycle = edge_color_cycle
-            edge_color = self._initialize_color(
-                edge_color, attribute='edge', n_shapes=n_shapes
+            self._border_color_property = ''
+            self.border_color_cycle_map = {}
+            self.border_colormap = border_colormap
+            self._border_contrast_limits = border_contrast_limits
+            if border_color_cycle is None:
+                border_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
+            self.border_color_cycle = border_color_cycle
+            border_color = self._initialize_color(
+                border_color, attribute='border', n_shapes=n_shapes
             )
 
             self._face_color_property = ''
@@ -2214,8 +2225,8 @@ class Shapes(Layer):
             self._add_shapes(
                 data,
                 shape_type=shape_type,
-                edge_width=edge_width,
-                edge_color=edge_color,
+                border_width=border_width,
+                border_color=border_color,
                 face_color=face_color,
                 z_index=z_index,
                 n_new_shapes=n_shapes,
@@ -2228,8 +2239,8 @@ class Shapes(Layer):
         data,
         *,
         shape_type='rectangle',
-        edge_width=None,
-        edge_color=None,
+        border_width=None,
+        border_color=None,
         face_color=None,
         z_index=None,
         n_new_shapes=0,
@@ -2250,12 +2261,12 @@ class Shapes(Layer):
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes. Overridden by data shape_type, if present.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        border_width : float | list
+            thickness of lines and borders. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        border_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
@@ -2282,19 +2293,19 @@ class Shapes(Layer):
             if hasattr(self, 'text'):
                 self.text.apply(self.features)
 
-        if edge_color is None:
-            edge_color = self._get_new_shape_color(
-                n_new_shapes, attribute='edge'
+        if border_color is None:
+            border_color = self._get_new_shape_color(
+                n_new_shapes, attribute='border'
             )
         if face_color is None:
             face_color = self._get_new_shape_color(
                 n_new_shapes, attribute='face'
             )
 
-        if edge_width is None:
-            edge_width = self.current_edge_width
-        if edge_color is None:
-            edge_color = self._current_edge_color
+        if border_width is None:
+            border_width = self.current_border_width
+        if border_color is None:
+            border_color = self._current_border_color
         if face_color is None:
             face_color = self._current_face_color
         if self._data_view is not None:
@@ -2310,11 +2321,11 @@ class Shapes(Layer):
             # transform the colors
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),
-                colors=edge_color,
-                elem_name='edge_color',
+                colors=border_color,
+                elem_name='border_color',
                 default='white',
             )
-            transformed_edge_color = normalize_and_broadcast_colors(
+            transformed_border_color = normalize_and_broadcast_colors(
                 len(data), transformed_ec
             )
             transformed_fc = transform_color_with_defaults(
@@ -2331,8 +2342,8 @@ class Shapes(Layer):
             shape_inputs = zip(
                 data,
                 ensure_iterable(shape_type),
-                ensure_iterable(edge_width),
-                transformed_edge_color,
+                ensure_iterable(border_width),
+                transformed_border_color,
                 transformed_face_color,
                 ensure_iterable(z_index),
                 strict=False,
@@ -2354,7 +2365,7 @@ class Shapes(Layer):
             (
                 shape_classes[st](
                     d,
-                    edge_width=ew,
+                    border_width=ew,
                     z_index=z,
                     dims_order=self._slice_input.order,
                     ndisplay=self._slice_input.ndisplay,
@@ -2365,12 +2376,12 @@ class Shapes(Layer):
             for d, st, ew, ec, fc, z in shape_inputs
         )
 
-        shapes, edge_colors, face_colors = tuple(zip(*sh_inp, strict=False))
+        shapes, border_colors, face_colors = tuple(zip(*sh_inp, strict=False))
 
         # Add all shapes at once (faster than adding them one by one)
         data_view.add(
             shape=shapes,
-            edge_color=edge_colors,
+            border_color=border_colors,
             face_color=face_colors,
             z_refresh=False,
         )
@@ -2608,13 +2619,13 @@ class Shapes(Layer):
             Nx2 array of any vertices to be rendered as Markers
         face_color : str
             String of the face color of the Markers
-        edge_color : str
-            String of the edge color of the Markers and Line for the box
+        border_color : str
+            String of the border color of the Markers and Line for the box
         pos : np.ndarray
             Nx2 array of vertices of the box that will be rendered using a
             Vispy Line
         width : float
-            Width of the box edge
+            Width of the box border
         """
         # Only highlight selected shapes that are in view.
         selected_in_view = self._selected_data_in_view
@@ -2632,10 +2643,10 @@ class Shapes(Layer):
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
-                edge_color = self._highlight_color
+                border_color = self._highlight_color
                 vertices = box[:, ::-1]
                 # Use a subset of the vertices of the interaction_box to plot
-                # the line around the edge
+                # the line around the border
                 pos = box[Box.LINE_HANDLE][:, ::-1]
                 width = 1.5
             elif self._mode in (
@@ -2666,36 +2677,36 @@ class Shapes(Layer):
                     face_color = 'white'
                 else:
                     face_color = self._highlight_color
-                edge_color = self._highlight_color
+                border_color = self._highlight_color
                 pos = None
                 width = 0
             else:
                 # Otherwise show nothing
                 vertices = np.empty((0, 2))
                 face_color = 'white'
-                edge_color = 'white'
+                border_color = 'white'
                 pos = None
                 width = 0
         elif self._highlight_visible and self._is_selecting:
             # If currently dragging a selection box just show an outline of
             # that box
             vertices = np.empty((0, 2))
-            edge_color = self._highlight_color
+            border_color = self._highlight_color
             face_color = 'white'
             box = create_box(self._drag_box)
             width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
-            # the line around the edge
+            # the line around the border
             pos = box[Box.LINE][:, ::-1]
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
             face_color = 'white'
-            edge_color = 'white'
+            border_color = 'white'
             pos = None
             width = 0
 
-        return vertices, face_color, edge_color, pos, width
+        return vertices, face_color, border_color, pos, width
 
     def _set_highlight(self, force=False) -> None:
         """Render highlights of shapes.
@@ -2871,8 +2882,8 @@ class Shapes(Layer):
 
             self._feature_table.remove(indices)
             self.text.remove(indices)
-            self._data_view._edge_color = np.delete(
-                self._data_view._edge_color, indices, axis=0
+            self._data_view._border_color = np.delete(
+                self._data_view._border_color, indices, axis=0
             )
             self._data_view._face_color = np.delete(
                 self._data_view._face_color, indices, axis=0
@@ -2910,8 +2921,8 @@ class Shapes(Layer):
             return {
                 'data': None,
                 'shape_type': None,
-                'edge_width': None,
-                'edge_color': None,
+                'border_width': None,
+                'border_color': None,
                 'face_color': None,
                 'z_index': None,
                 'features': {},
@@ -2920,8 +2931,8 @@ class Shapes(Layer):
         info = {
             'data': self.data[index],
             'shape_type': self.shape_type[index],
-            'edge_width': self.edge_width[index],
-            'edge_color': self.edge_color[index],
+            'border_width': self.border_width[index],
+            'border_color': self.border_color[index],
             'face_color': self.face_color[index],
             'z_index': self.z_index[index],
             'features': self.features.iloc[index].to_dict(),
@@ -3248,7 +3259,7 @@ class Shapes(Layer):
                     deepcopy(self._data_view.shapes[i])
                     for i in self._selected_data
                 ],
-                'edge_color': deepcopy(self._data_view._edge_color[index]),
+                'border_color': deepcopy(self._data_view._border_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
                 'features': deepcopy(self.features.iloc[index]),
                 'indices': self._data_slice.point,
@@ -3278,9 +3289,9 @@ class Shapes(Layer):
                 data[:, not_disp] = data[:, not_disp] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
-                edge_color = self._clipboard['edge_color'][i]
+                border_color = self._clipboard['border_color'][i]
                 self._data_view.add(
-                    shape, face_color=face_color, edge_color=edge_color
+                    shape, face_color=face_color, border_color=border_color
                 )
 
             self.selected_data = set(
@@ -3355,3 +3366,30 @@ class _ShapesSlicingState(_LayerSlicingState):
 
     def _set_view_slice(self):
         self.layer._set_view_slice()
+
+
+add_deprecated_property(
+    Shapes, 'edge_color', 'border_color', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes, 'edge_color_cycle', 'border_color_cycle', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes, 'edge_colormap', 'border_colormap', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes,
+    'edge_contrast_limits',
+    'border_contrast_limits',
+    '0.11.0',
+    '0.10.0',
+)
+add_deprecated_property(
+    Shapes, 'edge_width', 'border_width', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes, 'current_edge_color', 'current_border_color', '0.11.0', '0.10.0'
+)
+add_deprecated_property(
+    Shapes, 'current_edge_width', 'current_border_width', '0.11.0', '0.10.0'
+)
