@@ -11,13 +11,14 @@ from napari.settings._napari_settings import (
     NapariSettings,
 )
 from napari.settings._plugin_config_generator import (
-    PluginPreferences,
+    PluginSettings,
     plugin_configuration_generator,
 )
 
 __all__ = [
     'CURRENT_SCHEMA_VERSION',
     'NapariSettings',
+    'PluginSettings',
     'get_plugin_settings',
     'get_settings',
 ]
@@ -81,47 +82,49 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
     return _SETTINGS
 
 
-_PLUGIN_PREFERENCES: dict[str, PluginPreferences] = {}
+_PLUGIN_SETTINGS: dict[str, PluginSettings] = {}
 
 
 def _clear_plugin_settings_cache(*_args, **_kwargs) -> None:
     """Invalidate the plugin-settings cache.
 
-    `get_plugin_settings` caches _PLUGIN_PREFERENCES i.e. only
-    builds it on first call.
+    `get_plugin_settings` caches `_PLUGIN_SETTINGS`, i.e. it only builds
+    the plugin-settings models on first call.
 
     This utility clears the dict so that the next call forces a
     rebuild of the plugin-settings cache.
 
     Used when plugins are enabled/disabled or in tests.
     """
-    _PLUGIN_PREFERENCES.clear()
+    _PLUGIN_SETTINGS.clear()
 
 
 @overload
 def get_plugin_settings(
     plugin: None = None,
     path_dir: Path | str | _NotSetType | None = _NOT_SET,
-) -> dict[str, PluginPreferences]: ...
+) -> dict[str, PluginSettings]: ...
 
 
 @overload
 def get_plugin_settings(
     plugin: str,
     path_dir: Path | str | _NotSetType | None = _NOT_SET,
-) -> PluginPreferences: ...
+) -> PluginSettings: ...
 
 
 def get_plugin_settings(
     plugin: str | None = None,
     path_dir: Path | str | _NotSetType | None = _NOT_SET,
-) -> dict[str, PluginPreferences] | PluginPreferences:
+) -> dict[str, PluginSettings] | PluginSettings:
     """Get settings for all plugins, or for a single plugin.
+
     Plugin settings are declared by plugins in their manifest under
     ``contributions.configurations``. Each plugin's settings are persisted
     to their own file (e.g. ``<config dir>/<plugin-name>.yaml``), stored in
     the same directory as napari's own settings file, and are auto-saved
     whenever a value changes.
+
     Parameters
     ----------
     plugin : str, optional
@@ -133,11 +136,13 @@ def get_plugin_settings(
         provided, defaults to the directory containing napari's own
         settings file (honoring ``NAPARI_CONFIG``). The path can only be
         set once per session.
+
     Returns
     -------
-    PluginPreferences or dict of PluginPreferences
+    PluginSettings or dict of PluginSettings
         The settings for the requested plugin, or a mapping of all plugin
         settings keyed by plugin name.
+
     Examples
     --------
     >>> from napari.settings import get_plugin_settings
@@ -145,9 +150,9 @@ def get_plugin_settings(
     >>> settings.reader.lazy
     False
     """
-    global _PLUGIN_PREFERENCES
+    global _PLUGIN_SETTINGS
 
-    if not _PLUGIN_PREFERENCES:
+    if not _PLUGIN_SETTINGS:
         if isinstance(path_dir, _NotSetType):
             # same directory as napari's own settings file (``_CFG_PATH``), so
             # plugin settings honor ``NAPARI_CONFIG`` exactly like napari's do
@@ -159,15 +164,15 @@ def get_plugin_settings(
             config_path = (
                 None if path_dir is None else path_dir / f'{key}.yaml'
             )
-            _PLUGIN_PREFERENCES[key] = model(config_path=config_path)
+            _PLUGIN_SETTINGS[key] = model(config_path=config_path)
 
     elif not isinstance(path_dir, _NotSetType):
         _raise_path_set_twice()
 
     if plugin is not None:
         try:
-            return _PLUGIN_PREFERENCES[plugin]
+            return _PLUGIN_SETTINGS[plugin]
         except KeyError as err:
             raise KeyError(f"Plugin named '{plugin}' does not exist.") from err
 
-    return _PLUGIN_PREFERENCES
+    return _PLUGIN_SETTINGS
