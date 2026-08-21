@@ -467,7 +467,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._content_layout.setContentsMargins(4, 4, 4, 4)
             self._content_layout.setSpacing(4)
             self._histogram_content_widget.setLayout(self._content_layout)
-            self.histogram_label = QtWrappedLabel('histogram:')
 
             self._compute_timer = QTimer()
             self._compute_timer.setSingleShot(True)
@@ -651,7 +650,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             (self.contrast_limits_slider_label, self._clim_row),
         ]
         if self._histogram_single:
-            controls.append(
-                (self.histogram_label, self._histogram_content_widget)
-            )
+            controls.append((self._histogram_content_widget,))
         return controls

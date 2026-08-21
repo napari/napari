@@ -1,8 +1,4 @@
-"""Histogram computation for Image/Surface layer data.
-
-The math lives here; the ``HistogramModel`` (settings only) delegates to
-``compute_histogram``. Results are written to ``layer.metadata['_computed_histogram']``.
-"""
+"""Histogram computation for IntensityMixin layers."""
 
 from __future__ import annotations
 
@@ -18,34 +14,12 @@ from napari.utils._dask_utils import _is_dask_data
 
 logger = logging.getLogger('napari.components.histogram')
 
-# Default histogram configuration
-DEFAULT_BINS: int = 256
-DEFAULT_MAX_SAMPLES: int = 1_000_000
 # Maximum number of elements to materialize into a numpy array when
 # the data is not chunked (e.g. h5py datasets).  Used as a safety
 # guard in _get_full_data() — beyond this threshold we skip full-mode
 # computation and warn instead of silently pulling the full array into
 # memory.  ~50M float64 elements ≈ 400 MB.
 _MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
-
-_EMPTY_HISTOGRAM: dict[str, np.ndarray] = {
-    'bin_edges': np.array([0.0, 1.0]),
-    'counts': np.array([0.0]),
-}
-
-
-def get_computed(layer: Any) -> dict[str, np.ndarray]:
-    """Return the last computed histogram for *layer* (defaults if none)."""
-    return layer.metadata.get('_computed_histogram', _EMPTY_HISTOGRAM)
-
-
-def _write_metadata(
-    layer: Any, bin_edges: np.ndarray, counts: np.ndarray
-) -> None:
-    layer.metadata['_computed_histogram'] = {
-        'bin_edges': bin_edges,
-        'counts': counts,
-    }
 
 
 def compute_histogram(
@@ -60,30 +34,46 @@ def compute_histogram(
 
     For chunked full-mode data, yields intermediate results after each
     chunk for progressive display. For non-chunked data, yields the final
-    result once. Results are written to ``layer.metadata['_computed_histogram']``.
+    result once. Returns .
     """
     data = _get_data(layer, mode)
 
     if data is None or data.size == 0:
-        _write_metadata(layer, *_EMPTY_HISTOGRAM.values())
+        yield _make_empty()
         return
 
     if getattr(layer, 'rgb', False):
         data = _sample_rgb_and_luminance(data, max_samples)
         if data.size == 0:
-            _write_metadata(layer, *_EMPTY_HISTOGRAM.values())
+            yield _make_empty()
             return
 
     if mode == 'full' and _has_chunks(data):
         yield from _compute_chunked_progressive(
-            layer, data, bins, max_samples, log_scale
+            data=data,
+            contrast_limits_range=layer.contrast_limits_range,
+            bins=bins,
+            max_samples=max_samples,
+            log_scale=log_scale,
         )
+
     else:
         if data.size > max_samples:
             data = _sample_data(data, max_samples)
         bin_edges, counts = _calc_histogram(data, layer, bins, log_scale)
-        _write_metadata(layer, bin_edges, counts)
         yield bin_edges, counts
+
+
+def _make_empty():
+    return {
+        'bin_edges': np.array([0.0, 1.0]),
+        'counts': np.array([0.0]),
+    }
+
+
+def get_computed(layer: Any) -> dict[str, np.ndarray]:
+    """Return the last computed histogram for *layer* (defaults if none)."""
+    return layer.metadata.get('_computed_histogram', _make_empty())
 
 
 def _calc_histogram(
@@ -352,8 +342,8 @@ def _sample_data(data: np.ndarray, max_samples: int) -> np.ndarray:
 
 
 def _compute_chunked_progressive(
-    layer: Any,
     data: Any,
+    contrast_limits_range: tuple[float | None, float | None],
     bins: int,
     max_samples: int,
     log_scale: bool,
@@ -373,7 +363,7 @@ def _compute_chunked_progressive(
     probs = np.asarray(chunk_sizes) / sum(chunk_sizes)
     order = rng.choice(n_chunks, size=n_selected, p=probs, replace=False)
 
-    range_min, range_max = layer.contrast_limits_range
+    range_min, range_max = contrast_limits_range
     if range_min is None or range_max is None:
         range_min = 0.0
         range_max = 1.0
@@ -406,5 +396,3 @@ def _compute_chunked_progressive(
             counts = running_counts.astype(np.float32)
 
         yield bins_arr, counts
-
-    _write_metadata(layer, bins_arr, counts)

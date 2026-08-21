@@ -443,7 +443,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self._content_layout.setContentsMargins(4, 4, 4, 4)
         self._content_layout.setSpacing(4)
         self._histogram_content_widget.setLayout(self._content_layout)
-        self.histogram_label = QtWrappedLabel('histogram:')
 
         # Own the (debounced, asynchronous) histogram compute. Results are
         # written to layer.metadata['_computed_histogram'] and broadcast via
@@ -615,5 +614,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),
-            (self.histogram_label, self._histogram_content_widget),
+            (self._histogram_content_widget,),
         ]
