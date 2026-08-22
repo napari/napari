@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Any
 
 from pydantic import AliasChoices, Field
@@ -12,6 +13,16 @@ from napari.utils.triangulation_backend import (
     TriangulationBackend,
     set_backend as set_triangulation_backend,
 )
+
+
+class PaletteFuzzySearch(StrEnum):
+    """
+    Enum for palette fuzzy search.
+    """
+
+    enabled_if_available = 'Enabled if available'
+    enabled = 'Enabled'
+    disabled = 'Disabled'
 
 
 # this class inherits from EventedSettings instead of EventedModel because
@@ -97,6 +108,35 @@ class ExperimentalSettings(EventedSettings):
         title='Unused option. Use "triangulation backend" instead.',
         description='This option was removed in napari 0.6.0. Use \n'
         '"triangulation backend" instead.',
+    )
+
+    command_palette_fuzzy_search: PaletteFuzzySearch = Field(
+        default=PaletteFuzzySearch.enabled_if_available,
+        title='Enable fuzzy search in the command palette',
+        description=(
+            'When searching for commands via the command palette, use fuzzy finding\n'
+            'instead of matching exact words.'
+        ),
+    )
+
+    command_palette_fuzzy_search_threshold: int = Field(
+        default=60,
+        title='Similarity threshold (%) for fuzzy search in the command palette',
+        description=(
+            "When searching commands via the command palette, if a command's similarity\n"
+            "to the query is lower than this threshold, it won't be shown as a match."
+        ),
+        ge=0,
+        le=100,
+    )
+
+    dynamic_layer_controls: bool = Field(
+        default=False,
+        title='Generate GUI layer controls dynamically instead of using premade panels.',
+        description=(
+            'Based on the attributes of the currenty selected layer, generate layer controls\n'
+            'dynamically, even when a single layer is selected. Happens by default with multiple layers.'
+        ),
     )
 
     class NapariConfig:

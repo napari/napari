@@ -95,6 +95,7 @@ def imshow(
     interpolation2d=...,
     interpolation3d=...,
     iso_threshold=...,
+    locked_data_level=...,
     metadata=...,
     multiscale=...,
     name=...,
@@ -137,6 +138,7 @@ def imshow(
     interpolation2d=...,
     interpolation3d=...,
     iso_threshold=...,
+    locked_data_level=...,
     metadata=...,
     multiscale=...,
     name=...,
@@ -178,6 +180,7 @@ def imshow(
     interpolation2d='nearest',
     interpolation3d='linear',
     iso_threshold=None,
+    locked_data_level=None,
     metadata=None,
     multiscale=None,
     name=None,
@@ -272,6 +275,11 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict or list of dict
         Layer metadata.
     multiscale : bool
@@ -354,6 +362,7 @@ def imshow(
         rendering=rendering,
         depiction=depiction,
         iso_threshold=iso_threshold,
+        locked_data_level=locked_data_level,
         attenuation=attenuation,
         auto_contrast=auto_contrast,
         name=name,

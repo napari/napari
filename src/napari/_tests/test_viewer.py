@@ -262,19 +262,19 @@ def test_toggling_axes(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # Check axes are not visible
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
 
     # Make axes visible
-    viewer.axes.visible = True
-    assert viewer.axes.visible
+    viewer.scene.overlays.axes.visible = True
+    assert viewer.scene.overlays.axes.visible
 
     # Enter 3D rendering and check axes still visible
     viewer.dims.ndisplay = 3
-    assert viewer.axes.visible
+    assert viewer.scene.overlays.axes.visible
 
     # Make axes not visible
-    viewer.axes.visible = False
-    assert not viewer.axes.visible
+    viewer.scene.overlays.axes.visible = False
+    assert not viewer.scene.overlays.axes.visible
 
 
 def test_toggling_scale_bar(make_napari_viewer):
@@ -282,19 +282,19 @@ def test_toggling_scale_bar(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # Check scale bar is not visible
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible
-    viewer.scale_bar.visible = True
-    assert viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = True
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Enter 3D rendering and check scale bar is still visible
     viewer.dims.ndisplay = 3
-    assert viewer.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar not visible
-    viewer.scale_bar.visible = False
-    assert not viewer.scale_bar.visible
+    viewer.canvas.overlays.scale_bar.visible = False
+    assert not viewer.canvas.overlays.scale_bar.visible
 
 
 def test_removing_points_data(make_napari_viewer):
