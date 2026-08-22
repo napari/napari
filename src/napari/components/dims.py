@@ -247,19 +247,18 @@ class Dims(EventedModel):
         super().__init__(**kwargs)
         self.events.add(point_transition=Event)
 
-    @contextlib.contextmanager
-    def _setattr_context(self, name: str, value: Any):
-        if (
-            name not in {'point', 'current_step'}
-            or self._point_transition_depth
-            or self._validating
-            or not (
+    def _should_use_setattr_context(self, name: str) -> bool:
+        return (
+            name in {'point', 'current_step'}
+            and not self._point_transition_depth
+            and not self._validating
+            and bool(
                 self.events.point_transition.callbacks or self.events.callbacks
             )
-        ):
-            yield value
-            return
+        )
 
+    @contextlib.contextmanager
+    def _setattr_context(self, name: str, value: Any):
         try:
             assignment_value = tuple(value)
         except TypeError:

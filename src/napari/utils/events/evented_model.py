@@ -259,7 +259,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
             return
-        if self._use_setattr_context:
+        if self._use_setattr_context and self._should_use_setattr_context(
+            name
+        ):
             with (
                 ComparisonDelayer(self),
                 self._setattr_context(name, value) as value,
@@ -276,6 +278,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _setattr_context(self, name: str, value: Any):
         """Allow subclasses to wrap assignment without replacing event handling."""
         yield value
+
+    def _should_use_setattr_context(self, name: str) -> bool:
+        return True
 
     def _check_if_values_changed_and_emit_if_needed(self):
         """
