@@ -273,12 +273,7 @@ class Dims(EventedModel):
             self._point_transition_depth -= 1
 
         if name == 'current_step':
-            assignment_value = tuple(
-                rng.start + step * (rng.step or 1)
-                for step, rng in zip(
-                    assignment_value, self.range, strict=False
-                )
-            )
+            assignment_value = self._steps_to_point(assignment_value)
         requested_value = ensure_len(assignment_value, self.ndim, 0.0)
         self.events.point_transition(
             old_value=previous_value,
@@ -316,9 +311,13 @@ class Dims(EventedModel):
 
     @current_step.setter
     def current_step(self, value):
-        self.point = tuple(
-            rng.start + point * (rng.step or 1)
-            for point, rng in zip(value, self.range, strict=False)
+        self.point = self._steps_to_point(value)
+
+    def _steps_to_point(self, steps) -> tuple[float, ...]:
+        """Convert per-axis step indices to world coordinates."""
+        return tuple(
+            rng.start + step * (rng.step or 1)
+            for step, rng in zip(steps, self.range, strict=False)
         )
 
     @property
