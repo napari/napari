@@ -97,11 +97,11 @@ class Dims(EventedModel):
     Events
     ------
     point_transition : Event
-        Emitted after a ``point`` or ``current_step`` assignment is
-        validated, including unchanged assignments. Provides ``old_value``,
-        ``requested_value``, and ``value`` in world coordinates, before the
-        existing field-change events. Structural normalization caused by other
-        fields does not emit this event.
+        Emitted for every ``point`` or ``current_step`` assignment, including
+        ones that leave the point unchanged, and before the corresponding
+        field-change events. Carries ``old_value``, ``requested_value`` and
+        ``value`` as world-coordinate points. Point changes caused by a
+        ``range`` or ``ndim`` change do not emit it.
 
         .. versionadded:: 0.10.0
     """

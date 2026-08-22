@@ -211,6 +211,19 @@ def test_point_transition_preserves_field_event_order():
     assert events == ['point_transition', 'current_step', 'point']
 
 
+def test_point_transition_converts_step_assignment_to_world_coordinates():
+    dims = Dims(ndim=1, range=((0, 10, 2),), point=(4,))
+    events = []
+    dims.events.point_transition.connect(events.append)
+
+    dims.current_step = (3,)
+
+    assert len(events) == 1
+    assert events[0].old_value == (4.0,)
+    assert events[0].requested_value == (6.0,)
+    assert events[0].value == (6.0,)
+
+
 def test_range_normalization_is_not_a_point_transition():
     dims = Dims(
         ndim=3,
