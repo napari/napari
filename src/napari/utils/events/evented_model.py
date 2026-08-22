@@ -187,6 +187,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
     _primary_changes: dict[str, None] = PrivateAttr(default_factory=dict)
     _delay_check_semaphore: int = PrivateAttr(0)
+    # Avoid context manager overhead for models that do not override the hook.
+    _use_setattr_context: ClassVar[bool] = False
     __slots__: ClassVar[set[str]] = {'__weakref__'}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
@@ -257,10 +259,23 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # `_config_path` before calling the superclass constructor
             super().__setattr__(name, value)
             return
+        if self._use_setattr_context:
+            with (
+                ComparisonDelayer(self),
+                self._setattr_context(name, value) as value,
+            ):
+                self._primary_changes[name] = None
+                self._setattr_impl(name, value)
+            return
         with ComparisonDelayer(self):
             # NOTE: this is a dict and not just a set, because we need ORDERED!
             self._primary_changes[name] = None
             self._setattr_impl(name, value)
+
+    @contextmanager
+    def _setattr_context(self, name: str, value: Any):
+        """Allow subclasses to wrap assignment without replacing event handling."""
+        yield value
 
     def _check_if_values_changed_and_emit_if_needed(self):
         """

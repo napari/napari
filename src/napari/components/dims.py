@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from numbers import Integral
 from typing import (
     Any,
+    ClassVar,
     Literal,
     NamedTuple,
 )
@@ -11,7 +12,7 @@ import numpy as np
 import pint
 from pydantic import field_validator, model_validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
@@ -92,7 +93,20 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
+
+    Events
+    ------
+    point_transition : Event
+        Emitted after a ``point`` or ``current_step`` assignment is
+        validated, including unchanged assignments. Provides ``old_value``,
+        ``requested_value``, and ``value`` in world coordinates, before the
+        existing field-change events. Structural normalization caused by other
+        fields does not emit this event.
+
+        .. versionadded:: 0.10.0
     """
+
+    _use_setattr_context: ClassVar[bool] = True
 
     # fields
     ndim: int = 2
@@ -112,6 +126,7 @@ class Dims(EventedModel):
 
     # private vars
     _play_ready: bool = True  # False if currently awaiting a draw event
+    _point_transition_depth: int = 0
     _scroll_progress: int = 0
     _validating: bool = False
 
@@ -227,6 +242,50 @@ class Dims(EventedModel):
             self.last_used = not_displayed[0]
 
         return self
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(point_transition=Event)
+
+    @contextlib.contextmanager
+    def _setattr_context(self, name: str, value: Any):
+        if (
+            name not in {'point', 'current_step'}
+            or self._point_transition_depth
+            or self._validating
+            or not (
+                self.events.point_transition.callbacks or self.events.callbacks
+            )
+        ):
+            yield value
+            return
+
+        try:
+            assignment_value = tuple(value)
+        except TypeError:
+            yield value
+            return
+
+        previous_value = self.point
+        self._point_transition_depth += 1
+        try:
+            yield assignment_value
+        finally:
+            self._point_transition_depth -= 1
+
+        if name == 'current_step':
+            assignment_value = tuple(
+                rng.start + step * (rng.step or 1)
+                for step, rng in zip(
+                    assignment_value, self.range, strict=False
+                )
+            )
+        requested_value = ensure_len(assignment_value, self.ndim, 0.0)
+        self.events.point_transition(
+            old_value=previous_value,
+            requested_value=tuple(float(x) for x in requested_value),
+            value=self.point,
+        )
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:

@@ -147,6 +147,85 @@ def test_point_variable_step_size():
         dims.set_current_step((0, 1), (0, 0, 0))
 
 
+@pytest.mark.parametrize(
+    ('change', 'requested', 'value'),
+    [
+        (lambda dims: dims.set_point(0, 5), (5.0, 2.0, 1.0), (5, 2, 1)),
+        (
+            lambda dims: setattr(dims, 'point', (99, 2, 1)),
+            (99.0, 2.0, 1.0),
+            (5, 2, 1),
+        ),
+        (lambda dims: dims.set_point(0, 4), (4.0, 2.0, 1.0), (4, 2, 1)),
+        (
+            lambda dims: setattr(dims, 'current_step', (3, 2, 1)),
+            (3.0, 2.0, 1.0),
+            (3, 2, 1),
+        ),
+        (
+            lambda dims: dims.update({'point': (3, 2, 1)}),
+            (3.0, 2.0, 1.0),
+            (3, 2, 1),
+        ),
+    ],
+    ids=(
+        'set-point',
+        'direct-point-clipped',
+        'set-point-noop',
+        'direct-step',
+        'model-update',
+    ),
+)
+def test_point_transition(change, requested, value):
+    dims = Dims(
+        ndim=3,
+        range=((0, 5, 1),) * 3,
+        point=(4, 2, 1),
+    )
+    events = []
+    dims.events.point_transition.connect(events.append)
+
+    change(dims)
+
+    assert len(events) == 1
+    assert events[0].old_value == (4.0, 2.0, 1.0)
+    assert events[0].requested_value == requested
+    assert events[0].value == value
+
+
+def test_point_transition_preserves_field_event_order():
+    dims = Dims(
+        ndim=3,
+        range=((0, 5, 1),) * 3,
+        point=(4, 2, 1),
+    )
+    events = []
+    dims.events.point_transition.connect(
+        lambda event: events.append(event.type)
+    )
+    dims.events.point.connect(lambda event: events.append(event.type))
+    dims.events.current_step.connect(lambda event: events.append(event.type))
+
+    dims.current_step = (3, 2, 1)
+
+    assert events == ['point_transition', 'current_step', 'point']
+
+
+def test_range_normalization_is_not_a_point_transition():
+    dims = Dims(
+        ndim=3,
+        range=((0, 5, 1),) * 3,
+        point=(4, 2, 1),
+    )
+    events = []
+    dims.events.point_transition.connect(events.append)
+
+    dims.range = ((0, 2, 1),) * 3
+
+    assert dims.point == (2, 2, 1)
+    assert events == []
+
+
 def test_range():
     """
     Tests range setting.
