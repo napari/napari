@@ -176,14 +176,14 @@ def test_point_variable_step_size():
         'model-update',
     ),
 )
-def test_point_transition(change, requested, value):
+def test_point_requested(change, requested, value):
     dims = Dims(
         ndim=3,
         range=((0, 5, 1),) * 3,
         point=(4, 2, 1),
     )
     events = []
-    dims.events.point_transition.connect(events.append)
+    dims.events.point_requested.connect(events.append)
 
     change(dims)
 
@@ -193,14 +193,14 @@ def test_point_transition(change, requested, value):
     assert events[0].value == value
 
 
-def test_point_transition_preserves_field_event_order():
+def test_point_requested_preserves_field_event_order():
     dims = Dims(
         ndim=3,
         range=((0, 5, 1),) * 3,
         point=(4, 2, 1),
     )
     events = []
-    dims.events.point_transition.connect(
+    dims.events.point_requested.connect(
         lambda event: events.append(event.type)
     )
     dims.events.point.connect(lambda event: events.append(event.type))
@@ -208,13 +208,13 @@ def test_point_transition_preserves_field_event_order():
 
     dims.current_step = (3, 2, 1)
 
-    assert events == ['point_transition', 'current_step', 'point']
+    assert events == ['point_requested', 'current_step', 'point']
 
 
-def test_point_transition_converts_step_assignment_to_world_coordinates():
+def test_point_requested_converts_step_assignment_to_world_coordinates():
     dims = Dims(ndim=1, range=((0, 10, 2),), point=(4,))
     events = []
-    dims.events.point_transition.connect(events.append)
+    dims.events.point_requested.connect(events.append)
 
     dims.current_step = (3,)
 
@@ -224,14 +224,14 @@ def test_point_transition_converts_step_assignment_to_world_coordinates():
     assert events[0].value == (6.0,)
 
 
-def test_range_normalization_is_not_a_point_transition():
+def test_range_normalization_does_not_request_a_point():
     dims = Dims(
         ndim=3,
         range=((0, 5, 1),) * 3,
         point=(4, 2, 1),
     )
     events = []
-    dims.events.point_transition.connect(events.append)
+    dims.events.point_requested.connect(events.append)
 
     dims.range = ((0, 2, 1),) * 3
 

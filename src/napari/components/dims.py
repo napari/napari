@@ -96,7 +96,7 @@ class Dims(EventedModel):
 
     Events
     ------
-    point_transition : Event
+    point_requested : Event
         Emitted for every ``point`` or ``current_step`` assignment, including
         ones that leave the point unchanged, and before the corresponding
         field-change events. Carries ``old_value``, ``requested_value`` and
@@ -126,7 +126,7 @@ class Dims(EventedModel):
 
     # private vars
     _play_ready: bool = True  # False if currently awaiting a draw event
-    _point_transition_depth: int = 0
+    _point_request_depth: int = 0
     _scroll_progress: int = 0
     _validating: bool = False
 
@@ -245,15 +245,15 @@ class Dims(EventedModel):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.events.add(point_transition=Event)
+        self.events.add(point_requested=Event)
 
     def _should_use_setattr_context(self, name: str) -> bool:
         return (
             name in {'point', 'current_step'}
-            and not self._point_transition_depth
+            and not self._point_request_depth
             and not self._validating
             and bool(
-                self.events.point_transition.callbacks or self.events.callbacks
+                self.events.point_requested.callbacks or self.events.callbacks
             )
         )
 
@@ -266,16 +266,16 @@ class Dims(EventedModel):
             return
 
         previous_value = self.point
-        self._point_transition_depth += 1
+        self._point_request_depth += 1
         try:
             yield assignment_value
         finally:
-            self._point_transition_depth -= 1
+            self._point_request_depth -= 1
 
         if name == 'current_step':
             assignment_value = self._steps_to_point(assignment_value)
         requested_value = ensure_len(assignment_value, self.ndim, 0.0)
-        self.events.point_transition(
+        self.events.point_requested(
             old_value=previous_value,
             requested_value=tuple(float(x) for x in requested_value),
             value=self.point,
