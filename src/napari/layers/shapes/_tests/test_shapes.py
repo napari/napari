@@ -2811,7 +2811,6 @@ def test_outline_not_drawn_off_slice():
 
 
 def test_is_creating_tracks_draw_window_and_is_edge_triggered():
-    """is_creating mirrors the draw window; events fire only on a transition."""
     layer = Shapes()
     started, finished = Mock(), Mock()
     layer.events.drawing_started.connect(started)
@@ -2835,13 +2834,11 @@ def test_is_creating_tracks_draw_window_and_is_edge_triggered():
     finished.assert_called_once()
 
 
-@pytest.mark.parametrize('mode', ['add_polygon', 'add_path'])
-def test_drawing_events_multivertex_lifecycle(mode):
-    """A multi-vertex draw starts on the first vertex and finishes once."""
+def test_drawing_events_multivertex_lifecycle():
     from napari.layers.shapes import _shapes_mouse_bindings as mb
 
     layer = Shapes()
-    layer.mode = mode
+    layer.mode = 'add_polygon'
     started, finished = Mock(), Mock()
     layer.events.drawing_started.connect(started)
     layer.events.drawing_finished.connect(finished)

@@ -1329,6 +1329,8 @@ class Shapes(Layer):
         stays on an ``add_*`` value before, during and after a draw, this
         tracks the actual construction window. The ``drawing_started`` and
         ``drawing_finished`` events fire at its boundaries.
+
+        .. versionadded:: 0.10.0
         """
         return self._is_creating
 

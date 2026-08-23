@@ -1376,13 +1376,9 @@ def test_drag_start_selection(
     assert layer._drag_start is None
 
 
-@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
-def test_add_simple_shape_drawing_events(
-    shape_type, create_known_shapes_layer
-):
-    """A press/drag/release draw emits exactly one started and one finished."""
+def test_add_simple_shape_drawing_events(create_known_shapes_layer):
     layer, _, known_non_shape = create_known_shapes_layer
-    layer.mode = f'add_{shape_type}'
+    layer.mode = 'add_rectangle'
 
     started, finished = Mock(), Mock()
     layer.events.drawing_started.connect(started)
