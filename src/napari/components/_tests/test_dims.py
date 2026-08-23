@@ -224,6 +224,18 @@ def test_point_requested_converts_step_assignment_to_world_coordinates():
     assert events[0].value == (6.0,)
 
 
+def test_non_sequence_point_assignment_requests_nothing():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    events = []
+    dims.events.point_requested.connect(events.append)
+
+    with pytest.raises(TypeError):
+        dims.point = 5
+
+    assert events == []
+    assert dims.point == (4, 2, 1)
+
+
 def test_range_normalization_does_not_request_a_point():
     dims = Dims(
         ndim=3,

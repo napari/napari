@@ -259,12 +259,7 @@ class Dims(EventedModel):
 
     @contextlib.contextmanager
     def _setattr_context(self, name: str, value: Any):
-        try:
-            assignment_value = tuple(value)
-        except TypeError:
-            yield value
-            return
-
+        assignment_value = tuple(value)
         previous_value = self.point
         self._point_request_depth += 1
         try:

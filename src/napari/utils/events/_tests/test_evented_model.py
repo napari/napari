@@ -809,3 +809,19 @@ def test_events_called():
     s.a = 2
 
     e_m.assert_called_once()
+
+
+def test_setattr_context_defaults_are_transparent():
+    class Model(EventedModel):
+        _use_setattr_context: ClassVar[bool] = True
+        a: int = 0
+
+    m = Model()
+    mock = Mock()
+    m.events.a.connect(mock)
+
+    m.a = 1
+
+    assert m.a == 1
+    mock.assert_called_once()
+    assert mock.call_args[0][0].value == 1
