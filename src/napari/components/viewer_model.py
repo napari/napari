@@ -161,6 +161,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     ----------
     canvas : napari.components.canvas.Canvas
         The canvas model, controlling grid mode and canvas overlays.
+
+        .. versionadded:: 0.9.0
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -173,6 +175,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
+
+        .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
     title: str
