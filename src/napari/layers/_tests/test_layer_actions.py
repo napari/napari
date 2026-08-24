@@ -469,6 +469,8 @@ def test_toggle_edge_colorbar_unsupported_layer():
 
     with pytest.raises(NotImplementedError, match='Edge Colorbar'):
         _toggle_edge_colorbar(layer_list)
+
+
 @pytest.mark.parametrize(
     'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
 )
