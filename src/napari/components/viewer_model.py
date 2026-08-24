@@ -313,7 +313,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def camera(self) -> Camera:
         """The camera model controlling the view of the scene.
 
-        Deprecated since 0.9.0; use ``viewer.scene.camera`` instead.
+        .. deprecated:: 0.9.0
+            camera property is deprecated use ``viewer.scene.camera`` instead.
         """
         return self.scene.camera
 
@@ -328,7 +329,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def axes(self) -> SceneAxesOverlay:
         """The overlay controlling the display of the scene axes.
 
-        Deprecated since 0.9.0; use ``viewer.scene.overlays.axes`` instead.
+        .. deprecated:: 0.9.0
+            axes property is deprecated use ``viewer.scene.overlays.axes`` instead.
         """
         return self.scene.overlays.axes  # type: ignore[return-value]
 
@@ -343,7 +345,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def floating_axes(self) -> CanvasAxesOverlay:
         """The overlay controlling the display of the canvas axes.
 
-        Deprecated since 0.9.0; use ``viewer.canvas.overlays.axes`` instead.
+        .. deprecated:: 0.9.0
+            floating_axes property is deprecated use ``viewer.canvas.overlays.axes`` instead.
         """
         return self.canvas.overlays.axes  # type: ignore[return-value]
 
@@ -358,7 +361,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def scale_bar(self) -> ScaleBarOverlay:
         """The overlay controlling the display of the scale bar.
 
-        Deprecated since 0.9.0; use ``viewer.canvas.overlays.scale_bar`` instead.
+        .. deprecated:: 0.9.0
+            scale_bar property is deprecated use ``viewer.canvas.overlays.scale_bar`` instead.
         """
         return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
@@ -373,7 +377,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def text_overlay(self) -> TextOverlay:
         """The overlay controlling the display of text on the canvas.
 
-        Deprecated since 0.9.0; use ``viewer.canvas.overlays.text`` instead.
+        .. deprecated:: 0.9.0
+            text_overlay property is deprecated use ``viewer.canvas.overlays.text`` instead.
         """
         return self.canvas.overlays.text  # type: ignore[return-value]
 
@@ -388,7 +393,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def grid(self) -> GridCanvas:
         """The model controlling the display of the grid mode.
 
-        Deprecated since 0.9.0; use ``viewer.canvas.grid`` instead.
+        .. deprecated:: 0.9.0
+            grid property is deprecated use ``viewer.canvas.grid`` instead.
         """
         return self.canvas.grid
 
