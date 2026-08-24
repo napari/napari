@@ -57,7 +57,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         warnings.warn(
             f"Private attribute access ('{typ}.{name}') in this context "
             '(e.g. inside a plugin widget or dock widget) is deprecated '
-            'and will be unavailable in version 0.9.0',
+            'and will be unavailable no earlier than 0.10.0',
             category=FutureWarning,
             stacklevel=3,
         )
