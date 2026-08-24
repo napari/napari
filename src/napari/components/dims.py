@@ -11,7 +11,7 @@ import numpy as np
 import pint
 from pydantic import field_validator, model_validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
@@ -92,6 +92,22 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
+    axis_locked : tuple of bool
+        Tuple of per-axis navigation lock state. If True, navigation cannot
+        move the point on that axis.
+
+        .. versionadded:: 0.10.0
+
+    Events
+    ------
+    navigation_refused : Event
+        Emitted when an assignment to ``point`` (directly, or through
+        ``current_step``, ``set_point``, ``set_current_step`` or ``update``)
+        asked to move a locked axis. Carries ``axes``, the tuple of refused
+        axis indices. Point changes caused by a ``range`` or ``ndim`` change do
+        not emit it.
+
+        .. versionadded:: 0.10.0
     """
 
     # fields
@@ -101,6 +117,7 @@ class Dims(EventedModel):
     order: tuple[int, ...] = ()
     axis_labels: tuple[str, ...] = ()
     rollable: tuple[bool, ...] = ()
+    axis_locked: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
@@ -121,6 +138,7 @@ class Dims(EventedModel):
         'order',
         'axis_labels',
         'rollable',
+        'axis_locked',
         'point',
         'margin_left',
         'margin_right',
@@ -214,6 +232,7 @@ class Dims(EventedModel):
         with self._validating_ctx():
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
+            self.axis_locked = ensure_len(self.axis_locked, ndim, False)
 
         # If the last used slider is no longer visible, use the first.
         last_used = self.last_used
@@ -227,6 +246,45 @@ class Dims(EventedModel):
             self.last_used = not_displayed[0]
 
         return self
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(navigation_refused=Event)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Hold locked axes at their coordinate on an external point write.
+
+        Every navigation path ends in an assignment to ``point``:
+        ``current_step`` converts and assigns it, ``set_point`` and
+        ``set_current_step`` go through those, and ``update`` assigns each
+        field in turn. Intercepting ``point`` alone therefore covers them all.
+        A ``range`` or ``ndim`` change moves the point without one, which is
+        why layer-driven clipping of a locked axis stays permitted.
+        """
+        if name != 'point' or self._validating or not any(self.axis_locked):
+            super().__setattr__(name, value)
+            return
+
+        # Coerce before substituting: a component the field would reject must
+        # raise here, with the point untouched, rather than after a partial write.
+        requested = ensure_len(tuple(float(v) for v in value), self.ndim, 0.0)
+        previous = self.point
+        held = tuple(
+            prev if locked else req
+            for req, prev, locked in zip(
+                requested, previous, self.axis_locked, strict=False
+            )
+        )
+        refused = tuple(
+            axis
+            for axis, (req, kept) in enumerate(
+                zip(requested, held, strict=False)
+            )
+            if req != kept
+        )
+        super().__setattr__(name, held)
+        if refused:
+            self.events.navigation_refused(axes=refused)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -393,6 +451,31 @@ class Dims(EventedModel):
             value_world.append(rng.start + val * rng.step)
         self.set_point(axis, value_world)
 
+    def lock_axis(self, axis: int) -> None:
+        """Stop navigation from moving the point on ``axis``."""
+        self._set_axis_locked(axis, True)
+
+    def unlock_axis(self, axis: int) -> None:
+        """Allow navigation to move the point on ``axis`` again."""
+        self._set_axis_locked(axis, False)
+
+    def is_axis_locked(self, axis: int) -> bool:
+        """Whether navigation is locked on ``axis``."""
+        return self.axis_locked[ensure_axis_in_bounds(axis, self.ndim)]
+
+    def lock_all_axes(self) -> None:
+        """Lock navigation on every axis."""
+        self.axis_locked = (True,) * self.ndim
+
+    def unlock_all_axes(self) -> None:
+        """Unlock navigation on every axis."""
+        self.axis_locked = (False,) * self.ndim
+
+    def _set_axis_locked(self, axis: int, locked: bool) -> None:
+        axis_locked = list(self.axis_locked)
+        axis_locked[ensure_axis_in_bounds(axis, self.ndim)] = locked
+        self.axis_locked = tuple(axis_locked)
+
     def set_axis_label(
         self,
         axis: int | Sequence[int],
@@ -417,7 +500,7 @@ class Dims(EventedModel):
 
     def reset(self):
         """Reset dims values to initial states."""
-        # Don't reset axis labels
+        # Don't reset axis labels or axis locks
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
         self.range = ((0, 2, 1),) * self.ndim
