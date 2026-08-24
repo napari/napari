@@ -130,6 +130,15 @@ class ExperimentalSettings(EventedSettings):
         le=100,
     )
 
+    dynamic_layer_controls: bool = Field(
+        default=False,
+        title='Generate GUI layer controls dynamically instead of using premade panels.',
+        description=(
+            'Based on the attributes of the currenty selected layer, generate layer controls\n'
+            'dynamically, even when a single layer is selected. Happens by default with multiple layers.'
+        ),
+    )
+
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version', 'compiled_triangulation')

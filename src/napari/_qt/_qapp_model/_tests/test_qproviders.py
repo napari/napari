@@ -1,5 +1,9 @@
 """Test app-model Qt-related providers."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from app_model.types import Action
@@ -9,6 +13,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_active_layer,
     _provide_active_layer_list,
     _provide_qt_viewer_or_raise,
+    _provide_selected_layers,
     _provide_viewer,
     _provide_viewer_or_raise,
     _provide_window_or_raise,
@@ -16,9 +21,14 @@ from napari._qt._qapp_model.injection._qproviders import (
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.components import LayerList
-from napari.layers import Image
+from napari.layers import Image, Shapes
 from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
+
+    from napari.components import ViewerModel
 
 
 def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
@@ -112,3 +122,23 @@ def test_provide_active_layer_and_layer_list(make_napari_viewer):
     assert isinstance(provided_layers, LayerList)
     assert isinstance(provided_layers[0], Image)
     assert provided_layers[0].data.shape == shape
+
+
+def test_provide_selected_layers(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+) -> None:
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
+    s1 = viewer_model.add_layer(Shapes())
+    viewer_model.add_layer(Shapes())
+    s3 = viewer_model.add_layer(Shapes())
+
+    viewer_model.layers.selection = [s1, s3]
+
+    selected_layers = _provide_selected_layers()
+    assert selected_layers is not None
+    assert len(selected_layers) == 2
+    assert s1 in selected_layers
+    assert s3 in selected_layers

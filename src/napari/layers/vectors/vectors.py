@@ -635,7 +635,7 @@ class Vectors(Layer):
                     )
                 else:
                     raise ValueError(
-                        f'There must be a valid Points.properties to use {edge_color_mode}'
+                        f'There must be a valid Vectors.properties to use {edge_color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
