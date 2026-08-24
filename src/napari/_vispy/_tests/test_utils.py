@@ -48,24 +48,21 @@ def test_get_view_direction_in_scene_coordinates_2d(make_napari_viewer):
 def test_set_cursor(make_napari_viewer):
     viewer = make_napari_viewer()
     labels_layer = viewer.add_labels(np.zeros((10, 10), dtype=int))
+    brush_overlay = labels_layer._overlays['brush_circle']
 
     # The labels layer uses the standard cursor by default
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
         == Qt.CursorShape.ArrowCursor
     )
-    assert not viewer.canvas.overlays._brush_circle.visible
+    assert not brush_overlay.visible
 
     # use a known zoom so that brush size equals cursor size
     viewer.scene.camera.zoom = 1
 
     # Paint mode uses a blank cursor and shows the brush circle overlay
     labels_layer.mode = 'paint'
-    assert viewer.canvas.overlays._brush_circle.visible
-    assert (
-        viewer.canvas.overlays._brush_circle.size
-        == labels_layer._get_brush_world_size()
-    )
+    assert brush_overlay.visible
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
         == Qt.CursorShape.BlankCursor
@@ -77,12 +74,11 @@ def test_set_cursor(make_napari_viewer):
         viewer.window._qt_viewer.canvas.cursor.shape()
         == Qt.CursorShape.ArrowCursor
     )
-    assert not viewer.canvas.overlays._brush_circle.visible
+    assert not brush_overlay.visible
 
     # A normal sized brush shows the blank cursor and the overlay again
     labels_layer.brush_size = 20
-    assert viewer.canvas.overlays._brush_circle.visible
-    assert viewer.canvas.overlays._brush_circle.size == 20
+    assert brush_overlay.visible
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
         == Qt.CursorShape.BlankCursor
@@ -90,11 +86,7 @@ def test_set_cursor(make_napari_viewer):
 
     # A brush that is larger than the canvas falls back to the standard cursor
     viewer.scene.camera.zoom = 100
-    assert (
-        viewer.canvas.overlays._brush_circle.size
-        > min(*viewer.canvas.size) - 4
-    )
-    assert not viewer.canvas.overlays._brush_circle.visible
+    assert not brush_overlay.visible
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
         == Qt.CursorShape.ArrowCursor

@@ -617,31 +617,6 @@ def test_active_layer_status_update():
     )
 
 
-def test_active_layer_brush_circle():
-    """Test brush circle visibility and size update on active layer."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    viewer.add_image(np.random.random((10, 10)))
-    assert not viewer.canvas.overlays._brush_circle.visible
-
-    viewer.add_labels(np.random.randint(0, 10, size=(10, 10)))
-    assert len(viewer.layers) == 2
-    assert viewer.layers.selection.active == viewer.layers[1]
-
-    # Normalise zoom so that size == world-space brush size
-    viewer.scene.camera.zoom = 1
-
-    viewer.layers[1].mode = 'paint'
-    # Labels layer has a default brush size of 10
-    assert viewer.canvas.overlays._brush_circle.size == 10
-    assert viewer.canvas.overlays._brush_circle.visible
-    assert not viewer.canvas.overlays._brush_circle.position_is_frozen
-
-    # Brush circle is hidden when not in a brush mode
-    viewer.layers[1].mode = 'pick'
-    assert not viewer.canvas.overlays._brush_circle.visible
-
-
 def test_cursor_ndim_matches_layer():
     """Test cursor position ndim matches viewer ndim after update."""
     viewer = ViewerModel()

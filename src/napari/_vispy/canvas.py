@@ -390,15 +390,26 @@ class VispyCanvas:
     def _on_active_layer_change(self, event=None) -> None:
         """Track the active layer and rewire its mode event to refresh the cursor."""
         if self._active_layer is not None:
-            brush_overlay = self._active_layer._overlays.get(
-                '_brush_circle', None
-            )
-            if brush_overlay:
+            if brush_overlay := self._active_layer._overlays.get(
+                'brush_circle', None
+            ):
                 brush_overlay.visible = False
             self._active_layer.events.mode.disconnect(self._on_cursor)
+            if hasattr(self._active_layer, 'brush_size'):
+                self._active_layer.events.brush_size.disconnect(
+                    self._on_cursor
+                )
+                self._active_layer.events.brush_size_is_canvas.disconnect(
+                    self._on_cursor
+                )
         self._active_layer = self.viewer.layers.selection.active
         if self._active_layer is not None:
             self._active_layer.events.mode.connect(self._on_cursor)
+            if hasattr(self._active_layer, 'brush_size'):
+                self._active_layer.events.brush_size.connect(self._on_cursor)
+                self._active_layer.events.brush_size_is_canvas.connect(
+                    self._on_cursor
+                )
         self._on_cursor()
 
     def _on_cursor(self) -> None:
@@ -409,12 +420,11 @@ class VispyCanvas:
             return
 
         cursor = get_cursor_style(layer)
-        brush_overlay = layer._overlays.get('_brush_circle', None)
+        brush_overlay = layer._overlays.get('brush_circle', None)
         if cursor == 'circle':
-            if not brush_overlay:
+            if brush_overlay is None:
                 raise RuntimeError('unreachable')
-            brush_overlay = layer._overlays['brush_circle']
-            size = layer.brush_size
+            size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
             # make sure the circle fits within the current canvas
             if size < 8 or size > (min(*self.size) - 4):
                 brush_overlay.visible = False
