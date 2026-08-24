@@ -152,19 +152,19 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         # Content starts hidden.
-        assert control._histogram_content_widget.isHidden()
-        assert control._histogram_content is None
+        assert control.histogram_content_widget.isHidden()
+        assert control.histogram_content is None
 
         control._on_histogram_button_toggled(True)
-        assert not control._histogram_content_widget.isHidden()
-        assert control._histogram_content is not None
-        assert control._histogram_content.histogram_widget is not None
-        assert control._histogram_content.settings_widget is not None
+        assert not control.histogram_content_widget.isHidden()
+        assert control.histogram_content is not None
+        assert control.histogram_content.histogram_widget is not None
+        assert control.histogram_content.settings_widget is not None
 
         control._on_histogram_button_toggled(False)
-        assert control._histogram_content_widget.isHidden()
+        assert control.histogram_content_widget.isHidden()
         # Content is kept around (just hidden) until disconnect.
-        assert control._histogram_content is not None
+        assert control.histogram_content is not None
 
         control.disconnect_widget_controls()
 
@@ -172,7 +172,7 @@ class TestQtContrastLimitsControl:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        assert control._histogram_content_widget.isHidden()
+        assert control.histogram_content_widget.isHidden()
 
     def test_get_widget_controls_includes_histogram(
         self, qt_wrap: QtWrap
@@ -182,7 +182,7 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         controls = control.get_widget_controls()
-        assert any(control._histogram_content_widget in c for c in controls)
+        assert any(control.histogram_content_widget in c for c in controls)
 
     def test_histogram_computes_on_enable(
         self, qt_wrap: QtWrap, qtbot: QtBot
@@ -210,12 +210,12 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         control._ensure_histogram_content()
-        assert control._histogram_content is not None
+        assert control.histogram_content is not None
 
         control.disconnect_widget_controls()
         control.disconnect_widget_controls()
 
-    def test_disconnect_without_ensure_content_is_safe(
+    def test_disconnect_without__ensure_histogram_content_is_safe(
         self, qt_wrap: QtWrap
     ) -> None:
         image = Image(np.random.rand(10, 10))
@@ -351,13 +351,13 @@ class TestQtHistogramControl:
         image = Image(np.random.rand(10, 10))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        qt_wrap.add_widget(control._histogram_content_widget)
+        qt_wrap.add_widget(control.histogram_content_widget)
 
     def test_histogram_update(self, qt_wrap: QtWrap) -> None:
         image = Image(np.random.rand(10, 10))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        qt_wrap.add_widget(control._histogram_content_widget)
+        qt_wrap.add_widget(control.histogram_content_widget)
         control._ensure_histogram_content()
         hit_content = control.histogram_content
         assert hit_content is not None
@@ -381,9 +381,9 @@ class TestQtHistogramControl:
         qt_wrap.add_control(control)
 
         control._ensure_histogram_content()
-        assert control._histogram_content is not None
-        assert control._histogram_content.histogram_widget is not None
-        assert control._histogram_content.settings_widget is not None
+        assert control.histogram_content is not None
+        assert control.histogram_content.histogram_widget is not None
+        assert control.histogram_content.settings_widget is not None
 
         control.disconnect_widget_controls()
 

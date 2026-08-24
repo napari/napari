@@ -137,9 +137,9 @@ def test_qt_histogram_widget_updates_from_settings_theme(
         np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
     )
     controls = viewer.window._qt_viewer.controls.widgets[layer]
-    controls._contrast_limits_control.ensure_content()
+    controls._contrast_limits_control._ensure_histogram_content()
     widget = (
-        controls._contrast_limits_control._histogram_content.histogram_widget
+        controls._contrast_limits_control.histogram_content.histogram_widget
     )
     assert widget is not None
 

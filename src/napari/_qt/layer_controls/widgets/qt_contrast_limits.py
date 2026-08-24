@@ -434,17 +434,17 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
         # empty wrapper, will be populated on first toggle (otherwise
         # it may segfault in some cases)
-        self._histogram_content_widget = QWidget()
-        self._histogram_content_widget.setProperty('foreground', 'true')
-        self._histogram_content_widget.hide()
-        self._histogram_content_widget.setSizePolicy(
+        self.histogram_content_widget = QWidget()
+        self.histogram_content_widget.setProperty('foreground', 'true')
+        self.histogram_content_widget.hide()
+        self.histogram_content_widget.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
         )
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(4, 4, 4, 4)
         content_layout.setSpacing(4)
-        self._histogram_content_widget.setLayout(content_layout)
-        self._histogram_content = None
+        self.histogram_content_widget.setLayout(content_layout)
+        self.histogram_content = None
 
         self._histogram_worker: GeneratorWorker | None = None
         self._compute_epoch = 0
@@ -523,27 +523,27 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         """Handle left-click on histogram button to toggle histogram widget."""
         if visible:
             self._ensure_histogram_content()
-            self._histogram_content_widget.show()
-            self._histogram_content_widget.setSizePolicy(
+            self.histogram_content_widget.show()
+            self.histogram_content_widget.setSizePolicy(
                 QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
             )
             self._schedule_histogram_compute()
         else:
-            self._histogram_content_widget.setSizePolicy(
+            self.histogram_content_widget.setSizePolicy(
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
             )
-            self._histogram_content_widget.hide()
+            self.histogram_content_widget.hide()
 
     def _ensure_histogram_content(self) -> None:
         """Lazily create the histogram content widget (vispy canvas)."""
-        if self._histogram_content is not None:
+        if self.histogram_content is not None:
             return
-        self._histogram_content = QtHistogramContentWidget(
+        self.histogram_content = QtHistogramContentWidget(
             self._layer,
-            parent=self._histogram_content_widget,
+            parent=self.histogram_content_widget,
         )
-        self._histogram_content_widget.layout().addWidget(
-            self._histogram_content
+        self.histogram_content_widget.layout().addWidget(
+            self.histogram_content
         )
 
     def _schedule_histogram_compute(self, event=None) -> None:
@@ -609,9 +609,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         """Disconnect histogram model events and base controls."""
         self._cleaned_up = True
         self._abort_histogram_worker()
-        if self._histogram_content is not None:
-            self._histogram_content.cleanup()
-            self._histogram_content = None
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()
+            self.histogram_content = None
         disconnect_events(self._layer.histogram.events, self)
         super().disconnect_widget_controls()
 
@@ -621,5 +621,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),
-            (self._histogram_content_widget,),
+            (self.histogram_content_widget,),
         ]

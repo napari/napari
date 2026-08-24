@@ -66,7 +66,7 @@ def compute_histogram(
         yield bin_edges, counts
 
 
-def _make_empty():
+def _make_empty() -> dict[str, np.ndarray]:
     return {
         'bin_edges': np.array([0.0, 1.0]),
         'counts': np.array([0.0]),
