@@ -17,7 +17,7 @@ from napari._qt.qt_viewer import QtViewer
 
 # View actions
 def _toggle_activity_dock(window: Window):
-    window._status_bar._toggle_activity_dock()
+    window._qt_window.statusBar()._toggle_activity_dock()
 
 
 def _get_current_fullscreen_status(window: Window):
