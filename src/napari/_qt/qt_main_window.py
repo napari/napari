@@ -879,7 +879,7 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-            'no earlier than v0.9.0. It is considered an "implementation detail" '
+            'no earlier than v0.10.0. It is considered an "implementation detail" '
             'of the napari\napplication, not part of the napari viewer model. If your use case\n'
             'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
@@ -1140,7 +1140,7 @@ class Window:
         area: str | None = None,
         allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
-        add_vertical_stretch=True,
+        add_vertical_stretch=False,
         tabify: bool = False,
         menu: QMenu | None = None,
     ):
