@@ -63,6 +63,26 @@ class QtDims(QWidget):
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
+        self.dims.events.axis_locked.connect(self._on_axis_lock_changed)
+        self.dims.events.navigation_refused.connect(
+            self._on_navigation_refused
+        )
+
+    def _on_axis_lock_changed(self, event=None) -> None:
+        for widget in self.slider_widgets:
+            widget._update_lock_state()
+        if self.is_playing:
+            axis = self._animation_thread.axis
+            if (
+                axis is None
+                or axis >= self.dims.ndim
+                or self.dims.axis_locked[axis]
+            ):
+                self.stop()
+
+    def _on_navigation_refused(self, event) -> None:
+        for axis in event.axes:
+            self.slider_widgets[axis]._flash_lock()
 
     @property
     def nsliders(self):
@@ -297,6 +317,8 @@ class QtDims(QWidget):
 
         if axis >= self.dims.ndim:
             raise IndexError('axis argument out of range')
+        if self.dims.axis_locked[axis]:
+            return
 
         if self.is_playing and self._animation_thread.axis == axis:
             self.slider_widgets[axis]._update_play_settings(
@@ -352,6 +374,9 @@ class QtDims(QWidget):
         the canvas can draw, this will drop the intermediate frames, keeping
         the effective frame rate constant even if the canvas cannot keep up.
         """
+        if axis >= self.dims.ndim or self.dims.axis_locked[axis]:
+            self.stop()
+            return
         if self.dims._play_ready:
             # disable additional point advance requests until this one draws
             self.dims._play_ready = False
