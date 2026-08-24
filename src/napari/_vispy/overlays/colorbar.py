@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -106,7 +106,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.x_size = 50
         self.y_size = 250
 
-        self.source_wrapper: IntensityLayerWrapper | ColorManagerWrapper
+        self.source_wrapper: (
+            IntensityLayerWrapper | ColorManagerWrapper | ShapesColorWrapper
+        )
         if self.overlay.colormanager_attribute is not None:
             color_manager = getattr(
                 self.layer, self.overlay.colormanager_attribute
@@ -117,13 +119,17 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
                 self._on_colormap_change
             )
         elif self.overlay.layer_attribute is not None:
-            attribute = self.overlay_attribute
-            self.source_wrapper = ShapesColorWrapper(self.layer, attribute)
+            attribute = self.overlay.layer_attribute
+            self.source_wrapper = ShapesColorWrapper(
+                cast('Shapes', self.layer), attribute
+            )
             color_event = getattr(self.layer.events, f'{attribute}_color')
             color_event.connect(self._on_data_change)
             color_event.connect(self._on_colormap_change)
         else:
-            self.source_wrapper = IntensityLayerWrapper(self.layer)
+            self.source_wrapper = IntensityLayerWrapper(
+                cast('Image | Surface', self.layer)
+            )
 
             self.layer.events.colormap.connect(self._on_colormap_change)
             self.layer.events.contrast_limits.connect(self._on_data_change)
