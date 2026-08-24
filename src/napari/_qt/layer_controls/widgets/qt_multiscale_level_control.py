@@ -134,7 +134,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             else:
                 self.level_combobox.setCurrentIndex(0)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """Return the label/widget pairs for this control.
 
         Returns

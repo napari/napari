@@ -175,7 +175,9 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             self.color_feature_box.setHidden(True)
             self.edge_feature_label.setHidden(True)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.color_mode_label, self.color_mode_combobox),
             (self.edge_color_label, self.edge_color_edit),

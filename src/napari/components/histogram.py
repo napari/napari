@@ -65,7 +65,7 @@ class HistogramModel(EventedModel):
         """
         for bin_edges, counts in compute_histogram(
             layer,
-            bins=self.bins,
+            bin_count=self.bins,
             max_samples=self.max_samples,
             mode=self.mode,
             log_scale=self.log_scale,

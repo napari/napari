@@ -25,7 +25,7 @@ _MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
 def compute_histogram(
     layer: Any,
     *,
-    bins: int,
+    bin_count: int,
     max_samples: int,
     mode: Literal['canvas', 'full'],
     log_scale: bool,
@@ -54,7 +54,7 @@ def compute_histogram(
         yield from _compute_chunked_progressive(
             data=data,
             contrast_limits_range=layer.contrast_limits_range,
-            bins=bins,
+            bin_count=bin_count,
             max_samples=max_samples,
             log_scale=log_scale,
         )
@@ -62,7 +62,7 @@ def compute_histogram(
     else:
         if data.size > max_samples:
             data = _sample_data(data, max_samples)
-        bin_edges, counts = _calc_histogram(data, layer, bins, log_scale)
+        bin_edges, counts = _calc_histogram(data, layer, bin_count, log_scale)
         yield bin_edges, counts
 
 
@@ -81,7 +81,7 @@ def _get_computed(layer: Any) -> dict[str, np.ndarray]:
 def _calc_histogram(
     data: np.ndarray,
     layer: Any,
-    bins: int,
+    bin_count: int,
     log_scale: bool,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute bin edges and counts from data.
@@ -121,13 +121,13 @@ def _calc_histogram(
             range_min = float(range_min) - delta
             range_max = float(range_max) + delta
 
-    counts, bins = np.histogram(
+    counts, bin_count = np.histogram(
         data,
-        bins=bins,
+        bins=bin_count,
         range=(float(range_min), float(range_max)),
     )
 
-    bin_edges = bins.astype(np.float32)
+    bin_edges = bin_count.astype(np.float32)
 
     if log_scale:
         hist_counts = np.log10(counts + 1).astype(np.float32)
@@ -346,7 +346,7 @@ def _sample_data(data: np.ndarray, max_samples: int) -> np.ndarray:
 def _compute_chunked_progressive(
     data: Any,
     contrast_limits_range: tuple[float | None, float | None],
-    bins: int,
+    bin_count: int,
     max_samples: int,
     log_scale: bool,
 ) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
@@ -367,7 +367,7 @@ def _compute_chunked_progressive(
         range_min = 0.0
         range_max = 1.0
 
-    running_counts = np.zeros(bins, dtype=np.float64)
+    running_counts = np.zeros(bin_count, dtype=np.float64)
     for ci in order:
         # Chunk load failure (e.g. remote zarr read error) is
         # non-fatal. Stop the generator instead of letting the
@@ -381,12 +381,12 @@ def _compute_chunked_progressive(
             return
         chunk_counts, _ = np.histogram(
             block,
-            bins=bins,
+            bins=bin_count,
             range=(float(range_min), float(range_max)),
         )
         running_counts += chunk_counts.astype(np.float64)
 
-        bins_arr = np.linspace(range_min, range_max, bins + 1).astype(
+        bins_arr = np.linspace(range_min, range_max, bin_count + 1).astype(
             np.float32
         )
         if log_scale:
