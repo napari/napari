@@ -208,7 +208,7 @@ def test_histogram_control_lazy_creation(qtbot):
     assert qtctrl._contrast_limits_control._histogram_content is None
 
     # After ensure_content: all sub-widgets exist
-    qtctrl._contrast_limits_control.ensure_content()
+    qtctrl._contrast_limits_control._ensure_histogram_content()
     assert qtctrl._contrast_limits_control._histogram_content is not None
     assert (
         qtctrl._contrast_limits_control._histogram_content.histogram_widget

@@ -191,8 +191,8 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control.ensure_content()
-        control._run_compute()
+        control._ensure_histogram_content()
+        control._schedule_histogram_compute()
 
         qtbot.waitUntil(
             lambda: _get_computed(layer)['counts'].sum() > 0, timeout=10000
@@ -209,7 +209,7 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
 
-        control.ensure_content()
+        control._ensure_histogram_content()
         assert control._histogram_content is not None
 
         control.disconnect_widget_controls()
@@ -230,8 +230,8 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control.ensure_content()
-        control._run_compute()
+        control._ensure_histogram_content()
+        control._schedule_histogram_compute()
         QThreadPool.globalInstance().waitForDone(2000)
         control.disconnect_widget_controls()
         # should not hang or error after the worker is aborted
@@ -358,10 +358,10 @@ class TestQtHistogramControl:
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
         qt_wrap.add_widget(control._histogram_content_widget)
-        control.ensure_content()
+        control._ensure_histogram_content()
         hit_content = control.histogram_content
         assert hit_content is not None
-        control.ensure_content()
+        control._ensure_histogram_content()
         assert control.histogram_content is hit_content
 
     @pytest.mark.parametrize(
@@ -380,7 +380,7 @@ class TestQtHistogramControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control.ensure_content()
+        control._ensure_histogram_content()
         assert control._histogram_content is not None
         assert control._histogram_content.histogram_widget is not None
         assert control._histogram_content.settings_widget is not None

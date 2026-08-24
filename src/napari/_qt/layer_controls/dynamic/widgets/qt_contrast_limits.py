@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import weakref
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import Qt, QTimer, Signal
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -37,10 +38,17 @@ from napari.utils._dtype import normalize_dtype
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 
+
+def _safe_call_method(control_ref, method_name, *args):
+    """Call a method on a weak reference safely."""
+    control = control_ref()
+    if control is None:
+        return
+    getattr(control, method_name)(*args)
+
+
 if TYPE_CHECKING:
     from napari.layers import Image, Surface
-
-_COMPUTE_DEBOUNCE_MS = 50
 
 
 def range_to_decimals(range_, dtype):
@@ -294,7 +302,7 @@ class QContrastLimitsPopup(QtPopup):
             self.histogram_content.show()
             # this can be None in testing, so just skip
             if self._contrast_control is not None:
-                self._contrast_control._schedule_compute()
+                self._contrast_control._schedule_histogram_compute()
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
@@ -463,11 +471,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._histogram_content_widget.setLayout(content_layout)
             self._histogram_content = None
 
-            self._compute_timer = QTimer()
-            self._compute_timer.setSingleShot(True)
-            self._compute_timer.timeout.connect(self._run_compute)
-            self._worker: GeneratorWorker | None = None
+            self._histogram_worker: GeneratorWorker | None = None
             self._compute_epoch = 0
+            self._pending_compute = False
 
             layer = self._layers[0]
             for ev in (
@@ -479,7 +485,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
                 layer.events.contrast_limits_range,
                 layer.events.set_data,
             ):
-                ev.connect(self._schedule_compute)
+                ev.connect(self._schedule_histogram_compute)
+
+            self.destroyed.connect(self._abort_histogram_worker)
         else:
             self.histogram_button.setToolTip(
                 'Histogram is currently only supported for a single selected '
@@ -556,19 +564,19 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         if not self._histogram_single:
             return
         if visible:
-            self.ensure_content()
+            self._ensure_histogram_content()
             self._histogram_content_widget.show()
             self._histogram_content_widget.setSizePolicy(
                 QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
             )
-            self._schedule_compute()
+            self._schedule_histogram_compute()
         else:
             self._histogram_content_widget.setSizePolicy(
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
             )
             self._histogram_content_widget.hide()
 
-    def ensure_content(self) -> None:
+    def _ensure_histogram_content(self) -> None:
         """Lazily create the histogram content widget (vispy canvas)."""
         if self._histogram_content is not None:
             return
@@ -580,52 +588,56 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             self._histogram_content
         )
 
-    def _schedule_compute(self, event=None) -> None:
-        """Debounce histogram recomputation via a single-shot timer."""
-        self._compute_timer.start(_COMPUTE_DEBOUNCE_MS)
-
-    def _run_compute(self) -> None:
+    def _schedule_histogram_compute(self, event=None) -> None:
         """Run the async histogram compute."""
         if getattr(self, '_cleaned_up', False):
             return
-        self._abort_worker()
+        if self._histogram_worker is not None:
+            self._pending_compute = True
+            return
+        self._abort_histogram_worker()
         self._compute_epoch += 1
         epoch = self._compute_epoch
         layer = self._layers[0]
-        worker = create_worker(layer.histogram._compute_async_no_events, layer)
-        # we fire events from here (and not within compute_async) because
+        # we use the no_event variant and fire events from here because
         # we want them to always be on the main thread
-        worker.yielded.connect(lambda bc: self._on_yield(bc, epoch))
-        worker.finished.connect(lambda: self._on_worker_done(epoch))
-        self._worker = worker
+        worker = create_worker(layer.histogram._compute_async_no_events, layer)
+        self_ref = weakref.ref(self)
+        worker.yielded.connect(
+            lambda *_: _safe_call_method(
+                self_ref, '_on_histogram_yield', epoch
+            )
+        )
+        worker.finished.connect(
+            lambda *_: _safe_call_method(self_ref, '_on_histogram_done', epoch)
+        )
+        self._histogram_worker = worker
         worker.start()
 
-    def _on_yield(self, bin_counts: tuple, epoch: int) -> None:
+    def _on_histogram_yield(self, epoch: int) -> None:
         """Write the latest result and emit ``updated`` on the main thread."""
         if getattr(self, '_cleaned_up', False) or epoch != self._compute_epoch:
             return
-        bin_edges, counts = bin_counts
-        # Mirror the just-yielded chunk into metadata on the main thread before
-        # notifying listeners, so the visible data matches this update.
-        self._layers[0].metadata['_computed_histogram'] = {
-            'bin_edges': bin_edges,
-            'counts': counts,
-        }
         self._layers[0].histogram.events.updated()
 
-    def _on_worker_done(self, epoch: int) -> None:
+    def _on_histogram_done(self, epoch: int) -> None:
         """Emit ``completed`` on the main thread once the worker finishes."""
         if epoch != self._compute_epoch:
             return
-        self._worker = None
+        self._histogram_worker = None
         self._layers[0].histogram.events.completed()
+        if self._pending_compute:
+            # there was another compute lined up after us, run that!
+            self._pending_compute = False
+            self._schedule_histogram_compute()
 
-    def _abort_worker(self) -> None:
+    def _abort_histogram_worker(self) -> None:
         """Stop any in-flight compute worker."""
-        worker = self._worker
+        worker = self._histogram_worker
+        self._histogram_worker = None
+        self._pending_compute = False
         if worker is None:
             return
-        self._worker = None
         worker.yielded.disconnect()
         worker.finished.disconnect()
         pbar = getattr(worker, 'pbar', None)
@@ -637,8 +649,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         """Disconnect histogram model events and base controls."""
         if self._histogram_single:
             self._cleaned_up = True
-            self._compute_timer.stop()
-            self._abort_worker()
+            self._abort_histogram_worker()
             if self._histogram_content is not None:
                 self._histogram_content.cleanup()
                 self._histogram_content = None
