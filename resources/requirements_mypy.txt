@@ -69,7 +69,7 @@ pyproject-hooks==1.2.0
     # via build
 pyqt6==6.11.0
     # via -r resources/requirements_mypy.in
-pyqt6-qt6==6.11.1
+pyqt6-qt6==6.11.2
     # via pyqt6
 pyqt6-sip==13.12.0
     # via pyqt6

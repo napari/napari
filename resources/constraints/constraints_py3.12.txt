@@ -45,7 +45,7 @@ coverage==7.15.4
     # via napari (pyproject.toml)
 cuda-bindings==13.3.1
     # via torch
-cuda-pathfinder==1.6.1
+cuda-pathfinder==1.7.0
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
@@ -65,7 +65,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.2.1
     # via stack-data
-filelock==3.32.3
+filelock==3.32.4
     # via
     #   python-discovery
     #   torch
@@ -151,7 +151,7 @@ llvmlite==0.49.0
     # via numba
 locket==1.0.0
     # via partd
-lxml==6.1.1
+lxml==6.1.2
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -381,9 +381,9 @@ pyparsing==3.3.2
     # via matplotlib
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.2
+pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.10.2
+pyqt6-qt6==6.11.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
@@ -430,7 +430,7 @@ pyyaml==6.0.3
     #   dask
     #   donfig
     #   npe2
-pyzmq==27.1.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -469,7 +469,7 @@ rpds-py==2026.6.3
     #   referencing
 scikit-image==0.26.0
     # via napari (pyproject.toml)
-scipy==1.18.0
+scipy==1.18.1
     # via
     #   napari (pyproject.toml)
     #   scikit-image
@@ -500,7 +500,7 @@ tensorstore==0.1.85
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-tifffile==2026.8.16
+tifffile==2026.8.23
     # via
     #   napari (pyproject.toml)
     #   scikit-image
