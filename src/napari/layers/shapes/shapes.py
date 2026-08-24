@@ -116,9 +116,6 @@ class Shapes(Layer):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
-    cache : bool
-        Whether slices of out-of-core datasets should be cached upon retrieval.
-        Currently, this only applies to dask arrays.
     border_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
@@ -140,6 +137,9 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
+    cache : bool
+        Whether slices of out-of-core datasets should be cached upon retrieval.
+        Currently, this only applies to dask arrays.
     experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
@@ -454,12 +454,12 @@ class Shapes(Layer):
         affine=None,
         axis_labels=None,
         blending='translucent',
-        cache=True,
         border_color='#777777',
         border_color_cycle=None,
         border_colormap='viridis',
         border_contrast_limits=None,
         border_width=1,
+        cache=True,
         experimental_clipping_planes=None,
         face_color='white',
         face_color_cycle=None,

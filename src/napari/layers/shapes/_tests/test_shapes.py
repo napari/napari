@@ -150,7 +150,7 @@ def test_properties(properties):
     assert updated_properties['shape_type'][0] == non_default_property
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_properties(attribute):
     """Test adding properties to an existing layer"""
     np.random.seed(0)
@@ -1714,7 +1714,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
     np.random.seed(0)
@@ -1750,7 +1750,7 @@ def test_switch_color_mode(attribute):
     assert color_property == ''
 
     # transitioning to colormap should raise a warning
-    # because there isn't an edge color property yet and
+    # because there isn't an border color property yet and
     # the first property in shapes.properties is being automatically selected
     with pytest.warns(
         UserWarning, match='was not set, setting to: shape_truthiness'
@@ -1774,9 +1774,9 @@ def test_switch_color_mode(attribute):
     np.testing.assert_allclose(new_border_color, color)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_direct(attribute: str):
-    """Test setting face/edge color directly."""
+    """Test setting face/border color directly."""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     layer_kwargs = {f'{attribute}_color': 'black'}
@@ -1795,7 +1795,7 @@ def test_color_direct(attribute: str):
     assert current_color == 'blue'
     np.testing.assert_allclose(color_array, layer_color)
 
-    # Select data and change edge color of selection
+    # Select data and change border color of selection
     selected_data = {0, 1}
     layer.selected_data = {0, 1}
     current_color = getattr(layer, f'current_{attribute}_color')
@@ -1834,7 +1834,7 @@ def test_color_direct(attribute: str):
     np.testing.assert_allclose(color_array, layer_color)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_single_shape_properties(attribute):
     """Test creating single shape with properties"""
     shape = (4, 2)
@@ -1855,13 +1855,13 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 default_color_str = color_cycle_str[(SHAPE_DIM_0 + 1) % len(color_cycle_str)]
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
-    """Test setting edge/face color with a color cycle list"""
+    """Test setting border/face color with a color cycle list"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     shapes_kwargs = {
@@ -1925,9 +1925,9 @@ def test_color_cycle(attribute, color_cycle):
     )
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
-    """Test adding a shape to an empty layer when edge/face color is a color cycle
+    """Test adding a shape to an empty layer when border/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
@@ -1968,7 +1968,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     np.testing.assert_equal(layer.properties, new_properties)
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_adding_value_color_cycle(attribute):
     """Test that adding values to properties used to set a color cycle
     and then calling Shapes.refresh_colors() performs the update and adds the
@@ -2003,9 +2003,9 @@ default_color_colormap_str = color_colormap_cycle[
 ]
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_color_colormap(attribute):
-    """Test setting edge/face color with a colormap"""
+    """Test setting border/face color with a colormap"""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     properties = {'shape_type': _make_cycled_properties([0, 1.5], SHAPE_DIM_0)}
@@ -2068,7 +2068,7 @@ def test_color_colormap(attribute):
     assert attribute_colormap.name == new_colormap
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_without_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     np.random.seed(0)
@@ -2079,7 +2079,7 @@ def test_colormap_without_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_colormap_with_categorical_properties(attribute):
     """Setting the colormode to colormap should raise an exception"""
     np.random.seed(0)
@@ -2093,7 +2093,7 @@ def test_colormap_with_categorical_properties(attribute):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_colormap(attribute):
     """Test  directly adding a vispy Colormap object"""
     np.random.seed(0)
@@ -2112,7 +2112,7 @@ def test_add_colormap(attribute):
 
 
 def test_border_width():
-    """Test setting edge width."""
+    """Test setting border width."""
     np.random.seed(0)
     data = 20 * np.random.random(SHAPE_DIMS)
     layer = Shapes(data)
@@ -2120,12 +2120,12 @@ def test_border_width():
     assert len(layer.border_width) == SHAPE_DIM_0
     assert layer.border_width == [1] * SHAPE_DIM_0
 
-    # With no data selected changing edge width has no effect
+    # With no data selected changing border width has no effect
     layer.current_border_width = 2
     assert layer.current_border_width == 2
     assert layer.border_width == [1] * SHAPE_DIM_0
 
-    # Select data and change edge color of selection
+    # Select data and change border color of selection
     layer.selected_data = {0, 1}
     assert layer.current_border_width == 1
     layer.current_border_width = 3
@@ -2138,11 +2138,11 @@ def test_border_width():
     layer.add(new_shape)
     assert layer.border_width == [3] * 2 + [1] * (SHAPE_DIM_0 - 2) + [4]
 
-    # Instantiate with custom edge width
+    # Instantiate with custom border width
     layer = Shapes(data, border_width=5)
     assert layer.current_border_width == 5
 
-    # Instantiate with custom edge width list
+    # Instantiate with custom border width list
     width_list = [2, 3] * 5
     layer = Shapes(data, border_width=width_list)
     assert layer.current_border_width == 1
@@ -2161,11 +2161,11 @@ def test_border_width():
     assert len(layer.border_width) == SHAPE_DIM_0 - 1
     assert layer.border_width == [width_list[1]] + width_list[3:] + [4]
 
-    # Test setting edge width with number
+    # Test setting border width with number
     layer.border_width = 4
     assert all(width == 4 for width in layer.border_width)
 
-    # Test setting edge width with list
+    # Test setting border width with list
     new_widths = [2] * 5 + [3] * 4
     layer.border_width = new_widths
     assert layer.border_width == new_widths

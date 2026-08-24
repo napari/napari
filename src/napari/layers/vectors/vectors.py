@@ -84,8 +84,6 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    width : float
-        Width for all vectors in pixels.
     experimental_clipping_planes : list of dicts, list of ClippingPlane, or ClippingPlaneList
         Each dict defines a clipping plane in 3D in data coordinates.
         Valid dictionary keys are {'position', 'normal', and 'enabled'}.
@@ -130,12 +128,13 @@ class Vectors(Layer):
     units : tuple of str or pint.Unit, optional
         Units of the layer data in world coordinates.
         If not provided, the default units are assumed to be pixels.
-
     vector_style : str
         One of a list of preset display modes that determines how vectors are displayed.
         Allowed values are {'line', 'triangle', and 'arrow'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    width : float
+        Width for all vectors in pixels.
 
     Attributes
     ----------
@@ -223,7 +222,6 @@ class Vectors(Layer):
         color_cycle=None,
         colormap='viridis',
         contrast_limits=None,
-        width=1,
         experimental_clipping_planes=None,
         feature_defaults=None,
         features=None,
@@ -242,6 +240,7 @@ class Vectors(Layer):
         units=None,
         vector_style='triangle',
         visible=True,
+        width=1,
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
