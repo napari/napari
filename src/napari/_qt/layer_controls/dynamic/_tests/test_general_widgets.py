@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtWidgets import QLabel
+from qtpy.QtWidgets import QLabel, QWidget
 
 from napari._qt.layer_controls.dynamic.widgets import (
     QtColormapControl,
@@ -130,12 +130,13 @@ class TestQtContrastLimitsControl:
                 np.array([0, 1, 2]),
             )
         )
-        control = QtContrastLimitsControl([surface])
-        qt_wrap.add_control(control)
+        widget = QWidget()
+        control = QtContrastLimitsControl([surface], parent=widget)
+        qt_wrap.add_widget(widget)
 
         control.show_clim_popup()
         control.clim_popup.hide()  # so it doesn't show when testing
-        qt_wrap._qtbot.add_widget(control.clim_popup)
+        qt_wrap.add_widget(control.clim_popup)
 
     def test_histogram_button(self, qt_wrap: QtWrap) -> None:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
