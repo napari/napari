@@ -160,7 +160,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
 
         Returns
         -------
-        list[tuple[QtWrappedLabel, QWidget]]
+        list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
             Single-element list containing the resolution label and combobox.
         """
         return [(self.level_label, self.level_combobox)]

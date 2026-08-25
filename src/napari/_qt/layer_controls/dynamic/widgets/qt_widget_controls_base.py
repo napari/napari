@@ -72,8 +72,8 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
 
         Returns
         -------
-        list : list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:]
-            List of tuples of the (optional) label and widget controls available.
+        list : list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
+            List of tuples of the widget controls available.
 
         """
         raise NotImplementedError
