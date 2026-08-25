@@ -431,6 +431,18 @@ def _key_event(name, *, auto_repeat, modifiers=()):
     )
 
 
+def _vispy_event(key_name, modifiers=()):
+    """Build a minimal stand-in for a vispy key event.
+
+    ``_vispy2appmodel`` only reads ``event.key.name`` (the key that triggered
+    *this* event) and ``event.modifiers`` (the modifiers currently held).
+    """
+    return types.SimpleNamespace(
+        key=types.SimpleNamespace(name=key_name),
+        modifiers=tuple(modifiers),
+    )
+
+
 @pytest.mark.key_bindings
 @pytest.mark.parametrize(
     ('key_name', 'modifiers', 'expected'),
