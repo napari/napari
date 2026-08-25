@@ -49,7 +49,7 @@ vectors = np.concatenate((planes, pos), axis=2)
 
 # add the sliced vectors
 layer = viewer.add_vectors(
-    vectors, edge_width=0.4, name='sliced vectors', edge_color='blue'
+    vectors, width=0.4, name='sliced vectors', color='blue'
 )
 
 viewer.dims.ndisplay = 3

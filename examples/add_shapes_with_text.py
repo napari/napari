@@ -30,7 +30,7 @@ features = {
     'likelihood': [21.23423, 51.2315, 100],
     'class': ['hand', 'face', 'camera'],
 }
-edge_color_cycle = ['blue', 'magenta', 'green']
+border_color_cycle = ['blue', 'magenta', 'green']
 
 text = {
     'string': '{class}: {likelihood:0.1f}%',
@@ -45,9 +45,9 @@ shapes_layer = viewer.add_shapes(
     polygons,
     features=features,
     shape_type='polygon',
-    edge_width=3,
-    edge_color='class',
-    edge_color_cycle=edge_color_cycle,
+    border_width=3,
+    border_color='class',
+    border_color_cycle=border_color_cycle,
     face_color='transparent',
     text=text,
     name='shapes',

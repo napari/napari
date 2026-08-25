@@ -49,8 +49,8 @@ rois = [np.array([[149.38401138,  61.80004348],
 # Add lily rois to the viewer for visualization purposes, not required for exporting roi screenshots.
 roi_layer = viewer.add_shapes(
     rois, # in case of a shapes layer containing rectangular rois, pass on layer.data directly.
-    edge_width=10,
-    edge_color='green', # Optionally, set to [(0, 0, 0, 0)] * 4 to prevent edge color from showing in screenshots.
+    border_width=10,
+    border_color='green', # Optionally, set to [(0, 0, 0, 0)] * 4 to prevent edge color from showing in screenshots.
     face_color=[(0, 0, 0, 0)] * 4, # We do not want the face color to show up in the screenshots
     shape_type='rectangle',
     name='rois',

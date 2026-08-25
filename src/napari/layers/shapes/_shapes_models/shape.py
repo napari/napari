@@ -448,7 +448,7 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, border_triangles) = (
-                    partsegcore_triangulate.triangulate_polygon_with_border_numpy_li(
+                    partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
                         [data], split_edges=True
                     )
                 )
@@ -473,7 +473,7 @@ class Shape(ABC):
                 self._border_vertices,
                 self._border_offsets,
                 self._border_triangles,
-            ) = partsegcore_triangulate.triangulate_path_border_numpy(
+            ) = partsegcore_triangulate.triangulate_path_edge_numpy(
                 data, closed=closed
             )
         else:
@@ -642,7 +642,7 @@ class Shape(ABC):
     def _triangulate_border_partseg(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return partsegcore_triangulate.triangulate_path_border_numpy(
+        return partsegcore_triangulate.triangulate_path_edge_numpy(
             data, closed=closed
         )
 

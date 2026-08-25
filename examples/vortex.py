@@ -59,7 +59,7 @@ flow_layer = viewer.add_vectors(
         name='optical flow',
         scale=[step, step],
         translate=[offset, offset],
-        edge_width=0.3,
+        border_width=0.3,
         length=0.3,
         )
 

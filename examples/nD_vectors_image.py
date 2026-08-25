@@ -31,7 +31,7 @@ pos = np.random.uniform(-1, 1, size=(m, n, p, 3))
 print(image.shape, pos.shape)
 
 # add the vectors
-vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
+vect = viewer.add_vectors(pos, width=0.2, length=2.5)
 
 if __name__ == '__main__':
     napari.run()

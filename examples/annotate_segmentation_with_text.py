@@ -129,7 +129,7 @@ label_layer = viewer.add_labels(label_image, name='segmentation')
 shapes_layer = viewer.add_shapes(
     bbox_rects,
     face_color='transparent',
-    edge_color='green',
+    border_color='green',
     features=features,
     text=text_parameters,
     name='bounding box',

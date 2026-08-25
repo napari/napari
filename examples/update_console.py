@@ -67,8 +67,8 @@ polygons = [
 shapes_layer = viewer.add_shapes(
     polygons,
     shape_type='polygon',
-    edge_width=5,
-    edge_color='coral',
+    border_width=5,
+    border_color='coral',
     face_color='royalblue',
     name='shapes',
 )

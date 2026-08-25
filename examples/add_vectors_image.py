@@ -36,7 +36,7 @@ pos[:, :, 0] = rand1.reshape((n, m))
 pos[:, :, 1] = rand2.reshape((n, m))
 
 # add the vectors
-vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
+vect = viewer.add_vectors(pos, width=0.2, length=2.5)
 
 print(image.shape, pos.shape)
 

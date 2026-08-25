@@ -92,8 +92,8 @@ kwargs = {
     'properties': properties if args.properties else None,
     'face_color': 'class' if args.properties else [1,1,1,1],
     'face_color_cycle': color_cycle,
-    'edge_color': 'class' if args.properties else [1,1,1,1],
-    'edge_color_cycle': color_cycle,
+    'border_color': 'class' if args.properties else [1,1,1,1],
+    'border_color_cycle': color_cycle,
 }
 
 layer = time_me(

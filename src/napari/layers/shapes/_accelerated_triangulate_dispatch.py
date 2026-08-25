@@ -25,7 +25,7 @@ try:
 except ImportError:
     _accelerated_triangulate_numba = None
 
-USE_NUMBA_FOR_border_TRIANGULATION = _accelerated_triangulate_numba is not None
+USE_NUMBA_FOR_BORDER_TRIANGULATION = _accelerated_triangulate_numba is not None
 RUN_WARMUP = _accelerated_triangulate_numba is not None
 CACHE_WARMUP = False
 # Some numba functions are used even if for non-numba triangulation backends,
@@ -88,7 +88,7 @@ def _set_numba(value: bool) -> None:
     value : bool
         If True, use the Numba backend. If False, use the pure Python backend.
     """
-    global USE_NUMBA_FOR_border_TRIANGULATION
+    global USE_NUMBA_FOR_BORDER_TRIANGULATION
 
     val = value and (_accelerated_triangulate_numba is not None)
     if val:
@@ -100,7 +100,7 @@ def _set_numba(value: bool) -> None:
                 _accelerated_triangulate_python, f'{name}_py'
             )
 
-    USE_NUMBA_FOR_border_TRIANGULATION = val
+    USE_NUMBA_FOR_BORDER_TRIANGULATION = val
 
 
 def _set_warmup(value: bool) -> None:
@@ -148,7 +148,7 @@ def warmup_numba_cache() -> None:
             [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
         )
 
-        if not USE_NUMBA_FOR_border_TRIANGULATION:
+        if not USE_NUMBA_FOR_BORDER_TRIANGULATION:
             _accelerated_triangulate_numba.generate_2D_border_meshes(
                 data, True
             )

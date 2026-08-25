@@ -73,9 +73,9 @@ layer = viewer.add_shapes(
     polygons,
     features=features,
     shape_type='polygon',
-    edge_width=1,
-    edge_color='likelihood',
-    edge_colormap='gray',
+    border_width=1,
+    border_color='likelihood',
+    border_colormap='gray',
     face_color='class',
     face_color_cycle=face_color_cycle,
     name='shapes',
@@ -83,7 +83,7 @@ layer = viewer.add_shapes(
 
 # change some attributes of the layer
 layer.selected_data = set(range(layer.nshapes))
-layer.current_edge_width = 5
+layer.current_border_width = 5
 layer.selected_data = set()
 
 # To save layers to svg:

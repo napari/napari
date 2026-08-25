@@ -38,7 +38,7 @@ import numpy as np
 import napari
 from napari.layers import Shapes
 from napari.layers.shapes._accelerated_triangulate_python import (
-    generate_2D_edge_meshes_py,
+    generate_2D_border_meshes_py,
 )
 
 
@@ -61,11 +61,11 @@ def generate_regular_polygon(n, radius=1):
     return np.column_stack((radius * np.cos(angles), radius * np.sin(angles)))
 
 
-def get_reference_edge_triangulation_points(shape: Shapes) -> np.ndarray:
+def get_reference_border_triangulation_points(shape: Shapes) -> np.ndarray:
     """Get the non-accelerated points"""
     shapes = shape._data_view.shapes
     path_list = [(x.data, x._closed) for x in shapes]
-    mesh_list = [generate_2D_edge_meshes_py(path, closed)
+    mesh_list = [generate_2D_border_meshes_py(path, closed)
                  for path, closed in path_list]
     mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list, strict=False))
 
@@ -194,7 +194,7 @@ def generate_miter_vectors(
 
 
 @numba.njit
-def generate_edge_triangle_borders(centers, offsets, triangles) -> np.ndarray:
+def generate_border_triangle_borders(centers, offsets, triangles) -> np.ndarray:
     """Generate 3 vectors that represent the borders of the triangle.
 
     These are vectors to show the *ordering* of the triangles in the data.
@@ -268,7 +268,7 @@ def asdict(dataclass_instance):
 def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
     """Function to generate all auxiliary data for a shapes layer."""
     shapes = shapes_layer._data_view.shapes
-    mesh_list = [(s._edge_vertices, s._edge_offsets, s._edge_triangles)
+    mesh_list = [(s._border_vertices, s._border_offsets, s._border_triangles)
                  for s in shapes]
     path_list = [(s.data, s._closed) for s in shapes]
     mesh = tuple(np.concatenate(el, axis=0) for el in zip(*mesh_list, strict=False))
@@ -279,7 +279,7 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
                           for path_, closed in path_list]
 
     helpers = Helpers(
-        reference_join_points=get_reference_edge_triangulation_points(
+        reference_join_points=get_reference_border_triangulation_points(
                 shapes_layer
                 ),
         join_points=mesh[0] + mesh[1],
@@ -297,7 +297,7 @@ def get_helper_data_from_shapes(shapes_layer: Shapes) -> Helpers:
                 axis=0,
                 ),
         triangles_vectors=np.concatenate(
-                [generate_edge_triangle_borders(*m) for m in mesh_list],
+                [generate_border_triangle_borders(*m) for m in mesh_list],
                 axis=0,
                 ),
         face_triangles_vectors=np.concatenate(
@@ -331,7 +331,7 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
             viewer.add_vectors(
                     data,
                     name=name,
-                    vector_style='arrow', edge_width=size, edge_color=color,
+                    vector_style='arrow', border_width=size, border_color=color,
                     )
     source_layer.events.set_data.connect(
         partial(update_helper_layers, viewer=viewer, source_layer=source_layer)

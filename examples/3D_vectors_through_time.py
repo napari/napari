@@ -99,8 +99,8 @@ viewer.add_vectors(
   vector_style='arrow',
   length=1,
   properties={'disp_norm': lengths_all},
-  edge_colormap='plasma',
-  edge_width=3,
+  colormap='plasma',
+  width=3,
 )
 
 viewer.scene.camera.angles = (0,0,-97)

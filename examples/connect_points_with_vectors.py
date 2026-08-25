@@ -119,10 +119,10 @@ for i in range(N):
 # Finally, we pass N x 2 x D NumPy array to vectors layer
 vectors_layer = viewer.add_vectors(np.array(bonds))
 
-vectors_layer.edge_width = 0.1
+vectors_layer.width = 0.1
 vectors_layer.vector_style = "line"
 vectors_layer.length = 1
-vectors_layer.edge_color = "crimson"
+vectors_layer.color = "crimson"
 
 viewer.dims.axis_labels = ("x", "y", "z")
 viewer.floating_axes.visible = True

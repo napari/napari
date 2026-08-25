@@ -35,8 +35,8 @@ lines = [line1, line2]
 shapes_layer = viewer.add_shapes(
     lines,
     shape_type='line',
-    edge_width=5,
-    edge_color='coral',
+    border_width=5,
+    border_color='coral',
     face_color='royalblue',
 )
 shapes_layer.mode = 'select'
