@@ -283,8 +283,8 @@ class QtDynamicLayerControls(QFrame):
         self._controls.append(wrapper)
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     @property
     def ndisplay(self) -> int:
