@@ -909,6 +909,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
 
+        layers: Sequence[Layer]
         # Otherwise, return the layer status of multiple selected layers
         # or gridded layers if no selection. If no selection and no grid, all layers are used.
         if selection:
