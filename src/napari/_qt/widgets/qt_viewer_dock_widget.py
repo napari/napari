@@ -80,7 +80,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: list[str] | None = None,
         shortcut=_sentinel,
         object_name: str = '',
-        add_vertical_stretch=True,
+        add_vertical_stretch=False,
         close_btn=True,
     ) -> None:
         self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
@@ -128,6 +128,10 @@ class QtViewerDockWidget(QDockWidget):
 
         is_vertical = area in {'left', 'right'}
         widget_ = combine_widgets(widget, vertical=is_vertical)
+        widget_.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Maximum,
+        )
         self.setWidget(widget_)
         if is_vertical and add_vertical_stretch:
             self._maybe_add_vertical_stretch(widget_)
