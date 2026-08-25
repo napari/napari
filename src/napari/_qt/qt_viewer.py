@@ -344,6 +344,7 @@ class QtViewer(QSplitter):
                 close_btn=False,
             )
             # restore policy to avoid empty space below buttons
+            # See https://github.com/napari/napari/pull/9447
             layerList.setSizePolicy(prev_policy)
         return self._dockLayerList
 
