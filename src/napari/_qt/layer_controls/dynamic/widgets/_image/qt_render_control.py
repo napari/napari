@@ -170,7 +170,7 @@ class QtImageRenderControl(QtWidgetControlsBase):
         self.attenuation_slider.setVisible(attenuation_visible)
         self.attenuation_label.setVisible(attenuation_visible)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [
             (self.render_label, self.render_combobox),
             (self.iso_threshold_label, self.iso_threshold_slider),

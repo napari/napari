@@ -81,5 +81,5 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         if self.parent() is not None:
             self.parent().setFocus()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.contour_spinbox_label, self.contour_spinbox)]

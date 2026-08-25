@@ -119,7 +119,7 @@ class QtLabelRenderingControl(QtWidgetControlsBase):
             self.iso_gradient_combobox.hide()
             self.iso_gradient_combobox_label.hide()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [
             (self.rendering_combobox_label, self.rendering_combobox),
             (self.iso_gradient_combobox_label, self.iso_gradient_combobox),

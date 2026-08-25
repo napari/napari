@@ -62,7 +62,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
                 self.tail_length_slider.setMaximum(self._layer._max_length)
             self.tail_length_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_length_slider_label, self.tail_length_slider)]
 
 
@@ -116,7 +116,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
     def _on_data_change(self) -> None:
         self.tail_width_slider.setMaximum(int(self._layer._max_width))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]
 
 
@@ -157,5 +157,5 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
 
         self.tail_checkbox_label = QtWrappedLabel('tail:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_checkbox_label, self.tail_checkbox)]

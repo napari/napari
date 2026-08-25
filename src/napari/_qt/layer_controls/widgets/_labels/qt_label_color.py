@@ -195,5 +195,5 @@ class QtLabelControl(QtWidgetControlsBase):
         """Select a new label for the labels layer when the button is clicked."""
         new_label(self._layer)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.label_color_label, self.label_color)]

@@ -49,5 +49,5 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
         self.gamma_slider_label = QtWrappedLabel('gamma:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.gamma_slider_label, self.gamma_slider)]

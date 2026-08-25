@@ -70,5 +70,5 @@ class QtContiguousCheckBoxControl(QtWidgetControlsBase):
 
         self.contiguous_checkbox_label = QtWrappedLabel('contiguous:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.contiguous_checkbox_label, self.contiguous_checkbox)]

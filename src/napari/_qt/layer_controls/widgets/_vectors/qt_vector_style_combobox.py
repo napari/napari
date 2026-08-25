@@ -65,5 +65,5 @@ class QtVectorStyleComboBoxControl(QtWidgetControlsBase):
             )
             self.vector_style_combobox.setCurrentIndex(index)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.vector_style_combobox_label, self.vector_style_combobox)]

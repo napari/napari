@@ -76,7 +76,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
                 )
             self.tail_length_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_length_slider_label, self.tail_length_slider)]
 
 
@@ -136,7 +136,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
                 )
             self.tail_width_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]
 
 
@@ -187,5 +187,5 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
         """Receive layer model track line width change event and update checkbox."""
         self.tail_checkbox.setChecked(self._layers[0].display_tail)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.tail_checkbox_label, self.tail_checkbox)]

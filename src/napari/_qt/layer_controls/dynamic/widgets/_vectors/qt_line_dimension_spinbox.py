@@ -77,7 +77,7 @@ class QtWidthSpinBoxControl(QtWidgetControlsBase):
         if self.parent() is not None:
             self.parent().setFocus()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.width_spinbox_label, self.width_spinbox)]
 
 
@@ -143,5 +143,5 @@ class QtLengthSpinBoxControl(QtWidgetControlsBase):
         if self.parent() is not None:
             self.parent().setFocus()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.length_spinbox_label, self.length_spinbox)]

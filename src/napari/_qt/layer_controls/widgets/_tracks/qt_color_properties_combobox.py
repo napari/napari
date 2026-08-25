@@ -66,5 +66,5 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
             self.color_by_combobox.addItems(self._layer.properties_to_color_by)
         self._on_color_by_change()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.color_by_combobox_label, self.color_by_combobox)]

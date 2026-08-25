@@ -58,5 +58,5 @@ class QtProjectionModeControl(QtWidgetControlsBase):
                 str(self._layer.projection_mode)
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.projection_combobox_label, self.projection_combobox)]

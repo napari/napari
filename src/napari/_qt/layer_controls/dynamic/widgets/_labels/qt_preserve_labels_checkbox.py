@@ -71,7 +71,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             'preserve\nlabels:'
         )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [
             (
                 self.preserve_labels_checkbox_label,

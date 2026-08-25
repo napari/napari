@@ -140,7 +140,7 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
                 Blending(self._layers[0].blending)
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [
             (self.opacity_label, self.opacity_slider),
             (self.blend_label, self.blend_combobox),

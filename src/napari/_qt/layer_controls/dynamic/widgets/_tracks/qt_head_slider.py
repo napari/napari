@@ -70,5 +70,5 @@ class QtHeadLengthSliderControl(QtWidgetControlsBase):
                 self.head_length_slider.setMaximum(self._layers[0]._max_length)
             self.head_length_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.head_length_slider_label, self.head_length_slider)]

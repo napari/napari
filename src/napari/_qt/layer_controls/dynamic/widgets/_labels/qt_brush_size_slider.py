@@ -71,5 +71,5 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
                 self.brush_size_slider.setMaximum(int(value))
             self.brush_size_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
         return [(self.brush_size_slider_label, self.brush_size_slider)]
