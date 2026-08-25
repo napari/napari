@@ -18,7 +18,7 @@ class Ellipse(Shape):
         Either a (2, 2) array specifying the center and radii of an axis
         aligned ellipse, or a (4, D) array specifying the four corners of a
         bounding box that contains the ellipse. These need not be axis aligned.
-    edge_width : float
+    border_width : float
         thickness of lines and edges.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
@@ -33,14 +33,14 @@ class Ellipse(Shape):
         self,
         data,
         *,
-        edge_width=1,
+        border_width=1,
         opacity=1.0,
         z_index=0,
         dims_order=None,
         ndisplay=2,
     ) -> None:
         super().__init__(
-            edge_width=edge_width,
+            border_width=border_width,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,
@@ -115,9 +115,9 @@ class Ellipse(Shape):
             points,
             closed=self._closed,
         )
-        self._edge_vertices = centers
-        self._edge_offsets = offsets
-        self._edge_triangles = triangles
+        self._border_vertices = centers
+        self._border_offsets = offsets
+        self._border_triangles = triangles
         self._bounding_box = np.array(
             [
                 np.min(self._data, axis=0),

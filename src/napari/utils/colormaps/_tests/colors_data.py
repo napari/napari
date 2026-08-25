@@ -1,6 +1,6 @@
 """
 This file contains most (all?) permutations of single and dual colors
-which a user can try to use as an argument to face_color and edge_color
+which a user can try to use as an argument to face_color and border_color
 in the relevant layers. The idea is to parameterize the tests over these
 options.
 

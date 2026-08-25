@@ -70,8 +70,8 @@ polygons = [
 layer = viewer.add_shapes(
     polygons,
     shape_type='polygon',
-    edge_width=1,
-    edge_color='coral',
+    border_width=1,
+    border_color='coral',
     face_color='royalblue',
     name='shapes',
 )
@@ -81,8 +81,8 @@ ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
 layer.add(
     ellipse,
     shape_type='ellipse',
-    edge_width=5,
-    edge_color='coral',
+    border_width=5,
+    border_color='coral',
     face_color='purple',
 )
 

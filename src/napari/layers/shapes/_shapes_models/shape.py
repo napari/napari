@@ -54,7 +54,7 @@ class Shape(ABC):
     ----------
     data : (N, D) array
         Vertices specifying the shape.
-    edge_width : float
+    border_width : float
         thickness of lines and edges.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
@@ -71,7 +71,7 @@ class Shape(ABC):
     data_displayed : (N, 2) array
         Vertices of the shape that are currently displayed. Only 2D rendering
         currently supported.
-    edge_width : float
+    border_width : float
         thickness of lines and edges.
     name : str
         Name of shape type.
@@ -103,17 +103,17 @@ class Shape(ABC):
         Qx2 array of vertices of all triangles for the shape face
     _face_triangles : np.ndarray
         Px3 array of vertex indices that form the triangles for the shape face
-    _edge_vertices : np.ndarray
+    _border_vertices : np.ndarray
         Rx2 array of centers of vertices of triangles for the shape edge.
-        These values should be added to the scaled `_edge_offsets` to get the
+        These values should be added to the scaled `_border_offsets` to get the
         actual vertex positions. The scaling corresponds to the width of the
         edge
-    _edge_offsets : np.ndarray
+    _border_offsets : np.ndarray
         Sx2 array of offsets of vertices of triangles for the shape edge. For
-        These values should be scaled and added to the `_edge_vertices` to get
+        These values should be scaled and added to the `_border_vertices` to get
         the actual vertex positions. The scaling corresponds to the width of
         the edge
-    _edge_triangles : np.ndarray
+    _border_triangles : np.ndarray
         Tx3 array of vertex indices that form the triangles for the shape edge
     _filled : bool
         Flag if array is filled or not.
@@ -127,7 +127,7 @@ class Shape(ABC):
         self,
         *,
         shape_type='rectangle',
-        edge_width=1,
+        border_width=1,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -140,19 +140,21 @@ class Shape(ABC):
             (0, self.ndisplay), dtype=np.float32
         )
         self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices: CoordinateArray = np.empty(
+        self._border_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._edge_offsets: CoordinateArray = np.empty(
+        self._border_offsets: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._border_triangles: TriangleArray = np.empty(
+            (0, 3), dtype=np.uint32
+        )
         self._box: BoxArray = np.empty((9, 2), dtype=np.float32)
 
         self._closed = False
         self._filled = True
         self._use_face_vertices = False
-        self.edge_width = edge_width
+        self.border_width = border_width
         self.z_index = z_index
         self.name = ''
 
@@ -169,7 +171,7 @@ class Shape(ABC):
             and bermuda is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_bermuda
-            cls._triangulate_edge = cls._triangulate_edge_bermuda
+            cls._triangulate_edge = cls._triangulate_border_bermuda
         elif (
             TRIANGULATION_BACKEND
             in {
@@ -179,7 +181,7 @@ class Shape(ABC):
             and partsegcore_triangulate is not None
         ):
             cls._set_meshes = cls._set_meshes_compiled_partseg
-            cls._triangulate_edge = cls._triangulate_edge_partseg
+            cls._triangulate_edge = cls._triangulate_border_partseg
         elif (
             TRIANGULATION_BACKEND
             in {
@@ -242,8 +244,8 @@ class Shape(ABC):
         """(2, N) array, bounding box of the object."""
         # We add +-0.5 to handle edge width
         return self._bounding_box[:, self.dims_displayed] + [
-            [-0.5 * self.edge_width],
-            [0.5 * self.edge_width],
+            [-0.5 * self.border_width],
+            [0.5 * self.border_width],
         ]
 
     @property
@@ -257,13 +259,13 @@ class Shape(ABC):
         return self.data[:, self.dims_displayed]
 
     @property
-    def edge_width(self):
+    def border_width(self):
         """float: thickness of lines and edges."""
-        return self._edge_width
+        return self._border_width
 
-    @edge_width.setter
-    def edge_width(self, edge_width):
-        self._edge_width = edge_width
+    @border_width.setter
+    def border_width(self, border_width):
+        self._border_width = border_width
 
     @property
     def z_index(self):
@@ -279,12 +281,12 @@ class Shape(ABC):
     @property
     def vertices_count(self) -> int:
         """int: Number of vertices in the shape."""
-        return self._edge_vertices.shape[0] + self._face_vertices.shape[0]
+        return self._border_vertices.shape[0] + self._face_vertices.shape[0]
 
     @property
     def triangles_count(self) -> int:
         """int: Number of triangles in the shape."""
-        return self._face_triangles.shape[0] + self._edge_triangles.shape[0]
+        return self._face_triangles.shape[0] + self._border_triangles.shape[0]
 
     @property
     def face_triangles_count(self) -> int:
@@ -297,19 +299,19 @@ class Shape(ABC):
         return self._face_vertices.shape[0]
 
     @property
-    def edge_triangles_count(self) -> int:
+    def border_triangles_count(self) -> int:
         """int: Number of triangles in the edge of the shape."""
-        return self._edge_triangles.shape[0]
+        return self._border_triangles.shape[0]
 
     @property
-    def edge_vertices_count(self) -> int:
+    def border_vertices_count(self) -> int:
         """int: Number of vertices in the edge of the shape."""
-        return self._edge_vertices.shape[0]
+        return self._border_vertices.shape[0]
 
     def _set_empty_edge(self) -> None:
-        self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._border_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
+        self._border_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
+        self._border_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_empty_face(self) -> None:
         self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
@@ -332,12 +334,12 @@ class Shape(ABC):
             self._set_empty_face()
 
         if edge:
-            centers, offsets, edge_triangles = triangulate_edge(
+            centers, offsets, border_triangles = triangulate_edge(
                 data, closed=closed
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = edge_triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = border_triangles
         else:
             self._set_empty_edge()
 
@@ -381,7 +383,7 @@ class Shape(ABC):
         # with a single call to the compiled backend
         if edge and face:
             try:
-                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                (triangles, vertices), (centers, offsets, border_triangles) = (
                     bermuda.triangulate_polygons_with_edge([data])
                 )
             except BaseException as e:  # pragma: no cover
@@ -392,18 +394,20 @@ class Shape(ABC):
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
 
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = edge_triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = border_triangles
             self._face_vertices = vertices
             self._face_triangles = triangles
             return
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
-                bermuda.triangulate_path_edge(data, closed=closed)
-            )
+            (
+                self._border_vertices,
+                self._border_offsets,
+                self._border_triangles,
+            ) = bermuda.triangulate_path_edge(data, closed=closed)
         else:
             self._set_empty_edge()
         if face:
@@ -443,7 +447,7 @@ class Shape(ABC):
         # with a single call to the compiled backend
         if edge and face:
             try:
-                (triangles, vertices), (centers, offsets, edge_triangles) = (
+                (triangles, vertices), (centers, offsets, border_triangles) = (
                     partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
                         [data], split_edges=True
                     )
@@ -456,19 +460,21 @@ class Shape(ABC):
                     f'Triangulation failed. Data saved to {path} and {text_path}'
                 ) from e
 
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = edge_triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = border_triangles
             self._face_vertices = vertices
             self._face_triangles = triangles
             return
 
         # otherwise, we make individual calls to specialized functions
         if edge:
-            self._edge_vertices, self._edge_offsets, self._edge_triangles = (
-                partsegcore_triangulate.triangulate_path_edge_numpy(
-                    data, closed=closed
-                )
+            (
+                self._border_vertices,
+                self._border_offsets,
+                self._border_triangles,
+            ) = partsegcore_triangulate.triangulate_path_edge_numpy(
+                data, closed=closed
             )
         else:
             self._set_empty_edge()
@@ -506,18 +512,18 @@ class Shape(ABC):
             (f_vertices, f_triangles), (centers, offsets, triangles) = (
                 triangulate_face_and_edges(data, triangulate_face_triangle)
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = triangles
             self._face_vertices = f_vertices
             self._face_triangles = f_triangles
             return
 
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = triangles
         else:
             self._set_empty_edge()
         ndim = data.shape[1]
@@ -570,18 +576,18 @@ class Shape(ABC):
             (f_vertices, f_triangles), (centers, offsets, triangles) = (
                 triangulate_face_and_edges(data, triangulate_face_vispy)
             )
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = triangles
             self._face_vertices = f_vertices
             self._face_triangles = f_triangles
             return
 
         if edge:
             centers, offsets, triangles = triangulate_edge(data, closed=closed)
-            self._edge_vertices = centers
-            self._edge_offsets = offsets
-            self._edge_triangles = triangles
+            self._border_vertices = centers
+            self._border_offsets = offsets
+            self._border_triangles = triangles
         else:
             self._set_empty_edge()
 
@@ -633,14 +639,14 @@ class Shape(ABC):
         """
         return triangulate_edge(data, closed=closed)
 
-    def _triangulate_edge_partseg(
+    def _triangulate_border_partseg(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
         return partsegcore_triangulate.triangulate_path_edge_numpy(
             data, closed=closed
         )
 
-    def _triangulate_edge_bermuda(
+    def _triangulate_border_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
         return bermuda.triangulate_path_edge(data, closed=closed)
@@ -656,9 +662,10 @@ class Shape(ABC):
         return np.vstack(
             [
                 self._face_vertices[self._face_triangles],
-                (self._edge_vertices + self.edge_width * self._edge_offsets)[
-                    self._edge_triangles
-                ],
+                (
+                    self._border_vertices
+                    + self.border_width * self._border_offsets
+                )[self._border_triangles],
             ]
         )
 
@@ -681,9 +688,9 @@ class Shape(ABC):
         centers, offsets, triangles = self._triangulate_edge(
             points, closed=self._closed
         )
-        self._edge_vertices = centers
-        self._edge_offsets = offsets
-        self._edge_triangles = triangles
+        self._border_vertices = centers
+        self._border_offsets = offsets
+        self._border_triangles = triangles
         self._bounding_box = np.array(
             [
                 np.min(self._data, axis=0),
@@ -703,7 +710,7 @@ class Shape(ABC):
         shift = np.array(shift)
 
         self._face_vertices = self._face_vertices + shift
-        self._edge_vertices = self._edge_vertices + shift
+        self._border_vertices = self._border_vertices + shift
         self._box = self._box + shift
         self._data[:, self.dims_displayed] = self.data_displayed + shift
         self._bounding_box[:, self.dims_displayed] = (

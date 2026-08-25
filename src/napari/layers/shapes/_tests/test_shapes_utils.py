@@ -5,7 +5,7 @@ import pytest
 from numpy import array, testing as npt
 
 from napari.layers.shapes._accelerated_triangulate_python import (
-    generate_2D_edge_meshes_py,
+    generate_2D_border_meshes_py,
     is_convex_py,
     normalize_vertices_and_edges_py,
     reconstruct_polygons_from_edges_py,
@@ -44,7 +44,7 @@ def _regen_testcases():
     exec(
         """
 from napari.layers.shapes._tests.test_shapes_utils import (
-    generate_2D_edge_meshes,
+    generate_2D_border_meshes,
     W_DATA,
 )
 
@@ -59,7 +59,7 @@ mesh_cases = [
 
 s = '['
 for args in mesh_cases:
-    cot = generate_2D_edge_meshes(*args)
+    cot = generate_2D_border_meshes(*args)
     s = s + str(['W_DATA', *args[1:], cot]) + ','
 s += ']'
 s = s.replace("'W_DATA'", 'W_DATA')
@@ -363,14 +363,14 @@ def create_complex_shape():
     ('path', 'closed', 'limit', 'bevel', 'expected'),
     cases,
 )
-def test_generate_2D_edge_meshes(
+def test_generate_2D_border_meshes(
     path,
     closed,
     limit,
     bevel,
     expected,
 ):
-    c, o, t = generate_2D_edge_meshes_py(path, closed, limit, bevel)
+    c, o, t = generate_2D_border_meshes_py(path, closed, limit, bevel)
     expected_center, expected_offsets, expected_triangles = expected
     assert np.allclose(c, expected_center)
     assert np.allclose(o, expected_offsets)

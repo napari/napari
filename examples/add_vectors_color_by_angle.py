@@ -47,15 +47,15 @@ features = {
 # add the vectors
 layer = viewer.add_vectors(
     pos,
-    edge_width=3,
+    width=3,
     features=features,
-    edge_color='angle',
-    edge_colormap='husl',
+    color='angle',
+    colormap='husl',
     name='vectors'
 )
 
 # set the edge color mode to colormap
-layer.edge_color_mode = 'colormap'
+layer.color_mode = 'colormap'
 
 if __name__ == '__main__':
     napari.run()

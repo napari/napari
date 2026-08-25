@@ -8,7 +8,7 @@ from napari._vispy.layers.vectors import (
 
 
 @pytest.mark.parametrize(
-    ('edge_width', 'length', 'dims', 'style'),
+    ('width', 'length', 'dims', 'style'),
     [
         (0, 0, 2, 'line'),
         (0.3, 0.3, 2, 'line'),
@@ -21,12 +21,12 @@ from napari._vispy.layers.vectors import (
         (1, 1, 3, 'arrow'),
     ],
 )
-def test_generate_vector_meshes(edge_width, length, dims, style):
+def test_generate_vector_meshes(width, length, dims, style):
     n = 10
 
     data = np.random.random((n, 2, dims))
     vertices, faces = generate_vector_meshes(
-        data, width=edge_width, length=length, vector_style=style
+        data, width=width, length=length, vector_style=style
     )
     vertices_length, vertices_dims = vertices.shape
     faces_length, faces_dims = faces.shape
@@ -58,7 +58,7 @@ def test_generate_vector_meshes(edge_width, length, dims, style):
 
 
 @pytest.mark.parametrize(
-    ('edge_width', 'length', 'style', 'p'),
+    ('width', 'length', 'style', 'p'),
     [
         (0, 0, 'line', (1, 0, 0)),
         (0.3, 0.3, 'line', (0, 1, 0)),
@@ -71,13 +71,13 @@ def test_generate_vector_meshes(edge_width, length, dims, style):
         (1, 1, 'arrow', (0, 0, 1)),
     ],
 )
-def test_generate_vector_meshes_2D(edge_width, length, style, p):
+def test_generate_vector_meshes_2D(width, length, style, p):
     n = 10
     dims = 2
 
     data = np.random.random((n, 2, dims))
     vertices, faces = generate_vector_meshes_2D(
-        data, width=edge_width, length=length, vector_style=style, p=p
+        data, width=width, length=length, vector_style=style, p=p
     )
     vertices_length, vertices_dims = vertices.shape
     faces_length, faces_dims = faces.shape

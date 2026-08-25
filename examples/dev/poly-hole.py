@@ -95,14 +95,14 @@ layer = viewer.add_shapes(
         shape_type=['polygon'],
         features=features,
         face_color='#0e6639',
-        edge_color='#fdab19',
+        border_color='#fdab19',
         text=text,
         )
 
 # these settings help to visualise the polygon data directly in the
 # shapes layer.
 layer.mode = 'direct'
-layer.edge_width = 0.1
+layer.border_width = 0.1
 layer.selected_data = {0}
 
 if __name__ == '__main__':

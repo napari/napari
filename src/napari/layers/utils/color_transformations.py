@@ -84,7 +84,7 @@ def normalize_and_broadcast_colors(
     """Takes an input color array and forces into being the length of ``data``.
 
     Used when a single color is supplied for many input objects, but we need
-    Layer.current_face_color or Layer.current_edge_color to have the shape of
+    Layer.current_face_color or Layer.current_border_color to have the shape of
     the actual data.
 
     Note: This function can't robustly parse user input, and thus should

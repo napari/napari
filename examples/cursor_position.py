@@ -23,10 +23,10 @@ points = np.array([[0, 0], [2, 0], [1, 3]])
 viewer.add_points(points, size=0.25)
 
 rect = np.array([[0, 0], [3, 1]])
-viewer.add_shapes(rect, shape_type='rectangle', edge_width=0.1)
+viewer.add_shapes(rect, shape_type='rectangle', border_width=0.1)
 
 vect = np.array([[[3, 2], [-1, 1]]])
-viewer.add_vectors(vect, edge_width=0.1)
+viewer.add_vectors(vect, width=0.1)
 
 if __name__ == '__main__':
     napari.run()

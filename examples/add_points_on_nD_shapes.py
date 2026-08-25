@@ -44,7 +44,7 @@ for shape_type, mult in {('ellipse', 1), ('rectangle', -1)}:
     shapes_layer = viewer.add_shapes(
         shapes_data * mult,
         face_color=['magenta', 'green', 'blue'],
-        edge_color='white',
+        border_color='white',
         blending='additive',
         features=features,
         text='index',

@@ -29,8 +29,8 @@ class VispyShapesLayer(VispyBaseLayer):
             self._on_highlight_change_impl
         )
 
-        self.layer.events.edge_width.connect(self._on_data_change)
-        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.border_width.connect(self._on_data_change)
+        self.layer.events.border_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
@@ -108,7 +108,7 @@ class VispyShapesLayer(VispyBaseLayer):
         (
             vertices,
             face_color,
-            edge_color,
+            border_color,
             pos,
             _,
         ) = self.layer._compute_vertices_and_box()
@@ -125,7 +125,7 @@ class VispyShapesLayer(VispyBaseLayer):
             vertices,
             size=size,
             face_color=face_color,
-            edge_color=edge_color,
+            edge_color=border_color,
             edge_width=width,
         )
 
@@ -134,7 +134,7 @@ class VispyShapesLayer(VispyBaseLayer):
             width = 0
 
         self.node.highlight_lines.set_data(
-            pos=pos, color=edge_color, width=width
+            pos=pos, color=border_color, width=width
         )
 
     def _update_text(self, *, update_node=True):

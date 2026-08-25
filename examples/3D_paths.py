@@ -30,7 +30,7 @@ path = np.array([np.array([[0, 0, 0], [0, 10, 10], [0, 5, 15], [20, 5, 15],
 
 print('Path', path.shape)
 layer = viewer.add_shapes(
-    path, shape_type='path', edge_width=4, edge_color=['red', 'blue']
+    path, shape_type='path', border_width=4, border_color=['red', 'blue']
 )
 
 if __name__ == '__main__':

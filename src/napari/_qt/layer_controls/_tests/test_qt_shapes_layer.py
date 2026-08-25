@@ -25,21 +25,21 @@ def test_shape_controls_face_color(qtbot):
     )
 
 
-def test_shape_controls_edge_color(qtbot):
+def test_shape_controls_border_color(qtbot):
     """Check updating of edge color updates QtShapesControls."""
     layer = Shapes(_SHAPES)
     qtctrl = QtShapesControls(layer)
     qtbot.addWidget(qtctrl)
-    target_color = transform_color(layer.current_edge_color)[0]
+    target_color = transform_color(layer.current_border_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._edge_color_control.edge_color_edit.color, target_color
+        qtctrl._border_color_control.border_color_edit.color, target_color
     )
 
     # Update current edge color
-    layer.current_edge_color = 'red'
-    target_color = transform_color(layer.current_edge_color)[0]
+    layer.current_border_color = 'red'
+    target_color = transform_color(layer.current_border_color)[0]
     np.testing.assert_almost_equal(
-        qtctrl._edge_color_control.edge_color_edit.color, target_color
+        qtctrl._border_color_control.border_color_edit.color, target_color
     )
 
 

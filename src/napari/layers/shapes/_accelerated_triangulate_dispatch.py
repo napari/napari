@@ -25,7 +25,7 @@ try:
 except ImportError:
     _accelerated_triangulate_numba = None
 
-USE_NUMBA_FOR_EDGE_TRIANGULATION = _accelerated_triangulate_numba is not None
+USE_NUMBA_FOR_BORDER_TRIANGULATION = _accelerated_triangulate_numba is not None
 RUN_WARMUP = _accelerated_triangulate_numba is not None
 CACHE_WARMUP = False
 # Some numba functions are used even if for non-numba triangulation backends,
@@ -40,7 +40,7 @@ normalize_vertices_and_edges = (
 
 ALWAYS_NUMBA = ('remove_path_duplicates', 'create_box_from_bounding')
 SWAPPABLE_NUMBA = (
-    'generate_2D_edge_meshes',
+    'generate_2D_border_meshes',
     'is_convex',
     'normalize_vertices_and_edges',
     'reconstruct_polygons_from_edges',
@@ -53,8 +53,8 @@ if _accelerated_triangulate_numba is not None:
     create_box_from_bounding = (
         _accelerated_triangulate_numba.create_box_from_bounding
     )
-    generate_2D_edge_meshes = (
-        _accelerated_triangulate_numba.generate_2D_edge_meshes
+    generate_2D_border_meshes = (
+        _accelerated_triangulate_numba.generate_2D_border_meshes
     )
     is_convex = _accelerated_triangulate_numba.is_convex
     normalize_vertices_and_edges = (
@@ -71,8 +71,8 @@ else:
     create_box_from_bounding = (
         _accelerated_triangulate_python.create_box_from_bounding_py
     )
-    generate_2D_edge_meshes = (
-        _accelerated_triangulate_python.generate_2D_edge_meshes_py
+    generate_2D_border_meshes = (
+        _accelerated_triangulate_python.generate_2D_border_meshes_py
     )
     is_convex = _accelerated_triangulate_python.is_convex_py
     reconstruct_polygons_from_edges = (
@@ -88,7 +88,7 @@ def _set_numba(value: bool) -> None:
     value : bool
         If True, use the Numba backend. If False, use the pure Python backend.
     """
-    global USE_NUMBA_FOR_EDGE_TRIANGULATION
+    global USE_NUMBA_FOR_BORDER_TRIANGULATION
 
     val = value and (_accelerated_triangulate_numba is not None)
     if val:
@@ -100,7 +100,7 @@ def _set_numba(value: bool) -> None:
                 _accelerated_triangulate_python, f'{name}_py'
             )
 
-    USE_NUMBA_FOR_EDGE_TRIANGULATION = val
+    USE_NUMBA_FOR_BORDER_TRIANGULATION = val
 
 
 def _set_warmup(value: bool) -> None:
@@ -148,9 +148,13 @@ def warmup_numba_cache() -> None:
             [[0, 0], [1, 1], [0, 1], [1, 0]], dtype=np.float32, order=order
         )
 
-        if not USE_NUMBA_FOR_EDGE_TRIANGULATION:
-            _accelerated_triangulate_numba.generate_2D_edge_meshes(data, True)
-            _accelerated_triangulate_numba.generate_2D_edge_meshes(data, False)
+        if not USE_NUMBA_FOR_BORDER_TRIANGULATION:
+            _accelerated_triangulate_numba.generate_2D_border_meshes(
+                data, True
+            )
+            _accelerated_triangulate_numba.generate_2D_border_meshes(
+                data, False
+            )
             _accelerated_triangulate_numba.remove_path_duplicates(data, False)
             _accelerated_triangulate_numba.is_convex(data)
             v, e = _accelerated_triangulate_numba.normalize_vertices_and_edges(

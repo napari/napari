@@ -74,15 +74,15 @@ polygons = [
 layer = viewer.add_shapes(
     polygons,
     shape_type='polygon',
-    edge_width=1,
-    edge_color='coral',
+    border_width=1,
+    border_color='coral',
     face_color='royalblue',
     name='shapes',
 )
 
 # change some attributes of the layer
 layer.selected_data = set(range(layer.nshapes))
-layer.current_edge_width = 5
+layer.current_border_width = 5
 layer.opacity = 0.75
 layer.selected_data = set()
 
@@ -91,8 +91,8 @@ ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
 layer.add(
     ellipse,
     shape_type='ellipse',
-    edge_width=5,
-    edge_color='coral',
+    border_width=5,
+    border_color='coral',
     face_color='purple',
 )
 
@@ -123,7 +123,7 @@ pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
 pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
 # add the vectors
-layer = viewer.add_vectors(pos, edge_width=2)
+layer = viewer.add_vectors(pos, width=2)
 
 # take screenshot
 screenshot = viewer.screenshot()

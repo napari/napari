@@ -260,11 +260,11 @@ class Shape2DEditSuite:
         else:
             self.layer.selected_data = [2]
 
-    def time_set_edge_width(self, *_):
-        self.layer.current_edge_width = 10
+    def time_set_border_width(self, *_):
+        self.layer.current_border_width = 10
 
-    def time_set_edge_color(self, *_):
-        self.layer.current_edge_color = 'red'  # RGBA red
+    def time_set_border_color(self, *_):
+        self.layer.current_border_color = 'red'  # RGBA red
 
     def time_set_face_color(self, *_):
         self.layer.current_face_color = 'red'

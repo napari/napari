@@ -23,7 +23,7 @@ text = {'string': 'z_index', 'color': 'green', 'anchor': 'upper_left'}
 
 shapes_layer = viewer.add_shapes(
     shape,
-    edge_color=[0, 1, 0, 1],
+    border_color=[0, 1, 0, 1],
     face_color='transparent',
     features=features,
     text=text,

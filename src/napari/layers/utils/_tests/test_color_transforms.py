@@ -16,7 +16,7 @@ def test_transform_color_basic():
     colorarray = transform_color_with_defaults(
         num_entries=len(data),
         colors='r',
-        elem_name='edge_color',
+        elem_name='border_color',
         default='black',
     )
     np.testing.assert_array_equal(colorarray, ColorArray('r').rgba)
@@ -27,12 +27,12 @@ def test_transform_color_wrong_colorname():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     with pytest.warns(
-        UserWarning, match='resetting all edge_color values to black'
+        UserWarning, match='resetting all border_color values to black'
     ):
         colorarray = transform_color_with_defaults(
             num_entries=len(data),
             colors='rr',
-            elem_name='edge_color',
+            elem_name='border_color',
             default='black',
         )
     np.testing.assert_array_equal(colorarray, ColorArray('black').rgba)

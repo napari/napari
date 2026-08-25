@@ -46,8 +46,8 @@ def _disable_jit(request):
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
-def test_generate_2D_edge_meshes(path, closed, bevel, expected):
-    centers, offsets, triangles = ac.generate_2D_edge_meshes(
+def test_generate_2D_border_meshes(path, closed, bevel, expected):
+    centers, offsets, triangles = ac.generate_2D_border_meshes(
         np.array(path, dtype='float32'), closed=closed, bevel=bevel
     )
     assert centers.shape == offsets.shape

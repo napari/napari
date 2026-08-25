@@ -44,7 +44,7 @@ viewer.add_points(
     nuclei_points, name='nuclei maxima', blending='additive', opacity=0.5
 )
 viewer.add_shapes(
-    path, name='path', shape_type='path', blending='additive', edge_color='yellow'
+    path, name='path', shape_type='path', blending='additive', border_color='yellow'
 )
 
 # add a bounding box overlay to each layer, then change the color

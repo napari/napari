@@ -180,7 +180,7 @@ def test_nD_shapes():
     assert shape_list._mesh.vertices.shape[1] == 3
 
 
-@pytest.mark.parametrize('attribute', ['edge', 'face'])
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_bad_color_array(attribute):
     """Test adding shapes to ShapeList."""
     np.random.seed(0)
@@ -340,8 +340,8 @@ def test_edit_shape_pentagon(shape_li):
 def test_update_face_color(shape_li, new_color):
     """Test updating face color of shapes in ShapeList."""
     # Initial face color
-    initial_edge_color = shape_li.edge_color
-    assert initial_edge_color.shape == (4, 4)
+    initial_border_color = shape_li.border_color
+    assert initial_border_color.shape == (4, 4)
 
     # Update face color
     expected_color = np.array([[1, 0, 0, 1]] * 4)  # Red color
@@ -359,8 +359,8 @@ def test_update_face_color(shape_li, new_color):
         == 8
     )
 
-    # Check if the edge color remains unchanged
-    assert np.all(shape_li.edge_color == initial_edge_color)
+    # Check if the border color remains unchanged
+    assert np.all(shape_li.border_color == initial_border_color)
 
 
 @pytest.mark.parametrize(
@@ -371,17 +371,17 @@ def test_update_face_color(shape_li, new_color):
         np.array([[1, 0, 0, 1]] * 4),
     ],
 )
-def test_update_edge_color(shape_li, new_color):
-    """Test updating edge color of shapes in ShapeList."""
-    # Initial edge color
+def test_update_border_color(shape_li, new_color):
+    """Test updating border color of shapes in ShapeList."""
+    # Initial border color
     initial_face_color = shape_li.face_color
     assert initial_face_color.shape == (4, 4)
 
-    # Update edge color
+    # Update border color
     expected_color = np.array([[1, 0, 0, 1]] * 4)
-    shape_li.update_edge_colors(range(4), new_color)
-    # Check if the edge color has been updated
-    npt.assert_array_equal(shape_li.edge_color, expected_color)
+    shape_li.update_border_colors(range(4), new_color)
+    # Check if the border color has been updated
+    npt.assert_array_equal(shape_li.border_color, expected_color)
     assert (
         np.count_nonzero(
             np.all(
@@ -407,15 +407,15 @@ LAYER_COUNT = 16
 @pytest.fixture
 def multi_z_rectangles() -> list[Rectangle]:
     width = 6
-    edge = width - 2
+    border = width - 2
     return [  # create 256 boxes in a grid
         Rectangle(
             np.array(
                 [
                     [z, y * width, x * width],
-                    [z, y * width + edge, x * width],
-                    [z, y * width + edge, x * width + edge],
-                    [z, y * width, x * width + edge],
+                    [z, y * width + border, x * width],
+                    [z, y * width + border, x * width + border],
+                    [z, y * width, x * width + border],
                 ]
             )
         )
@@ -435,7 +435,7 @@ def triangles_slice(simple_rectangle):
     triang = np.concatenate(
         [
             simple_rectangle._face_triangles,
-            simple_rectangle._edge_triangles
+            simple_rectangle._border_triangles
             + simple_rectangle.face_vertices_count,
         ]
     )

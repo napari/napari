@@ -175,7 +175,7 @@ class CrossWidget(QCheckBox):
         if self.layer in self.viewer.layers:
             self.viewer.layers.remove(self.layer)
         self.layer = Vectors(name='.cross', ndim=event.value, vector_style='line')
-        self.layer.edge_width = 1.5
+        self.layer.border_width = 1.5
         self.update_cross()
 
     def _update_cross_visibility(self, state):
