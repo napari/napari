@@ -65,7 +65,9 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.text_disp_checkbox):
             self.text_disp_checkbox.setChecked(self._layers[0].text.visible)
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.text_disp_label, self.text_disp_checkbox)]
 
     def disconnect_widget_controls(self) -> None:

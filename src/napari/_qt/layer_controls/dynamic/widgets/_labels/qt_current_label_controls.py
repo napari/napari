@@ -206,5 +206,7 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
         for layer in self._layers:
             new_label(layer)
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.label_color_label, self.label_color)]

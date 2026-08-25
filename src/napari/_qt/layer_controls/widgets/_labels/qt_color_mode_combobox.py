@@ -71,5 +71,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         else:
             self.color_mode_combobox.setCurrentEnum(LabelColorMode.DIRECT)
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.color_mode_combobox_label, self.color_mode_combobox)]

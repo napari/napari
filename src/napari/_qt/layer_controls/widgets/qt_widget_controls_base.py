@@ -60,13 +60,15 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         self._callbacks: list[Callable[[Any], None]] = []
 
     @abstractmethod
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """
         Enable access to the created labels and control widgets.
 
         Returns
         -------
-        list : list[tuple[QWidget, ...]]
+        list : list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
             List of tuples of the label and widget controls available.
 
         """

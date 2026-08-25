@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
+    QtWrappedLabel,
 )
 from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari.layers import Image
@@ -107,7 +108,9 @@ class QtHistogramControl(QtWidgetControlsBase):
         self.histogram_widget = self.histogram_content.histogram_widget
         self.settings_widget = self.histogram_content.settings_widget
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """Return empty list; histogram is dynamically shown/hidden."""
         return []
 

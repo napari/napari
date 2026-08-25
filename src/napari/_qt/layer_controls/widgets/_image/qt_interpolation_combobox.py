@@ -98,7 +98,9 @@ class QtInterpolationComboBoxControl(QtWidgetControlsBase):
             self.interpolation_combobox.addItems(interp_names)
             self.interpolation_combobox.setCurrentText(interp)
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.interpolation_combobox_label, self.interpolation_combobox)
         ]

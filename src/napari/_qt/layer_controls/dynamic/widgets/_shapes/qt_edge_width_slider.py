@@ -82,5 +82,7 @@ class QtEdgeWidthSliderControl(QtWidgetControlsBase):
             value = np.clip(int(value), 0, 40)
             self.edge_width_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.edge_width_label, self.edge_width_slider)]

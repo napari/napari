@@ -606,7 +606,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             disconnect_events(layer.histogram.events, self)
         super().disconnect_widget_controls()
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),

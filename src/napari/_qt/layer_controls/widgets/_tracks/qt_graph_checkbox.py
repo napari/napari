@@ -49,5 +49,7 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
 
         self.graph_checkbox_label = QtWrappedLabel('graph:')
 
-    def get_widget_controls(self) -> list[tuple[QWidget, ...]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.graph_checkbox_label, self.graph_checkbox)]
