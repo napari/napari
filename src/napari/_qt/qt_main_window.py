@@ -838,6 +838,8 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
+        viewer.events.theme.connect(self._update_theme)
+
         if show:
             self.show()
             # Ensure the controls dock uses the minimum height
