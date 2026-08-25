@@ -331,7 +331,7 @@ def add_helper_layers(viewer: napari.Viewer, source_layer):
             viewer.add_vectors(
                     data,
                     name=name,
-                    vector_style='arrow', border_width=size, border_color=color,
+                    vector_style='arrow', width=size, color=color,
                     )
     source_layer.events.set_data.connect(
         partial(update_helper_layers, viewer=viewer, source_layer=source_layer)

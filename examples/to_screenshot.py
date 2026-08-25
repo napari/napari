@@ -123,7 +123,7 @@ pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
 pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
 # add the vectors
-layer = viewer.add_vectors(pos, border_width=2)
+layer = viewer.add_vectors(pos, width=2)
 
 # take screenshot
 screenshot = viewer.screenshot()
