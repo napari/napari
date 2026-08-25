@@ -130,7 +130,7 @@ class QtViewerDockWidget(QDockWidget):
         widget_ = combine_widgets(widget, vertical=is_vertical)
         widget_.setSizePolicy(
             QSizePolicy.Policy.Preferred,
-            QSizePolicy.Policy.Maximum,
+            QSizePolicy.Policy.Preferred,
         )
         self.setWidget(widget_)
         if is_vertical and add_vertical_stretch:
