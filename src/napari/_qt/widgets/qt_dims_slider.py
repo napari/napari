@@ -139,6 +139,9 @@ class QtDimSliderWidget(QWidget):
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
 
+        # Unparented, and stopped on destruction: a timer parented to the row
+        # is deleted with it while still running, and firing into the deleted
+        # C++ object raises at teardown.
         self._lock_flash_timer = QTimer()
         self._lock_flash_timer.setSingleShot(True)
         self._lock_flash_timer.setInterval(LOCK_FLASH_MS)

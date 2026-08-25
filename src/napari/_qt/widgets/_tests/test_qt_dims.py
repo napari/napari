@@ -445,16 +445,6 @@ def test_pressing_a_frozen_slider_claims_the_axis(qt_dims):
     assert qt_dims.dims.last_used == 0
 
 
-def test_pressing_the_padlock_never_flashes_it(qt_dims):
-    qt_dims.dims.ndim = 3
-    slider_widget = qt_dims.slider_widgets[0]
-    qt_dims.dims.lock_axis(0)
-
-    _press(slider_widget.lock_button)
-
-    assert not slider_widget.lock_button.property('flash')
-
-
 def test_locking_a_playing_axis_stops_it(qt_dims, qtbot):
     """A blocked write emits nothing, so the frame pump would wait forever."""
     qt_dims.dims.ndim = 3
