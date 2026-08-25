@@ -152,8 +152,8 @@ class QtDimSliderWidget(QWidget):
         """Flash the padlock when a press lands on a control the lock froze.
 
         The slider, play button and slice editor are disabled while the axis is
-        locked, so they issue no navigation request and nothing reaches
-        ``navigation_refused``. A disabled widget also receives no mouse events and
+        locked, so they ask for no move and nothing reaches
+        ``_point_refused``. A disabled widget also receives no mouse events and
         does not hand them to its parent, so the row cannot see the attempt
         either; a filter installed on the child is what still does.
 
@@ -267,7 +267,7 @@ class QtDimSliderWidget(QWidget):
         return play_button
 
     def _create_lock_button_widget(self) -> QPushButton:
-        """Create the padlock that toggles navigation for this axis."""
+        """Create the padlock that locks and unlocks this axis."""
         button = QPushButton(self)
         button.setObjectName('axis_lock_button')
         button.setCheckable(True)
@@ -282,7 +282,7 @@ class QtDimSliderWidget(QWidget):
             self.dims.unlock_axis(self.axis)
 
     def _update_lock_state(self) -> None:
-        """Sync navigation controls and padlock to the Dims model."""
+        """Sync the row's controls and padlock to the Dims model."""
         if self.axis >= self.dims.ndim:
             return
         locked = self.dims.axis_locked[self.axis]
@@ -298,7 +298,7 @@ class QtDimSliderWidget(QWidget):
             self._set_lock_flash(False)
 
     def _flash_lock(self) -> None:
-        """Briefly highlight the padlock after refused navigation."""
+        """Briefly highlight the padlock after a refused move."""
         if self.axis >= self.dims.ndim or not self.dims.axis_locked[self.axis]:
             return
         self._set_lock_flash(True)

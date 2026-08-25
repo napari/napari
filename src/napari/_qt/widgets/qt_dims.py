@@ -64,9 +64,7 @@ class QtDims(QWidget):
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
         self.dims.events.axis_locked.connect(self._on_axis_lock_changed)
-        self.dims.events.navigation_refused.connect(
-            self._on_navigation_refused
-        )
+        self.dims.events._point_refused.connect(self._on_point_refused)
 
     def _on_axis_lock_changed(self, event=None) -> None:
         for widget in self.slider_widgets:
@@ -80,7 +78,7 @@ class QtDims(QWidget):
             ):
                 self.stop()
 
-    def _on_navigation_refused(self, event) -> None:
+    def _on_point_refused(self, event) -> None:
         for axis in event.axes:
             self.slider_widgets[axis]._flash_lock()
 

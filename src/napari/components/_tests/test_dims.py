@@ -179,7 +179,7 @@ def test_axis_lock_guards_model_update():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     events = []
-    dims.events.navigation_refused.connect(events.append)
+    dims.events._point_refused.connect(events.append)
 
     dims.update({'point': (0, 0, 0)})
 
@@ -227,7 +227,7 @@ def test_axis_lock_refusal_reports_the_refused_axes():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     events = []
-    dims.events.navigation_refused.connect(events.append)
+    dims.events._point_refused.connect(events.append)
 
     dims.set_point(0, 1)
 
@@ -238,7 +238,7 @@ def test_axis_lock_is_silent_when_nothing_is_refused():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     events = []
-    dims.events.navigation_refused.connect(events.append)
+    dims.events._point_refused.connect(events.append)
 
     # already where the lock holds it, and a move on a free axis
     dims.set_point(0, 4)
@@ -253,7 +253,7 @@ def test_range_change_may_still_clip_a_locked_point():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     events = []
-    dims.events.navigation_refused.connect(events.append)
+    dims.events._point_refused.connect(events.append)
 
     dims.range = ((0, 2, 1),) * 3
 
@@ -265,12 +265,52 @@ def test_axis_lock_rejects_an_invalid_component_without_moving():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     events = []
-    dims.events.navigation_refused.connect(events.append)
+    dims.events._point_refused.connect(events.append)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         dims.point = (np.array([1, 2]), 5, 5)
 
     assert dims.point == (4, 2, 1)
+    assert events == []
+
+
+def test_axis_lock_holds_a_point_of_the_wrong_length():
+    """A short or long point is padded and cropped before the lock reads it."""
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.point = (0, 0)
+    assert dims.point == (4, 0, 0)
+
+    dims.point = (0, 5, 5, 5)
+    assert dims.point == (4, 5, 5)
+
+    dims.update({'point': (0, 0), 'last_used': 1})
+    assert dims.point == (4, 0, 0)
+
+    assert [event.axes for event in events] == [(0,), (0,), (0,)]
+
+
+def test_clipping_that_also_moves_last_used_refuses_nothing():
+    """``last_used`` is assigned outside the validating context, re-entering
+    the validator; the lock must not read that as a refused request."""
+    dims = Dims(
+        ndim=4,
+        ndisplay=2,
+        range=((0, 5, 1),) * 4,
+        point=(4, 2, 1, 1),
+        last_used=0,
+    )
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.range = ((0, 0, 1), (0, 5, 1), (0, 5, 1), (0, 5, 1))
+
+    assert dims.point == (0, 2, 1, 1)
+    assert dims.last_used == 1
     assert events == []
 
 

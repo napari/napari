@@ -93,21 +93,20 @@ class Dims(EventedModel):
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
     axis_locked : tuple of bool
-        Tuple of per-axis navigation lock state. If True, navigation cannot
-        move the point on that axis.
+        Tuple of per-axis lock state. If True, the point cannot be moved on
+        that axis by anything that asks for it: the sliders, the arrow keys,
+        Ctrl+scroll, or an assignment to ``point``. A ``range`` or ``ndim``
+        change still moves it, so a layer leaving the viewer can still clip a
+        locked axis back into the remaining extent.
 
         .. versionadded:: 0.10.0
 
-    Events
-    ------
-    navigation_refused : Event
-        Emitted when an assignment to ``point`` (directly, or through
-        ``current_step``, ``set_point``, ``set_current_step`` or ``update``)
-        asked to move a locked axis. Carries ``axes``, the tuple of refused
-        axis indices. Point changes caused by a ``range`` or ``ndim`` change do
-        not emit it.
-
-        .. versionadded:: 0.10.0
+    Notes
+    -----
+    ``events._point_refused`` is emitted, with ``axes``, when such a request is
+    refused. It is private: the padlock in the slider row listens to it so a
+    refusal from the keyboard or from plugin code is visible, and there is no
+    other consumer.
     """
 
     # fields
@@ -131,6 +130,7 @@ class Dims(EventedModel):
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
     _validating: bool = False
+    _point_before_check: tuple[float, ...] = ()
 
     # validators
     # check fields is false to allow private fields to work
@@ -177,6 +177,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
+        refused = self._hold_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -245,46 +246,46 @@ class Dims(EventedModel):
         if len(not_displayed) > 0 and last_used not in not_displayed:
             self.last_used = not_displayed[0]
 
+        if refused:
+            self.events._point_refused(axes=refused)
+
         return self
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.events.add(navigation_refused=Event)
+    def _hold_locked_axes(self) -> tuple[int, ...]:
+        """Put locked components back to where they were before this write.
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Hold locked axes at their coordinate on an external point write.
-
-        Every navigation path ends in an assignment to ``point``:
-        ``current_step`` converts and assigns it, ``set_point`` and
-        ``set_current_step`` go through those, and ``update`` assigns each
-        field in turn. Intercepting ``point`` alone therefore covers them all.
-        A ``range`` or ``ndim`` change moves the point without one, which is
-        why layer-driven clipping of a locked axis stays permitted.
+        The snapshot is as long as the old ``ndim``, so a snapshot of a
+        different length means dimensionality changed rather than the point
+        being written; padding and cropping the point for a new ``ndim`` is
+        this validator's own work, not a request to move it.
         """
-        if name != 'point' or self._validating or not any(self.axis_locked):
-            super().__setattr__(name, value)
-            return
-
-        # Coerce before substituting: a component the field would reject must
-        # raise here, with the point untouched, rather than after a partial write.
-        requested = ensure_len(tuple(float(v) for v in value), self.ndim, 0.0)
-        previous = self.point
+        previous = self._point_before_check
+        if not any(self.axis_locked) or len(previous) != self.ndim:
+            return ()
+        # A short or long point is padded and cropped the same way the
+        # validator would, so the comparison is per axis rather than by offset.
+        requested = ensure_len(self.point, self.ndim, 0.0)
         held = tuple(
-            prev if locked else req
-            for req, prev, locked in zip(
+            prev if locked else new
+            for new, prev, locked in zip(
                 requested, previous, self.axis_locked, strict=False
             )
         )
         refused = tuple(
             axis
-            for axis, (req, kept) in enumerate(
+            for axis, (new, kept) in enumerate(
                 zip(requested, held, strict=False)
             )
-            if req != kept
+            if new != kept
         )
-        super().__setattr__(name, held)
         if refused:
-            self.events.navigation_refused(axes=refused)
+            with self._validating_ctx():
+                self.point = held
+        return refused
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(_point_refused=Event)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -452,23 +453,23 @@ class Dims(EventedModel):
         self.set_point(axis, value_world)
 
     def lock_axis(self, axis: int) -> None:
-        """Stop navigation from moving the point on ``axis``."""
+        """Hold the point on ``axis`` where it is."""
         self._set_axis_locked(axis, True)
 
     def unlock_axis(self, axis: int) -> None:
-        """Allow navigation to move the point on ``axis`` again."""
+        """Let the point move on ``axis`` again."""
         self._set_axis_locked(axis, False)
 
     def is_axis_locked(self, axis: int) -> bool:
-        """Whether navigation is locked on ``axis``."""
+        """Whether the point is held on ``axis``."""
         return self.axis_locked[ensure_axis_in_bounds(axis, self.ndim)]
 
     def lock_all_axes(self) -> None:
-        """Lock navigation on every axis."""
+        """Hold the point on every axis."""
         self.axis_locked = (True,) * self.ndim
 
     def unlock_all_axes(self) -> None:
-        """Unlock navigation on every axis."""
+        """Let the point move on every axis again."""
         self.axis_locked = (False,) * self.ndim
 
     def _set_axis_locked(self, axis: int, locked: bool) -> None:
@@ -612,6 +613,11 @@ class Dims(EventedModel):
             yield
         finally:
             self._validating = prev
+            if not prev:
+                # The lock compares an incoming point against this snapshot, so
+                # every write that is allowed to move the point without asking
+                # must leave it as the new reference.
+                self._point_before_check = self.point
 
 
 def ensure_len(value: tuple, length: int, pad_width: Any):
