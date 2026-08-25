@@ -31,6 +31,7 @@ from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
 from napari._qt.perf.qt_performance import QtPerformance
 from napari._qt.utils import QImg2array
 from napari._qt.widgets.qt_dims import QtDims
+from napari._qt.widgets.qt_list_and_buttons import QtLayerListAndButtons
 from napari._qt.widgets.qt_viewer_buttons import (
     QtLayerButtons,
     QtViewerButtons,
@@ -325,17 +326,12 @@ class QtViewer(QSplitter):
     def dockLayerList(self) -> QtViewerDockWidget:
         """QWidget wrapped in a QDockWidget with forwarded viewer events."""
         if self._dockLayerList is None:
-            layerList = QWidget()
-            layerList.setObjectName('layerList')
-            layerListLayout = QVBoxLayout()
-            layerListLayout.addWidget(self.layerButtons)
-            layerListLayout.addWidget(self.layers)
-            layerListLayout.addWidget(self.viewerButtons)
-            layerListLayout.setContentsMargins(8, 4, 8, 6)
-            layerList.setLayout(layerListLayout)
+            list_and_buttons = QtLayerListAndButtons(
+                self.layerButtons, self.layers, self.viewerButtons
+            )
             self._dockLayerList = QtViewerDockWidget(
                 self,
-                layerList,
+                list_and_buttons,
                 name='layer list',
                 area='left',
                 allowed_areas=['left', 'right'],
