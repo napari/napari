@@ -79,7 +79,7 @@ def pick(layer, event):
     )
 
 
-modifiers = BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+modifiers = tuple(BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS)
 
 
 def _on_modifiers_change():
@@ -87,7 +87,7 @@ def _on_modifiers_change():
     modifiers_setting = (
         get_settings().application.brush_size_on_mouse_move_modifiers
     )
-    modifiers = modifiers_setting.value.split('+')
+    modifiers = tuple(modifiers_setting.value.split('+'))
 
 
 def resize_brush_on_mouse_move(layer, event):

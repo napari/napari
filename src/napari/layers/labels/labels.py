@@ -590,17 +590,13 @@ class Labels(ScalarFieldBase):
         self._brush_size_is_canvas = bool(value)
         self.events.brush_size_is_canvas()
 
-    def _get_brush_size_canvas(self, zoom):
-        if self.brush_size_is_canvas:
-            return self.brush_size
+    def _get_brush_size_canvas(self, zoom: float) -> float:
         world_scale = self._data_to_world.scale
         displayed = self._slice_input.displayed
         min_scale = np.min([abs(world_scale[d]) for d in displayed])
         return self.brush_size * min_scale * zoom
 
-    def _get_brush_size_data(self, zoom):
-        if not self.brush_size_is_canvas:
-            return self._brush_size
+    def _get_brush_size_data(self, zoom: float) -> float:
         world_scale = self._data_to_world.scale
         displayed = self._slice_input.displayed
         min_scale = np.min([abs(world_scale[d]) for d in displayed])
@@ -1426,11 +1422,14 @@ class Labels(ScalarFieldBase):
         if coordinates is None:
             return
 
-        if self.brush_size_is_canvas and zoom is None:
-            raise RuntimeError(
-                'When drawing, zoom must be provided if brush_size_is_canvas is True'
-            )
-        brush_size = self._get_brush_size_data(zoom)
+        if self.brush_size_is_canvas:
+            if zoom is None:
+                raise RuntimeError(
+                    'When drawing, zoom must be provided if brush_size_is_canvas is True'
+                )
+            brush_size = self._get_brush_size_data(zoom)
+        else:
+            brush_size = self.brush_size
 
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, brush_size
@@ -1469,11 +1468,14 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        if self.brush_size_is_canvas and zoom is None:
-            raise RuntimeError(
-                'When drawing, zoom must be provided if brush_size_is_canvas is True'
-            )
-        brush_size = self._get_brush_size_data(zoom)
+        if self.brush_size_is_canvas:
+            if zoom is None:
+                raise RuntimeError(
+                    'When drawing, zoom must be provided if brush_size_is_canvas is True'
+                )
+            brush_size = self._get_brush_size_data(zoom)
+        else:
+            brush_size = self.brush_size
 
         self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
@@ -1502,7 +1504,7 @@ class Labels(ScalarFieldBase):
         coord: Sequence[float],
         dims_to_paint: list[int],
         shape: list[int],
-        brush_size: int = 10,
+        brush_size: float = 10,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
         """Compute the mask and bounding box for a brush painting operation.
 

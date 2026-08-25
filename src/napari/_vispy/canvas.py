@@ -424,7 +424,12 @@ class VispyCanvas:
         if cursor == 'circle':
             if brush_overlay is None:
                 raise RuntimeError('unreachable')
-            size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+            if layer.brush_size_is_canvas:
+                size = layer.brush_size
+            else:
+                size = layer._get_brush_size_canvas(
+                    self.viewer.scene.camera.zoom
+                )
             # make sure the circle fits within the current canvas
             if size < 8 or size > (min(*self.size) - 4):
                 brush_overlay.visible = False
