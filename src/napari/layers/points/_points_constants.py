@@ -99,11 +99,8 @@ class PointsProjectionMode(StringEnum):
         * ALL: project all points in the slice onto displayed dimensions
         * RESCALE_LINEAR: like ALL, but points are resized linearly based on their distance from the
             center of the thick slice (size is zero at the edge of the margin)
-        * RESCALE_SPHERICAL: like ALL, but points are resized to match the size of the disc created by
-            a sphere centered on the point when intersecting the center of the thick slice
     """
 
     NONE = auto()
     ALL = auto()
     RESCALE_LINEAR = auto()
-    RESCALE_SPHERICAL = auto()

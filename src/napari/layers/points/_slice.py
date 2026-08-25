@@ -129,52 +129,17 @@ class _PointSliceRequest:
 
         size = self.size[visible]
 
-        if self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
-        ):
+        if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
             # our rescaling is relative to the center of the slice, in each dimension
             dist_from_point = data_not_disp[visible] - point
-            if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
-                # linear rescaling, closest to the old out_of_slice_display implementation
+            # linear rescaling, closest to the old out_of_slice_display implementation
 
-                # margins can be different, so we need to treat low/high distance independently
-                slice_end = np.where(
-                    dist_from_point < 0, low - point, high - point
-                )
-                # we multiply the scales from each dimension into a single one
-                scale = np.prod(1 - dist_from_point / slice_end, axis=1)
-                size = size * scale
-            elif (
-                self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
-            ):
-                # This follows a spherical decay, meaning that while a point's poisition
-                # may be in the slice, if the sphere centered on it does not intersect
-                # the center of the slice, it will be discarded
-
-                # the length of the radius segment cut by the intersection with the
-                # slice center (per dimension) is dist_from_point. When bigger than size
-                # in any dimension, then there is no intersection!
-                radius = size / 2
-                radius_segment = np.abs(dist_from_point)
-
-                # discard points whose radius is bigger than the distance to the slice
-                # (no intersection between the sphere and the slice center)
-                valid = np.all(radius_segment < radius[:, None], axis=1)
-                radius_segment = radius_segment[valid]
-                radius = radius[valid]
-
-                # reduce to one dimension by getting the ndimensional "in slice portion"
-                # of the point, and multiplying them together
-                out_of_slice_portion = np.prod(
-                    1 - (radius_segment / radius[:, None])
-                )
-                radius_segment = (1 - out_of_slice_portion) * radius
-
-                # radius of the "disc"
-                disc_radius = np.sqrt(radius**2 - radius_segment**2)
-                size = disc_radius * 2
-
-                visible = visible[valid]
+            # margins can be different, so we need to treat low/high distance independently
+            slice_end = np.where(
+                dist_from_point < 0, low - point, high - point
+            )
+            # we multiply the scales from each dimension into a single one
+            scale = np.prod(1 - dist_from_point / slice_end, axis=1)
+            size = size * scale
 
         return visible, size
