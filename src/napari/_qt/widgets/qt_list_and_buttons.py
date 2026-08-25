@@ -3,7 +3,12 @@ from qtpy.QtWidgets import QWIDGETSIZE_MAX, QVBoxLayout, QWidget
 
 
 class QtLayerListAndButtons(QWidget):
-    def __init__(self, layer_buttons, layer_list, viewer_buttons):
+    def __init__(
+        self,
+        layer_buttons: QWidget,
+        layer_list: QWidget,
+        viewer_buttons: QWidget,
+    ) -> None:
         super().__init__()
         self.setObjectName('layerList')
         layerListLayout = QVBoxLayout()
@@ -13,7 +18,7 @@ class QtLayerListAndButtons(QWidget):
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         self.setLayout(layerListLayout)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         # because we use Maximum as dock widget size policy;
         # without this, this widget would take just enough space
         # instead of all the available space
