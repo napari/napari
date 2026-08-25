@@ -455,6 +455,21 @@ def test_pressing_the_padlock_never_flashes_it(qt_dims):
     assert not slider_widget.lock_button.property('flash')
 
 
+def test_locking_a_playing_axis_stops_it(qt_dims, qtbot):
+    """A blocked write emits nothing, so the frame pump would wait forever."""
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+
+    with qtbot.waitSignal(qt_dims._animation_thread.started):
+        qt_dims.play(0, fps=20)
+    qtbot.waitUntil(lambda: qt_dims.is_playing)
+
+    with qtbot.waitSignal(qt_dims._animation_thread.finished):
+        qt_dims.dims.lock_axis(0)
+
+    assert not qt_dims.is_playing
+
+
 def test_locked_axis_does_not_start_playing(qt_dims):
     qt_dims.dims.ndim = 3
     qt_dims.dims.set_range(0, (0, 5, 1))
