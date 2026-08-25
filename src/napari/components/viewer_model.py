@@ -157,12 +157,20 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
+    canvas : napari.components.canvas.Canvas
+        The canvas model, controlling grid mode and canvas overlays.
+
+        .. versionadded:: 0.9.0
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
     layers : napari.components.layerlist.LayerList
         List of contained layers.
+    scene : napari.components.scene.Scene
+        The scene model, controlling the camera and scene overlays.
+
+        .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
     window : napari._qt.qt_main_window.Window
@@ -285,6 +293,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def camera(self) -> Camera:
+        """The camera model controlling the view of the scene.
+
+        .. deprecated:: 0.9.0
+            The camera property is deprecated. Use `viewer.scene.camera` instead.
+        """
         return self.scene.camera
 
     @property
@@ -296,6 +309,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def axes(self) -> SceneAxesOverlay:
+        """The overlay controlling the display of the scene axes.
+
+        .. deprecated:: 0.9.0
+            The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
+        """
         return self.scene.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -307,6 +325,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> CanvasAxesOverlay:
+        """The overlay controlling the display of the canvas axes.
+
+        .. deprecated:: 0.9.0
+            The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
+        """
         return self.canvas.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -318,6 +341,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
+        """The overlay controlling the display of the scale bar.
+
+        .. deprecated:: 0.9.0
+            The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
+        """
         return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
     @property
@@ -329,6 +357,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
+        """The overlay controlling the display of text on the canvas.
+
+        .. deprecated:: 0.9.0
+            The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
+        """
         return self.canvas.overlays.text  # type: ignore[return-value]
 
     @property
@@ -340,6 +373,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:
+        """The model controlling the display of the grid mode.
+
+        .. deprecated:: 0.9.0
+            The grid property is deprecated. Use `viewer.canvas.grid` instead.
+        """
         return self.canvas.grid
 
     def _update_camera_orientation(self):
