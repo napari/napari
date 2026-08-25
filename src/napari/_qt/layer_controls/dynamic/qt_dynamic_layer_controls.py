@@ -323,10 +323,8 @@ class QtDynamicLayerControls(QFrame):
             control = self.findChild(cls)
             if control is None:
                 continue
-            for label, widget in control.get_widget_controls():
-                set_widgets_enabled_with_opacity(
-                    self, (label, widget), enabled
-                )
+            for widgets in control.get_widget_controls():
+                set_widgets_enabled_with_opacity(self, widgets, enabled)
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)
