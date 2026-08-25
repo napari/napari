@@ -267,6 +267,8 @@ class Vectors(Layer):
             edge_color=Event,
             vector_style=Event,
             edge_color_mode=Event,
+            edge_colormap=Event,
+            edge_contrast_limits=Event,
             properties=Event,
             out_of_slice_display=WarningEmitter(
                 _OUT_SLICE_DISP_WARNING_MSG,
@@ -304,6 +306,15 @@ class Vectors(Layer):
                 if self._data.size > 0
                 else self._feature_table.currents()
             ),
+        )
+        self._edge.events.color_mode.connect(
+            lambda _event: self.events.edge_color_mode()
+        )
+        self._edge.events.continuous_colormap.connect(
+            lambda _event: self.events.edge_colormap()
+        )
+        self._edge.events.contrast_limits.connect(
+            lambda _event: self.events.edge_contrast_limits()
         )
 
         # now that everything is set up, make the layer visible (if set to visible)
@@ -610,7 +621,6 @@ class Vectors(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: str | ColorMode):
         edge_color_mode = ColorMode(edge_color_mode)
-        old_mode = self._edge.color_mode
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge.color_mode = edge_color_mode
@@ -649,9 +659,6 @@ class Vectors(Layer):
 
             self._edge.color_mode = edge_color_mode
             self.events.edge_color()
-
-        if self._edge.color_mode != old_mode:
-            self.events.edge_color_mode()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
