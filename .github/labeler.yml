@@ -4,32 +4,35 @@
 # Marketplace Action docs: https://github.com/marketplace/actions/labeler
 design:
   - changed-files:
-    - any-glob-to-any-file: 'napari/_qt/qt_resources/**/*'
-
-preferences:
-  - changed-files:
-    - any-glob-to-any-file:
-      - 'napari/_qt/**/*/preferences_dialog.py'
-      - 'napari/settings/**/*.py'
-
-qt:
-  - changed-files:
-    - any-glob-to-any-file:
-      - 'napari/_qt/**/*.py'
-      - 'napari/_qt/**/*.py'
-      - 'napari/qt/**/*.py'
-      - 'napari/qt/**/*.py'
-
-tests:
-  - changed-files:
-    - any-glob-to-any-file: '**/*/_tests/**/*.py'
-
-vispy:
-  - changed-files:
-    - any-glob-to-any-file: 'napari/_vispy'
+    - any-glob-to-any-file: 'src/napari/_qt/qt_resources/**/*'
 
 maintenance:
   - changed-files:
     - any-glob-to-any-file:
       - '.pre-commit-config.yaml'
       - '.github/**/*'
+
+# topics
+'topic:preferences':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/napari/_qt/**/*/preferences_dialog.py'
+      - 'src/napari/settings/**/*.py'
+
+'topic:qt':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/napari/_qt/**/*.py'
+      - 'src/napari/_qt/**/*.py'
+      - 'src/napari/qt/**/*.py'
+      - 'src/napari/qt/**/*.py'
+
+'topic:vispy':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/napari/_vispy/**/*.py'
+
+'topic:layer':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/napari/layers/**/*.py'
