@@ -585,7 +585,8 @@ class QtContrastLimitsControl(
             layers=self._layers,
             parent=self.parent(),
         )
-        self.clim_popup.move_to('top', min_length=650)
+        if self.parent():
+            self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
 
     def eventFilter(self, obj, event):

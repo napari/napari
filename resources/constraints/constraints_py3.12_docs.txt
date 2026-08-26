@@ -71,7 +71,7 @@ bioio-imageio==1.3.0
     # via ndevio
 bioio-ome-tiff==1.4.0
     # via ndevio
-bioio-ome-zarr==3.7.0
+bioio-ome-zarr==3.8.0
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
@@ -119,7 +119,7 @@ coverage==7.15.4
     # via napari (pyproject.toml)
 cuda-bindings==13.3.1
     # via torch
-cuda-pathfinder==1.6.1
+cuda-pathfinder==1.7.0
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
@@ -164,7 +164,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.22.2
     # via nbformat
-filelock==3.32.3
+filelock==3.32.4
     # via
     #   gdown
     #   python-discovery
@@ -340,7 +340,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.1.1
+lxml==6.1.2
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -731,9 +731,9 @@ pyproj==3.7.2
     # via geopandas
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.2
+pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.10.2
+pyqt6-qt6==6.11.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
@@ -796,7 +796,7 @@ pyyaml==6.0.3
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
     #   trackastra
-pyzmq==27.1.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -860,7 +860,7 @@ scikit-learn==1.8.0
     # via
     #   glasbey
     #   nilearn
-scipy==1.18.0
+scipy==1.18.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -976,7 +976,7 @@ tensorstore==0.1.85
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.8.16
+tifffile==2026.8.23
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -1071,7 +1071,7 @@ urllib3==2.7.0
     # via
     #   botocore
     #   requests
-uvicorn==0.52.3
+uvicorn==0.52.4
     # via sphinx-autobuild
 virtualenv==21.7.4
     # via napari (pyproject.toml)

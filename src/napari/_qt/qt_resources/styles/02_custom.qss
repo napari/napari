@@ -670,6 +670,16 @@ QCommandList::item:selected {
   background-color: {{ primary }};
 }
 
+/* ------------- JSON-schema form validation state --------- */
+/* see qt_json_builder.qt_jsonschema_form.widgets.SchemaWidgetMixin */
+*[invalid="true"] {
+  background-color: {{ error }};
+}
+
+QLabel[invalid-msg="true"] {
+  color: {{ opacity(text, 178) }};
+}
+
 /* mixed_value widgets, warning color */
 
 QPushButton[mixed_value="true"] {
