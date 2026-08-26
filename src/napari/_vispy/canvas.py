@@ -405,6 +405,8 @@ class VispyCanvas:
                 self._active_layer.events.brush_size_is_canvas.disconnect(
                     self._on_cursor
                 )
+        # Now we update self._active_layer and wire its mode changes
+        # to the cursor state
         self._active_layer = self.viewer.layers.selection.active
         if self._active_layer is not None:
             self._active_layer.events.mode.connect(self._on_cursor)
