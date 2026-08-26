@@ -904,7 +904,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            if status['value'] != '':
+            if status['value'] == '':
                 # 'coordinates' is the one used by the status bar itself
                 status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
