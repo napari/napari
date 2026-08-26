@@ -257,11 +257,8 @@ class Shapes(Layer):
     nshapes : int
         Total number of shapes.
     is_creating : bool
-        Read-only flag, ``True`` while a shape is being drawn -- from drawing
-        initiation until the shape is finished or cancelled. The
-        ``drawing_started`` and ``drawing_finished`` events fire at its
-        boundaries. Unlike ``mode`` (which stays on an ``add_*`` value before,
-        during and after a draw) this tracks the actual construction window.
+        Read-only flag, ``True`` while a shape is being drawn. The
+        ``drawing_started`` and ``drawing_finished`` events fire at its edges.
     mode : Mode
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -1322,13 +1319,8 @@ class Shapes(Layer):
     def is_creating(self) -> bool:
         """bool: whether a shape is currently being drawn.
 
-        ``True`` from the moment a new shape's construction begins until it is
-        finished or cancelled. ``drawing_started`` fires before the initial
-        geometry is added to the layer, so a listener reacting to it should not
-        assume the new shape is already in ``data``. Unlike ``mode``, which
-        stays on an ``add_*`` value before, during and after a draw, this
-        tracks the actual construction window. The ``drawing_started`` and
-        ``drawing_finished`` events fire at its boundaries.
+        ``drawing_started`` fires before the new shape's initial geometry is
+        added to the layer, so a listener must not assume it is in ``data``.
 
         .. versionadded:: 0.10.0
         """
@@ -1340,8 +1332,6 @@ class Shapes(Layer):
 
     @_is_creating.setter
     def _is_creating(self, value: bool) -> None:
-        # Edge-triggered: only a real transition fires, so listeners see one
-        # event per draw rather than one per assignment.
         value = bool(value)
         if value == self._private_is_creating:
             return

@@ -2810,44 +2810,25 @@ def test_outline_not_drawn_off_slice():
     assert layer._outline_shapes() == (None, None)  # hover-only path
 
 
-def test_is_creating_tracks_draw_window_and_is_edge_triggered():
+def test_is_creating_is_edge_triggered():
     layer = Shapes()
     started, finished = Mock(), Mock()
     layer.events.drawing_started.connect(started)
     layer.events.drawing_finished.connect(finished)
-
     assert layer.is_creating is False
+
     layer._is_creating = False  # same value: no event
     started.assert_not_called()
 
     layer._is_creating = True
     assert layer.is_creating is True
     started.assert_called_once()
-    layer._is_creating = True  # repeat: still once
+    layer._is_creating = True
     started.assert_called_once()
     finished.assert_not_called()
 
     layer._is_creating = False
     assert layer.is_creating is False
     finished.assert_called_once()
-    layer._is_creating = False  # repeat: still once
-    finished.assert_called_once()
-
-
-def test_drawing_events_multivertex_lifecycle():
-    from napari.layers.shapes import _shapes_mouse_bindings as mb
-
-    layer = Shapes()
-    layer.mode = 'add_polygon'
-    started, finished = Mock(), Mock()
-    layer.events.drawing_started.connect(started)
-    layer.events.drawing_finished.connect(finished)
-
-    mb.initiate_polygon_draw(layer, np.array([10.0, 10.0]))
-    assert layer.is_creating is True
-    started.assert_called_once()
-    finished.assert_not_called()
-
-    layer._finish_drawing()
-    assert layer.is_creating is False
+    layer._is_creating = False
     finished.assert_called_once()

@@ -1022,6 +1022,10 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
     def is_creating_is_False(event):
         assert not event.source._is_creating
 
+    started, finished = Mock(), Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
     assert not layer._is_creating
     layer.events.set_data.connect(is_creating_is_True)
 
@@ -1044,6 +1048,8 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
     mouse_double_click_callbacks(layer, end_click)
 
     assert not layer._is_creating
+    started.assert_called_once()
+    finished.assert_called_once()
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
@@ -1374,32 +1380,3 @@ def test_drag_start_selection(
         pytest.fail('Unreachable code')
     assert layer._drag_box is None
     assert layer._drag_start is None
-
-
-def test_add_simple_shape_drawing_events(create_known_shapes_layer):
-    layer, _, known_non_shape = create_known_shapes_layer
-    layer.mode = 'add_rectangle'
-
-    started, finished = Mock(), Mock()
-    layer.events.drawing_started.connect(started)
-    layer.events.drawing_finished.connect(finished)
-
-    event = read_only_mouse_event(type='mouse_press', position=known_non_shape)
-    mouse_press_callbacks(layer, event)
-    # the start boundary is the press, not the release
-    assert layer.is_creating is True
-    started.assert_called_once()
-    finished.assert_not_called()
-
-    end = [40, 60]
-    event = read_only_mouse_event(
-        type='mouse_move', is_dragging=True, position=end
-    )
-    mouse_move_callbacks(layer, event)
-
-    event = read_only_mouse_event(type='mouse_release', position=end)
-    mouse_release_callbacks(layer, event)
-
-    assert layer.is_creating is False
-    started.assert_called_once()
-    finished.assert_called_once()
