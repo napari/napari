@@ -633,7 +633,7 @@ class QtViewer(QSplitter):
                     data_displayed=False,
                     thumbnail=True,
                     highlight=True,
-                    extent=True,
+                    extent=False,  # already updated
                 )
 
     def _on_active_change(self) -> None:
