@@ -39,7 +39,6 @@ from napari._qt.layer_controls.dynamic.widgets._labels import (
     QtPreserveLabelsCheckBoxControl,
 )
 from napari._qt.layer_controls.dynamic.widgets._points import (
-    QtBorderColorControl,
     QtCurrentSizeSliderControl,
     QtSymbolComboBoxControl,
 )
@@ -62,19 +61,18 @@ from napari._qt.layer_controls.dynamic.widgets._tracks import (
     QtTailWidthSliderControl,
 )
 from napari._qt.layer_controls.dynamic.widgets._vectors import (
-    QtEdgeColorFeatureControl,
     QtLengthSpinBoxControl,
     QtVectorStyleComboBoxControl,
     QtWidthSpinBoxControl,
+)
+from napari._qt.layer_controls.dynamic.widgets.qt_colormanager_controls import (
+    QtColorManagerControl,
 )
 from napari._qt.layer_controls.dynamic.widgets.qt_colormap_control import (
     QtColormapControl,
 )
 from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
     QtContrastLimitsControl,
-)
-from napari._qt.layer_controls.dynamic.widgets.qt_face_color import (
-    QtFaceColorControl,
 )
 from napari._qt.layer_controls.dynamic.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
@@ -120,10 +118,16 @@ controls_dict = {
     ),
     Points | Shapes: (
         QtTextVisibilityControl,
-        QtFaceColorControl,
+        (
+            QtColorManagerControl,
+            {'display_name': 'border', 'colormanager_attribute': '_border'},
+        ),
     ),
     Points: (
-        QtBorderColorControl,
+        (
+            QtColorManagerControl,
+            {'display_name': 'face', 'colormanager_attribute': '_face'},
+        ),
         QtCurrentSizeSliderControl,
         QtSymbolComboBoxControl,
     ),
@@ -160,7 +164,10 @@ controls_dict = {
         QtTailDisplayCheckBoxControl,
     ),
     Vectors: (
-        QtEdgeColorFeatureControl,
+        (
+            QtColorManagerControl,
+            {'display_name': 'edge', 'colormanager_attribute': '_edge'},
+        ),
         QtWidthSpinBoxControl,
         QtLengthSpinBoxControl,
         QtVectorStyleComboBoxControl,
@@ -245,8 +252,12 @@ class QtDynamicLayerControls(QFrame):
         for layer_type, controls in controls_dict.items():
             if all(isinstance(layer, layer_type) for layer in self._layers):
                 for control in controls:
+                    if isinstance(control, tuple):
+                        control, kwargs = control
+                    else:
+                        kwargs = {}
                     self._add_widget_controls(
-                        control(parent=self, layers=layers)
+                        control(parent=self, layers=layers, **kwargs)
                     )
         for layer in self._layers:
             layer.events.data.connect(self._on_surface_coloring_change)
