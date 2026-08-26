@@ -116,17 +116,15 @@ controls_dict = {
         QtGammaSliderControl,
         QtColormapControl,
     ),
-    Points | Shapes: (
-        QtTextVisibilityControl,
-        (
-            QtColorManagerControl,
-            {'display_name': 'border', 'colormanager_attribute': '_border'},
-        ),
-    ),
+    Points | Shapes: (QtTextVisibilityControl,),
     Points: (
         (
             QtColorManagerControl,
             {'display_name': 'face', 'colormanager_attribute': '_face'},
+        ),
+        (
+            QtColorManagerControl,
+            {'display_name': 'border', 'colormanager_attribute': '_border'},
         ),
         QtCurrentSizeSliderControl,
         QtSymbolComboBoxControl,
@@ -151,6 +149,10 @@ controls_dict = {
     Shapes: (
         QtEdgeColorControl,
         QtEdgeWidthSliderControl,
+        (
+            QtColorManagerControl,
+            {'display_name': 'edge', 'colormanager_attribute': '_edge'},
+        ),
     ),
     Tracks: (
         QtColorPropertiesComboBoxControl,

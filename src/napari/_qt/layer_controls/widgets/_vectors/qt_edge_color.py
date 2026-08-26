@@ -137,14 +137,14 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
     def _on_edge_color_change(self):
         """Receive layer model edge color  change event & update dropdown."""
         if (
-            self._layer._edge.color_mode == ColorMode.DIRECT
+            self._layer._edge.color_mode == ColorMode.direct
             and len(self._layer.data) > 0
         ):
             with qt_signals_blocked(self.edge_color_edit):
                 self.edge_color_edit.setColor(self._layer.edge_color[0])
         elif self._layer._edge.color_mode in (
-            ColorMode.CYCLE,
-            ColorMode.COLORMAP,
+            ColorMode.cycle,
+            ColorMode.colormap,
         ):
             with qt_signals_blocked(self.color_feature_box):
                 prop = self._layer._edge.color_properties.name

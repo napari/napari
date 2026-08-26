@@ -290,19 +290,19 @@ class Points(Layer):
     face_color_mode : str
         Face color setting mode.
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        direct (default mode) allows each point to be set arbitrarily
 
-        CYCLE allows the color to be set via a color cycle over an attribute
+        cycle allows the color to be set via a color cycle over an attribute
 
-        COLORMAP allows color to be set via a color map over an attribute
+        colormap allows color to be set via a color map over an attribute
     border_color_mode : str
         Border color setting mode.
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        direct (default mode) allows each point to be set arbitrarily
 
-        CYCLE allows the color to be set via a color cycle over an attribute
+        cycle allows the color to be set via a color cycle over an attribute
 
-        COLORMAP allows color to be set via a color map over an attribute
+        colormap allows color to be set via a color map over an attribute
     shading : Shading
         Shading mode.
     antialiasing: float
@@ -772,7 +772,7 @@ class Points(Layer):
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
             if color_name not in feature_table.values:
-                color_manager.color_mode = ColorMode.DIRECT
+                color_manager.color_mode = ColorMode.direct
                 color_manager.color_properties = None
                 warnings.warn(
                     f'property used for {name} dropped',
@@ -1180,11 +1180,11 @@ class Points(Layer):
     def border_color_mode(self) -> str:
         """str: border color setting mode
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        direct (default mode) allows each point to be set arbitrarily
 
-        CYCLE allows the color to be set via a color cycle over an attribute
+        cycle allows the color to be set via a color cycle over an attribute
 
-        COLORMAP allows color to be set via a color map over an attribute
+        colormap allows color to be set via a color map over an attribute
         """
         return self._border.color_mode
 
@@ -1267,11 +1267,11 @@ class Points(Layer):
     def face_color_mode(self) -> str:
         """str: Face color setting mode
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        direct (default mode) allows each point to be set arbitrarily
 
-        CYCLE allows the color to be set via a color cycle over an attribute
+        cycle allows the color to be set via a color cycle over an attribute
 
-        COLORMAP allows color to be set via a color map over an attribute
+        colormap allows color to be set via a color map over an attribute
         """
         return self._face.color_mode
 
@@ -1298,9 +1298,9 @@ class Points(Layer):
         color_mode = ColorMode(color_mode)
         color_manager = getattr(self, f'_{attribute}')
 
-        if color_mode == ColorMode.DIRECT:
+        if color_mode == ColorMode.direct:
             color_manager.color_mode = color_mode
-        elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
+        elif color_mode in (ColorMode.cycle, ColorMode.colormap):
             if color_manager.color_properties is not None:
                 color_property = color_manager.color_properties.name
             else:
@@ -1323,13 +1323,13 @@ class Points(Layer):
                         f'There must be a valid Points.properties to use {color_mode}'
                     )
 
-            # ColorMode.COLORMAP can only be applied to numeric properties
+            # ColorMode.colormap can only be applied to numeric properties
             color_property = color_manager.color_properties.name
-            if (color_mode == ColorMode.COLORMAP) and not issubclass(
+            if (color_mode == ColorMode.colormap) and not issubclass(
                 self.features[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    'selected property must be numeric to use ColorMode.colormap'
                 )
             color_manager.color_mode = color_mode
 
