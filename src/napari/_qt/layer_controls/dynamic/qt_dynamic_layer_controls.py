@@ -74,6 +74,9 @@ from napari._qt.layer_controls.dynamic.widgets.qt_colormap_control import (
 from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
     QtContrastLimitsControl,
 )
+from napari._qt.layer_controls.dynamic.widgets.qt_face_color import (
+    QtFaceColorControl,
+)
 from napari._qt.layer_controls.dynamic.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
@@ -148,6 +151,7 @@ controls_dict = {
     ),
     Shapes: (
         QtEdgeColorControl,
+        QtFaceColorControl,
         QtEdgeWidthSliderControl,
         (
             QtColorManagerControl,
