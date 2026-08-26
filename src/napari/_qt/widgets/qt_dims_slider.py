@@ -699,20 +699,6 @@ class AnimationThread(QThread):
             )
         self.max_point += 1  # range is inclusive
 
-    def refresh_dims_range(self) -> bool:
-        """Re-read the axis extent, then resync the bounds and position.
-
-        Returns False when an explicit frame range no longer fits the axis.
-        """
-        try:
-            self.set_frame_range(self.frame_range)
-        except IndexError:
-            return False
-        self.current = min(
-            max(self.current, self.min_point), self.max_point - 1
-        )
-        return True
-
     @Slot()
     def advance(self):
         """Advance the current frame in the animation.

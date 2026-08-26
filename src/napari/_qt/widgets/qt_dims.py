@@ -93,15 +93,28 @@ class QtDims(QWidget):
         for widget in self.slider_widgets:
             widget._update_range()
 
-        if self._animation_thread.isRunning():
-            axis = self._animation_thread.axis
+        animation_thread = self._animation_thread
+        if animation_thread.isRunning():
+            axis = animation_thread.axis
+            frame_range = animation_thread.frame_range
             if (
                 axis is None
                 or axis >= len(self._displayed_sliders)
                 or not self._displayed_sliders[axis]
-                or not self._animation_thread.refresh_dims_range()
+            ) or (
+                frame_range != (0, 0)
+                and frame_range[1] >= self.dims.nsteps[axis]
             ):
                 self.stop()
+            else:
+                animation_thread.set_frame_range(frame_range)
+                animation_thread.current = min(
+                    max(
+                        animation_thread.current,
+                        animation_thread.min_point,
+                    ),
+                    animation_thread.max_point - 1,
+                )
 
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
