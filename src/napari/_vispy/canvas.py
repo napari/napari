@@ -389,6 +389,9 @@ class VispyCanvas:
 
     def _on_active_layer_change(self, event=None) -> None:
         """Track the active layer and rewire its mode event to refresh the cursor."""
+        # at this point, self._active_layer holds the *previously* active layer;
+        # we know that's changed so we make its overlays invisible and disconnect
+        # its events.
         if self._active_layer is not None:
             if brush_overlay := self._active_layer._overlays.get(
                 'brush_circle', None
