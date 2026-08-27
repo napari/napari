@@ -263,9 +263,9 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        rgb = len(xr_source.shape) != ndim
+        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
         xr_metadata = _get_xr_metadata(
-            xr_source,
+            xr_source,  # pyrefly: ignore [bad-argument-type]
             rgb=rgb,
             axis_labels=axis_labels,
             scale=scale,

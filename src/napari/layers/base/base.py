@@ -609,7 +609,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if translate is None:
             translate = [0] * ndim
         self._initial_affine = coerce_affine(
-            affine,
+            affine,  # pyrefly: ignore [bad-argument-type]
             ndim=ndim,
             name='physical2world',
         )

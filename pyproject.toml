@@ -609,6 +609,7 @@ project-excludes = [
     'src/napari/_qt/layer_controls/widgets/qt_out_slice_checkbox.py',
     'src/napari/_qt/layer_controls/widgets/qt_projection_mode_control.py',
     'src/napari/_qt/layer_controls/widgets/qt_text_visibility.py',
+    'src/napari/_qt/layer_controls/dynamic/**',
     'src/napari/_qt/menus/_util.py',
     'src/napari/_qt/menus/file_menu.py',
     'src/napari/_qt/perf/qt_event_tracing.py',

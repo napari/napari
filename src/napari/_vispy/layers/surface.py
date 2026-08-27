@@ -125,12 +125,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         if has_tex and self._texture_filter is None:
             self._texture_filter = TextureFilter(
-                np.flipud(self.layer.texture),
+                np.flipud(self.layer.texture),  # pyrefly: ignore [no-matching-overload]
                 self.layer._view_texcoords,
             )
             self.node.attach(self._texture_filter)
         elif has_tex:
-            self._texture_filter.texture = np.flipud(self.layer.texture)  # pyrefly: ignore [missing-attribute]
+            self._texture_filter.texture = np.flipud(self.layer.texture)  # pyrefly: ignore [missing-attribute, no-matching-overload]
             self._texture_filter.texcoords = self.layer._view_texcoords  # pyrefly: ignore [missing-attribute]
 
         if self._texture_filter is not None:

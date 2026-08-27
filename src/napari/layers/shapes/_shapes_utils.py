@@ -461,7 +461,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # pyrefly: ignore [bad-return]
 
 
 def rectangle_to_box(
