@@ -17,7 +17,8 @@ import napari
 blobs = data.binary_blobs(
     length=100, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.05
 )
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 # create the points
 points = []
@@ -44,7 +45,6 @@ points_layer = viewer.add_points(
     border_width_is_relative=False,
     border_color='border_feature',
     face_color='face_feature',
-    out_of_slice_display=False,
 )
 
 # change the face color cycle

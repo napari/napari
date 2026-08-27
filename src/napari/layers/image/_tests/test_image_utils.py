@@ -10,8 +10,8 @@ from hypothesis import given
 from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
 
+from napari.layers._scalar_field._slice import _ScalarFieldSliceRequest
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
-from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.utils._slice_input import _ThickNDSlice
 
 data_dask = da.random.random(
@@ -142,7 +142,7 @@ def test_timing_multiscale_big():
 
 def test_create_data_indexing():
     point = (np.nan, 10.1, 2.6, 4)
-    idx = _ImageSliceRequest._point_to_slices(point)
+    idx = _ScalarFieldSliceRequest._point_to_slices(point)
     expected = (slice(None), 10, 3, 4)
     assert idx == expected
 
@@ -153,7 +153,7 @@ def test_create_data_indexing():
         margin_left=(np.nan, 0, 1.6, 0.3, 1),
         margin_right=(np.nan, 0.1, 0.3, 0.5, 0.6),
     )
-    idx = _ImageSliceRequest._data_slice_to_slices(
+    idx = _ScalarFieldSliceRequest._data_slice_to_slices(
         data_slice, dims_displayed=(0,)
     )
     expected = (

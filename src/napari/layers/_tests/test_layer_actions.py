@@ -18,8 +18,10 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _split_rgb,
     _split_stack,
+    _toggle_lock,
     _toggle_visibility,
 )
+from napari.utils.transforms import Affine
 
 REG = pint.get_application_registry()
 
@@ -37,18 +39,37 @@ def test_split_stack():
         assert layer_list[idx].data.shape == (8, 8)
 
 
-def test_split_rgb():
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'affine'),
+    [
+        (None, None, None),
+        ([2.0, 2.0], None, None),
+        (None, [0, 4], None),
+        (None, None, Affine(translate=[0, 4])),
+    ],
+)
+def test_split_rgb(scale, translate, affine):
     layer_list = LayerList()
-    layer_list.append(Image(np.random.random((48, 48, 3))))
+    image = Image(
+        np.zeros((8, 8, 3)),
+        rgb=True,
+        affine=affine,
+        translate=translate,
+        scale=scale,
+    )
+    layer_list.append(image)
     assert len(layer_list) == 1
-    assert layer_list[0].rgb is True
+    assert layer_list[0].rgb
 
     layer_list.selection.active = layer_list[0]
     _split_rgb(layer_list)
     assert len(layer_list) == 3
 
     for idx in range(3):
-        assert layer_list[idx].data.shape == (48, 48)
+        assert layer_list[idx].data.shape == (8, 8)
+        np.testing.assert_allclose(
+            layer_list[idx].affine.affine_matrix, image.affine.affine_matrix
+        )
 
 
 def test_merge_stack():
@@ -100,6 +121,35 @@ def test_toggle_visibility():
     assert layer_list[0].visible is True
 
 
+def test_toggle_lock():
+    """Single locked layer flips to unlocked and back."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.selection.active = layer_list[0]
+
+    _toggle_lock(layer_list)
+    assert layer_list[0].locked
+
+    _toggle_lock(layer_list)
+    assert not layer_list[0].locked
+
+
+def test_toggle_lock_mixed_selection():
+    """Mixed selection flips each layer's locked state independently."""
+    layer_list = LayerList()
+    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Points([[0, 0]]))
+    layer_list[0].locked = True
+
+    layer_list.selection.active = layer_list[0]
+    layer_list.selection.add(layer_list[1])
+
+    _toggle_lock(layer_list)
+
+    assert not layer_list[0].locked
+    assert layer_list[1].locked
+
+
 def test_toggle_visibility_with_linked_layers():
     """Test toggling visibility of a layer."""
     layer_list = LayerList()
@@ -136,7 +186,7 @@ def test_duplicate_layers(layer_type):
     layer_list.append(layer_type([], name='test'))
     layer_list.selection.active = layer_list[0]
     layer_list[0].events.data.connect(_dummy)
-    assert len(layer_list[0].events.data.callbacks) == 2
+    assert len(layer_list[0].events.data.callbacks) == 3
     assert len(layer_list) == 1
     _duplicate_layer(layer_list)
     assert len(layer_list) == 2
@@ -144,7 +194,7 @@ def test_duplicate_layers(layer_type):
     assert layer_list[1].name == 'test copy'
     assert layer_list[1].events.source is layer_list[1]
     assert (
-        len(layer_list[1].events.data.callbacks) == 1
+        len(layer_list[1].events.data.callbacks) == 2
     )  # `events` Event Emitter
     assert layer_list[1].source.parent() is layer_list[0]
 
@@ -278,6 +328,7 @@ def test_convert_dtype(mode):
     assert ll[-1].data.flatten().sum() == 1000
 
 
+@pytest.mark.filterwarnings('ignore:projection mode :UserWarning')
 @pytest.mark.parametrize(
     ('layer', 'type_'),
     [
@@ -298,7 +349,7 @@ def test_convert_layer(layer, type_):
     original_scale = layer.scale.copy()
     ll.append(layer)
     assert ll[0]._type_string != type_
-    _convert(ll, type_)
+    _convert(ll, 'labels')
     if isinstance(layer, Shapes) or (
         type_ == 'labels'
         and isinstance(layer, Image)
@@ -312,7 +363,36 @@ def test_convert_layer(layer, type_):
         )  # check array data not copied unnecessarily
 
 
-def test_convert_warns_with_projecton_mode():
+@pytest.mark.parametrize(
+    ('scale', 'translate', 'xfail'),
+    [
+        ((1.0, 1.0), (0.0, 0.0), False),  # default
+        ((1.0, 1.0), (30.0, 30.0), True),  # translated, currently fails
+        ((5.0, 5.0), (0.0, 0.0), False),  # scaled
+    ],
+)
+def test_make_label_from_shape_param(scale, translate, xfail):
+    """Tests that label shape matches the maximum extent of added shape, with optional scale and translate."""
+    ll = LayerList()
+    # add an image
+    layer = Image(np.zeros((20, 20)))
+    layer.scale = np.array(scale)
+    layer.translate = np.array(translate)
+    ll.append(layer)
+    # add a shape within the image
+    shape = Shapes([np.array([[5, 5], [5, 25], [25, 5], [25, 25]])])
+    shape.scale = np.array(scale)
+    shape.translate = np.array(translate)
+    ll.append(shape)
+    # Create a label based on the shape.
+    if xfail:
+        pytest.xfail('Converting layers with translations does not work')
+    _convert(ll, 'labels')
+    # the label layer should match the layer list extent
+    assert np.array_equal(ll[-1].extent.world, ll.extent.world)
+
+
+def test_convert_warns_with_projection_mode():
     # inplace
     ll = LayerList(
         [Image(np.random.rand(10, 10).astype(int), projection_mode='mean')]
@@ -334,3 +414,93 @@ def make_three_layer_layerlist():
     layer_list.append(Image(np.random.rand(8, 8, 8)))
 
     return layer_list
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_projection(mode):
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+    assert np.array_equal(
+        projected_layer.data[0], getattr(np, mode)(data[0], axis=0)
+    )
+    assert np.array_equal(
+        projected_layer.data[1], getattr(np, mode)(data[1], axis=0)
+    )
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_nondecreasing_pyramid_multiscale_projection(mode, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 8 * 8).reshape(2, 8, 8),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+
+    for projected, original in zip(projected_layer.data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected,
+            getattr(np, mode)(original, axis=0),
+        )
+
+    assert len(warnings) == 1
+    assert 'Projection warning' in warnings[0]
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_zarr_projection_is_lazy(mode):
+    import dask.array as da
+
+    projecting_axis = 0
+
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+
+    zarr_data = tuple(zarr.array(array, chunks=(1, 2, 2)) for array in data)
+    ll = LayerList([Image(data=zarr_data, multiscale=True)])
+
+    _project(ll, mode=mode, axis=projecting_axis)
+
+    projected_data = ll[-1].data
+    assert all(isinstance(level, da.Array) for level in projected_data)
+
+    if mode != 'median':
+        for projected_level, zarr_level in zip(
+            projected_data, zarr_data, strict=True
+        ):
+            expected_chunk = tuple(
+                chunk
+                for index, chunk in enumerate(zarr_level.chunks)
+                if projecting_axis != index
+            )
+            assert projected_level.chunksize == expected_chunk
+
+    for projected, original in zip(projected_data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected.compute(),
+            getattr(np, mode)(original, axis=projecting_axis),
+        )

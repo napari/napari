@@ -1,23 +1,32 @@
+from __future__ import annotations
+
 import csv
-import itertools
 import os
 import re
-from collections.abc import Sequence
+import tokenize
 from contextlib import suppress
 from glob import glob
+from itertools import chain, pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
-import dask.array as da
 import imageio.v3 as iio
 import numpy as np
+import numpy.typing as npt
 from dask import delayed
 
+from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from napari.types import FullLayerData, LayerData, ReaderFunction
+    from collections.abc import Iterable, Sequence
+
+    from napari.types import (
+        FullLayerData,
+        LayerData,
+        PathOrPaths,
+        ReaderFunction,
+    )
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -34,6 +43,52 @@ def _is_url(filename):
     Originally vendored from scikit-image/skimage/io/util.py
     """
     return isinstance(filename, str) and URL_REGEX.match(filename) is not None
+
+
+def _git_provider_url_to_raw_url(filename: str) -> str:
+    """Convert a git provider's URL to a raw file URL.
+
+    A git provider could be GitHub URL, GitHub Gist URL, or GitLab URL.
+    Parameters
+    ----------
+    filename : str
+        The git provider URL to convert.
+    Returns
+    -------
+    str
+        The raw file URL.
+    """
+    from urllib.parse import urlparse
+
+    parsed_url = urlparse(filename)
+    # For a GitLab file URL that contains `blob/` replace with `raw`
+    if 'gitlab' in parsed_url.netloc:
+        return filename.replace('blob/', 'raw/')
+    # For GitHub gists, we need to substitute `githubusercontent` and
+    # append `/raw` to get the raw content
+    if parsed_url.netloc == 'gist.github.com':
+        base_url = filename.replace(
+            'gist.github.com', 'gist.githubusercontent.com'
+        )
+        if not base_url.endswith('/raw'):
+            if '#' in base_url:
+                # Split at fragment and add /raw before it
+                parts = base_url.split('#')
+                base_url = f'{parts[0]}/raw' + (
+                    f'#{parts[1]}' if len(parts) > 1 else ''
+                )
+            else:
+                base_url += '/raw'
+        return base_url
+
+    # For GitHub repository URLs, substitute `raw.githubusercontent.com` and `r'/refs/heads/'`
+    if parsed_url.netloc == 'github.com':
+        return filename.replace(
+            'github.com', 'raw.githubusercontent.com'
+        ).replace('/blob/', r'/refs/heads/')
+
+    # Return filename if no match is found for a git provider
+    return filename
 
 
 def imread(filename: str) -> np.ndarray:
@@ -64,13 +119,17 @@ def _guess_zarr_path(path: str) -> bool:
 
 
 def read_zarr_dataset(path: str):
-    """Read a zarr dataset, including an array or a group of arrays.
+    """Read a local or HTTP remote zarr store
+
+    If the store is a single array, open it. If it's a group and local,
+    load it as a list of arrays. For remote groups, can't traverse the hierarchy
+    via HTTP, so inform the user to open an array directly.
+    If it's a group of groups, open the first group and inform the user.
 
     Parameters
     ----------
     path : str
-        Path to directory ending in '.zarr'. Path can contain either an array
-        or a group of arrays in the case of multiscale data.
+        Path or URL to a zarr store or directory.
 
     Returns
     -------
@@ -79,39 +138,62 @@ def read_zarr_dataset(path: str):
     shape : tuple
         Shape of array or first array in list
     """
-    path = Path(path)
-    if (path / '.zarray').exists():
-        # load zarr array
-        image = da.from_zarr(path)
-        shape = image.shape
-    elif (path / '.zgroup').exists():
-        # else load zarr all arrays inside file, useful for multiscale data
-        image = [
-            read_zarr_dataset(subpath)[0]
-            for subpath in sorted(path.iterdir())
-            if not subpath.name.startswith('.') and subpath.is_dir()
-        ]
-        assert image, 'No arrays found in zarr group'
-        shape = image[0].shape
-    elif (path / 'zarr.json').exists():
-        # zarr v3
+    import dask.array as da
+
+    from napari.utils.notifications import show_info
+
+    # For local paths, zarr.open can create a DirectoryStore on a non-existent
+    # path, so we check for existence first.
+    if not _is_url(path) and not os.path.exists(path):
+        raise FileNotFoundError(f"Path '{path}' does not exist.")
+
+    try:
         import zarr
 
-        data = zarr.open(store=path)
-        if isinstance(data, zarr.Array):
-            image = da.from_zarr(data)
-            shape = image.shape
-        else:
-            image = [data[k] for k in sorted(data)]
-            assert image, 'No arrays found in zarr group'
-            shape = image[0].shape
-    else:  # pragma: no cover
+        store = zarr.open(path, mode='r')
+    except Exception as e:
         raise ValueError(
-            trans._(
-                'Not a zarr dataset or group: {path}', deferred=True, path=path
-            )
+            f'Failed to open zarr store at {path}. Error: {e!s}'
+        ) from e
+
+    # Arrays can be opened directly, local and remote
+    if isinstance(store, zarr.Array):
+        image = da.from_zarr(store)
+        return image, image.shape
+
+    # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
+    if not isinstance(store, zarr.Group):
+        raise TypeError(f'Unexpected zarr type: {type(store).__name__}')
+
+    # Remote zarr Groups cannot be traversed over HTTP
+    if _is_url(path):
+        raise ValueError(
+            'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.'
         )
-    return image, shape
+
+    group_keys = sorted(store.group_keys())
+
+    if group_keys:
+        # open the first group
+        group = store[group_keys[0]]
+
+        if len(group_keys) > 1:
+            # if there are multiple groups, inform the user
+            other_groups = group_keys[1:]
+            show_info(
+                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {", ".join(other_groups)}'
+            )
+    else:
+        # the store consists of a single group, so open it
+        group = store
+
+    array_keys = sorted(group.array_keys())
+    if not array_keys:
+        raise ValueError(f'No arrays found in zarr group: {path}')
+
+    # Build list of arrays from arrays in the group
+    image = [da.from_zarr(group[k]) for k in array_keys]
+    return image, image[0].shape
 
 
 PathOrStr = Union[str, Path]
@@ -176,11 +258,7 @@ def magic_imread(
 
     if not filenames_expanded:
         raise ValueError(
-            trans._(
-                'No files found in {filenames} after removing subdirectories',
-                deferred=True,
-                filenames=filenames,
-            )
+            f'No files found in {filenames} after removing subdirectories'
         )
 
     # then, read in images
@@ -200,6 +278,8 @@ def magic_imread(
                 shape = image.shape
                 dtype = image.dtype
             if use_dask:
+                import dask.array as da
+
                 image = da.from_delayed(
                     delayed(imread)(filename), shape=shape, dtype=dtype
                 )
@@ -214,16 +294,15 @@ def magic_imread(
         image = images[0]
     elif stack:
         if use_dask:
+            import dask.array as da
+
             image = da.stack(images)
         else:
             try:
                 image = np.stack(images)
             except ValueError as e:
                 if 'input arrays must have the same shape' in str(e):
-                    msg = trans._(
-                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
-                        deferred=True,
-                    )
+                    msg = 'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.'
                     raise ValueError(msg) from e
                 raise  # pragma: no cover
     else:
@@ -233,7 +312,7 @@ def magic_imread(
 
 def _points_csv_to_layerdata(
     table: np.ndarray, column_names: list[str]
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Convert table data and column names from a csv file to Points LayerData.
 
     Parameters
@@ -273,7 +352,7 @@ def _points_csv_to_layerdata(
 
 def _shapes_csv_to_layerdata(
     table: np.ndarray, column_names: list[str]
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Convert table data and column names from a csv file to Shapes LayerData.
 
     Parameters
@@ -298,13 +377,11 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError(
-            trans._('Expected number of shapes not found', deferred=True)
-        )
+        raise ValueError('Expected number of shapes not found')
 
     data = []
     shape_type = []
-    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
+    for ind_a, ind_b in pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
@@ -379,20 +456,11 @@ def read_csv(
         if require_type:
             if not layer_type:
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as valid Layer data',
-                        deferred=True,
-                        filename=filename,
-                    )
+                    f'File "{filename}" not recognized as valid Layer data'
                 )
             if layer_type != require_type and require_type.lower() != 'any':
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as {require_type} data',
-                        deferred=True,
-                        filename=filename,
-                        require_type=require_type,
-                    )
+                    f'File "{filename}" not recognized as {require_type} data'
                 )
 
         data = np.array(list(reader))
@@ -407,7 +475,7 @@ csv_reader_functions = {
 
 def csv_to_layer_data(
     path: str, require_type: str | None = None
-) -> Optional['FullLayerData']:
+) -> Optional[FullLayerData]:
     """Return layer data from a CSV file if detected as a valid type.
 
     Parameters
@@ -448,7 +516,7 @@ def csv_to_layer_data(
     return None  # only reachable if it is a valid layer type without a reader
 
 
-def _csv_reader(path: str | Sequence[str]) -> list['LayerData']:
+def _csv_reader(path: str | Sequence[str]) -> list[LayerData]:
     if isinstance(path, str):
         layer_data = csv_to_layer_data(path, require_type=None)
         return [layer_data] if layer_data else []
@@ -459,13 +527,91 @@ def _csv_reader(path: str | Sequence[str]) -> list['LayerData']:
     ]
 
 
-def _magic_imreader(path: str) -> list['LayerData']:
+def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
+
+
+def _read_wavefront_obj_lines(
+    lines: Iterable[str],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
+    vertices = []
+    faces = []
+
+    for line in lines:
+        parts = line.strip().split()
+        # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
+        if len(parts) > 1:
+            element_type, *values = parts
+            match element_type:
+                # we are currently only interested in vertices and faces, no other features
+                case 'v':
+                    vertices.append([float(value) for value in values])
+                case 'f':
+                    # we only take the first part of the split, which is the vertex index
+                    # (because we ignore normals and texture coordinates)
+                    indices = [value.split('/')[0] for value in values]
+                    # we only support triangles (for now)
+                    if len(indices) != 3:
+                        raise ValueError('Only triangular faces are supported')
+                    # subtract one for each index, since OBJ uses 1-based indexing
+                    faces.append([int(index) - 1 for index in indices])
+
+    return (
+        np.array(vertices, dtype=np.float64),
+        np.array(faces, dtype=np.int32),
+    )
+
+
+def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
+    # if it is a sequence of paths, we process each file separately and return all results
+    if not isinstance(path_or_paths, (str, Path)):
+        return list(
+            chain.from_iterable(
+                _read_wavefront_obj(path) for path in path_or_paths
+            )
+        )
+
+    with open(path_or_paths, encoding='utf-8') as obj_file:
+        vertices, faces = _read_wavefront_obj_lines(obj_file)
+        surface = (vertices, faces)
+
+        add_kwargs = {
+            'blending': 'opaque',
+            # we default to smooth shading for now (in the future we could process the 's' type if necessary)
+            'shading': 'smooth',
+        }
+
+        return [(surface, add_kwargs, 'surface')]
+
+
+def napari_get_obj_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Wavefront OBJ files.
+
+    It is used to read the mesh data contained in the OBJ file and
+    convert it to a Surface for internal use.
+
+    Parameters
+    ----------
+    path : str
+        Path to the OBJ file to be read.
+
+    Returns
+    -------
+    callable
+        A function parses the OBJ file and converts it to a Surface.
+    """
+    if not os.path.exists(path):
+        return None
+
+    if os.path.splitext(path)[1] != '.obj':
+        return None
+
+    return _read_wavefront_obj
 
 
 def napari_get_reader(
     path: str | list[str],
-) -> 'ReaderFunction':
+) -> ReaderFunction:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -485,3 +631,55 @@ def napari_get_reader(
         return _csv_reader
 
     return _magic_imreader
+
+
+def _read_python_source(script_path: str | Path) -> str:
+    """Read Python source from script."""
+    with tokenize.open(script_path) as file:
+        return file.read()
+
+
+def load_and_execute_python_code(script_path: str) -> list[LayerData]:
+    """Load and execute Python code from a file.
+
+    Parameters
+    ----------
+    script_path : str
+        Path to the Python file to be executed.
+    """
+    if _is_url(script_path):
+        # download the script from the URL
+
+        from urllib.request import urlopen
+
+        raw_url = _git_provider_url_to_raw_url(script_path)
+        with urlopen(raw_url) as response:
+            encoding = response.headers.get_content_charset() or 'utf-8'
+            code = response.read().decode(encoding)
+    else:
+        code = _read_python_source(script_path)
+    execute_python_code(code, script_path)
+    return [(None,)]
+
+
+def napari_get_py_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Python files.
+
+    This function is used to read Python files and execute their content.
+    It returns a callable that executes the code in the file.
+
+    Parameters
+    ----------
+    path : str
+        Path to the Python file to be executed.
+
+    Returns
+    -------
+    callable
+        A function that executes the Python code in the specified file.
+    """
+    if not os.path.exists(path) and not _is_url(path):
+        return None
+    if os.path.splitext(path)[1] != '.py':
+        return None
+    return load_and_execute_python_code

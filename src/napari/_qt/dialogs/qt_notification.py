@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import cast
+from contextlib import suppress
+from typing import ClassVar
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -31,7 +32,6 @@ from napari._qt.qt_resources import QColoredSVGIcon
 from napari.settings import get_settings
 from napari.utils.notifications import Notification, NotificationSeverity
 from napari.utils.theme import get_theme
-from napari.utils.translations import trans
 
 ActionSequence = Sequence[tuple[str, Callable[['NapariQtNotification'], None]]]
 
@@ -74,6 +74,8 @@ class NapariQtNotification(QDialog):
     source_label: QLabel
     severity_icon: QLabel
 
+    _instances: ClassVar[list[NapariQtNotification]] = []
+
     def __init__(
         self,
         message: str,
@@ -95,9 +97,7 @@ class NapariQtNotification(QDialog):
         self._update_icon(str(severity))
         self.message.setText(message)
         if source:
-            self.source_label.setText(
-                trans._('Source: {source}', source=source)
-            )
+            self.source_label.setText(f'Source: {source}')
 
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
@@ -115,19 +115,8 @@ class NapariQtNotification(QDialog):
         from napari.utils.theme import get_theme
 
         settings = get_settings()
-        theme = settings.appearance.theme
-        default_color = get_theme(theme).icon.as_hex()
-
-        # FIXME: Should these be defined at the theme level?
-        # Currently there is a warning one
-        colors = {
-            'error': '#D85E38',
-            'warning': '#E3B617',
-            'info': default_color,
-            'debug': default_color,
-            'none': default_color,
-        }
-        color = colors.get(severity, default_color)
+        theme = get_theme(settings.appearance.theme)
+        color = getattr(theme, severity, theme.icon).as_hex()
         icon = QColoredSVGIcon.from_resources(severity)
         self.severity_icon.setPixmap(icon.colored(color=color).pixmap(15, 15))
 
@@ -155,14 +144,12 @@ class NapariQtNotification(QDialog):
     def show(self):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
+        self._instances.append(self)
         self.slide_in()
         if self.parent() is not None and not self.parent().isActiveWindow():
             return
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             for notification in notifications:
                 notification.timer_stop()
         if self.DISMISS_AFTER > 0:
@@ -196,11 +183,11 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        with suppress(ValueError):
+            # if show is not called, the element is not in list
+            self._instances.remove(self)
         if self.parent() is not None:
-            notifications = cast(
-                list[NapariQtNotification],
-                self.parent().findChildren(NapariQtNotification),
-            )
+            notifications = self._instances
             if len(notifications) > 1 and notifications[-1] == self:
                 notifications[-2].timer_start()
             self.parent().setFocus()
@@ -315,6 +302,7 @@ class NapariQtNotification(QDialog):
         )
         self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
+        self.row2_widget.setObjectName('notification_actions')
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
@@ -325,12 +313,6 @@ class NapariQtNotification(QDialog):
         self.row2.addStretch()
         self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
-        self.row2_widget.setStyleSheet(
-            'QPushButton{'
-            'padding: 4px 12px 4px 12px; '
-            'font-size: 11px;'
-            'min-height: 18px; border-radius: 0;}'
-        )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
         self.resize(self.MIN_WIDTH, 40)
@@ -395,7 +377,7 @@ class NapariQtNotification(QDialog):
 
             actions = (
                 *tuple(notification.actions),
-                (trans._('View Traceback'), show_tb),
+                ('View Traceback', show_tb),
             )
         else:
             actions = notification.actions
@@ -424,7 +406,7 @@ class NapariQtNotification(QDialog):
             and _QtMainWindow.current()
             and _QtMainWindow.current().isVisible()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer._welcome_widget
+            canvas = _QtMainWindow.current()._qt_viewer.canvas.native
             cls.from_notification(notification, canvas).show()
 
 
@@ -457,16 +439,14 @@ class TracebackDialog(QDialog):
         )
         text.setText(exception.as_text())
         text.setReadOnly(True)
-        self.btn = QPushButton(trans._('Enter Debugger'))
+        self.btn = QPushButton('Enter Debugger')
         self.btn.clicked.connect(self._enter_debug_mode)
         self.layout().addWidget(text)
         self.layout().addWidget(self.btn, 0, Qt.AlignmentFlag.AlignRight)
 
     def _enter_debug_mode(self):
         self.btn.setText(
-            trans._(
-                'Now Debugging. Please quit debugger in console to continue'
-            )
+            'Now Debugging. Please quit debugger in console to continue'
         )
         _debug_tb(self.exception.__traceback__)
-        self.btn.setText(trans._('Enter Debugger'))
+        self.btn.setText('Enter Debugger')

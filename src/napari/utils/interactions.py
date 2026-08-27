@@ -4,14 +4,11 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
-from numpydoc.docscrape import FunctionDoc
-
 from napari.utils.key_bindings import (
     KeyBindingLike,
     KeyCode,
     coerce_keybinding,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
@@ -87,11 +84,7 @@ def mouse_double_click_callbacks(obj, event) -> None:
     for mouse_click_func in obj.mouse_double_click_callbacks:
         # execute function to run press event code
         if inspect.isgeneratorfunction(mouse_click_func):
-            raise ValueError(
-                trans._(
-                    "Double-click actions can't be generators.", deferred=True
-                )
-            )
+            raise ValueError("Double-click actions can't be generators.")
         mouse_click_func(obj, event)
 
 
@@ -265,10 +258,7 @@ class Shortcut:
         shortcut : keybinding-like
             shortcut to format
         """
-        error_msg = trans._(
-            '`{shortcut}` does not seem to be a valid shortcut Key.',
-            shortcut=shortcut,
-        )
+        error_msg = f'`{shortcut}` does not seem to be a valid shortcut Key.'
         error = False
 
         try:
@@ -369,12 +359,3 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
         )
     key_bindings_strs.append('</table>')
     return ''.join(key_bindings_strs)
-
-
-def get_function_summary(func):
-    """Get summary of doc string of function."""
-    doc = FunctionDoc(func)
-    summary = ''
-    for s in doc['Summary']:
-        summary += s
-    return summary.rstrip('.')

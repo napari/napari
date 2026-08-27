@@ -1,6 +1,9 @@
 """Test app-model Qt-related providers."""
 
-import numpy as np
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from app_model.types import Action
 
@@ -9,6 +12,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_active_layer,
     _provide_active_layer_list,
     _provide_qt_viewer_or_raise,
+    _provide_selected_layers,
     _provide_viewer,
     _provide_viewer_or_raise,
     _provide_window_or_raise,
@@ -16,9 +20,14 @@ from napari._qt._qapp_model.injection._qproviders import (
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.components import LayerList
-from napari.layers import Image
+from napari.layers import Shapes
 from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
+
+    from napari.components import ViewerModel
 
 
 def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
@@ -58,7 +67,7 @@ def test_publicproxy_provide_viewer(capsys, make_napari_viewer):
 def test_provide_viewer_or_raise(make_napari_viewer):
     """Check `_provide_viewer_or_raise` raises or returns correct `Viewer`."""
     # raises when no viewer
-    with pytest.raises(RuntimeError, match='No current `Viewer` found. test'):
+    with pytest.raises(RuntimeError, match=r'No current `Viewer` found. test'):
         _provide_viewer_or_raise(msg='test')
 
     # create viewer
@@ -74,7 +83,7 @@ def test_provide_qt_viewer_or_raise(make_napari_viewer):
     """Check `_provide_qt_viewer_or_raise` raises or returns `QtViewer`."""
     # raises when no QtViewer
     with pytest.raises(
-        RuntimeError, match='No current `QtViewer` found. test'
+        RuntimeError, match=r'No current `QtViewer` found. test'
     ):
         _provide_qt_viewer_or_raise(msg='test')
 
@@ -87,7 +96,7 @@ def test_provide_qt_viewer_or_raise(make_napari_viewer):
 def test_provide_window_or_raise(make_napari_viewer):
     """Check `_provide_window_or_raise` raises or returns `Window`."""
     # raises when no Window
-    with pytest.raises(RuntimeError, match='No current `Window` found. test'):
+    with pytest.raises(RuntimeError, match=r'No current `Window` found. test'):
         _provide_window_or_raise(msg='test')
 
     # create viewer (and Window)
@@ -96,19 +105,60 @@ def test_provide_window_or_raise(make_napari_viewer):
     assert isinstance(viewer, Window)
 
 
-def test_provide_active_layer_and_layer_list(make_napari_viewer):
+def test_provide_active_layer(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+):
     """Check `_provide_active_layer/_list` returns correct object."""
-    shape = (10, 10)
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
 
-    viewer = make_napari_viewer()
-    layer_a = Image(np.random.random(shape))
-    viewer.layers.append(layer_a)
+    layer_a = viewer_model.add_layer(Shapes())
+    viewer_model.add_layer(Shapes())
+    viewer_model.layers.selection.active = layer_a
 
     provided_layer = _provide_active_layer()
-    assert isinstance(provided_layer, Image)
-    assert provided_layer.data.shape == shape
+    assert provided_layer is layer_a
+
+    viewer_model.layers.selection = []
+
+    provided_layer = _provide_active_layer()
+    assert provided_layer is None
+
+
+def test_provide_layer_list(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+):
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
+
+    layer_a = viewer_model.add_layer(Shapes())
+    layer_b = viewer_model.add_layer(Shapes())
 
     provided_layers = _provide_active_layer_list()
     assert isinstance(provided_layers, LayerList)
-    assert isinstance(provided_layers[0], Image)
-    assert provided_layers[0].data.shape == shape
+    assert provided_layers[0] is layer_a
+    assert provided_layers[1] is layer_b
+
+
+def test_provide_selected_layers(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+) -> None:
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
+    s1 = viewer_model.add_layer(Shapes())
+    viewer_model.add_layer(Shapes())
+    s3 = viewer_model.add_layer(Shapes())
+
+    viewer_model.layers.selection = [s1, s3]
+
+    selected_layers = _provide_selected_layers()
+    assert selected_layers is not None
+    assert len(selected_layers) == 2
+    assert s1 in selected_layers
+    assert s3 in selected_layers

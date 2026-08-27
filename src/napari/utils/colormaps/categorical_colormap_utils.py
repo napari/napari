@@ -1,13 +1,9 @@
 from dataclasses import dataclass
-from itertools import cycle
+from typing import Any
 
 import numpy as np
-
-from napari.layers.utils.color_transformations import (
-    transform_color,
-    transform_color_cycle,
-)
-from napari.utils.translations import trans
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 
 @dataclass(eq=False)
@@ -19,16 +15,34 @@ class ColorCycle:
     ----------
     values : np.ndarray
         The (Nx4) color array of all colors contained in the color cycle.
-    cycle : cycle
-        The cycle object that gives fallback colors.
+    current_index : int
+        The index of the current color within the values array.
     """
 
     values: np.ndarray
-    cycle: cycle
+    current_index: int = 0
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_type
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        validate = core_schema.no_info_plain_validator_function(
+            cls.validate_type
+        )
+        json_serialize = core_schema.plain_serializer_function_ser_schema(
+            lambda v: {
+                'values': v.values.tolist()
+                if isinstance(v.values, np.ndarray)
+                else v,
+                'current_index': v.current_index,
+            },
+            when_used='json',
+        )
+        return core_schema.json_or_python_schema(
+            json_schema=validate,
+            python_schema=validate,
+            serialization=json_serialize,
+        )
 
     @classmethod
     def validate_type(cls, val):
@@ -40,9 +54,6 @@ class ColorCycle:
 
         return _coerce_colorcycle_from_colors(val)
 
-    def _json_encode(self):
-        return {'values': self.values.tolist()}
-
     def __eq__(self, other):
         if isinstance(other, ColorCycle):
             eq = np.array_equal(self.values, other.values)
@@ -50,53 +61,63 @@ class ColorCycle:
             eq = False
         return eq
 
+    def __next__(self):
+        val = self.current_color()
+        self.current_index += 1
+        self.current_index %= len(self.values)
+        return val
+
+    def __iter__(self):
+        return self
+
+    def current_color(self) -> np.ndarray:
+        return self.values[self.current_index]
+
 
 def _coerce_colorcycle_from_dict(
-    val: dict[str, str | list | np.ndarray | cycle],
+    val: dict[str, str | list | np.ndarray | int],
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color,
+    )
+
     # validate values
     color_values = val.get('values')
     if color_values is None:
-        raise ValueError(
-            trans._('ColorCycle requires a values argument', deferred=True)
-        )
+        raise ValueError('ColorCycle requires a values argument')
 
     transformed_color_values = transform_color(color_values)
 
-    # validate cycle
-    color_cycle = val.get('cycle')
-    if color_cycle is None:
-        transformed_color_cycle = transform_color_cycle(
-            color_cycle=color_values,
-            elem_name='color_cycle',
-            default='white',
-        )[0]
-    elif isinstance(color_cycle, cycle):
-        transformed_color_cycle = color_cycle
-    else:
-        raise TypeError(f'cycle entry must be type(cycle), got {type(cycle)}')
+    current_index = val.get('current_index', 0)
+    if not isinstance(current_index, int):
+        raise TypeError('ColorCycle current_index must be an integer')
+    if current_index > len(transformed_color_values) - 1:
+        raise ValueError('ColorCycle current_index must be < len(values)')
 
     return ColorCycle(
-        values=transformed_color_values, cycle=transformed_color_cycle
+        values=transformed_color_values,
+        current_index=current_index,
     )
 
 
 def _coerce_colorcycle_from_colors(
     val: str | list | np.ndarray,
 ) -> ColorCycle:
+    # avoid circular import
+    from napari.layers.utils.color_transformations import (
+        transform_color_cycle,
+    )
+
     if isinstance(val, str):
         val = [val]
-    (
-        transformed_color_cycle,
-        transformed_color_values,
-    ) = transform_color_cycle(
+
+    transformed_color_values = transform_color_cycle(
         color_cycle=val,
         elem_name='color_cycle',
         default='white',
     )
-    return ColorCycle(
-        values=transformed_color_values, cycle=transformed_color_cycle
-    )
+    return ColorCycle(values=transformed_color_values)
 
 
 def compare_colormap_dicts(cmap_1, cmap_2):

@@ -7,7 +7,9 @@ the translator before the settings manager is created.
 
 import os
 
-from napari.utils._appdirs import user_config_dir
+from napari.utils._platformdirs import user_config_dir
+
+__all__ = ('_DEFAULT_CONFIG_PATH', '_DEFAULT_LOCALE', '_FILENAME')
 
 _FILENAME = 'settings.yaml'
 _DEFAULT_LOCALE = 'en'

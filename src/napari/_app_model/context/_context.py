@@ -9,8 +9,6 @@ from app_model.expressions import (
     get_context as _get_context,
 )
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
@@ -31,8 +29,8 @@ class ContextMapping(collections.abc.Mapping):
     `ContextMapping` object.
     """
 
-    def __init__(self, initial_values: collections.abc.Mapping):
-        self._initial_context_mapping = initial_values
+    def __init__(self, initial_values: collections.abc.Mapping | None):
+        self._initial_context_mapping = initial_values or {}
         self._evaluated_context_mapping: dict[str, Any] = {}
 
     def __getitem__(self, key):
@@ -84,8 +82,8 @@ class SettingsAwareContext(Context):
             if splits:
                 while splits:
                     val = getattr(val, splits.pop(0))
-                if hasattr(val, 'dict'):
-                    val = val.dict()
+                if hasattr(val, 'model_dump'):
+                    val = val.model_dump()
                 return val
         return super().__missing__(key)
 
@@ -99,13 +97,7 @@ class SettingsAwareContext(Context):
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
-            raise ValueError(
-                trans._(
-                    'Cannot set key starting with {prefix!r}',
-                    deferred=True,
-                    prefix=self._PREFIX,
-                )
-            )
+            raise ValueError(f'Cannot set key starting with {self._PREFIX!r}')
 
         return super().__setitem__(k, v)
 

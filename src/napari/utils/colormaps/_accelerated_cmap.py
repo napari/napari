@@ -12,10 +12,30 @@ from typing import TYPE_CHECKING
 import numpy as np
 from packaging.version import parse
 
+from napari.utils.colormap_backend import ColormapBackend
+
+try:
+    import numba
+except ImportError:
+    numba = None
+
+
+try:
+    from PartSegCore_compiled_backend import (
+        napari_mapping as partsegcore_mapping,
+    )
+except ImportError:
+    partsegcore_mapping = None
+
+prange = range
+
 if TYPE_CHECKING:
     from numba import typed
 
     from napari.utils.colormaps import DirectLabelColormap
+
+
+COLORMAP_BACKEND = ColormapBackend.fastest_available
 
 
 __all__ = (
@@ -26,7 +46,7 @@ __all__ = (
 )
 
 MAPPING_OF_UNKNOWN_VALUE = 0
-# For direct mode we map all unknown values to single value
+# For direct mode we map all unknown values to a single value
 # for simplicity of implementation we select 0
 
 
@@ -236,21 +256,85 @@ def _labels_raw_to_texture_direct_inner_loop(
     return out
 
 
-try:
-    import numba
-except ModuleNotFoundError:
-    zero_preserving_modulo = zero_preserving_modulo_numpy
-    labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
-    prange = range
-else:
+def zero_preserving_modulo_partsegcore(
+    values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
+) -> np.ndarray:
+    out = np.empty(values.size, dtype=dtype)
+    partsegcore_mapping.zero_preserving_modulo_parallel(
+        values.reshape(-1), n, to_zero, out
+    )
+    return out.reshape(values.shape)
+
+
+def labels_raw_to_texture_direct_partsegcore(
+    data: np.ndarray, direct_colormap: 'DirectLabelColormap'
+) -> np.ndarray:
+    if direct_colormap.use_selection:
+        dkt = {None: 0, direct_colormap.selection: 1}
+    else:
+        iinfo = np.iinfo(data.dtype)
+        dkt = {
+            k: v
+            for k, v in direct_colormap._label_mapping_and_color_dict[
+                0
+            ].items()
+            if k is None or iinfo.min <= k <= iinfo.max
+        }
+    target_dtype = minimum_dtype_for_labels(
+        direct_colormap._num_unique_colors + 2
+    )
+    out = np.empty(data.size, dtype=target_dtype)
+    partsegcore_mapping.map_array_parallel(
+        data.reshape(-1), dkt, MAPPING_OF_UNKNOWN_VALUE, out
+    )
+    return out.reshape(data.shape)
+
+
+zero_preserving_modulo = zero_preserving_modulo_numpy
+labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
+
+if numba is not None:
     _zero_preserving_modulo_inner_loop = numba.njit(parallel=True, cache=True)(
         _zero_preserving_modulo_inner_loop
     )
-    zero_preserving_modulo = _zero_preserving_modulo_loop
-    labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
     _labels_raw_to_texture_direct_inner_loop = numba.njit(
         parallel=True, cache=True
     )(_labels_raw_to_texture_direct_inner_loop)
-    prange = numba.prange  # type: ignore [misc]
 
-    del numba
+
+def set_colormap_backend(backend: ColormapBackend) -> None:
+    """Set the colormap backend to use.
+
+    Parameters
+    ----------
+    backend : ColormapBackend
+        The colormap backend to use.
+    """
+    global \
+        COLORMAP_BACKEND, \
+        labels_raw_to_texture_direct, \
+        zero_preserving_modulo, \
+        prange
+    COLORMAP_BACKEND = backend
+
+    if partsegcore_mapping is not None and backend in {
+        ColormapBackend.fastest_available,
+        ColormapBackend.partsegcore,
+    }:
+        labels_raw_to_texture_direct = labels_raw_to_texture_direct_partsegcore
+        zero_preserving_modulo = zero_preserving_modulo_partsegcore
+        prange = range
+    elif numba is not None and backend in {
+        ColormapBackend.fastest_available,
+        ColormapBackend.numba,
+    }:
+        zero_preserving_modulo = _zero_preserving_modulo_loop
+        labels_raw_to_texture_direct = _labels_raw_to_texture_direct_loop
+        prange = numba.prange
+    else:
+        zero_preserving_modulo = zero_preserving_modulo_numpy
+        labels_raw_to_texture_direct = _labels_raw_to_texture_direct_numpy
+        prange = range
+
+
+set_colormap_backend(COLORMAP_BACKEND)

@@ -13,7 +13,8 @@ import numpy as np
 import napari
 
 # add the image with three points
-viewer = napari.view_image(np.zeros((400, 400)))
+viewer = napari.Viewer()
+layer = viewer.add_image(np.zeros((400, 400)))
 points = np.array([[100, 100], [200, 300], [333, 111]])
 
 # create features for each point

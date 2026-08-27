@@ -118,7 +118,6 @@ def test_directory_readers_not_in_dropdown(
 
     widget = extension2reader_widget(
         npe2_readers={tmp_plugin.name: tmp_plugin.display_name},
-        npe1_readers={},
     )
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
@@ -127,33 +126,24 @@ def test_directory_readers_not_in_dropdown(
     assert tmp_plugin.display_name not in all_dropdown_items
 
 
-def test_filtering_readers(
-    extension2reader_widget, builtins, tif_reader, npy_reader
-):
-    widget = extension2reader_widget(
-        npe1_readers={builtins.display_name: builtins.display_name}
-    )
+def test_filtering_readers(extension2reader_widget, tif_reader, npy_reader):
+    widget = extension2reader_widget()
 
-    assert widget._new_reader_dropdown.count() == 3
-    widget._filter_compatible_readers('*.npy')
     assert widget._new_reader_dropdown.count() == 2
+    widget._filter_compatible_readers('*.npy')
+    assert widget._new_reader_dropdown.count() == 1
     all_dropdown_items = [
         widget._new_reader_dropdown.itemText(i)
         for i in range(widget._new_reader_dropdown.count())
     ]
-    assert (
-        sorted([npy_reader.display_name, builtins.display_name])
-        == all_dropdown_items
-    )
+    assert sorted([npy_reader.display_name]) == all_dropdown_items
 
 
 @pytest.mark.parametrize('pattern', ['.', '', '/'])
 def test_filtering_readers_problematic_patterns(
-    extension2reader_widget, builtins, tif_reader, npy_reader, pattern
+    extension2reader_widget, tif_reader, npy_reader, pattern
 ):
-    widget = extension2reader_widget(
-        npe1_readers={builtins.display_name: builtins.display_name}
-    )
+    widget = extension2reader_widget()
     widget._filter_compatible_readers(pattern)
     assert widget._new_reader_dropdown.count() == 1
     assert widget._new_reader_dropdown.itemText(0) == 'None available'
@@ -167,7 +157,7 @@ def test_filtering_readers_complex_pattern(
     )
     def f(path): ...
 
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
 
     assert widget._new_reader_dropdown.count() == 2
     widget._filter_compatible_readers('my-specific-folder/my-file.tif')
@@ -182,7 +172,7 @@ def test_filtering_readers_complex_pattern(
 def test_adding_new_preference(
     extension2reader_widget, tif_reader, npy_reader
 ):
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
     widget._fn_pattern_edit.setText('*.tif')
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)
@@ -204,7 +194,7 @@ def test_adding_new_preference(
 def test_adding_new_preference_no_asterisk(
     extension2reader_widget, tif_reader, npy_reader
 ):
-    widget = extension2reader_widget(npe1_readers={})
+    widget = extension2reader_widget()
     widget._fn_pattern_edit.setText('.tif')
     # will be filtered and tif-reader will be only item
     widget._new_reader_dropdown.setCurrentIndex(0)

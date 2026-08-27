@@ -2,24 +2,17 @@ import inspect
 import os
 import site
 from textwrap import indent
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
-from napari._pydantic_compat import BaseSettings, Field, PrivateAttr
+from pydantic import Field, PrivateAttr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from napari.utils.misc import ROOT_DIR
-from napari.utils.translations import trans
 
 try:
     from rich import print  # noqa: A004
 except ModuleNotFoundError:
-    print(
-        trans._(
-            'TIP: run `pip install rich` for much nicer event debug printout.'
-        )
-    )
-try:
-    import dotenv
-except ModuleNotFoundError:
-    dotenv = None  # type: ignore
+    print('TIP: run `pip install rich` for much nicer event debug printout.')
 
 if TYPE_CHECKING:
     from napari.utils.events.event import Event
@@ -29,9 +22,8 @@ class EventDebugSettings(BaseSettings):
     """Parameters controlling how event debugging logs appear.
 
     To enable Event debugging:
-        1. pip install rich pydantic[dotenv]
-        2. export NAPARI_DEBUG_EVENTS=1  # or modify the .env_sample file
-        3. see .env_sample file for ways to set these fields here.
+        1. export NAPARI_DEBUG_EVENTS=1  # or modify the .env_sample file
+        2. see .env_sample file for ways to set these fields here.
     """
 
     # event emitters (e.g. 'Shapes') and event names (e.g. 'set_data')
@@ -50,11 +42,12 @@ class EventDebugSettings(BaseSettings):
     # (i.e. events that get triggered by other events)
     nesting_allowance: int = 0
 
-    _cur_depth: ClassVar[int] = PrivateAttr(0)
+    _cur_depth: int = PrivateAttr(default=0)
 
-    class Config:
-        env_prefix = 'event_debug_'
-        env_file = '.env' if dotenv is not None else ''
+    model_config = SettingsConfigDict(
+        env_prefix='event_debug_',
+        env_file='.env',
+    )
 
 
 _SETTINGS = EventDebugSettings()
@@ -69,7 +62,9 @@ def _shorten_fname(fname: str) -> str:
     return fname.replace(ROOT_DIR, 'napari')
 
 
-def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
+def log_event_stack(
+    event: 'Event', cfg: EventDebugSettings = _SETTINGS
+) -> None:
     """Print info about what caused this event to be emitted.s"""
 
     if cfg.include_events:
@@ -124,7 +119,7 @@ def log_event_stack(event: 'Event', cfg: EventDebugSettings = _SETTINGS):
 
     # spy on nested events...
     # (i.e. events that were emitted while another was being emitted)
-    def _pop_source():
+    def _pop_source() -> None:
         cfg._cur_depth -= 1
         return event._sources.pop()
 

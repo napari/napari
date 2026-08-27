@@ -3,6 +3,15 @@ from typing import Any
 import numpy as np
 
 from napari.layers import Layer
+from napari.layers.base import _LayerSlicingState
+from napari.types import LayerDataType
+
+
+class SampleLayerSlicingState(_LayerSlicingState):
+    layer: 'SampleLayer'
+
+    def _set_view_slice(self) -> None:
+        pass
 
 
 class SampleLayer(Layer):
@@ -28,6 +37,7 @@ class SampleLayer(Layer):
         translate=None,
         units=None,
         visible=True,
+        locked=False,
     ) -> None:
         if ndim is None:
             ndim = data.ndim
@@ -51,7 +61,8 @@ class SampleLayer(Layer):
             translate=translate,
             units=units,
             visible=visible,
-        )  # type: ignore [no-untyped-call]
+            locked=locked,
+        )
         self._data = data
         self.a = 2
 
@@ -88,3 +99,8 @@ class SampleLayer(Layer):
 
     def _post_init(self) -> None:
         self.a = 1
+
+    def _get_layer_slicing_state(
+        self, data: LayerDataType, cache: bool
+    ) -> _LayerSlicingState:
+        return SampleLayerSlicingState(self, data, cache)

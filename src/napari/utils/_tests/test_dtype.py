@@ -50,7 +50,7 @@ def test_normalize_dtype_np_noop(module, dtype_str):
     """Check that normalize dtype works as expected for plain NumPy dtypes."""
     module_arr = module.zeros(5, dtype=dtype_str)
     np_arr = np.zeros(5, dtype=normalize_dtype(module_arr.dtype))
-    assert normalize_dtype(module_arr.dtype) is normalize_dtype(np_arr.dtype)
+    assert normalize_dtype(module_arr.dtype) == normalize_dtype(np_arr.dtype)
 
 
 @pytest.mark.parametrize('dtype_str', ['int', 'float'])

@@ -22,7 +22,7 @@ def _load_skimage_data(name, **kwargs):
                 {
                     'channel_axis': -1,
                     'name': ['nuclei', 'WGA', 'actin'],
-                    'colormap': ['blue', 'green', 'red'],
+                    'colormap': ['cyan', 'magenta', 'yellow'],
                 },
             )
         ]
@@ -32,8 +32,13 @@ def _load_skimage_data(name, **kwargs):
                 skimage.data.lily(),
                 {
                     'channel_axis': -1,
-                    'name': ['lily-R', 'lily-G', 'lily-W', 'lily-B'],
-                    'colormap': ['red', 'green', 'gray', 'blue'],
+                    'name': [
+                        'lily-magenta',
+                        'lily-green',
+                        'lily-yellow',
+                        'lily-blue',
+                    ],
+                    'colormap': ['magenta', 'green', 'yellow', 'blue'],
                 },
             )
         ]
@@ -41,6 +46,12 @@ def _load_skimage_data(name, **kwargs):
         kwargs['n_dim'] = 3
         kwargs.setdefault('length', 128)
         kwargs.setdefault('volume_fraction', 0.25)
+        kwargs.setdefault('rng', 1)
+        name = 'binary_blobs'
+    if name == 'binary_blobs':
+        kwargs.setdefault('length', 512)
+        kwargs.setdefault('volume_fraction', 0.5)
+        kwargs.setdefault('rng', 1)
         name = 'binary_blobs'
 
     return [(getattr(skimage.data, name)(**kwargs), {'name': name})]

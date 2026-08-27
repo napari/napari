@@ -281,7 +281,9 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.setText('napari')
+    first_label.setFocus()
+    first_label.selectAll()
+    qtbot.keyClicks(first_label, 'napari')
     assert first_label.text() == view.dims.axis_labels[0]
     assert '…' in first_label._elidedText()
     assert observed_axis_labels_event
@@ -290,6 +292,32 @@ def test_update_dims_labels(qtbot):
     view.setFixedWidth(250)
     assert first_label.text() == view.dims.axis_labels[0]
     assert first_label._elidedText() == view.dims.axis_labels[0]
+
+
+def test_model_axis_label_updates_do_not_write_back(qtbot):
+    """Programmatic model updates should not re-enter through QLineEdit signals."""
+    dims = Dims(ndim=4)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    calls = []
+    original = Dims.set_axis_label
+
+    def wrapped(self, axis, label):
+        calls.append((axis, label))
+        return original(self, axis, label)
+
+    with patch.object(Dims, 'set_axis_label', wrapped):
+        dims.axis_labels = ('T', 'Z', 'Y', 'X')
+
+    assert dims.axis_labels == ('T', 'Z', 'Y', 'X')
+    assert [widget.axis_label.text() for widget in view.slider_widgets] == [
+        'T',
+        'Z',
+        'Y',
+        'X',
+    ]
+    assert calls == []
 
 
 def test_slider_press_updates_last_used(qtbot):
@@ -312,39 +340,99 @@ def test_slider_press_updates_last_used(qtbot):
             assert view.dims.last_used == 0
 
 
+def test_last_used_style_property_set_at_creation(qtbot):
+    """The active slider is marked from the start, not only after a change.
+
+    The ``last_used`` event only fires on a change, so with the default
+    ``last_used == 0`` freshly created sliders never got the style property
+    and the active slider opened unhighlighted.
+    """
+    view = QtDims(Dims(ndim=4))
+    qtbot.addWidget(view)
+
+    assert view.dims.last_used == 0
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [True, False, False, False]
+
+    view.dims.last_used = 1
+    assert [
+        widg.slider.property('last_used') for widg in view.slider_widgets
+    ] == [False, True, False, False]
+
+
 @pytest.mark.skipif(
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',
 )
-def test_play_button(qtbot):
+def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     """test that the play button and its popup dialog work"""
     ndim = 3
-    view = QtDims(Dims(ndim=ndim))
-    qtbot.addWidget(view)
-    slider = view.slider_widgets[0]
+    qt_dims.dims.ndim = ndim
+    qtbot.addWidget(qt_dims)
+    slider = qt_dims.slider_widgets[0]
     button = slider.play_button
 
     # Need looping playback so that it does not stop before we can assert that.
     assert slider.loop_mode == 'loop'
-    assert not view.is_playing
+    assert not qt_dims.is_playing
 
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(lambda: view.is_playing)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: qt_dims.is_playing)
 
-    qtbot.mouseClick(button, Qt.LeftButton)
-    qtbot.waitUntil(lambda: not view.is_playing)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: not qt_dims.is_playing)
 
-    with patch.object(button.popup, 'show_above_mouse') as mock_popup:
-        qtbot.mouseClick(button, Qt.RightButton)
+    with mock_qt_method_ctx(button.popup, 'show_above_mouse') as mock_popup:
+        qtbot.mouseClick(button, Qt.MouseButton.RightButton)
         mock_popup.assert_called_once()
 
     # Check popup updates widget properties (fps, play mode and loop mode)
     button.fpsspin.clear()
     qtbot.keyClicks(button.fpsspin, '11')
-    qtbot.keyClick(button.fpsspin, Qt.Key_Enter)
+    qtbot.keyClick(button.fpsspin, Qt.Key.Key_Enter)
     assert slider.fps == button.fpsspin.value() == 11
     button.reverse_check.setChecked(True)
     assert slider.fps == -button.fpsspin.value() == -11
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
-    qtbot.waitUntil(view._animation_thread.isFinished)
+    qtbot.waitUntil(qt_dims._animation_thread.isFinished)
+
+
+def test_play_popup_stays_open_on_enter(qtbot, qt_dims):
+    qt_dims.dims.ndim = 3
+    qtbot.addWidget(qt_dims)
+    slider = qt_dims.slider_widgets[0]
+    button = slider.play_button
+
+    button.popup.show()
+    qtbot.waitUntil(button.popup.isVisible)
+
+    button.fpsspin.setFocus()
+    button.fpsspin.clear()
+    qtbot.keyClicks(button.fpsspin, '11')
+    qtbot.keyClick(button.fpsspin, Qt.Key.Key_Enter)
+
+    assert slider.fps == button.fpsspin.value() == 11
+    assert button.popup.isVisible()
+
+    # the spinbox used to clear focus, so a second press reached the popup
+    focused = button.popup.focusWidget() or button.popup
+    qtbot.keyClick(focused, Qt.Key.Key_Enter)
+    assert button.popup.isVisible()
+
+
+def test_loop_mode_model_update_emits_once(qtbot):
+    dims = Dims(ndim=3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    slider = view.slider_widgets[0]
+
+    observed = []
+    slider.mode_changed.connect(observed.append)
+
+    slider.loop_mode = 'once'
+
+    assert slider.loop_mode == 'once'
+    assert slider.play_button.mode_combo.currentText() == 'once'
+    assert observed == ['once']

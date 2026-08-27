@@ -41,6 +41,31 @@ def test_multiscale(make_napari_viewer):
     assert value[1] is None
 
 
+@skip_on_win_ci
+@skip_local_popups
+def test_multiscale_zoom_in_within_level_does_not_refresh(make_napari_viewer):
+    """Ensure zooming in within the same level does not trigger a refresh."""
+    viewer = make_napari_viewer(show=True)
+    view = viewer.window._qt_viewer
+
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
+    data = [np.ones(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
+
+    view.canvas.view.canvas.size = (800, 600)
+    view.canvas.view.camera.rect = [1000, 1000, 200, 150]
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
+    assert layer.data_level == 0
+    initial_corners = layer.corner_pixels.copy()
+
+    view.canvas.view.camera.rect = [1000, 1000, 100, 75]
+    viewer.window._qt_viewer.canvas.on_draw(None)
+
+    assert layer.data_level == 0
+    np.testing.assert_array_equal(layer.corner_pixels, initial_corners)
+
+
 def test_3D_multiscale_image(make_napari_viewer):
     """Test rendering of 3D multiscale image uses lowest resolution."""
     viewer = make_napari_viewer()
@@ -196,8 +221,6 @@ def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
-    view = viewer.window._qt_viewer
-    view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
@@ -226,16 +249,16 @@ def test_multiscale_flipped_axes(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_rotated_image(make_napari_viewer):
-    viewer = make_napari_viewer(show=True)
+def test_multiscale_rotated_image(qt_viewer, viewer_model):
+    qt_viewer.show()
     sizes = [4000 // i for i in range(1, 5)]
     arrays = [np.zeros((size, size), dtype=np.uint8) for size in sizes]
     for arr in arrays:
         arr[:10, :10] = 255
         arr[-10:, -10:] = 255
 
-    viewer.add_image(arrays, multiscale=True, rotate=44)
-    screenshot_rgba = viewer.screenshot(canvas_only=True, flash=False)
+    viewer_model.add_image(arrays, multiscale=True, rotate=44)
+    screenshot_rgba = qt_viewer.screenshot(flash=False)
     screenshot_rgb = screenshot_rgba[..., :3]
     assert np.any(
         screenshot_rgb

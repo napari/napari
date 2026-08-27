@@ -15,15 +15,15 @@ import napari
 histo = data.astronaut() / 255
 rch, gch, bch = np.transpose(histo, (2, 0, 1))
 
-v = napari.Viewer()
+viewer = napari.Viewer()
 
-rlayer = v.add_image(
+rlayer = viewer.add_image(
     rch, name='red channel', colormap='red', blending='additive'
 )
-glayer = v.add_image(
+glayer = viewer.add_image(
     gch, name='green channel', colormap='green', blending='additive'
 )
-blayer = v.add_image(
+blayer = viewer.add_image(
     bch, name='blue channel', colormap='blue', blending='additive'
 )
 
