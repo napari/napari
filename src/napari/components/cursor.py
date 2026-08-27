@@ -38,9 +38,13 @@ class Cursor(EventedModel):
 
     # fields
     position: tuple[float, ...] = (1.0, 1.0)
-    canvas_position: tuple[int, int] | None = None
     viewbox: tuple[int, int] | None = None
     scaled: bool = True
     size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD
+    _canvas_position: tuple[int, int] | None = None
     _view_direction: np.ndarray | None = None
+
+    @property
+    def canvas_position(self) -> tuple[int, int] | None:
+        return self._canvas_position

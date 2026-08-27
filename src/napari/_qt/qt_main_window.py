@@ -378,7 +378,7 @@ class _QtMainWindow(QMainWindow):
                 # TODO: anything to do here?
                 pass
             elif event.type() == QEvent.Type.Leave:
-                self._qt_viewer.viewer.cursor.canvas_position = None
+                self._qt_viewer.viewer.cursor._canvas_position = None
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
