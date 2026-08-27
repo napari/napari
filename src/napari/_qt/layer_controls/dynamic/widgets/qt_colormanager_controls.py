@@ -127,7 +127,7 @@ class QtColorManagerControl(QtWidgetControlsBase):
             for layer in self._layers:
                 getattr(
                     layer, self._colormanager_attribute
-                ).current_color = ColorValue
+                ).current_color = color
 
     def _on_current_color_change(self):
         with qt_signals_blocked(self.color_edit):
