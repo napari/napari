@@ -217,6 +217,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
+        # stub to be removed after deprecation cycle; only here to support
+        # tests and other edge cases that use pure ViewerModels and access
+        # window properties such as the title.
+        self._title = title
+
         # max_depth=0 means don't look for parent contexts.
 
         # FIXME: just like the LayerList, this object should ideally be created
@@ -299,6 +304,40 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
+
+    @property
+    @deprecated(
+        (
+            'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+            ' A pure ViewerModel no longer has access to window-related attributes.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self._title
+
+    @title.setter
+    @deprecated(
+        (
+            'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+            ' A pure ViewerModel no longer has access to window-related attributes.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self._title = title
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -452,7 +491,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def __str__(self):
         """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
+        return 'napari.ViewerModel'
 
     @property
     def _sliced_extent_world_augmented(self) -> np.ndarray:

@@ -1909,6 +1909,14 @@ class Window:
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
 
+    @property
+    def title(self) -> str:
+        return self._qt_window.windowTitle()
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self._qt_window.setWindowTitle(title)
+
 
 def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
