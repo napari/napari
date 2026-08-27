@@ -199,6 +199,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    _title: str = PrivateAttr()
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
