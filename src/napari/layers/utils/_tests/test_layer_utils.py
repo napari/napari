@@ -290,18 +290,14 @@ def test_unique_element_single_ndarray_valued_element():
     # array of 1D arrays.
     array = np.empty(1, dtype=object)
     array[0] = np.array([1.0, 0.0, 0.0, 1.0])
-    np.testing.assert_array_equal(
-        _unique_element(array), [1.0, 0.0, 0.0, 1.0]
-    )
+    np.testing.assert_array_equal(_unique_element(array), [1.0, 0.0, 0.0, 1.0])
 
 
 def test_unique_element_multiple_identical_ndarray_valued_elements():
     array = np.empty(2, dtype=object)
     array[0] = np.array([1.0, 0.0, 0.0, 1.0])
     array[1] = np.array([1.0, 0.0, 0.0, 1.0])
-    np.testing.assert_array_equal(
-        _unique_element(array), [1.0, 0.0, 0.0, 1.0]
-    )
+    np.testing.assert_array_equal(_unique_element(array), [1.0, 0.0, 0.0, 1.0])
 
 
 def test_unique_element_multiple_ragged_ndarray_valued_elements():
