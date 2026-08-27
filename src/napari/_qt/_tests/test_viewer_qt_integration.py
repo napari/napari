@@ -126,7 +126,7 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     instances = list(viewer._instances)
     idx = 0 if instances[1] == viewer else 1
     assert (
-        instances[idx].window._qt_window.windowTitle() == 'text'
+        instances[idx].window.title == 'text'
     )  # Check the second viewer's name
     instances[idx].close()  # Close the second viewer
 
