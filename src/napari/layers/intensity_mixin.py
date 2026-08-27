@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import ensure_colormap
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
 from napari.utils.status_messages import format_float
 from napari.utils.validators import _validate_increasing, validate_n_seq
@@ -101,7 +101,7 @@ class IntensityVisualizationMixin:
     @property
     def colormaps(self):
         """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
+        return tuple(AVAILABLE_COLORMAPS.keys())
 
     @property
     def colorbar(self):
