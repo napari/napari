@@ -123,10 +123,10 @@ class PolygonBase(Shape):
                 data = np.stack(splev(u, tck), axis=1)[:-1].astype(np.float32)
 
         # For path connect every all data
-        self._set_meshes(data, face=self._filled, closed=self._closed)
+        self._set_meshes(data, face=self._filled, closed=self._closed)  # type: ignore[ty:invalid-argument-type]
         bbox = self._bounding_box[:, self.dims_displayed]
-        self._box = create_box_from_bounding(bbox)
+        self._box = create_box_from_bounding(bbox)  # type: ignore[ty:invalid-assignment]
 
-        self.slice_key = np.rint(
+        self.slice_key = np.rint(  # type: ignore[ty:invalid-assignment]
             self._bounding_box[:, self.dims_not_displayed]
         ).astype(int)

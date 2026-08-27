@@ -577,6 +577,15 @@ include = [
 [tool.ty.overrides.rules]
 all = "ignore"
 
+# main's dynamic layer-controls refactor is not typed; ignore it like the rest
+# of layer_controls (mirrors mypy's `napari._qt.layer_controls.dynamic.*` entry)
+[[tool.ty.overrides]]
+include = [
+    'src/napari/_qt/layer_controls/dynamic/**',
+]
+[tool.ty.overrides.rules]
+all = "ignore"
+
 # equivalent of mypy ignore_errors = true (see napari issue #2751)
 [[tool.ty.overrides]]
 include = [

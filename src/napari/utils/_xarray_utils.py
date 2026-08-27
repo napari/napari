@@ -94,7 +94,7 @@ def _data_dims(
     dims = list(data.dims)
     if rgb:
         dims.pop()
-    return tuple(dims)
+    return tuple(dims)  # type: ignore[ty:invalid-return-type]
 
 
 # time units, from largest to smallest, mapped to their length in

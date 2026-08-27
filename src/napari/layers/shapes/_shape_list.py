@@ -1793,7 +1793,8 @@ class ShapeList:
         )
 
     def shapes_in_box(
-        self, corners: np.ndarray[tuple[Literal[2], Literal[2]]]
+        self,
+        corners: np.ndarray[tuple[Literal[2], Literal[2]]],  # type: ignore[ty:invalid-type-arguments]
     ) -> list[int]:
         """Determines which shapes, if any, are inside an axis-aligned box.
 
@@ -1874,8 +1875,8 @@ class ShapeList:
     def _bounding_boxes(
         self,
     ) -> tuple[
-        np.ndarray[tuple[int, Literal[2, 3]]],
-        np.ndarray[tuple[int, Literal[2, 3]]],
+        np.ndarray[tuple[int, Literal[2, 3]]],  # type: ignore[ty:invalid-type-arguments]
+        np.ndarray[tuple[int, Literal[2, 3]]],  # type: ignore[ty:invalid-type-arguments]
     ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:

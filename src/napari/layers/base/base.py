@@ -283,7 +283,7 @@ class _LayerSlicingState(ABC):
         offset = ndim_world - ndim
         order = np.array(world_dims)
         if offset == 0:
-            return order
+            return order  # type: ignore[ty:invalid-return-type]
         if offset < 0:
             return np.concatenate((np.arange(-offset), order - offset))
 

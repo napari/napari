@@ -331,7 +331,7 @@ def reconstruct_polygons_from_edges_py(
         polygon_vertices = vertices[polygon_indices]
         polygons.append(polygon_vertices)
 
-    return polygons
+    return polygons  # type: ignore[ty:invalid-return-type]
 
 
 def normalize_vertices_and_edges_py(
@@ -376,7 +376,9 @@ def normalize_vertices_and_edges_py(
         that are visited twice are removed.
     """
     if tuple(vertices[0]) == tuple(vertices[-1]):  # closed polygon
-        vertices = vertices[:-1]  # make closing implicit
+        vertices = vertices[
+            :-1
+        ]  # make closing implicit  # type: ignore[ty:invalid-assignment]
         close = True
 
     # Now, we make sure the vertices are unique (repeated vertices cause
@@ -419,7 +421,7 @@ def normalize_vertices_and_edges_py(
 
     new_vertices_array = np.array(new_vertices, dtype=np.float32)
     edges_array = np.array(list(edges), dtype=np.int64)
-    return new_vertices_array, edges_array
+    return new_vertices_array, edges_array  # type: ignore[ty:invalid-return-type]
 
 
 def _are_polar_angles_monotonic(poly: npt.NDArray, orientation_: int) -> bool:

@@ -216,7 +216,7 @@ def triangle_edges_intersect_box(
         Array with `True` values for triangles with edges that intersect the
         edges of the box.
     """
-    box = create_box(corners)[[0, 2, 4, 6]]
+    box = create_box(corners)[[0, 2, 4, 6]]  # type: ignore[ty:invalid-argument-type]
 
     all_intersects = np.zeros(len(triangles), dtype=bool)
     for i in range(3):

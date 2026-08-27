@@ -322,7 +322,7 @@ class Vectors(Layer):
         self,
     ) -> np.ndarray[tuple[Literal[1], int], np.dtype[np.integer]]:
         """(1, M) array: indices for the M in view vectors."""
-        return self._slicing_state._view_indices
+        return self._slicing_state._view_indices  # type: ignore[ty:invalid-return-type]
 
     @property
     def _view_alphas(self) -> float | np.ndarray:

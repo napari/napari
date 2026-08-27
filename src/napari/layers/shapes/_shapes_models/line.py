@@ -74,6 +74,6 @@ class Line(Shape):
         # in this case we have only 2D data (based on docstring)
         self._box = create_box(self.data_displayed)  # type: ignore[ty:invalid-argument-type]
 
-        self.slice_key = np.round(
+        self.slice_key = np.round(  # type: ignore[ty:invalid-assignment]
             self._bounding_box[:, self.dims_not_displayed]
         ).astype('int')

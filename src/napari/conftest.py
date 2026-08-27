@@ -115,7 +115,7 @@ def surface_data() -> tuple[
     data = np.array([[0, 0], [0, 20], [10, 0], [10, 10]], dtype=np.float32)
     faces = np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32)
     values = np.linspace(0, 1, len(data), dtype=np.float32)
-    return (data, faces, values)
+    return (data, faces, values)  # type: ignore[ty:invalid-return-type]
 
 
 class TrackDataDict(TypedDict):
@@ -134,14 +134,14 @@ def tracks_data() -> TrackDataDict:
         'time': [0, 1, 0, 1],
         'speed': [50, 30, 20, 10],
     }
-    return {'data': data, 'properties': properties}
+    return {'data': data, 'properties': properties}  # type: ignore[ty:invalid-return-type, ty:invalid-argument-type]
 
 
 @pytest.fixture
 def vectors_data() -> np.ndarray[
     tuple[int, Literal[2], Literal[2]], np.dtype[np.float32]
 ]:
-    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)
+    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)  # type: ignore[ty:invalid-return-type]
 
 
 @pytest.fixture(
