@@ -76,9 +76,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
 from napari._qt.layer_controls.dynamic.widgets.qt_face_color import (
     QtFaceColorControl,
 )
-from napari._qt.layer_controls.dynamic.widgets.qt_gamma_slider import (
-    QtGammaSliderControl,
-)
 from napari._qt.layer_controls.dynamic.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
@@ -91,7 +88,10 @@ from napari._qt.layer_controls.dynamic.widgets.qt_projection_mode_control import
 from napari._qt.layer_controls.dynamic.widgets.qt_text_visibility import (
     QtTextVisibilityControl,
 )
-from napari._qt.utils import set_widgets_enabled_with_opacity
+from napari._qt.utils import (
+    set_mixed_value_style,
+    set_widgets_enabled_with_opacity,
+)
 from napari.layers import (
     Image,
     Labels,
@@ -115,7 +115,6 @@ controls_dict = {
     IntensityVisualizationMixin: (
         QtContrastLimitsControl,
         QtHistogramControl,
-        QtGammaSliderControl,
         QtColormapControl,
     ),
     Points | Shapes: (
@@ -264,6 +263,12 @@ class QtDynamicLayerControls(QFrame):
         warn_layout.addStretch(1)
         warn_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         layout.addRow('experimental!', warn_widget)
+
+        self.warn_mixed = QLabel('mixed-state widgets')
+        set_mixed_value_style(self.warn_mixed, enabled=True)
+        self.warn_mixed.setVisible(False)
+        layout.addRow(self.warn_mixed)
+
         self._on_surface_coloring_change()
         self._on_ndisplay_changed()
 
@@ -317,7 +322,6 @@ class QtDynamicLayerControls(QFrame):
         )
         for cls in (
             QtContrastLimitsControl,
-            QtGammaSliderControl,
             QtColormapControl,
         ):
             control = self.findChild(cls)
