@@ -3,6 +3,7 @@ from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -99,10 +100,45 @@ class Viewer(ViewerModel):
         """
         return super().__new__(cls)
 
+    def __str__(self):
+        return f'napari.Viewer: {self.window.title}'
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
         return self._window
+
+    @property
+    @deprecated(
+        (
+            'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self.window.title
+
+    @title.setter
+    @deprecated(
+        (
+            'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+            ' There is currently no planned date for removal of the legacy attribute.'
+        ),
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self.window.title = title
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
