@@ -1640,17 +1640,6 @@ class Window:
                 coordinates=status_info['coordinates'],
             )
 
-    def _title_changed(self, event):
-        """Update window title.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if hasattr(self, '_qt_window'):
-            self._qt_window.setWindowTitle(event.value)
-
     def _help_changed(self, event):
         """Update help message on status bar.
 

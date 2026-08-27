@@ -88,7 +88,6 @@ from napari.utils.events import (
     EventedModel,
     disconnect_events,
 )
-from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
@@ -223,7 +222,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # stub to be removed after deprecation cycle; only here to support
     # tests and other edge cases that use pure ViewerModels and access
     # window properties such as the title.
-    _title: str = PrivateAttr()
+    _title: str = PrivateAttr(default='napari')
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -236,7 +235,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
-            title=title,
             dims={
                 'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
@@ -245,6 +243,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             },
         )
         self.model_config['extra'] = 'ignore'
+
+        # see above, this will be removed
+        self._title = title
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -273,9 +274,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # future.
         self.events.add(
             reset_view=Event,
-            title=WarningEmitter(
-                _TITLE_DEPRECATION_MSG, FutureWarning, stacklevel=2
-            ),
         )
 
         # Connect events
