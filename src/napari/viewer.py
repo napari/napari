@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
 
     from napari.window import (
-        Window,  # noqa: TC004  # it's actually imported lazily below
+        Window,
     )
 
 
