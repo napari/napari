@@ -138,6 +138,22 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     assert 'viewer2' in console.shell.user_ns
 
 
+def test_qt_viewer(make_napari_viewer):
+    """Test instantiating viewer."""
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    assert viewer.window.title == 'napari'
+    assert view.viewer == viewer
+
+    assert len(viewer.layers) == 0
+    assert view.layers.model().rowCount() == 0
+
+    assert viewer.dims.ndim == 2
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+
 def test_welcome_widget_visibility(make_napari_viewer):
     # Welcome screen shown when no layers and show_welcome_screen=True
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
