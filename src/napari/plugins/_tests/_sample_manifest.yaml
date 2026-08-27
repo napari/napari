@@ -39,6 +39,25 @@ contributions:
       colors:
         background: "#272822"
         foreground: "#75715e"
+  configurations:
+    reader:
+      title: Reading with something
+      properties:
+        lazy:
+          type: boolean
+          default: false
+          title: Load lazily
+    writer:
+      title: Writing
+      properties:
+        lazy:
+          type: boolean
+          default: false
+          title: write lazily
+        other_Attribute:
+          type: boolean
+          default: false
+          title: something
   sample_data:
     - display_name: Some Random Data (512 x 512)
       key: random_data
