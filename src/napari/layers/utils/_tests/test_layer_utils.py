@@ -265,15 +265,64 @@ def test_unique_element_scalar(array, expected):
 
 def test_unique_element_single_list_valued_element():
     # https://github.com/napari/napari/issues/9379
+    # A single selected point has no ambiguity: its list-valued feature
+    # is trivially "unique" and should be returned, not treated as
+    # unknown.
     array = np.empty(1, dtype=object)
     array[0] = [1, 2, 3]
-    assert _unique_element(array) is None
+    assert _unique_element(array) == [1, 2, 3]
 
 
-def test_unique_element_multiple_list_valued_elements():
+def test_unique_element_multiple_identical_list_valued_elements():
     array = np.empty(3, dtype=object)
     array[:] = [[1, 2], [1, 2], [1, 2]]
+    assert _unique_element(array) == [1, 2]
+
+
+def test_unique_element_multiple_differing_list_valued_elements():
+    array = np.empty(3, dtype=object)
+    array[:] = [[1, 2], [3, 4], [1, 2]]
     assert _unique_element(array) is None
+
+
+def test_unique_element_single_ndarray_valued_element():
+    # e.g. a single selected point's RGBA color, stored as an object
+    # array of 1D arrays.
+    array = np.empty(1, dtype=object)
+    array[0] = np.array([1.0, 0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(
+        _unique_element(array), [1.0, 0.0, 0.0, 1.0]
+    )
+
+
+def test_unique_element_multiple_identical_ndarray_valued_elements():
+    array = np.empty(2, dtype=object)
+    array[0] = np.array([1.0, 0.0, 0.0, 1.0])
+    array[1] = np.array([1.0, 0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(
+        _unique_element(array), [1.0, 0.0, 0.0, 1.0]
+    )
+
+
+def test_unique_element_multiple_ragged_ndarray_valued_elements():
+    # Differently-shaped elements must not raise a broadcasting error;
+    # they are simply not unique.
+    array = np.empty(2, dtype=object)
+    array[0] = np.array([1.0, 0.0])
+    array[1] = np.array([1.0, 0.0, 0.0])
+    assert _unique_element(array) is None
+
+
+def test_unique_element_2d_array_rows():
+    # The common real case: border_color/face_color stored directly as
+    # an (N, 4) float array, not an object array of sub-arrays.
+    identical = np.array([[1.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
+    np.testing.assert_array_equal(
+        _unique_element(identical), [1.0, 0.0, 0.0, 1.0]
+    )
+
+    differing = np.array([[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]])
+    assert _unique_element(differing) is None
 
 
 def test_dataframe_to_properties():
