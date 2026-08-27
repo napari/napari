@@ -203,6 +203,7 @@ class _QtMainWindow(QMainWindow):
         init_qactions()
 
         self._current_tooltip = 'Ready'
+        self._tooltip_visible = settings.appearance.layer_tooltip_visibility
         self.status_thread = StatusChecker(viewer, parent=self)
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
@@ -218,6 +219,9 @@ class _QtMainWindow(QMainWindow):
         )
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
+        )
+        settings.appearance.events.layer_tooltip_visibility.connect(
+            self._toggle_tooltip
         )
         self._qt_viewer._welcome_widget.urls_drag_entered.connect(
             self._set_drag_help
@@ -238,6 +242,11 @@ class _QtMainWindow(QMainWindow):
             self.status_thread.start()
         else:
             self.status_thread.terminate()
+
+    def _toggle_tooltip(self):
+        self._tooltip_visible = (
+            get_settings().appearance.layer_tooltip_visibility
+        )
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
@@ -319,10 +328,7 @@ class _QtMainWindow(QMainWindow):
         return window._qt_viewer.viewer if window else None
 
     def event(self, e: QEvent) -> bool:
-        if (
-            e.type() == QEvent.Type.ToolTip
-            and get_settings().appearance.layer_tooltip_visibility
-        ):
+        if e.type() == QEvent.Type.ToolTip and self._tooltip_visible:
             # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
             # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
             pnt = (
