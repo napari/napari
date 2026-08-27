@@ -37,6 +37,9 @@ def auto_contrast_once(layer: Image) -> None:
     layer.reset_contrast_limits()
 
 
+# TODO: how to make these 4 actions only work for `Selection[Image]`?
+#       Doesn't work cause Selection[Image] is technically not a subtype
+#       of `Selection[Layer]`...
 @register_image_action('Orient plane normal along z-axis')
 def orient_plane_normal_along_z(layer: Image) -> None:
     orient_plane_normal_around_cursor(layer, plane_normal=(1, 0, 0))
@@ -85,7 +88,9 @@ def orient_plane_normal_along_view_direction(
 
 # The generator function above can't be bound to a button, so here
 # is a non-generator version of the function
-def orient_plane_normal_along_view_direction_no_gen(layer: Image) -> None:
+def orient_plane_normal_along_view_direction_no_gen(
+    layer: Image,
+) -> None:
     viewer = napari.viewer.current_viewer()
     if viewer is None or viewer.dims.ndisplay != 3:
         return

@@ -1,5 +1,4 @@
 from enum import StrEnum
-from typing import Any
 
 from pydantic import AliasChoices, Field
 
@@ -28,9 +27,8 @@ class PaletteFuzzySearch(StrEnum):
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
-    def __init__(self, **data: dict[str, Any]):
-        super().__init__(**data)
-
+    def _connect_events(self) -> None:
+        """Connects the events for the triangulation and colormap backends to their respective update functions."""
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
         )
@@ -128,6 +126,15 @@ class ExperimentalSettings(EventedSettings):
         ),
         ge=0,
         le=100,
+    )
+
+    dynamic_layer_controls: bool = Field(
+        default=False,
+        title='Generate GUI layer controls dynamically instead of using premade panels.',
+        description=(
+            'Based on the attributes of the currenty selected layer, generate layer controls\n'
+            'dynamically, even when a single layer is selected. Happens by default with multiple layers.'
+        ),
     )
 
     class NapariConfig:
