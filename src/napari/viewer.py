@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
 
     from napari.window import (
-        Window,  # noqa: TC004  # it's actually imported lazily below
+        Window,
     )
 
 
@@ -44,7 +44,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: Window = None  # type: ignore
+    _window: 'Window' = None  # type: ignore
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
