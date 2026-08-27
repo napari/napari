@@ -179,8 +179,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
-    title: str
-        The title of the viewer model
     tooltip: napari.components.tooltip.Tooltip
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
@@ -204,7 +202,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     status: Union[str, Dict[str, str]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
-    title: str = 'napari'
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
