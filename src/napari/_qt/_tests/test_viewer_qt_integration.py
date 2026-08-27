@@ -126,7 +126,7 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     instances = list(viewer._instances)
     idx = 0 if instances[1] == viewer else 1
     assert (
-        instances[idx].window._qt_window.windowTitle() == 'text'
+        instances[idx].window.title == 'text'
     )  # Check the second viewer's name
     instances[idx].close()  # Close the second viewer
 
@@ -136,6 +136,22 @@ def test_drop_python_file_double_viewer(make_napari_viewer, tmp_path):
     assert np.array_equal(console.shell.user_ns['data'], np.zeros((10, 10)))
     assert 'viewer1' in console.shell.user_ns
     assert 'viewer2' in console.shell.user_ns
+
+
+def test_qt_viewer(make_napari_viewer):
+    """Test instantiating viewer."""
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    assert viewer.window.title == 'napari'
+    assert view.viewer == viewer
+
+    assert len(viewer.layers) == 0
+    assert view.layers.model().rowCount() == 0
+
+    assert viewer.dims.ndim == 2
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_welcome_widget_visibility(make_napari_viewer):
