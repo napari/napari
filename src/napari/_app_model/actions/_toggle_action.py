@@ -56,7 +56,7 @@ class ViewerModelToggleAction(Action):
         attr = viewer
         for part in self._attribute_path_parts:
             attr = getattr(attr, part)
-        return attr  # type: ignore[ty:invalid-return-type]
+        return attr  # pyrefly: ignore [bad-return]
 
     def toggle(self, viewer: ViewerModel) -> None:
         """toggle the viewer attribute"""

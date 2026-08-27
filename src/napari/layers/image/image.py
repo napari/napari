@@ -636,7 +636,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)  # pyrefly: ignore [bad-argument-type]
         if np.allclose(
             fixed_contrast_info.contrast_limits,
-            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
+            self.contrast_limits,
         ):
             return raw
 
@@ -647,7 +647,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # pyrefly: ignore [not-callable]
         if not np.allclose(
             _coerce_contrast_limits(self.contrast_limits).contrast_limits,  # pyrefly: ignore [bad-argument-type]
-            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
+            self.contrast_limits,
         ):
             # we use the private attribute here to avoid triggering the setter again
             prev = self._auto_contrast

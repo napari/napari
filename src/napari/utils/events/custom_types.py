@@ -29,7 +29,7 @@ if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
 
 
 class Array(np.ndarray):
-    def __class_getitem__(cls, t: object) -> type:  # type: ignore[ty:invalid-method-override]
+    def __class_getitem__(cls, t: object) -> type:  # pyrefly: ignore [bad-override]
         return type('Array', (Array,), {'__dtype__': t})
 
     @classmethod

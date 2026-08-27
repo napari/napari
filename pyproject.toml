@@ -667,8 +667,8 @@ project-excludes = [
     'src/napari/utils/transforms/transforms.py',
     'src/napari/view_layers.py',
 ]
-python-version = "3.12"
-python-platform = "linux"
+
+python-platform = "all"
 replace-imports-with-any = ["qtpy.*", "vispy.*"]
 
 [tool.pyrefly.errors]

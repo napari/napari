@@ -461,7 +461,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box  # pyrefly: ignore [bad-return]
+    return box
 
 
 def rectangle_to_box(
@@ -1041,7 +1041,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         index_d = i * tube_points + jp
 
         indices.extend(
-            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[ty:invalid-argument-type]
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # pyrefly: ignore [bad-argument-type]
         )
     triangles = np.array(indices, dtype=np.uint32)
 

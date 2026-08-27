@@ -11,7 +11,7 @@ def _show_error_dialog_windows(message: str, title: str = 'Error') -> None:
 
     # Display a message box with the error message
     # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxw
-    ctypes.windll.user32.MessageBoxW(0, message, title, 1)  # type: ignore[ty:unresolved-attribute]
+    ctypes.windll.user32.MessageBoxW(0, message, title, 1)
 
 
 def _show_error_dialog_mac(message: str, title: str = 'Error') -> None:

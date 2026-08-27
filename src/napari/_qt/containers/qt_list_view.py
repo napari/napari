@@ -45,4 +45,4 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):
         self.setRoot(root)
 
     def model(self) -> QtListModel[ItemType]:
-        return super().model()  # type: ignore[ty:invalid-return-type]
+        return super().model()  # pyrefly: ignore [bad-return]

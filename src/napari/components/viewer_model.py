@@ -316,7 +316,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def axes(self) -> SceneAxesOverlay:
-        return self.scene.overlays.axes  # type: ignore[return-value]
+        return self.scene.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(

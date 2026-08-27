@@ -217,7 +217,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[ty:invalid-argument-type]
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # pyrefly: ignore [bad-argument-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -615,7 +615,7 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
+                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
                 layer._slicing_state._update_loaded_slice_id(
