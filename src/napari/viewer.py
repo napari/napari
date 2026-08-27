@@ -13,7 +13,15 @@ if typing.TYPE_CHECKING:
     # helpful for IDE support
     from pathlib import Path
 
-    from napari._qt.qt_main_window import Window
+    from napari.window import (
+        Window,  # noqa: TC004  # it's actually imported lazily below
+    )
+
+
+_TITLE_DEPRECATION_MSG = (
+    'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    ' There is currently no planned date for removal of the legacy attribute.'
+)
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -36,7 +44,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: Window = None  # type: ignore
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
@@ -110,10 +118,7 @@ class Viewer(ViewerModel):
 
     @property
     @deprecated(
-        (
-            'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
-        ),
+        _TITLE_DEPRECATION_MSG,
         stacklevel=2,
     )
     def title(self) -> str:
@@ -126,10 +131,7 @@ class Viewer(ViewerModel):
 
     @title.setter
     @deprecated(
-        (
-            'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
-        ),
+        _TITLE_DEPRECATION_MSG,
         stacklevel=2,
     )
     def title(self, title: str) -> None:

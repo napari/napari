@@ -88,6 +88,7 @@ from napari.utils.events import (
     EventedModel,
     disconnect_events,
 )
+from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
@@ -137,6 +138,12 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
         parsed = urlparse(p_str)
         if not (parsed.scheme and parsed.netloc) and not Path(p_str).exists():
             raise FileNotFoundError(f'Path {p_str!r} does not exist.')
+
+
+_TITLE_DEPRECATION_MSG = (
+    'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    ' A pure ViewerModel no longer has access to window-related attributes.'
+)
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -213,16 +220,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # stub to be removed after deprecation cycle; only here to support
+    # tests and other edge cases that use pure ViewerModels and access
+    # window properties such as the title.
     _title: str = PrivateAttr()
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        # stub to be removed after deprecation cycle; only here to support
-        # tests and other edge cases that use pure ViewerModels and access
-        # window properties such as the title.
-        self._title = title
-
         # max_depth=0 means don't look for parent contexts.
 
         # FIXME: just like the LayerList, this object should ideally be created
@@ -266,7 +271,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add extra reset_view event. Ideally this should be removed in the
         # future.
-        self.events.add(reset_view=Event)
+        self.events.add(
+            reset_view=Event,
+            title=WarningEmitter(
+                _TITLE_DEPRECATION_MSG, FutureWarning, stacklevel=2
+            ),
+        )
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
@@ -308,10 +318,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
-            ' A pure ViewerModel no longer has access to window-related attributes.'
-        ),
+        _TITLE_DEPRECATION_MSG,
         category=FutureWarning,
         stacklevel=2,
     )
@@ -325,10 +332,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @title.setter
     @deprecated(
-        (
-            'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
-            ' A pure ViewerModel no longer has access to window-related attributes.'
-        ),
+        _TITLE_DEPRECATION_MSG,
         category=FutureWarning,
         stacklevel=2,
     )
