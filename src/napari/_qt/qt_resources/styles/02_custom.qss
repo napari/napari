@@ -694,3 +694,7 @@ QSlider[mixed_value="true"]::handle:horizontal {
 QSlider[mixed_value="true"]::handle:vertical {
   background-color: {{ warning }};
 }
+QLabel[mixed_value="true"] {
+  color: {{ warning }};
+  text-decoration: {{ warning }} underline;
+}
