@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Set as AbstractSet
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
@@ -10,6 +9,8 @@ from napari.layers.points._points_utils import _points_in_box_3d, points_in_box
 from napari.utils.events import Event
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Set as AbstractSet
+
     from napari.layers.points.points import Points
 
 
@@ -255,10 +256,10 @@ def _select_points_from_drag(
 
     # If shift combine drag selection with existing selected ones
     if modify_selection:
-        new_selected = layer._indices_view[selection]
+        new_selected = layer._view_indices[selection]
         target = set(layer.selected_data).symmetric_difference(
             set(new_selected)
         )
         layer.selected_data = list(target)
     else:
-        layer.selected_data = layer._indices_view[selection]
+        layer.selected_data = layer._view_indices[selection]

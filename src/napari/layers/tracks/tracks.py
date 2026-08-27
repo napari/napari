@@ -2,18 +2,19 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from warnings import warn
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.tracks._track_utils import TrackManager
 from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events import Event
-from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class Tracks(Layer):
@@ -399,7 +400,7 @@ class Tracks(Layer):
         self._reset_editable()
 
     @property
-    def features(self) -> pd.DataFrame:
+    def features(self) -> 'pd.DataFrame':
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -419,7 +420,7 @@ class Tracks(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
@@ -540,13 +541,7 @@ class Tracks(Layer):
     def color_by(self, color_by: str) -> None:
         """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
-            raise ValueError(
-                trans._(
-                    '{color_by} is not a valid property key',
-                    deferred=True,
-                    color_by=color_by,
-                )
-            )
+            raise ValueError(f'{color_by} is not a valid property key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -559,13 +554,7 @@ class Tracks(Layer):
     def colormap(self, colormap: str) -> None:
         """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(
-                trans._(
-                    'Colormap {colormap} not available',
-                    deferred=True,
-                    colormap=colormap,
-                )
-            )
+            raise ValueError(f'Colormap {colormap} not available')
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
@@ -665,13 +654,7 @@ class Tracks(Layer):
     def _check_color_by_in_features(self) -> None:
         if self._color_by not in self.features.columns:
             warn(
-                (
-                    trans._(
-                        'Previous color_by key {key!r} not present in features. Falling back to track_id',
-                        deferred=True,
-                        key=self._color_by,
-                    )
-                ),
+                f'Previous color_by key {self._color_by!r} not present in features. Falling back to track_id',
                 UserWarning,
             )
             self._color_by = 'track_id'

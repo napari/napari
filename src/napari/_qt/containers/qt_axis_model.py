@@ -1,12 +1,16 @@
-from collections.abc import Iterable
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from qtpy.QtCore import QModelIndex, Qt
-from typing_extensions import Self
 
 from napari._qt.containers.qt_list_model import QtListModel
 from napari.components import Dims
 from napari.utils.events import SelectableEventedList
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from typing import Self
 
 
 class AxisModel:
@@ -95,21 +99,23 @@ class AxisList(SelectableEventedList[AxisModel]):
 
 
 class QtAxisListModel(QtListModel[AxisModel]):
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole):
+    def data(
+        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
         if not index.isValid():
             return None
-        axis = self.getItem(index)
+        axis = self.getItemStrict(index)
         if role == Qt.ItemDataRole.DisplayRole:
             return str(axis)
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         if role == Qt.ItemDataRole.CheckStateRole:
             return (
                 Qt.CheckState.Checked
                 if axis.rollable
                 else Qt.CheckState.Unchecked
             )
-        return super().data(index, role)
+        return super().data(index, Qt.ItemDataRole(role))
 
     def setData(
         self,
@@ -117,7 +123,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
-        axis = self.getItem(index)
+        axis = self.getItemStrict(index)
         if role == Qt.ItemDataRole.CheckStateRole:
             axis.rollable = Qt.CheckState(value) == Qt.CheckState.Checked
         elif role == Qt.ItemDataRole.EditRole:
@@ -129,7 +135,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         self.dataChanged.emit(index, index, [role])
         return True
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         """Returns the item flags for the given `index`.
 
         This describes the properties of a given item in the model.  We set

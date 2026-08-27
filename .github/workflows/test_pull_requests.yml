@@ -20,11 +20,13 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Set up Python 3.12
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: 3.12
+          persist-credentials: false
+      - name: Set up Python 3.14
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: 3.14
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -38,41 +40,24 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.12"
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
-        run: pip install --upgrade pip
-      - name: Install Napari dev
-        run: pip install -e .  --group build
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.12.txt
+        run: pip install --upgrade pip tox
       - name: Make Typestubs
         run: |
-          make typestubs
+          tox -e typestubs
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Check Manifest
         run: |
-          make check-manifest
-
-  localization_syntax:
-    # make sure all necessary files will be bundled in the release
-    name: Check l18n syntax
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.x"
-      - name: Check localization formatting
-        run: |
-          pip install --upgrade pip semgrep
-          # f"..." and f'...' are the same for semgrep
-          semgrep --error --lang python --pattern 'trans._(f"...")' src/napari
-          semgrep --error --lang python --pattern "trans._(\$X.format(...))" src/napari
+          tox -e check-manifest
 
   build_wheel:
     name: Build wheel
@@ -86,7 +71,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt5
             coverage: no_cov
@@ -112,60 +97,67 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ ubuntu-latest ]
-        python: [ "3.13" ]
+        python: [ "3.14" ]
         backend: [ "pyqt5,pyqt6" ]
         coverage: [ cov ]
         include:
-          # Windows py310
+          # when changing these, try to keep full coverage of supported
+          # python versions so we test at least once everywhere
           - python: "3.11"
-            platform: windows-2022
+            platform: windows-latest
             backend: pyqt5
             coverage: no_cov
-          - python: "3.13"
-            platform: windows-2022
+          - python: "3.14"
+            platform: windows-latest
             backend: pyqt6
             coverage: cov
-          - python: "3.13"
+          - python: "3.14"
             platform: macos-15-intel
             backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
-          - python: "3.13"
-            platform: macos-latest
+          - python: "3.14"
+            platform: macos-15
             backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
           # minimum specified requirements
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
-          - python: "3.12"
+          # [all] extras
+          - python: "3.13"
             platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
           # test without any Qt backends
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
           # test with torch
-          - python: "3.13"
+          - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
           # test with no numba
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
           # pyside6 test
-          - python: "3.13"
+          - python: "3.14"
             platform: ubuntu-latest
             backend: pyside6
+            coverage: cov
+          # linux aarch64 test
+          - python: "3.14"
+            platform: ubuntu-24.04-arm
+            backend: pyqt6
             coverage: cov
     with:
       python_version: ${{ matrix.python }}
@@ -187,7 +179,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py312-pyqt6-examples
         timeout: 60
         python_version: 3.12
         constraints_suffix: _examples
@@ -212,17 +204,18 @@ jobs:
     env:
       GIT_LFS_SKIP_SMUDGE: 1
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: 3.12
           cache-dependency-path: pyproject.toml
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
         with:
           qt: true
           wm: herbstluftwm
@@ -233,7 +226,7 @@ jobs:
           unzip triangulation-benchmark-shapes.zip -d src/napari/benchmarks/
           rm triangulation-benchmark-shapes.zip
 
-      - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
+      - uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         # here we get hash of the latest release commit to compare with PR
         id: latest_release
         with:
@@ -270,7 +263,7 @@ jobs:
 
       - name: Upload triangulation artifacts
         if: failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: triangulation-benchmarks
           path: /tmp/napari*

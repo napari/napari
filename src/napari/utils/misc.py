@@ -11,8 +11,7 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from enum import Enum, EnumMeta
+from enum import Enum, StrEnum
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -24,11 +23,9 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
-
-_sentinel = object()
-
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Sequence
+
     import packaging.version
 
 
@@ -54,43 +51,48 @@ def running_as_constructor_app() -> bool:
 
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None and shell.__class__.__name__ == 'ZMQInteractiveShell'
+    )
 
 
 def in_ipython() -> bool:
     """Return true if we're running in an IPython interactive shell."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
-    return False
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return False
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'TerminalInteractiveShell'
+    )
 
 
 def in_python_repl() -> bool:
     """Return true if we're running in a Python REPL."""
-    with contextlib.suppress(ImportError):
-        from IPython import get_ipython
-
-        return get_ipython().__class__.__name__ == 'NoneType' and hasattr(
-            sys, 'ps1'
-        )
-    return False
-
-
-def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
-    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
-    if match is None:
-        raise ValueError("arg not in format 'rgb(x,y,z)'")
-    return list(map(int, match.groups()))
+    # check if IPython is imported already
+    ipy = sys.modules.get('IPython')
+    if ipy is None:
+        return hasattr(sys, 'ps1')
+    get_ipython = ipy.get_ipython
+    shell = get_ipython()
+    return (
+        shell is not None
+        and shell.__class__.__name__ == 'NoneType'
+        and hasattr(sys, 'ps1')
+    )
 
 
 def ensure_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
@@ -102,7 +104,7 @@ def ensure_iterable(
 
 
 def is_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
     allow_none: bool = False,
 ) -> bool:
     """Determine if a single argument is an iterable."""
@@ -192,14 +194,7 @@ def ensure_sequence_of_iterables(
     ):
         if length is not None and len(obj) != length:
             # sequence of iterables of wrong length
-            raise ValueError(
-                trans._(
-                    'length of {obj} must equal {length}',
-                    deferred=True,
-                    obj=obj,
-                    length=length,
-                )
-            )
+            raise ValueError(f'length of {obj} must equal {length}')
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -219,76 +214,54 @@ def formatdoc(obj):
     return obj
 
 
-class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item):
-        """set the item name case to uppercase for name lookup"""
-        if isinstance(item, str):
-            item = item.upper()
-
-        return super().__getitem__(item)
-
-    def __call__(
-        cls,
-        value,
-        names=None,
-        *,
-        module=None,
-        qualname=None,
-        type=None,  # noqa: A002
-        start=1,
-    ):
-        """set the item value case to lowercase for value lookup"""
-        # simple value lookup
-        if names is None:
-            if isinstance(value, str):
-                return super().__call__(value.lower())
-            if isinstance(value, cls):
-                return value
-
-            raise ValueError(
-                trans._(
-                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                    deferred=True,
-                    class_name=cls,
-                    dtype=builtins.type(value),
-                )
-            )
-
-        # otherwise create new Enum class
-        return cls._create_(
-            value,
-            names,
-            module=module,
-            qualname=qualname,
-            type=type,
-            start=start,
-        )
-
-    def keys(self) -> list[str]:
-        return list(map(str, self))
-
-
-class StringEnum(Enum, metaclass=StringEnumMeta):
+class StringEnum(StrEnum):
     @staticmethod
-    def _generate_next_value_(name: str, start, count, last_values) -> str:
-        """autonaming function assigns each value its own name as a value"""
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list[str]
+    ) -> str:
+        """Assign the lower-cased member name as its value."""
         return name.lower()
 
     def __str__(self) -> str:
-        """String representation: The string method returns the lowercase
-        string of the Enum name
-        """
         return self.value
+
+    @classmethod
+    def _missing_(cls, value: object) -> StringEnum | None:
+        if isinstance(value, StringEnum):
+            # ruff suggests to use TypeError for when
+            # a value is of the wrong type,
+            # but tests expect ValueError,
+            # so tests win here
+            raise ValueError(  # noqa: TRY004
+                f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
+            )
+        if isinstance(value, str):
+            for member in cls:
+                if member.value == value.lower():
+                    return member
+            return None
+        raise ValueError(
+            f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
+        )
 
     def __eq__(self, other: object) -> bool:
         if type(self) is type(other):
             return self is other
+        if isinstance(other, StringEnum):
+            return False
         if isinstance(other, str):
             return str(self) == other
         return False
 
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
     def __hash__(self) -> int:
         return hash(str(self))
+
+    @classmethod
+    def keys(cls) -> list[str]:
+        return list(map(str, cls))
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
@@ -331,9 +304,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     from urllib.parse import urlparse
 
     if not isinstance(relpath, str | Path):
-        raise TypeError(
-            trans._('Argument must be a string or Path', deferred=True)
-        )
+        raise TypeError('Argument must be a string or Path')
     OriginType = type(relpath)
 
     relpath_str = fspath(relpath)
@@ -343,13 +314,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
-        raise ValueError(
-            trans._(
-                'Requested path {path!r} does not exist.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'Requested path {path!r} does not exist.')
     return OriginType(path)
 
 
@@ -398,11 +363,7 @@ def ensure_n_tuple(
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:
-    msg = trans._(
-        'Not a valid layer data tuple: {value!r}',
-        deferred=True,
-        value=val,
-    )
+    msg = f'Not a valid layer data tuple: {val!r}'
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
@@ -418,9 +379,7 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-    raise TypeError(
-        trans._('Not a valid list of layer data tuples!', deferred=True)
-    )
+    raise TypeError('Not a valid list of layer data tuples!')
 
 
 def _quiet_array_equal(*a, **k) -> bool:
@@ -528,13 +487,7 @@ def dir_hash(
     import hashlib
 
     if not Path(path).is_dir():
-        raise TypeError(
-            trans._(
-                '{path} is not a directory.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise TypeError(f'{path} is not a directory.')
 
     hash_func = hashlib.md5
     _hash = hash_func()
@@ -744,3 +697,23 @@ def argsort(values: Sequence[int]) -> list[int]:
     [1, 2, 0]
     """
     return sorted(range(len(values)), key=values.__getitem__)
+
+
+def human_readable_size(size_bytes: float) -> str:
+    """Convert bytes to a human-readable string (KB, MB, GB, etc.).
+
+    Parameters
+    ----------
+    size_bytes : float
+        Number of bytes.
+
+    Returns
+    -------
+    str
+        Human-readable size string, e.g. ``"8.4 MB"``.
+    """
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
+        if abs(size_bytes) < 1000:
+            return f'{size_bytes:.1f} {unit}'
+        size_bytes /= 1000
+    return f'{size_bytes:.1f} PB'

@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import datetime
 import uuid
 from enum import auto
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from napari.utils.misc import Callable, StringEnum
+from napari.utils.misc import StringEnum
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Status(StringEnum):

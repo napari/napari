@@ -1,13 +1,15 @@
-from collections.abc import Iterable
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from napari.utils.events.containers import SelectableEventedList
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 T = TypeVar('T')
 
 
 def _make_selectable_list_and_select_first(
-    items: Iterable[T],
+    items: 'Iterable[T]',
 ) -> SelectableEventedList[T]:
     selectable_list = SelectableEventedList(items)
     first = selectable_list[0]

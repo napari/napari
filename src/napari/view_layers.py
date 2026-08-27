@@ -4,7 +4,7 @@ This module provides the `imshow` function.
 """
 
 import inspect
-from typing import Any
+from typing import Any, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -75,13 +75,100 @@ def _make_viewer_then(
     return viewer, added
 
 
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: None = ...,
+    affine=...,
+    attenuation=...,
+    auto_contrast=...,
+    axis_labels=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    locked_data_level=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, Image]: ...
+
+
+@overload
+def imshow(
+    data,
+    *,
+    channel_axis: int,
+    affine=...,
+    attenuation=...,
+    auto_contrast=...,
+    axis_labels=...,
+    blending=...,
+    cache=...,
+    colormap=...,
+    contrast_limits=...,
+    custom_interpolation_kernel_2d=...,
+    depiction=...,
+    experimental_clipping_planes=...,
+    gamma=...,
+    interpolation2d=...,
+    interpolation3d=...,
+    iso_threshold=...,
+    locked_data_level=...,
+    metadata=...,
+    multiscale=...,
+    name=...,
+    opacity=...,
+    plane=...,
+    projection_mode=...,
+    rendering=...,
+    rgb=...,
+    rotate=...,
+    scale=...,
+    shear=...,
+    translate=...,
+    units=...,
+    visible=...,
+    viewer=...,
+    title=...,
+    ndisplay=...,
+    order=...,
+    show=...,
+) -> tuple[Viewer, tuple[Image, ...]]: ...
+
+
 def imshow(
     data,
     *,
     channel_axis=None,
     affine=None,
-    axis_labels=None,
     attenuation=0.05,
+    auto_contrast=False,
+    axis_labels=None,
     blending=None,
     cache=True,
     colormap=None,
@@ -93,6 +180,7 @@ def imshow(
     interpolation2d='nearest',
     interpolation3d='linear',
     iso_threshold=None,
+    locked_data_level=None,
     metadata=None,
     multiscale=None,
     name=None,
@@ -112,7 +200,7 @@ def imshow(
     ndisplay=2,
     order=(),
     show=True,
-) -> tuple[Viewer, list['Image']]:
+) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
     Parameters
@@ -141,6 +229,10 @@ def imshow(
         top of the provided scale, rotate, and shear values.
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     blending : str or list of str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -183,6 +275,11 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict or list of dict
         Layer metadata.
     multiscale : bool
@@ -245,7 +342,7 @@ def imshow(
     -------
     viewer : napari.Viewer
         The created or passed viewer.
-    layer(s) : napari.layers.Image or List[napari.layers.Image]
+    layer(s) : napari.layers.Image or tuple of napari.layers.Image
         The added layer(s). (May be more than one if the ``channel_axis`` keyword
         argument is given.
     """
@@ -265,7 +362,9 @@ def imshow(
         rendering=rendering,
         depiction=depiction,
         iso_threshold=iso_threshold,
+        locked_data_level=locked_data_level,
         attenuation=attenuation,
+        auto_contrast=auto_contrast,
         name=name,
         metadata=metadata,
         scale=scale,

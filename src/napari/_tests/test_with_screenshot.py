@@ -232,13 +232,13 @@ def test_grid_mode(make_napari_viewer):
 
     viewer = make_napari_viewer(show=True)
 
-    # Add images
+    # Add 6 image layers
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -246,10 +246,10 @@ def test_grid_mode(make_napari_viewer):
     np.testing.assert_almost_equal(screenshot[center], color[-1])
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
@@ -283,10 +283,10 @@ def test_grid_mode(make_napari_viewer):
         np.testing.assert_almost_equal(screenshot[coord], c)
 
     # return to stack view
-    viewer.grid.enabled = False
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
+    viewer.canvas.grid.enabled = False
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
 
 
 @skip_on_win_ci
@@ -384,7 +384,7 @@ def test_labels_painting(make_napari_viewer):
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_napari_viewer):
-    """Test that something visible on launch."""
+    """Test that the welcome widget is visible in canvas screenshots."""
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
 
     # Check something is visible
@@ -403,26 +403,21 @@ def test_welcome(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert len(viewer.layers) == 0
     assert screenshot[..., :-1].max() > 0
-    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome_overlay_covers_other_overlays(make_napari_viewer):
-    """Test that Welcome overlay covers scale_bar and axes when no layers.
-
-    Regression test for https://github.com/napari/napari/issues/8642
-    """
+    """Test that the welcome widget covers scale bar and axes when no layers."""
     viewer = make_napari_viewer(show=True, show_welcome_screen=True)
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
     viewer.scale_bar.visible = True
-    viewer.axes.visible = True
+    viewer.scene.overlays.axes.visible = True
 
     screenshot_with_overlays = viewer.screenshot(canvas_only=True, flash=False)
 
     np.testing.assert_array_equal(launch_screenshot, screenshot_with_overlays)
-    viewer.welcome_screen.visible = False  # to stop timer
 
 
 @skip_on_win_ci
@@ -433,18 +428,18 @@ def test_axes_visible(make_napari_viewer):
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
 
     # Make axes visible and check something is seen
-    viewer.axes.visible = True
+    viewer.scene.overlays.axes.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.axes.visible
+    assert viewer.scene.overlays.axes.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make axes not visible and check they are gone
-    viewer.axes.visible = False
+    viewer.scene.overlays.axes.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
@@ -456,18 +451,18 @@ def test_scale_bar_visible(make_napari_viewer):
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
 
     # Make scale bar visible and check something is seen
-    viewer.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
     on_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert viewer.scale_bar.visible
+    assert viewer.canvas.overlays.scale_bar.visible
     assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make scale bar not visible and check it is gone
-    viewer.scale_bar.visible = False
+    viewer.canvas.overlays.scale_bar.visible = False
     off_screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert not viewer.scale_bar.visible
+    assert not viewer.canvas.overlays.scale_bar.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
@@ -476,10 +471,10 @@ def test_scale_bar_visible(make_napari_viewer):
 def test_screenshot_has_no_border(make_napari_viewer):
     """See https://github.com/napari/napari/issues/3357"""
     viewer = make_napari_viewer(show=True)
-    image_data = np.ones((60, 80))
+    image_data = np.ones((60, 80), dtype=np.float32)
     viewer.add_image(image_data, colormap='red')
     # Zoom in dramatically to make the screenshot all red.
-    viewer.camera.zoom = 1000
+    viewer.scene.camera.zoom = 1000
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
 
@@ -500,7 +495,7 @@ def test_blending_modes_with_canvas(make_napari_viewer):
     img2_layer = viewer.add_image(img2)
 
     viewer.window._qt_viewer.canvas.size = shape
-    viewer.camera.zoom = 1
+    viewer.scene.camera.zoom = 1
 
     # check that additive behaves correctly with black canvas
     img1_layer.blending = 'additive'

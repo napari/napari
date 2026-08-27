@@ -4,15 +4,18 @@ from collections import deque
 from collections.abc import Iterable, Iterator, MutableSet
 from types import GeneratorType
 from typing import (
+    TYPE_CHECKING,
     Any,
     TypeVar,
     get_args,
 )
 
-from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
 from napari.utils.events import EmitterGroup
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
 
 _T = TypeVar('_T')
 
