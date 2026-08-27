@@ -643,7 +643,7 @@ class Shape(ABC):
     def _triangulate_edge_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return bermuda.triangulate_path_edge(data, closed=closed)  # type: ignore[ty:invalid-return-type]
+        return bermuda.triangulate_path_edge(data, closed=closed)
 
     def _all_triangles(self):
         """Return all triangles for the shape

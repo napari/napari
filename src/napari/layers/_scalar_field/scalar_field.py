@@ -265,7 +265,7 @@ class ScalarFieldBase(Layer, ABC):
         )
         rgb = len(xr_source.shape) != ndim
         xr_metadata = _get_xr_metadata(
-            xr_source,  # type: ignore[ty:invalid-argument-type]
+            xr_source,
             rgb=rgb,
             axis_labels=axis_labels,
             scale=scale,

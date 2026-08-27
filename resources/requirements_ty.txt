@@ -12,6 +12,10 @@ certifi==2026.7.22
     # via requests
 charset-normalizer==3.4.9
     # via requests
+colorama==0.4.6
+    # via
+    #   build
+    #   typer
 docstring-parser==0.18.0
     # via magicgui
 idna==3.18
@@ -24,7 +28,7 @@ markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-npe2==0.8.3
+npe2==0.9.0
     # via -r resources/requirements_ty.in
 numpy==2.5.1
     # via -r resources/requirements_ty.in

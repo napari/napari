@@ -85,13 +85,13 @@ class Ellipse(Shape):
         # Build boundary vertices with num_segments
         self._clean_cache()
         vertices, triangles = triangulate_ellipse(self.data_displayed)
-        self._set_meshes(vertices[1:-1], face=False)  # type: ignore[ty:invalid-argument-type]
+        self._set_meshes(vertices[1:-1], face=False)
         self._face_vertices = vertices
         self._face_triangles = triangles
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(self.data_displayed)  # type: ignore[ty:invalid-argument-type]
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(  # type: ignore[ty:invalid-assignment]
+        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )
 
