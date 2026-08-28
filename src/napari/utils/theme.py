@@ -370,7 +370,7 @@ def get_theme(theme_id: str):
 def invert_theme(theme, **kwargs):
     new_type = 'dark' if theme.type == 'light' else 'light'
     inverted_kwargs = {
-        'id': f'{theme.id}-{new_type}',
+        'id': theme.id,
         'type': new_type,
         'label': f'{theme.label} - {new_type.capitalize()}',
         'background': _invert_luminance(theme.background),
@@ -395,27 +395,27 @@ def invert_theme(theme, **kwargs):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(theme_id, theme, source):
+def get_full_theme_id(theme: Theme):
+    return f'{theme.id}-{theme.type}'
+
+
+def register_theme(theme: Theme, source: str):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    theme_id : str
-        id of requested theme.
-    theme : dict of str: str, Theme
+    theme : Theme
         Theme mapping elements to colors.
     source : str
         Source plugin of theme
     """
-    if isinstance(theme, dict):
-        theme = Theme(**theme)
-    assert isinstance(theme, Theme)
+    theme_id = get_full_theme_id(theme)
     _themes[theme_id] = theme
 
     build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(theme_id):
+def unregister_theme(full_theme_id):
     """Remove existing theme.
 
     Parameters
@@ -423,7 +423,7 @@ def unregister_theme(theme_id):
     theme_id : str
         id of the theme to be removed.
     """
-    _themes.pop(theme_id, None)
+    _themes.pop(full_theme_id, None)
 
 
 def available_themes() -> list[str]:
@@ -437,7 +437,7 @@ def available_themes() -> list[str]:
     return [*_themes, 'system']
 
 
-def is_theme_available(theme_id):
+def is_theme_available(full_theme_id):
     """Check if a theme is available.
 
     Parameters
@@ -450,10 +450,10 @@ def is_theme_available(theme_id):
     bool
         True if the theme is available, False otherwise.
     """
-    if theme_id == 'system':
+    if full_theme_id == 'system':
         return True
-    if theme_id not in _themes and _theme_path(theme_id).exists():
-        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
+    if full_theme_id not in _themes and _theme_path(full_theme_id).exists():
+        plugin_name_file = _theme_path(full_theme_id) / PLUGIN_FILE_NAME
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
@@ -461,7 +461,7 @@ def is_theme_available(theme_id):
             npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
-    return theme_id in _themes
+    return full_theme_id in _themes
 
 
 def rebuild_theme_settings():
@@ -516,8 +516,8 @@ LIGHT = Theme(
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
-register_theme('dark', DARK, 'builtin')
-register_theme('light', LIGHT, 'builtin')
+register_theme(DARK, 'napari')
+register_theme(LIGHT, 'napari')
 
 
 # this function here instead of plugins._npe2 to avoid circular import
@@ -541,13 +541,16 @@ def _install_npe2_themes(themes=None):
             theme_dict.update(theme_colors)
             theme = Theme(**theme_dict)
             inverted = invert_theme(theme)
-            try:
-                register_theme(theme.id, theme, manifest.name)
-                register_theme(inverted.id, inverted, manifest.name)
-            except ValueError:
-                logging.getLogger('napari').exception(
-                    'Registration theme failed.'
-                )
+
+            for version in (theme, inverted):
+                full_id = get_full_theme_id(version)
+                if full_id not in themes:
+                    try:
+                        register_theme(theme, manifest.name)
+                    except ValueError:
+                        logging.getLogger('napari').exception(
+                            'Registration of theme %s failed.', full_id
+                        )
 
 
 _install_npe2_themes(_themes)
