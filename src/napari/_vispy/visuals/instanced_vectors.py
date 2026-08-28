@@ -1,14 +1,11 @@
 """Instanced rendering for vectors using vispy 0.16+."""
 
 import numpy as np
-import vispy
 from vispy.gloo import IndexBuffer, VertexBuffer
 from vispy.scene.visuals import create_visual_node
 from vispy.visuals.visual import Visual
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
-
-vispy.use(gl='gl+')  # Required for instanced rendering
 
 # Vertex shader for instanced vector rendering
 vert = r"""
@@ -183,8 +180,7 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
     def set_data(
         self,
         vertices=None,
-        faces=None,
-        face_colors=None,
+        colors=None,
         vector_style='line',
     ):
         """Set data for rendering vectors.
@@ -233,11 +229,11 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
         ]  # All ends (odd indices)
 
         # One color per instance (per vector)
-        if face_colors is not None and len(face_colors) > 0:
-            assert len(face_colors) == n_segments, (
-                'face_colors must have one color per vector'
+        if colors is not None and len(colors) > 0:
+            assert len(colors) == n_segments, (
+                'colors must have one color per vector'
             )
-            instance_data['a_color'] = face_colors
+            instance_data['a_color'] = colors
         else:
             # Default white color
             instance_data['a_color'] = [1, 1, 1, 1]

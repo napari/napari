@@ -1,24 +1,39 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+from vispy import use
 
 from napari._vispy.layers.base import VispyBaseLayer
-from napari._vispy.visuals.vectors import Vectors
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
 
+logger = logging.getLogger(__name__)
+
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer, font_info: FontInfo) -> None:
-        # Use instanced rendering (use the scene node, not the visual)
-        node = Vectors()
+        try:
+            use(gl='gl+')  # Required for instanced rendering
+            from napari._vispy.visuals.instanced_vectors import Vectors
+        except RuntimeError:
+            from napari._vispy.visuals.fallback_vectors import Vectors
+
+            logger.warning(
+                'Could not use gl+ for instanced rendering of vectors. '
+                'Falling back to GL line rendering. This has a few limitations:\n'
+                '- width is limited to integer increments\n'
+                '- vectors styles other than "line" are disabled\n'
+            )
+
+        node = Vectors(font_info=font_info)
         super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.edge_color.connect(self._on_data_change)
-        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_width.connect(self._on_width_change)
         self.layer.events.length.connect(self._on_data_change)
         self.layer.events.vector_style.connect(self._on_data_change)
 
@@ -29,7 +44,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         # Generate simple start/end pairs for instanced rendering
         vectors_data = self.layer._view_data
         length = self.layer.length
-        face_color = self.layer._view_face_color
+        color = self.layer._view_face_color
         ndisplay = self.layer._slice_input.ndisplay
         ndim = self.layer.ndim
 
@@ -57,13 +72,13 @@ class VispyVectorsLayer(VispyBaseLayer):
         # Pass face_colors directly - the visual handles per-instance color indexing
         self.node.set_data(
             vertices=vertices,
-            face_colors=face_color,
+            colors=color,
             vector_style=self.layer.vector_style,
         )
-
-        # Then set width (updates uniforms)
-        self.node.width = self.layer.edge_width
 
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_width_change(self):
+        self.node.width = self.layer.edge_width
