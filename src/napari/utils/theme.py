@@ -9,7 +9,7 @@ from typing import Any, Literal
 from warnings import warn
 
 import npe2
-from pydantic import field_validator
+from pydantic import ValidationError, field_validator
 from pydantic_extra_types.color import Color
 
 from napari.resources._icons import (
@@ -413,6 +413,8 @@ def register_theme(theme: Theme, source: str):
     source : str
         Source plugin of theme
     """
+    if theme.full_id in _themes:
+        raise ValueError(f'theme "{theme.full_id}" already registered.')
     _themes[theme.full_id] = theme
 
     build_theme_svgs(theme.full_id, source)
@@ -543,16 +545,21 @@ def _install_npe2_themes(themes=None):
             theme_colors = theme.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
-            theme = Theme(**theme_dict)
-            inverted = invert_theme(theme)
-            for version in (theme, inverted):
-                if version.full_id not in themes:
-                    try:
-                        register_theme(version, manifest.name)
-                    except ValueError:
-                        logging.getLogger('napari').exception(
-                            'Registration of theme %s failed.', version.full_id
-                        )
+            try:
+                theme = Theme(**theme_dict)
+            except ValidationError:
+                logging.getLogger('napari').exception(
+                    'Registration of theme %s failed.', theme.id
+                )
+            else:
+                register_theme(theme, manifest.name)
+                # register inverted theme if not already existing
+                inverted = invert_theme(theme)
+                if inverted.full_id not in set(themes) | {
+                    f'{t.id}-{t.type}'
+                    for t in manifest.contributions.themes or ()
+                }:
+                    register_theme(inverted, manifest.name)
 
 
 _install_npe2_themes(_themes)
