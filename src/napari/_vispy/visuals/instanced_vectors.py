@@ -1,11 +1,18 @@
 """Instanced rendering for vectors using vispy 0.16+."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 from vispy.gloo import IndexBuffer, VertexBuffer
 from vispy.scene.visuals import create_visual_node
 from vispy.visuals.visual import Visual
 
 from napari._vispy.visuals.clipping_planes_mixin import ClippingPlanesMixin
+
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
 
 # Vertex shader for instanced vector rendering
 vert = r"""
@@ -105,8 +112,10 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
     - 'arrow': Arrows with distinct shaft and head
     """
 
-    def __init__(self, font_info=None, **kwargs):
-        self._data = None
+    def __init__(
+        self, font_info: FontInfo | None = None, **kwargs: Any
+    ) -> None:
+        self._data: np.ndarray | None = None
         self._n_instances = 0
         self._width = 1.0
         self._vector_style = 'line'
@@ -129,7 +138,7 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
         if len(kwargs) > 0:
             self.set_data(**kwargs)
 
-    def _setup_template_vertices(self):
+    def _setup_template_vertices(self) -> None:
         """Setup unified template geometry for all vector styles.
 
         All styles (line, triangle, arrow) use the same arrow template.
@@ -183,10 +192,10 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
 
     def set_data(
         self,
-        vertices=None,
-        colors=None,
-        vector_style='line',
-    ):
+        vertices: np.ndarray | None = None,
+        colors: np.ndarray | None = None,
+        vector_style: str = 'line',
+    ) -> None:
         """Set data for rendering vectors.
 
         Parameters
@@ -272,16 +281,18 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
         self.update()
 
     @property
-    def width(self):
+    def width(self) -> float:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: float) -> None:
         self._width = value
         self.shared_program['u_width'] = value
         self.update()
 
-    def _prepare_transforms(self, view):
+    def _prepare_transforms(self, view: VectorsVisual | None = None) -> None:
+        if view is None:
+            return
         view.view_program.vert['visual_to_framebuffer'] = view.get_transform(
             'visual', 'framebuffer'
         )
@@ -289,8 +300,8 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
             'framebuffer', 'render'
         )
 
-    def _prepare_draw(self, view):
-        if self._data is None or self._n_instances == 0:
+    def _prepare_draw(self, view: VectorsVisual | None = None) -> bool:
+        if view is None or self._data is None or self._n_instances == 0:
             return False
 
         # Set uniforms
