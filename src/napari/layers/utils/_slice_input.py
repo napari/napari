@@ -6,14 +6,13 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 import pint
-from typing_extensions import Self
 
 from napari.utils.misc import reorder_after_dim_reduction
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Self
 
     import numpy.typing as npt
 
@@ -193,11 +192,8 @@ class _SliceInput:
         """
         if not self.is_orthogonal(world_to_data):
             warnings.warn(
-                trans._(
-                    'Non-orthogonal slicing is being requested, but is not fully supported. '
-                    'Data is displayed without applying an out-of-slice rotation or shear component.',
-                    deferred=True,
-                ),
+                'Non-orthogonal slicing is being requested, but is not fully supported. '
+                'Data is displayed without applying an out-of-slice rotation or shear component.',
                 category=UserWarning,
             )
 

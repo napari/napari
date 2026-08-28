@@ -1,11 +1,13 @@
 from collections import defaultdict
 from collections.abc import MutableMapping, Sequence
+from enum import StrEnum
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
     Literal,
+    Self,
     cast,
     overload,
 )
@@ -19,17 +21,14 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
-from typing_extensions import Self
 
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from numba import typed
@@ -118,22 +117,14 @@ class Colormap(EventedModel):
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
-                trans._(
-                    'Control points must start with 0.0 and end with 1.0. '
-                    'Got {start_control_point} and {end_control_point}',
-                    deferred=True,
-                    start_control_point=v[0],
-                    end_control_point=v[-1],
-                )
+                'Control points must start with 0.0 and end with 1.0. '
+                f'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
         if not np.array_equal(v, sorted(v)):
             raise ValueError(
-                trans._(
-                    'Control points need to be sorted in ascending order',
-                    deferred=True,
-                )
+                'Control points need to be sorted in ascending order'
             )
 
         # Check number of control points is correct
@@ -143,12 +134,7 @@ class Colormap(EventedModel):
         n_controls = len(v)
         if n_controls != n_controls_target:
             raise ValueError(
-                trans._(
-                    'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
-                    deferred=True,
-                    n_controls_target=n_controls_target,
-                    n_controls=n_controls,
-                )
+                f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}'
             )
 
         return v
@@ -175,12 +161,7 @@ class Colormap(EventedModel):
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
-            raise ValueError(
-                trans._(
-                    'Unrecognized Colormap Interpolation Mode',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Unrecognized Colormap Interpolation Mode')
 
         values = values[..., None]
         # map NaNs, lows, and highs
@@ -196,6 +177,32 @@ class Colormap(EventedModel):
     def colorbar(self):
         return make_colorbar(self)
 
+    def same_colors(self, other: 'Colormap') -> bool:
+        return bool(
+            np.array_equal(self.controls, other.controls)
+            and np.array_equal(self.colors, other.colors)
+            and self.interpolation == other.interpolation
+            and np.all(self.nan_color == other.nan_color)
+            and np.all(self.high_color == other.high_color)
+            and np.all(self.low_color == other.low_color)
+        )
+
+
+class _RebuildableCache(dict):
+    """Cache dict that is emptied on (deep)copy and rebuilt lazily.
+
+    ``DirectLabelColormap`` stores a numba ``typed.Dict`` here after a layer
+    has been rendered; that object holds an unpicklable
+    ``_nrt_python._MemInfo`` that breaks ``copy.deepcopy`` of the colormap.
+    The cache is a pure performance memoization, so emptying it on copy is
+    always safe -- it is recomputed on the next ``map`` call. Defending the
+    value itself keeps this independent of where pydantic stores private
+    attributes or which hook a copy routes through.
+    """
+
+    def __deepcopy__(self, memo):
+        return type(self)()
+
 
 class LabelColormapBase(Colormap):
     use_selection: bool = False
@@ -205,9 +212,11 @@ class LabelColormapBase(Colormap):
         ColormapInterpolationMode.ZERO, frozen=True
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
-        default={}
+        default_factory=_RebuildableCache
     )
-    _cache_other: dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(
+        default_factory=_RebuildableCache
+    )
 
     model_config = EventedModel.model_config | ConfigDict(
         # this config is to avoid deepcopy of cached_property
@@ -255,8 +264,8 @@ class LabelColormapBase(Colormap):
 
     def _clear_cache(self):
         """Mechanism to clean cached properties"""
-        self._cache_mapping = {}
-        self._cache_other = {}
+        self._cache_mapping = _RebuildableCache()
+        self._cache_other = _RebuildableCache()
 
     @property
     def _num_unique_colors(self) -> int:

@@ -17,11 +17,15 @@ def test_camera(make_napari_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
-    np.testing.assert_almost_equal(viewer.camera.center, (0, 5.0, 5.0))
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (0, 5.0, 5.0))
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 def test_vispy_camera_update_from_model(make_napari_viewer):
@@ -38,15 +42,19 @@ def test_vispy_camera_update_from_model(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
     # Update camera center and zoom
-    viewer.camera.center = (11, 12)
-    viewer.camera.zoom = 4
+    viewer.scene.camera.center = (11, 12)
+    viewer.scene.camera.zoom = 4
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
-    np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
-    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (0, 11, 12))
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 4)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 def test_camera_model_update_from_vispy(make_napari_viewer):
@@ -69,12 +77,16 @@ def test_camera_model_update_from_vispy(make_napari_viewer):
     vispy_camera.zoom = 4
     vispy_camera.on_draw(None)
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
-    np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
-    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (0, 11, 12))
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 4)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 def test_3D_camera(make_napari_viewer):
@@ -89,11 +101,15 @@ def test_3D_camera(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # Test camera values have updated
-    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 0))
-    np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0, 5.0))
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (0, 0, 0))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (5.0, 5.0, 5.0))
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 def test_vispy_camera_update_from_model_3D(make_napari_viewer):
@@ -108,16 +124,20 @@ def test_vispy_camera_update_from_model_3D(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # Update camera angles, center, and zoom
-    viewer.camera.angles = (24, 12, -19)
-    viewer.camera.center = (11, 12, 15)
-    viewer.camera.zoom = 4
+    viewer.scene.camera.angles = (24, 12, -19)
+    viewer.scene.camera.center = (11, 12, 15)
+    viewer.scene.camera.zoom = 4
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (24, 12, -19))
-    np.testing.assert_almost_equal(viewer.camera.center, (11, 12, 15))
-    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (24, 12, -19))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (11, 12, 15))
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 4)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 def test_camera_model_update_from_vispy_3D(make_napari_viewer):
@@ -133,21 +153,25 @@ def test_camera_model_update_from_vispy_3D(make_napari_viewer):
 
     vispy_camera.on_draw(None)  # required for proper initialization
     # Update vispy camera angles, center, and zoom
-    viewer.camera.angles = (24, 12, -19)
+    viewer.scene.camera.angles = (24, 12, -19)
     vispy_camera.center = (11, 12, 15)
     vispy_camera.zoom = 4
     vispy_camera.on_draw(None)
 
-    np.testing.assert_almost_equal(viewer.camera.angles, (24, 12, -19))
-    np.testing.assert_almost_equal(viewer.camera.center, (11, 12, 15))
-    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
-    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
-    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+    np.testing.assert_almost_equal(viewer.scene.camera.angles, (24, 12, -19))
+    np.testing.assert_almost_equal(viewer.scene.camera.center, (11, 12, 15))
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 4)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.angles, vispy_camera.angles
+    )
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
-def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
-    """Test that switching dims.ndisplay maintains 3D angles."""
+def test_synced_camera_ndisplay_vispy_sync(make_napari_viewer):
+    """Test that synced camera center/zoom persist and sync with vispy across ndisplay switches."""
     viewer = make_napari_viewer()
     vispy_camera = viewer.window._qt_viewer.canvas.camera
 
@@ -155,23 +179,25 @@ def test_switching_ndisplay_maintains_3D_angles(make_napari_viewer):
     data = np.random.random((11, 11, 11))
     viewer.add_image(data)
 
-    angles_3D = (24, 12, -19)
-    angles_2D = (0, 0, 0)
+    # Customize 2D view
+    viewer.scene.camera.zoom = 2.5
+    viewer.scene.camera.center = (0, 3, 7)
 
+    # Switch to 3D — center/zoom persist (synced default)
     viewer.dims.ndisplay = 3
-    viewer.camera.angles = angles_3D
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 2.5)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
-    # switching to 2D should maintain the model camera angles from 3D
-    # but the vispy camera angles will be the default 2D angles
+    # Switch back to 2D — same
     viewer.dims.ndisplay = 2
-    np.testing.assert_almost_equal(viewer.camera.angles, angles_3D)
-    np.testing.assert_almost_equal(vispy_camera.angles, angles_2D)
-
-    # switching back to 3D should use the model camera angles for the
-    # vispy camera
-    viewer.dims.ndisplay = 3
-    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, 2.5)
+    np.testing.assert_almost_equal(
+        viewer.scene.camera.center, vispy_camera.center
+    )
+    np.testing.assert_almost_equal(viewer.scene.camera.zoom, vispy_camera.zoom)
 
 
 @pytest.mark.skipif(
@@ -199,7 +225,7 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
 
     # now we reverse the orientation of the vertical axis, and check that the
     # row gradient has changed direction but not the col gradient
-    viewer.camera.orientation2d = ('up', 'right')
+    viewer.scene.camera.orientation2d = ('up', 'right')
     qtbot.wait(50)
     sshot1 = viewer.window.export_figure(scale=10, flash=False)[..., 0]
     avg_row_intensity_grad1 = np.diff(np.mean(sshot1, axis=1))
@@ -209,7 +235,7 @@ def test_camera_orientation_2d(make_napari_viewer, qtbot):
 
     # finally, reverse orientation of horizontal axis, check that col gradient
     # has now also changed direction
-    viewer.camera.orientation2d = ('up', 'left')
+    viewer.scene.camera.orientation2d = ('up', 'left')
     qtbot.wait(50)
     sshot2 = viewer.window.export_figure(scale=10, flash=False)[..., 0]
     avg_row_intensity_grad2 = np.diff(np.mean(sshot2, axis=1))
@@ -237,11 +263,11 @@ def test_camera_orientation_3d(make_napari_viewer, qtbot):
     # the overall brightness of the image when pointing z in different
     # directions
 
-    viewer.camera.perspective = 60
-    viewer.camera.orientation = ('away', 'down', 'right')
+    viewer.scene.camera.perspective = 60
+    viewer.scene.camera.orientation = ('away', 'down', 'right')
     qtbot.wait(50)
     sshot_away = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
-    viewer.camera.orientation = ('towards', 'down', 'right')
+    viewer.scene.camera.orientation = ('towards', 'down', 'right')
     qtbot.wait(50)
     sshot_towards = viewer.screenshot(canvas_only=True, flash=False)[..., 0]
 

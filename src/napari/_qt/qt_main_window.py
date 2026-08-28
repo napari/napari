@@ -5,6 +5,7 @@ wrap.
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import inspect
 import os
@@ -22,7 +23,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-import numpy as np
+from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -33,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -86,23 +87,28 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_warning
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
     from pathlib import Path
 
+    import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
+    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
+    from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
 
 _sentinel = object()
 
+SHOW_QT_WARNING = QT5
+# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
+
+del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -135,10 +141,11 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
-        self._qt_viewer = QtViewer(
+        self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
         )
         self._quit_app = False
+        self._viewer_tour: GuidedTour | None = None
 
         get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -193,11 +200,6 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        # only after qaction are initialized we can get all shortcuts and actions,
-        # so we have to force update the welcome screen here.
-        viewer.welcome_screen.events.shortcuts()
-        viewer.welcome_screen.events.tips()
-
         with contextlib.suppress(IndexError):
             viewer.cursor.events.position.disconnect(
                 viewer.update_status_from_cursor
@@ -232,6 +234,8 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
+        global SHOW_QT_WARNING
+
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -240,6 +244,14 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
+
+        if SHOW_QT_WARNING:
+            show_warning(
+                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
+            )
+
+            SHOW_QT_WARNING = False
+
         super().showEvent(event)
 
     def enterEvent(self, a0):
@@ -613,8 +625,7 @@ class _QtMainWindow(QMainWindow):
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 
-        self.status_thread.close_terminate()
-        self.status_thread.wait()
+        self._stop_worker_threads()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -635,12 +646,15 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
-        self._qt_viewer.dims.stop()
-
         if self._quit_app:
             quit_app_()
 
         event.accept()
+
+    def _stop_worker_threads(self) -> None:
+        self.status_thread.close_terminate()
+        self.status_thread.wait()
+        self._qt_viewer.dims.stop()
 
     def restart(self):
         """Restart the napari application in a detached process."""
@@ -668,6 +682,15 @@ class _QtMainWindow(QMainWindow):
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
+
+
+@atexit.register
+def _shutdown_open_windows() -> None:
+    """Stop worker threads for windows still open at interpreter shutdown."""
+    for window in list(_QtMainWindow._instances):
+        # Qt may have deleted a window while leaving its Python wrapper alive.
+        with contextlib.suppress(RuntimeError):
+            window._stop_worker_threads()
 
 
 class Window:
@@ -738,7 +761,6 @@ class Window:
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
-        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
@@ -856,13 +878,10 @@ class Window:
     @property
     def qt_viewer(self):
         warnings.warn(
-            trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.8.0. It is considered an "implementation detail" of the napari\napplication, '
-                'not part of the napari viewer model. If your use case\n'
-                'requires access to qt_viewer, please open an issue to discuss.',
-                deferred=True,
-            ),
+            'Public access to Window.qt_viewer is deprecated and will be removed in\n'
+            'no earlier than v0.10.0. It is considered an "implementation detail" '
+            'of the napari\napplication, not part of the napari viewer model. If your use case\n'
+            'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
             stacklevel=2,
         )
@@ -965,7 +984,7 @@ class Window:
         )
         # file menu
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title='&File', parent=self._qt_window
         )
         self.file_menu.aboutToShow.connect(
             self._update_file_menu_state,
@@ -973,7 +992,7 @@ class Window:
         self.main_menu.addMenu(self.file_menu)
         # view menu
         self.view_menu = build_qmodel_menu(
-            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+            MenuId.MENUBAR_VIEW, title='&View', parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
             self._update_view_menu_state,
@@ -982,7 +1001,7 @@ class Window:
         # layers menu
         self.layers_menu = build_qmodel_menu(
             MenuId.MENUBAR_LAYERS,
-            title=trans._('&Layers'),
+            title='&Layers',
             parent=self._qt_window,
         )
         self.layers_menu.aboutToShow.connect(
@@ -992,7 +1011,7 @@ class Window:
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
-            title=trans._('&Plugins'),
+            title='&Plugins',
             parent=self._qt_window,
         )
         self.plugins_menu.aboutToShow.connect(
@@ -1003,7 +1022,7 @@ class Window:
         if perf.perf_config is not None:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
-                title=trans._('&Debug'),
+                title='&Debug',
                 parent=self._qt_window,
             )
             self._handle_trace_file_on_start()
@@ -1014,7 +1033,7 @@ class Window:
         # window menu
         self.window_menu = build_qmodel_menu(
             MenuId.MENUBAR_WINDOW,
-            title=trans._('&Window'),
+            title='&Window',
             parent=self._qt_window,
         )
         self.plugins_menu.aboutToShow.connect(
@@ -1023,7 +1042,7 @@ class Window:
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
-            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+            MenuId.MENUBAR_HELP, title='&Help', parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
             self._update_help_menu_state,
@@ -1121,7 +1140,7 @@ class Window:
         area: str | None = None,
         allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
-        add_vertical_stretch=True,
+        add_vertical_stretch=False,
         tabify: bool = False,
         menu: QMenu | None = None,
     ):
@@ -1168,10 +1187,7 @@ class Window:
         if not name:
             with contextlib.suppress(AttributeError):
                 name = widget.objectName()
-            name = name or trans._(
-                'Dock widget {number}',
-                number=self._unnamed_dockwidget_count,
-            )
+            name = name or f'Dock widget {self._unnamed_dockwidget_count}'
 
             self._unnamed_dockwidget_count += 1
 
@@ -1364,11 +1380,7 @@ class Window:
                     break
             else:
                 raise LookupError(
-                    trans._(
-                        'Could not find a dock widget containing: {widget}',
-                        deferred=True,
-                        widget=widget,
-                    )
+                    f'Could not find a dock widget containing: {widget}'
                 )
         else:
             _dw = widget
@@ -1515,10 +1527,7 @@ class Window:
             self._qt_window.show(block=block)
         except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
-                trans._(
-                    'This viewer has already been closed and deleted. Please create a new one.',
-                    deferred=True,
-                )
+                'This viewer has already been closed and deleted. Please create a new one.'
             ) from e
 
         if settings.application.first_time:
@@ -1527,10 +1536,7 @@ class Window:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
             except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
-                    trans._(
-                        'This viewer has already been closed and deleted. Please create a new one.',
-                        deferred=True,
-                    )
+                    'This viewer has already been closed and deleted. Please create a new one.'
                 ) from e
         else:
             try:
@@ -1542,11 +1548,7 @@ class Window:
                 import warnings
 
                 warnings.warn(
-                    trans._(
-                        'The window geometry settings could not be loaded due to the following error: {err}',
-                        deferred=True,
-                        err=err,
-                    ),
+                    f'The window geometry settings could not be loaded due to the following error: {err}',
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
@@ -1704,11 +1706,8 @@ class Window:
             fit_to_data_extent or size is not None or scale is not None
         ):
             raise ValueError(
-                trans._(
-                    'scale, size, and fit_to_data_extent can only be set for '
-                    'canvas_only screenshots.',
-                    deferred=True,
-                )
+                'scale, size, and fit_to_data_extent can only be set for '
+                'canvas_only screenshots.'
             )
 
         # Part 2: take the screenshot

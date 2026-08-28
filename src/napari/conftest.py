@@ -43,7 +43,7 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypedDict
 from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
@@ -104,6 +104,44 @@ def layer_data_and_types():
         layer.name + e for layer, e in zip(layers, extensions, strict=False)
     ]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture
+def surface_data() -> tuple[
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    np.ndarray[tuple[int], np.dtype[np.int32]],
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+]:
+    data = np.array([[0, 0], [0, 20], [10, 0], [10, 10]], dtype=np.float32)
+    faces = np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32)
+    values = np.linspace(0, 1, len(data), dtype=np.float32)
+    return (data, faces, values)
+
+
+class TrackDataDict(TypedDict):
+    data: np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]]
+    properties: dict[Literal['track_id', 'time', 'speed'], list]
+
+
+@pytest.fixture
+def tracks_data() -> TrackDataDict:
+    data = np.array(
+        [[0, 0, 0, 0], [0, 1, 0, 20], [1, 0, 10, 0], [1, 1, 10, 10]],
+        dtype=np.float32,
+    )
+    properties: dict[Literal['track_id', 'time', 'speed'], list[int]] = {
+        'track_id': [0, 0, 1, 1],
+        'time': [0, 1, 0, 1],
+        'speed': [50, 30, 20, 10],
+    }
+    return {'data': data, 'properties': properties}
+
+
+@pytest.fixture
+def vectors_data() -> np.ndarray[
+    tuple[int, Literal[2], Literal[2]], np.dtype[np.float32]
+]:
+    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)
 
 
 @pytest.fixture(
@@ -286,6 +324,29 @@ def npe2pm_(npe2pm, monkeypatch):
 
 
 @pytest.fixture
+def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    mock_reg = MagicMock()
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=manifest_path):
+        yield npe2pm
+
+
+@pytest.fixture(autouse=True)
+def plugin_settings_(plugin_settings):
+    """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.
+
+    Without this, whichever test happens to call `get_plugin_settings`
+    first (e.g. by constructing a `PreferencesDialog`) would populate and
+    freeze `_PLUGIN_SETTINGS` for the rest of the session, against the
+    real user config directory.
+    """
+    return plugin_settings
+
+
+@pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
@@ -299,6 +360,17 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
+
+
+@pytest.fixture
+def manifest_path() -> str:
+    path_to = (
+        Path(__file__)
+        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+        .resolve()
+    )
+    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+    return str(path_to)
 
 
 @pytest.fixture
@@ -1137,6 +1209,16 @@ def _fix_magic_name(monkeypatch, request):
         'path_prefix',
         (naming.ROOT_DIR, str(request.fspath)),
     )
+
+
+@pytest.fixture(autouse=True)
+def _reset_colormaps(monkeypatch):
+    from napari.utils.colormaps import colormap_utils
+
+    prev = dict(colormap_utils.AVAILABLE_COLORMAPS)
+    yield
+    colormap_utils.AVAILABLE_COLORMAPS.clear()
+    colormap_utils.AVAILABLE_COLORMAPS.update(prev)
 
 
 def pytest_runtest_setup(item):
