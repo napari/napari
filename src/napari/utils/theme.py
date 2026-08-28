@@ -110,6 +110,10 @@ class Theme(EventedModel):
             for (k, v) in th.items()
         }
 
+    @property
+    def full_id(self) -> str:
+        return f'{self.id}-{self.type}'
+
 
 increase_pattern = re.compile(r'{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}')
 decrease_pattern = re.compile(r'{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}')
@@ -290,6 +294,10 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
+        if k == 'id':
+            # workaround to replace the `id` with `full_id` to avoid
+            # replacing everything in the qss and add a new entry in the model_dump
+            v = f'{v}-{theme["type"]}'
         css = increase_pattern.sub(_increase_match, css)
         css = decrease_pattern.sub(_decrease_match, css)
         css = gradient_pattern.sub(gradient_match, css)
@@ -357,7 +365,7 @@ def get_theme(theme_id: str):
         side effects.
     """
     if theme_id == 'system':
-        theme_id = get_system_theme()
+        theme_id = f'napari-{get_system_theme()}'
 
     if theme_id not in _themes:
         raise ValueError(
@@ -395,10 +403,6 @@ def invert_theme(theme, **kwargs):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def get_full_theme_id(theme: Theme):
-    return f'{theme.id}-{theme.type}'
-
-
 def register_theme(theme: Theme, source: str):
     """Register a new or updated theme.
 
@@ -409,10 +413,9 @@ def register_theme(theme: Theme, source: str):
     source : str
         Source plugin of theme
     """
-    theme_id = get_full_theme_id(theme)
-    _themes[theme_id] = theme
+    _themes[theme.full_id] = theme
 
-    build_theme_svgs(theme_id, source)
+    build_theme_svgs(theme.full_id, source)
 
 
 def unregister_theme(full_theme_id):
@@ -531,7 +534,8 @@ def _install_npe2_themes(themes=None):
     ):
         for theme in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].model_dump()
+            fallback = DARK if theme.type == 'dark' else LIGHT
+            theme_dict = themes[fallback.full_id].model_dump()
             # update available values
             theme_info = theme.model_dump(
                 exclude={'colors'}, exclude_unset=True
@@ -541,15 +545,13 @@ def _install_npe2_themes(themes=None):
             theme_dict.update(theme_colors)
             theme = Theme(**theme_dict)
             inverted = invert_theme(theme)
-
             for version in (theme, inverted):
-                full_id = get_full_theme_id(version)
-                if full_id not in themes:
+                if version.full_id not in themes:
                     try:
-                        register_theme(theme, manifest.name)
+                        register_theme(version, manifest.name)
                     except ValueError:
                         logging.getLogger('napari').exception(
-                            'Registration of theme %s failed.', full_id
+                            'Registration of theme %s failed.', version.full_id
                         )
 
 
