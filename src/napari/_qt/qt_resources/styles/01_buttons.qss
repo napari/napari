@@ -7,16 +7,11 @@ QtViewerPushButton{
    min-height : 28px;
    max-height : 28px;
    padding: 0px;
+   margin-top: 3px;  /* to counteract the margin tricks below*/
 }
 
 QtViewerPushButton[mode="delete_button"] {
    image: url("theme_{{ id }}:/delete.svg");
-}
-
-QtViewerPushButton[mode="new_points"],
-QtViewerPushButton[mode="new_shapes"],
-QtViewerPushButton[mode="new_labels"] {
-  border: 3px solid {{ background }};
 }
 
 QtViewerPushButton[mode="new_points"] {
@@ -31,22 +26,35 @@ QtViewerPushButton[mode="new_labels"] {
   image: url("theme_{{ id }}:/new_labels.svg");
 }
 
-QtViewerPushButton[mode="new_labels"]:disabled {
-  border: 3px solid {{ background }};
+QtViewerPushButton[mode="new_points"],
+QtViewerPushButton[mode="new_shapes"],
+QtViewerPushButton[mode="new_labels"] {
+  border: 1px solid {{ primary }};
+  margin: 2px;
+  margin-top: 5px;
 }
 
 /* TODO: can we avoid this darken/lighten? */
 QtViewerPushButton[mode="new_points"][creation_state="full"],
 QtViewerPushButton[mode="new_shapes"][creation_state="full"],
 QtViewerPushButton[mode="new_labels"][creation_state="full"] {
-  border: 3px solid {{ current }};
+  border: 3px solid {{ lighten(current, 20) }};
+  margin: 0px;
+  margin-top: 3px;
 }
 
 QtViewerPushButton[mode="new_points"][creation_state="partial"],
 QtViewerPushButton[mode="new_shapes"][creation_state="partial"],
 QtViewerPushButton[mode="new_labels"][creation_state="partial"] {
-  margin: 2px;
-  border: 1px solid {{ current }};
+  border: 3px solid {{ current }};
+  margin: 0px;
+  margin-top: 3px;
+}
+
+QtViewerPushButton[mode="new_points"]:disabled,
+QtViewerPushButton[mode="new_shapes"]:disabled,
+QtViewerPushButton[mode="new_labels"]:disabled {
+  background-color: {{ background }};
 }
 
 QtViewerPushButton[mode="warning"] {
@@ -133,32 +141,46 @@ QtViewerPushButton[mode="grid_view_button"] {
 
 
 QtModeRadioButton {
-  min-height : 28px;
-  padding: 0px;
+  min-height: 28px;
+  min-width: 28px;
 }
 
-QtModeRadioButton::indicator:unchecked {
+QtModePushButton {
+  min-height: 26px;
+  min-width: 26px;
+  border: 1px solid {{ primary }};
   border-radius: 3px;
-  width: 28px;
-  height: 28px;
+  padding: 0px;
+  margin: 1px;
+}
+
+
+QtModeRadioButton::indicator{
+  min-height: 28px;
+  min-width: 28px;
+  border-radius: 3px;
+  border: 1px solid {{ primary }};
+}
+
+QtModeRadioButton::indicator:unchecked{
   padding: 0;
   background-color: {{ primary }};
 }
 
-QtModeRadioButton::indicator:checked {
-  border-radius: 3px;
-  height: 28px;
-  width: 28px;
+QtModeRadioButton::indicator:checked{
   padding: 0;
   background-color: {{ current }};
+  border-color: {{ current }};
 }
 
 /* TODO: introduce "disabled" as color? */
-QtModeRadioButton::indicator:disabled {
-  background-color: {{ opacity(primary, 50) }}
+QtModeRadioButton::indicator:disabled,
+QtModePushButton:disabled {
+  background-color: {{ foreground }};
 }
 
-QtModeRadioButton::indicator:unchecked:hover {
+QtModeRadioButton::indicator:unchecked:hover,
+QtModePushButton::indicator:hover {
   background-color: {{ highlight }};
 }
 
@@ -244,6 +266,22 @@ QtModeRadioButton[mode="select_points"]::indicator {
 
 QtModeRadioButton[mode="add_points"]::indicator {
     image: url("theme_{{ id }}:/add.svg");
+}
+
+QtModePushButton[mode="histogram"] {
+  image: url("theme_{{ id }}:/histogram.svg");
+}
+
+QtModePushButton[mode="histogram"]:hover:!checked {
+  background-color: {{ highlight }};
+}
+
+QtModePushButton[mode="histogram"]:checked {
+  background-color: {{ current }};
+}
+
+QtModePushButton[mode="histogram"]:disabled {
+  background-color: {{ darken(foreground, 20) }};
 }
 
 QtModePushButton[mode="shuffle"] {

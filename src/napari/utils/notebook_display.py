@@ -18,10 +18,10 @@ __all__ = ['NotebookScreenshot', 'nbscreenshot']
 
 
 class NotebookScreenshot:
-    """Display napari screenshot in the jupyter notebook.
+    """Display a napari screenshot in a jupyter notebook.
 
     Functions returning an object with a _repr_png_() method
-    will displayed as a rich image in the jupyter notebook.
+    will be displayed as a rich image in a jupyter notebook.
 
     https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html
 
@@ -75,6 +75,7 @@ class NotebookScreenshot:
             Image description alternative text, for screenreader accessibility.
             Good alt-text describes the image and any text within the image
             in no more than three short, complete sentences.
+            By default, None.
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
@@ -134,4 +135,51 @@ class NotebookScreenshot:
         return f'<img src="{url}" alt="{_alt}"></img>'
 
 
-nbscreenshot = NotebookScreenshot
+def nbscreenshot(
+    viewer,
+    *,
+    canvas_only=False,
+    alt_text=None,
+) -> NotebookScreenshot:
+    """Display a napari screenshot in a Jupyter notebook.
+
+    This is a convenience wrapper around `NotebookScreenshot` for the common
+    use case of returning a rich display object directly from a notebook cell.
+
+    Parameters
+    ----------
+    viewer : napari.Viewer
+        The napari viewer.
+    canvas_only : bool, optional
+        If False include the napari viewer frame in the screenshot,
+        and if True then take screenshot of just the image display canvas.
+        By default, False.
+    alt_text : str, optional
+        Image description alternative text, for screenreader accessibility.
+        Good alt-text describes the image and any text within the image
+        in no more than three short, complete sentences.
+        By default, None.
+
+    Returns
+    -------
+    NotebookScreenshot
+        A rich display object that renders as a PNG in notebook frontends.
+
+    Examples
+    --------
+
+    >>> import napari
+    >>> from napari.utils import nbscreenshot
+    >>> from skimage.data import chelsea
+
+    >>> viewer = napari.Viewer()
+    >>> viewer.add_image(chelsea(), name='chelsea-the-cat')
+    >>> nbscreenshot(viewer)
+    >>> # screenshot just the canvas without the napari viewer framing it
+    >>> nbscreenshot(viewer, canvas_only=True)
+    """
+    return NotebookScreenshot(
+        viewer,
+        canvas_only=canvas_only,
+        alt_text=alt_text,
+    )

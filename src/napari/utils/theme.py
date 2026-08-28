@@ -6,6 +6,7 @@ import sys
 from ast import literal_eval
 from contextlib import suppress
 from typing import Any, Literal
+from warnings import warn
 
 import npe2
 from pydantic import field_validator
@@ -18,7 +19,6 @@ from napari.resources._icons import (
 )
 from napari.utils.events import EventedModel
 from napari.utils.events.containers._evented_dict import EventedDict
-from napari.utils.translations import trans
 
 
 class Theme(EventedModel):
@@ -76,6 +76,9 @@ class Theme(EventedModel):
     warning: Color
     error: Color
     current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
     font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
 
     @field_validator('syntax_style', mode='before')
@@ -83,23 +86,18 @@ class Theme(EventedModel):
     def _ensure_syntax_style(cls, value: str) -> str:
         from pygments.styles import STYLE_MAP
 
-        assert value in STYLE_MAP, trans._(
-            'Incorrect `syntax_style` value: {value} provided. Please use one of the following: {syntax_style}',
-            deferred=True,
-            syntax_style=f' {", ".join(STYLE_MAP)}',
-            value=value,
+        valid_styles = ', '.join(STYLE_MAP)
+        assert value in STYLE_MAP, (
+            f'Incorrect `syntax_style` value: {value} provided. '
+            f'Please use one of the following: {valid_styles}'
         )
         return value
 
     @field_validator('font_size', mode='before')
     @classmethod
     def _ensure_font_size(cls, value: str) -> str:
-        assert value.endswith('pt'), trans._(
-            'Font size must be in points (pt).', deferred=True
-        )
-        assert int(value[:-2]) > 0, trans._(
-            'Font size must be greater than 0.', deferred=True
-        )
+        assert value.endswith('pt'), 'Font size must be in points (pt).'
+        assert int(value[:-2]) > 0, 'Font size must be greater than 0.'
         return value
 
     def to_rgb_dict(self) -> dict[str, Any]:
@@ -121,14 +119,29 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def decrease(font_size: str, pt: int) -> str:
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return float(pt)
+
+
+def decrease(font_size: str, pt: str) -> str:
     """Decrease fontsize."""
-    return f'{int(font_size[:-2]) - int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
 
 
-def increase(font_size: str, pt: int) -> str:
+def increase(font_size: str, pt: str) -> str:
     """Increase fontsize."""
-    return f'{int(font_size[:-2]) + int(pt)}pt'
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
 
 
 def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
@@ -249,11 +262,11 @@ def gradient(stops, horizontal: bool = True) -> str:
 def template(css: str, **theme):
     def _increase_match(matchobj):
         font_size, to_add = matchobj.groups()
-        return increase(theme[font_size], int(to_add))
+        return increase(theme[font_size], to_add)
 
     def _decrease_match(matchobj):
         font_size, to_subtract = matchobj.groups()
-        return decrease(theme[font_size], int(to_subtract))
+        return decrease(theme[font_size], to_subtract)
 
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
@@ -290,17 +303,38 @@ def template(css: str, **theme):
 
 
 def get_system_theme() -> str:
-    """Return the system default theme, either 'dark', or 'light'."""
-    try:
-        from napari._vendor import darkdetect
-    except ImportError:
-        return 'dark'
-    try:
-        id_ = darkdetect.theme().lower()
-    except AttributeError:
-        id_ = 'dark'
+    """Return the system default theme, either 'dark', or 'light'.
 
-    return id_
+    Note: uses Qt6 (version >6.5) property colorScheme
+    """
+    try:
+        from qtpy import QT6
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QGuiApplication
+    except (ImportError, RuntimeError):
+        return 'dark'
+
+    if not QT6:
+        # can remove this check once pyqt5 support is dropped
+        warn(
+            'System theme detection requires a Qt6 backend. '
+            'Please switch to PyQt6 or PySide6 to use it.',
+            stacklevel=2,
+        )
+        return 'dark'
+
+    style_hints = QGuiApplication.styleHints()
+    if style_hints is None:
+        return 'dark'
+
+    scheme = style_hints.colorScheme()
+    match scheme:
+        case Qt.ColorScheme.Dark:
+            return 'dark'
+        case Qt.ColorScheme.Light:
+            return 'light'
+        case _:
+            return 'dark'
 
 
 def get_theme(theme_id: str):
@@ -327,15 +361,35 @@ def get_theme(theme_id: str):
 
     if theme_id not in _themes:
         raise ValueError(
-            trans._(
-                'Unrecognized theme {id}. Available themes are {themes}',
-                deferred=True,
-                id=theme_id,
-                themes=available_themes(),
-            )
+            f'Unrecognized theme {theme_id}. Available themes are {available_themes()}'
         )
     theme = _themes[theme_id].model_copy()
     return theme
+
+
+def invert_theme(theme, **kwargs):
+    new_type = 'dark' if theme.type == 'light' else 'light'
+    inverted_kwargs = {
+        'id': f'{theme.id}-{new_type}',
+        'type': new_type,
+        'label': f'{theme.label} - {new_type.capitalize()}',
+        'background': _invert_luminance(theme.background),
+        'foreground': _invert_luminance(theme.foreground),
+        'primary': _invert_luminance(theme.primary),
+        'secondary': _invert_luminance(theme.secondary),
+        'highlight': _invert_luminance(theme.highlight),
+        'text': _invert_luminance(theme.text),
+        'icon': _invert_luminance(theme.icon),
+        'warning': _invert_luminance(theme.warning),
+        'error': _invert_luminance(theme.error),
+        'current': _invert_luminance(theme.current),
+        'syntax_style': theme.syntax_style,
+        'console': _invert_luminance(theme.console),
+        'canvas': _invert_luminance(theme.canvas),
+        'font_size': theme.font_size,
+    } | kwargs
+
+    return Theme(**inverted_kwargs)
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
@@ -422,57 +476,44 @@ def rebuild_theme_settings():
     settings.appearance.refresh_themes()
 
 
-def invert_theme(theme, **kwargs):
-    new_type = 'dark' if theme.type == 'light' else 'light'
-    inverted_kwargs = {
-        'id': f'{theme.id}-{new_type}',
-        'type': new_type,
-        'label': f'{theme.label} - {new_type.capitalize()}',
-        'background': _invert_luminance(theme.background),
-        'foreground': _invert_luminance(theme.foreground),
-        'primary': _invert_luminance(theme.primary),
-        'secondary': _invert_luminance(theme.secondary),
-        'highlight': _invert_luminance(theme.highlight),
-        'text': _invert_luminance(theme.text),
-        'icon': _invert_luminance(theme.icon),
-        'warning': _invert_luminance(theme.warning),
-        'error': _invert_luminance(theme.error),
-        'current': _invert_luminance(theme.current),
-        'syntax_style': theme.syntax_style,
-        'console': _invert_luminance(theme.console),
-        'canvas': _invert_luminance(theme.canvas),
-        'font_size': theme.font_size,
-    } | kwargs
-
-    return Theme(**inverted_kwargs)
-
-
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
-    id='dark',
+    id='napari',
     type='dark',
     label='Default Dark',
-    background='rgb(38, 41, 48)',
-    foreground='rgb(50, 55, 65)',
-    primary='rgb(70, 78, 88)',
+    background='rgb(35, 36, 43)',
+    foreground='rgb(46, 51, 62)',
+    primary='rgb(66, 74, 84)',
     secondary='rgb(86, 95, 108)',
     highlight='rgb(97, 105, 110)',
     text='rgb(240, 241, 242)',
     icon='rgb(209, 210, 212)',
     warning='rgb(227, 182, 23)',
     error='rgb(153, 18, 31)',
-    current='rgb(57, 102, 204)',
+    current='rgb(69, 96, 196)',
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
-
-LIGHT = invert_theme(
-    DARK,
-    id='light',
+LIGHT = Theme(
+    id='napari',
+    type='light',
     label='Default Light',
+    background='rgb(235, 231, 230)',
+    foreground='rgb(221, 218, 216)',
+    primary='rgb(197, 195, 193)',
+    secondary='rgb(180, 178, 175)',
+    highlight='rgb(175, 172, 170)',
+    text='rgb(30, 30, 33)',
+    icon='rgb(62, 63, 65)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(255, 18, 31)',
+    current='rgb(160, 184, 255)',
     syntax_style='default',
+    console='white',
+    canvas='white',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
 register_theme('dark', DARK, 'builtin')
