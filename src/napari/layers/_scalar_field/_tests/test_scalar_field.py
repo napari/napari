@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari.components import Dims
 from napari.layers import Image, Labels
@@ -241,6 +242,17 @@ class TestLockedDataLevel:
         assert layer.locked_data_level is None
 
 
+def test_locked_data_level_constructor():
+    """locked_data_level can be set via the Image constructor."""
+    data = _make_multiscale_3d()
+    layer = Image(data, multiscale=True, locked_data_level=2)
+    assert layer.locked_data_level == 2
+
+    # Default (None) should also be safe
+    layer2 = Image(data, multiscale=True)
+    assert layer2.locked_data_level is None
+
+
 def _draw_layer(layer, shape_threshold=(800, 600)):
     """Call ``_update_draw`` with a viewport that sees the full data extent."""
     displayed = layer._slice_input.displayed
@@ -389,3 +401,160 @@ class TestLockedDataLevelDraw:
                 f'Level {level_idx}: expected all {expected_value}, '
                 f'got unique values {np.unique(view)}'
             )
+
+
+def test_set_view_slice_3d_multiscale_corners_without_viewer():
+    """Switching a multiscale layer to ndisplay=3 without a viewer
+    (no _update_draw) must set corner_pixels and _data_level to the
+    coarsest level so slicing produces correct 3D data.
+
+    Regression test: without the fix, corner_pixels stayed at the 2D
+    extent and _data_level was not updated, leading to wrong or empty
+    slices.
+    """
+    data = [
+        np.full((8, 40, 20), 10, dtype=np.uint8),
+        np.full((4, 20, 10), 20, dtype=np.uint8),
+        np.full((2, 10, 5), 30, dtype=np.uint8),
+    ]
+    layer = Image(data, multiscale=True)
+
+    dims_3d = Dims(ndim=3, ndisplay=3)
+    layer._slice_dims(dims_3d)
+
+    coarsest = len(data) - 1
+    assert layer.data_level == coarsest, (
+        f'Expected data_level={coarsest}, got {layer.data_level}'
+    )
+
+    expected_shape = np.array(data[coarsest].shape)
+    corners = layer.corner_pixels
+    actual_extent = corners[1, :] - corners[0, :] + 1
+    np.testing.assert_array_equal(
+        actual_extent,
+        expected_shape,
+        err_msg=(
+            'corner_pixels should span the full coarsest level '
+            'when switching to 3D without a viewer'
+        ),
+    )
+
+
+class TestXarrayMetadataInit:
+    def test_xarray_image_all_metadata(self):
+        """Image inherits axis_labels, scale, translate, units from DataArray."""
+        data = xr.DataArray(
+            np.random.random((3, 10, 15)),
+            dims=['z', 'y', 'x'],
+            coords={
+                'z': ('z', [10, 15, 20], {'units': 'microns'}),
+                'y': ('y', np.arange(100, 110).astype(float), {'units': 'mm'}),
+                'x': ('x', np.arange(200, 215).astype(float)),
+            },
+        )
+        layer = Image(data)
+        assert layer.axis_labels == ('z', 'y', 'x')
+        np.testing.assert_allclose(layer.scale, [5.0, 1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [10.0, 100.0, 200.0])
+        assert str(layer.units[0]) == 'micron'
+        assert str(layer.units[1]) == 'millimeter'
+        assert str(layer.units[2]) == 'pixel'
+
+    @pytest.mark.parametrize(
+        ('rgb', 'expected_ndim', 'expected_axis_labels'),
+        [
+            (None, 2, ('y', 'x')),
+            (True, 2, ('y', 'x')),
+            (False, 3, ('y', 'x', 'channel')),
+        ],
+    )
+    def test_xarray_rgb_metadata(
+        self, rgb, expected_ndim, expected_axis_labels
+    ):
+        """RGB channel dimensions are excluded only when rgb is enabled."""
+        data = xr.DataArray(
+            np.zeros((64, 64, 3)),
+            dims=['y', 'x', 'channel'],
+            coords={
+                'y': np.arange(64),
+                'x': np.arange(64),
+                'channel': np.arange(3),
+            },
+        )
+        layer = Image(data, rgb=rgb)
+        assert layer.ndim == expected_ndim
+        assert layer.axis_labels == expected_axis_labels
+        assert len(layer.scale) == expected_ndim
+        assert len(layer.translate) == expected_ndim
+        assert len(layer.units) == expected_ndim
+
+    def test_xarray_labels_gets_metadata(self):
+        """Labels inherits axis_labels from DataArray dims (no coords)."""
+        data = xr.DataArray(
+            np.random.randint(0, 5, (5, 10, 15)), dims=['z', 'y', 'x']
+        )
+        layer = Labels(data)
+        assert layer.axis_labels == ('z', 'y', 'x')
+
+    def test_xarray_explicit_overrides(self):
+        """Explicit axis_labels, scale, units override auto-inheritance."""
+        data = xr.DataArray(
+            np.random.random((10, 15)),
+            dims=['y', 'x'],
+            coords={
+                'y': [0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
+                'x': list(range(15)),
+            },
+        )
+        layer = Image(
+            data,
+            axis_labels=('row', 'col'),
+            scale=(3.0, 3.0),
+            translate=(5.0, 5.0),
+            units=('mm', 'mm'),
+        )
+        assert layer.axis_labels == ('row', 'col')
+        np.testing.assert_allclose(layer.scale, [3.0, 3.0])
+        np.testing.assert_allclose(layer.translate, [5.0, 5.0])
+        assert str(layer.units[0]) == 'millimeter'
+
+    def test_xarray_multiscale_list(self):
+        """List of xarrays (multiscale) inherits metadata from first level."""
+        da_full = xr.DataArray(
+            np.random.random((10, 20)),
+            dims=['y', 'x'],
+            coords={
+                'y': (
+                    'y',
+                    np.arange(100, 110).astype(float),
+                    {'units': 'microns'},
+                ),
+                'x': ('x', np.arange(200, 220).astype(float)),
+            },
+        )
+        da_half = xr.DataArray(np.random.random((5, 10)), dims=['y', 'x'])
+        layer = Image([da_full, da_half], multiscale=True)
+        assert layer.axis_labels == ('y', 'x')
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [100.0, 200.0])
+        assert str(layer.units[0]) == 'micron'
+
+    def test_xarray_datetime_coords(self):
+        """Datetime coords get a real time unit, scale and translate."""
+        data = xr.DataArray(
+            np.random.random((3, 10, 15)),
+            dims=['time', 'y', 'x'],
+            coords={
+                'time': np.array(
+                    ['2013-01-01', '2013-01-02', '2013-01-03'],
+                    dtype='datetime64[ns]',
+                ),
+                'y': ('y', np.arange(100, 110).astype(float)),
+                'x': ('x', np.arange(200, 215).astype(float)),
+            },
+        )
+        layer = Image(data)
+        assert layer.axis_labels == ('time', 'y', 'x')
+        np.testing.assert_allclose(layer.scale, [1.0, 1.0, 1.0])
+        np.testing.assert_allclose(layer.translate, [15706.0, 100.0, 200.0])
+        assert str(layer.units[0]) == 'day'

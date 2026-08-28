@@ -1,14 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.visuals.vectors import Vectors
 
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+
 
 class VispyVectorsLayer(VispyBaseLayer):
-    def __init__(self, layer) -> None:
+    def __init__(self, layer, font_info: FontInfo) -> None:
         # Use instanced rendering (use the scene node, not the visual)
         node = Vectors()
-        super().__init__(layer, node)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.edge_width.connect(self._on_data_change)

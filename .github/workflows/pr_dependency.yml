@@ -2,6 +2,7 @@
 name: "PR Dependency Check"
 on:
   pull_request:
+    types: [ opened, synchronize, reopened, edited ]
   issue_comment:
     types: [ created ]
 

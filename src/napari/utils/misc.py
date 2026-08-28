@@ -1,7 +1,3 @@
-# StrEnum is only available in Python 3.11+; a vendored version
-# from backports.strenum is used for older versions.
-# Source: https://github.com/ethanfurman/backports.strenum
-# License: https://docs.python.org/3/license.html
 """Miscellaneous utility functions."""
 
 from __future__ import annotations
@@ -15,7 +11,7 @@ import os
 import re
 import sys
 import warnings
-from enum import Enum, EnumMeta
+from enum import Enum, StrEnum
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -27,13 +23,10 @@ from typing import (
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
     import packaging.version
-    from typing_extensions import Self
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
@@ -98,28 +91,8 @@ def in_python_repl() -> bool:
     )
 
 
-def str_to_rgb(arg: str) -> list[int]:
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-
-    .. deprecated:: 0.7.1
-        `str_to_rgb` is deprecated and will be removed in a future release.
-        Please migrate away from this utility. The function currently
-        retains its behavior but will warn on use.
-    """
-    warnings.warn(
-        'napari.utils.misc.str_to_rgb is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg)
-    if match is None:
-        raise ValueError("arg not in format 'rgb(x,y,z)'")
-    return list(map(int, match.groups()))
-
-
 def ensure_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
@@ -131,7 +104,7 @@ def ensure_iterable(
 
 
 def is_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
     allow_none: bool = False,
 ) -> bool:
     """Determine if a single argument is an iterable."""
@@ -221,14 +194,7 @@ def ensure_sequence_of_iterables(
     ):
         if length is not None and len(obj) != length:
             # sequence of iterables of wrong length
-            raise ValueError(
-                trans._(
-                    'length of {obj} must equal {length}',
-                    deferred=True,
-                    obj=obj,
-                    length=length,
-                )
-            )
+            raise ValueError(f'length of {obj} must equal {length}')
 
         if len(obj) > 0 or not repeat_empty:
             return obj
@@ -248,46 +214,7 @@ def formatdoc(obj):
     return obj
 
 
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        """Enum where members are also (and must be) strings."""
-
-        def __new__(cls, *values: str) -> Self:
-            if len(values) > 3:
-                raise TypeError(f'too many arguments for str(): {values!r}')
-            if len(values) == 1 and not isinstance(values[0], str):
-                raise TypeError(f'{values[0]!r} is not a string')
-            if len(values) >= 2 and not isinstance(values[1], str):
-                raise TypeError(
-                    f'encoding must be a string, not {values[1]!r}'
-                )
-            if len(values) == 3 and not isinstance(values[2], str):
-                raise TypeError(f'errors must be a string, not {values[2]!r}')
-            value = str(*values)
-            member = str.__new__(cls, value)
-            member._value_ = value
-            return member
-
-        __str__ = str.__str__
-
-        @staticmethod
-        def _generate_next_value_(
-            name: str, start: int, count: int, last_values: list[str]
-        ) -> str:
-            """Return the lower-cased version of the member name."""
-            return name.lower()
-
-
-class StringEnumMeta(EnumMeta):
-    def __getitem__(self, item: str) -> StringEnum:  # type: ignore[override]
-        """Case-insensitive name lookup: MyEnum['tHiNg'] -> MyEnum.THING."""
-        return super().__getitem__(item.upper())
-
-
-class StringEnum(StrEnum, metaclass=StringEnumMeta):
+class StringEnum(StrEnum):
     @staticmethod
     def _generate_next_value_(
         name: str, start: int, count: int, last_values: list[str]
@@ -306,12 +233,7 @@ class StringEnum(StrEnum, metaclass=StringEnumMeta):
             # but tests expect ValueError,
             # so tests win here
             raise ValueError(  # noqa: TRY004
-                trans._(
-                    '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                    deferred=True,
-                    class_name=cls,
-                    dtype=builtins.type(value),
-                )
+                f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
             )
         if isinstance(value, str):
             for member in cls:
@@ -319,12 +241,7 @@ class StringEnum(StrEnum, metaclass=StringEnumMeta):
                     return member
             return None
         raise ValueError(
-            trans._(
-                '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
-                deferred=True,
-                class_name=cls,
-                dtype=builtins.type(value),
-            )
+            f'{cls} may only be called with a `str` or an instance of {cls}. Got {builtins.type(value)}'
         )
 
     def __eq__(self, other: object) -> bool:
@@ -387,9 +304,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
     from urllib.parse import urlparse
 
     if not isinstance(relpath, str | Path):
-        raise TypeError(
-            trans._('Argument must be a string or Path', deferred=True)
-        )
+        raise TypeError('Argument must be a string or Path')
     OriginType = type(relpath)
 
     relpath_str = fspath(relpath)
@@ -399,13 +314,7 @@ def abspath_or_url(relpath: T, *, must_exist: bool = False) -> T:
 
     path = os_path.abspath(os_path.expanduser(relpath_str))
     if must_exist and not (urlp.scheme or urlp.netloc or os.path.exists(path)):
-        raise ValueError(
-            trans._(
-                'Requested path {path!r} does not exist.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'Requested path {path!r} does not exist.')
     return OriginType(path)
 
 
@@ -454,11 +363,7 @@ def ensure_n_tuple(
 
 
 def ensure_layer_data_tuple(val: tuple) -> tuple:
-    msg = trans._(
-        'Not a valid layer data tuple: {value!r}',
-        deferred=True,
-        value=val,
-    )
+    msg = f'Not a valid layer data tuple: {val!r}'
     if not isinstance(val, tuple) and val:
         raise TypeError(msg)
     if len(val) > 1:
@@ -474,9 +379,7 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     if isinstance(val, list):
         with contextlib.suppress(TypeError):
             return [ensure_layer_data_tuple(v) for v in val]
-    raise TypeError(
-        trans._('Not a valid list of layer data tuples!', deferred=True)
-    )
+    raise TypeError('Not a valid list of layer data tuples!')
 
 
 def _quiet_array_equal(*a, **k) -> bool:
@@ -584,13 +487,7 @@ def dir_hash(
     import hashlib
 
     if not Path(path).is_dir():
-        raise TypeError(
-            trans._(
-                '{path} is not a directory.',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise TypeError(f'{path} is not a directory.')
 
     hash_func = hashlib.md5
     _hash = hash_func()

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 
 import numpy as np
@@ -11,16 +13,17 @@ from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.layers import Shapes
 
 
 class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
-    layer: 'Shapes'
+    layer: Shapes
 
-    def __init__(self, layer: 'Shapes') -> None:
-        node = ShapesVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer: Shapes, font_info: FontInfo) -> None:
+        node = ShapesVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self._on_highlight_change_debounc = qdebounced(
             self._on_highlight_change_impl
