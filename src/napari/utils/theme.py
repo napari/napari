@@ -240,9 +240,12 @@ def _invert_luminance(
     color: tuple[float, float, float] | Color,
 ) -> tuple[int, int, int]:
     """Inverts luminance around mid-gray."""
+    color_rgb: tuple[float, float, float]
     if isinstance(color, Color):
-        color = color.as_rgb_tuple(alpha=False)  # type:ignore[invalid-assignment]
-    return _change_luminance(color, 255.0 - _luminance(color))
+        color_rgb = color.as_rgb_tuple(alpha=False)  # type:ignore[assignment]
+    else:
+        color_rgb = color
+    return _change_luminance(color_rgb, 255.0 - _luminance(color_rgb))
 
 
 def opacity(color: str | Color, value: int = 255) -> str:
@@ -534,15 +537,15 @@ def _install_npe2_themes(themes=None):
     for manifest in npe2.PluginManager.instance().iter_manifests(
         disabled=False
     ):
-        for theme in manifest.contributions.themes or ():
+        for theme_contrib in manifest.contributions.themes or ():
             # get fallback values
-            fallback = DARK if theme.type == 'dark' else LIGHT
+            fallback = DARK if theme_contrib.type == 'dark' else LIGHT
             theme_dict = themes[fallback.full_id].model_dump()
             # update available values
-            theme_info = theme.model_dump(
+            theme_info = theme_contrib.model_dump(
                 exclude={'colors'}, exclude_unset=True
             )
-            theme_colors = theme.colors.model_dump(exclude_unset=True)
+            theme_colors = theme_contrib.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:
