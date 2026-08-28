@@ -3,19 +3,16 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, TypeVar, cast
 from weakref import ref
 
 from app_model.expressions import ContextKey
 
 from napari._app_model.context._context_keys import ContextNamespace
 from napari.utils._dtype import normalize_dtype
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from weakref import ReferenceType
-
-    from numpy.typing import DTypeLike
 
     from napari.components.layerlist import LayerList
     from napari.layers import Layer
@@ -37,7 +34,7 @@ class LayerListContextKeys(ContextNamespace['Layer']):
 
     num_layers = ContextKey(
         0,
-        trans._('Number of layers.'),
+        'Number of layers.',
         _len,
     )
 
@@ -66,6 +63,10 @@ def _n_selected_imgs(s: LayerSel) -> int:
     return sum(x._type_string == 'image' for x in s)
 
 
+def _only_image(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'image' for x in s))
+
+
 def _only_labels(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'labels' for x in s))
 
@@ -84,6 +85,10 @@ def _n_selected_points(s: LayerSel) -> int:
 
 def _only_shapes(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'shapes' for x in s))
+
+
+def _only_surfaces(s: LayerSel) -> bool:
+    return bool(s and all(x._type_string == 'surface' for x in s))
 
 
 def _n_selected_shapes(s: LayerSel) -> int:
@@ -147,7 +152,7 @@ def _same_shape(s: LayerSel) -> bool:
     return len({tuple(getattr(x.data, 'shape', ())) for x in s}) == 1
 
 
-def _active_dtype(s: LayerSel) -> DTypeLike:
+def _active_dtype(s: LayerSel) -> str | None:
     dtype = None
     if s.active:
         with contextlib.suppress(AttributeError):
@@ -184,6 +189,45 @@ def _active_supports_features(s: LayerSel) -> bool:
     return hasattr(s.active, 'features')
 
 
+def _all_support_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'colorbar') for x in s))
+
+
+def _all_support_border_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'border_colorbar') for x in s))
+
+
+def _all_support_face_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
+
+
+def _any_deletion_locked(s: LayerSel) -> bool:
+    from napari.layers.base import LayerLock
+
+    return any(bool(x.locked & LayerLock.DELETION) for x in s)
+
+
+A = TypeVar('A')
+
+
+class CallableContextKey(ContextKey[A, bool]):
+    """A context key that is a callable."""
+
+    def __init__(
+        self,
+        default_value: bool,
+        description: str,
+        getter: Callable[[A], Callable[[], bool]] | None = None,
+        **kwargs: str,
+    ) -> None:
+        super().__init__(
+            default_value=default_value,
+            description=description,
+            getter=cast(Callable[[A], bool], getter),
+            **kwargs,
+        )
+
+
 class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     """Available context keys relating to the selection in a LayerList.
 
@@ -193,29 +237,27 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
 
     num_selected_layers = ContextKey(
         0,
-        trans._('Number of currently selected layers.'),
+        'Number of currently selected layers.',
         _len,
     )
     num_selected_layers_linked = ContextKey(
         False,
-        trans._('True when all selected layers are linked.'),
+        'True when all selected layers are linked.',
         _all_linked,
     )
     num_unselected_linked_layers = ContextKey(
         0,
-        trans._('Number of unselected layers linked to selected layer(s).'),
+        'Number of unselected layers linked to selected layer(s).',
         _n_unselected_links,
     )
     active_layer_is_rgb = ContextKey(
         False,
-        trans._('True when the active layer is RGB.'),
+        'True when the active layer is RGB.',
         _is_rgb,
     )
     active_layer_type = ContextKey['LayerSel', Optional[str]](
         None,
-        trans._(
-            'Lowercase name of active layer type, or None of none active.'
-        ),
+        'Lowercase name of active layer type, or None of none active.',
         _active_type,
     )
     # TODO: try to reduce these `num_selected_x_layers` to a single set of strings
@@ -223,88 +265,116 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     # support Sets, tuples, lists, etc...  which they currently do not.
     num_selected_image_layers = ContextKey(
         0,
-        trans._('Number of selected image layers.'),
+        'Number of selected image layers.',
         _n_selected_imgs,
     )
     num_selected_labels_layers = ContextKey(
         0,
-        trans._('Number of selected labels layers.'),
+        'Number of selected labels layers.',
         _n_selected_labels,
     )
     num_selected_points_layers = ContextKey(
         0,
-        trans._('Number of selected points layers.'),
+        'Number of selected points layers.',
         _n_selected_points,
     )
     num_selected_shapes_layers = ContextKey(
         0,
-        trans._('Number of selected shapes layers.'),
+        'Number of selected shapes layers.',
         _n_selected_shapes,
     )
     num_selected_surface_layers = ContextKey(
         0,
-        trans._('Number of selected surface layers.'),
+        'Number of selected surface layers.',
         _n_selected_surfaces,
     )
     num_selected_vectors_layers = ContextKey(
         0,
-        trans._('Number of selected vectors layers.'),
+        'Number of selected vectors layers.',
         _n_selected_vectors,
     )
     num_selected_tracks_layers = ContextKey(
         0,
-        trans._('Number of selected tracks layers.'),
+        'Number of selected tracks layers.',
         _n_selected_tracks,
     )
     active_layer_ndim = ContextKey['LayerSel', Optional[int]](
         None,
-        trans._(
-            'Number of dimensions in the active layer, or `None` if nothing is active.'
-        ),
+        'Number of dimensions in the active layer, or `None` if nothing is active.',
         _active_ndim,
     )
     active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
         (),
-        trans._('Shape of the active layer, or `None` if nothing is active.'),
+        'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,
     )
     active_layer_is_image_3d = ContextKey(
         False,
-        trans._('True when the active layer is a 3D image.'),
+        'True when the active layer is a 3D image.',
         _active_is_image_3d,
     )
     active_layer_dtype = ContextKey(
         None,
-        trans._('Dtype of the active layer, or `None` if nothing is active.'),
+        'Dtype of the active layer, or `None` if nothing is active.',
         _active_dtype,
     )
     all_selected_layers_same_shape = ContextKey(
         False,
-        trans._('True when all selected layers have the same shape.'),
+        'True when all selected layers have the same shape.',
         _same_shape,
     )
     all_selected_layers_same_type = ContextKey(
         False,
-        trans._('True when all selected layers are of the same type.'),
+        'True when all selected layers are of the same type.',
         _same_type,
+    )
+    all_selected_layers_image = ContextKey(
+        False,
+        'True when all selected layers are images.',
+        _only_image,
     )
     all_selected_layers_labels = ContextKey(
         False,
-        trans._('True when all selected layers are labels.'),
+        'True when all selected layers are labels.',
         _only_labels,
     )
     all_selected_layers_shapes = ContextKey(
         False,
-        trans._('True when all selected layers are shapes.'),
+        'True when all selected layers are shapes.',
         _only_shapes,
     )
-    selected_empty_shapes_layer = ContextKey(
+    all_selected_layers_surfaces = ContextKey(
         False,
-        trans._('True when there is a shapes layer without data selected.'),
+        'True when all selected layers are surfaces.',
+        _only_surfaces,
+    )
+    all_selected_layers_support_colorbar = ContextKey(
+        False,
+        'True when all selected layers support a colorbar.',
+        _all_support_colorbar,
+    )
+    all_selected_layers_support_border_colorbar = ContextKey(
+        False,
+        'True when all selected layers support a border colorbar.',
+        _all_support_border_colorbar,
+    )
+    all_selected_layers_support_face_colorbar = ContextKey(
+        False,
+        'True when all selected layers support a face colorbar.',
+        _all_support_face_colorbar,
+    )
+    selected_empty_shapes_layer = CallableContextKey(
+        False,
+        'True when there is a shapes layer without data selected.',
         _empty_shapes_layer_selected,
     )
     active_layer_supports_features = ContextKey(
         False,
-        trans._('True when the active layer can have a Features table.'),
+        'True when the active layer can have a Features table.',
         _active_supports_features,
+    )
+    any_selected_layers_deletion_locked = ContextKey(
+        False,
+        'True when any selected layer has DELETION lock engaged.',
+        _any_deletion_locked,
     )

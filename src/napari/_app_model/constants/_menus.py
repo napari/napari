@@ -11,7 +11,7 @@ SOME of these (but definitely not all) will be exposed as "contributable"
 menus for plugins to contribute commands and submenu items to.
 """
 
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 class MenuId(StrEnum):
@@ -25,7 +25,8 @@ class MenuId(StrEnum):
     FILE_ACQUIRE = 'napari/file/acquire'
 
     MENUBAR_VIEW = 'napari/view'
-    VIEW_AXES = 'napari/view/axes'
+    VIEW_SCENE_AXES = 'napari/view/scene_axes'
+    VIEW_CANVAS_AXES = 'napari/view/canvas_axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
 
     MENUBAR_LAYERS = 'napari/layers'
@@ -33,6 +34,7 @@ class MenuId(StrEnum):
     LAYERS_ANNOTATE = 'napari/layers/annotate'
 
     LAYERS_DATA = 'napari/layers/data'
+    LAYERS_METADATA = 'napari/layers/metadata'
     LAYERS_LAYER_TYPE = 'napari/layers/layer_type'
 
     LAYERS_TRANSFORM = 'napari/layers/transform'
@@ -57,6 +59,7 @@ class MenuId(StrEnum):
     LAYERS_CONTEXT_CONVERT_DTYPE = 'napari/layers/context/convert_dtype'
     LAYERS_CONTEXT_PROJECT = 'napari/layers/contxt/project'
     LAYERS_CONTEXT_COPY_SPATIAL = 'napari/layers/context/copy_spatial'
+    LAYERS_CONTEXT_VISUALIZATION = 'napari/layers/context/visualization'
 
     def __str__(self) -> str:
         return self.value
@@ -73,6 +76,7 @@ class MenuId(StrEnum):
             cls.LAYERS_VISUALIZE,
             cls.LAYERS_ANNOTATE,
             cls.LAYERS_DATA,
+            cls.LAYERS_METADATA,
             cls.LAYERS_LAYER_TYPE,
             cls.LAYERS_FILTER,
             cls.LAYERS_TRANSFORM,

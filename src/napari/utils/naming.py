@@ -1,15 +1,18 @@
 """Automatically generate names."""
 
+from __future__ import annotations
+
 import inspect
 import re
 from collections import ChainMap, ChainMap as ChainMapType
-from collections.abc import Callable
-from types import FrameType, TracebackType
-from typing import (
-    Any,
-)
+from typing import TYPE_CHECKING, Any
 
 from napari.utils.misc import ROOT_DIR, formatdoc
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import FrameType, TracebackType
+    from typing import Self
 
 sep = ' '
 start = 1
@@ -98,7 +101,7 @@ class CallerFrame:
         self.namespace = ChainMap()
         self.names = ()
 
-    def __enter__(self) -> 'CallerFrame':
+    def __enter__(self) -> Self:
         frame = inspect.currentframe()
         try:
             # See issue #1635 regarding potential AttributeError

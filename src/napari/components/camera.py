@@ -1,9 +1,11 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+from pydantic import Field, PrivateAttr, field_validator
 
-from napari._pydantic_compat import validator
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
     DepthAxisOrientation,
@@ -15,10 +17,32 @@ from napari.utils.camera_orientations import (
 )
 from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+
+_SYNCED_CAMERA_DESCRIPTION = (
+    'Controls how camera state is managed when switching between\n'
+    '2D and 3D views. When checked, camera center and zoom are\n'
+    'shared between views, with the depth (Z) component synced via\n'
+    'the dims slider. When unchecked, each mode remembers\n'
+    'its own camera state independently.'
+)
+
+
+@dataclass(frozen=True)
+class _CameraState:
+    """Captured camera state for a single ndisplay mode.
+
+    This is a lightweight private data container used internally by
+    :class:`Camera` to preserve per-mode center, zoom, and angles when
+    switching between 2D and 3D views.
+    """
+
+    center: tuple[float, float, float] | tuple[float, float]
+    zoom: float
+    angles: tuple[float, float, float]
 
 
 class Camera(EventedModel):
@@ -34,8 +58,10 @@ class Camera(EventedModel):
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
-        Note that Euler angles's intrinsic degeneracy means different
-        sets of Euler angles may lead to the same view.
+        Euler angles in 3D do not uniquely represent an orientation, so
+        different angle triplets can produce the same view.
+        Stored or returned angle values may differ from those that were set,
+        while still representing an equivalent camera orientation.
     perspective : float
         Perspective (aka "field of view" in vispy) of the camera (if 3D).
     mouse_pan : bool
@@ -51,7 +77,7 @@ class Camera(EventedModel):
         0.0,
     )
     zoom: float = 1.0
-    angles: tuple[float, float, float] = (0.0, 0.0, 90.0)
+    angles: tuple[float, float, float] = (0.0, 0.0, 0.0)
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
@@ -60,9 +86,36 @@ class Camera(EventedModel):
         VerticalAxisOrientation,
         HorizontalAxisOrientation,
     ] = DEFAULT_ORIENTATION_TYPED
+    synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
 
-    # validators
-    @validator('center', 'angles', pre=True, allow_reuse=True)
+    # Per-mode camera state cache for the "separate" (synced=False) mode.
+    _cached_2d_state: _CameraState | None = PrivateAttr(None)
+    _cached_3d_state: _CameraState | None = PrivateAttr(None)
+
+    def _cache_state(self, ndisplay_mode: int) -> None:
+        """Save current camera state for a given ndisplay mode."""
+        state = _CameraState(
+            center=self.center,
+            zoom=self.zoom,
+            angles=self.angles,
+        )
+        if ndisplay_mode == 2:
+            self._cached_2d_state = state
+        else:
+            self._cached_3d_state = state
+
+    def _pop_cached_state(self, ndisplay_mode: int) -> _CameraState | None:
+        """Retrieve and remove cached state for a given ndisplay mode."""
+        if ndisplay_mode == 2:
+            state = self._cached_2d_state
+            self._cached_2d_state = None
+        else:
+            state = self._cached_3d_state
+            self._cached_3d_state = None
+        return state
+
+    @field_validator('center', 'angles', mode='before')
+    @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
@@ -74,15 +127,14 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        ang = np.deg2rad(self.angles)
-        view_direction = (
-            # z has a negative sign for the right-handed reference frame
-            # flip (#7488)
-            -np.sin(ang[2]) * np.cos(ang[1]),
-            np.cos(ang[2]) * np.cos(ang[1]),
-            -np.sin(ang[1]),
-        )
-        return view_direction
+        from scipy.spatial.transform import Rotation as R
+
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot.
+        rotation = R.from_euler('xyz', self.angles, degrees=True)
+        # view direction is given by the z component, but flipping the sign.
+        # This is because the default view direction at angles (0, 0, 0) is (-1, 0, 0)
+        return tuple(-rotation.as_matrix()[0])
 
     @property
     def up_direction(self) -> tuple[float, float, float]:
@@ -92,16 +144,14 @@ class Camera(EventedModel):
         3-tuple. This direction is in 3D scene coordinates, the world coordinate
         system for three currently displayed dimensions.
         """
-        rotation_matrix = R.from_euler(
-            seq='yzx', angles=self.angles, degrees=True
-        ).as_matrix()
-        return (
-            # z has a negative sign for the right-handed reference frame
-            # flip (#7488)
-            -rotation_matrix[2, 2],
-            rotation_matrix[1, 2],
-            rotation_matrix[0, 2],
-        )
+        from scipy.spatial.transform import Rotation as R
+
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot.
+        rotation = R.from_euler('xyz', self.angles, degrees=True)
+        # up direction is given by the y component, but flipping the sign.
+        # This is because the default up direction at angles (0, 0, 0) is (0, -1, 0)
+        return tuple(-rotation.as_matrix()[1])
 
     def set_view_direction(
         self,
@@ -129,56 +179,31 @@ class Camera(EventedModel):
             to (0, -1, 0) unless the view direction is parallel to the y-axis,
             in which case will default to (-1, 0, 0).
         """
-        # default behaviour of up direction
-        view_direction_along_y_axis = (
-            view_direction[0],
-            view_direction[2],
-        ) == (0, 0)
-        up_direction_along_y_axis = (up_direction[0], up_direction[2]) == (
-            0,
-            0,
+        from scipy.spatial.transform import Rotation as R
+
+        # project up onto view so we can remove the parallel component
+        projection = np.dot(up_direction, view_direction) * np.array(
+            view_direction
         )
-        if view_direction_along_y_axis and up_direction_along_y_axis:
-            up_direction = (1, 0, 0)  # align up direction along z axis
+        up_direction_arr = np.asarray(up_direction) - projection
 
-        # xyz ordering for vispy
-        view_vector = np.array(view_direction, dtype=float, copy=True)[::-1]
-        # flip z axis for right-handed frame
-        view_vector *= [1, 1, -1]
-        # normalise vector for rotation matrix
-        view_vector /= np.linalg.norm(view_vector)
-
-        # xyz ordering for vispy
-        up_vector = np.array(up_direction, dtype=float, copy=True)[::-1]
-        # flip z axis for right-handed frame
-        up_vector *= [1, 1, -1]
-        # ??? why a cross product here?
-        up_vector = np.cross(view_vector, up_vector)
-        # normalise vector for rotation matrix
-        up_vector /= np.linalg.norm(up_vector)
-
-        # explicit check for parallel view direction and up direction
-        if np.allclose(np.cross(view_vector, up_vector), 0):
-            raise ValueError(
-                trans._(
-                    'view direction and up direction are parallel',
-                    deferred=True,
-                )
-            )
-
-        x_vector = np.cross(up_vector, view_vector)
-        x_vector /= np.linalg.norm(x_vector)
-
-        # construct rotation matrix, convert to euler angles
-        rotation_matrix = np.column_stack((up_vector, view_vector, x_vector))
-        euler_angles = R.from_matrix(rotation_matrix).as_euler(
-            seq='yzx', degrees=True
+        view_direction_arr = np.asarray(view_direction) / np.linalg.norm(
+            view_direction
         )
-        self.angles = euler_angles
+        up_direction_arr = up_direction_arr / np.linalg.norm(up_direction_arr)
+        right_direction = np.cross(up_direction_arr, view_direction_arr)
+
+        # once we're in scene-land, we pretend to be in xyz space (axes names don't
+        # mean anything after all...) which simplifies the logic a lot. We also
+        # flip all signs (see explanations in self.view_direction, and self.up_direction)
+        matrix = -np.array(
+            (view_direction_arr, up_direction_arr, right_direction)
+        )
+        self.angles = R.from_matrix(matrix).as_euler('xyz', degrees=True)
 
     def calculate_nd_view_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
-    ) -> Optional['npt.NDArray[np.float64]']:
+    ) -> npt.NDArray[np.float64] | None:
         """Calculate the nD view direction vector of the camera.
 
         Parameters

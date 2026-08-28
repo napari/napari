@@ -83,7 +83,6 @@ def main():
     print("\n\nChecking vendored modules\n")
     vendored_modules = []
     for org, reponame, tag, source, target in [
-        ("albertosottile", "darkdetect", "master", None, None),
         (
             "matplotlib",
             "matplotlib",

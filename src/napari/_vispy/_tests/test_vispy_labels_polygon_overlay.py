@@ -1,7 +1,9 @@
 import numpy as np
+import pytest
 
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
-from napari.components.overlays import LabelsPolygonOverlay
+from napari._vispy.utils.qt_font import FontInfo
+from napari.components import ViewerModel
 from napari.layers.labels._labels_key_bindings import complete_polygon
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -9,16 +11,28 @@ from napari.utils.interactions import (
 )
 
 
-def test_vispy_labels_polygon_overlay(make_napari_viewer):
-    viewer = make_napari_viewer()
+@pytest.fixture
+def patch_gloo_set_state(monkeypatch):
+    monkeypatch.setattr(
+        'vispy.visuals.polygon.set_state', lambda *args, **kwargs: None
+    )
 
-    labels_polygon = LabelsPolygonOverlay()
+
+# see https://github.com/napari/napari/pull/9262
+@pytest.mark.usefixtures('patch_gloo_set_state')
+@pytest.mark.usefixtures('qapp')
+def test_vispy_labels_polygon_overlay():
+    viewer = ViewerModel()
 
     data = np.zeros((50, 50), dtype=int)
     layer = viewer.add_labels(data, opacity=0.5)
+    labels_polygon = layer._overlays['polygon']
 
     vispy_labels_polygon = VispyLabelsPolygonOverlay(
-        layer=layer, overlay=labels_polygon
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=labels_polygon,
     )
 
     assert vispy_labels_polygon._polygon.color.alpha == 0.5
@@ -42,13 +56,24 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     assert vispy_labels_polygon._polygon.color.is_blank
 
 
-def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
+@pytest.mark.usefixtures('patch_gloo_set_state')
+def test_labels_drawing_with_polygons(MouseEvent):
     """Test polygon painting."""
     np.random.seed(0)
 
+    # viewer = make_napari_viewer()
+
     data = np.zeros((3, 15, 15), dtype=np.int32)
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     layer = viewer.add_labels(data)
+
+    vispy_labels_polygon = VispyLabelsPolygonOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=layer._overlays['polygon'],
+    )
+    vispy_labels_polygon.overlay.enabled = True
 
     layer.mode = 'polygon'
     layer.selected_label = 1
@@ -135,3 +160,89 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     # Finish drawing
     complete_polygon(layer)
     assert np.array_equiv(data[0, :], 0)
+
+
+@pytest.mark.usefixtures('patch_gloo_set_state')
+def test_labels_polygon_with_downsampling(monkeypatch):
+    """Test that polygon overlay visual positions are correct with downsampling.
+
+    This test verifies that when a Labels layer is downsampled (exceeding
+    GL_MAX_TEXTURE_SIZE), the polygon overlay visual correctly transforms
+    coordinates from data space to texture space for proper display.
+    """
+    # Patch get_max_texture_sizes to a small value
+    monkeypatch.setattr(
+        'napari._vispy.layers.base.get_max_texture_sizes',
+        lambda: (256, 256),
+    )
+
+    viewer = ViewerModel()
+
+    # Create a labels layer that will be downsampled
+    shape = (600, 500)
+    data = np.zeros(shape, dtype=np.int32)
+    layer = viewer.add_labels(data, multiscale=False)
+
+    vispy_polygon_overlay = VispyLabelsPolygonOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=layer._overlays['polygon'],
+    )
+
+    expected_downsample = np.array([3, 2])
+    layer._transforms['tile2data'].scale = expected_downsample
+    np.testing.assert_array_equal(
+        layer._transforms['tile2data'].scale, expected_downsample
+    )
+
+    layer.mode = 'polygon'
+    layer.selected_label = 1
+
+    polygon_overlay = layer._overlays['polygon']
+
+    assert vispy_polygon_overlay is not None, (
+        'Could not find polygon overlay visual'
+    )
+
+    # Define points in data coordinates (600x500 space)
+    # These coordinates are what mouse events would provide
+    data_points = [
+        [200.5, 200.5],  # data coordinates
+        [200.5, 300.5],
+        [300.5, 300.5],
+    ]
+
+    # Set overlay points (simulating mouse clicks adding vertices)
+    polygon_overlay.points = data_points
+
+    # Get the visual positions that were set
+    # The overlay's _on_points_change should have been called
+    # Vispy Markers store position data in _data['a_position'] attribute
+    visual_positions = vispy_polygon_overlay._nodes._data['a_position'][:, :2]
+
+    # Expected visual positions should be in texture space
+    # With [3, 2] downsampling: texture_coord = data_coord / downsample
+    # Note: dims are reversed for vispy (y, x instead of x, y)
+    expected_texture_positions = (
+        np.array(
+            [
+                [200.5, 200.5],  # reversed: (y, x)
+                [300.5, 200.5],
+                [300.5, 300.5],
+            ]
+        )
+        / expected_downsample[::-1]
+    )
+
+    # The visual positions should match the texture coordinates
+    # (with coordinates properly transformed by tile2data.inverse)
+    np.testing.assert_array_almost_equal(
+        visual_positions,
+        expected_texture_positions,
+        decimal=1,
+        err_msg=(
+            'Polygon overlay visual positions should be in texture space '
+            '(data coordinates divided by downsample factor) when downsampling is active'
+        ),
+    )

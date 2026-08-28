@@ -808,7 +808,7 @@ def test_instiantiate_with_plane():
     """
     plane = SlicingPlane(position=(32, 32, 32), normal=(1, 1, 1), thickness=22)
     image = Image(np.ones((32, 32, 32)), plane=plane)
-    for k, v in plane.dict().items():
+    for k, v in plane.model_dump().items():
         assert v == getattr(image.plane, k, v)
 
 
@@ -960,6 +960,24 @@ def test_thick_slice():
     )
 
 
+def test_thick_slice_maintains_contrast_limits():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data.astype(np.uint8))
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+
+    layer.projection_mode = 'mean'
+    layer.reset_contrast_limits()
+    assert layer.contrast_limits == [0, 255]
+    np.testing.assert_array_equal(layer.thumbnail[..., -1], 255)
+
+
 def test_adjust_contrast_out_of_range():
     arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
     img_lay = Image(arr)
@@ -973,12 +991,26 @@ def test_adjust_contrast_out_of_range():
 def test_adjust_contrast_limits_range_set_data():
     arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
     img_lay = Image(arr)
-    img_lay._keep_auto_contrast = True
+    img_lay.auto_contrast = True
     npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
     img_lay.data = arr * 1e39
     assert not np.array_equal(
         img_lay._slice.image.view, img_lay._slice.image.raw
     )
+
+
+def test_ndisplay_3_auto_contrast():
+    """Ensure toggle to 3D display with with continuous contrast.
+
+    Regression test for https://github.com/napari/napari/issues/7152
+    """
+    data = np.ones((10, 20, 20))
+    layer = Image(data)
+    layer.auto_contrast = True
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=2))
+    # switch to ndisplay=3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
 
 def test_thick_slice_multiscale():

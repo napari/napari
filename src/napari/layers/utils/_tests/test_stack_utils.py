@@ -1,10 +1,14 @@
+import dask.array as da
 import numpy as np
 import pytest
+import zarr
 
 from napari.layers import Image
+from napari.layers.base._base_constants import Blending
 from napari.layers.utils.stack_utils import (
     images_to_stack,
     merge_rgb,
+    slice_from_axis,
     split_channels,
     split_rgb,
     stack_to_images,
@@ -203,6 +207,44 @@ def test_split_and_merge_rgba():
     assert (rgb_image.data[3] == 4).all()
 
 
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgb_blending(stack_blending):
+    """Test blending settings on a split RGB image."""
+    # Make an RGB
+    data = np.random.randint(0, 100, (10, 128, 128, 3))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the RGB into 3 images
+    images = split_rgb(stack)
+    blendings = [image.blending for image in images]
+    assert blendings == [stack_blending, 'additive', 'additive']
+
+
+@pytest.mark.parametrize(
+    'stack_blending', [blending.value for blending in Blending]
+)
+def test_split_rgba_blending(stack_blending):
+    """Test blending settings on a split RGBA image."""
+    # Make an RGBA
+    data = np.random.randint(0, 100, (10, 128, 128, 4))
+    stack = Image(data)
+    stack.blending = stack_blending
+
+    # split the rgb into 4 images
+    images = split_rgb(stack, with_alpha=True)
+    blendings = [image.blending for image in images]
+    # multiplicative should be assigned to alpha channel
+    assert blendings == [
+        stack_blending,
+        'additive',
+        'additive',
+        'multiplicative',
+    ]
+
+
 @pytest.fixture(
     params=[
         {
@@ -338,3 +380,84 @@ def test_split_channels_multi_affine_napari(kwargs):
             meta['affine'].affine_matrix,
             Affine(scale=[idx + 1, idx + 1]).affine_matrix,
         )
+
+
+@pytest.mark.parametrize(
+    ('input_array', 'expected_type'),
+    [
+        (np.zeros((10, 20)), np.ndarray),
+        (da.zeros((10, 20)), da.Array),
+        (zarr.zeros((10, 20)), da.Array),
+    ],
+    ids=['numpy', 'dask', 'zarr'],
+)
+def test_images_to_stack_lazy_arrays(input_array, expected_type):
+    """Test that images_to_stack handles numpy, dask, and zarr arrays correctly."""
+    data = input_array
+    images = [Image(data) for _ in range(3)]
+    stack = images_to_stack(images)
+
+    assert not stack.multiscale
+    assert isinstance(stack.data, expected_type)
+    assert stack.data.shape[1:] == input_array.shape
+
+
+@pytest.mark.parametrize(
+    ('input_array', 'expected_type'),
+    [
+        (np.zeros((10, 20)), np.ndarray),
+        (da.zeros((10, 20)), da.Array),
+        (zarr.zeros((10, 20)), da.Array),
+    ],
+    ids=['numpy', 'dask', 'zarr'],
+)
+def test_images_to_stack_lazy_multiscale_arrays(input_array, expected_type):
+    """Test stacking of multiscale numpy, dask, and zarr arrays."""
+    # Slicing zarr array returns numpy array, so we need to re-wrap in zarr
+    if isinstance(input_array, zarr.Array):
+        data = [input_array, zarr.array(input_array[::2, ::2])]
+    else:
+        data = [input_array, input_array[::2, ::2]]
+
+    images = [Image(data) for _ in range(3)]
+    stack = images_to_stack(images)
+
+    assert stack.multiscale
+    assert isinstance(stack.data[0], expected_type)
+    assert stack.data[0].shape[1:] == input_array.shape
+
+
+@pytest.mark.parametrize(
+    ('array_type', 'expected_result_type'),
+    [
+        ('numpy', np.ndarray),
+        ('dask', da.Array),
+        ('zarr', da.Array),
+    ],
+)
+def test_slice_from_axis_different_array_types(
+    array_type, expected_result_type
+):
+    """Test slice_from_axis with numpy, dask, and zarr arrays."""
+    # Create test data
+    if array_type == 'numpy':
+        data = np.zeros((3, 4, 4))
+    elif array_type == 'dask':
+        data = da.zeros((3, 4, 4))
+    elif array_type == 'zarr':
+        data = zarr.zeros((3, 4, 4))
+
+    axis, element = 1, 2
+    expected_shape = (3, 4)
+    result = slice_from_axis(data, axis=axis, element=element)
+
+    # Check result type and shape
+    assert isinstance(result, expected_result_type)
+    assert result.shape == expected_shape
+
+    # Check result values - compare with expected slice
+    result_computed = (
+        result.compute() if hasattr(result, 'compute') else result
+    )
+    expected = data[:, element, :]
+    np.testing.assert_array_equal(result_computed, expected)

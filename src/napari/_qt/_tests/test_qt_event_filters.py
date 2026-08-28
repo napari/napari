@@ -9,15 +9,19 @@ pytest.importorskip('qtpy', reason='Cannot test event filters without qtpy.')
     ('tooltip', 'is_qt_tag_present'),
     [
         (
-            '<html>'
-            '<p>A widget to test that a rich text tooltip might be detected '
-            'and therefore not changed to include a qt tag</p>'
-            '</html>',
+            (
+                '<html>'
+                '<p>A widget to test that a rich text tooltip might be detected '
+                'and therefore not changed to include a qt tag</p>'
+                '</html>'
+            ),
             False,
         ),
         (
-            'A widget to test that a non-rich text tooltip might '
-            'be detected and therefore changed',
+            (
+                'A widget to test that a non-rich text tooltip might '
+                'be detected and therefore changed'
+            ),
             True,
         ),
     ],
@@ -31,7 +35,7 @@ def test_qt_tooltip_event_filter(qtbot, tooltip, is_qt_tag_present):
 
     # event filter object and QEvent
     event_filter_handler = QtToolTipEventFilter()
-    qevent = QEvent(QEvent.ToolTipChange)
+    qevent = QEvent(QEvent.Type.ToolTipChange)
 
     # check if tooltip is changed by the event filter
     widget = QWidget()

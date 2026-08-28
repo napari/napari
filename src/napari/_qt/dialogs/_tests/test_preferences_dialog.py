@@ -1,12 +1,14 @@
 import sys
 
 import numpy.testing as npt
-import pyautogui
 import pytest
-from qtpy.QtCore import QPoint, Qt
+from pydantic import BaseModel
+from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtGui import QKeyEvent
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication
 
-from napari._pydantic_compat import BaseModel
+from napari._pydantic_util import get_inner_type
 from napari._qt.dialogs.preferences_dialog import (
     PreferencesDialog,
     QMessageBox,
@@ -18,10 +20,15 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
-from napari.settings import NapariSettings, get_settings
+from napari.settings import NapariSettings, get_plugin_settings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.settings._plugin_config_generator import (
+    plugin_configuration_generator,
+)
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
+
+PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
 
 
 @pytest.fixture
@@ -56,10 +63,67 @@ def pref(qtbot):
 
 def test_prefdialog_populated(pref):
     subfields = filter(
-        lambda f: isinstance(f.type_, type) and issubclass(f.type_, BaseModel),
-        NapariSettings.__fields__.values(),
+        lambda f: (
+            isinstance(ff := get_inner_type(f.annotation), type)
+            and issubclass(ff, BaseModel)
+        ),
+        NapariSettings.model_fields.values(),
     )
-    assert pref._stack.count() == len(list(subfields))
+    # one page per napari setting, plus a separator page, plus one page
+    # per plugin that contributes a configuration
+    number_of_plugins = len(plugin_configuration_generator())
+    assert pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
+
+
+def test_add_plugin(mock_pm, pref):
+    assert len(get_plugin_settings()) == len(
+        plugin_configuration_generator(mock_pm)
+    )
+
+    with pytest.raises(KeyError):
+        get_plugin_settings('random-plugin')
+
+    get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()
+
+
+def test_plugin_settings_restored_on_cancel(mock_pm, pref):
+    settings = get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()  # snapshot plugin settings (defaults)
+
+    settings.reader.lazy = True
+    assert settings.reader.lazy is True
+
+    pref.reject()
+
+    # Cancel reverts plugin settings, like it reverts napari's own settings
+    assert settings.reader.lazy is False
+
+
+def test_plugin_settings_saved_on_accept(mock_pm, pref, qtbot):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    with qtbot.waitSignal(pref.finished):
+        pref.accept()
+
+    # OK persists plugin settings to their own config file
+    assert 'lazy: true' in settings.config_path.read_text()
+
+
+def test_plugin_settings_restore_defaults(mock_pm, pref, monkeypatch):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    monkeypatch.setattr(
+        QMessageBox,
+        'question',
+        lambda *a, **k: QMessageBox.StandardButton.RestoreDefaults,
+    )
+    pref._restore_default_dialog()
+
+    # Restore defaults resets plugin settings, like it resets napari's own
+    assert settings.reader.lazy is False
 
 
 def test_dask_widget(qtbot, pref):
@@ -220,13 +284,13 @@ def test_preferences_dialog_ok(qtbot, pref):
 def test_preferences_dialog_close(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.close()
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 def test_preferences_dialog_escape(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         qtbot.keyPress(pref, Qt.Key_Escape)
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'dark'
 
 
 @pytest.mark.key_bindings
@@ -303,12 +367,6 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
     Notes:
         * Skipped on macOS CI due to accessibility permissions not being
           settable on macOS GitHub Actions runners.
-        * For this test to pass locally, you need to give the Terminal/iTerm/VSCode
-          application accessibility permissions:
-              `System Settings > Privacy & Security > Accessibility`
-
-        See https://github.com/asweigart/pyautogui/issues/247 and
-        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855
     """
     shortcut_widget = (
         pref._stack.widget(3).widget().widget.widgets['shortcuts']
@@ -342,9 +400,26 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         pos=item_pos,
     )
     qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
-    pyautogui.press('delete')
+
+    editor = QApplication.focusWidget()
+    assert editor is not None
+    # Send a ShortcutOverride event to trigger Delete handling,
+    # which clears the selected shortcut text
+    delete_event = QKeyEvent(
+        QEvent.Type.ShortcutOverride,
+        Qt.Key.Key_Delete,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(editor, delete_event)
     qtbot.wait(100)
-    pyautogui.press(confirm_key)
+
+    # Confirm the change with the given key
+    confirm_key_map = {
+        'enter': Qt.Key.Key_Enter,
+        'return': Qt.Key.Key_Return,
+        'tab': Qt.Key.Key_Tab,
+    }
+    QTest.keyClick(editor, confirm_key_map[confirm_key])
     qtbot.wait(100)
 
     # ensure the dialog is still open
@@ -355,3 +430,10 @@ def test_preferences_dialog_not_dismissed_by_keybind_confirm(
         12, shortcut_widget._shortcut_col
     ).text()
     assert shortcut == ''
+
+
+def test_startup_script_file_extension(pref):
+    startup_script_widget = (
+        pref._stack.widget(0).widget().widget.widgets['startup_script']
+    )
+    assert startup_script_widget.file_filter() == 'File (*.py)'

@@ -1,9 +1,10 @@
 """OpenGL Utilities."""
 
-from collections.abc import Generator
+from __future__ import annotations
+
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -11,7 +12,8 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
-from napari.utils.translations import trans
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 texture_dtypes = [
     np.dtype(np.uint8),
@@ -61,7 +63,7 @@ def get_max_texture_sizes() -> tuple[int, int]:
     with _opengl_context():
         max_size_2d = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
 
-    if max_size_2d == ():
+    if not max_size_2d:
         max_size_2d = None
 
     # vispy/gloo doesn't provide the GL_MAX_3D_TEXTURE_SIZE location,
@@ -71,7 +73,7 @@ def get_max_texture_sizes() -> tuple[int, int]:
         GL_MAX_3D_TEXTURE_SIZE = 32883
         max_size_3d = gl.glGetParameter(GL_MAX_3D_TEXTURE_SIZE)
 
-    if max_size_3d == ():
+    if not max_size_3d:
         max_size_3d = None
 
     return max_size_2d, max_size_3d
@@ -111,12 +113,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
             dtype_ = np.float32
     except KeyError as e:  # not an int or float
         raise TypeError(
-            trans._(
-                'type {dtype} not allowed for texture; must be one of {textures}',
-                deferred=True,
-                dtype=dtype,
-                textures=set(texture_dtypes),
-            )
+            f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'
         ) from e
     return data.astype(dtype_)
 

@@ -1,5 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QScrollBar, QStyle, QStyleOptionSlider
+
+if TYPE_CHECKING:
+    from qtpy.QtGui import QMouseEvent
 
 CC = QStyle.ComplexControl
 SC = QStyle.SubControl
@@ -17,7 +24,9 @@ class ModifiedScrollBar(QScrollBar):
     fully to the clicked position.
     """
 
-    def _move_to_mouse_position(self, event):
+    def _move_to_mouse_position(self, event: QMouseEvent | None) -> None:
+        if event is None:
+            return
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
 
@@ -28,16 +37,19 @@ class ModifiedScrollBar(QScrollBar):
             if hasattr(event, 'position')
             else event.pos()
         )
-        control = self.style().hitTestComplexControl(
+        style = self.style()
+        if style is None:
+            return
+        control = style.hitTestComplexControl(
             CC.CC_ScrollBar, opt, point, self
         )
         if control not in {SC.SC_ScrollBarAddPage, SC.SC_ScrollBarSubPage}:
             return
         # scroll here
-        gr = self.style().subControlRect(
+        gr = style.subControlRect(
             CC.CC_ScrollBar, opt, SC.SC_ScrollBarGroove, self
         )
-        sr = self.style().subControlRect(
+        sr = style.subControlRect(
             CC.CC_ScrollBar, opt, SC.SC_ScrollBarSlider, self
         )
         if self.orientation() == Qt.Orientation.Horizontal:
@@ -62,13 +74,17 @@ class ModifiedScrollBar(QScrollBar):
             )
         )
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent | None) -> None:
+        if event is None:
+            return None
         if event.buttons() & Qt.MouseButton.LeftButton:
             # dragging with the mouse button down should move the slider
             self._move_to_mouse_position(event)
         return super().mouseMoveEvent(event)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        if event is None:
+            return None
         if event.button() == Qt.MouseButton.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)

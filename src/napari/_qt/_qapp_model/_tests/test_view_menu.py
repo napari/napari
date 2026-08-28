@@ -3,16 +3,19 @@ import sys
 
 import numpy as np
 import pytest
+from packaging.version import parse as parse_version
 from qtpy import QT_VERSION
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
+from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
 from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
-    toggle_action_details,
+    toggle_actions,
 )
+from napari._app_model.constants import MenuId
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -43,12 +46,10 @@ def check_view_menu_visibility(viewer, qtbot):
 
 
 @pytest.mark.parametrize(
-    ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
-    toggle_action_details,
+    ('action_id', 'action_title', 'attribute_path'),
+    toggle_actions[MenuId.VIEW_SCALEBAR],
 )
-def test_toggle_axes_scale_bar_attr(
-    action_id, action_title, viewer_attr, sub_attr
-):
+def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -68,23 +69,30 @@ def test_toggle_axes_scale_bar_attr(
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    axes_scale_bar = getattr(viewer, viewer_attr)
-
-    # Get initial sub-attribute value (for example `axes.visible`)
-    initial_value = getattr(axes_scale_bar, sub_attr)
+    *parent_path, attr_name = attribute_path.split('.')
+    parent = viewer
+    for part in parent_path:
+        parent = getattr(parent, part)
+    initial_value = getattr(parent, attr_name)
 
     # Change sub-attribute via action command execution and check value
     with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
-    changed_value = getattr(axes_scale_bar, sub_attr)
+
+    changed_value = getattr(parent, attr_name)
+
     assert initial_value is not changed_value
 
 
 @skip_local_popups
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0')
+    and sys.platform == 'win32',
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.qt_log_level_fail('WARNING')
 def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
     """
@@ -128,8 +136,11 @@ def test_toggle_fullscreen_from_normal(make_napari_viewer, qtbot):
 
 
 @skip_local_popups
+@pytest.mark.flaky(
+    reruns=2, reruns_delay=250, condition=sys.platform == 'darwin'
+)  # sometimes fails on macos CI
 @pytest.mark.skipif(
-    QT_VERSION == '6.9.0',
+    parse_version(QT_VERSION) >= parse_version('6.9.0'),
     reason='bug in Qt with maximized windows, https://bugreports.qt.io/browse/QTBUG-135844',
 )
 @pytest.mark.qt_log_level_fail('WARNING')
@@ -179,6 +190,36 @@ def test_toggle_fullscreen_from_maximized(make_napari_viewer, qtbot):
     check_view_menu_visibility(viewer, qtbot)
 
 
+def _mouse_move_to(widget, pos):
+    """Send a synthetic MouseMove event to *widget* at local position *pos*.
+
+    Uses ``QApplication.sendEvent`` instead of ``QTest.mouseMove`` because
+    the latter bypasses QApplication event filters in Qt6, making it unreliable
+    for testing the event-filter-based menubar toggle behavior.
+    """
+    global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
+    if QT_VERSION.startswith('5'):
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            pos,
+            global_pos,
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    else:
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(pos),
+            QPointF(global_pos),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+
+    QApplication.sendEvent(widget, event)
+
+
 @skip_local_focus
 @pytest.mark.skipif(
     sys.platform == 'darwin',
@@ -206,13 +247,11 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     viewer.window._qt_window.move(0, 0)
     qtbot.waitUntil(viewer.window._qt_window.isVisible)
     # Check menubar gets visible via mouse hovering over the window top area
-    qtbot.mouseMove(viewer.window._qt_window)
-    qtbot.wait(50)
-    qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(15, 15))
+    _mouse_move_to(viewer.window._qt_window, QPoint(15, 15))
     qtbot.waitUntil(viewer.window._qt_window.menuBar().isVisible)
 
     # Check menubar hides when the mouse no longer is hovering over the window top area
-    qtbot.mouseMove(viewer.window._qt_window, pos=QPoint(50, 50))
+    _mouse_move_to(viewer.window._qt_window, QPoint(200, 200))
     qtbot.waitUntil(lambda: not viewer.window._qt_window.menuBar().isVisible())
 
     # Check restore menubar visibility
@@ -221,6 +260,7 @@ def test_toggle_menubar(make_napari_viewer, qtbot):
     assert not viewer.window._qt_window._toggle_menubar_visibility
 
 
+@pytest.mark.allow_animation_thread
 def test_toggle_play(make_napari_viewer, qtbot):
     """Test toggle play action."""
     action_id = 'napari.window.view.toggle_play'
@@ -283,7 +323,7 @@ def test_toggle_activity_dock(make_napari_viewer):
 def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
     """Test toggle layer tooltips"""
     make_napari_viewer()
-    action_id = 'napari.window.view.toggle_layer_tooltips'
+    action_id = 'napari.window.toggle_layer_tooltips'
     app = get_app_model()
 
     # Check initial layer tooltip visibility settings state (False)
@@ -306,29 +346,29 @@ def test_zoom_actions(make_napari_viewer):
     viewer.add_image(np.ones((10, 10, 10)))
 
     # get initial zoom state
-    initial_zoom = viewer.camera.zoom
+    initial_zoom = viewer.scene.camera.zoom
 
     # Check zoom in action
-    app.commands.execute_command('napari.viewer.camera.zoom_in')
-    assert viewer.camera.zoom == pytest.approx(1.5 * initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_in')
+    assert viewer.scene.camera.zoom == pytest.approx(1.5 * initial_zoom)
 
     # Check zoom out action
-    app.commands.execute_command('napari.viewer.camera.zoom_out')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_out')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
-    viewer.camera.zoom = 2
+    viewer.scene.camera.zoom = 2
     # Check reset zoom action
-    app.commands.execute_command('napari.viewer.fit_to_view')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.fit_to_view')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
     # Check that angle is preserved
     viewer.dims.ndisplay = 3
-    viewer.camera.angles = (90, 0, 0)
-    viewer.camera.zoom = 2
-    app.commands.execute_command('napari.viewer.fit_to_view')
+    viewer.scene.camera.angles = (90, 0, 0)
+    viewer.scene.camera.zoom = 2
+    app.commands.execute_command('napari.scene.fit_to_view')
     # Zoom should be reset, but angle unchanged
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
-    assert viewer.camera.angles == (90, 0, 0)
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
+    assert viewer.scene.camera.angles == (90, 0, 0)
 
 
 @pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])

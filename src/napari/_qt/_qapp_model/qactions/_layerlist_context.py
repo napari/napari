@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import pickle
 from typing import Any
 
 import numpy as np
@@ -18,16 +17,24 @@ from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import LayerList
 from napari.layers import Layer
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
 
 __all__ = ('Q_LAYERLIST_CONTEXT_ACTIONS', 'is_valid_spatial_in_clipboard')
 
 
+def _numpy_to_list_map_value(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, dict):
+        return _numpy_to_list(value)
+    if isinstance(value, list):
+        return [_numpy_to_list_map_value(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_numpy_to_list_map_value(v) for v in value)
+    return value
+
+
 def _numpy_to_list(d: dict) -> dict:
-    for k, v in list(d.items()):
-        if isinstance(v, np.ndarray):
-            d[k] = v.tolist()
-    return d
+    return {k: _numpy_to_list_map_value(v) for k, v in d.items()}
 
 
 class UnitsEncoder(json.JSONEncoder):
@@ -40,6 +47,24 @@ class UnitsEncoder(json.JSONEncoder):
 
 
 def _set_data_in_clipboard(data: dict) -> None:
+    """
+    This function is to set data in clipboard json encoded.
+
+    This method depends on the Qt to interact with the clipboard.
+
+    Based on python documentation about floating-point arithmetic
+    https://docs.python.org/3/tutorial/floatingpoint.html
+    The float.__repr__ method produces form that will be parsed to exactly
+    the same value. So this expression will be true eval(repr(value)) == value.
+    The eval(repr(value)) == value expression will be true for all values except
+    for those that are not representable in the float type.
+
+    Parameters
+    ----------
+    data: dict
+        dict with data to be copied to clipboard.
+
+    """
     data = _numpy_to_list(data)
     clip = QApplication.clipboard()
     if clip is None:
@@ -47,10 +72,8 @@ def _set_data_in_clipboard(data: dict) -> None:
         return
 
     d = json.dumps(data, cls=UnitsEncoder)
-    p = pickle.dumps(data)
     mime_data = QMimeData()
     mime_data.setText(d)
-    mime_data.setData('application/octet-stream', p)
 
     clip.setMimeData(mime_data)
 
@@ -108,8 +131,6 @@ def _get_spatial_from_clipboard() -> dict | None:
     if mime_data is None:  # pragma: no cover
         # we should never get here, but just in case
         return None
-    if mime_data.data('application/octet-stream'):
-        return pickle.loads(mime_data.data('application/octet-stream'))  # type: ignore[arg-type]
 
     return json.loads(mime_data.text())
 
@@ -117,7 +138,7 @@ def _get_spatial_from_clipboard() -> dict | None:
 def _paste_spatial_from_clipboard(ll: LayerList) -> None:
     try:
         loaded = _get_spatial_from_clipboard()
-    except (json.JSONDecodeError, pickle.UnpicklingError):
+    except json.JSONDecodeError:
         show_warning('Cannot parse clipboard data')
         return
     if loaded is None:
@@ -189,7 +210,7 @@ def _paste_spatial_from_clipboard(ll: LayerList) -> None:
 def is_valid_spatial_in_clipboard() -> bool:
     try:
         loaded = _get_spatial_from_clipboard()
-    except (json.JSONDecodeError, pickle.UnpicklingError):
+    except json.JSONDecodeError:
         return False
     if not isinstance(loaded, dict):
         return False
@@ -199,59 +220,59 @@ def is_valid_spatial_in_clipboard() -> bool:
     )
 
 
-Q_LAYERLIST_CONTEXT_ACTIONS = [
+Q_LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     Action(
         id='napari.layer.copy_all_to_clipboard',
-        title=trans._('Copy all to clipboard'),
+        title='Copy all to clipboard',
         callback=_copy_spatial_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_affine_to_clipboard',
-        title=trans._('Copy affine to clipboard'),
+        title='Copy affine to clipboard',
         callback=_copy_affine_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_rotate_to_clipboard',
-        title=trans._('Copy rotate to clipboard'),
+        title='Copy rotate to clipboard',
         callback=_copy_rotate_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_scale_to_clipboard',
-        title=trans._('Copy scale to clipboard'),
+        title='Copy scale to clipboard',
         callback=_copy_scale_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_shear_to_clipboard',
-        title=trans._('Copy shear to clipboard'),
+        title='Copy shear to clipboard',
         callback=_copy_shear_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_translate_to_clipboard',
-        title=trans._('Copy translate to clipboard'),
+        title='Copy translate to clipboard',
         callback=_copy_translate_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.copy_units_to_clipboard',
-        title=trans._('Copy units to clipboard'),
+        title='Copy units to clipboard',
         callback=_copy_units_to_clipboard,
         menus=[{'id': MenuId.LAYERS_CONTEXT_COPY_SPATIAL}],
         enablement=(LLSCK.num_selected_layers == 1),
     ),
     Action(
         id='napari.layer.paste_spatial_from_clipboard',
-        title=trans._('Apply scale/transforms from Clipboard'),
+        title='Apply scale/transforms from Clipboard',
         callback=_paste_spatial_from_clipboard,
         menus=[
             {

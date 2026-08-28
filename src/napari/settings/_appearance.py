@@ -1,70 +1,69 @@
 from typing import Union, cast
 
-from napari._pydantic_compat import Field
-from napari.settings._fields import Theme
+from pydantic import AliasChoices, Field
+
+from napari.settings._fields import Logo, Theme
 from napari.utils.events.evented_model import ComparisonDelayer, EventedModel
 from napari.utils.theme import available_themes, get_theme
-from napari.utils.translations import trans
 
 
 class HighlightSettings(EventedModel):
     highlight_thickness: int = Field(
         1,
-        title=trans._('Highlight thickness'),
-        description=trans._(
-            'Select the highlight thickness when hovering over shapes/points.'
-        ),
+        title='Highlight thickness',
+        description='Select the highlight thickness when hovering over shapes/points.',
         ge=1,
         le=10,
     )
-    highlight_color: list[float] = Field(
-        [0.0, 0.6, 1.0, 1.0],
-        title=trans._('Highlight color'),
-        description=trans._(
-            'Select the highlight color when hovering over shapes/points.'
-        ),
+    highlight_color: list[float] = (
+        Field(  # TODO: fix type annotation to tuple[float, float, float, float],
+            [0.0, 0.6, 1.0, 1.0],
+            title='Highlight color',
+            description='Select the highlight color when hovering over shapes/points.',
+        )
     )
 
 
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
         Theme('dark'),
-        title=trans._('Theme'),
-        description=trans._('Select the user interface theme.'),
-        env='napari_theme',
+        title='Theme',
+        description='Select the user interface theme.',
+        validation_alias=AliasChoices('theme', 'napari_theme'),
+    )
+    logo: Logo = Field(
+        Logo('auto'),
+        title='Logo variant',
+        description='Select which logo variant to use.',
     )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
-        title=trans._('Font size'),
-        description=trans._('Select the user interface font size.'),
+        title='Font size',
+        description='Select the user interface font size.',
         ge=5,
         le=20,
     )
     highlight: HighlightSettings = Field(
         HighlightSettings(),
-        title=trans._('Highlight'),
-        description=trans._(
-            'Select the highlight color and thickness to use when hovering over shapes/points.'
-        ),
+        title='Highlight',
+        description='Select the highlight color and thickness to use when hovering over shapes/points.',
     )
     layer_tooltip_visibility: bool = Field(
         False,
-        title=trans._('Show layer tooltips'),
-        description=trans._('Toggle to display a tooltip on mouse hover.'),
+        title='Show layer tooltips',
+        description='Toggle to display a tooltip on mouse hover.',
     )
     update_status_based_on_layer: bool = Field(
         True,
-        title=trans._('Update status based on layer'),
-        description=trans._(
-            'Calculate status bar based on current active layer and mouse position.'
-        ),
+        title='Update status based on layer',
+        description='Calculate status bar based on current active layer and mouse position.',
     )
 
     def update(
         self, values: Union['EventedModel', dict], recurse: bool = True
     ) -> None:
         if isinstance(values, self.__class__):
-            values = values.dict()
+            values = values.model_dump()
         values = cast(dict, values)
 
         # Check if a font_size change is needed when changing theme:
@@ -111,4 +110,6 @@ class AppearanceSettings(EventedModel):
         added (either by a plugin or directly by the user) the enum is updated in
         place, ensuring that Preferences dialog can still be opened.
         """
-        self.schema()['properties']['theme'].update(enum=available_themes())
+        self.model_json_schema()['properties']['theme'].update(
+            enum=available_themes()
+        )

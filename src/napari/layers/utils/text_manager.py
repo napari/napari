@@ -1,13 +1,10 @@
 import warnings
-from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
-import pandas as pd
-from pydantic.v1 import PositiveFloat
+from pydantic import PositiveFloat, field_validator
 
-from napari._pydantic_compat import validator
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import get_text_anchors
@@ -25,7 +22,9 @@ from napari.layers.utils.string_encoding import (
 from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TextManager(EventedModel):
@@ -158,9 +157,7 @@ class TextManager(EventedModel):
             The new properties from the layer
         """
         warnings.warn(
-            trans._(
-                'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.'
-            ),
+            'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.',
             DeprecationWarning,
             stacklevel=2,
         )
@@ -178,13 +175,11 @@ class TextManager(EventedModel):
             The number of text elements to add
         """
         warnings.warn(
-            trans._(
-                'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.'
-            ),
+            'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.',
             DeprecationWarning,
             stacklevel=2,
         )
-        features = pd.DataFrame(
+        features = _validate_features(
             {
                 name: np.repeat(value, n_text, axis=0)
                 for name, value in properties.items()
@@ -282,12 +277,12 @@ class TextManager(EventedModel):
         text_coords = anchor_coords + translation
         return text_coords, anchor_x, anchor_y
 
-    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+    def view_text(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the values of the text elements in view
 
         Parameters
         ----------
-        indices_view : (N x 1) np.ndarray
+        view_indices : (N x 1) np.ndarray
             Indices of the text elements in view
 
         Returns
@@ -295,22 +290,22 @@ class TextManager(EventedModel):
         text : (N x 1) np.ndarray
             Array of text strings for the N text elements in view
         """
-        values = _get_style_values(self.string, indices_view)
+        values = _get_style_values(self.string, view_indices)
         return (
-            np.broadcast_to(values, len(indices_view))
+            np.broadcast_to(values, len(view_indices))
             if values.ndim == 0
             else values
         )
 
-    def _view_color(self, indices_view: np.ndarray) -> np.ndarray:
+    def _view_color(self, view_indices: np.ndarray) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
-        return _get_style_values(self.color, indices_view, value_ndim=1)
+        return _get_style_values(self.color, view_indices, value_ndim=1)
 
     @classmethod
     def _from_layer(
         cls,
         *,
-        text: Union['TextManager', dict, str, Sequence[str], None],
+        text: Union['TextManager', dict, str, 'Sequence[str]', None],
         features: Any,
     ) -> 'TextManager':
         """Create a TextManager from a layer.
@@ -329,7 +324,7 @@ class TextManager(EventedModel):
         TextManager
         """
         if isinstance(text, TextManager):
-            kwargs = text.dict()
+            kwargs = text.model_dump()
         elif isinstance(text, dict):
             kwargs = deepcopy(text)
         elif text is None:
@@ -365,7 +360,7 @@ class TextManager(EventedModel):
         # should not mutate any existing fields in-place.
         # Avoid recursion because some fields are also models that may
         # not share field names/types (e.g. string).
-        current_manager = self.copy()
+        current_manager = self.model_copy()
         current_manager.update(new_manager, recurse=False)
 
         # If we got here, then there were no errors, so update for real.
@@ -376,7 +371,8 @@ class TextManager(EventedModel):
         # values if needed.
         self.apply(features)
 
-    @validator('blending', pre=True, always=True, allow_reuse=True)
+    @field_validator('blending', mode='before')
+    @classmethod
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 
@@ -385,10 +381,7 @@ class TextManager(EventedModel):
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
-                trans._(
-                    'opaque blending mode is not allowed for text. setting to translucent.',
-                    deferred=True,
-                ),
+                'opaque blending mode is not allowed for text. setting to translucent.',
                 category=RuntimeWarning,
             )
 
@@ -397,9 +390,7 @@ class TextManager(EventedModel):
 
 def _warn_about_deprecated_text_parameter():
     warnings.warn(
-        trans._(
-            'text is a deprecated parameter since 0.4.16. Use string instead.'
-        ),
+        'text is a deprecated parameter since 0.4.16. Use string instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -407,9 +398,7 @@ def _warn_about_deprecated_text_parameter():
 
 def _warn_about_deprecated_properties_parameter():
     warnings.warn(
-        trans._(
-            'properties is a deprecated parameter since 0.4.16. Use features instead.'
-        ),
+        'properties is a deprecated parameter since 0.4.16. Use features instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -417,9 +406,7 @@ def _warn_about_deprecated_properties_parameter():
 
 def _warn_about_deprecated_n_text_parameter():
     warnings.warn(
-        trans._(
-            'n_text is a deprecated parameter since 0.4.16. Use features instead.'
-        ),
+        'n_text is a deprecated parameter since 0.4.16. Use features instead.',
         DeprecationWarning,
         stacklevel=2,
     )
@@ -427,9 +414,7 @@ def _warn_about_deprecated_n_text_parameter():
 
 def _warn_about_deprecated_values_parameter():
     warnings.warn(
-        trans._(
-            'values is a deprecated parameter since 0.4.16. Use string instead.'
-        ),
+        'values is a deprecated parameter since 0.4.16. Use string instead.',
         DeprecationWarning,
         stacklevel=2,
     )

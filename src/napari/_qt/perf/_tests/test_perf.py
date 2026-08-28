@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import dataclasses
 import json
 import os
 import subprocess
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,6 +14,9 @@ from pretend import stub
 from napari._qt.perf import qt_performance
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 # NOTE:
 # for some reason, running this test fails in a subprocess with a segfault
 # if you don't show the viewer...
@@ -19,7 +24,8 @@ PERFMON_SCRIPT = """
 import napari
 from qtpy.QtCore import QTimer
 
-v = napari.view_points()
+v = napari.Viewer()
+v.add_points()
 QTimer.singleShot(100, napari._qt.qt_event_loop.quit_app)
 napari.run()
 """
