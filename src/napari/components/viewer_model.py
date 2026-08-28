@@ -144,6 +144,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
+    Testing for circle-ci path filtering.
+
     Parameters
     ----------
     title : string
