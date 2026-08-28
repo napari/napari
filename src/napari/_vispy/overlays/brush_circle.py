@@ -5,25 +5,16 @@ from typing import TYPE_CHECKING, Any
 from vispy.scene.visuals import Compound, Ellipse
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
-from napari.components.overlays.brush_circle import BrushCircleOverlay
-from napari.utils.events import Event
-from napari.viewer import Viewer
 
 if TYPE_CHECKING:
-    from vispy.scene import ViewBox
+    from napari.components.overlays.brush_circle import BrushCircleOverlay
+    from napari.utils.events import Event
 
 
 class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: BrushCircleOverlay
 
-    def __init__(
-        self,
-        *,
-        viewer: Viewer,
-        overlay: BrushCircleOverlay,
-        parent: ViewBox | None = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         self._white_circle = Ellipse(
             center=(0, 0),
             color=(0, 0, 0, 0.0),
@@ -39,9 +30,6 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         super().__init__(
             node=Compound([self._white_circle, self._black_circle]),
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
             **kwargs,
         )
 
@@ -57,8 +45,10 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.reset()
 
         # manually connect this once and get the correct canvas
-        if parent is not None:
-            parent.scene.canvas.events.mouse_move.connect(self._on_mouse_move)
+        if self.node.parent is not None:
+            self.node.parent.scene.canvas.events.mouse_move.connect(
+                self._on_mouse_move
+            )
 
     def _on_position_change(self, event: Event | None = None) -> None:
         self._set_position(self.overlay.position)

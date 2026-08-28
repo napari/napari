@@ -19,7 +19,6 @@ from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from vispy.scene import Node
@@ -115,11 +114,7 @@ class ImageLayerNode(ScalarFieldLayerNode):
             # early when we are creating the wrong nodes or
             # textures for our data
             raise ValueError(
-                trans._(
-                    'dtype {dtype} does not match texture_format={texture_format}',
-                    dtype=dtype,
-                    texture_format=res.texture_format,
-                )
+                f'dtype {dtype} does not match texture_format={res.texture_format}'
             )
         return res
 
@@ -133,6 +128,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         node=None,
         texture_format='auto',
         layer_node_class=ImageLayerNode,
+        **kwargs,
     ) -> None:
         # Track order to detect transpose/roll. Needs to be set before super().__init__()
         self._last_order = None
@@ -142,6 +138,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
             node=node,
             texture_format=texture_format,
             layer_node_class=layer_node_class,
+            **kwargs,
         )
 
         self.layer.events.interpolation2d.connect(

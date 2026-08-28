@@ -55,7 +55,7 @@ def wave_2d(frequency, angle, phase_shift):
 
 # set up viewer with grid-mode enabled
 viewer = napari.Viewer()
-viewer.grid.enabled = True
+viewer.canvas.grid.enabled = True
 
 
 def update_layer(name, data, **kwargs):

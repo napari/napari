@@ -1,4 +1,5 @@
 from napari._vispy.layers.tracks import VispyTracksLayer
+from napari._vispy.utils.qt_font import FontInfo
 from napari.layers import Tracks
 
 
@@ -19,7 +20,7 @@ def test_tracks_graph_cleanup():
     graph = {1: [], 2: [1], 3: [1]}
 
     layer = Tracks(tracks_data, graph=graph)
-    visual = VispyTracksLayer(layer)
+    visual = VispyTracksLayer(layer, font_info=FontInfo())
 
     layer.graph = {}
 

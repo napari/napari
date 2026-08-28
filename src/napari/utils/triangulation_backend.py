@@ -6,8 +6,7 @@ may be inconsistent with the backend used.
 """
 
 import sys
-
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 class TriangulationBackend(StrEnum):
