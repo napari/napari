@@ -105,13 +105,17 @@ class VectorsVisual(ClippingPlanesMixin, Visual):
     - 'arrow': Arrows with distinct shaft and head
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, font_info=None, **kwargs):
         self._data = None
         self._n_instances = 0
         self._width = 1.0
         self._vector_style = 'line'
 
-        Visual.__init__(self, vcode=vert, fcode=frag)
+        # dunno why I have to call the mixin directly, but something is going
+        # wrong with kwargs transmission otherwise... this works.
+        ClippingPlanesMixin.__init__(
+            self, vcode=vert, fcode=frag, font_info=font_info
+        )
 
         self._draw_mode = 'triangles'
 

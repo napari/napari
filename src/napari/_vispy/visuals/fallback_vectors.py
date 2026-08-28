@@ -23,4 +23,8 @@ class Vectors(ClippingPlanesMixin, Line):
 
     @width.setter
     def width(self, value):
-        super().set_data(width=value)
+        pass
+        # TODO: this width is in screen pixels; we shoould make this
+        #       an option for normal vectors too, and then at least this
+        #       would work!
+        # super().set_data(width=value)

@@ -25,7 +25,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             logger.warning(
                 'Could not use gl+ for instanced rendering of vectors. '
                 'Falling back to GL line rendering. This has a few limitations:\n'
-                '- width is limited to integer increments\n'
+                '- width is fixed at 1 screen pixel \n'
                 '- vectors styles other than "line" are disabled\n'
             )
 
