@@ -9,7 +9,7 @@ from pydantic import (
     create_model,
 )
 
-from napari.settings._plugin_preferences import PluginPreferences
+from napari.settings._plugin_settings import PluginSettings
 from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
@@ -143,8 +143,8 @@ def _build_single_config_model(
 
 def plugin_configuration_generator(
     plugin_manager: PluginManager | None = None,
-) -> dict[str, type[PluginPreferences]]:
-    """Build a plugin-preferences model class for each plugin with configurations."""
+) -> dict[str, type[PluginSettings]]:
+    """Build a plugin-settings model class for each plugin with configurations."""
     if plugin_manager is None:
         from npe2 import PluginManager
 
@@ -163,7 +163,7 @@ def plugin_configuration_generator(
         for plug in plugins
         if plug.contributions.configurations
     }
-    plugin_settings: dict[str, type[PluginPreferences]] = {}
+    plugin_settings: dict[str, type[PluginSettings]] = {}
     for plugin_name, configuration in configurations.items():
         fields: dict[str, Any] = {}
         for conf_name, conf in configuration.items():
@@ -174,7 +174,7 @@ def plugin_configuration_generator(
             )
         plugin_settings[plugin_name] = create_model(
             _model_name(plugin_name),
-            __base__=PluginPreferences,
+            __base__=PluginSettings,
             **fields,
         )
         # ``display_name`` is plugin metadata (not a settings field): it is set
