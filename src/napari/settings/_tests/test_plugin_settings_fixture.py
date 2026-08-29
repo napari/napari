@@ -2,7 +2,7 @@
 
 The ``plugin_settings`` fixture (in ``napari.utils._testsupport``) makes
 ``napari.settings.get_plugin_settings`` hermetic per-test: it clears the
-``_PLUGIN_PREFERENCES`` cache, points the default ``path_dir`` at the test's
+``_PLUGIN_SETTINGS`` cache, points the default ``path_dir`` at the test's
 ``tmp_path``, and connects ``_clear_plugin_settings_cache`` to npe2's
 ``plugins_registered`` / ``enablement_changed`` signals so plugins registered
 mid-test are picked up.
