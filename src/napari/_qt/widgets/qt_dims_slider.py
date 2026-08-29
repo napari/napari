@@ -158,7 +158,7 @@ class QtDimSliderWidget(QWidget):
         label.setEnabled(True)
         label.setAlignment(Qt.AlignmentFlag.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
-        label.textChanged.connect(self._update_label)
+        label.textEdited.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
         return label
 
@@ -466,25 +466,6 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         if value.is_integer():
             value = int(value)
         return str(value)
-
-    def keyPressEvent(self, event):
-        """Handle key press event for the dimension slider spinbox.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QKeyEvent
-            Event from the Qt context.
-        """
-        # this is here to intercept Return/Enter keys when editing the FPS
-        # SpinBox.  We WANT the return key to close the popup normally,
-        # but if the user is editing the FPS spinbox, we simply want to
-        # register the change and lose focus on the lineEdit, in case they
-        # want to make an additional change (without reopening the popup)
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.editingFinished.emit()
-            self.clearFocus()
-            return
-        super().keyPressEvent(event)
 
 
 class QtPlayButton(QPushButton):

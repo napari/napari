@@ -5,6 +5,7 @@ wrap.
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import inspect
 import os
@@ -99,6 +100,7 @@ if TYPE_CHECKING:
     from magicgui.widgets import Widget
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
+    from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
 
 _sentinel = object()
@@ -139,10 +141,11 @@ class _QtMainWindow(QMainWindow):
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
-        self._qt_viewer = QtViewer(
+        self._qt_viewer: QtViewer = QtViewer(
             viewer, show_welcome_screen=show_welcome_screen
         )
         self._quit_app = False
+        self._viewer_tour: GuidedTour | None = None
 
         get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -622,8 +625,7 @@ class _QtMainWindow(QMainWindow):
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 
-        self.status_thread.close_terminate()
-        self.status_thread.wait()
+        self._stop_worker_threads()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -644,12 +646,15 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
-        self._qt_viewer.dims.stop()
-
         if self._quit_app:
             quit_app_()
 
         event.accept()
+
+    def _stop_worker_threads(self) -> None:
+        self.status_thread.close_terminate()
+        self.status_thread.wait()
+        self._qt_viewer.dims.stop()
 
     def restart(self):
         """Restart the napari application in a detached process."""
@@ -677,6 +682,15 @@ class _QtMainWindow(QMainWindow):
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
+
+
+@atexit.register
+def _shutdown_open_windows() -> None:
+    """Stop worker threads for windows still open at interpreter shutdown."""
+    for window in list(_QtMainWindow._instances):
+        # Qt may have deleted a window while leaving its Python wrapper alive.
+        with contextlib.suppress(RuntimeError):
+            window._stop_worker_threads()
 
 
 class Window:
@@ -747,7 +761,6 @@ class Window:
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
-        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
@@ -866,7 +879,7 @@ class Window:
     def qt_viewer(self):
         warnings.warn(
             'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-            'no earlier than v0.9.0. It is considered an "implementation detail" '
+            'no earlier than v0.10.0. It is considered an "implementation detail" '
             'of the napari\napplication, not part of the napari viewer model. If your use case\n'
             'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
@@ -1127,7 +1140,7 @@ class Window:
         area: str | None = None,
         allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
-        add_vertical_stretch=True,
+        add_vertical_stretch=False,
         tabify: bool = False,
         menu: QMenu | None = None,
     ):
