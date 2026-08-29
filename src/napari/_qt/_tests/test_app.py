@@ -5,7 +5,7 @@ from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtGui import QFont
+from qtpy.QtGui import QFont, QFontMetricsF
 from qtpy.QtWidgets import QAction, QLabel, QShortcut
 
 from napari._qt.qt_event_loop import (
@@ -118,6 +118,15 @@ def test_status_bar_requests_tabular_numerals_with_preexisting_app(
     viewer.window._update_theme()
 
     assert status.font().isFeatureSet(tag)
+
+
+def test_status_readouts_use_fixed_pitch_font(make_napari_viewer):
+    viewer = make_napari_viewer()
+    status_bar = viewer.window._qt_window.statusBar()
+
+    for label in (status_bar._status, status_bar._coordinates):
+        fm = QFontMetricsF(label.font())
+        assert len({fm.horizontalAdvance(c) for c in '0189 .-'}) == 1
 
 
 def test_shortcut_collision(qtbot, make_napari_viewer):
