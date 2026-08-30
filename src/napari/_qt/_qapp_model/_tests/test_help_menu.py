@@ -39,7 +39,15 @@ def test_help_urls(url):
     try:
         # Without a timeout an unresponsive server can block the test forever.
         response = requests.head(target, timeout=30, allow_redirects=True)
-    except (requests.RequestException, ValueError) as exc:
+    except (
+        requests.exceptions.InvalidURL,
+        requests.exceptions.InvalidSchema,
+        requests.exceptions.MissingSchema,
+        requests.exceptions.URLRequired,
+        requests.exceptions.InvalidHeader,
+    ):
+        raise
+    except requests.RequestException as exc:
         pytest.skip(f'{target} unreachable: {type(exc).__name__}: {exc}')
     if response.status_code >= 500 or response.status_code in (408, 425, 429):
         pytest.skip(
