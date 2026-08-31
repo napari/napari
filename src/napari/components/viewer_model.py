@@ -140,7 +140,7 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
 
 
 _TITLE_DEPRECATION_MSG = (
-    'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    'ViewerModel.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
     ' A pure ViewerModel no longer has access to window-related attributes.'
 )
 
@@ -323,7 +323,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def title(self) -> str:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         return self._title
@@ -337,7 +337,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def title(self, title: str) -> None:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         self._title = title
