@@ -461,6 +461,8 @@ class LayerList(SelectableEventedList[Layer]):
             # Units from separate registries can still be converted.
             matching_units = False
         if matching_units:
+            # Copy, don't `return scale`: callers own the result, and `scale`
+            # may be a view of a layer's cached extent arrays.
             return np.array(scale)
         return np.array(
             [
