@@ -79,5 +79,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
             with contextlib.suppress(TypeError):
                 self.size_slider.setValue(int(value))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.size_slider_label, self.size_slider)]
