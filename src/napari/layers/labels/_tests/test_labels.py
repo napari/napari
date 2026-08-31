@@ -20,7 +20,10 @@ from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import LabelsRendering
-from napari.layers.labels._labels_utils import get_contours
+from napari.layers.labels._labels_utils import (
+    get_contours,
+    interpolate_coordinates,
+)
 from napari.layers.labels.labels import WrongSelectedLabelError
 from napari.utils import Colormap
 from napari.utils._test_utils import (
@@ -2449,6 +2452,105 @@ def test_draw(colormap, expected):
     labels._draw(1, (15, 15), (15, 15))
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
+
+
+def _make_labels_array(array_type, base, tmp_path):
+    """Return a copy of ``base`` backed by the requested array type."""
+    if array_type == 'numpy':
+        return base.copy()
+    if array_type == 'dask':
+        return da.from_array(base.copy(), chunks=(32, 32))
+    # zarr and tensorstore share an on-disk zarr store
+    file_path = str(tmp_path / 'labels.zarr')
+    kwargs = {} if ZARR_V3 else {'compressor': None}
+    store = zarr.open(
+        store=file_path,
+        mode='w',
+        shape=base.shape,
+        dtype=base.dtype,
+        chunks=(32, 32),
+        zarr_format=3 if ZARR_V3 else 2,
+        **kwargs,
+    )
+    store[:] = base
+    if array_type == 'zarr':
+        return store
+    ts = pytest.importorskip('tensorstore')
+    spec = {
+        'driver': 'zarr3' if ZARR_V3 else 'zarr',
+        'kvstore': {'driver': 'file', 'path': file_path},
+        'path': '',
+    }
+    return ts.open(spec, create=False, open=True).result()
+
+
+@pytest.mark.parametrize(
+    'array_type', ['numpy', 'dask', 'zarr', 'tensorstore']
+)
+def test_draw_batches_stamps_across_backends(array_type, tmp_path):
+    """A dragged stroke batches its stamps into one region write per event.
+
+    The result must match painting each interpolated coordinate separately
+    (the pre-batching behaviour) and be identical across array backends,
+    since copy-on-write backends (dask, zarr, tensorstore) now write the whole
+    stroke segment back in a single operation.
+    """
+    base = np.zeros((64, 64), dtype=np.uint32)
+    segments = [(10, 12), (52, 24), (28, 55)]
+    brush, label = 5, 3
+
+    # reference: paint every interpolated coordinate individually (numpy)
+    ref = Labels(base.copy())
+    ref.brush_size, ref.selected_label, ref.mode = brush, label, 'paint'
+    last = segments[0]
+    for point in segments:
+        for coord in interpolate_coordinates(
+            np.array(last, float), np.array(point, float), brush
+        ):
+            ref.paint(coord, label, refresh=False)
+        last = point
+    expected = np.asarray(ref.data)
+    assert (expected == label).any()  # the stroke painted something
+
+    # batched drag on the backend under test
+    layer = Labels(_make_labels_array(array_type, base, tmp_path))
+    layer.brush_size, layer.selected_label, layer.mode = brush, label, 'paint'
+    last = segments[0]
+    layer._draw(label, last, last)
+    for point in segments[1:]:
+        layer._draw(label, last, point)
+        last = point
+
+    npt.assert_array_equal(np.asarray(layer.data), expected)
+
+
+def test_draw_3d_view_2d_brush_not_batched():
+    """A 2D brush in a 3D view (n_edit_dimensions < ndisplay) must not batch.
+
+    The drag moves through the unpainted dimension, so its stamps land on
+    different planes and must be written per-stamp, matching the result of
+    painting each interpolated coordinate individually.
+    """
+    base = np.ones((30, 30, 30), dtype=np.uint32)  # all foreground
+    a, b = np.array([5.0, 15.0, 15.0]), np.array([25.0, 15.0, 15.0])
+
+    def make():
+        layer = Labels(base.copy())
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        layer.n_edit_dimensions = 2
+        layer.brush_size, layer.selected_label, layer.mode = 4, 9, 'paint'
+        return layer
+
+    ref = make()
+    for coord in interpolate_coordinates(a, b, 4):
+        ref.paint(coord, 9, refresh=False)
+
+    layer = make()
+    layer._draw(9, a, b)
+
+    npt.assert_array_equal(np.asarray(layer.data), np.asarray(ref.data))
+    # the stroke must span multiple planes in the unpainted dimension
+    assert len(np.unique(np.where(np.asarray(layer.data) == 9)[0])) > 1
 
 
 class TestLabels:
