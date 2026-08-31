@@ -1,13 +1,15 @@
 import warnings
 from copy import copy
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-import pandas as pd
 
 from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.utils._color_manager_constants import ColorMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.layers.utils.color_manager import ColorManager
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.layer_utils import _FeatureTable
@@ -24,7 +26,19 @@ from napari.types import LayerDataType
 from napari.utils.colormaps import Colormap, ValidColormapArg
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import deprecated_constructor_arg_by_attr
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from napari.components.dims import Dims
+
+_OUT_SLICE_DISP_WARNING_MSG = (
+    'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
+    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
+)
 
 
 class Vectors(Layer):
@@ -89,9 +103,6 @@ class Vectors(Layer):
         An empty vectors layer can be instantiated with arbitrary ndim.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
-    out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also slightly out of slice
-        according to specified point marker size.
     projection_mode : str
         How data outside the viewed dimensions but inside the thick Dims slice will
         be projected onto the viewed dimenions.
@@ -162,9 +173,6 @@ class Vectors(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    out_of_slice_display : bool
-        If True, renders vectors not just in central plane but also slightly out of slice
-        according to specified point marker size.
     units: tuple of pint.Unit
         Units of the layer data in world coordinates.
 
@@ -188,11 +196,13 @@ class Vectors(Layer):
     """
 
     _projectionclass = VectorsProjectionMode
+    _slicing_state: '_VectorsSlicingState'
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
 
+    @deprecated_constructor_arg_by_attr('out_of_slice_display')
     def __init__(
         self,
         data=None,
@@ -214,7 +224,6 @@ class Vectors(Layer):
         name=None,
         ndim=None,
         opacity=0.7,
-        out_of_slice_display=False,
         projection_mode='all',
         properties=None,
         property_choices=None,
@@ -259,7 +268,11 @@ class Vectors(Layer):
             vector_style=Event,
             edge_color_mode=Event,
             properties=Event,
-            out_of_slice_display=Event,
+            out_of_slice_display=WarningEmitter(
+                _OUT_SLICE_DISP_WARNING_MSG,
+                FutureWarning,
+                type_name='out_of_slice_display',
+            ),
             features=Event,
             feature_defaults=Event,
         )
@@ -267,7 +280,6 @@ class Vectors(Layer):
         # Save the vector style params
         self._vector_style = VectorStyle(vector_style)
         self._edge_width = edge_width
-        self._out_of_slice_display = out_of_slice_display
 
         self._length = float(length)
 
@@ -374,7 +386,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: dict[str, np.ndarray] | pd.DataFrame,
+        features: 'dict[str, np.ndarray] | pd.DataFrame',
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -382,10 +394,7 @@ class Vectors(Layer):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    trans._(
-                        'property used for edge_color dropped',
-                        deferred=True,
-                    ),
+                    'property used for edge_color dropped',
                     RuntimeWarning,
                 )
             else:
@@ -418,7 +427,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: dict[str, Any] | pd.DataFrame
+        self, defaults: 'dict[str, Any] | pd.DataFrame'
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -455,7 +464,6 @@ class Vectors(Layer):
                 'ndim': self.ndim,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
-                'out_of_slice_display': self.out_of_slice_display,
             }
         )
         return state
@@ -485,14 +493,31 @@ class Vectors(Layer):
 
     @property
     def out_of_slice_display(self) -> bool:
-        """bool: renders vectors slightly out of slice."""
-        return self._out_of_slice_display
+        """bool: renders points slightly out of slice."""
+        warnings.warn(
+            _OUT_SLICE_DISP_WARNING_MSG,
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._projection_mode == VectorsProjectionMode.FADE
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
-        self._out_of_slice_display = out_of_slice_display
-        self.events.out_of_slice_display()
-        self.refresh(extent=False)
+        if out_of_slice_display:
+            warnings.warn(
+                _OUT_SLICE_DISP_WARNING_MSG,
+                category=FutureWarning,
+                stacklevel=2,
+            )
+        old = self.projection_mode == VectorsProjectionMode.FADE
+        self.projection_mode = (
+            VectorsProjectionMode.FADE
+            if out_of_slice_display
+            else VectorsProjectionMode.ALL
+        )
+        new = self.projection_mode == VectorsProjectionMode.FADE
+        if old != new:
+            self.events.out_of_slice_display()
 
     @property
     def edge_width(self) -> float:
@@ -585,9 +610,10 @@ class Vectors(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: str | ColorMode):
         edge_color_mode = ColorMode(edge_color_mode)
+        old_mode = self._edge.color_mode
 
         if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
+            self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
@@ -604,20 +630,12 @@ class Vectors(Layer):
                         ],
                     }
                     warnings.warn(
-                        trans._(
-                            'edge_color property was not set, setting to: {color_property}',
-                            deferred=True,
-                            color_property=color_property,
-                        ),
+                        f'edge_color property was not set, setting to: {color_property}',
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Points.properties to use {edge_color_mode}',
-                            deferred=True,
-                            edge_color_mode=edge_color_mode,
-                        )
+                        f'There must be a valid Vectors.properties to use {edge_color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -626,14 +644,14 @@ class Vectors(Layer):
                 np.number,
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
 
             self._edge.color_mode = edge_color_mode
-        self.events.edge_color_mode()
+            self.events.edge_color()
+
+        if self._edge.color_mode != old_mode:
+            self.events.edge_color_mode()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -670,7 +688,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge.contrast_limits = contrast_limits
 
@@ -788,18 +806,20 @@ class _VectorsSlicingState(_LayerSlicingState):
         super().__init__(layer, data, cache)
 
         # Data containing vectors in the currently viewed slice
-        self._view_data = np.empty((0, 2, 2))
+        self._view_data: np.ndarray[
+            tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
+        ] = np.empty((0, 2, 2))
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 
     def _set_view_slice(self):
-        request = self.make_slice_request_internal(
+        request = self._make_slice_request_internal(
             self.layer._slice_input, self.layer._data_slice
         )
         response = request()
         self._update_slice_response(response)
 
-    def make_slice_request(self, dims) -> _VectorSliceRequest:
+    def _make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # TODO: [see Image]
@@ -809,12 +829,10 @@ class _VectorsSlicingState(_LayerSlicingState):
         # absorbs these performance issues here, but we can likely improve
         # things either by caching the world-to-data transform on the layer
         # or by lazily evaluating it in the slice task itself.
-        slice_indices = slice_input.data_slice(
-            self.layer._data_to_world.inverse
-        )
-        return self.make_slice_request_internal(slice_input, slice_indices)
+        data_slice = self._slice_indices(slice_input, dims)
+        return self._make_slice_request_internal(slice_input, data_slice)
 
-    def make_slice_request_internal(
+    def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
     ):
         return _VectorSliceRequest(
@@ -822,7 +840,6 @@ class _VectorsSlicingState(_LayerSlicingState):
             data=self.layer.data,
             data_slice=data_slice,
             projection_mode=self.layer.projection_mode,
-            out_of_slice_display=self.layer.out_of_slice_display,
             length=self.layer.length,
         )
 

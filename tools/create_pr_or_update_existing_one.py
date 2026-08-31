@@ -118,7 +118,9 @@ def commit_message(branch_name) -> str:
         changed_direct = get_changed_dependencies(
             all_packages=False,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     if not changed_direct:
@@ -131,7 +133,9 @@ def long_description(branch_name: str) -> str:
         all_changed = get_changed_dependencies(
             all_packages=True,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     return 'Updated packages: ' + ', '.join(f'`{x}`' for x in all_changed)

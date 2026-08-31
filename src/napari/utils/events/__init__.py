@@ -4,7 +4,10 @@ from napari.utils.events.event import (  # isort:skip
     EventEmitter,
     set_event_tracing_enabled,
 )
-from napari.utils.events.containers._evented_dict import EventedDict
+from napari.utils.events.containers._evented_dict import (
+    EventedDict,
+    EventedDictNamespace,
+)
 from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selectable_list import (
@@ -22,6 +25,7 @@ __all__ = [
     'Event',
     'EventEmitter',
     'EventedDict',
+    'EventedDictNamespace',
     'EventedList',
     'EventedModel',
     'EventedSet',

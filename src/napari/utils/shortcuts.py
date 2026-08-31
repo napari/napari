@@ -1,6 +1,6 @@
-from app_model.types import KeyBinding, KeyCode, KeyMod
+from app_model.types import KeyBinding, KeyCode, KeyCombo, KeyMod
 
-_default_shortcuts = {
+_default_shortcuts: dict[str, list[KeyCombo | KeyCode]] = {
     # viewer
     'napari:toggle_console_visibility': [
         KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyC
@@ -97,6 +97,7 @@ _default_shortcuts = {
     'napari:orient_plane_normal_along_y': [KeyCode.KeyY],
     'napari:orient_plane_normal_along_z': [KeyCode.KeyZ],
     'napari:orient_plane_normal_along_view_direction': [KeyCode.KeyO],
+    'napari:auto_contrast_once': [KeyCode.KeyC],
     'napari:activate_image_pan_zoom_mode': [KeyCode.Digit1],
     'napari:activate_image_transform_mode': [KeyCode.Digit2],
     # vectors

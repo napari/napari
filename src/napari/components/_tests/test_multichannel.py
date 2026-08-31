@@ -1,6 +1,7 @@
 import dask.array as da
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari.components import ViewerModel
 from napari.utils.colormaps import (
@@ -240,3 +241,25 @@ def test_multichannel_index_error_hint():
         'Requested channel_axis (0) had length 5, but the '
         "'name' argument only provided 2 values." in str(e)
     )
+
+
+def test_multichannel_xarray_rgb_metadata():
+    """Channel-split xarray whose channels are RGB excludes the color axis."""
+    data = xr.DataArray(
+        np.zeros((3, 64, 64, 3)),
+        dims=['channel', 'y', 'x', 'rgb'],
+        coords={
+            'channel': np.arange(3),
+            'y': np.arange(64),
+            'x': np.arange(64),
+            'rgb': np.arange(3),
+        },
+    )
+    layers = ViewerModel().add_image(data, channel_axis=0)
+    assert len(layers) == 3
+    for layer in layers:
+        assert layer.ndim == 2
+        assert layer.axis_labels == ('y', 'x')
+        assert len(layer.scale) == 2
+        assert len(layer.translate) == 2
+        assert len(layer.units) == 2

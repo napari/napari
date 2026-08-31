@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari._vispy.layers.base import VispyBaseLayer
@@ -8,13 +12,18 @@ from napari.settings import get_settings
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events import disconnect_events
 
+if TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.layers import Points
+
 
 class VispyPointsLayer(VispyBaseLayer):
     node: PointsVisual
+    layer: Points
 
-    def __init__(self, layer) -> None:
-        node = PointsVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer, font_info: FontInfo) -> None:
+        node = PointsVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.border_width.connect(self._on_data_change)
@@ -44,7 +53,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
-        if len(self.layer._indices_view) == 0:
+        if len(self.layer._view_indices) == 0:
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
@@ -63,7 +72,7 @@ class VispyPointsLayer(VispyBaseLayer):
         set_data = self.node.points_markers.set_data
 
         # use only last dimension to scale point sizes, see #5582
-        scale = self.layer.scale[-1]
+        scale = abs(self.layer.scale[-1])
         scaled_size = size * scale
 
         if self.layer.border_width_is_relative:
@@ -81,7 +90,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         set_data(
             data[:, ::-1],
-            size=size * scale,
+            size=scaled_size,
             symbol=symbol,
             # edge_color is the name of the vispy marker visual kwarg
             edge_color=border_color,
@@ -98,7 +107,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
             # _highlight_index contains indices into the view arrays, but we can get the
             # actual data indices once to avoid materializing the entire view for each property
-            data_indices = self.layer._indices_view[
+            data_indices = self.layer._view_indices[
                 self.layer._highlight_index
             ]
 
@@ -107,7 +116,7 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer.size[data_indices] * self.layer._view_size_scale
+            size = self.layer._view_size[self.layer._highlight_index]
             border_width = self.layer.border_width[data_indices]
             if self.layer.border_width_is_relative:
                 border_width = border_width * size
@@ -118,7 +127,7 @@ class VispyPointsLayer(VispyBaseLayer):
             symbol = ['o']
             border_width = np.empty(0)
 
-        scale = self.layer.scale[-1]
+        scale = abs(self.layer.scale[-1])
         highlight_thickness = settings.appearance.highlight.highlight_thickness
         scaled_size = (size + border_width) * scale
         # cap scaled_highlight to the marker size, cause otherwise we get strange effects

@@ -4,12 +4,14 @@ import re
 from enum import IntFlag
 from fnmatch import fnmatch
 from functools import lru_cache
-
-from npe2 import PluginManifest
+from typing import TYPE_CHECKING
 
 from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.types import PathLike
+
+if TYPE_CHECKING:
+    from npe2 import PluginManifest
 
 
 class MatchFlag(IntFlag):

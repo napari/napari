@@ -1,18 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.bounding_box import BoundingBox
 
+if TYPE_CHECKING:
+    from napari.components.overlays import BoundingBoxOverlay
+    from napari.layers._scalar_field import ScalarFieldBase
+
 
 class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
-    def __init__(self, *, layer, viewer, overlay, parent=None):
-        super().__init__(
-            node=BoundingBox(),
-            layer=layer,
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
-        )
+    overlay: BoundingBoxOverlay
+    layer: ScalarFieldBase
+    node: BoundingBox
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(node=BoundingBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_bounds_change)
         self.overlay.events.lines.connect(self._on_lines_change)
         self.overlay.events.line_thickness.connect(
@@ -25,19 +31,35 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _on_bounds_change(self):
-        bounds = self.layer._display_bounding_box_augmented_data_level(
-            self.layer._slice_input.displayed
-        )
-        if (
-            len(self.layer._slice_input.displayed) == 3
-            and self.layer.multiscale
-        ):
-            # for 3D multiscale layers, the lowest data level is displayed
-            # and we need the augmented bounding box
+    def _on_bounds_change(self) -> None:
+        displayed = list(self.layer._slice_input.displayed)
+
+        if self.layer.multiscale:
+            # Always use the full level-0 extent so the bounding box
+            # represents the complete dataset in both 2D and 3D.
+            # The pixel-edge extent of the dataset spans [-0.5, shape - 0.5]
+            # in level-0 pixel-center coordinates, i.e. [0, shape] in
+            # pixel-edge coordinates.
             bounds = self.layer._display_bounding_box_at_level(
-                self.layer._slice_input.displayed, len(self.layer.data) - 1
-            ) + np.array([[-0.5, 0.5]])
+                displayed, 0
+            ) + np.array([[0.0, 1.0]])
+
+            # This overlay node lives in the tile coordinate frame: the
+            # parent layer node applies tile2data (the displayed level's
+            # downsampling scale plus the corner-pixel translation), while
+            # `VispyBaseLayer._on_matrix_change` gives child nodes an
+            # offset that exactly cancels the corner translation (and the
+            # half-pixel centering shifts). So only the level scale needs
+            # to be inverted here; inverting the translation as well would
+            # compensate the corner offset twice and make the box drift as
+            # the corners change with zooming/panning.
+            tile2data = self.layer._transforms[0]
+            scale = np.asarray(tile2data.scale)[displayed]
+            bounds = bounds / scale[:, np.newaxis] - 0.5
+        else:
+            bounds = self.layer._display_bounding_box_augmented_data_level(
+                displayed
+            )
 
         if len(bounds) == 2:
             # 2d layers are assumed to be at 0 in the 3rd dimension
@@ -45,29 +67,29 @@ class VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.node.set_bounds(bounds[::-1])  # invert for vispy
 
-    def _on_lines_change(self):
+    def _on_lines_change(self) -> None:
         self.node.lines.visible = self.overlay.lines
 
-    def _on_points_change(self):
+    def _on_points_change(self) -> None:
         self.node.markers.visible = self.overlay.points
 
-    def _on_line_thickness_change(self):
+    def _on_line_thickness_change(self) -> None:
         self.node._line_thickness = self.overlay.line_thickness
         self._on_bounds_change()
 
-    def _on_line_color_change(self):
+    def _on_line_color_change(self) -> None:
         self.node._line_color = self.overlay.line_color
         self._on_bounds_change()
 
-    def _on_point_size_change(self):
+    def _on_point_size_change(self) -> None:
         self.node._marker_size = self.overlay.point_size
         self._on_bounds_change()
 
-    def _on_point_color_change(self):
+    def _on_point_color_change(self) -> None:
         self.node._marker_color = self.overlay.point_color
         self._on_bounds_change()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_line_thickness_change()
         self._on_line_color_change()

@@ -1,7 +1,77 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal, cast
+
 import numpy as np
-from scipy.spatial.transform import Rotation
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
+
+if TYPE_CHECKING:
+    from napari.components import Camera
+
+
+def get_vispy_flipped_axes(
+    camera: Camera, ndisplay: Literal[2, 3] = 2
+) -> tuple[int, int, int]:
+    # Note: the Vispy axis order is xyz, or horizontal, vertical, depth,
+    # while the napari axis order is zyx / plane-row-column, or depth, vertical,
+    # horizontal — i.e. it is exactly inverted. This switch happens when data
+    # is passed from napari to Vispy, usually with a transposition. In the camera
+    # models, this means that the order of these orientations appear in the
+    # opposite order to that in napari.components.Camera.
+    #
+    # Note that the default Vispy camera orientations come from Vispy, not from us.
+    vispy_default_orientation = (
+        ('right', 'up', 'towards')
+        if ndisplay == 2
+        else ('right', 'down', 'away')
+    )
+
+    # Vispy uses xyz coordinates; napari uses zyx coordinates. We therefore
+    # start by inverting the order of coordinates coming from the napari
+    # camera model:
+    orientation_xyz = camera.orientation[::-1]
+    # The Vispy camera flip is a tuple of three ints in {0, 1}, indicating
+    # whether they are flipped relative to the Vispy default.
+    return cast(
+        tuple[int, int, int],
+        tuple(
+            int(ori != default_ori)
+            for ori, default_ori in zip(
+                orientation_xyz, vispy_default_orientation, strict=True
+            )
+        ),
+    )
+
+
+def napari_angles_to_vispy_quat(
+    angles: tuple[float, float, float], flipped_axes: tuple[int, int, int]
+) -> Quaternion:
+    from scipy.spatial.transform import Rotation
+
+    # flip handedness so the rotation is always righthanded even with axis flipping
+    angles_flipped = angles * np.where(flipped_axes, -1, 1)
+    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+    angles_fixed = (np.array(angles_flipped) * (1, -1, 1)) + (0, 0, 90)
+    # see #8281 for why this is yzx. In short: longstanding vispy bug.
+    rotation = Rotation.from_euler('yzx', angles_fixed, degrees=True)
+    # Create quaternion
+    return Quaternion(*rotation.as_quat(scalar_first=True))
+
+
+def vispy_quat_to_napari_angles(
+    quat: Quaternion, flipped_axes: tuple[int, int, int]
+) -> tuple[float, float, float]:
+    from scipy.spatial.transform import Rotation
+
+    # Do conversion from quaternion representation to euler angles
+    rotation = Rotation.from_quat([quat.x, quat.y, quat.z, quat.w])
+    # see #8281 for why this is yzx. In short: longstanding vispy bug.
+    angles = rotation.as_euler('yzx', degrees=True)
+    # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
+    angles_fixed = (angles - (0, 0, 90)) * (1, -1, 1)
+    # flip handedness so the rotation is always righthanded even with axis flipping
+    return tuple(angles_fixed * np.where(flipped_axes, -1, 1))
 
 
 class VispyCamera:
@@ -51,18 +121,10 @@ class VispyCamera:
         """
 
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            # Do conversion from quaternion representation to euler angles
-            q = self._view.camera._quaternion
-            rotation = Rotation.from_quat([q.x, q.y, q.z, q.w])
-            # see #8281 for why this is yzx. In short: longstanding vispy bug.
-            angles = rotation.as_euler('yzx', degrees=True)
-            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-            angles = (angles - (0, 0, 90)) * (1, -1, 1)
-            # flip handedness so the rotation is always righthanded even with axis flipping
-            angles = angles * np.where(
-                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
+            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
+            return vispy_quat_to_napari_angles(
+                self._view.camera._quaternion, flipped_axes
             )
-            return tuple(angles)
 
         return (0, 0, 0)
 
@@ -73,18 +135,11 @@ class VispyCamera:
 
         # Only update angles if current camera is 3D camera
         if isinstance(self._view.camera, MouseToggledArcballCamera):
-            # flip handedness so the rotation is always righthanded even with axis flipping
-            angles = angles * np.where(
-                self._camera._vispy_flipped_axes(ndisplay=3), -1, 1
+            flipped_axes = get_vispy_flipped_axes(self._camera, ndisplay=3)
+            quat = napari_angles_to_vispy_quat(
+                self._camera.angles, flipped_axes
             )
-            # undo vispy quirks (rotation of 90 digrees and lefthanded y axis)
-            angles = (np.array(angles) * (1, -1, 1)) + (0, 0, 90)
-            # see #8281 for why this is yzx. In short: longstanding vispy bug.
-            rotation = Rotation.from_euler('yzx', angles, degrees=True)
-            # Create and set quaternion
-            q = Quaternion(*rotation.as_quat(scalar_first=True))
-            self._view.camera._quaternion = q
-            self._view.camera.view_changed()
+            self._view.camera.set_state(_quaternion=quat)
 
     @property
     def center(self):
@@ -192,8 +247,8 @@ class VispyCamera:
         self.zoom = self._camera.zoom
 
     def _on_orientation_change(self):
-        self._2D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=2)
-        self._3D_camera.flip = self._camera._vispy_flipped_axes(ndisplay=3)
+        self._2D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=2)
+        self._3D_camera.flip = get_vispy_flipped_axes(self._camera, ndisplay=3)
 
     def _on_perspective_change(self):
         self.perspective = self._camera.perspective

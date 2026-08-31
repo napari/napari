@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
@@ -8,22 +10,31 @@ class ColorBarOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    color : np.ndarray
-        A (4,) color array of the text.
-    size: : 2-tuple of ints
-        Size of the colorbar rectangle (X, Y).
+    color : ColorValue | None
+        The color of the outline and ticks of the colorbar.
+    size : tuple[float, float]
+        The size of the colorbar in pixels (width, height).
     tick_length : float
-        Length of the tick marks.
+        The length of the ticks in pixels.
     font_size : float, optional
         The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
+    box : bool
+        Whether the background box is visible or not.
+    box_color : ColorValue or None
+        Background box color. If unset, it defaults to the canvas color.
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
         If the overlay is visible or not.
     opacity : float
         The opacity of the overlay. 0 is fully transparent.
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     color: ColorValue | None = None
@@ -31,3 +42,6 @@ class ColorBarOverlay(CanvasOverlay):
     tick_length: float = 5
     font_size: float | None = None
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
+    colormanager_attribute: str | None = Field(
+        default=None, frozen=True, repr=False
+    )

@@ -17,7 +17,7 @@ from napari._tests.utils import (
 from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
-from napari.layers.points._points_constants import Mode
+from napari.layers.points._points_constants import Mode, PointsProjectionMode
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
@@ -68,16 +68,16 @@ def test_empty_points_with_features():
     https://github.com/napari/napari/issues/5634
     """
     points = Points(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         face_color='a',
         face_color_cycle=list('rgb'),
     )
 
     points.add([0, 0])
-    points.feature_defaults['a'] = 1
+    points.feature_defaults['a'] = 'y'
     points.add([50, 50])
-    points.feature_defaults = {'a': 2}
+    points.feature_defaults = {'a': 'z'}
     points.add([100, 100])
 
     assert_colors_equal(points.face_color, list('rgb'))
@@ -1126,32 +1126,6 @@ def test_border_width_types_negative(border_width):
         Points(data, border_width=border_width, border_width_is_relative=False)
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-    shape = (10, 4)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer.out_of_slice_display is False
-
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
-
-    layer = Points(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
-
-
 @pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1368,6 +1342,24 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_color_cycle_default(attribute):
+    """Cycle mode without an explicit cycle still distinguishes the categories.
+
+    The default used to be a single white, which made the mode a no-op: every category
+    mapped to the same color, and picking "cycle" in the layer controls turned the whole
+    layer white.
+    """
+    layer = Points(
+        np.zeros((6, 2)),
+        features={'point_type': np.array(['A', 'B', 'C'] * 2)},
+        **{f'{attribute}_color': 'point_type'},
+    )
+
+    assert getattr(layer, f'{attribute}_color_mode') == 'cycle'
+    assert len(np.unique(getattr(layer, f'{attribute}_color'), axis=0)) > 1
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 @pytest.mark.parametrize(
     'color_cycle',
     [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
@@ -1436,19 +1428,21 @@ def test_color_cycle(attribute, color_cycle):
 def test_color_cycle_dict(attribute):
     """Test setting border/face color with a color cycle dict"""
     data = np.array([[0, 0], [100, 0], [0, 100]])
-    properties = {'my_colors': [2, 6, 3]}
+    properties = {'my_colors': ['b', 'x', 'c']}
     points_kwargs = {
         'properties': properties,
         f'{attribute}_color': 'my_colors',
-        f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
+        f'{attribute}_color_cycle': {'a': 'green', 'b': 'red', 'c': 'blue'},
     }
     layer = Points(data, **points_kwargs)
 
     color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
-    np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
-    np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
-    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
+    np.testing.assert_allclose(color_cycle_map['b'], [1, 0, 0, 1])  # b is red
+    np.testing.assert_allclose(color_cycle_map['c'], [0, 0, 1, 1])  # c is blue
+    np.testing.assert_allclose(
+        color_cycle_map['x'], [1, 1, 1, 1]
+    )  # unkown (x) is white
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
@@ -1887,7 +1881,7 @@ def test_view_size():
     """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
     sizes = np.array([5, 5, 3, 3])
-    layer = Points(coords, size=sizes, out_of_slice_display=False)
+    layer = Points(coords, size=sizes)
 
     layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[0, 1]])
@@ -1895,14 +1889,19 @@ def test_view_size():
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
-    layer.out_of_slice_display = True
-    # NOTE: since a dims slice of thickness 0 defaults back to 1,
-    # out_of_slice_display actually compares the half-size with
-    # distance + 0.5, not just distance
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+    assert len(layer._view_size) == 1
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(1, 1, 1),
+            margin_right=(1, 1, 1),
+        )
+    )
     assert len(layer._view_size) == 3
 
     # test a slice with no points
-    layer.out_of_slice_display = False
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
@@ -2463,71 +2462,6 @@ def test_shown():
     assert np.all(layer.shown[:-2])
     assert layer.shown[-2] == False  # noqa
     assert layer.shown[-1] == True  # noqa
-
-
-def test_shown_view_size_and_view_data_have_the_same_dimension():
-    data = [[0, 0, 0], [1, 1, 1]]
-    # Data with default settings
-    layer = Points(
-        data, out_of_slice_display=False, shown=[True, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # shown == [True, False]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[True, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # shown == [False, True]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[False, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
-
-    # shown == [False, False]
-    layer = Points(
-        data, out_of_slice_display=False, shown=[False, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
-
-    # Out of slice display == True
-    layer = Points(data, out_of_slice_display=True, shown=[True, True], size=3)
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 2
-    assert np.array_equiv(layer._view_size, [3, 2])
-
-    # Out of slice display == True && shown == [True, False]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[True, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [3])
-
-    # Out of slice display == True && shown == [False, True]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[False, True], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 1
-    assert np.array_equal(layer._view_size, [2])
-
-    # Out of slice display == True && shown == [False, False]
-    layer = Points(
-        data, out_of_slice_display=True, shown=[False, False], size=3
-    )
-    assert layer._view_size.shape[0] == layer._view_data.shape[0]
-    assert layer._view_size.shape[0] == 0
-    assert np.array_equal(layer._view_size, [])
 
 
 def test_empty_data_from_tuple():
