@@ -121,13 +121,11 @@ def _calc_histogram(
             range_min = float(range_min) - delta
             range_max = float(range_max) + delta
 
-    counts, bin_count = np.histogram(
+    counts, bin_edges = np.histogram(
         data,
         bins=bin_count,
         range=(float(range_min), float(range_max)),
     )
-
-    bin_edges = bin_count.astype(np.float32)
 
     if log_scale:
         hist_counts = np.log10(counts + 1).astype(np.float32)
