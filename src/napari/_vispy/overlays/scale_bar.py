@@ -137,9 +137,15 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_size_or_zoom_change(self, *, force: bool = False):
         """Update length based on scale bar size and zoom."""
 
-        # If scale or canvas size has not changed, do not redraw
         scale = 1 / self.viewer.scene.camera.zoom
-        target_canvas_length = self.viewer.canvas.size[1] / 6
+
+        if self.overlay.gridded:
+            ref_length = self.viewer.canvas.viewbox_size(self.viewer.layers)[0]
+        else:
+            ref_length = self.viewer.canvas.size[0]
+        target_canvas_length = ref_length / 5
+
+        # If scale or canvas size has not changed, do not redraw
         if (
             abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
             and target_canvas_length == self._canvas_length
