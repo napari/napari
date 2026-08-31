@@ -26,6 +26,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
     def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
         self._canvas_length = 150.0
+        self._canvas_tick_length = 10.0
+        self._canvas_thickness = 3
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
@@ -141,11 +143,13 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         scale = 1 / self.viewer.scene.camera.zoom
 
         if self.overlay.gridded:
-            ref_length = self.viewer.canvas.viewbox_size(self.viewer.layers)[0]
+            view_height, view_width = self.viewer.canvas.viewbox_size(
+                self.viewer.layers
+            )
         else:
-            ref_length = self.viewer.canvas.size[0]
-        target_canvas_length = ref_length / 4
+            view_height, view_width = self.viewer.canvas.size
 
+        target_canvas_length = view_width / 4
         # If scale or canvas size has not changed, do not redraw
         if (
             abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
@@ -171,6 +175,13 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._canvas_length = canvas_length
         self._scale = scale
 
+        # some magic numbers
+        self._canvas_tick_length = max(view_height // 70, 11)
+        self._canvas_thickness = max((view_width + view_height) // 700, 3)
+        # prefer odd numbers as they look nicer
+        self._canvas_tick_length += (self._canvas_tick_length + 1) % 2
+        self._canvas_thickness += (self._canvas_thickness + 1) % 2
+
         # Update scalebar and text
         self.node.text.text = f'{dim_with_unit:g~#P}'
         self._on_rendering_change()
@@ -187,9 +198,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         width, height = self.node.set_data(
             length=self._canvas_length,
-            color=color,
-            ticks=self.overlay.ticks,
+            tick_length=self._canvas_tick_length if self.overlay.ticks else 0,
+            thickness=self._canvas_thickness,
             font_size=self.overlay.font_size,
+            color=color,
         )
 
         size_changed = width != self.x_size or height != self.y_size
