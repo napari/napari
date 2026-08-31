@@ -1008,7 +1008,7 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
-        canvas.size = tuple(size_arr)  # pyrefly: ignore [bad-argument-type]
+        canvas.size = tuple(size_arr)
         try:
             yield
         finally:
