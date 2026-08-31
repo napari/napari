@@ -207,8 +207,8 @@ class QtViewer(QSplitter):
         self._welcome_widget = QtWelcomeWidget(
             self.canvas.native, viewer=self.viewer, tips=tips
         )
-        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
-        self._welcome_widget.urls_dropped.connect(self.dropEvent)
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)  # pyrefly: ignore [missing-attribute]
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)  # pyrefly: ignore [missing-attribute]
 
         main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)
@@ -259,11 +259,11 @@ class QtViewer(QSplitter):
         # set up welcome screen
         self._set_welcome_visible(False)
 
-    def showEvent(self, event: QShowEvent | None) -> None:
+    def showEvent(self, event: QShowEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         super().showEvent(event)
         self._update_welcome_screen()
 
-    def hideEvent(self, event: QHideEvent | None) -> None:
+    def hideEvent(self, event: QHideEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         super().hideEvent(event)
 
     @property
@@ -1177,10 +1177,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
         )
-        self.viewerButtons.consoleButton.style().unpolish(
+        self.viewerButtons.consoleButton.style().unpolish(  # pyrefly: ignore [missing-attribute]
             self.viewerButtons.consoleButton
         )
-        self.viewerButtons.consoleButton.style().polish(
+        self.viewerButtons.consoleButton.style().polish(  # pyrefly: ignore [missing-attribute]
             self.viewerButtons.consoleButton
         )
 
@@ -1197,7 +1197,7 @@ class QtViewer(QSplitter):
         """
         self._welcome_widget.set_welcome_visible(visible)
 
-    def keyPressEvent(self, event: QKeyEvent | None) -> None:
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Called whenever a key is pressed.
 
         Parameters
@@ -1212,7 +1212,7 @@ class QtViewer(QSplitter):
         )
         event.accept()
 
-    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:
+    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Called whenever a key is released.
 
         Parameters
@@ -1227,7 +1227,7 @@ class QtViewer(QSplitter):
         )
         event.accept()
 
-    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:
+    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Ignore event if not dragging & dropping a file or URL to open.
 
         Using event.ignore() here allows the event to pass through the
@@ -1294,7 +1294,7 @@ class QtViewer(QSplitter):
                 return
         show_info('No image or link in clipboard.')
 
-    def dropEvent(self, event: QDropEvent | None) -> None:
+    def dropEvent(self, event: QDropEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Add local files and web URLS with drag and drop.
 
         For each file, attempt to open with existing associated reader
@@ -1344,7 +1344,7 @@ class QtViewer(QSplitter):
             choose_plugin=choose_plugin,
         )
 
-    def closeEvent(self, event: QCloseEvent | None) -> None:
+    def closeEvent(self, event: QCloseEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Cleanup and close.
 
         Parameters
@@ -1360,7 +1360,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()
+        self.dims.stop()  # pyrefly: ignore [missing-argument]
         self.canvas.delete()
         if self._console is not None:
             self._console.close()

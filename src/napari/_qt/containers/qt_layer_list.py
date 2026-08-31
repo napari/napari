@@ -31,10 +31,10 @@ class ReverseProxyModel(QSortFilterProxyModel):
         self.setSortRole(SortRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)
 
-    def dropMimeData(self, data, action, destRow, col, parent):
+    def dropMimeData(self, data, action, destRow, col, parent):  # pyrefly: ignore [bad-override-param-name]
         """Handle destination row for dropping with reversed indices."""
-        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow
-        return self.sourceModel().dropMimeData(data, action, row, col, parent)
+        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow  # pyrefly: ignore [missing-attribute]
+        return self.sourceModel().dropMimeData(data, action, row, col, parent)  # pyrefly: ignore [missing-attribute]
 
 
 class QtLayerList(QtListView[Layer]):
@@ -57,7 +57,7 @@ class QtLayerList(QtListView[Layer]):
         viewport = self.viewport()
         assert viewport is not None
 
-        layer_delegate.loading_frame_changed.connect(viewport.update)
+        layer_delegate.loading_frame_changed.connect(viewport.update)  # pyrefly: ignore [missing-attribute]
 
         self.setToolTip('Layer list')
 

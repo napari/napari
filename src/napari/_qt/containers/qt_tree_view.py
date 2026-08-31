@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 NodeType = TypeVar('NodeType', bound=Node)
 
 
-class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # pyrefly: ignore [inconsistent-inheritance]
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
@@ -65,4 +65,4 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
             self.setRootIsDecorated(hasgroup)
 
     def model(self) -> QtNodeTreeModel[NodeType]:
-        return super().model()
+        return super().model()  # pyrefly: ignore [bad-return]

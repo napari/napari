@@ -49,7 +49,7 @@ def _start_viewer_tour(window: Window, *, tour: GuidedTour | None = None):
     if tour is None:
         tour = build_viewer_tour(qt_window)
     qt_window._viewer_tour = tour
-    tour.finished.connect(lambda: setattr(qt_window, '_viewer_tour', None))
+    tour.finished.connect(lambda: setattr(qt_window, '_viewer_tour', None))  # pyrefly: ignore [missing-attribute]
     tour.start()
 
 

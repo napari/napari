@@ -776,12 +776,12 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     if 'disable_qthread_start' in request.keywords:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Dummy function to prevent thread starts."""
 
     else:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
@@ -906,7 +906,7 @@ def _dangling_qtimers(monkeypatch, request):
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):
+            def start(self, time=None):  # pyrefly: ignore [bad-override]
                 if time is not None:
                     base_start(self, time)
                 else:
@@ -1036,7 +1036,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:
+        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
@@ -1132,7 +1132,7 @@ with contextlib.suppress(ImportError):
             # As Qt6 autodetect High dpi scaling, we need to
             # enable it only on Qt5 bindings.
             # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # pyrefly: ignore [missing-attribute]
         return QApplication
 
     @pytest.fixture(autouse=True)

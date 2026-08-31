@@ -18,7 +18,7 @@ class QtSpinBox(QSpinBox):
         """
         self.prohibit = value
 
-    def validate(
+    def validate(  # pyrefly: ignore [bad-override-param-name]
         self, value: str | None, pos: int
     ) -> tuple[QValidator.State, str, int]:
         if value == str(self.prohibit):

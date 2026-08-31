@@ -96,7 +96,7 @@ def _load_glyph_qt(
         bytes_per_line = image.bytesPerLine()
 
         # Create array with proper stride, then extract only the actual image data
-        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(
+        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # pyrefly: ignore [no-matching-overload]
             (height, bytes_per_line)
         )
         bitmap = full_array[:, :width].copy()

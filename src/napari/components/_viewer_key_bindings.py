@@ -222,7 +222,7 @@ def toggle_console_visibility(qt_viewer: QtViewer) -> None:
     else:
         # old action_manager path :( :(, where
         # toggle_console_visibility is treated as bound method...
-        qt_viewer.window._qt_viewer.toggle_console_visibility()
+        qt_viewer.window._qt_viewer.toggle_console_visibility()  # pyrefly: ignore [missing-attribute]
 
 
 @register_viewer_action('Press and hold for move camera mode')
