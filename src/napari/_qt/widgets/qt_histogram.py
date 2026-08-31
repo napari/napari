@@ -212,7 +212,7 @@ class QtHistogramWidget(QWidget):
     ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
         # color is returned as a 4-tuple even when alpha=False,
-        # so to satisfy mypy we need to explicity build a 3-tuple
+        # so to satisfy pyrefly we need to explicity build a 3-tuple
         rgb = color.as_rgb_tuple(alpha=False)
         red, green, blue = rgb[0], rgb[1], rgb[2]
         return (red / 255, green / 255, blue / 255, alpha)

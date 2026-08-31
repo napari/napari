@@ -26,7 +26,7 @@ class Scene(EventedModel):
     """
 
     camera: Camera = Field(default_factory=Camera, frozen=True)
-    # NOTE: the type ignore comment below is only there because mypy
+    # NOTE: the type ignore comment below is only there because pyrefly
     #       thinks EventedDictNamespace[SceneAxesOverlay] is not a subtype
     #       of EventedDictNamespace[SceneOverlay]. This will not be necessary
     #       as soon as we add any other overlay

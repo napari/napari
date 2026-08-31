@@ -226,7 +226,7 @@ class VispyScalarFieldBaseLayer(VispyBaseLayer[ScalarFieldBase]):
                 scale[d] = downsample[i]
 
             # tile2data is a ScaleTransform thus is has a .scale attribute, but
-            # mypy cannot know this.
+            # pyrefly cannot know this.
             self.layer._transforms['tile2data'].scale = scale
 
             self._on_matrix_change()

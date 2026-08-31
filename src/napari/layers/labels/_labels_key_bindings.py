@@ -193,7 +193,7 @@ def reset_polygon(layer: Labels) -> None:
 )
 def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
-    # Because layer._overlays has type Overlay, mypy doesn't know that
+    # Because layer._overlays has type Overlay, pyrefly doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
     from napari.components.overlays.labels_polygon import (

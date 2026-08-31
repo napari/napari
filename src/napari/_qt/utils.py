@@ -249,7 +249,7 @@ def combine_widgets(
     if isinstance(getattr(widgets, 'native', None), QWidget):
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
-        return widgets.native  # type: ignore
+        return widgets.native  # pyrefly: ignore
     if isinstance(widgets, QWidget):
         return widgets
     if is_sequence(widgets):

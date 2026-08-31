@@ -682,7 +682,7 @@ class LayerList(SelectableEventedList[Layer]):
         from napari.layers.utils import _link_layers
 
         if layers is not None:
-            layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
+            layers = [self[x] if isinstance(x, str) else x for x in layers]  # pyrefly: ignore
         else:
             layers = self
         getattr(_link_layers, method)(layers, attributes)

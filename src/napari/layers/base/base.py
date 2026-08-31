@@ -1016,7 +1016,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @axis_labels.setter
     def axis_labels(self, axis_labels: Sequence[str] | None) -> None:
         prev = self._transforms['data2physical'].axis_labels
-        # mypy bug https://github.com/python/mypy/issues/3004
+        # See https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].axis_labels = axis_labels
         if self._transforms['data2physical'].axis_labels != prev:
             self.events.axis_labels()
@@ -1034,7 +1034,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @units.setter
     def units(self, units: Sequence[pint.Unit | str] | None) -> None:
         prev = self.units
-        # mypy bug https://github.com/python/mypy/issues/3004
+        # See https://github.com/python/mypy/issues/3004
         self._transforms['data2physical'].units = units
         if self.units != prev:
             self._clear_extent()

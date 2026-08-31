@@ -187,7 +187,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
     _primary_changes: dict[str, None] = PrivateAttr(default_factory=dict)
     _delay_check_semaphore: int = PrivateAttr(0)
-    __slots__: ClassVar[set[str]] = {'__weakref__'}  # type: ignore
+    __slots__: ClassVar[set[str]] = {'__weakref__'}  # pyrefly: ignore
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/

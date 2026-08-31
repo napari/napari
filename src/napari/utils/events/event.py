@@ -192,7 +192,7 @@ class Event:
         """Shorter string representation"""
         return self.__class__.__name__
 
-    # mypy fix for dynamic attribute access
+    # pyrefly fix for dynamic attribute access
     def __getattr__(self, name: str) -> Any:
         return object.__getattribute__(self, name)
 
@@ -911,7 +911,7 @@ class EmitterGroup(EventEmitter):
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
-        self.add(**emitters)  # type: ignore
+        self.add(**emitters)  # pyrefly: ignore
 
     def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
@@ -930,7 +930,7 @@ class EmitterGroup(EventEmitter):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})  # type: ignore
+        self.add(**{name: emitter})  # pyrefly: ignore
 
     def add(
         self,
@@ -971,11 +971,11 @@ class EmitterGroup(EventEmitter):
             if emitter is None:
                 emitter = Event
 
-            if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
+            if inspect.isclass(emitter) and issubclass(emitter, Event):  # pyrefly: ignore
                 emitter = EventEmitter(
                     source=self.source,
                     type_name=name,
-                    event_class=emitter,  # type: ignore
+                    event_class=emitter,  # pyrefly: ignore
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(

@@ -386,7 +386,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         variables.  (see `_save_dict` method.)
         """
         path = path or self.config_path
-        # use insinstance so mypy is happy
+        # use insinstance so pyrefly is happy
         if not path or isinstance(path, _NotSetType):
             raise ValueError('No path provided in config or save argument.')
 

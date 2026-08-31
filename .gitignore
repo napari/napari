@@ -113,8 +113,6 @@ venv.bak/
 # mkdocs documentation
 /site
 
-.mypy_cache/
-
 # Pycharm files
 .idea
 

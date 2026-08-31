@@ -6,7 +6,7 @@ from pathlib import Path
 
 @lru_cache
 def available_logos() -> list[str]:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
+    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # pyrefly: ignore
     variants = ['auto']
     for logo in Path(logo_dir).glob('*-plain-light.svg'):
         variants.append(logo.stem.rsplit('-', 2)[0])
@@ -50,7 +50,7 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
 def get_logo_path(
     logo: str, template: str, theme_type: str, today: date | None = None
 ) -> Path:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
+    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # pyrefly: ignore
     if logo not in available_logos():
         raise ValueError(
             f'logo must be one one {set(available_logos())}; got {logo}'

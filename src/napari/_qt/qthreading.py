@@ -30,8 +30,8 @@ wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
 
 
 class _NotifyingMixin:
-    def __init__(self: _qthreading.WorkerBase, *args, **kwargs) -> None:  # type: ignore
-        super().__init__(*args, **kwargs)  # type: ignore
+    def __init__(self: _qthreading.WorkerBase, *args, **kwargs) -> None:  # pyrefly: ignore
+        super().__init__(*args, **kwargs)  # pyrefly: ignore
         self.errored.connect(self._relay_error)
         self.warned.connect(self._relay_warning)
 
