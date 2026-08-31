@@ -1144,7 +1144,7 @@ with contextlib.suppress(ImportError):
         import logging
 
         monkeypatch.setattr(
-            'napari._qt.widgets.qt_logger._get_log_level_value',
+            'napari.utils.logging._get_log_level_value',
             lambda x: logging.WARNING,
         )
 
