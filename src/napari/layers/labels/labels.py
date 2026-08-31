@@ -1471,16 +1471,19 @@ class Labels(ScalarFieldBase):
             if brush_info is None:
                 continue
             stamps.append(brush_info)
+            # get the coordinates of the last valid coordinate
             slice_coord = coord
 
-        if not stamps:
+        if slice_coord is None:
             return
 
         # Union bounding box of all stamps, then OR each stamp into it.
         _, stamp_mins, stamp_maxs = zip(*stamps, strict=True)
         min_vals = np.min(stamp_mins, axis=0)
         max_vals = np.max(stamp_maxs, axis=0)
-        combined_mask = np.zeros(tuple(max_vals - min_vals), dtype=bool)
+        combined_mask: npt.NDArray[np.bool_] = np.zeros(
+            tuple(max_vals - min_vals), dtype=bool
+        )
         for brush_mask, stamp_min, stamp_max in stamps:
             region = tuple(
                 slice(stamp_min[i] - min_vals[i], stamp_max[i] - min_vals[i])
