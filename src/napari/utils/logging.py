@@ -15,6 +15,13 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+__all__ = [
+    'deregister_logger_from_napari_handler',
+    'register_logger_to_napari_handler',
+    'using_napari_log_handler',
+]
+
+
 def _get_log_level_value(log_level_name: str | None) -> int:
     if log_level_name is None:
         return logging.NOTSET
