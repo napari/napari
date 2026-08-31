@@ -1214,7 +1214,7 @@ def test_colormap_with_categorical_properties(attribute):
     with (
         pytest.raises(
             TypeError,
-            match=r'selected property must be numeric to use ColorMode.COLORMAP',
+            match=r'selected property must be numeric to use ColorMode.colormap',
         ),
         pytest.warns(
             UserWarning,
@@ -1994,7 +1994,7 @@ def test_set_face_color_mode_after_set_properties():
         'cont': np.random.random(num_points),
     }
 
-    # Initially the color_mode is DIRECT, which means that the face ColorManager
+    # Initially the color_mode is direct, which means that the face ColorManager
     # has no color_properties, so the first property is used with a warning.
     with pytest.warns(
         UserWarning, match='_face_color_property was not set, setting to: cat'

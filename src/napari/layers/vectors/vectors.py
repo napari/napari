@@ -391,7 +391,7 @@ class Vectors(Layer):
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self.features:
-                self._edge.color_mode = ColorMode.DIRECT
+                self._edge.color_mode = ColorMode.direct
                 self._edge.color_properties = None
                 warnings.warn(
                     'property used for edge_color dropped',
@@ -599,11 +599,11 @@ class Vectors(Layer):
     def edge_color_mode(self) -> ColorMode:
         """str: Edge color setting mode
 
-        DIRECT (default mode) allows each vector to be set arbitrarily
+        direct (default mode) allows each vector to be set arbitrarily
 
-        CYCLE allows the color to be set via a color cycle over an attribute
+        cycle allows the color to be set via a color cycle over an attribute
 
-        COLORMAP allows color to be set via a color map over an attribute
+        colormap allows color to be set via a color map over an attribute
         """
         return self._edge.color_mode
 
@@ -612,9 +612,9 @@ class Vectors(Layer):
         edge_color_mode = ColorMode(edge_color_mode)
         old_mode = self._edge.color_mode
 
-        if edge_color_mode == ColorMode.DIRECT:
+        if edge_color_mode == ColorMode.direct:
             self._edge.color_mode = edge_color_mode
-        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
+        elif edge_color_mode in (ColorMode.cycle, ColorMode.colormap):
             if self._edge.color_properties is not None:
                 color_property = self._edge.color_properties.name
             else:
@@ -638,13 +638,13 @@ class Vectors(Layer):
                         f'There must be a valid Vectors.properties to use {edge_color_mode}'
                     )
 
-            # ColorMode.COLORMAP can only be applied to numeric properties
-            if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
+            # ColorMode.colormap can only be applied to numeric properties
+            if (edge_color_mode == ColorMode.colormap) and not issubclass(
                 self.properties[color_property].dtype.type,
                 np.number,
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    'selected property must be numeric to use ColorMode.colormap'
                 )
 
             self._edge.color_mode = edge_color_mode
