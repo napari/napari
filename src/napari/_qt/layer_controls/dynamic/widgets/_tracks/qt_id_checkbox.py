@@ -63,5 +63,7 @@ class QtIdCheckBoxControl(QtWidgetControlsBase):
     def update_display_id(self) -> None:
         self.display_id_checkbox.setChecked(self._layers[0].display_id)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.display_id_checkbox_label, self.display_id_checkbox)]

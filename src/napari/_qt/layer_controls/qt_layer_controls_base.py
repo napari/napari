@@ -137,8 +137,8 @@ class QtLayerControls(QFrame):
         """
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     def changeProjectionMode(self, text):
         with self.layer.events.blocker(self._on_projection_mode_change):
