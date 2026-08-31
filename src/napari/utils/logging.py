@@ -109,6 +109,8 @@ def _html_tag_for_level(level_name: str, level_value: int) -> str:
 def register_logger_to_napari_handler(module: str) -> None:
     """
     Register a specific module's logger to use our custom log handler.
+
+    .. version-added:: 0.10.0
     """
     logger = logging.getLogger(module)
     # ensure the default "last resort" logging to console remains
@@ -120,6 +122,8 @@ def register_logger_to_napari_handler(module: str) -> None:
 def deregister_logger_from_napari_handler(module: str) -> None:
     """
     Deregister a specific module's logger from using our custom log handler.
+
+    .. version-added:: 0.10.0
     """
     logger = logging.getLogger(module)
     # fails silently
@@ -132,6 +136,8 @@ def using_napari_log_handler(
 ) -> Generator[None, None, None]:
     """
     Context manager to temporarily register a module's logger to our custom handler.
+
+    .. version-added:: 0.10.0
     """
     register_logger_to_napari_handler(module)
     yield
