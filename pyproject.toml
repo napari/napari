@@ -670,7 +670,6 @@ project-excludes = [
 ]
 
 python-platform = "all"
-replace-imports-with-any = ["qtpy.*", "vispy.*"]
 
 [tool.pyrefly.errors]
 bad-override-mutable-attribute = "ignore"
