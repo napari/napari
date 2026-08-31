@@ -467,7 +467,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         sliced_extent_world : array, shape (2, D)
         """
         layers = LayerList(layers) if layers is not None else self.layers
-        if len(self.layers) == 0:
+        for layer in layers:
+            if layer not in self.layers:
+                raise ValueError(
+                    f'layer "{layer.name}" is not part of this viewer.'
+                )
+        if len(layers) == 0:
             # if no layers are present, assume image-like
             # with dimensions of size 512
             return np.vstack(
