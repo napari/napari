@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+from enum import Enum
+from pathlib import Path, PosixPath, WindowsPath
+from typing import TYPE_CHECKING
+
+from app_model.types import KeyBinding
+from pydantic import BaseModel
+from yaml import SafeDumper, dump_all
+
+from napari.settings._fields import Version
+
+if TYPE_CHECKING:
+    from typing import Any, TypeVar, Union
+
+    IntStr = Union[int, str]
+    DictStrAny = dict[str, Any]
+    from pydantic.main import IncEx
+
+    Model = TypeVar('Model', bound=BaseModel)
+
+
+class YamlDumper(SafeDumper):
+    """The default YAML serializer for our pydantic models.
+
+    Add support for custom types by using `YamlDumper.add_representer` or
+    `YamlDumper.add_multi_representer` below.
+    """
+
+
+# add_representer requires a strict type match
+# add_multi_representer also works for all subclasses of the provided type.
+YamlDumper.add_multi_representer(str, YamlDumper.represent_str)
+YamlDumper.add_multi_representer(
+    Enum, lambda dumper, data: dumper.represent_str(data.value)
+)
+# the default set representer is ugly:
+# disabled_plugins: !!set
+#   bioformats: null
+# and pydantic will make sure that incoming sets are converted to sets
+YamlDumper.add_representer(
+    set, lambda dumper, data: dumper.represent_list(data)
+)
+YamlDumper.add_representer(
+    Version, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    KeyBinding, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    Path, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    PosixPath, lambda dumper, data: dumper.represent_str(str(data))
+)
+YamlDumper.add_representer(
+    WindowsPath, lambda dumper, data: dumper.represent_str(str(data))
+)
+
+
+class PydanticYamlMixin(BaseModel):
+    """Mixin that provides yaml dumping capability to pydantic BaseModel.
+
+    To provide a custom yaml Dumper on a subclass, provide a `yaml_dumper`
+    on the Config:
+
+        class Config:
+            yaml_dumper = MyDumper
+    """
+
+    def yaml(
+        self,
+        *,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
+        by_alias: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        dumper: type[SafeDumper] | None = None,
+        **dumps_kwargs: Any,
+    ) -> str:
+        """Serialize model to yaml."""
+        data = self.model_dump(
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+        )
+
+        return self._yaml_dump(data, dumper, **dumps_kwargs)
+
+    def _yaml_dump(
+        self, data, dumper: type[SafeDumper] | None = None, **kw
+    ) -> str:
+        kw.setdefault('sort_keys', False)
+        dumper = dumper or getattr(
+            self.model_config, 'yaml_dumper', YamlDumper
+        )
+        return dump_all([data], Dumper=dumper, **kw)

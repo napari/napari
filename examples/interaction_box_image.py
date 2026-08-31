@@ -13,7 +13,8 @@ from skimage import data
 
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 viewer.layers.selection.active.mode = 'transform'
 
 if __name__ == '__main__':

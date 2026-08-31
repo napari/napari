@@ -13,14 +13,15 @@ from skimage import data
 
 import napari
 
-print("click to add points; close the window when finished.")
+print('click to add points; close the window when finished.')
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 points = viewer.add_points(np.zeros((0, 2)))
 points.mode = 'add'
 
 if __name__ == '__main__':
     napari.run()
 
-    print("you clicked on:")
+    print('you clicked on:')
     print(points.data)

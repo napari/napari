@@ -1,0 +1,1595 @@
+from __future__ import annotations
+
+import contextlib
+import logging
+import sys
+import traceback
+import warnings
+import weakref
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+)
+from weakref import WeakSet, ref
+
+import numpy as np
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtGui import (
+    QGuiApplication,
+    QImage,
+)
+from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from superqt import ensure_main_thread
+
+from napari._app_model import get_app_model
+from napari._qt.containers import QtLayerList
+from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
+from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
+from napari._qt.perf.qt_performance import QtPerformance
+from napari._qt.utils import QImg2array
+from napari._qt.widgets.qt_dims import QtDims
+from napari._qt.widgets.qt_viewer_buttons import (
+    QtLayerButtons,
+    QtViewerButtons,
+)
+from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
+from napari._vispy.utils.qt_font import QtFontManager
+from napari.components.camera import Camera
+from napari.components.layerlist import LayerList
+from napari.errors import MultipleReaderError, ReaderPluginError
+from napari.layers.base.base import Layer
+from napari.plugins import _npe2
+from napari.settings import get_settings
+from napari.settings._application import DaskSettings
+from napari.utils import config, perf, resize_dask_cache
+from napari.utils.action_manager import action_manager
+from napari.utils.geometry import get_center_bbox
+from napari.utils.history import (
+    get_open_history,
+    get_save_history,
+    update_open_history,
+    update_save_history,
+)
+from napari.utils.io import imsave
+from napari.utils.key_bindings import KeymapHandler
+from napari.utils.misc import in_ipython, in_jupyter
+from napari.utils.naming import CallerFrame
+from napari.utils.notifications import show_info
+
+from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+    from types import FrameType
+
+    from napari_console import QtConsole
+    from npe2.manifest.contributions import WriterContribution
+    from qtpy.QtGui import (
+        QCloseEvent,
+        QDragEnterEvent,
+        QDropEvent,
+        QHideEvent,
+        QKeyEvent,
+        QShowEvent,
+    )
+
+    from napari._qt.layer_controls import QtLayerControlsContainer
+    from napari._vispy.layers.base import VispyBaseLayer
+    from napari.components import ViewerModel
+    from napari.utils.events import Event
+
+_LayerTypeName = Literal[
+    'graph',
+    'image',
+    'labels',
+    'points',
+    'shapes',
+    'surface',
+    'tracks',
+    'vectors',
+]
+
+
+def _npe2_decode_selected_filter(
+    ext_str: str, selected_filter: str, writers: Sequence[WriterContribution]
+) -> WriterContribution | None:
+    """Determine the writer that should be invoked to save data.
+
+    When npe2 can be imported, resolves a selected file extension
+    string into a specific writer. Otherwise, returns None.
+    """
+    # When npe2 is not present, `writers` is expected to be an empty list,
+    # `[]`. This function will return None.
+
+    for entry, writer in zip(
+        ext_str.split(';;'),
+        writers,
+        strict=False,
+    ):
+        if entry.startswith(selected_filter):
+            return writer
+    return None
+
+
+class QtViewer(QSplitter):
+    """Qt view for the napari Viewer model.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    show_welcome_screen : bool, optional
+        Flag to show a welcome message when no layers are present in the
+        canvas. Default is `False`.
+    canvas_class : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
+    tips : Sequence[str] | None, optional
+        Custom welcome-screen tips. By default, the built-in napari tips are
+        used.
+
+    Attributes
+    ----------
+    canvas : napari._vispy.canvas.VispyCanvas
+        The VispyCanvas class providing the Vispy SceneCanvas. Users can also
+        have a custom canvas here.
+    dims : napari.qt_dims.QtDims
+        Dimension sliders; Qt View for Dims model.
+    show_welcome_screen : bool
+        Boolean indicating whether to show the welcome screen.
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    _key_map_handler : napari.utils.key_bindings.KeymapHandler
+        KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped
+    _qt_poll : Optional[napari._qt.experimental.qt_poll.QtPoll]
+        A QtPoll object required for the monitor.
+    _remote_manager : napari.components.experimental.remote.RemoteManager
+        A remote manager processing commands from remote clients and sending out messages when polled.
+    """
+
+    _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
+
+    def __init__(
+        self,
+        viewer: ViewerModel,
+        show_welcome_screen: bool = False,
+        canvas_class: type[VispyCanvas] = VispyCanvas,
+        tips: Sequence[str] | None = None,
+    ) -> None:
+        super().__init__()
+        self._instances.add(self)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+
+        QCoreApplication.setAttribute(
+            Qt.ApplicationAttribute.AA_UseStyleSheetPropagationInWidgetStyles,
+            True,
+        )
+
+        self.viewer = viewer
+        self.dims: QtDims = QtDims(self.viewer.dims)
+        self._controls: QtLayerControlsContainer | None = None
+        self._layers: QtLayerList | None = None
+        self._layersButtons: QtLayerButtons | None = None
+        self._viewerButtons: QtViewerButtons | None = None
+        self._key_map_handler = KeymapHandler()
+        self._key_map_handler.keymap_providers = [self.viewer]
+        self._console_backlog: list[dict[str, Any]] = []
+        self._console: QtConsole | None = None
+
+        self._dockLayerList: QtViewerDockWidget | None = None
+        self._dockLayerControls: QtViewerDockWidget | None = None
+        self._dockConsole: QtViewerDockWidget | None = None
+        self._dockPerformance: QtViewerDockWidget | None = None
+        self._show_welcome_screen = show_welcome_screen
+        self._font_manager = QtFontManager()
+        self._overlay_font = QGuiApplication.font().family()
+
+        main_widget = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 2, 0, 2)
+        main_layout.setSpacing(0)
+
+        # This dictionary holds the corresponding vispy visual for each layer
+        self.canvas: VispyCanvas = canvas_class(
+            viewer=viewer,
+            parent=main_widget,
+            font_manager=self._font_manager,
+            font_family=self._overlay_font,
+            key_map_handler=self._key_map_handler,
+            size=self.viewer.canvas.size,
+            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+        )
+
+        self._welcome_widget = QtWelcomeWidget(
+            self.canvas.native, viewer=self.viewer, tips=tips
+        )
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)
+
+        main_layout.addWidget(self.canvas.native, stretch=1)
+        main_layout.addWidget(self.dims)
+        main_widget.setLayout(main_layout)
+
+        self.setOrientation(Qt.Orientation.Vertical)
+        self.addWidget(main_widget)
+
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+
+        self._on_active_change()
+        self.viewer.layers.events.inserted.connect(self._update_camera_depth)
+        self.viewer.layers.events.removed.connect(self._update_camera_depth)
+        self.viewer.dims.events.ndisplay.connect(self._update_camera_depth)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_change
+        )
+
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
+
+        self.setAcceptDrops(True)
+
+        # Create the experimental QtPool for the monitor.
+        self._qt_poll = _create_qt_poll(self, self.viewer.scene.camera)
+
+        # Create the experimental RemoteManager for the monitor.
+        self._remote_manager = _create_remote_manager(
+            self.viewer.layers, self._qt_poll
+        )
+
+        # bind shortcuts stored in settings last.
+        with get_app_model().register_with_namespace('QtViewer', self):
+            # we overwrite global injection namespace to ensure that correct QtViewer will be provided.
+            self._bind_shortcuts()
+
+        settings = get_settings()
+        self._update_dask_cache_settings(settings.application.dask)
+
+        settings.application.dask.events.connect(
+            self._update_dask_cache_settings
+        )
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
+
+        # set up welcome screen
+        self._set_welcome_visible(False)
+
+    def showEvent(self, event: QShowEvent | None) -> None:
+        super().showEvent(event)
+        self._update_welcome_screen()
+
+    def hideEvent(self, event: QHideEvent | None) -> None:
+        super().hideEvent(event)
+
+    @property
+    def show_welcome_screen(self) -> bool:
+        """bool: Whether to show the welcome screen when there are no layers."""
+        return self._show_welcome_screen
+
+    @show_welcome_screen.setter
+    def show_welcome_screen(self, value: bool) -> None:
+        self._show_welcome_screen = value
+        self._update_welcome_screen()
+
+    @staticmethod
+    def _update_dask_cache_settings(
+        dask_setting: DaskSettings | Event | None = None,
+    ) -> None:
+        """Update dask cache to match settings."""
+        if not dask_setting:
+            return
+        if not isinstance(dask_setting, DaskSettings):
+            dask_setting = get_settings().application.dask
+
+        enabled = dask_setting.enabled
+        size = dask_setting.cache
+        resize_dask_cache(int(int(enabled) * size * 1e9))
+
+    @property
+    def controls(self) -> QtLayerControlsContainer:
+        """Qt view for GUI controls."""
+        if self._controls is None:
+            # Avoid circular import.
+            from napari._qt.layer_controls import QtLayerControlsContainer
+
+            self._controls = QtLayerControlsContainer(self.viewer)
+        return self._controls
+
+    @property
+    def layers(self) -> QtLayerList:
+        """Qt view for LayerList controls."""
+        if self._layers is None:
+            self._layers = QtLayerList(self.viewer.layers)
+        return self._layers
+
+    @property
+    def layerButtons(self) -> QtLayerButtons:
+        """Button controls for napari layers."""
+        if self._layersButtons is None:
+            self._layersButtons = QtLayerButtons(self.viewer)
+        return self._layersButtons
+
+    @property
+    def viewerButtons(self) -> QtViewerButtons:
+        """Button controls for the napari viewer."""
+        if self._viewerButtons is None:
+            self._viewerButtons = QtViewerButtons(self.viewer)
+        return self._viewerButtons
+
+    @property
+    def dockLayerList(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
+        if self._dockLayerList is None:
+            layerList = QWidget()
+            layerList.setObjectName('layerList')
+            layerListLayout = QVBoxLayout()
+            layerListLayout.addWidget(self.layerButtons)
+            layerListLayout.addWidget(self.layers)
+            layerListLayout.addWidget(self.viewerButtons)
+            layerListLayout.setContentsMargins(8, 4, 8, 6)
+            layerList.setLayout(layerListLayout)
+            prev_policy = layerList.sizePolicy()
+            self._dockLayerList = QtViewerDockWidget(
+                self,
+                layerList,
+                name='layer list',
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer list',
+                close_btn=False,
+            )
+            # restore policy to avoid empty space below buttons
+            # See https://github.com/napari/napari/pull/9447
+            layerList.setSizePolicy(prev_policy)
+        return self._dockLayerList
+
+    @property
+    def dockLayerControls(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
+        if self._dockLayerControls is None:
+            self._dockLayerControls = QtViewerDockWidget(
+                self,
+                self.controls,
+                name='layer controls',
+                area='left',
+                allowed_areas=['left', 'right'],
+                object_name='layer controls',
+                close_btn=False,
+            )
+        return self._dockLayerControls
+
+    @property
+    def dockConsole(self) -> QtViewerDockWidget:
+        """QWidget wrapped in a QDockWidget with forwarded viewer events."""
+        if self._dockConsole is None:
+            self._dockConsole = QtViewerDockWidget(
+                self,
+                QWidget(),
+                name='console',
+                area='bottom',
+                allowed_areas=['top', 'bottom'],
+                object_name='console',
+                close_btn=False,
+            )
+            self._dockConsole.setVisible(False)
+            self._dockConsole.visibilityChanged.connect(self._ensure_connect)
+        return self._dockConsole
+
+    @property
+    def dockPerformance(self) -> QtViewerDockWidget | None:
+        if self._dockPerformance is None:
+            self._dockPerformance = self._create_performance_dock_widget()
+        return self._dockPerformance
+
+    @property
+    def layer_to_visual(self) -> dict[Layer, VispyBaseLayer[Layer]]:
+        """Mapping of Napari layer to Vispy layer. Added for backward compatibility"""
+        return self.canvas.layer_to_visual
+
+    def _leave_canvas(self) -> None:
+        """disable status on canvas leave"""
+        self.viewer.status = ''
+        self.viewer.mouse_over_canvas = False
+
+    def _enter_canvas(self) -> None:
+        """enable status on canvas enter"""
+        self.viewer.status = 'Ready'
+        self.viewer.mouse_over_canvas = True
+
+    def _update_welcome_screen(self) -> None:
+        """Update welcome screen display based on layer count."""
+        show_welcome = (
+            self._show_welcome_screen
+            and self.isVisible()
+            and not self.viewer.layers
+        )
+        self._set_welcome_visible(show_welcome)
+
+    def _ensure_connect(self) -> None:
+        # lazy load console
+        id(self.console)
+
+    def _bind_shortcuts(self) -> None:
+        """Bind shortcuts stored in SETTINGS to actions."""
+        for action, shortcuts in get_settings().shortcuts.shortcuts.items():
+            action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, str(shortcut))
+
+    def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
+        """Create the dock widget that shows performance metrics."""
+        if perf.perf_config is not None:
+            return QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+            )
+        return None
+
+    def _weakref_if_possible(self, obj: object) -> ref | object:
+        """Create a weakref to obj.
+
+        Parameters
+        ----------
+        obj : object
+            Cannot create weakrefs to many Python built-in datatypes such as
+            list, dict, str.
+
+            From https://docs.python.org/3/library/weakref.html: "Objects which
+            support weak references include class instances, functions written
+            in Python (but not in C), instance methods, sets, frozensets, some
+            file objects, generators, type objects, sockets, arrays, deques,
+            regular expression pattern objects, and code objects."
+
+        Returns
+        -------
+        weakref or object
+            Returns a weakref if possible.
+        """
+        newref: ref | object
+        try:
+            newref = ref(obj)
+        except TypeError:
+            newref = obj
+        return newref
+
+    def _unwrap_if_weakref(self, value: ref | object) -> object | None:
+        """Return value or if that is weakref the object referenced by value.
+
+        Parameters
+        ----------
+        value : object or weakref
+            No-op for types other than weakref.
+
+        Returns
+        -------
+        unwrapped: object or None
+            Returns referenced object, or None if weakref is dead.
+        """
+        unwrapped = value() if isinstance(value, ref) else value
+        return unwrapped
+
+    def add_to_console_backlog(
+        self, variables: dict | str | list | tuple
+    ) -> None:
+        """Save variables for pushing to console when it is instantiated.
+
+        This function will create weakrefs when possible to avoid holding on to
+        too much memory unnecessarily.
+
+        Parameters
+        ----------
+        variables : dict, str or list/tuple of str
+            The variables to inject into the console's namespace. If a dict, a
+            simple update is done. If a str, the string is assumed to have
+            variable names separated by spaces. A list/tuple of str can also
+            be used to give the variable names. If just the variable names are
+            give (list/tuple/str) then the variable values looked up in the
+            callers frame.
+        """
+        if isinstance(variables, str | list | tuple):
+            vlist: Sequence[str]
+            if isinstance(variables, str):
+                vlist = variables.split()
+            else:
+                vlist = variables
+            vdict = {}
+            cf = sys._getframe(2)
+            for name in vlist:
+                try:
+                    vdict[name] = eval(name, cf.f_globals, cf.f_locals)
+                except NameError:
+                    logging.getLogger('napari').warning(
+                        'Could not get variable %s from %s',
+                        name,
+                        cf.f_code.co_name,
+                    )
+        elif isinstance(variables, dict):
+            vdict = variables
+        else:
+            raise TypeError('variables must be a dict/str/list/tuple')
+        # weakly reference values if possible
+        new_dict = {k: self._weakref_if_possible(v) for k, v in vdict.items()}
+        self.console_backlog.append(new_dict)
+
+    @property
+    def console_backlog(self) -> list[dict[str, Any]]:
+        """List: items to push to console when instantiated."""
+        return self._console_backlog
+
+    def _get_console(self) -> QtConsole | None:
+        """Function to setup console.
+
+        Returns
+        -------
+        console : QtConsole or None
+            The napari console.
+
+        Notes
+        _____
+        _get_console extracted to separate function to simplify testing.
+
+        """
+        try:
+            import numpy as np
+
+            # QtConsole imports debugpy that overwrites default breakpoint.
+            # It makes problems with debugging if you do not know this.
+            # So we do not want to overwrite it if it is already set.
+            breakpoint_handler = sys.breakpointhook
+            from napari_console import QtConsole
+
+            sys.breakpointhook = breakpoint_handler
+
+            import napari
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
+                console = QtConsole(self.viewer, style_sheet=self.styleSheet())
+                # Override actions shortcuts that collide with default napari shortcuts
+                # See napari/napari#8183
+                console.print_action.setShortcut('')
+                console.push(
+                    {'napari': napari, 'action_manager': action_manager}
+                )
+                with CallerFrame(_in_napari) as c:
+                    if (
+                        c.frame is not None
+                        and c.frame.f_globals.get('__name__', '') == '__main__'
+                    ):
+                        console.push({'np': np})
+                for i in self.console_backlog:
+                    # recover weak refs
+                    console.push(
+                        {
+                            k: self._unwrap_if_weakref(v)
+                            for k, v in i.items()
+                            if self._unwrap_if_weakref(v) is not None
+                        }
+                    )
+                return console
+        except ModuleNotFoundError:
+            warnings.warn(
+                'napari-console not found. It can be installed with'
+                ' "pip install napari_console"',
+                stacklevel=1,
+            )
+            return None
+        except ImportError:
+            traceback.print_exc()
+            warnings.warn(
+                'error importing napari-console. See console for full error.',
+                stacklevel=1,
+            )
+            return None
+
+    @property
+    def console(self) -> QtConsole | None:
+        """QtConsole: iPython console terminal integrated into the napari GUI."""
+        if self._console is None:
+            self.console = self._get_console()
+            self._console_backlog = []
+        return self._console
+
+    @console.setter
+    def console(self, console: QtConsole | None) -> None:
+        self._console = console
+        if console is not None:
+            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
+            console.setParent(self.dockConsole)
+
+    @ensure_main_thread
+    def _on_slice_ready(self, event: Event) -> None:
+        """Callback connected to `viewer._layer_slicer.events.ready`.
+
+        Provides updates after slicing using the slice response data.
+        This only gets triggered on the async slicing path.
+        """
+        responses: dict[weakref.ReferenceType[Layer], Any] = event.value
+        logging.getLogger('napari').debug(
+            'QtViewer._on_slice_ready: %s', responses
+        )
+        for weak_layer, response in responses.items():
+            if layer := weak_layer():
+                # Update the layer slice state to temporarily support behavior
+                # that depends on it.
+                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
+                # Update the layer's loaded state before everything else,
+                # because they may rely on its updated value.
+                layer._slicing_state._update_loaded_slice_id(
+                    response.request_id
+                )
+                # The rest of `Layer.refresh` after `set_view_slice`, where
+                # `set_data` notifies the corresponding vispy layer of the new
+                # slice.
+                layer.events.set_data()
+                layer._refresh_sync(
+                    data_displayed=False,
+                    thumbnail=True,
+                    highlight=True,
+                    extent=True,
+                )
+
+    def _on_active_change(self) -> None:
+        """When active layer changes change keymap handler."""
+        self._key_map_handler.keymap_providers = (
+            [self.viewer]
+            if self.viewer.layers.selection.active is None
+            else [self.viewer.layers.selection.active, self.viewer]
+        )
+
+    def _on_add_layer_change(self, event: Event) -> None:
+        """When a layer is added, set its parent and order.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        layer = event.value
+        self._add_layer(layer)
+
+    def _update_camera_depth(self) -> None:
+        """When the layer extents change, update the camera depth.
+
+        The camera depth is the difference between the near clipping plane
+        and the far clipping plane in a scene. If they are set too high
+        relative to the actual depth of a scene, precision issues can arise
+        in the depth of objects in the scene, with objects at the back
+        seeming to pop to the front.
+
+        See: https://github.com/napari/napari/issues/2138
+        """
+        if self.viewer.dims.ndisplay == 2:
+            # don't bother updating 3D camera if we're not using it
+            return
+        # otherwise, set depth to diameter of displayed dimensions
+        extent = self.viewer.layers.extent
+        # we add a step because the difference is *right* at the point
+        # coordinates, not accounting for voxel size:
+        # >>> viewer.add_image(np.random.random((2, 3, 4, 5)))
+        # >>> viewer.layers.extent
+        # Extent(
+        #     data=None,
+        #     world=array([[0., 0., 0., 0.],
+        #                  [1., 2., 3., 4.]]),
+        #     step=array([1., 1., 1., 1.]),
+        # )
+        extent_all = extent.world[1] - extent.world[0] + extent.step
+        extent_displayed = extent_all[list(self.viewer.dims.displayed)]
+        diameter = np.linalg.norm(extent_displayed)
+        # Use 128x the diameter to avoid aggressive near- and far-plane
+        # clipping in perspective projection, while still preserving enough
+        # bit depth in the depth buffer to avoid artifacts. See discussion at:
+        # https://github.com/napari/napari/pull/7529#issuecomment-2594203871
+        #
+        # If depth_value becomes too large, the projection matrix entry
+        # M[2,2] = -(f+n)/(f-n) rounds to exactly -1.0 in float32
+        # (vispy builds the frustum in float32), making the far-plane
+        # inverse singular and breaking volume raycasting (renders black).
+        # Vispy sets far/near = depth_value * 10, so we cap at
+        # depth_value < 2 / (10 * float32_eps). See
+        # https://github.com/vispy/vispy/blob/0a6da357/vispy/scene/cameras/perspective.py#L322
+        max_depth = 2.0 / (10.0 * np.finfo(np.float32).eps)
+        for camera in [self.canvas.camera] + self.canvas.grid_cameras:
+            camera._3D_camera.depth_value = min(128 * diameter, max_depth)
+
+    def _add_layer(self, layer: Layer) -> None:
+        """When a layer is added, set its parent and order.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            Layer to be added.
+        """
+        vispy_layer = create_vispy_layer(
+            layer, font_info=self.canvas.font_info()
+        )
+
+        # QtPoll is experimental.
+        if self._qt_poll is not None:
+            # QtPoll will call VipyBaseImage._on_poll() when the camera
+            # moves or the timer goes off.
+            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
+
+            # In the other direction, some visuals need to tell QtPoll to
+            # start polling. When they receive new data they need to be
+            # polled to load it, even if the camera is not moving.
+            if vispy_layer.events is not None:
+                vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
+
+        self.canvas.add_layer_visual_mapping(layer, vispy_layer)
+
+    def _remove_invalid_chars(self, selected_layer_name: str) -> str:
+        """Removes invalid characters from selected layer name to suggest a filename.
+
+        Parameters
+        ----------
+        selected_layer_name : str
+            The selected napari layer name.
+
+        Returns
+        -------
+        suggested_name : str
+            Suggested name from input selected layer name, without invalid characters.
+        """
+        unprintable_ascii_chars = (
+            '\x00',
+            '\x01',
+            '\x02',
+            '\x03',
+            '\x04',
+            '\x05',
+            '\x06',
+            '\x07',
+            '\x08',
+            '\x0e',
+            '\x0f',
+            '\x10',
+            '\x11',
+            '\x12',
+            '\x13',
+            '\x14',
+            '\x15',
+            '\x16',
+            '\x17',
+            '\x18',
+            '\x19',
+            '\x1a',
+            '\x1b',
+            '\x1c',
+            '\x1d',
+            '\x1e',
+            '\x1f',
+            '\x7f',
+        )
+        invalid_characters = (
+            ''.join(unprintable_ascii_chars)
+            + '/'
+            + '\\'  # invalid Windows filename character
+            + ':*?"<>|\t\n\r\x0b\x0c'  # invalid Windows path characters
+        )
+        translation_table = dict.fromkeys(map(ord, invalid_characters), None)
+        # Remove invalid characters
+        suggested_name = selected_layer_name.translate(translation_table)
+        return suggested_name
+
+    def _save_layers_dialog(self, selected: bool = False) -> None:
+        """Save layers (all or selected) to disk, using ``LayerList.save()``.
+
+        Parameters
+        ----------
+        selected : bool
+            If True, only layers that are selected in the viewer will be saved.
+            By default, all layers are saved.
+        """
+        msg = ''
+        if not len(self.viewer.layers):
+            msg = 'There are no layers in the viewer to save'
+        elif selected and not len(self.viewer.layers.selection):
+            msg = (
+                'Please select one or more layers to save,'
+                '\nor use "Save all layers..."'
+            )
+        if msg:
+            raise OSError('Nothing to save')
+
+        # prepare list of extensions for drop down menu.
+        ext_str, writers = _npe2.file_extensions_string_for_layers(
+            list(self.viewer.layers.selection)
+            if selected
+            else self.viewer.layers
+        )
+
+        msg = 'selected' if selected else 'all'
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+        # get the layer's name to use for a default name if only one layer is selected
+        selected_layer_name = ''
+        if self.viewer.layers.selection.active is not None:
+            selected_layer_name = self.viewer.layers.selection.active.name
+            selected_layer_name = self._remove_invalid_chars(
+                selected_layer_name
+            )
+        filename, selected_filter = dlg.getSaveFileName(
+            self,  # parent
+            f'Save {msg} layers',  # caption
+            # home dir by default if selected all, home dir and file name if only 1 layer
+            str(
+                Path(hist[0]) / selected_layer_name
+            ),  # directory in PyQt, dir in PySide
+            filter=ext_str,
+            options=(
+                QFileDialog.Option.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Option(0)
+            ),
+        )
+        logging.getLogger('napari').debug(
+            'QFileDialog - filename: %s selected_filter: %s',
+            filename or None,
+            selected_filter or None,
+        )
+
+        if filename:
+            writer = (
+                _npe2_decode_selected_filter(ext_str, selected_filter, writers)
+                if ext_str
+                else None
+            )
+            with warnings.catch_warnings(record=True) as wa:
+                saved = self.viewer.layers.save(
+                    filename, selected=selected, _writer=writer
+                )
+                logging.getLogger('napari').debug('Saved %s', saved)
+                error_messages = '\n'.join(
+                    str(x.message.args[0])
+                    if isinstance(x.message, Warning)
+                    else str(x.message)
+                    for x in wa
+                )
+
+            if not saved:
+                raise OSError(
+                    f'File {filename} save failed.\n{error_messages}'
+                )
+
+            update_save_history(saved[0])
+
+    def screenshot(
+        self,
+        path: str | Path | None = None,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
+        """Take currently displayed screen and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = QImg2array(
+            self._screenshot(
+                flash=flash,
+                size=size,
+                scale=scale,
+                fit_to_data_extent=fit_to_data_extent,
+            )
+        )
+        if path is not None:
+            imsave(str(path), img)
+        return img
+
+    def _screenshot(
+        self,
+        flash: bool = True,
+        size: tuple[int, int] | None = None,
+        scale: float = 1.0,
+        fit_to_data_extent: bool = False,
+    ) -> QImage:
+        """Take currently displayed screen and convert to an image array.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        size : tuple[int, int]
+            Size (resolution height x width) of the screenshot.
+        scale : float
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, the currently displayed resolution.
+        fit_to_data_extent: bool
+            Tightly fit the canvas around the data to prevent margins from
+            showing in the screenshot. If False, a screenshot of the currently
+            visible canvas will be generated.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+
+        if size is not None and len(size) != 2:
+            raise ValueError(
+                f'screenshot size must be 2 values, got {len(size)}'
+            )
+
+        try:
+            self.viewer._layer_slicer.wait_until_idle(timeout=5)
+        except TimeoutError as e:  # pragma: no cover
+            raise TimeoutError(
+                'Slicing was too slow. Wait for all layers to load before taking a screenshot, '
+                'or disable async slicing in Preferences->Experimental.'
+            ) from e
+
+        if fit_to_data_extent:
+            # Use the same scene parameter calculations as in viewer_model.fit_to_view
+            ndisplay = self.viewer.dims.ndisplay
+            extent, scene_size, _ = self.viewer._get_scene_parameters()
+            extent_scale = min(self.viewer.layers.extent.step[-ndisplay:])
+
+            if ndisplay == 3:
+                scene_size = self.viewer._calculate_bounding_box(
+                    extent=extent,
+                    view_direction=self.viewer.scene.camera.view_direction,
+                    up_direction=self.viewer.scene.camera.up_direction,
+                )
+
+            # adjust size by the scale, to return the size in real pixels
+            grid_shape = self.viewer.canvas.grid.actual_shape(
+                self.viewer.layers
+            )
+            size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
+
+        with self.resize_canvas(size, scale):
+            if fit_to_data_extent:
+                self.viewer.fit_to_view(margin=0)
+            if self._welcome_widget.isVisible():
+                img = self.canvas.native.grab().toImage()
+            else:
+                img = self.canvas.screenshot()
+            if flash:
+                from napari._qt.utils import add_flash_animation
+
+                add_flash_animation(self)
+
+            return img
+
+    @contextlib.contextmanager
+    def resize_canvas(
+        self, size: tuple[int, int] | None, scale: float
+    ) -> Iterator[None]:
+        """Temporarily, safely, resize the canvas
+
+        Parameters
+        ----------
+        size: (int, int)
+            New canvas size in pixels. Often calculated based on data size.
+        scale: float
+            Scale factor to modify final canvas size.
+        """
+        canvas = self.canvas
+        prev_size = canvas.size
+        camera = self.viewer.scene.camera
+        old_center = camera.center
+        old_zoom = camera.zoom
+        if size is not None:
+            size_arr = np.asarray(size) / self.devicePixelRatio()
+        else:
+            size_arr = np.asarray(prev_size)
+        size_arr = (size_arr * scale).astype(np.int64)
+        canvas.size = tuple(size_arr)
+        try:
+            yield
+        finally:
+            canvas.size = prev_size
+            camera.center = old_center
+            camera.zoom = old_zoom
+
+    def clipboard(self, flash: bool = True) -> None:
+        """Take a screenshot of the currently displayed screen and copy the
+        image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        cb = QGuiApplication.clipboard()
+        if cb is None:
+            return
+        cb.setImage(self._screenshot(flash))
+
+    def _screenshot_dialog(self) -> None:
+        """Save screenshot of current display, default .png"""
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self, hist[0], hist)
+        if dial.exec():
+            update_save_history(dial.selectedFiles()[0])
+
+    def _open_file_dialog_uni(self, caption: str) -> list[str]:
+        """
+        Open dialog to get list of files from user
+        """
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+
+        open_kwargs: dict[str, Any] = {
+            'parent': self,
+            'caption': caption,
+        }
+        if 'pyside' in QFileDialog.__module__.lower():
+            # PySide6
+            open_kwargs['dir'] = hist[0]
+        else:
+            open_kwargs['directory'] = hist[0]
+
+        if in_ipython():
+            open_kwargs['options'] = QFileDialog.Option.DontUseNativeDialog
+
+        return dlg.getOpenFileNames(**open_kwargs)[0]
+
+    def _open_files_dialog(
+        self, choose_plugin: bool = False, stack: bool = False
+    ) -> None:
+        """Add files from the menubar."""
+        filenames = self._open_file_dialog_uni('Select file(s)...')
+
+        if filenames:
+            self._qt_open(filenames, choose_plugin=choose_plugin, stack=stack)
+            update_open_history(filenames[0])
+
+    def _open_files_dialog_as_stack_dialog(
+        self, choose_plugin: bool = False
+    ) -> None:
+        """Add files as a stack, from the menubar."""
+        return self._open_files_dialog(choose_plugin=choose_plugin, stack=True)
+
+    def _open_folder_dialog(self, choose_plugin: bool = False) -> None:
+        """Add a folder of files from the menubar."""
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+
+        folder = dlg.getExistingDirectory(
+            self,
+            'Select folder...',
+            hist[0],  # home dir by default
+            (
+                QFileDialog.Option.DontUseNativeDialog
+                if in_ipython()
+                else QFileDialog.Option(0)
+            ),
+        )
+
+        if folder not in {'', None}:
+            self._qt_open([folder], stack=False, choose_plugin=choose_plugin)
+            update_open_history(folder)
+
+    def _qt_open(
+        self,
+        filenames: list[str],
+        stack: bool | list[list[str | Path]],
+        choose_plugin: bool = False,
+        plugin: str | None = None,
+        layer_type: _LayerTypeName | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Open files, potentially popping reader dialog for plugin selection.
+
+        Call ViewerModel.open and catch errors that could
+        be fixed by user making a plugin choice.
+
+        Parameters
+        ----------
+        filenames : List[str]
+            paths to open
+        choose_plugin : bool
+            True if user wants to explicitly choose the plugin else False
+        stack : bool or list[list[str]]
+            whether to stack files or not. Can also be a list containing
+            files to stack.
+        plugin : str
+            plugin to use for reading
+        layer_type : str
+            layer type for opened layers
+        """
+        if choose_plugin:
+            handle_gui_reading(
+                filenames, self, stack, plugin_override=choose_plugin, **kwargs
+            )
+            return
+
+        try:
+            self.viewer.open(
+                filenames,
+                stack=stack,
+                plugin=plugin,
+                layer_type=layer_type,
+                **kwargs,
+            )
+        except ReaderPluginError as e:
+            handle_gui_reading(
+                filenames,
+                self,
+                stack,
+                e.reader_plugin,
+                e,
+                layer_type=layer_type,
+                **kwargs,
+            )
+        except MultipleReaderError:
+            handle_gui_reading(filenames, self, stack, **kwargs)
+
+    def toggle_console_visibility(self, event: Event | None = None) -> None:
+        """Toggle console visible and not visible.
+
+        Imports the console the first time it is requested.
+        """
+        if in_ipython() or in_jupyter():
+            return
+
+        # force instantiation of console if not already instantiated
+        _ = self.console
+
+        viz = not self.dockConsole.isVisible()
+        # modulate visibility at the dock widget level as console is dockable
+        self.dockConsole.setVisible(viz)
+        if self.dockConsole.isFloating():
+            self.dockConsole.setFloating(True)
+
+        if viz:
+            self.dockConsole.raise_()
+            self.dockConsole.setFocus()
+
+        self.viewerButtons.consoleButton.setProperty(
+            'expanded', self.dockConsole.isVisible()
+        )
+        self.viewerButtons.consoleButton.style().unpolish(
+            self.viewerButtons.consoleButton
+        )
+        self.viewerButtons.consoleButton.style().polish(
+            self.viewerButtons.consoleButton
+        )
+
+    def set_welcome_tips(self, tips: Sequence[str] | None) -> None:
+        """Replace the welcome screen tip pool."""
+        self._welcome_widget.set_tips(tips)
+
+    def _set_welcome_visible(self, visible: bool) -> None:
+        """Directly show or hide the welcome screen widget.
+
+        Unlike the ``show_welcome_screen`` property setter, this method does
+        not modify the ``_show_welcome_screen`` preference and bypasses the
+        layer-count / visibility guards in ``_update_welcome_screen``.
+        """
+        self._welcome_widget.set_welcome_visible(visible)
+
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:
+        """Called whenever a key is pressed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        if event is None:
+            return
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_press, event
+        )
+        event.accept()
+
+    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:
+        """Called whenever a key is released.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        if event is None:
+            return
+        self.canvas._scene_canvas._backend._keyEvent(
+            self.canvas._scene_canvas.events.key_release, event
+        )
+        event.accept()
+
+    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:
+        """Ignore event if not dragging & dropping a file or URL to open.
+
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDragEvent
+            Event from the Qt context.
+        """
+        if event is None:
+            return
+        mime = event.mimeData()
+        if mime is not None and mime.hasUrls():
+            self._set_drag_status()
+            event.accept()
+        else:
+            event.ignore()
+
+    def _set_drag_status(self) -> None:
+        """Set dedicated status message when dragging files into viewer"""
+        self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+
+    def _image_from_clipboard(self) -> None:
+        """Insert image from clipboard as a new layer if clipboard contains an image or link."""
+        cb = QGuiApplication.clipboard()
+        if cb is None:
+            return
+        mime = cb.mimeData()
+        if mime is None:
+            return
+        if mime.hasImage():
+            image = cb.image()
+            if image.isNull():
+                return
+            arr = QImg2array(image)
+            self.viewer.add_image(arr)
+            return
+        if mime.hasUrls():
+            show_info('No image in clipboard, trying to open link instead.')
+            self._open_from_list_of_urls_data(
+                mime.urls(), stack=False, choose_plugin=False
+            )
+            return
+        if mime.hasText():
+            show_info(
+                'No image in clipboard, trying to parse text in clipboard as a link.'
+            )
+            url_list = []
+            for line in mime.text().split('\n'):
+                url = QUrl(line.strip())
+                if url.isEmpty():
+                    continue
+                if url.scheme() == '':
+                    url.setScheme('file')
+                if url.isLocalFile() and not Path(url.toLocalFile()).exists():
+                    break
+                url_list.append(url)
+            else:
+                self._open_from_list_of_urls_data(
+                    url_list, stack=False, choose_plugin=False
+                )
+                return
+        show_info('No image or link in clipboard.')
+
+    def dropEvent(self, event: QDropEvent | None) -> None:
+        """Add local files and web URLS with drag and drop.
+
+        For each file, attempt to open with existing associated reader
+        (if available). If no reader is associated or opening fails,
+        and more than one reader is available, open dialog and ask
+        user to choose among available readers. User can choose to persist
+        this choice.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDropEvent
+            Event from the Qt context.
+        """
+        if event is None:
+            return
+        shift_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.ShiftModifier
+        )
+        alt_down = (
+            QGuiApplication.keyboardModifiers()
+            & Qt.KeyboardModifier.AltModifier
+        )
+        mime = event.mimeData()
+        if mime is None:
+            return
+        self._open_from_list_of_urls_data(
+            mime.urls(),
+            stack=bool(shift_down),
+            choose_plugin=bool(alt_down),
+        )
+
+    def _open_from_list_of_urls_data(
+        self, urls_list: list[QUrl], stack: bool, choose_plugin: bool
+    ) -> None:
+        filenames = []
+        for url in urls_list:
+            if url.isLocalFile():
+                # directories get a trailing "/", Path conversion removes it
+                filenames.append(str(Path(url.toLocalFile())))
+            else:
+                filenames.append(url.toString())
+
+        self._qt_open(
+            filenames,
+            stack=stack,
+            choose_plugin=choose_plugin,
+        )
+
+    def closeEvent(self, event: QCloseEvent | None) -> None:
+        """Cleanup and close.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QCloseEvent
+            Event from the Qt context.
+        """
+        if self._layers is not None:
+            # do not create layerlist if it does not exist yet.
+            self.layers.close()
+
+        # if the viewer.QtDims object is playing an axis, we need to terminate
+        # the AnimationThread before close, otherwise it will cause a segFault
+        # or Abort trap. (calling stop() when no animation is occurring is also
+        # not a problem)
+        self.dims.stop()
+        self.canvas.delete()
+        if self._console is not None:
+            self._console.close()
+        self.dockConsole.deleteLater()
+        if event is not None:
+            event.accept()
+
+    def export_rois(
+        self,
+        rois: list[np.ndarray],
+        paths: str | Path | list[str | Path] | None = None,
+        scale: float = 1.0,
+    ) -> list[np.ndarray]:
+        """Export the given rectangular rois to specified file paths.
+
+        For each shape, moves the camera to the center of the shape
+        and adjust the canvas size to fit the shape.
+        Note: The shape height and width can be of type float.
+        However, the canvas size only accepts a tuple of integers.
+        This can result in slight misalignment.
+
+        Parameters
+        ----------
+        rois: list[np.ndarray]
+            A list of arrays  with each being of shape (4, 2) representing
+            a rectangular roi.
+        paths: str, Path, list[str, Path], optional
+            Where to save the rois. If a string or a Path, a directory will
+            be created if it does not exist yet and screenshots will be
+            saved with filename `roi_{n}.png` where n is the nth roi. If
+            paths is a list of either string or paths, these need to be the
+            full paths of where to store each individual roi. In this case
+            the length of the list and the number of rois must match.
+            If None, the screenshots will only be returned and not saved
+            to disk.
+        scale: float, optional
+            Scale factor used to increase resolution of canvas for the screenshot.
+            By default, uses the displayed scale.
+
+        Returns
+        -------
+        screenshot_list: list
+            The list with roi screenshots.
+
+        """
+        if any(roi.shape[-2:] != (4, 2) for roi in rois):
+            raise ValueError(
+                'ROI found with invalid shape, all rois must have shape (4, 2), i.e. have 4 corners defined in 2 '
+                'dimensions. 3D is not supported.'
+            )
+        if (
+            paths is not None
+            and isinstance(paths, list)
+            and len(paths) != len(rois)
+        ):
+            raise ValueError(
+                'The number of file paths does not match the number of ROI shapes'
+            )
+
+        if isinstance(paths, str | Path):
+            storage_dir = Path(paths).expanduser()
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            paths = [storage_dir / f'roi_{n}.png' for n in range(len(rois))]
+
+        if self.viewer.dims.ndisplay > 2:
+            raise NotImplementedError(
+                "'export_rois' is not implemented for 3D view."
+            )
+
+        screenshot_list = []
+        camera = self.viewer.scene.camera
+        start_camera_center = camera.center
+        start_camera_zoom = camera.zoom
+        canvas = self.canvas
+        prev_size = canvas.size
+
+        visible_dims = list(self.viewer.dims.displayed)
+        step = min(self.viewer.layers.extent.step[visible_dims])
+
+        for index, roi in enumerate(rois):
+            center_coord, height, width = get_center_bbox(roi)
+            camera.center = (float(center_coord[0]), float(center_coord[1]))
+            canvas.size = (int(height / step), int(width / step))
+
+            camera.zoom = 1 / step
+            path = paths[index] if paths is not None else None
+            screenshot_list.append(
+                self.screenshot(path=path, scale=scale, flash=False)
+            )
+
+        canvas.size = prev_size
+        camera.center = start_camera_center
+        camera.zoom = start_camera_zoom
+
+        return screenshot_list
+
+    def export_figure(
+        self,
+        path: str | None = None,
+        scale: float = 1,
+        flash: bool = True,
+    ) -> np.ndarray:
+        """Export an image of the full extent of the displayed layer data.
+
+        This function finds a tight boundary around the data, resets the view
+        around that boundary (and, when scale=1, such that 1 captured pixel is
+        equivalent to one data pixel), takes a screenshot, then restores the
+        previous zoom and canvas sizes.
+
+        Parameters
+        ----------
+        path : str, optional
+            Filename for saving screenshot image.
+        scale : float
+            Scale factor used to increase resolution of canvas for the
+            screenshot. By default, a scale of 1.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        if not isinstance(scale, float | int):
+            raise TypeError('Scale must be a float or an int.')
+
+        img = QImg2array(
+            self._screenshot(
+                scale=scale,
+                flash=flash,
+                fit_to_data_extent=True,
+            )
+        )
+        if path is not None:
+            imsave(path, img)
+        return img
+
+
+if TYPE_CHECKING:
+    from napari._qt.experimental.qt_poll import QtPoll
+    from napari.components.experimental.remote import RemoteManager
+
+
+def _create_qt_poll(parent: QObject, camera: Camera) -> QtPoll | None:
+    """Create and return a QtPoll instance, if needed.
+
+    Create a QtPoll instance for the monitor.
+
+    Monitor needs QtPoll to poll for incoming messages. This might be
+    temporary until we can process incoming messages with a dedicated
+    thread.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent Qt object.
+    camera : Camera
+        Camera that the QtPoll object will listen to.
+
+    Returns
+    -------
+    Optional[QtPoll]
+        The new QtPoll instance, if we need one.
+    """
+    if not config.monitor:
+        return None
+
+    from napari._qt.experimental.qt_poll import QtPoll
+
+    qt_poll = QtPoll(parent)
+    camera.events.connect(qt_poll.on_camera)
+    return qt_poll
+
+
+def _create_remote_manager(
+    layers: LayerList, qt_poll: QtPoll | None
+) -> RemoteManager | None:
+    """Create and return a RemoteManager instance, if we need one.
+
+    Parameters
+    ----------
+    layers : LayersList
+        The viewer's layers.
+    qt_poll : QtPoll
+        The viewer's QtPoll instance.
+    """
+    if not config.monitor:
+        return None  # Not using the monitor at all
+
+    from napari.components.experimental.monitor import monitor
+    from napari.components.experimental.remote import RemoteManager
+
+    # Start the monitor so we can access its events. The monitor has no
+    # dependencies to napari except to utils.Event.
+    started = monitor.start()
+
+    if not started:
+        return None  # Probably not >= Python 3.9, so no manager is needed.
+
+    # Create the remote manager and have monitor call its process_command()
+    # method to execute commands from clients.
+    manager = RemoteManager(layers)
+
+    # RemoteManager will process incoming command from the monitor.
+    monitor.run_command_event.connect(manager.process_command)
+
+    # QtPoll should pool the RemoteManager and the Monitor.
+    # config.monitor is True here, so qt_poll was created by the caller.
+    assert qt_poll is not None
+    qt_poll.events.poll.connect(manager.on_poll)
+    qt_poll.events.poll.connect(monitor.on_poll)
+
+    return manager
+
+
+def _in_napari(n: int, frame: FrameType) -> bool:
+    """
+    Determines whether we are in napari by looking at:
+        1) the frames modules names:
+        2) the min_depth
+    """
+    if n < 2:
+        return True
+    # in-n-out is used in napari for dependency injection.
+    for pref in {'napari.', 'in_n_out.'}:
+        if frame.f_globals.get('__name__', '').startswith(pref):
+            return True
+    return False

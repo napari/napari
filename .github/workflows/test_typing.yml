@@ -1,19 +1,25 @@
-name: Test typing
+name: Type-check
 
 on:
   pull_request:
     branches:
       - main
 
+concurrency:
+  group: typing-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  typing:
+  mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.11"
-          cache-dependency-path: setup.cfg
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+          cache-dependency-path: pyproject.toml
       - name: Install tox
         run: |
           pip install tox

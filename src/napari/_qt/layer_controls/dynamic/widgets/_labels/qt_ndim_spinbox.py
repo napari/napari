@@ -1,0 +1,92 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QSpinBox,
+    QWidget,
+)
+
+from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+    QtWrappedLabel,
+)
+from napari._qt.utils import qt_signals_blocked
+
+if TYPE_CHECKING:
+    from napari.layers import Labels
+
+
+class QtNdimSpinBoxControl(QtWidgetControlsBase):
+    """
+    Class that wraps the connection of events/signals between the layer number of
+    editable dimensions attribute and Qt widgets.
+
+    Parameters
+    ----------
+    parent: qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as widgets parent
+    layers : list[napari.layers.Labels]
+        A list of napari Labels layers.
+
+    Attributes
+    ----------
+    ndim_spinbox : qtpy.QtWidgets.QSpinBox
+        Spinbox to control the number of editable dimensions of label layer.
+    ndim_spinbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the number of editable dimensions chooser widget.
+    """
+
+    _layers: list[Labels]
+
+    def __init__(
+        self, layers: list[Labels], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
+        # Setup layer
+        for layer in self._layers:
+            layer.events.n_edit_dimensions.connect(
+                self._on_n_edit_dimensions_change
+            )
+            layer.events.data.connect(self._on_data_change)
+
+        # Setup widgets
+        ndim_sb = QSpinBox()
+        self.ndim_spinbox = ndim_sb
+        ndim_sb.setToolTip('Number of dimensions for label editing')
+        ndim_sb.valueChanged.connect(self.change_n_edit_dim)
+        ndim_sb.setMinimum(2)
+        ndim_sb.setMaximum(self._layers[0].ndim)
+        ndim_sb.setSingleStep(1)
+        ndim_sb.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._on_n_edit_dimensions_change()
+
+        self.ndim_spinbox_label = QtWrappedLabel('n edit dim:')
+
+    def change_n_edit_dim(self, value: int) -> None:
+        """Change the number of editable dimensions of label layer.
+        Parameters
+        ----------
+        value : int
+            The number of editable dimensions to set.
+        """
+        for layer in self._layers:
+            layer.n_edit_dimensions = value
+        self.ndim_spinbox.clearFocus()
+
+        # TODO: Check how to decouple this
+        if (p := self.parent()) is not None:
+            p.setFocus()
+
+    def _on_n_edit_dimensions_change(self) -> None:
+        """Receive layer model n-dim mode change event and update the checkbox."""
+        with qt_signals_blocked(self.ndim_spinbox):
+            value = self._layers[0].n_edit_dimensions
+            self.ndim_spinbox.setValue(int(value))
+
+    def _on_data_change(self) -> None:
+        self.ndim_spinbox.setMaximum(self._layers[0].ndim)
+
+    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+        return [(self.ndim_spinbox_label, self.ndim_spinbox)]

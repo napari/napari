@@ -5,7 +5,7 @@ Add points with features
 Display a points layer on top of an image layer using the ``add_points`` and
 ``add_image`` APIs
 
-.. tags:: visualization-basic
+.. tags:: visualization-basic, features-table
 """
 
 import numpy as np
@@ -15,7 +15,8 @@ from skimage.color import rgb2gray
 import napari
 
 # add the image
-viewer = napari.view_image(rgb2gray(data.astronaut()))
+viewer = napari.Viewer()
+layer = viewer.add_image(rgb2gray(data.astronaut()))
 # add the points
 points = np.array([[100, 100], [200, 200], [333, 111]])
 
@@ -29,22 +30,22 @@ features = {
 face_color_cycle = ['blue', 'green']
 
 # create a points layer where the face_color is set by the good_point feature
-# and the edge_color is set via a color map (grayscale) on the confidence
+# and the border_color is set via a color map (grayscale) on the confidence
 # feature.
 points_layer = viewer.add_points(
     points,
     features=features,
     size=20,
-    edge_width=7,
-    edge_width_is_relative=False,
-    edge_color='confidence',
-    edge_colormap='gray',
+    border_width=7,
+    border_width_is_relative=False,
+    border_color='confidence',
+    border_colormap='gray',
     face_color='good_point',
     face_color_cycle=face_color_cycle
 )
 
-# set the edge_color mode to colormap
-points_layer.edge_color_mode = 'colormap'
+# set the border_color mode to colormap
+points_layer.border_color_mode = 'colormap'
 
 
 # bind a function to toggle the good_point annotation of the selected points

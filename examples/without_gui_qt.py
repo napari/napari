@@ -16,7 +16,8 @@ from skimage import data
 
 import napari
 
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 
 # You can do anything you would normally do with the viewer object
 # like take a
@@ -35,6 +36,6 @@ if __name__ == '__main__':
     # the viewer object.  For example, add click the buttons to add various layer
     # types when the window is open and see the result below:
 
-    print("Your viewer has the following layers:")
+    print('Your viewer has the following layers:')
     for name, n in Counter(type(x).__name__ for x in viewer.layers).most_common():
-        print(f"   {name:<7}: {n}")
+        print(f'   {name:<7}: {n}')

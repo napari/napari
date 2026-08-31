@@ -19,9 +19,24 @@ viewer.add_image(
     name=('membrane', 'nuclei'),
     channel_axis=1,
     scale=(0.29, 0.26, 0.26),
+    units='um',
 )
-viewer.scale_bar.visible = True
-viewer.scale_bar.unit = "um"
+viewer.canvas.overlays.scale_bar.visible = True
+
+# Text options
+viewer.canvas.overlays.scale_bar.length = 23  # length, in units, of the scale bar
+viewer.canvas.overlays.scale_bar.font_size = 20  # default is 10
+
+# Text color
+viewer.canvas.overlays.scale_bar.colored = True  # default value is False
+viewer.canvas.overlays.scale_bar.color = 'yellow'  # default value is magenta: (1,0,1,1)
+
+# Background box
+viewer.canvas.overlays.scale_bar.box = True  # add background box, default is False
+viewer.canvas.overlays.scale_bar.box_color = (0, 1, 1, 0.2)  # cyan with alpha=0.2
+
+# Scale bar position
+viewer.canvas.overlays.scale_bar.position = 'bottom_left'  # default is 'bottom_right'
 
 if __name__ == '__main__':
     napari.run()

@@ -1,0 +1,197 @@
+"""MutableMapping that emits events when altered."""
+
+from typing import TYPE_CHECKING
+
+from psygnal import EmissionInfo, EventedModel as PsygnalModel
+
+from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
+from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.types import SupportsEvents
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
+
+class EventedDict(TypedMutableMapping[_K, _T]):
+    """Mutable dictionary that emits events when altered.
+
+    This class is designed to behave exactly like builtin ``dict``, but
+    will emit events before and after all mutations (addition, removal, and
+    changing).
+
+    Parameters
+    ----------
+    data : Mapping, optional
+        Dictionary to initialize the class with.
+    basetype : type of sequence of types, optional
+        Type of the element in the dictionary.
+
+    Events
+    ------
+    changing (key: K)
+        emitted before an item at ``key`` is changed
+    changed (key: K, old_value: T, value: T)
+        emitted when item at ``key`` is changed from ``old_value`` to ``value``
+    adding (key: K)
+        emitted before an item is added to the dictionary with ``key``
+    added (key: K, value: T)
+        emitted after ``value`` was added to the dictionary with ``key``
+    removing (key: K)
+        emitted before ``key`` is removed from the dictionary
+    removed (key: K, value: T)
+        emitted after ``key`` was removed from the dictionary
+    updated (key, K, value: T)
+        emitted after ``value`` of ``key`` was changed. Only implemented by
+        subclasses to give them an option to trigger some update after ``value``
+        was changed and this class did not register it. This can be useful if
+        the ``basetype`` is not an evented object.
+    """
+
+    events: EmitterGroup
+
+    def __init__(
+        self,
+        data: 'Mapping[_K, _T] | None' = None,
+        basetype: 'type[_T] | Sequence[type[_T]]' = (),
+    ) -> None:
+        _events = {
+            'changing': None,
+            'changed': None,
+            'adding': None,
+            'added': None,
+            'removing': None,
+            'removed': None,
+            'updated': None,
+        }
+        # For inheritance: If the mro already provides an EmitterGroup, add...
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            self.events.add(**_events)
+        else:
+            # otherwise create a new one
+            self.events = EmitterGroup(
+                source=self,
+                auto_connect=False,
+                _connect_children=True,
+                **_events,
+            )
+        super().__init__(data, basetype)
+
+    def first_callback_connect(self) -> None:
+        """When the first callback is connected to `self.events`,
+        connect to all child emitters.
+        """
+        for item in self._dict.values():
+            self._connect_child_emitters(item)
+
+    def last_callback_disconnect(self) -> None:
+        """When the last callback is disconnected from `self.events`, disconnect
+        from all child emitters.
+        """
+        if self.events.callbacks:
+            # to not disconnect child emitters if there are
+            # still callbacks connected to this emitter
+            return
+
+        for item in self._dict.values():
+            self._disconnect_child_emitters(item)
+
+    def __setitem__(self, key: _K, value: _T) -> None:
+        old = self._dict.get(key)
+        if value is old or value == old:
+            return
+        if old is None:
+            self.events.adding(key=key)
+            super().__setitem__(key, value)
+            self.events.added(key=key, value=value)
+            if self.events.callbacks:
+                self._connect_child_emitters(value)
+        else:
+            self.events.changing(key=key)
+            super().__setitem__(key, value)
+            self.events.changed(key=key, old_value=old, value=value)
+
+    def __delitem__(self, key: _K) -> None:
+        self.events.removing(key=key)
+        self._disconnect_child_emitters(self[key])
+        item = self._dict.pop(key)
+        self.events.removed(key=key, value=item)
+
+    def _reemit_child_event(self, event: Event) -> None:
+        """An item in the dict emitted an event.  Re-emit with key"""
+        if not hasattr(event, 'key'):
+            event.key = self.key(event.source)  # type: ignore[attr-defined]
+
+        # re-emit with this object's EventEmitter
+        self.events(event)
+
+    def _reemit_child_event_psygnal(self, event: EmissionInfo) -> None:
+        source = event.signal.instance
+        key: _K | str | None
+        if event.path:
+            key = f'{self.key(source)}.{event.path}'
+        else:
+            key = self.key(source)
+        event = Event(value=event.args, key=key, type_name='')
+        event._push_source(source)
+
+        self.events(event)
+
+    def _disconnect_child_emitters(self, child: _T) -> None:
+        """Disconnect all events from the child from the re-emitter."""
+        if isinstance(child, PsygnalModel):
+            child.events.disconnect(self._reemit_child_event_psygnal)
+        if isinstance(child, SupportsEvents):
+            child.events.disconnect(self._reemit_child_event)
+
+    def _connect_child_emitters(self, child: _T) -> None:
+        """Connect all events from the child to be re-emitted."""
+        if isinstance(child, PsygnalModel):
+            child.events.all.connect(
+                self._reemit_child_event_psygnal, unique=True
+            )
+        elif isinstance(child, SupportsEvents):
+            # make sure the event source has been set on the child
+            if child.events.source is None:
+                child.events.source = child
+            child.events.connect(self._reemit_child_event)
+
+    def key(self, value: _T) -> _K | None:
+        """Return first instance of value."""
+        for k, v in self._dict.items():
+            if v is value or v == value:
+                return k
+        return None
+
+
+class EventedDictNamespace(EventedDict[str, _T]):
+    """An evented dict that also exposes its elements as a simple namespace.
+
+    Needs keys to be str.
+    """
+
+    def __getattr__(self, name: str) -> _T:
+        # we need some special cases cause they are accessed before full initialization
+        if name == 'events':
+            raise AttributeError(name)
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    def __setattr__(self, name: str, value: _T) -> None:
+        # we need some special cases cause they are accessed before full initialization
+        if (
+            name in ('events', '_dict', '_basetypes')
+            or name in super().__dir__()
+        ):
+            super().__setattr__(name, value)
+        else:
+            self[name] = value
+
+    def __dir__(self) -> list[str]:
+        # provides autocompletion including the magical attributes computed from keys
+        # unless they are private
+        return sorted(
+            set(super().__dir__())
+            | {k for k in self.keys() if not k.startswith('_')}
+        )

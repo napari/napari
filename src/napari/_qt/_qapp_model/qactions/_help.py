@@ -1,0 +1,180 @@
+"""Qt 'Help' menu Actions."""
+
+import sys
+from functools import partial
+from webbrowser import open as web_open
+
+from app_model.types import Action, KeyBindingRule, KeyCode, KeyMod
+from packaging.version import parse
+
+from napari import __version__
+from napari._app_model.constants import MenuGroup, MenuId
+from napari._qt.dialogs.qt_about import QtAbout
+from napari._qt.qt_main_window import Window
+from napari._qt.widgets.qt_logger import LogWidget
+from napari._qt.widgets.qt_tips import TipsWidget
+from napari._qt.widgets.qt_viewer_tour import GuidedTour, build_viewer_tour
+
+
+def _show_about(window: Window):
+    QtAbout.showAbout(window._qt_window)
+
+
+def _show_logs(window: Window):
+    window.add_dock_widget(
+        LogWidget(), name='logger', area='bottom', tabify=True
+    )
+
+
+def _show_tips(window: Window):
+    window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
+
+
+def _start_viewer_tour(window: Window, *, tour: GuidedTour | None = None):
+    """Start a guided tour on ``window``.
+
+    Parameters
+    ----------
+    window : Window
+        The napari window to start the tour on.
+    tour : GuidedTour, optional
+        A pre-built tour to run instead of napari's built-in viewer tour.
+        Use this to run a custom tour, e.g. one built with
+        ``build_viewer_tour(window._qt_window, sample=...)`` against
+        different sample data, or an entirely different set of steps.
+    """
+    qt_window = window._qt_window
+    if qt_window._viewer_tour is not None:
+        return
+    if tour is None:
+        tour = build_viewer_tour(qt_window)
+    qt_window._viewer_tour = tour
+    tour.finished.connect(lambda: setattr(qt_window, '_viewer_tour', None))
+    tour.start()
+
+
+v = parse(__version__)
+VERSION = 'dev' if v.is_devrelease or v.is_prerelease else str(v.base_version)
+
+HELP_URLS: dict[str, str] = {
+    'getting_started': f'https://napari.org/{VERSION}/getting_started/start_index.html',
+    'tutorials': f'https://napari.org/{VERSION}/tutorials/index.html',
+    'layers_guide': f'https://napari.org/{VERSION}/howtos/layers/index.html',
+    'examples_gallery': f'https://napari.org/{VERSION}/gallery.html',
+    'plugins': f'https://napari.org/{VERSION}/plugins/index.html',
+    'contribute': f'https://napari.org/{VERSION}/developers/index.html',
+    'release_notes': f'https://napari.org/{VERSION}/release/release_{VERSION.replace(".", "_")}.html',
+    'github_issue': 'https://github.com/napari/napari/issues',
+    'homepage': 'https://napari.org',
+}
+
+Q_HELP_ACTIONS: list[Action] = [
+    Action(
+        id='napari.window.help.info',
+        title='‎napari Info',
+        callback=_show_about,
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+        status_tip='About napari',
+        keybindings=[KeyBindingRule(primary=KeyMod.CtrlCmd | KeyCode.Slash)],
+    ),
+    Action(
+        id='napari.window.help.about_macos',
+        title='About napari',
+        callback=_show_about,
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'group': MenuGroup.RENDER,
+                'when': sys.platform == 'darwin',
+            }
+        ],
+        status_tip='About napari',
+    ),
+    Action(
+        id='napari.window.help.viewer_tour',
+        title='Take a tour',
+        callback=_start_viewer_tour,
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+        status_tip='Start a guided tour of the napari viewer',
+    ),
+    Action(
+        id='napari.window.help.getting_started',
+        title='Getting started ↗',
+        callback=partial(web_open, url=HELP_URLS['getting_started']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.tutorials',
+        title='Tutorials ↗',
+        callback=partial(web_open, url=HELP_URLS['tutorials']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.tips',
+        title='Tips and Tricks',
+        callback=_show_tips,
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+        status_tip='Show some quick napari tips and tricks',
+    ),
+    Action(
+        id='napari.window.help.layers_guide',
+        title='Using Layers Guides ↗',
+        callback=partial(web_open, url=HELP_URLS['layers_guide']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.examples',
+        title='Examples Gallery ↗',
+        callback=partial(web_open, url=HELP_URLS['examples_gallery']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.plugins',
+        title='Extend with Plugins ↗',
+        callback=partial(web_open, url=HELP_URLS['plugins']),
+        menus=[{'id': MenuId.MENUBAR_HELP}],
+    ),
+    Action(
+        id='napari.window.help.release_notes',
+        title='Release Notes ↗',
+        callback=partial(web_open, url=HELP_URLS['release_notes']),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION != 'dev',
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.window.help.github_issue',
+        title='Report an issue on GitHub ↗',
+        callback=partial(web_open, url=HELP_URLS['github_issue']),
+        menus=[
+            {
+                'id': MenuId.MENUBAR_HELP,
+                'when': VERSION == 'dev',
+                'group': MenuGroup.NAVIGATION,
+            }
+        ],
+    ),
+    Action(
+        id='napari.window.help.contribute',
+        title='Contribute to napari ↗',
+        callback=partial(web_open, url=HELP_URLS['contribute']),
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
+        id='napari.window.help.homepage',
+        title='napari homepage ↗',
+        callback=partial(web_open, url=HELP_URLS['homepage']),
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.NAVIGATION}],
+    ),
+    Action(
+        id='napari.window.help.show_logs',
+        title='Show logs',
+        callback=_show_logs,
+        menus=[{'id': MenuId.MENUBAR_HELP, 'group': MenuGroup.RENDER}],
+        status_tip='View and filter logs',
+    ),
+]

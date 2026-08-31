@@ -1,2 +1,6 @@
-napari_gui/_version.py export-subst
+# All text files are stored with LF line endings in the repository (see ruff config)
+# On all OSes (including Windows), we want to ensure LF checkout so that there is not pre-commit churn
+# In addition, things like shell scripts should always use LF line endings, otherwise bash commands will fail on Windows with CRLF
+* text=auto eol=lf
 
+napari_gui/_version.py export-subst
