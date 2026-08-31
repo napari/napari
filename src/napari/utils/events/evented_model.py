@@ -13,7 +13,7 @@ from pydantic import (
 from pydantic._internal._model_construction import ModelMetaclass
 
 from napari._pydantic_util import get_inner_type, get_outer_type
-from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.event import EmitterGroup, Event, WarningEmitter
 from napari.utils.misc import pick_equality_operator
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -215,9 +215,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if not field.frozen
         ]
 
-        self._events.add(
-            **dict.fromkeys(field_events + list(self.__properties__))
-        )
+        property_events = {
+            name: WarningEmitter(message=prop.fget.__deprecated__)
+            if hasattr(prop.fget, '__deprecated__')
+            else None
+            for name, prop in self.__properties__.items()
+        }
+
+        self._events.add(**(dict.fromkeys(field_events) | property_events))
 
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
