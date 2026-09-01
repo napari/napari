@@ -878,7 +878,7 @@ def test_deprecated_property_in_subclass():
         c: int = 3
 
         @property
-        @deprecated('deprecation text', category=FutureWarning)
+        @deprecated('deprecation text', category=DeprecationWarning)
         def d(self):
             return self.c + self.b
 
@@ -887,11 +887,35 @@ def test_deprecated_property_in_subclass():
     with pytest.warns(FutureWarning, match='deprecation text'):
         assert s.b == 2
 
-    with pytest.warns(FutureWarning, match='deprecation text'):
+    with pytest.warns(DeprecationWarning, match='deprecation text'):
         assert s.d == 5
 
     with pytest.warns(FutureWarning, match='deprecation text'):
         s.events.b.connect(lambda x: None)
 
-    with pytest.warns(FutureWarning, match='deprecation text'):
+    with pytest.warns(DeprecationWarning, match='deprecation text'):
         s.events.d.connect(lambda x: None)
+
+
+def test_overwriting_deprecation_text_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):  # pragma: no cover
+            return self.a * 2
+
+    class Sub(Base):
+        @property
+        @deprecated('new deprecation text', category=DeprecationWarning)
+        def b(self):
+            return self.a * 3
+
+    s = Sub()
+
+    with pytest.warns(DeprecationWarning, match='new deprecation text'):
+        assert s.b == 3
+
+    with pytest.warns(DeprecationWarning, match='new deprecation text'):
+        s.events.b.connect(lambda x: None)

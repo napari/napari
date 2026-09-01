@@ -1,7 +1,8 @@
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from types import FunctionType
+from typing import Any, ClassVar, NotRequired, TypedDict, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -230,7 +231,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ]
 
         property_events = {
-            name: WarningEmitter(message=prop.fget.__deprecated__)
+            name: WarningEmitter(**_get_deprecated_params(prop.fget))
             if hasattr(prop.fget, '__deprecated__')
             else None
             for name, prop in self.__properties__.items()
@@ -533,3 +534,22 @@ class ComparisonDelayer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()
+
+
+class _DeprecatedParam(TypedDict):
+    message: str
+    category: NotRequired[type[Warning]]
+
+
+def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
+    message = getattr(function, '__deprecated__', '')
+    if (closure := function.__closure__) is None:
+        return _DeprecatedParam(message=message)
+
+    for idx, name in enumerate(function.__code__.co_freevars):
+        if idx >= len(closure):
+            break
+        if name == 'category':
+            category = closure[idx].cell_contents
+            return _DeprecatedParam(message=message, category=category)
+    return _DeprecatedParam(message=message)
