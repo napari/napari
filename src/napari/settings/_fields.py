@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from functools import total_ordering
 from typing import Any, SupportsInt
 
-from napari_resources import logo_variants
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
+from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
 
 
@@ -59,7 +59,7 @@ class Logo(StrField):
 
     @classmethod
     def _available_options(cls):
-        return logo_variants()
+        return available_logos()
 
     @classmethod
     def _valid_option(cls, v):

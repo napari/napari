@@ -1,8 +1,14 @@
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from napari_resources import logo_path
+from napari_resources import logo_path, logo_variants
+
+
+@lru_cache
+def available_logos() -> list[str]:
+    return ['auto'] + sorted(logo_variants())
 
 
 def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
