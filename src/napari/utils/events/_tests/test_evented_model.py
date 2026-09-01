@@ -506,7 +506,7 @@ def test_evented_model_with_property_setters():
         t.e = 100
 
 
-def test_base_class_property_in_subclass():
+def test_inheritance_and_calculated_helpers():
     class Base(EventedModel):
         a: int = 1
 
@@ -522,6 +522,13 @@ def test_base_class_property_in_subclass():
             return self.c + self.b
 
     assert Sub.__properties__ == {'b': Base.b, 'd': Sub.d}
+    assert Sub.__eq_operators__ == {
+        'a': operator.eq,
+        'b': operator.eq,
+        'c': operator.eq,
+        'd': operator.eq,
+    }
+    assert Sub.__field_dependents__ == {'a': {'b', 'd'}, 'c': {'d'}}
 
 
 @pytest.fixture

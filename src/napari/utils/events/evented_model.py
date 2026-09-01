@@ -41,7 +41,11 @@ class EventedMetaclass(ModelMetaclass):
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        cls.__eq_operators__ = {}
+        non_evented_properties = getattr(
+            cls, '__non_evented_properties__', set()
+        )
+
+        cls.__eq_operators__ = {**getattr(cls, '__eq_operators__', {})}
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
             cls.__eq_operators__[n] = pick_equality_operator(field_type)
@@ -63,6 +67,8 @@ class EventedMetaclass(ModelMetaclass):
         # Current implementation ignores properties defined in mixins
         cls.__properties__ = {**getattr(cls, '__properties__', {})}
         for name, attr in namespace.items():
+            if name in non_evented_properties:
+                continue
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
                 # determine compare operator
@@ -187,6 +193,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
+    __non_evented_properties__: ClassVar[set[str]] = {'events', '_defaults'}
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[dict[str, set[str]]]
@@ -381,7 +388,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self.events, name).source = self
 
     @property
-    def _defaults(self):
+    def _defaults(self) -> dict[str, Any]:
         return get_defaults(self)
 
     def reset(self):
