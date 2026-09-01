@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
@@ -13,6 +13,10 @@ from napari.utils.camera_orientations import (
 
 if TYPE_CHECKING:
     from napari.utils.camera_orientations import AxesOrientation3D
+
+
+EulerAngles: TypeAlias = tuple[float, float, float]
+Vector3D: TypeAlias = tuple[float, float, float]
 
 
 def _get_vispy_flipped_axes(
@@ -47,8 +51,8 @@ def _quaternion_to_matrix(
     """Return the rotation matrix for a VisPy quaternion.
 
     VisPy derives its rotation from the quaternion axis-angle, permuting the
-    vector part as (x, z, y) [NOTE THE WRONG ORDER].
-    See #8281 for the origin of this quirk.
+    vector part as (x, z, y) [NOTE THE WRONG ORDER!!!].
+    See #8281 for some discussion on this quirk and why we keep it around.
 
     Parameters
     ----------
@@ -63,6 +67,7 @@ def _quaternion_to_matrix(
     from scipy.spatial.transform import Rotation
 
     w, x, y, z = quat.w, quat.x, quat.y, quat.z
+    # order is nonstandard!
     return Rotation.from_quat([x, z, y, w]).as_matrix().T
 
 
@@ -76,13 +81,13 @@ def _matrix_to_quaternion(
     from scipy.spatial.transform import Rotation
 
     qx, qy, qz, qw = Rotation.from_matrix(matrix.T).as_quat()
-    # VisPy uses the vector part permuted as (x, z, y).
+    # order is nonstandard!
     return Quaternion(qw, qx, qz, qy)
 
 
 def _directions_to_vispy_quat(
-    view_direction: tuple[float, float, float],
-    up_direction: tuple[float, float, float],
+    view_direction: Vector3D,
+    up_direction: Vector3D,
     orientation: AxesOrientation3D,
 ) -> Quaternion:
     """Return the VisPy quaternion from the given napari view and up directions."""
@@ -96,7 +101,7 @@ def _directions_to_vispy_quat(
 
 
 def napari_angles_to_vispy_quat(
-    angles: tuple[float, float, float],
+    angles: EulerAngles,
     orientation: AxesOrientation3D,
 ) -> Quaternion:
     """Return the VisPy quaternion for the given napari camera angles.
@@ -121,7 +126,7 @@ def napari_angles_to_vispy_quat(
 def vispy_quat_to_napari_angles(
     quat: Quaternion,
     orientation: AxesOrientation3D,
-) -> tuple[float, float, float]:
+) -> EulerAngles:
     """Return the napari camera angles for the given VisPy quaternion.
 
     Parameters
