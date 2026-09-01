@@ -11,6 +11,7 @@ from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field, GetCoreSchemaHandler, ValidationError
 from pydantic_core import core_schema
+from typing_extensions import deprecated
 
 from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
@@ -809,3 +810,31 @@ def test_events_called():
     s.a = 2
 
     e_m.assert_called_once()
+
+
+def test_property_deprecation():
+    class SampleClass(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):
+            return self.a * 2
+
+        @b.setter
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self, value):
+            self.a = value // 2
+
+    s = SampleClass()
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.b = 4
+
+    assert s.a == 2
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        assert s.b == 4
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.events.b.connect(lambda x: None)
