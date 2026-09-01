@@ -510,14 +510,14 @@ def test_inheritance_and_calculated_helpers():
         a: int = 1
 
         @property
-        def b(self) -> int:
+        def b(self) -> int:  # pragma: no cover
             return self.a * 2
 
     class Sub(Base):
         c: int = 3
 
         @property
-        def d(self) -> int:
+        def d(self) -> int:  # pragma: no cover
             return self.c + self.b
 
     assert Sub.__properties__ == {'b': Base.b, 'd': Sub.d}
