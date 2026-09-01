@@ -11,7 +11,7 @@ import numpy as np
 import pint
 from pydantic import field_validator, model_validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
@@ -92,6 +92,21 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
+    axis_locked : tuple of bool
+        Tuple of per-axis lock state. If True, the point cannot be moved on
+        that axis by anything that asks for it: the sliders, the arrow keys,
+        Ctrl+scroll, or an assignment to ``point``. A ``range`` or ``ndim``
+        change still moves it, so a layer leaving the viewer can still clip a
+        locked axis back into the remaining extent.
+
+        .. versionadded:: 0.10.0
+
+    Notes
+    -----
+    ``events._point_refused`` is emitted, with ``axes``, when such a request is
+    refused. It is private: the padlock in the slider row listens to it so a
+    refusal from the keyboard or from plugin code is visible, and there is no
+    other consumer.
     """
 
     # fields
@@ -101,6 +116,7 @@ class Dims(EventedModel):
     order: tuple[int, ...] = ()
     axis_labels: tuple[str, ...] = ()
     rollable: tuple[bool, ...] = ()
+    axis_locked: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
@@ -114,6 +130,7 @@ class Dims(EventedModel):
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
     _validating: bool = False
+    _point_before_check: tuple[float, ...] = ()
 
     # validators
     # check fields is false to allow private fields to work
@@ -121,6 +138,7 @@ class Dims(EventedModel):
         'order',
         'axis_labels',
         'rollable',
+        'axis_locked',
         'point',
         'margin_left',
         'margin_right',
@@ -159,6 +177,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
+        refused = self._hold_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -214,6 +233,7 @@ class Dims(EventedModel):
         with self._validating_ctx():
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
+            self.axis_locked = ensure_len(self.axis_locked, ndim, False)
 
         # If the last used slider is no longer visible, use the first.
         last_used = self.last_used
@@ -226,7 +246,46 @@ class Dims(EventedModel):
         if len(not_displayed) > 0 and last_used not in not_displayed:
             self.last_used = not_displayed[0]
 
+        if refused:
+            self.events._point_refused(axes=refused)
+
         return self
+
+    def _hold_locked_axes(self) -> tuple[int, ...]:
+        """Put locked components back to where they were before this write.
+
+        The snapshot is as long as the old ``ndim``, so a snapshot of a
+        different length means dimensionality changed rather than the point
+        being written; padding and cropping the point for a new ``ndim`` is
+        this validator's own work, not a request to move it.
+        """
+        previous = self._point_before_check
+        if not any(self.axis_locked) or len(previous) != self.ndim:
+            return ()
+        # A short or long point is padded and cropped the same way the
+        # validator would, so the comparison is per axis rather than by offset.
+        requested = ensure_len(self.point, self.ndim, 0.0)
+        held = tuple(
+            prev if locked else new
+            for new, prev, locked in zip(
+                requested, previous, self.axis_locked, strict=False
+            )
+        )
+        refused = tuple(
+            axis
+            for axis, (new, kept) in enumerate(
+                zip(requested, held, strict=False)
+            )
+            if new != kept
+        )
+        if refused:
+            with self._validating_ctx():
+                self.point = held
+        return refused
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(_point_refused=Event)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -393,6 +452,31 @@ class Dims(EventedModel):
             value_world.append(rng.start + val * rng.step)
         self.set_point(axis, value_world)
 
+    def lock_axis(self, axis: int) -> None:
+        """Hold the point on ``axis`` where it is."""
+        self._set_axis_locked(axis, True)
+
+    def unlock_axis(self, axis: int) -> None:
+        """Let the point move on ``axis`` again."""
+        self._set_axis_locked(axis, False)
+
+    def is_axis_locked(self, axis: int) -> bool:
+        """Whether the point is held on ``axis``."""
+        return self.axis_locked[ensure_axis_in_bounds(axis, self.ndim)]
+
+    def lock_all_axes(self) -> None:
+        """Hold the point on every axis."""
+        self.axis_locked = (True,) * self.ndim
+
+    def unlock_all_axes(self) -> None:
+        """Let the point move on every axis again."""
+        self.axis_locked = (False,) * self.ndim
+
+    def _set_axis_locked(self, axis: int, locked: bool) -> None:
+        axis_locked = list(self.axis_locked)
+        axis_locked[ensure_axis_in_bounds(axis, self.ndim)] = locked
+        self.axis_locked = tuple(axis_locked)
+
     def set_axis_label(
         self,
         axis: int | Sequence[int],
@@ -417,7 +501,7 @@ class Dims(EventedModel):
 
     def reset(self):
         """Reset dims values to initial states."""
-        # Don't reset axis labels
+        # Don't reset axis labels or axis locks
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
         self.range = ((0, 2, 1),) * self.ndim
@@ -529,6 +613,11 @@ class Dims(EventedModel):
             yield
         finally:
             self._validating = prev
+            if not prev:
+                # The lock compares an incoming point against this snapshot, so
+                # every write that is allowed to move the point without asking
+                # must leave it as the new reference.
+                self._point_before_check = self.point
 
 
 def ensure_len(value: tuple, length: int, pad_width: Any):

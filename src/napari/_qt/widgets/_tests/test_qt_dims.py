@@ -4,7 +4,9 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QEvent, Qt
+from qtpy.QtGui import QMouseEvent
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
@@ -359,6 +361,113 @@ def test_last_used_style_property_set_at_creation(qtbot):
     assert [
         widg.slider.property('last_used') for widg in view.slider_widgets
     ] == [False, True, False, False]
+
+
+def test_lock_button_toggles_the_axis_lock(qt_dims, qtbot):
+    qt_dims.dims.ndim = 3
+    slider = qt_dims.slider_widgets[0]
+
+    qtbot.mouseClick(slider.lock_button, Qt.MouseButton.LeftButton)
+    assert qt_dims.dims.is_axis_locked(0)
+
+    qtbot.mouseClick(slider.lock_button, Qt.MouseButton.LeftButton)
+    assert not qt_dims.dims.is_axis_locked(0)
+
+
+def test_locked_axis_disables_its_navigation_controls(qt_dims):
+    qt_dims.dims.ndim = 3
+    slider = qt_dims.slider_widgets[0]
+
+    qt_dims.dims.lock_axis(0)
+
+    assert not slider.slider.isEnabled()
+    assert not slider.play_button.isEnabled()
+    assert not slider.curslice_label.isEnabled()
+    # the padlock has to stay clickable or the lock cannot be released
+    assert slider.lock_button.isEnabled()
+
+    qt_dims.dims.unlock_axis(0)
+    assert slider.slider.isEnabled()
+
+
+def test_refused_navigation_flashes_the_padlock(qt_dims):
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+    slider = qt_dims.slider_widgets[0]
+    qt_dims.dims.lock_axis(0)
+    assert not slider.lock_button.property('flash')
+
+    qt_dims.dims.set_point(0, 3)
+
+    assert slider.lock_button.property('flash')
+
+
+def _press(widget):
+    """Send a press straight to ``widget``, as a real click on it would."""
+    centre = widget.rect().center()
+    position = centre.toPointF() if hasattr(centre, 'toPointF') else centre
+    QApplication.sendEvent(
+        widget,
+        QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            position,
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    'control', ['slider', 'play_button', 'curslice_label']
+)
+def test_pressing_a_frozen_control_flashes_the_padlock(qt_dims, control):
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+    slider_widget = qt_dims.slider_widgets[0]
+    qt_dims.dims.lock_axis(0)
+    assert not slider_widget.lock_button.property('flash')
+
+    _press(getattr(slider_widget, control))
+
+    assert slider_widget.lock_button.property('flash')
+
+
+def test_pressing_a_frozen_slider_claims_the_axis(qt_dims):
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+    qt_dims.dims.last_used = 1
+    slider_widget = qt_dims.slider_widgets[0]
+    qt_dims.dims.lock_axis(0)
+
+    _press(slider_widget.slider)
+
+    assert qt_dims.dims.last_used == 0
+
+
+def test_locking_a_playing_axis_stops_it(qt_dims, qtbot):
+    """A blocked write emits nothing, so the frame pump would wait forever."""
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+
+    with qtbot.waitSignal(qt_dims._animation_thread.started):
+        qt_dims.play(0, fps=20)
+    qtbot.waitUntil(lambda: qt_dims.is_playing)
+
+    with qtbot.waitSignal(qt_dims._animation_thread.finished):
+        qt_dims.dims.lock_axis(0)
+
+    assert not qt_dims.is_playing
+
+
+def test_locked_axis_does_not_start_playing(qt_dims):
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 5, 1))
+    qt_dims.dims.lock_axis(0)
+
+    qt_dims.play(0)
+
+    assert not qt_dims.is_playing
 
 
 @pytest.mark.skipif(

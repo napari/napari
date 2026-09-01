@@ -5,7 +5,15 @@ from typing import TYPE_CHECKING
 from weakref import ref
 
 import numpy as np
-from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QObject,
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+    Slot,
+)
 from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
     QApplication,
@@ -40,6 +48,7 @@ if TYPE_CHECKING:
 # Width companion to QtDims.SLIDERHEIGHT: keeps a narrow window from collapsing
 # the groove until the handle covers it and dragging becomes impossible.
 SLIDER_MINIMUM_WIDTH = 150
+LOCK_FLASH_MS = 300
 
 
 class _ModifiedScrollBar(ModifiedScrollBar):
@@ -115,8 +124,10 @@ class QtDimSliderWidget(QWidget):
         self.axis_label = self._create_axis_label_widget()
         self.slider = self._create_range_slider_widget()
         self.play_button = self._create_play_button_widget()
+        self.lock_button = self._create_lock_button_widget()
 
         layout.addWidget(self.axis_label)
+        layout.addWidget(self.lock_button)
         layout.addWidget(self.play_button)
         layout.addWidget(self.slider, stretch=2)
         layout.addWidget(self.curslice_label)
@@ -127,6 +138,42 @@ class QtDimSliderWidget(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
+
+        # Unparented, and stopped on destruction: a timer parented to the row
+        # is deleted with it while still running, and firing into the deleted
+        # C++ object raises at teardown.
+        self._lock_flash_timer = QTimer()
+        self._lock_flash_timer.setSingleShot(True)
+        self._lock_flash_timer.setInterval(LOCK_FLASH_MS)
+        self._lock_flash_timer.timeout.connect(self._end_lock_flash)
+        self.destroyed.connect(self._lock_flash_timer.stop)
+        for frozen in (self.slider, self.play_button, self.curslice_label):
+            frozen.installEventFilter(self)
+        self._update_lock_state()
+
+    def eventFilter(self, qobject: QObject, event: QEvent) -> bool:
+        """Flash the padlock when a press lands on a control the lock froze.
+
+        The slider, play button and slice editor are disabled while the axis is
+        locked, so they ask for no move and nothing reaches
+        ``_point_refused``. A disabled widget also receives no mouse events and
+        does not hand them to its parent, so the row cannot see the attempt
+        either; a filter installed on the child is what still does.
+
+        A press on the frozen slider also claims the axis, standing in for the
+        ``sliderPressed`` a disabled scrollbar never emits. Without it a locked
+        axis could not be made the active one, and the arrow keys would have no
+        way back to it once released.
+        """
+        if (
+            event.type() == QEvent.Type.MouseButtonPress
+            and self.axis < self.dims.ndim
+            and self.dims.axis_locked[self.axis]
+        ):
+            if qobject is self.slider:
+                self.dims.last_used = self.axis
+            self._flash_lock()
+        return super().eventFilter(qobject, event)
 
     def _set_slice_from_label(self) -> None:
         """Update the dims point based on the curslice_label."""
@@ -221,6 +268,54 @@ class QtDimSliderWidget(QWidget):
         self.play_stopped.connect(play_button._handle_stop)
         self.play_started.connect(play_button._handle_start)
         return play_button
+
+    def _create_lock_button_widget(self) -> QPushButton:
+        """Create the padlock that locks and unlocks this axis."""
+        button = QPushButton(self)
+        button.setObjectName('axis_lock_button')
+        button.setCheckable(True)
+        button.setProperty('flash', False)
+        button.clicked.connect(self._on_lock_button_clicked)
+        return button
+
+    def _on_lock_button_clicked(self, checked: bool) -> None:
+        if checked:
+            self.dims.lock_axis(self.axis)
+        else:
+            self.dims.unlock_axis(self.axis)
+
+    def _update_lock_state(self) -> None:
+        """Sync the row's controls and padlock to the Dims model."""
+        if self.axis >= self.dims.ndim:
+            return
+        locked = self.dims.axis_locked[self.axis]
+        for widget in (self.slider, self.play_button, self.curslice_label):
+            widget.setEnabled(not locked)
+        self.lock_button.setChecked(locked)
+        action = 'Unlock' if locked else 'Lock'
+        description = f'{action} axis {self.axis}'
+        self.lock_button.setToolTip(description)
+        self.lock_button.setAccessibleName(description)
+        if not locked:
+            self._lock_flash_timer.stop()
+            self._set_lock_flash(False)
+
+    def _flash_lock(self) -> None:
+        """Briefly highlight the padlock after a refused move."""
+        if self.axis >= self.dims.ndim or not self.dims.axis_locked[self.axis]:
+            return
+        self._set_lock_flash(True)
+        self._lock_flash_timer.start()
+
+    def _end_lock_flash(self) -> None:
+        self._set_lock_flash(False)
+
+    def _set_lock_flash(self, enabled: bool) -> None:
+        if bool(self.lock_button.property('flash')) is enabled:
+            return
+        self.lock_button.setProperty('flash', enabled)
+        self.lock_button.style().unpolish(self.lock_button)
+        self.lock_button.style().polish(self.lock_button)
 
     def _fps_listener(self, *_) -> None:
         fps = self.play_button.fpsspin.value()
