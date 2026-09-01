@@ -60,7 +60,8 @@ class EventedMetaclass(ModelMetaclass):
                 )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
-        cls.__properties__ = {}
+        # Current implementation ignores properties defined in mixins
+        cls.__properties__ = {**getattr(cls, '__properties__', {})}
         for name, attr in namespace.items():
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
@@ -75,6 +76,12 @@ class EventedMetaclass(ModelMetaclass):
                     cls.__eq_operators__[name] = pick_equality_operator(
                         attr.fget.__annotations__['return']
                     )
+        cls.__properties__.pop(
+            'events', None
+        )  # we don't want to treat events as a usual property
+        cls.__properties__.pop(
+            '_defaults', None
+        )  # don't want to treat _defaults as a usual property
 
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls

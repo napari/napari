@@ -506,6 +506,24 @@ def test_evented_model_with_property_setters():
         t.e = 100
 
 
+def test_base_class_property_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> int:
+            return self.a * 2
+
+    class Sub(Base):
+        c: int = 3
+
+        @property
+        def d(self) -> int:
+            return self.c + self.b
+
+    assert Sub.__properties__ == {'b': Base.b, 'd': Sub.d}
+
+
 @pytest.fixture
 def mocked_object():
     t = T()
@@ -838,3 +856,35 @@ def test_property_deprecation():
 
     with pytest.warns(FutureWarning, match='deprecation text'):
         s.events.b.connect(lambda x: None)
+
+
+def test_deprecated_property_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):
+            return self.a * 2
+
+    class Sub(Base):
+        c: int = 3
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def d(self):
+            return self.c + self.b
+
+    s = Sub()
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        assert s.b == 2
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        assert s.d == 5
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.events.b.connect(lambda x: None)
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.events.d.connect(lambda x: None)
