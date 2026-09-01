@@ -25,11 +25,17 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     node: ScaleBar
 
     def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
+        # starting values, don't really matter as they get updated immediately
         self._canvas_length = 150.0
-        self._canvas_tick_length = 10.0
+        self._canvas_tick_length = 11.0
         self._canvas_thickness = 3
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
+
+        # minimum dimesnions, to avoid degenerate cases
+        self._min_canvas_length = 75
+        self._min_canvas_tick_length = 11.0
+        self._min_canvas_thickness = 3
 
         super().__init__(
             node=ScaleBar(font_info=font_info),
@@ -150,7 +156,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             view_height, view_width = self.viewer.canvas.size
 
-        target_canvas_length = view_width / 4
+        target_canvas_length = max(view_width / 4, self._min_canvas_length)
         # If scale or canvas size has not changed, do not redraw
         if (
             abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
@@ -177,11 +183,15 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._scale = scale
 
         # some magic numbers
-        self._canvas_tick_length = max(view_height // 70, 11)
-        self._canvas_thickness = max((view_width + view_height) // 700, 3)
+        self._canvas_thickness = max(
+            (view_width + view_height) // 700, self._min_canvas_thickness
+        )
         # prefer odd numbers as they look nicer
-        self._canvas_tick_length += (self._canvas_tick_length + 1) % 2
         self._canvas_thickness += (self._canvas_thickness + 1) % 2
+
+        self._canvas_tick_length = max(
+            self._canvas_thickness * 3, self._min_canvas_tick_length
+        )
 
         # Update scalebar and text
         self.node.text.text = f'{dim_with_unit:g~#P}'

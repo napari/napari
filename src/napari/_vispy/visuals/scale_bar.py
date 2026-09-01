@@ -50,7 +50,13 @@ class ScaleBar(Compound):
     def _calculate_layout(
         self, length: float, tick_length: float, thickness: float
     ) -> dict:
-        """Calculate all layout dimensions and positions."""
+        """Calculate all layout dimensions and positions.
+
+            text
+        |          |
+        |----------|
+        |          |
+        """
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
 
@@ -62,14 +68,18 @@ class ScaleBar(Compound):
             length + thickness,
             text_width,
         )
-        height = text_height + tick_length + thickness
-
-        line_center_y = text_height + (tick_length / 2)
+        # padding below the text to ensure space from the line, if the ticks+thickness
+        # are not enough to push the text higher (e.g: if ticks have 0 length)
+        text_padding = text_height * 0.2
+        tick_padding = (tick_length + thickness) / 2
+        # from the top!
+        line_y = text_height + max(tick_padding, text_padding)
+        height = line_y + tick_padding
 
         return {
             'width': width,
             'height': height,
-            'line_center_y': line_center_y,
+            'line_y': line_y,
         }
 
     def set_data(self, *, length, tick_length, thickness, font_size, color):
@@ -84,7 +94,7 @@ class ScaleBar(Compound):
             pos=self._line_data * (length / 2, tick_length / 2)
             + (
                 layout['width'] / 2,  # Center horizontally
-                layout['line_center_y'],  # Position vertically
+                layout['line_y'],  # Position vertically
             ),
             width=thickness,
             color=color,
