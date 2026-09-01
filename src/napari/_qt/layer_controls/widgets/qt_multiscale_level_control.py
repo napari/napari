@@ -134,12 +134,14 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             else:
                 self.level_combobox.setCurrentIndex(0)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """Return the label/widget pairs for this control.
 
         Returns
         -------
-        list[tuple[QtWrappedLabel, QWidget]]
+        list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
             Single-element list containing the resolution label and combobox.
         """
         return [(self.level_label, self.level_combobox)]
