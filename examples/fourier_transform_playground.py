@@ -168,10 +168,6 @@ wdg = moving_wave()
 # add the widget to the window and run it once
 viewer.window.add_dock_widget(wdg, area='bottom')
 
-# wait a moment for the thread to start and yield its first value
-sleep(0.1)
-QApplication.processEvents()
-
 wdg()
 
 # wait for the layers to be added before running the viewer
