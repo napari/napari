@@ -105,6 +105,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
 
     def reset(self):
         super().reset()
+        self._on_font_size_change()
         self._on_text_change()
         self._on_color_change()
 
