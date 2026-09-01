@@ -7,9 +7,8 @@ from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
 from napari.utils.camera_orientations import (
-    angles_from_view_direction,
-    up_direction_from_angles,
-    view_direction_from_angles,
+    angles_from_view_and_up_directions,
+    view_and_up_directions_from_angles,
 )
 
 if TYPE_CHECKING:
@@ -115,11 +114,8 @@ def napari_angles_to_vispy_quat(
     vispy.util.quaternion.Quaternion
         The VisPy quaternion rendering the given camera angles.
     """
-    return _directions_to_vispy_quat(
-        view_direction_from_angles(angles, orientation),
-        up_direction_from_angles(angles, orientation),
-        orientation,
-    )
+    view, up = view_and_up_directions_from_angles(angles, orientation)
+    return _directions_to_vispy_quat(view, up, orientation)
 
 
 def vispy_quat_to_napari_angles(
@@ -147,7 +143,7 @@ def vispy_quat_to_napari_angles(
     # Undo the flips and switch from VisPy (xyz) to napari (zyx) coordinates.
     view_direction = tuple((factors * matrix[1])[::-1])
     up_direction = tuple((factors * matrix[2])[::-1])
-    return angles_from_view_direction(
+    return angles_from_view_and_up_directions(
         view_direction, up_direction, orientation
     )
 

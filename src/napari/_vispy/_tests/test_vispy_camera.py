@@ -6,7 +6,7 @@ from hypothesis import given, settings, strategies as st
 
 from napari.utils.camera_orientations import (
     up_direction_from_angles,
-    view_direction_from_angles,
+    view_and_up_directions_from_angles,
 )
 
 
@@ -339,7 +339,7 @@ def test_view_direction_correct_under_rotation(
     view_direction = (-matrix_inv[:, 2])[::-1]
     up_direction = (matrix_inv[:, 1])[::-1]
     assert np.allclose(
-        view_direction_from_angles(angles, orientation),
+        view_and_up_directions_from_angles(angles, orientation),
         view_direction,
     )
     assert np.allclose(
@@ -361,8 +361,8 @@ def test_vispy_quat_roundtrip(qapp, orientation, angles):
     quat = napari_angles_to_vispy_quat(angles, orientation)
     recovered = vispy_quat_to_napari_angles(quat, orientation)
     assert np.allclose(
-        view_direction_from_angles(recovered, orientation),
-        view_direction_from_angles(angles, orientation),
+        view_and_up_directions_from_angles(recovered, orientation),
+        view_and_up_directions_from_angles(angles, orientation),
     )
     assert np.allclose(
         up_direction_from_angles(recovered, orientation),

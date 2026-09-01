@@ -5,9 +5,9 @@ import pytest
 from hypothesis import given, settings, strategies as st
 
 from napari.utils.camera_orientations import (
-    angles_from_view_direction,
+    angles_from_view_and_up_directions,
     up_direction_from_angles,
-    view_direction_from_angles,
+    view_and_up_directions_from_angles,
 )
 
 ORIENTATIONS = [
@@ -35,7 +35,7 @@ def test_home_view_matches_base_directions(orientation):
     """With zero angles the camera must show the home view."""
     depth, vertical, _ = orientation
     assert np.allclose(
-        view_direction_from_angles((0, 0, 0), orientation),
+        view_and_up_directions_from_angles((0, 0, 0), orientation),
         (-1 if str(depth) == 'towards' else 1, 0, 0),
     )
     assert np.allclose(
@@ -60,7 +60,9 @@ def test_single_angle_rotation_axis(angle_index, axis_component):
     orientation = ('towards', 'down', 'right')
 
     def camera_basis(angles):
-        view = np.asarray(view_direction_from_angles(angles, orientation))
+        view = np.asarray(
+            view_and_up_directions_from_angles(angles, orientation)
+        )
         up = np.asarray(up_direction_from_angles(angles, orientation))
         return np.stack([view, up, np.cross(view, up)], axis=1)
 
@@ -80,15 +82,16 @@ def test_single_angle_rotation_axis(angle_index, axis_component):
 @settings(max_examples=50, deadline=None)
 def test_angles_from_view_direction_roundtrip(orientation, angles):
     """Check that angles_from_view_direction inverts view/up direction."""
-    view_direction = view_direction_from_angles(angles, orientation)
+    view_direction = view_and_up_directions_from_angles(angles, orientation)
     up_direction = up_direction_from_angles(angles, orientation)
-    recovered = angles_from_view_direction(
+    recovered = angles_from_view_and_up_directions(
         view_direction, up_direction, orientation
     )
     # Euler angles are degenerate, so compare the resulting directions
     # rather than the angles themselves.
     assert np.allclose(
-        view_direction_from_angles(recovered, orientation), view_direction
+        view_and_up_directions_from_angles(recovered, orientation),
+        view_direction,
     )
     assert np.allclose(
         up_direction_from_angles(recovered, orientation), up_direction
@@ -100,13 +103,13 @@ def test_angles_from_view_direction_non_orthogonal_up(orientation):
     """Check that a non-orthogonal up direction is projected correctly."""
     view_direction = (1.0, 0.5, 0.25)
     up_direction = (0.0, 1.0, 0.0)
-    angles = angles_from_view_direction(
+    angles = angles_from_view_and_up_directions(
         view_direction, up_direction, orientation
     )
     # the recovered up direction should be orthogonal to the view direction
     # and point "up" on the canvas
     up = up_direction_from_angles(angles, orientation)
     assert np.allclose(
-        np.dot(up, view_direction_from_angles(angles, orientation)), 0
+        np.dot(up, view_and_up_directions_from_angles(angles, orientation)), 0
     )
     assert np.dot(up, up_direction) > 0
