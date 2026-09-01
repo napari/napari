@@ -13,19 +13,11 @@ from napari.utils.camera_orientations import (
 )
 
 if TYPE_CHECKING:
-    from napari.utils.camera_orientations import (
-        DepthAxisOrientation,
-        HorizontalAxisOrientation,
-        VerticalAxisOrientation,
-    )
+    from napari.utils.camera_orientations import AxesOrientation3D
 
 
 def _get_vispy_flipped_axes(
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
     ndisplay: Literal[2, 3] = 2,
 ) -> tuple[int, int, int]:
     # Note that the default Vispy camera orientations come from Vispy, not from us.
@@ -92,11 +84,7 @@ def _matrix_to_quaternion(
 def _directions_to_vispy_quat(
     view_direction: tuple[float, float, float],
     up_direction: tuple[float, float, float],
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> Quaternion:
     """Return the VisPy quaternion from the given napari view and up directions."""
     flipped_axes = _get_vispy_flipped_axes(orientation, ndisplay=3)
@@ -110,11 +98,7 @@ def _directions_to_vispy_quat(
 
 def napari_angles_to_vispy_quat(
     angles: tuple[float, float, float],
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> Quaternion:
     """Return the VisPy quaternion for the given napari camera angles.
 
@@ -140,11 +124,7 @@ def napari_angles_to_vispy_quat(
 
 def vispy_quat_to_napari_angles(
     quat: Quaternion,
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> tuple[float, float, float]:
     """Return the napari camera angles for the given VisPy quaternion.
 

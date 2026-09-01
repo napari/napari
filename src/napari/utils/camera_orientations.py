@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import warnings
 from enum import auto
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 
@@ -43,6 +43,22 @@ class Handedness(StringEnum):
     LEFT = auto()
 
 
+AxisOrientation: TypeAlias = type[
+    DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation
+]
+
+
+AxesOrientation3D: TypeAlias = tuple[
+    DepthAxisOrientation,
+    VerticalAxisOrientation,
+    HorizontalAxisOrientation,
+]
+
+AxesOrientation2D: TypeAlias = tuple[
+    VerticalAxisOrientation,
+    HorizontalAxisOrientation,
+]
+
 VerticalAxisOrientationStr = Literal['up', 'down']
 HorizontalAxisOrientationStr = Literal['left', 'right']
 DepthAxisOrientationStr = Literal['away', 'towards']
@@ -57,11 +73,7 @@ DEFAULT_ORIENTATION = tuple(map(str, DEFAULT_ORIENTATION_TYPED))
 
 
 def _base_directions(
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Home-view camera view and up directions for the given orientation.
 
@@ -91,11 +103,7 @@ def _camera_rotation_matrix(
 
 def view_direction_from_angles(
     angles: tuple[float, float, float],
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> tuple[float, float, float]:
     """Return the 3D view direction for the given angles.
 
@@ -108,11 +116,7 @@ def view_direction_from_angles(
 
 def up_direction_from_angles(
     angles: tuple[float, float, float],
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> tuple[float, float, float]:
     """Return the 3D up direction for the given angles.
 
@@ -126,11 +130,7 @@ def up_direction_from_angles(
 def angles_from_view_direction(
     view_direction: tuple[float, float, float],
     up_direction: tuple[float, float, float],
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ],
+    orientation: AxesOrientation3D,
 ) -> tuple[float, float, float]:
     """Return camera Euler angles matching the given direction vectors.
 

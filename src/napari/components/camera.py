@@ -8,12 +8,11 @@ from pydantic import Field, PrivateAttr, field_validator
 
 from napari.utils.camera_orientations import (
     DEFAULT_ORIENTATION_TYPED,
-    DepthAxisOrientation,
+    AxesOrientation2D,
+    AxesOrientation3D,
     Handedness,
     HorizontalAxisOrientation,
-    HorizontalAxisOrientationStr,
     VerticalAxisOrientation,
-    VerticalAxisOrientationStr,
     angles_from_view_direction,
     up_direction_from_angles,
     view_direction_from_angles,
@@ -86,11 +85,7 @@ class Camera(EventedModel):
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
-    orientation: tuple[
-        DepthAxisOrientation,
-        VerticalAxisOrientation,
-        HorizontalAxisOrientation,
-    ] = DEFAULT_ORIENTATION_TYPED
+    orientation: AxesOrientation3D = DEFAULT_ORIENTATION_TYPED
     synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
 
     # Per-mode camera state cache for the "separate" (synced=False) mode.
@@ -223,16 +218,13 @@ class Camera(EventedModel):
     @property
     def orientation2d(
         self,
-    ) -> tuple[VerticalAxisOrientation, HorizontalAxisOrientation]:
+    ) -> AxesOrientation2D:
         return self.orientation[1:]
 
     @orientation2d.setter
     def orientation2d(
         self,
-        value: tuple[
-            VerticalAxisOrientation | VerticalAxisOrientationStr,
-            HorizontalAxisOrientation | HorizontalAxisOrientationStr,
-        ],
+        value: AxesOrientation2D,
     ) -> None:
         self.orientation = (
             self.orientation[0],
