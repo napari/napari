@@ -1,14 +1,3 @@
-"""Camera orientation helpers shared by the napari camera model.
-
-The camera orientation is given by three Euler angles (rx, ry, rz) in degrees
-that rotate the camera about the three displayed dimensions: the first angle
-about the depth axis (dim0), the second about the vertical axis (dim1), and
-the third about the horizontal axis (dim2), in that order. With all angles
-zero the camera shows the home view, where the view direction lies along the
-depth axis and up along the vertical axis, with signs given by the
-``orientation``.
-"""
-
 from __future__ import annotations
 
 import warnings
