@@ -223,7 +223,7 @@ class QContrastLimitsPopup(QtPopup):
             self._ensure_histogram_content()
 
     def keyPressEvent(self, event):
-        """Override to prevent Enter from closing the popup."""
+        """Move focus to the slider when return is pressed."""
         if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
             self.slider.setFocus()
             return
@@ -562,7 +562,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         disconnect_events(self._layer.histogram.events, self)
         super().disconnect_widget_controls()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),

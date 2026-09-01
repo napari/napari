@@ -361,6 +361,17 @@ def test_last_used_style_property_set_at_creation(qtbot):
     ] == [False, True, False, False]
 
 
+def test_frame_request_that_moves_nothing_keeps_playback_armed(qtbot):
+    dims = Dims(ndim=3, range=((0, 10, 1),) * 3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    dims._play_ready = True
+    view._set_frame(0, dims.current_step[0])
+
+    assert dims._play_ready
+
+
 @pytest.mark.skipif(
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',
@@ -397,6 +408,29 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     button.mode_combo.setCurrentText('once')
     assert slider.loop_mode == button.mode_combo.currentText() == 'once'
     qtbot.waitUntil(qt_dims._animation_thread.isFinished)
+
+
+def test_play_popup_stays_open_on_enter(qtbot, qt_dims):
+    qt_dims.dims.ndim = 3
+    qtbot.addWidget(qt_dims)
+    slider = qt_dims.slider_widgets[0]
+    button = slider.play_button
+
+    button.popup.show()
+    qtbot.waitUntil(button.popup.isVisible)
+
+    button.fpsspin.setFocus()
+    button.fpsspin.clear()
+    qtbot.keyClicks(button.fpsspin, '11')
+    qtbot.keyClick(button.fpsspin, Qt.Key.Key_Enter)
+
+    assert slider.fps == button.fpsspin.value() == 11
+    assert button.popup.isVisible()
+
+    # the spinbox used to clear focus, so a second press reached the popup
+    focused = button.popup.focusWidget() or button.popup
+    qtbot.keyClick(focused, Qt.Key.Key_Enter)
+    assert button.popup.isVisible()
 
 
 def test_loop_mode_model_update_emits_once(qtbot):

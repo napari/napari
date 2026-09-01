@@ -73,5 +73,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
                 )
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.face_color_label, self.face_color_edit)]
