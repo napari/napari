@@ -1377,11 +1377,11 @@ def test_dims_axis_labels_default_when_all_layers_default():
 def test_deprecated_title():
     viewer = ViewerModel()
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match='viewer.title'):
         assert viewer.title == 'napari'
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match='viewer.title'):
         viewer.title = 'new'
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(FutureWarning, match='viewer.title'):
         viewer.events.title.connect(lambda _: None)

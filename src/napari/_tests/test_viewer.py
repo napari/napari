@@ -97,13 +97,13 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 2
 
     # check deprecations work
-    with pytest.warns(FutureWarning):
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
         assert viewer.title == 'napari'
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
         viewer.title = 'new'
 
-    with pytest.warns(FutureWarning):
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
         viewer.events.title.connect(lambda _: None)
 
 

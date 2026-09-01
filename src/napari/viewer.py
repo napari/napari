@@ -7,6 +7,7 @@ from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
+from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
@@ -64,6 +65,18 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
             **kwargs,
         )
+
+        # to ensure the warning is different from a pure ViewerModel, we need to pop
+        # the emitter here and recreate it as a DeprecationWarning with our message
+        # this will be removed together with the deprecated field
+        del self.events.title
+        self.events.emitters.pop('title')
+        self.events.add(
+            title=WarningEmitter(
+                _TITLE_DEPRECATION_MSG, DeprecationWarning, stacklevel=2
+            )
+        )
+
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
         from napari.plugins import _initialize_plugins
