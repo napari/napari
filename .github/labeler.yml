@@ -11,6 +11,9 @@ maintenance:
     - any-glob-to-any-file:
       - '.pre-commit-config.yaml'
       - '.github/**/*'
+      - 'resources/constraints/*'
+      - 'tox.ini'
+      - 'pyproject.toml'
 
 # topics
 'topic:preferences':
@@ -23,8 +26,6 @@ maintenance:
   - changed-files:
     - any-glob-to-any-file:
       - 'src/napari/_qt/**/*.py'
-      - 'src/napari/_qt/**/*.py'
-      - 'src/napari/qt/**/*.py'
       - 'src/napari/qt/**/*.py'
 
 'topic:vispy':
@@ -36,3 +37,8 @@ maintenance:
   - changed-files:
     - any-glob-to-any-file:
       - 'src/napari/layers/**/*.py'
+
+'topic:examples':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'examples/*'
