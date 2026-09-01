@@ -25,9 +25,10 @@ def test_qt_container_creation(dynamic, qtbot, viewer_model):
 
 @pytest.mark.parametrize('dynamic', [True, False])
 def test_qt_container_theme_change(dynamic, qtbot, viewer_model):
+    get_settings().experimental.dynamic_layer_controls = dynamic
     cont = QtLayerControlsContainer(viewer_model)
     qtbot.addWidget(cont)
     viewer_model.add_image(np.arange(25).reshape(5, 5))
-    get_settings().appearance.theme = 'light'
+    viewer_model.theme = 'light'
     # only affects histogram; too nasty to actualy check for, but
     # at least this runs the lines to ensure nothign crashes
