@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from napari._pydantic_compat import validator
+from pydantic import field_validator
+
 from napari.components.overlays.base import CanvasOverlay
-from napari.utils.events import Event
 
 
 class ZoomOverlay(CanvasOverlay):
@@ -14,26 +14,41 @@ class ZoomOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    canvas_positions : 2-tuple of 2-tuples
+    position : 2-tuple of 2-tuples
         Corners at the top left and bottom right in canvas coordinates.
+    zoom_area : 2-tuple of 2-tuples
+        Coordinates in world space of the area to zoom in.
+    box : bool
+        Whether the background box is visible or not.
+    box_color : ColorValue or None
+        Background box color. If unset, it defaults to the canvas color.
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
         If the overlay is visible or not.
     opacity : float
         The opacity of the overlay. 0 is fully transparent.
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
-    canvas_positions: tuple[tuple[float, float], tuple[float, float]] = (
+    position: tuple[tuple[float, float], tuple[float, float]] = (
+        (0, 0),
+        (0, 0),
+    )
+    zoom_area: tuple[tuple[float, float], tuple[float, float]] = (
         (0, 0),
         (0, 0),
     )
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        self.events.add(zoom=Event)
 
-    @validator('canvas_positions', pre=True, always=True, allow_reuse=True)
+    @field_validator('position', 'zoom_area', mode='before')
+    @classmethod
     def _validate_bounds(
         cls, v: tuple[tuple[float, ...], tuple[float, ...]]
     ) -> tuple[tuple[float, float], tuple[float, float]]:

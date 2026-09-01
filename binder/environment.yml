@@ -7,7 +7,7 @@ dependencies:
   - napari
 # additional dependencies for convenience in conda-forge
   - fsspec
-  - pyqt
+  - pyqt6
   - scikit-image
   - zarr
 

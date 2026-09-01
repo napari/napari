@@ -12,7 +12,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
 from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtTailLengthSliderControl(QtWidgetControlsBase):
@@ -51,7 +50,7 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
             self.tail_length_slider.valueChanged, self._layer, 'tail_length'
         )
 
-        self.tail_length_slider_label = QtWrappedLabel(trans._('tail length:'))
+        self.tail_length_slider_label = QtWrappedLabel('tail length:')
 
         self._on_tail_length_change()
 
@@ -63,7 +62,9 @@ class QtTailLengthSliderControl(QtWidgetControlsBase):
                 self.tail_length_slider.setMaximum(self._layer._max_length)
             self.tail_length_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_length_slider_label, self.tail_length_slider)]
 
 
@@ -104,7 +105,7 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
             self.tail_width_slider.valueChanged, self._layer, 'tail_width'
         )
 
-        self.tail_width_slider_label = QtWrappedLabel(trans._('tail width:'))
+        self.tail_width_slider_label = QtWrappedLabel('tail width:')
 
         self._on_tail_width_change()
 
@@ -117,7 +118,9 @@ class QtTailWidthSliderControl(QtWidgetControlsBase):
     def _on_data_change(self) -> None:
         self.tail_width_slider.setMaximum(int(self._layer._max_width))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_width_slider_label, self.tail_width_slider)]
 
 
@@ -156,7 +159,9 @@ class QtTailDisplayCheckBoxControl(QtWidgetControlsBase):
             convert_fun=checked_to_bool,
         )
 
-        self.tail_checkbox_label = QtWrappedLabel(trans._('tail:'))
+        self.tail_checkbox_label = QtWrappedLabel('tail:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.tail_checkbox_label, self.tail_checkbox)]

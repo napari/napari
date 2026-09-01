@@ -1,9 +1,18 @@
+from __future__ import annotations
+
 from itertools import product
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.markers import Markers
+from napari.utils.color import ColorValue
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from vispy.visuals.line import LineVisual
 
 
 class BoundingBox(Compound):
@@ -32,23 +41,27 @@ class BoundingBox(Compound):
         ]
     )
 
-    def __init__(self, *args, **kwargs):
-        self._line_color = 'red'
-        self._line_thickness = 2
-        self._marker_color = (1, 1, 1, 1)
-        self._marker_size = 1
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self._line_color = ColorValue('red')
+        self._line_thickness = 2.0
+        self._marker_color = ColorValue((1, 1, 1, 1))
+        self._marker_size = 1.0
 
-        super().__init__([Line(), Markers(antialias=0)], *args, **kwargs)
+        super().__init__(
+            [Line(antialias=True), Markers(antialias=0)], *args, **kwargs
+        )
 
     @property
-    def lines(self):
+    def lines(self) -> LineVisual:
         return self._subvisuals[0]
 
     @property
-    def markers(self):
+    def markers(self) -> Markers:
         return self._subvisuals[1]
 
-    def set_bounds(self, bounds):
+    def set_bounds(
+        self, bounds: Sequence[Sequence[float] | None] | np.ndarray
+    ) -> None:
         """Update the bounding box based on a layer's bounds."""
         if any(b is None for b in bounds):
             return

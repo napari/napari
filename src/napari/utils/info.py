@@ -9,7 +9,6 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import napari
-from napari.settings import get_settings
 
 OS_RELEASE_PATH = '/etc/os-release'
 
@@ -72,6 +71,12 @@ def _sys_name() -> str:
                     capture_output=True,
                 )
                 return f'MacOS {res.stdout.decode().strip()}'
+    return ''
+
+
+def _desktop_env() -> str:
+    if sys.platform == 'linux':
+        return f'{os.getenv("XDG_SESSION_TYPE")} - {os.getenv("XDG_SESSION_DESKTOP")}'
     return ''
 
 
@@ -150,6 +155,7 @@ def get_plugin_list() -> str:
 def startup_script() -> str:
     """Get information about the startup script if executed."""
 
+    from napari.settings import get_settings
     from napari.utils._startup_script import startup_script_status_info
 
     if startup_script_status_info is None:
@@ -187,13 +193,16 @@ def sys_info(as_html: bool = False) -> str:
     __sys_name = _sys_name()
     if __sys_name:
         text += f'<b>System</b>: {__sys_name}<br>'
+    __desktop_env = _desktop_env()
+    if __desktop_env:
+        text += f'<b>Session</b>: {__desktop_env}<br>'
 
     text += f'<b>Python</b>: {sys_version}<br>'
 
     try:
         from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
 
-        if API_NAME in {'PySide2', 'PySide6'}:
+        if API_NAME == 'PySide6':
             API_VERSION = PYSIDE_VERSION
         elif API_NAME in {'PyQt5', 'PyQt6'}:
             API_VERSION = PYQT_VERSION
@@ -285,6 +294,7 @@ def sys_info(as_html: bool = False) -> str:
         except PackageNotFoundError:
             text += f'  - {name} not installed<br>'
 
+    _config_path: str | Path | None
     try:
         from napari.settings import get_settings
 
@@ -295,7 +305,7 @@ def sys_info(as_html: bool = False) -> str:
         )
         _config_path = get_settings().config_path
     except ValueError:
-        from napari.utils._appdirs import user_config_dir
+        from napari.utils._platformdirs import user_config_dir
 
         _async_setting = str(os.getenv('NAPARI_ASYNC', 'False'))
         _autoswap_buffers = str(os.getenv('NAPARI_AUTOSWAP', 'False'))

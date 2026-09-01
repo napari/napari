@@ -4,24 +4,25 @@ from weakref import ref
 import numpy as np
 import pytest
 
-from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_dims_slider import AnimationThread
-from napari.components import Dims
 from napari.settings._constants import LoopMode
 
 
 @contextmanager
 def make_worker(
-    qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
+    qt_dims,
+    qtbot,
+    nframes=8,
+    fps=20,
+    frame_range=None,
+    loop_mode: LoopMode = LoopMode.LOOP,
 ):
     # sets up an AnimationWorker ready for testing, and breaks down when done
-    dims = Dims(ndim=4)
-    qtdims = QtDims(dims)
-    qtbot.addWidget(qtdims)
     nz = 8
     step = 1
-    dims.set_range(0, (0, nz - 1, step))
-    slider_widget = qtdims.slider_widgets[0]
+    qt_dims.dims.ndim = 4
+    qt_dims.dims.set_range(0, (0, nz - 1, step))
+    slider_widget = qt_dims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
     slider_widget.frame_range = frame_range
@@ -74,10 +75,17 @@ CONDITIONS = [
 @pytest.mark.parametrize(
     ('nframes', 'fps', 'mode', 'rng', 'result'), CONDITIONS
 )
-def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
+def test_animation_thread_variants(
+    qtbot, qt_dims, nframes, fps, mode, rng, result
+):
     """This is mostly testing that AnimationWorker.advance works as expected"""
     with make_worker(
-        qtbot, fps=fps, nframes=nframes, frame_range=rng, loop_mode=mode
+        qt_dims,
+        qtbot,
+        fps=fps,
+        nframes=nframes,
+        frame_range=rng,
+        loop_mode=mode,
     ) as worker:
         current = worker.go()
     if rng:
@@ -90,11 +98,13 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     assert expected - 1 <= current <= expected + 1
 
 
-def test_animation_thread_once(qtbot):
+def test_animation_thread_once(qt_dims, qtbot):
     """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
     with (
-        make_worker(qtbot, nframes=nframes, loop_mode=LoopMode.ONCE) as worker,
+        make_worker(
+            qt_dims, qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
+        ) as worker,
         qtbot.waitSignal(worker.finished, timeout=8000),
     ):
         worker.start()
@@ -102,7 +112,7 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture
-def ref_view(make_napari_viewer):
+def ref_view(qt_viewer, qtbot):
     """basic viewer with data that we will use a few times
 
     It is problematic to yield the qt_viewer directly as it will stick
@@ -112,13 +122,14 @@ def ref_view(make_napari_viewer):
     in the test suite.
     """
 
-    viewer = make_napari_viewer()
-
-    np.random.seed(0)
-    data = np.random.random((2, 10, 10, 15))
-    viewer.add_image(data)
-    yield ref(viewer.window._qt_viewer)
-    viewer.close()
+    rng = np.random.default_rng(0)
+    data = rng.random((2, 10, 10, 15))
+    qt_viewer.viewer.add_image(data)
+    yield ref(qt_viewer)
+    if qt_viewer.dims.is_playing:
+        qt_viewer.dims.stop()
+        qtbot.wait_until(lambda: not qt_viewer.dims.is_playing)
+    qt_viewer.viewer.layers.clear()
 
 
 def test_play_raises_index_errors(qtbot, ref_view):
@@ -139,6 +150,71 @@ def test_play_raises_value_errors(qtbot, ref_view):
 
     with pytest.raises(ValueError, match='loop_mode must be one of'):
         view.dims.play(0, 20, loop_mode=5)
+
+
+def test_playback_survives_axis_shrinking(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((500, 10, 10, 15))
+    view.viewer.dims.set_current_step(0, 480)
+    # Offscreen canvases never paint, so supply the draw that re-arms playback.
+    view.viewer.dims.events.current_step.connect(view.canvas.enable_dims_play)
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    thread = view.dims._animation_thread
+    thread.current = 480
+    # advance() holds this block around its emit, and delivery to the main
+    # thread is queued, so the clamp Dims applies can land while it is held.
+    with view.viewer.dims.events.current_step.blocker(thread._on_axis_changed):
+        layer.data = np.zeros((3, 10, 10, 15))
+
+    assert view.dims.is_playing
+    step = view.viewer.dims.current_step[0]
+    qtbot.wait_until(lambda: view.viewer.dims.current_step[0] != step)
+    assert view.viewer.dims.current_step[0] < 3
+
+
+def test_playback_survives_axis_growing(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((3, 10, 10, 15))
+    view.viewer.dims.events.current_step.connect(view.canvas.enable_dims_play)
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    layer.data = np.zeros((6, 10, 10, 15))
+
+    assert view.dims.is_playing
+    qtbot.wait_until(lambda: view.viewer.dims.current_step[0] >= 3)
+
+
+def test_playback_stops_when_axis_loses_its_slider(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((10, 10, 10, 15))
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    layer.data = np.zeros((1, 10, 10, 15))
+
+    assert not view.dims.is_playing
+
+
+def test_playback_stops_when_frame_range_becomes_invalid(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((10, 10, 10, 15))
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20, frame_range=(2, 6))
+
+    layer.data = np.zeros((3, 10, 10, 15))
+
+    assert not view.dims.is_playing
 
 
 def test_playing_hidden_slider_does_nothing(ref_view):

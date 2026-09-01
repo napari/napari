@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from functools import partial, wraps
+from functools import partial
 from pathlib import Path
 from types import TracebackType
 from typing import (
@@ -12,10 +12,11 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
@@ -50,7 +51,6 @@ __all__ = [
     'VectorsData',
     'WidgetCallable',
     'WriterFunction',
-    'image_reader_to_layerdata_reader',
 ]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
@@ -60,6 +60,7 @@ __all__ = [
 # note, numpy.typing.ArrayLike (in v1.20) is not quite what we want either,
 # since it includes all valid arguments for np.array() ( int, float, str...)
 ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
+LayerDataType = Union[npt.ArrayLike, Sequence[npt.ArrayLike]]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
@@ -99,7 +100,7 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase: type[np.ndarray] = np.ndarray
+ArrayBase = TypeAliasType('ArrayBase', np.ndarray)
 
 
 ImageData = NewType('ImageData', np.ndarray)
@@ -120,33 +121,6 @@ _LayerData = Union[
 ]
 
 LayerDataTuple = NewType('LayerDataTuple', tuple)
-
-
-def image_reader_to_layerdata_reader(
-    func: Callable[[PathOrPaths], ArrayLike],
-) -> ReaderFunction:
-    """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
-
-    Parameters
-    ----------
-    func : Callable[[PathLike], ArrayLike]
-        A function that accepts a string or list of strings, and returns an
-        ArrayLike.
-
-    Returns
-    -------
-    reader_function : Callable[[PathLike], List[LayerData]]
-        A function that accepts a string or list of strings, and returns data
-        as a list of LayerData: List[Tuple[ArrayLike]]
-
-    """
-
-    @wraps(func)
-    def reader_function(*args, **kwargs) -> list[LayerData]:
-        result = func(*args, **kwargs)
-        return [(result,)]
-
-    return reader_function
 
 
 def _register_types_with_magicgui():

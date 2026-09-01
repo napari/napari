@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
@@ -15,13 +16,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.plugins import _npe2
 from napari.plugins.utils import (
-    get_all_readers,
     get_filename_patterns_for_reader,
-    get_potential_readers,
 )
 from napari.settings import get_settings
-from napari.utils.translations import trans
 
 
 class Extension2ReaderTable(QWidget):
@@ -31,19 +30,13 @@ class Extension2ReaderTable(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(
-        self, parent=None, npe2_readers=None, npe1_readers=None
-    ) -> None:
+    def __init__(self, parent=None, npe2_readers=None) -> None:
         super().__init__(parent=parent)
 
-        npe2, npe1 = get_all_readers()
         if npe2_readers is None:
-            npe2_readers = npe2
-        if npe1_readers is None:
-            npe1_readers = npe1
+            npe2_readers = _npe2.get_readers()
 
         self._npe2_readers = npe2_readers
-        self._npe1_readers = npe1_readers
 
         self._table = QTableWidget()
         self._table.setShowGrid(False)
@@ -52,9 +45,7 @@ class Extension2ReaderTable(QWidget):
         self._populate_table()
 
         instructions = QLabel(
-            trans._(
-                'Enter a filename pattern to associate with a reader e.g. "*.tif" for all TIFF files.  Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts. \n\nYou can save a preference for a specific folder by listing the folder name with a "/" at the end (for example, "/test_images/"). \n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
-            )
+            'Enter a filename pattern to associate with a reader e.g. "*.tif" for all TIFF files.  Available readers will be filtered to those compatible with your pattern. Hover over a reader to see what patterns it accepts. \n\nYou can save a preference for a specific folder by listing the folder name with a "/" at the end (for example, "/test_images/"). \n\nFor documentation on valid filename patterns, see https://docs.python.org/3/library/fnmatch.html'
         )
         instructions.setWordWrap(True)
         instructions.setOpenExternalLinks(True)
@@ -73,7 +64,7 @@ class Extension2ReaderTable(QWidget):
         self._fn_pattern_col = 0
         self._reader_col = 1
 
-        header_strs = [trans._('Filename Pattern'), trans._('Reader Plugin')]
+        header_strs = ['Filename Pattern', 'Reader Plugin']
 
         self._table.setColumnCount(2)
         self._table.setColumnWidth(self._fn_pattern_col, 200)
@@ -105,7 +96,7 @@ class Extension2ReaderTable(QWidget):
 
         self._fn_pattern_edit = QLineEdit()
         self._fn_pattern_edit.setPlaceholderText(
-            trans._('Start typing filename pattern...')
+            'Start typing filename pattern...'
         )
         self._fn_pattern_edit.textChanged.connect(
             self._filter_compatible_readers
@@ -117,12 +108,12 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown = QComboBox()
         for i, (plugin_name, display_name) in enumerate(
-            sorted(dict(self._npe2_readers, **self._npe1_readers).items())
+            sorted(self._npe2_readers.items())
         ):
             self._add_reader_choice(i, plugin_name, display_name)
 
-        add_btn = QPushButton(trans._('Add'))
-        add_btn.setToolTip(trans._('Save reader preference for pattern'))
+        add_btn = QPushButton('Add')
+        add_btn.setToolTip('Save reader preference for pattern')
         add_btn.clicked.connect(self._save_new_preference)
 
         add_reader_widg.layout().addWidget(self._new_reader_dropdown)
@@ -139,7 +130,7 @@ class Extension2ReaderTable(QWidget):
 
     def _display_no_preferences_found(self):
         self._table.setRowCount(1)
-        item = QTableWidgetItem(trans._('No filename preferences found.'))
+        item = QTableWidgetItem('No filename preferences found.')
         item.setFlags(Qt.ItemFlag.NoItemFlags)
         self._table.setItem(self._fn_pattern_col, 0, item)
 
@@ -153,13 +144,10 @@ class Extension2ReaderTable(QWidget):
 
         self._new_reader_dropdown.addItem(display_name, plugin_name)
         if '*' in reader_patterns:
-            tooltip_text = trans._('Accepts all')
+            tooltip_text = 'Accepts all'
         else:
             reader_patterns_formatted = ', '.join(sorted(reader_patterns))
-            tooltip_text = trans._(
-                'Accepts: {reader_patterns_formatted}',
-                reader_patterns_formatted=reader_patterns_formatted,
-            )
+            tooltip_text = f'Accepts: {reader_patterns_formatted}'
         self._new_reader_dropdown.setItemData(
             i, tooltip_text, role=Qt.ItemDataRole.ToolTipRole
         )
@@ -171,11 +159,22 @@ class Extension2ReaderTable(QWidget):
         readers = self._npe2_readers.copy()
         to_delete = []
         try:
-            compatible_readers = get_potential_readers(new_pattern)
+            # Running both the extension and the new_pattern through the `Path`
+            # module helps us avoid issues with empty or invalid paths on
+            # Windows (invalid patterns can occur when the user is in the
+            # process of typing a valid pattern).
+            # Either of these lines could throw a ValueError about
+            # empty names, which we catch below, and allow the user to continue
+            # typing. See PR #6107 and #8579 for more detail
+            ext = Path(new_pattern).suffix.lower()
+            _ = Path(new_pattern).with_suffix(ext)
         except ValueError as e:
             if 'empty name' not in str(e):
                 raise
             compatible_readers = {}
+        else:
+            compatible_readers = _npe2.get_readers(new_pattern)
+
         for plugin_name in readers:
             if plugin_name not in compatible_readers:
                 to_delete.append(plugin_name)
@@ -183,14 +182,12 @@ class Extension2ReaderTable(QWidget):
         for reader in to_delete:
             del readers[reader]
 
-        readers.update(self._npe1_readers)
-
         for i, (plugin_name, display_name) in enumerate(
             sorted(readers.items())
         ):
             self._add_reader_choice(i, plugin_name, display_name)
         if self._new_reader_dropdown.count() == 0:
-            self._new_reader_dropdown.addItem(trans._('None available'))
+            self._new_reader_dropdown.addItem('None available')
 
     def _save_new_preference(self, event):
         """Save current preference to settings and show in table"""
@@ -253,7 +250,7 @@ class Extension2ReaderTable(QWidget):
         remove_btn.setFixedWidth(30)
         remove_btn.setStyleSheet('margin: 4px;')
         remove_btn.setToolTip(
-            trans._('Remove this filename pattern to reader association')
+            'Remove this filename pattern to reader association'
         )
         remove_btn.clicked.connect(self.remove_existing_preference)
 

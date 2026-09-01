@@ -1,9 +1,12 @@
-import numpy as np
-from vispy.scene.visuals import Compound, Line, Mesh, Text
+from __future__ import annotations
 
+import numpy as np
+from vispy.scene.visuals import Compound, Line, Mesh
+
+from napari._vispy.utils.qt_font import FontInfo
+from napari._vispy.visuals.text import Text
 from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):
@@ -71,11 +74,7 @@ def color_lines(colors):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
@@ -92,11 +91,7 @@ def color_dashed_lines(colors):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
@@ -117,16 +112,15 @@ def color_arrowheads(colors, num_segments):
         )
 
     return ValueError(
-        trans._(
-            'Either 2 or 3 colors must be provided, got {number}.',
-            deferred=True,
-            number=len(colors),
-        )
+        f'Either 2 or 3 colors must be provided, got {len(colors)}.'
     )
 
 
 class Axes(Compound):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        font_info: FontInfo,
+    ) -> None:
         self._num_segments_arrowhead = 100
         # CMYRGB for 6 axes data in x, y, z, ... ordering
         self._default_color = [
@@ -137,8 +131,6 @@ class Axes(Compound):
             [0, 1, 0, 1],
             [0, 0, 1, 1],
         ]
-
-        self._text_offsets = 0.1 * np.array([1, 1, 1])
 
         # note order is x, y, z for VisPy
         self._line_data2D = np.array(
@@ -183,13 +175,14 @@ class Axes(Compound):
 
         super().__init__(
             [
-                Line(connect='segments', method='gl', width=3),
+                Line(connect='segments', method='gl', width=3, antialias=True),
                 Mesh(),
                 Text(
                     text='1',
                     font_size=10,
                     anchor_x='center',
                     anchor_y='center',
+                    font_info=font_info,
                 ),
             ]
         )
@@ -206,7 +199,16 @@ class Axes(Compound):
     def text(self):
         return self._subvisuals[2]
 
-    def set_data(self, axes, reversed_axes, colored, bg_color, dashed, arrows):
+    def set_data(
+        self,
+        axes,
+        reversed_axes,
+        colored,
+        bg_color,
+        dashed,
+        arrows,
+        text_offset=0.3,
+    ):
         ndisplay = len(axes)
 
         # Determine colors of axes based on reverse position
@@ -243,10 +245,7 @@ class Axes(Compound):
             text_data = self._line_data3D[1::2]
         else:
             raise ValueError(
-                trans._(
-                    'Axes dash status and ndisplay combination not supported',
-                    deferred=True,
-                )
+                'Axes dash status and ndisplay combination not supported'
             )
 
         if arrows and ndisplay == 2:
@@ -274,4 +273,4 @@ class Axes(Compound):
         )
 
         self.text.color = axes_colors
-        self.text.pos = text_data + self._text_offsets
+        self.text.pos = text_data + np.eye(3)[:ndisplay] * text_offset

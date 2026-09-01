@@ -1,28 +1,34 @@
 from collections import defaultdict
 from collections.abc import MutableMapping, Sequence
+from enum import StrEnum
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Literal,
+    Self,
     cast,
     overload,
 )
 from warnings import warn
 
 import numpy as np
-from typing_extensions import Self
+from pydantic import (
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationInfo,
+    field_validator,
+)
 
-from napari._pydantic_compat import Field, PrivateAttr, validator
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.compat import StrEnum
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.migrations import deprecated_class_name
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from numba import typed
@@ -81,7 +87,9 @@ class Colormap(EventedModel):
     name: str = 'custom'
     _display_name: str | None = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array = Field(default_factory=lambda: cast(Array, []))
+    controls: Array = Field(
+        default_factory=lambda: cast(Array, []), validate_default=True
+    )
     nan_color: ColorValue = ColorValue('transparent')
     high_color: ColorValue | None = None
     low_color: ColorValue | None = None
@@ -96,49 +104,37 @@ class Colormap(EventedModel):
         self._display_name = display_name
 
     # controls validator must be called even if None for correct initialization
-    @validator('controls', pre=True, always=True, allow_reuse=True)
-    def _check_controls(cls, v, values):
+    @field_validator('controls', mode='after')
+    @classmethod
+    def _check_controls(cls, v, info):
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
-            n_controls = len(values['colors']) + int(
-                values['interpolation'] == ColormapInterpolationMode.ZERO
+            n_controls = len(info.data['colors']) + int(
+                info.data['interpolation'] == ColormapInterpolationMode.ZERO
             )
             return np.linspace(0, 1, n_controls, dtype=np.float32)
 
         # Check control end points are correct
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
-                trans._(
-                    'Control points must start with 0.0 and end with 1.0. '
-                    'Got {start_control_point} and {end_control_point}',
-                    deferred=True,
-                    start_control_point=v[0],
-                    end_control_point=v[-1],
-                )
+                'Control points must start with 0.0 and end with 1.0. '
+                f'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
         if not np.array_equal(v, sorted(v)):
             raise ValueError(
-                trans._(
-                    'Control points need to be sorted in ascending order',
-                    deferred=True,
-                )
+                'Control points need to be sorted in ascending order'
             )
 
         # Check number of control points is correct
-        n_controls_target = len(values.get('colors', [])) + int(
-            values['interpolation'] == ColormapInterpolationMode.ZERO
+        n_controls_target = len(info.data.get('colors', [])) + int(
+            info.data['interpolation'] == ColormapInterpolationMode.ZERO
         )
         n_controls = len(v)
         if n_controls != n_controls_target:
             raise ValueError(
-                trans._(
-                    'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}',
-                    deferred=True,
-                    n_controls_target=n_controls_target,
-                    n_controls=n_controls,
-                )
+                f'Wrong number of control points provided. Expected {n_controls_target}, got {n_controls}'
             )
 
         return v
@@ -165,12 +161,7 @@ class Colormap(EventedModel):
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
-            raise ValueError(
-                trans._(
-                    'Unrecognized Colormap Interpolation Mode',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Unrecognized Colormap Interpolation Mode')
 
         values = values[..., None]
         # map NaNs, lows, and highs
@@ -186,6 +177,32 @@ class Colormap(EventedModel):
     def colorbar(self):
         return make_colorbar(self)
 
+    def same_colors(self, other: 'Colormap') -> bool:
+        return bool(
+            np.array_equal(self.controls, other.controls)
+            and np.array_equal(self.colors, other.colors)
+            and self.interpolation == other.interpolation
+            and np.all(self.nan_color == other.nan_color)
+            and np.all(self.high_color == other.high_color)
+            and np.all(self.low_color == other.low_color)
+        )
+
+
+class _RebuildableCache(dict):
+    """Cache dict that is emptied on (deep)copy and rebuilt lazily.
+
+    ``DirectLabelColormap`` stores a numba ``typed.Dict`` here after a layer
+    has been rendered; that object holds an unpicklable
+    ``_nrt_python._MemInfo`` that breaks ``copy.deepcopy`` of the colormap.
+    The cache is a pure performance memoization, so emptying it on copy is
+    always safe -- it is recomputed on the next ``map`` call. Defending the
+    value itself keeps this independent of where pydantic stores private
+    attributes or which hook a copy routes through.
+    """
+
+    def __deepcopy__(self, memo):
+        return type(self)()
+
 
 class LabelColormapBase(Colormap):
     use_selection: bool = False
@@ -195,16 +212,20 @@ class LabelColormapBase(Colormap):
         ColormapInterpolationMode.ZERO, frozen=True
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
-        default={}
+        default_factory=_RebuildableCache
     )
-    _cache_other: dict[str, Any] = PrivateAttr(default={})
+    _cache_other: dict[str, Any] = PrivateAttr(
+        default_factory=_RebuildableCache
+    )
 
-    class Config(Colormap.Config):
+    model_config = EventedModel.model_config | ConfigDict(
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
         # it is required until we drop Pydantic 1 or Python 3.11 and older
         # need to validate after drop pydantic 1
-        keep_untouched = (cached_property,)
+        ignored_types=(cached_property,)
+        # TODO: ensure that this is actually needed
+    )
 
     @overload
     def _data_to_texture(self, values: np.ndarray) -> np.ndarray: ...
@@ -220,7 +241,7 @@ class LabelColormapBase(Colormap):
 
     def _cmap_without_selection(self) -> Self:
         if self.use_selection:
-            cmap = self.__class__(**self.dict())
+            cmap = self.__class__(**self.model_dump())
             cmap.use_selection = False
             return cmap
         return self
@@ -243,8 +264,8 @@ class LabelColormapBase(Colormap):
 
     def _clear_cache(self):
         """Mechanism to clean cached properties"""
-        self._cache_mapping = {}
-        self._cache_other = {}
+        self._cache_mapping = _RebuildableCache()
+        self._cache_other = _RebuildableCache()
 
     @property
     def _num_unique_colors(self) -> int:
@@ -297,7 +318,8 @@ class CyclicLabelColormap(LabelColormapBase):
 
     seed: float = 0.5
 
-    @validator('colors', allow_reuse=True)
+    @field_validator('colors', mode='after')
+    @classmethod
     def _validate_color(cls, v):
         if len(v) > 2**16:
             raise ValueError(
@@ -409,9 +431,10 @@ class DirectLabelColormap(LabelColormapBase):
         Exist because of implementation details. Please do not use it.
     """
 
-    color_dict: defaultdict[int | None, np.ndarray] = Field(
-        default_factory=lambda: defaultdict(lambda: np.zeros(4))
-    )
+    color_dict: defaultdict[
+        int | None,
+        Annotated[np.ndarray, Field(default_factory=lambda: np.zeros(4))],
+    ] = Field(default_factory=lambda: defaultdict(lambda: np.zeros(4)))
     use_selection: bool = False
     selection: int = 0
 
@@ -428,8 +451,9 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return self._num_unique_colors + 2
 
-    @validator('color_dict', pre=True, always=True, allow_reuse=True)
-    def _validate_color_dict(cls, v, values):
+    @field_validator('color_dict', mode='before')
+    @classmethod
+    def _validate_color_dict(cls, v: MutableMapping, values: ValidationInfo):
         """Ensure colors are RGBA arrays, not strings.
 
         Parameters
@@ -441,10 +465,8 @@ class DirectLabelColormap(LabelColormapBase):
             which indicates the color to map items not in the dictionary.
             Alternatively, it could be a defaultdict. If neither is provided,
             missing colors are not rendered (rendered as fully transparent).
-        values : dict[str, Any]
-            A dictionary mapping previously-validated attributes to their
-            validated values. Attributes are validated in the order in which
-            they are defined.
+        values : ValidationInfo
+            A structure with information about previously validated attributes
 
         Returns
         -------
@@ -464,8 +486,8 @@ class DirectLabelColormap(LabelColormapBase):
             for label, color_str in v.items()
         }
         if (
-            'background_value' in values
-            and (bg := values['background_value']) not in res
+            'background_value' in values.data
+            and (bg := values.data['background_value']) not in res
         ):
             res[bg] = transform_color('transparent')[0]
         if isinstance(v, defaultdict):
@@ -937,7 +959,7 @@ def _normalize_label_colormap(
     ):
         return any_colormap_like
     if isinstance(any_colormap_like, Sequence):
-        return CyclicLabelColormap(any_colormap_like)
+        return CyclicLabelColormap(colors=any_colormap_like)
     if isinstance(any_colormap_like, MutableMapping):
         return DirectLabelColormap(color_dict=any_colormap_like)
     if (
@@ -945,7 +967,7 @@ def _normalize_label_colormap(
         and any_colormap_like.ndim == 2
         and any_colormap_like.shape[1] in (3, 4)
     ):
-        return CyclicLabelColormap(any_colormap_like)
+        return CyclicLabelColormap(colors=any_colormap_like)
     raise ValueError(
         f'Unable to interpret as labels colormap: {any_colormap_like}'
     )

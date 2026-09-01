@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "requests>=2.32.5",
+# ]
+# ///
 """
 This file contains the code to create a PR or update an existing one based on the state of the current branch.
 """
@@ -112,7 +118,9 @@ def commit_message(branch_name) -> str:
         changed_direct = get_changed_dependencies(
             all_packages=False,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     if not changed_direct:
@@ -125,7 +133,9 @@ def long_description(branch_name: str) -> str:
         all_changed = get_changed_dependencies(
             all_packages=True,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     return 'Updated packages: ' + ', '.join(f'`{x}`' for x in all_changed)
@@ -187,12 +197,16 @@ def update_own_pr(pr_number: int, access_token: str, base_branch: str, repo):
             break
 
 
-def list_pr_for_branch(branch_name: str, access_token: str, repo=''):
+def list_pr_for_branch(
+    branch_name: str,
+    access_token: str,
+    repo: str = 'napari/napari',
+    user: str = 'napari-bot',
+):
     """
     check if PR for branch exists
     """
-    org_name = repo.split('/')[0]
-    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={org_name}:{branch_name}'
+    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={user}:{branch_name}'
     response = requests.get(url)
     response.raise_for_status()
     if response.json():
@@ -344,7 +358,7 @@ def main():
     if event_name in {'schedule', 'workflow_dispatch'}:
         logging.info('Creating PR')
         create_pr_with_push(branch_name, access_token)
-    elif event_name == 'issue_comment':
+    elif event_name in {'issue_comment', 'workflow_call'}:
         logging.info('Updating PR')
         update_pr(branch_name)
     elif event_name == 'pull_request':

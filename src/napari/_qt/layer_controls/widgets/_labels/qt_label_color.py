@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
 from qtpy.QtWidgets import (
     QHBoxLayout,
+    QPushButton,
     QWidget,
 )
 from superqt import QLargeIntSpinBox
@@ -11,12 +12,12 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import attr_to_settr, qt_signals_blocked
 from napari.layers import Labels
+from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 
 class QtColorBox(QWidget):
@@ -43,7 +44,7 @@ class QtColorBox(QWidget):
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
-        self.setToolTip(trans._('Selected label color'))
+        self.setToolTip('Selected label color')
 
         self.color = None
 
@@ -124,34 +125,47 @@ class QtLabelControl(QtWidgetControlsBase):
     selection_spinbox : superqt.QLargeIntSpinBox
         Widget to select a specific label by its index.
         N.B. cannot represent labels > 2**53.
+    new_label_button : qtpy.QtWidgets.QPushButton
+        Button to add a new label to the label layer.
     """
 
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
-        self._layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
         self._layer.events.data.connect(self._on_data_change)
 
         # Setup widgets
         self.selection_spinbox = QLargeIntSpinBox()
         dtype_lims = get_dtype_limits(get_dtype(layer))
         self.selection_spinbox.setRange(*dtype_lims)
+        self.selection_spinbox.setValue(self._layer.selected_label)
         self.selection_spinbox.setKeyboardTracking(False)
         self.selection_spinbox.valueChanged.connect(self.change_selection)
         self.selection_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._on_selected_label_change()
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'selected_label',
+                self.selection_spinbox,
+                'setValue',
+            )
+        )
+        self.new_label_button = QPushButton()
+        self.new_label_button.setText('new')
+        self.new_label_button.setObjectName('newLabelButton')
+        self.new_label_button.clicked.connect(self._on_button_click)
 
-        self.label_color_label = QtWrappedLabel(trans._('label:'))
+        self.label_color_label = QtWrappedLabel('label:')
         self.label_color = QWidget()
-        self.label_color.setProperty('emphasized', True)
         color_layout = QHBoxLayout()
         color_layout.setContentsMargins(0, 2, 0, 1)
+        color_layout.setSpacing(4)
         self.colorbox = QtColorBox(layer)
-        color_layout.addWidget(self.colorbox)
-        color_layout.addWidget(self.selection_spinbox)
+        color_layout.addWidget(self.colorbox, 0)
+        color_layout.addWidget(self.selection_spinbox, 1)
+        color_layout.addWidget(self.new_label_button, 0)
         self.label_color.setLayout(color_layout)
+        self.label_color.setProperty('foreground', 'true')
 
     def change_selection(self, value: int) -> None:
         """Change currently selected label.
@@ -165,12 +179,6 @@ class QtLabelControl(QtWidgetControlsBase):
         # TODO: decouple
         self.parent().setFocus()
 
-    def _on_selected_label_change(self) -> None:
-        """Receive layer model label selection change event and update spinbox."""
-        with qt_signals_blocked(self.selection_spinbox):
-            value = self._layer.selected_label
-            self.selection_spinbox.setValue(value)
-
     def _on_data_change(self) -> None:
         """Update label selection spinbox min/max when data changes."""
         with qt_signals_blocked(self.selection_spinbox):
@@ -181,5 +189,11 @@ class QtLabelControl(QtWidgetControlsBase):
         self.colorbox.disconnect_widget_controls()
         super().disconnect_widget_controls()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def _on_button_click(self):
+        """Select a new label for the labels layer when the button is clicked."""
+        new_label(self._layer)
+
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.label_color_label, self.label_color)]

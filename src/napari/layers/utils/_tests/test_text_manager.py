@@ -3,8 +3,8 @@ from itertools import permutations
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
-from napari._pydantic_compat import ValidationError
 from napari._tests.utils import assert_colors_equal
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils.string_encoding import (
@@ -362,7 +362,7 @@ def test_update_from_layer_with_invalid_value_fails_safely():
         text='class',
         features=features,
     )
-    before = text_manager.copy(deep=True)
+    before = text_manager.model_copy(deep=True)
 
     text = {
         'string': 'confidence',
@@ -536,7 +536,7 @@ def test_serialization():
     )
     original = TextManager(features=features, string='class', color='red')
 
-    serialized = original.dict()
+    serialized = original.model_dump()
     deserialized = TextManager(**serialized)
 
     assert original == deserialized
@@ -755,7 +755,7 @@ def test_compute_text_coords(ndim, ndisplay, translation):
     np.testing.assert_equal(text_coords, expected_coords)
 
 
-@pytest.mark.parametrize(('order'), permutations((0, 1, 2)))
+@pytest.mark.parametrize(('order'), list(permutations((0, 1, 2))))
 def test_compute_text_coords_with_3D_data_2D_display(order):
     """See https://github.com/napari/napari/issues/5111"""
     num_points = 3

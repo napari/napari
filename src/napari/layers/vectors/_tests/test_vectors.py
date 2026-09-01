@@ -9,6 +9,7 @@ from napari._tests.utils import (
 )
 from napari.components.dims import Dims
 from napari.layers import Vectors
+from napari.layers.vectors._vectors_constants import VectorsProjectionMode
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_kwargs_sorted,
@@ -41,6 +42,26 @@ def test_random_vectors_image():
     assert layer.data.shape == (20 * 10, 2, 2)
     assert layer.ndim == 2
     assert layer._view_data.shape[2] == 2
+
+
+def test_sparse_vectors_image_coordinates():
+    """Test if vector images are correctly converted to coordinates.
+
+    Prior to [1]_, vector images were incorrectly converted to coordinates.
+
+    This was due to an incorrect call to `np.meshgrid`.
+
+    [1]: https://forum.image.sc/t/missing-something-about-vectors-in-napari/117092
+    """
+    shape = (20, 10)
+    data = np.zeros(shape + (2,))
+    i, j = np.random.randint(shape)
+    data[i, j] = np.random.random((2,))
+    layer = Vectors(data)
+    coord_data = layer.data
+    non_zero_vectors = ~np.all(coord_data[:, 1] == 0, axis=-1)
+    non_zero_coords = coord_data[non_zero_vectors, 0, :][0]
+    np.testing.assert_equal(non_zero_coords, (i, j))
 
 
 def test_no_args_vectors():
@@ -79,16 +100,16 @@ def test_empty_vectors_with_features():
     https://github.com/napari/napari/issues/5634
     """
     vectors = Vectors(
-        features={'a': np.empty(0, int)},
-        feature_defaults={'a': 0},
+        features={'a': np.empty(0, str)},
+        feature_defaults={'a': 'x'},
         edge_color='a',
         edge_color_cycle=list('rgb'),
     )
 
     vectors.data = np.concatenate((vectors.data, [[[0, 0], [1, 1]]]))
-    vectors.feature_defaults['a'] = 1
+    vectors.feature_defaults['a'] = 'y'
     vectors.data = np.concatenate((vectors.data, [[[1, 1], [2, 2]]]))
-    vectors.feature_defaults = {'a': 2}
+    vectors.feature_defaults = {'a': 'z'}
     vectors.data = np.concatenate((vectors.data, [[[2, 2], [3, 3]]]))
 
     assert_colors_equal(vectors.edge_color, list('rgb'))
@@ -228,10 +249,9 @@ def test_data_setter():
 
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
-    shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = np.random.default_rng(0).random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
@@ -248,10 +268,9 @@ def test_properties_dataframe():
 
 def test_adding_properties():
     """test adding properties to a Vectors layer"""
-    shape = (10, 2)
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     layer = Vectors(data)
@@ -274,7 +293,7 @@ def test_adding_properties():
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A', 'B'])}
     with pytest.raises(
-        ValueError, match='(does not match length)|(indices imply)'
+        ValueError, match=r'does not match length|indices imply'
     ):
         layer.properties = bad_properties
 
@@ -439,6 +458,68 @@ def test_edge_color_cycle():
     np.testing.assert_array_equal(layer.edge_color, edge_color_array)
 
 
+def test_edge_color_cycle_default():
+    """Cycle mode without an explicit cycle still distinguishes the categories.
+
+    The default used to be a single white, which made the mode a no-op: every category
+    mapped to the same color, and picking "cycle" in the layer controls turned the whole
+    layer white.
+    """
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(
+        data,
+        features={'vector_type': np.array(['A', 'B', 'C'] * 2)},
+        edge_color='vector_type',
+    )
+
+    assert layer.edge_color_mode == 'cycle'
+    assert len(np.unique(layer.edge_color, axis=0)) > 1
+
+
+def test_switching_edge_color_mode_fires_edge_color_event():
+    """Switching modes moves the layer in and out of a feature mapping.
+
+    The direct setter used to assign an attribute nothing reads (`_edge_color_mode`), so
+    the layer stayed in colormap/cycle mode and only the event fired — Points and Shapes
+    switch as expected. Switching back to colormap remaps every color, so it also has to
+    emit `edge_color` or the renderers keep drawing the stale ones.
+    """
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(
+        data,
+        features={'phase': np.linspace(-1, 1, 6)},
+        edge_color='phase',
+    )
+    assert layer.edge_color_mode == 'colormap'
+
+    layer.edge_color_mode = 'direct'
+
+    assert layer.edge_color_mode == 'direct'
+
+    layer.edge_color = 'yellow'
+    events = []
+    layer.events.edge_color.connect(events.append)
+
+    layer.edge_color_mode = 'colormap'
+
+    assert len(events) == 1
+    assert len(np.unique(layer.edge_color, axis=0)) == 6
+
+
+def test_setting_the_current_edge_color_mode_does_not_emit():
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(data)
+    heard = []
+    layer.events.edge_color_mode.connect(lambda event: heard.append(event))
+
+    layer.edge_color_mode = 'direct'
+
+    assert heard == []
+
+
 def test_edge_color_colormap():
     """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)
@@ -558,24 +639,28 @@ def test_properties_color_mode_without_properties():
     """Test that switching to a colormode requiring
     properties without properties defined raises an exceptions
     """
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     shape = (10, 2, 2)
-    data = np.random.random(shape)
+    data = rng.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.properties == {}
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(
+        ValueError, match=r'must be a valid Vectors.properties'
+    ):
         layer.edge_color_mode = 'colormap'
 
-    with pytest.raises(ValueError, match='must be a valid Points.properties'):
+    with pytest.raises(
+        ValueError, match=r'must be a valid Vectors.properties'
+    ):
         layer.edge_color_mode = 'cycle'
 
 
 def test_length():
     """Test setting length."""
-    np.random.seed(0)
-    data = np.random.random((10, 2, 2))
+    rng = np.random.default_rng(0)
+    data = rng.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
     assert layer.length == 1
@@ -669,30 +754,32 @@ def test_world_data_extent():
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
 
 
-def test_out_of_slice_display():
-    """Test setting out_of_slice_display flag for 2D and 4D data."""
-    shape = (10, 2, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Vectors(data)
-    assert layer.out_of_slice_display is False
+def test_thick_slicing():
+    coords = np.array([[[0, 0, 0], [3, 3, 3]], [[10, 0, 0], [-3, -3, -3]]])
+    layer = Vectors(coords)
 
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert np.array_equal(layer._view_indices, [0])
 
-    layer = Vectors(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
-    shape = (10, 2, 4)
-    data = 20 * np.random.random(shape)
-    layer = Vectors(data)
-    assert layer.out_of_slice_display is False
+    layer.projection_mode = VectorsProjectionMode.FADE
 
-    layer.out_of_slice_display = True
-    assert layer.out_of_slice_display is True
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+        )
+    )
 
-    layer = Vectors(data, out_of_slice_display=True)
-    assert layer.out_of_slice_display is True
+    assert np.array_equal(layer._view_indices, [0])
+    assert np.array_equal(layer._view_alphas, [0.5])
+
+    # test without thickness
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert np.array_equal(layer._view_indices, [])
 
 
 def test_empty_data_from_tuple():
