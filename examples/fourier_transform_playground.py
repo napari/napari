@@ -54,6 +54,8 @@ def wave_2d(frequency, angle, phase_shift):
 
 
 # set up viewer with grid-mode enabled
+# check if one exists to circumvent the forced napari.run() teardown at the end of this script
+existing_viewer = napari.current_viewer()
 viewer = napari.Viewer()
 viewer.canvas.grid.enabled = True
 
@@ -176,7 +178,10 @@ wdg()
 wait_for_layers(viewer, ['wave 0'])
 viewer.fit_to_view()
 
-if __name__ == '__main__':
+# Only tear the animation thread down when this script is the main script and
+# owns the napari event loop. Drag and drop would otherwise result in the
+# thread being torn down while the viewer is running.
+if existing_viewer is None:
     napari.run()
     thread.quit()
     FINISHED = True
