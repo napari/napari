@@ -5,7 +5,6 @@ import pytest
 from hypothesis import given, settings, strategies as st
 
 from napari.utils.camera_orientations import (
-    up_direction_from_angles,
     view_and_up_directions_from_angles,
 )
 
@@ -338,12 +337,13 @@ def test_view_direction_correct_under_rotation(
     # VisPy uses xyz coordinates; napari uses zyx, hence the reversal.
     view_direction = (-matrix_inv[:, 2])[::-1]
     up_direction = (matrix_inv[:, 1])[::-1]
+    view, up = view_and_up_directions_from_angles(angles, orientation)
     assert np.allclose(
-        view_and_up_directions_from_angles(angles, orientation),
+        view,
         view_direction,
     )
     assert np.allclose(
-        up_direction_from_angles(angles, orientation),
+        up,
         up_direction,
     )
 
@@ -360,11 +360,9 @@ def test_vispy_quat_roundtrip(qapp, orientation, angles):
 
     quat = napari_angles_to_vispy_quat(angles, orientation)
     recovered = vispy_quat_to_napari_angles(quat, orientation)
-    assert np.allclose(
-        view_and_up_directions_from_angles(recovered, orientation),
-        view_and_up_directions_from_angles(angles, orientation),
+    view_recovered, up_recovered = view_and_up_directions_from_angles(
+        recovered, orientation
     )
-    assert np.allclose(
-        up_direction_from_angles(recovered, orientation),
-        up_direction_from_angles(angles, orientation),
-    )
+    view, up = view_and_up_directions_from_angles(angles, orientation)
+    assert np.allclose(view_recovered, view)
+    assert np.allclose(up_recovered, up)
