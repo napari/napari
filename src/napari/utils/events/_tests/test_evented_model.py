@@ -505,6 +505,24 @@ def test_evented_model_with_property_setters():
         t.e = 100
 
 
+def test_base_class_property_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> int:
+            return self.a * 2
+
+    class Sub(Base):
+        c: int = 3
+
+        @property
+        def d(self) -> int:
+            return self.c + self.b
+
+    assert Sub.__properties__ == {'b': Base.b, 'd': Sub.d}
+
+
 @pytest.fixture
 def mocked_object():
     t = T()
