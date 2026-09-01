@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
 from napari.utils.camera_orientations import (
-    DepthAxisOrientation,
-    HorizontalAxisOrientation,
-    VerticalAxisOrientation,
     angles_from_view_direction,
     up_direction_from_angles,
     view_direction_from_angles,
 )
+
+if TYPE_CHECKING:
+    from napari.utils.camera_orientations import (
+        DepthAxisOrientation,
+        HorizontalAxisOrientation,
+        VerticalAxisOrientation,
+    )
 
 
 def _get_vispy_flipped_axes(
