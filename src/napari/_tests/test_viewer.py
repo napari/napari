@@ -96,6 +96,16 @@ def test_viewer(make_napari_viewer):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
+    # check deprecations work
+    with pytest.warns(FutureWarning):
+        assert viewer.title == 'napari'
+
+    with pytest.warns(FutureWarning):
+        viewer.title = 'new'
+
+    with pytest.warns(FutureWarning):
+        viewer.events.title.connect(lambda _: None)
+
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
 def test_add_layer(make_napari_viewer, layer_class, data, ndim):
