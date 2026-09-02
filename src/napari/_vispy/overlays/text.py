@@ -9,7 +9,6 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import TextOverlay
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo

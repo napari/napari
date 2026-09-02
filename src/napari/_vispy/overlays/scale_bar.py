@@ -10,7 +10,6 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
-from napari.components.overlays import ScaleBarOverlay
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.notifications import show_warning
 

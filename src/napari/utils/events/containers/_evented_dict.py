@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 
 from psygnal import EmissionInfo, EventedModel as PsygnalModel
 
-from psygnal import EmissionInfo, EventedModel as PsygnalModel
-
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.events.types import SupportsEvents

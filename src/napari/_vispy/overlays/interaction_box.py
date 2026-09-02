@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.interaction_box import InteractionBox
-from napari.components.overlays import SelectionBoxOverlay, TransformBoxOverlay
 from napari.layers.base._base_constants import InteractionBoxHandle
 
 if TYPE_CHECKING:
