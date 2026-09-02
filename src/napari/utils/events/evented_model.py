@@ -1,7 +1,8 @@
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from types import FunctionType
+from typing import Any, ClassVar, NotRequired, TypedDict, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -41,7 +42,11 @@ class EventedMetaclass(ModelMetaclass):
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        cls.__eq_operators__ = {}
+        non_evented_properties = getattr(
+            cls, '__non_evented_properties__', set()
+        )
+
+        cls.__eq_operators__ = {**getattr(cls, '__eq_operators__', {})}
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
             cls.__eq_operators__[n] = pick_equality_operator(field_type)
@@ -60,8 +65,11 @@ class EventedMetaclass(ModelMetaclass):
                 )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
-        cls.__properties__ = {}
+        # Current implementation ignores properties defined in mixins
+        cls.__properties__ = {**getattr(cls, '__properties__', {})}
         for name, attr in namespace.items():
+            if name in non_evented_properties:
+                continue
             if isinstance(attr, property):
                 cls.__properties__[name] = attr
                 # determine compare operator
@@ -75,6 +83,12 @@ class EventedMetaclass(ModelMetaclass):
                     cls.__eq_operators__[name] = pick_equality_operator(
                         attr.fget.__annotations__['return']
                     )
+        cls.__properties__.pop(
+            'events', None
+        )  # we don't want to treat events as a usual property
+        cls.__properties__.pop(
+            '_defaults', None
+        )  # don't want to treat _defaults as a usual property
 
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
@@ -180,6 +194,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
+    __non_evented_properties__: ClassVar[set[str]] = {'events', '_defaults'}
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
     __field_dependents__: ClassVar[dict[str, set[str]]]
@@ -216,7 +231,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         ]
 
         property_events = {
-            name: WarningEmitter(message=prop.fget.__deprecated__)
+            name: WarningEmitter(**_get_deprecated_params(prop.fget))
             if hasattr(prop.fget, '__deprecated__')
             else None
             for name, prop in self.__properties__.items()
@@ -374,7 +389,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 getattr(self.events, name).source = self
 
     @property
-    def _defaults(self):
+    def _defaults(self) -> dict[str, Any]:
         return get_defaults(self)
 
     def reset(self):
@@ -519,3 +534,22 @@ class ComparisonDelayer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()
+
+
+class _DeprecatedParam(TypedDict):
+    message: str
+    category: NotRequired[type[Warning]]
+
+
+def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
+    message = getattr(function, '__deprecated__', '')
+    if (closure := function.__closure__) is None:
+        return _DeprecatedParam(message=message)
+
+    for idx, name in enumerate(function.__code__.co_freevars):
+        if idx >= len(closure):
+            break
+        if name == 'category':
+            category = closure[idx].cell_contents
+            return _DeprecatedParam(message=message, category=category)
+    return _DeprecatedParam(message=message)
