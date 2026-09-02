@@ -100,7 +100,7 @@ def _disconnect_all_events(
     if isinstance(evented_object, _EventedModelProtocol):
         values = [
             getattr(evented_object, name)
-            for name in evented_object.model_fields
+            for name in evented_object.__class__.model_fields  # type: ignore
         ]
     elif isinstance(evented_object, _EventedMappingProtocol):
         values = evented_object.values()
@@ -110,7 +110,7 @@ def _disconnect_all_events(
         values = []
     for value in values:
         if isinstance(value, _EventedObject):
-            _disconnect_all_events(value.events, listener)
+            _disconnect_all_events(value, listener)
 
 
 def connect_setattr(
