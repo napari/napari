@@ -77,7 +77,7 @@ jobs:
           attempt_limit: 3
           attempt_delay: 30000 # 30s
           retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          command: python -m tox -v --pre --recreate
+          command: python -m tox -v --pre --recreate  --runner virtualenv
         env:
           BACKEND: ${{ matrix.backend }}
           PYTHON: ${{ matrix.python }}
