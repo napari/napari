@@ -1,9 +1,10 @@
 import weakref
 from functools import partial
+from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import EventEmitter
+from napari.utils.events import EventEmitter, RenamedEmitter, WarningEmitter
 
 
 def test_event_blocker_count_none():
@@ -351,3 +352,91 @@ def test_none_disconnect():
     e.connect(fun2)
     e()
     assert count_list == [1, 2]
+
+
+def test_warning_emitter():
+    mock = Mock()
+    e = WarningEmitter(
+        type_name='test', message='This is a warning', category=FutureWarning
+    )
+
+    with pytest.warns(FutureWarning, match='This is a warning'):
+        e.connect(mock)
+
+    assert e.callbacks
+
+    mock.assert_not_called()
+    e()
+
+    mock.assert_called_once()
+
+
+def test_renamed_emitter_simple():
+    class DummyEventEmitter:
+        def __init__(self, parent):
+            self.new_event = EventEmitter(type_name='new_event')
+            self.old_event = RenamedEmitter(
+                type_name='old_event',
+                new_name='new_event',
+                source=parent,
+                message='Warning message',
+            )
+
+    class NewNamespace:
+        def __init__(self):
+            self.events = DummyEventEmitter(self)
+
+    mock = Mock()
+
+    n = NewNamespace()
+
+    assert not n.events.new_event.callbacks
+
+    with pytest.warns(FutureWarning, match='Warning message'):
+        n.events.old_event.connect(mock)
+    assert n.events.new_event.callbacks
+
+    mock.assert_not_called()
+
+    n.events.new_event()
+
+    mock.assert_called_once()
+
+
+def test_renamed_emitter_composite():
+    class DummyEventEmitterComposite:
+        def __init__(self, parent):
+            self.new_event = EventEmitter(type_name='new_event')
+
+    class DummyEventEmitterBase:
+        def __init__(self, parent):
+            self.old_event = RenamedEmitter(
+                type_name='old_event',
+                new_name='composite.new_event',
+                source=parent,
+                message='Warning message',
+            )
+
+    class CompositeNamespace:
+        def __init__(self):
+            self.events = DummyEventEmitterComposite(self)
+
+    class OldNamespace:
+        def __init__(self):
+            self.events = DummyEventEmitterBase(self)
+            self.composite = CompositeNamespace()
+
+    mock = Mock()
+
+    o = OldNamespace()
+
+    assert not o.composite.events.new_event.callbacks
+    with pytest.warns(FutureWarning, match='Warning message'):
+        o.events.old_event.connect(mock)
+    assert o.composite.events.new_event.callbacks
+
+    mock.assert_not_called()
+
+    o.composite.events.new_event()
+
+    mock.assert_called_once()

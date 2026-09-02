@@ -824,17 +824,21 @@ class WarningEmitter(EventEmitter):
         *args,
         **kwargs,
     ) -> None:
+        super().__init__(*args, **kwargs)
         self._message = message
         self._warned = False
         self._category = category
         self._stacklevel = stacklevel
-        EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
         self._warn(cb)
         return EventEmitter.connect(self, cb, *args, **kwargs)
 
     def _invoke_callback(self, cb, event):
+        """invoke callback with warn if not warned yet."""
+        # check if this is needed. The _invoke_callback is not called if there is a callback.
+        # but if there is a callback, then _warn was called in the connect.
+        # And warn emmit a warning only once.
         self._warn(cb)
         return EventEmitter._invoke_callback(self, cb, event)
 
@@ -852,6 +856,51 @@ class WarningEmitter(EventEmitter):
             self._message, category=self._category, stacklevel=self._stacklevel
         )
         self._warned = True
+
+
+class RenamedEmitter(WarningEmitter):
+    """
+    Warning emitter to be used when an attribute was renamed or moved to a composition object.
+    It will connect to the new event once the callback is connected to the old one.
+     It will also warn the user that the attribute was renamed.
+    """
+
+    def __init__(
+        self,
+        new_name: str,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        *self._new_name_path, self._new_name = new_name.split('.')
+        self._connected = False
+
+    def _get_new_emitter(self):
+        target = self.source
+        if self.source is None:
+            raise RuntimeError(
+                f'Cannot connect to renamed emitter {self._new_name} because source is None'
+            )
+        for attr in self._new_name_path:
+            target = getattr(target, attr)
+        new_emitter = getattr(target.events, self._new_name)
+        return new_emitter
+
+    def connect(self, cb, *args, **kwargs):
+        if not self._connected:
+            new_emitter = self._get_new_emitter()
+            new_emitter.connect(self)
+            self._connected = True
+        super().connect(cb, *args, **kwargs)
+
+    def disconnect(
+        self, callback: Callback | CallbackRef | object | None = None
+    ):
+        super().disconnect(callback)
+        if not self.callbacks:
+            new_emitter = self._get_new_emitter()
+            new_emitter.disconnect(self)
+            self._connected = False
 
 
 class EmitterGroup(EventEmitter):

@@ -2,6 +2,8 @@ from napari.utils.events.event import (  # isort:skip
     EmitterGroup,
     Event,
     EventEmitter,
+    WarningEmitter,
+    RenamedEmitter,
     set_event_tracing_enabled,
 )
 from napari.utils.events.containers._evented_dict import (
@@ -30,10 +32,12 @@ __all__ = [
     'EventedModel',
     'EventedSet',
     'NestableEventedList',
+    'RenamedEmitter',
     'SelectableEventedList',
     'Selection',
     'SupportsEvents',
     'TypedMutableSequence',
+    'WarningEmitter',
     'disconnect_events',
     'set_event_tracing_enabled',
 ]
