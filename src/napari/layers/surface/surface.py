@@ -250,7 +250,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         blending='translucent',
         cache=True,
         colormap='gray',
-        contrast_limits=None,
+        contrast_limits: tuple[float, float] | None = None,
         experimental_clipping_planes=None,
         feature_defaults=None,
         features=None,
@@ -357,7 +357,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
-        self.contrast_limits = self._contrast_limits
         self.contrast_limits = self._contrast_limits
         self.auto_contrast = auto_contrast
 
