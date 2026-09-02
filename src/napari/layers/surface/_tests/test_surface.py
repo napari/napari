@@ -178,19 +178,19 @@ def test_random_3D_timeseries_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._view_verices.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     # assert layer._view_vertex_values.ndim == 1
     assert layer.extent.data[1][0] == max(vertices[:, 0])
 
     layer._slice_dims(Dims(ndim=4, ndisplay=3))
-    assert layer._view_verices.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     # assert layer._view_vertex_values.ndim == 1
 
     # # If a values axis is made to be a displayed axis then no data should be
     # # shown
     # with pytest.warns(UserWarning, match='Assigning multiple data per vertex'):
     #     layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
-    assert len(layer._view_verices) == 10
+    assert len(layer._view_vertices) == 10
 
 
 def test_changing_surface():

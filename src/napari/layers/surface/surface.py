@@ -401,11 +401,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._histogram
 
     @property
-    def _view_vertex_colors(self) -> list[Any] | np.ndarray | None:
+    def _view_vertex_colors(self) -> np.ndarray | None:
         return self._slicing_state._view_vertex_colors
 
     @property
-    def _view_vertex_values(self) -> list[Any] | np.ndarray | None:
+    def _view_vertex_values(self) -> np.ndarray | None:
         return self._slicing_state._view_vertex_values
 
     @property
