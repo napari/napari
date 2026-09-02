@@ -111,7 +111,9 @@ class QtOpacityBlendingControls(QtWidgetControlsBase):
         with self._layer.events.blending.blocker():
             self.blend_combobox.setCurrentEnum(Blending(self._layer.blending))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.opacity_label, self.opacity_slider),
             (self.blend_label, self.blend_combobox),

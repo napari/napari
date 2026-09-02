@@ -42,9 +42,9 @@ certifi==2026.7.22
     #   pyproj
     #   rasterio
     #   requests
-chardet==7.5.1
+chardet==7.6.0
     # via trackastra
-charset-normalizer==3.4.9
+charset-normalizer==3.5.1
     # via requests
 click==8.4.2
     # via
@@ -68,7 +68,7 @@ coverage==7.15.4
     # via napari (pyproject.toml)
 cuda-bindings==13.3.1
     # via torch
-cuda-pathfinder==1.6.0
+cuda-pathfinder==1.7.0
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
@@ -96,7 +96,7 @@ edt==3.1.2
     # via trackastra
 executing==2.2.1
     # via stack-data
-filelock==3.32.2
+filelock==3.32.4
     # via
     #   gdown
     #   python-discovery
@@ -145,9 +145,9 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.165.2
+hypothesis==6.165.10
     # via napari (pyproject.toml)
-idna==3.18
+idna==3.19
     # via
     #   requests
     #   yarl
@@ -156,7 +156,7 @@ ilpy==0.6.0
     #   motile
     #   structsvm
     #   trackastra
-imagecodecs==2026.6.26
+imagecodecs==2026.8.16
     # via
     #   tifffile
     #   trackastra
@@ -217,13 +217,13 @@ lazy-loader==0.5
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-llvmlite==0.48.0
+llvmlite==0.49.0
     # via numba
 locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.1.1
+lxml==6.1.2
     # via
     #   napari (pyproject.toml)
     #   lxml-html-clean
@@ -253,7 +253,7 @@ mercantile==1.2.1
     # via contextily
 meshio==5.3.5
     # via napari (pyproject.toml:gallery)
-ml-dtypes==0.5.4
+ml-dtypes==0.6.0
     # via tensorstore
 motile==1.0.1
     # via trackastra
@@ -287,11 +287,11 @@ nibabel==5.4.2
     # via nilearn
 nilearn==0.14.0
     # via napari (pyproject.toml:gallery)
-npe2==0.8.3
+npe2==0.9.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.66.0
+numba==0.67.0
     # via
     #   napari (pyproject.toml)
     #   glasbey
@@ -300,7 +300,7 @@ numcodecs==0.16.5
     # via
     #   geff
     #   zarr
-numpy==2.4.6
+numpy==2.5.2
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -436,7 +436,7 @@ pint==0.25.3
     #   napari-metadata
 pip==26.2.1
     # via napari-plugin-manager
-platformdirs==4.11.1
+platformdirs==4.11.3
     # via
     #   napari (pyproject.toml)
     #   jupyter-core
@@ -499,7 +499,7 @@ pydantic-extra-types==2.11.1
     #   npe2
 pydantic-settings==2.15.0
     # via napari (pyproject.toml)
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   napari (pyproject.toml)
     #   ipython
@@ -522,9 +522,9 @@ pyproj==3.7.2
     # via geopandas
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.2
+pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.10.2
+pyqt6-qt6==6.11.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
@@ -532,11 +532,11 @@ pyqt6-sip==13.12.0
     # via pyqt6
 pyscipopt==6.2.1
     # via ilpy
-pyside6==6.10.3
+pyside6==6.11.2
     # via napari (pyproject.toml)
-pyside6-addons==6.10.3
+pyside6-addons==6.11.2
     # via pyside6
-pyside6-essentials==6.10.3
+pyside6-essentials==6.11.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -558,16 +558,16 @@ pytest-pretty==1.3.0
     # via napari (pyproject.toml)
 pytest-qt==4.5.0
     # via napari (pyproject.toml)
-pytest-rerunfailures==16.4
+pytest-rerunfailures==16.6
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-discovery==1.5.1
+python-discovery==1.5.2
     # via virtualenv
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 pyyaml==6.0.3
     # via
@@ -577,7 +577,7 @@ pyyaml==6.0.3
     #   donfig
     #   npe2
     #   trackastra
-pyzmq==27.1.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -629,7 +629,7 @@ scikit-learn==1.8.0
     # via
     #   glasbey
     #   nilearn
-scipy==1.18.0
+scipy==1.18.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -642,7 +642,7 @@ shapely==2.1.2
     # via geopandas
 shellingham==1.5.4
     # via typer
-shiboken6==6.10.3
+shiboken6==6.11.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -675,7 +675,7 @@ tensorstore==0.1.85
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.7.31
+tifffile==2026.8.23
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:gallery)
@@ -745,13 +745,13 @@ typing-extensions==4.16.0
     #   torch
     #   typing-inspection
     #   zarr
-typing-inspection==0.4.2
+typing-inspection==0.4.4
     # via
     #   pydantic
     #   pydantic-settings
 urllib3==2.7.0
     # via requests
-virtualenv==21.7.3
+virtualenv==21.7.4
     # via napari (pyproject.toml)
 vispy==0.16.2
     # via

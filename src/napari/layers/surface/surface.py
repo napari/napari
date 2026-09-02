@@ -29,7 +29,6 @@ from napari.layers.utils.layer_utils import _FeatureTable, calc_data_range
 from napari.types import LayerDataType
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import (
-    AVAILABLE_COLORMAPS,
     Colormap,
     ValidColormapArg,
 )
@@ -239,7 +238,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     _projectionclass: type[StringEnum] = SurfaceProjectionMode
 
-    _colormaps = AVAILABLE_COLORMAPS
     _slicing_state: _SurfaceSlicingState
 
     def __init__(
