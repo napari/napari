@@ -157,14 +157,6 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             view_height, view_width = self.viewer.canvas.size
 
         target_canvas_length = max(view_width / 4, self._min_canvas_length)
-        # If scale or canvas size has not changed, do not redraw
-        if (
-            abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
-            and target_canvas_length == self._canvas_length
-            and not force
-        ):
-            return
-
         # convert desired length to world size
         target_world_pixels = scale * target_canvas_length
 
