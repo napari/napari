@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def _get_methods(obj):
+def _get_methods(obj: Any) -> list[Callable]:
     """Get all the (bound) instance methods of an object."""
     methods = []
 
@@ -97,6 +97,7 @@ def _disconnect_all_events(
 ) -> None:
     disconnect_events(evented_object.events, listener)
 
+    values: Iterable
     if isinstance(evented_object, _EventedModelProtocol):
         values = [
             getattr(evented_object, name)
