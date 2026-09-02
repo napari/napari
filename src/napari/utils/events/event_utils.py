@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import weakref
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, runtime_checkable
 
 from psygnal import SignalGroup
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from typing import Protocol
+from napari.utils.events.event import EmitterGroup
 
-    from napari.utils.events.event import EmitterGroup
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
     class Emitter(Protocol):
         def connect(self, callback: Callable): ...
@@ -21,7 +21,24 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
+def _get_methods(obj):
+    """Get all the (bound) instance methods of an object."""
+    methods = []
+
+    for cls in obj.__class__.__mro__:
+        for name, value in cls.__dict__.items():
+            if name in methods:
+                continue
+
+            if inspect.isfunction(value):
+                methods.append(getattr(obj, name))
+
+    return methods
+
+
+def disconnect_events(
+    emitter: EmitterGroup | SignalGroup, listener: object
+) -> None:
     """Disconnect all events between an emitter group and a listener.
 
     Parameters
@@ -31,19 +48,69 @@ def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
     listener : Object
         Any object that has been connected to.
     """
-    if isinstance(signal_group, SignalGroup):
-        signals = signal_group.signals
+    if isinstance(emitter, EmitterGroup):
+        emitter.disconnect(listener)
+        for em in emitter.emitters.values():
+            em.disconnect(listener)
+    elif isinstance(emitter, SignalGroup):
+        if callable(listener):
+            emitter.disconnect(listener)
+        else:
+            # TODO: this currently is not supported in psygnal; one needs to
+            # manually disconnect from each method
+            for method in _get_methods(listener):
+                emitter.disconnect(method)
+
+
+@runtime_checkable
+class _EventedModelProtocol(Protocol):
+    @property
+    def events(self) -> EmitterGroup | SignalGroup: ...
+
+    @property
+    def model_fields(self) -> Iterable: ...
+
+
+@runtime_checkable
+class _EventedMappingProtocol(Protocol):
+    @property
+    def events(self) -> EmitterGroup | SignalGroup: ...
+
+    def values(self) -> Iterable: ...
+
+
+@runtime_checkable
+class _EventedContainerProtocol(Protocol):
+    @property
+    def events(self) -> EmitterGroup | SignalGroup: ...
+
+    def __iter__(self): ...
+
+
+_EventedObject: TypeAlias = (
+    _EventedModelProtocol | _EventedMappingProtocol | _EventedContainerProtocol
+)
+
+
+def _disconnect_all_events(
+    evented_object: _EventedObject, listener: object
+) -> None:
+    disconnect_events(evented_object.events, listener)
+
+    if isinstance(evented_object, _EventedModelProtocol):
+        values = [
+            getattr(evented_object, name)
+            for name in evented_object.model_fields
+        ]
+    elif isinstance(evented_object, _EventedMappingProtocol):
+        values = evented_object.values()
+    elif isinstance(evented_object, _EventedContainerProtocol):
+        values = evented_object
     else:
-        # old events
-        signals = signal_group.emitters
-    for sig in signals.values():
-        try:
-            sig.disconnect(listener)
-        except TypeError:
-            # this is not a callable, so probably we wanted to disconnect its methods
-            for method in dir(listener):
-                if callable(method):
-                    sig.disconnect(method)
+        values = []
+    for value in values:
+        if isinstance(value, _EventedObject):
+            _disconnect_all_events(value.events, listener)
 
 
 def connect_setattr(
