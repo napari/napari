@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.interpolate import splev, splprep
 
 from napari.layers.shapes._accelerated_triangulate_dispatch import (
     create_box_from_bounding,
@@ -8,7 +7,6 @@ from napari.layers.shapes._shapes_models.shape import (
     Shape,
     remove_path_duplicates,
 )
-from napari.utils.translations import trans
 
 
 class PolygonBase(Shape):
@@ -77,11 +75,7 @@ class PolygonBase(Shape):
 
         if len(data) < 2:
             raise ValueError(
-                trans._(
-                    'Shape needs at least two unique vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Shape needs at least two unique vertices, {len(data)} provided.'
             )
 
         self._data = data
@@ -107,6 +101,9 @@ class PolygonBase(Shape):
         # data_spline = data[~np.all(duplicates, axis=1)]
 
         if self.interpolation_order > 1:
+            # only import if needed
+            from scipy.interpolate import splev, splprep
+
             data_spline = remove_path_duplicates(data, closed=True)
 
             if len(data_spline) > self.interpolation_order:

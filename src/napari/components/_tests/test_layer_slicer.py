@@ -1,9 +1,8 @@
 import time
-import weakref
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -12,6 +11,10 @@ from napari._tests.utils import DEFAULT_TIMEOUT_SECS, LockableData
 from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Labels, Points
+from napari.utils.notifications import notification_manager
+
+if TYPE_CHECKING:
+    import weakref
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -41,6 +44,7 @@ class FakeAsyncLayer:
         self._last_slice_id: int = 0
         self._slice_request_count: int = 0
         self.slice_count: int = 0
+        self.loaded: bool = True
         self.visible: bool = True
         self.lock: RLock = RLock()
 
@@ -57,6 +61,15 @@ class FakeAsyncLayer:
 
     def _set_unloaded_slice_id(self, slice_id: int) -> None:
         self._last_slice_id = slice_id
+        self.loaded = False
+
+    def _update_loaded_slice_id(self, slice_id: int) -> None:
+        if self._last_slice_id == slice_id:
+            self.loaded = True
+
+    @property
+    def _slicing_state(self):
+        return self
 
 
 class FakeSyncLayer:
@@ -66,6 +79,10 @@ class FakeSyncLayer:
 
     def _slice_dims(self, *args, **kwargs) -> None:
         self.slice_count += 1
+
+    @property
+    def _slicing_state(self):
+        return self
 
 
 @pytest.fixture
@@ -245,9 +262,15 @@ def test_submit_exception_main_thread(layer_slicer):
         layer_slicer.submit(layers=[layer], dims=Dims())
 
 
-def test_submit_exception_subthread_on_result(layer_slicer):
+def test_submit_exception_subthread_on_result(layer_slicer, monkeypatch):
     """Exception is raised on the main thread from an error on a subthread
     only after result is called, not upon submission of the task."""
+    errors = []
+
+    def _record_error(exctype, value, traceback, thread=None):
+        errors.append((exctype, value))
+
+    monkeypatch.setattr(notification_manager, 'receive_error', _record_error)
 
     @dataclass(frozen=True)
     class FakeSliceRequestError(FakeSliceRequest):
@@ -269,6 +292,10 @@ def test_submit_exception_subthread_on_result(layer_slicer):
     assert done, 'Test future did not complete within timeout.'
     with pytest.raises(RuntimeError, match='FakeSliceRequestError'):
         _wait_for_response(future)
+    assert layer.loaded
+    assert len(errors) == 1
+    assert errors[0][0] is RuntimeError
+    assert str(errors[0][1]) == 'FakeSliceRequestError'
 
 
 def test_wait_until_idle(layer_slicer, single_threaded_executor):

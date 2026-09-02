@@ -61,14 +61,16 @@ jobs:
       # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
-      COVERAGE: ${{ inputs.coverage }}
+      TOX_TEST_RUNNER: ${{ inputs.coverage == 'cov' && 'coverage run --parallel-mode' || 'python' }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Cache pooch downloads
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ${{ github.workspace }}/.cache/scikit-image
@@ -76,9 +78,10 @@ jobs:
             ${{ github.workspace }}/.cache/pooch
           key: pooch
 
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Download packages needed for testing
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: wheel
+          name: Packages
           path: dist
 
       - name: Set wheel path
@@ -86,7 +89,7 @@ jobs:
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
@@ -102,7 +105,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
         with:
           qt: true
           wm: herbstluftwm
@@ -141,51 +144,53 @@ jobs:
         # FOURTH=none
         shell: bash
         run: |
-          python tools/split_qt_backend.py 0 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 1 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 2 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
-          python tools/split_qt_backend.py 3 ${{ inputs.qt_backend }} >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 0 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 1 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 2 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+          python tools/split_qt_backend.py 3 "${INPUTS_QT_BACKEND}" >> "$GITHUB_ENV"
+        env:
+          INPUTS_QT_BACKEND: ${{ inputs.qt_backend }}
 
-      - name: Test with tox main
+      - name: Test with tox main qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         shell: bash
         run: |
-          echo ${{ env.MAIN }}
+          echo "${MAIN}"
           tox --version
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
           TOX_WORK_DIR: .tox
 
-      - name: Test with tox second
+      - name: Test with tox second qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.SECOND != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.SECOND }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Test with tox third
+      - name: Test with tox third qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if : ${{ env.THIRD != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.THIRD }}
           NAPARI_TEST_SUBSET: qt
 
-      - name: Test with tox fourth
+      - name: Test with tox fourth qt_backend
         timeout-minutes: ${{ inputs.timeout }}
         if: ${{ env.FOURTH != 'none' }}
         shell: bash
         run: |
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
           rm -r .tox
         env:
           BACKEND: ${{ env.FOURTH }}
@@ -193,7 +198,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: .pytest_tmp
@@ -201,20 +206,20 @@ jobs:
 
       - name: Upload leaked viewer graph
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: ./*leak-backref-graph*.pdf
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ inputs.coverage == 'cov' }}
         with:
           name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}

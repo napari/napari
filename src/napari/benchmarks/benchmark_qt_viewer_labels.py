@@ -61,7 +61,11 @@ class QtViewerSingleLabelsSuite:
 
     def time_set_view_slice(self):
         """Time to set view slice."""
-        self.layer._set_view_slice()
+        if hasattr(self.layer, '_slicing_state'):
+            self.layer._slicing_state._set_view_slice()
+        else:
+            # before https://github.com/napari/napari/pull/8254
+            self.layer._set_view_slice()
 
     def time_refresh(self):
         """Time to refresh view."""
@@ -167,6 +171,8 @@ class LabelRendering:
 
     def _time_zoom_change(self, *_):
         """Time to zoom in and zoom out."""
+        # TODO: this uses the old acess (viewer.camera instead of viewer.scene.camera)
+        #       so the benchmark is backward compatible. Eventually to be updated.
         initial_zoom = self.viewer.camera.zoom
         self.viewer.camera.zoom = 0.5 * initial_zoom
         self.app.processEvents()
@@ -211,6 +217,8 @@ class LabelRenderingSuite3D(LabelRendering):
     def time_rotate(self, *_):
         """Time to rotate the layer."""
         for i in range(0, (self.steps * 20), 5):
+            # TODO: this uses the old acess (viewer.camera instead of viewer.scene.camera)
+            #       so the benchmark is backward compatible. Eventually to be updated.
             self.viewer.camera.angles = (0, i / 2, i)
             self.app.processEvents()
 

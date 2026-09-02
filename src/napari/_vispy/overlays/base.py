@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.components.overlays import Overlay
+from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
+    from vispy.scene import Node, ViewBox
+
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
+    from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
     from napari.utils.events import Event
 
@@ -21,9 +28,21 @@ class VispyBaseOverlay:
     vispy backend, translating them into rendering.
     """
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
+    overlay: Overlay
+
+    def __init__(
+        self,
+        *,
+        overlay: Overlay,
+        font_info: FontInfo,
+        viewer: ViewerModel,
+        node: Node,
+        parent: ViewBox | None = None,
+    ) -> None:
         super().__init__()
-        self.overlay: Overlay = overlay
+        self.overlay = overlay
+        self._font_info = font_info
+        self.viewer = viewer
 
         self.node = node
         self.node.order = self.overlay.order
@@ -35,8 +54,11 @@ class VispyBaseOverlay:
         if parent is not None:
             self.node.parent = parent
 
+    def _should_be_visible(self) -> bool:
+        return self.overlay.visible
+
     def _on_visible_change(self) -> None:
-        self.node.visible = self.overlay.visible
+        self.node.visible = self._should_be_visible()
 
     def _on_opacity_change(self) -> None:
         self.node.opacity = self.overlay.opacity
@@ -51,7 +73,11 @@ class VispyBaseOverlay:
         self._on_blending_change()
 
     def close(self) -> None:
-        disconnect_events(self.overlay.events, self)
+        self.overlay.events.visible.disconnect(self._on_visible_change)
+        self.overlay.events.opacity.disconnect(self._on_opacity_change)
+        self.overlay.events.blending.disconnect(self._on_blending_change)
+        disconnect_events(self.viewer.events, self)
+        disconnect_events(self.viewer.canvas.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -67,23 +93,82 @@ class VispyCanvasOverlay(VispyBaseOverlay):
       *not* supposed to be tiled
     - ensure that the napari Overlay model uses the `position` field correctly
       (must be a CanvasPosition enum if tileable, or anything else if "free")
-
-    canvas_position_callback is set by the VispyCanvas object, and is responsible
-    to update the position of all canvas overlays whenever necessary
     """
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=parent)
+    overlay: CanvasOverlay
+
+    def __init__(self, **kwargs) -> None:
+
+        super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
         self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
-        self.canvas_position_callback = lambda: None
+        self.overlay.events.box.connect(self._on_box_change)
+        self.overlay.events.box_color.connect(self._on_box_change)
+
+        self.viewer.canvas.events.background_color.connect(self._on_box_change)
+        self.viewer.canvas.overlay_tiling.events.padding.connect(
+            self._on_box_change
+        )
+
+        self.box = Rectangle(center=(0, 0), border_width=0)
+
+    def _on_visible_change(self) -> None:
+        super()._on_visible_change()
+        self._on_box_change()
+
+    def _on_box_change(self) -> None:
+        if not self.overlay.box or not self._should_be_visible():
+            self.box.parent = None
+            return
+
+        self.box.parent = self.node.parent
+
+        pad_x, pad_y = (
+            np.array(self.viewer.canvas.overlay_tiling.padding) * 0.8
+        )
+        self.box.width = self.x_size + pad_x
+        self.box.height = self.y_size + pad_y
+        self.box.center = self.x_size / 2, self.y_size / 2
+
+        if self.overlay.box_color is None:
+            bgcolor = self.viewer.canvas.background_color
+            # make the color a bit transparent
+            bgcolor[-1] *= 0.8
+        else:
+            bgcolor = self.overlay.box_color
+
+        self.box.color = bgcolor
+
+        self.box.order = self.node.order - 1
+        self.box.transform = self.node.transform
+
+    def _get_fgcolor(self) -> ColorValue:
+        if not self.overlay.box or self.overlay.box_color is None:
+            bgcolor = self.viewer.canvas.background_color
+        else:
+            bgcolor = self.overlay.box_color
+        return self._contrasting_color(bgcolor)
+
+    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
+        opposite = 1 - bgcolor
+        # shift away from mid tones for better contrast
+        opposite = 0.5 + (opposite - 0.5) * 1.2
+        opposite = np.clip(opposite, 0, 1)
+        # don't change alpha
+        opposite[-1] = bgcolor[-1]
+        return opposite
+
+    def _on_blending_change(self) -> None:
+        self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
+        super()._on_blending_change()
 
     def _on_position_change(self, event: Event | None = None) -> None:
         # NOTE: when subclasses call this method, they should first ensure sizes
         # (x_size, and y_size) are set correctly
-        self.canvas_position_callback()
+        self._on_box_change()
+        self.viewer.canvas.events._overlay_positions_changed()
 
     def reset(self) -> None:
         super().reset()
@@ -91,7 +176,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     def close(self) -> None:
         super().close()
-        self.canvas_position_callback = lambda: None
+        self.box.parent = None
 
 
 class VispySceneOverlay(VispyBaseOverlay):
@@ -99,25 +184,28 @@ class VispySceneOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in scene (2D or 3D) space.
     """
 
-    def __init__(self, *, overlay, node, parent=None) -> None:
-        super().__init__(overlay=overlay, node=node, parent=parent)
+    overlay: SceneOverlay
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
 
 class LayerOverlayMixin:
-    def __init__(self, *, layer: Layer, overlay, node, parent=None) -> None:
-        super().__init__(
-            node=node,
-            overlay=overlay,
-            parent=parent,
-        )
+    layer: Layer
+    overlay: Overlay
+
+    def __init__(self, *, layer: Layer, **kwargs) -> None:
         self.layer = layer
+        super().__init__(
+            **kwargs,
+        )
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
         self.layer.events.visible.connect(self._on_visible_change)
 
-    def _on_visible_change(self) -> None:
-        self.node.visible = self.overlay.visible and self.layer.visible
+    def _should_be_visible(self) -> bool:
+        return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
         disconnect_events(self.layer.events, self)
@@ -125,14 +213,4 @@ class LayerOverlayMixin:
 
 
 class ViewerOverlayMixin:
-    def __init__(self, *, viewer, overlay, node, parent=None) -> None:
-        super().__init__(
-            node=node,
-            overlay=overlay,
-            parent=parent,
-        )
-        self.viewer = viewer
-
-    def close(self) -> None:
-        disconnect_events(self.viewer.events, self)
-        super().close()
+    pass

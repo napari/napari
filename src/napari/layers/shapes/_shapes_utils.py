@@ -23,7 +23,6 @@ from napari.layers.shapes.shape_types import (
     EdgeArray,
     TriangleArray,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -69,7 +68,7 @@ def find_planar_axis(
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
             return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
+    return np.empty((0, 2), dtype=points.dtype), None, None
 
 
 @typing.overload
@@ -198,7 +197,9 @@ def triangle_vertices_inside_box(triangles, corners):
     return inside
 
 
-def triangle_edges_intersect_box(triangles, corners):
+def triangle_edges_intersect_box(
+    triangles: npt.NDArray, corners: npt.NDArray
+) -> npt.NDArray:
     """Determines which triangles have edges that intersect the edges of an
     axis aligned box.
 
@@ -217,7 +218,7 @@ def triangle_edges_intersect_box(triangles, corners):
     """
     box = create_box(corners)[[0, 2, 4, 6]]
 
-    intersects = np.zeros([len(triangles), 12], dtype=bool)
+    all_intersects = np.zeros(len(triangles), dtype=bool)
     for i in range(3):
         # check if each triangle edge
         p1 = triangles[:, i, :]
@@ -226,12 +227,12 @@ def triangle_edges_intersect_box(triangles, corners):
         for j in range(4):
             # Check the four edges of the box
             p2 = box[j]
-            q2 = box[(j + 1) % 3]
-            intersects[:, i * 3 + j] = [
-                lines_intersect(p1[k], q1[k], p2, q2) for k in range(len(p1))
-            ]
+            q2 = box[(j + 1) % 4]
 
-    return np.any(intersects, axis=1)
+            intersects = vectorized_lines_intersect(p1, q1, p2, q2)
+            all_intersects |= intersects
+
+    return all_intersects
 
 
 def lines_intersect(p1, q1, p2, q2):
@@ -253,62 +254,93 @@ def lines_intersect(p1, q1, p2, q2):
     intersects : bool
         Bool indicating if line segment p1q1 intersects line segment p2q2
     """
-    # Determine four orientations
-    o1 = _triangulate_py.orientation(p1, q1, p2)
-    o2 = _triangulate_py.orientation(p1, q1, q2)
-    o3 = _triangulate_py.orientation(p2, q2, p1)
-    o4 = _triangulate_py.orientation(p2, q2, q1)
+    # Wrap inputs into (1, 2) arrays to use the vectorized function
+    p1_arr = np.array([p1])
+    q1_arr = np.array([q1])
 
-    # Test general case
-    if (o1 != o2) and (o3 != o4):
-        return True
-
-    # Test special cases
-    # p1, q1 and p2 are collinear and p2 lies on segment p1q1
-    if o1 == 0 and on_segment(p1, p2, q1):
-        return True
-
-    # p1, q1 and q2 are collinear and q2 lies on segment p1q1
-    if o2 == 0 and on_segment(p1, q2, q1):
-        return True
-
-    # p2, q2 and p1 are collinear and p1 lies on segment p2q2
-    if o3 == 0 and on_segment(p2, p1, q2):
-        return True
-
-    # p2, q2 and q1 are collinear and q1 lies on segment p2q2
-    if o4 == 0 and on_segment(p2, q1, q2):  # noqa: SIM103
-        return True
-
-    # Doesn't fall into any special cases
-    return False
+    return vectorized_lines_intersect(p1_arr, q1_arr, p2, q2)[0]
 
 
-def on_segment(p, q, r):
-    """Checks if q is on the segment from p to r
+def vectorized_lines_intersect(
+    p1: npt.NDArray, q1: npt.NDArray, p2: npt.NDArray, q2: npt.NDArray
+) -> npt.NDArray:
+    """Determines if a set of N line segments intersects with a single line segment.
+
+    This implementation is vectorized to be fast for many segments. It uses
+    the 'orientation' method, which is a vectorized version of the algorithm
+    used elsewhere in this codebase, making it easier to review and maintain.
+
+    The algorithm is based on checking if the endpoints of each segment lie on
+    opposite sides of the other segment.
 
     Parameters
     ----------
-    p : (2,) array
-        Array of first point of segment
-    q : (2,) array
-        Array of point to check if on segment
-    r : (2,) array
-        Array of second point of segment
+    p1 : (N, 2) array
+        Array of first points of N line segments.
+    q1 : (N, 2) array
+        Array of second points of N line segments.
+    p2 : (2,) array
+        First point of the single line segment.
+    q2 : (2,) array
+        Second point of the single line segment.
 
     Returns
     -------
-    on : bool
-        Bool indicating if q is on segment from p to r
+    intersects : (N,) array of bool
+        Array with `True` values for line segments in the set that intersect
+        the single line segment.
     """
-    if max(p[0], r[0]) >= q[0] >= min(p[0], r[0]) and max(p[1], r[1]) >= q[
-        1
-    ] >= min(p[1], r[1]):
-        on = True
-    else:
-        on = False
+    # Determine four orientations
+    o1 = _triangulate_py.vectorized_orientation(p1, q1, p2)
+    o2 = _triangulate_py.vectorized_orientation(p1, q1, q2)
+    o3 = _triangulate_py.vectorized_orientation(p2, q2, p1)
+    o4 = _triangulate_py.vectorized_orientation(p2, q2, q1)
 
-    return on
+    # Test general case
+    intersects = (o1 != o2) & (o3 != o4)
+
+    # Test special cases
+    # p1, q1 and p2 are collinear and p2 lies on segment p1q1
+    intersects |= (o1 == 0) & on_segment(p1, p2, q1)
+
+    # p1, q1 and q2 are collinear and q2 lies on segment p1q1
+    intersects |= (o2 == 0) & on_segment(p1, q2, q1)
+
+    # p2, q2 and p1 are collinear and p1 lies on segment p2q2
+    intersects |= (o3 == 0) & on_segment(p2, p1, q2)
+
+    # p2, q2 and q1 are collinear and q1 lies on segment p2q2
+    intersects |= (o4 == 0) & on_segment(p2, q1, q2)
+
+    return intersects
+
+
+def on_segment(p: npt.NDArray, q: npt.NDArray, r: npt.NDArray) -> npt.NDArray:
+    """Check if point(s) q are on the segment(s) from p to r.
+
+    This function is vectorized and assumes that the points are already
+    known to be collinear.
+
+    Parameters
+    ----------
+    p : (..., 2) array
+        Array of first points of segments.
+    q : (..., 2) array
+        Array of points to check.
+    r : (..., 2) array
+        Array of second points of segments.
+
+    Returns
+    -------
+    on : (...) array of bool
+        Array of booleans with `True` if q is on pr.
+    """
+    return (
+        (q[..., 0] <= np.maximum(p[..., 0], r[..., 0]))
+        & (q[..., 0] >= np.minimum(p[..., 0], r[..., 0]))
+        & (q[..., 1] <= np.maximum(p[..., 1], r[..., 1]))
+        & (q[..., 1] >= np.minimum(p[..., 1], r[..., 1]))
+    )
 
 
 def is_collinear(points: npt.NDArray) -> bool:
@@ -453,10 +485,7 @@ def rectangle_to_box(
     """
     if data.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle'
         )
     box = np.array(
         [
@@ -563,10 +592,7 @@ def triangulate_ellipse(
     """
     if corners.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse'
         )
     assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
@@ -1308,13 +1334,7 @@ def validate_num_vertices(
             min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
-                trans._(
-                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
-                    deferred=True,
-                    shape_type=shape_type,
-                    shape=shape,
-                    shape_length=len(shape),
-                )
+                f'{shape_type} {shape} has invalid number of vertices: {len(shape)}.'
             )
 
 

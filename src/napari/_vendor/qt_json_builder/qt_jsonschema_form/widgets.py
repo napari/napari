@@ -1,10 +1,9 @@
 from functools import partial
 from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
-from packaging.version import parse as parse_version
 import os
 
-from qtpy import QtCore, QtGui, QtWidgets, QT_VERSION
+from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
 from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
@@ -14,8 +13,6 @@ from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
-from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
-
 from ...._qt.widgets.qt_spinbox import QtSpinBox
 
 
@@ -23,14 +20,8 @@ if TYPE_CHECKING:
     from .form import WidgetBuilder
 
 
-QT_GE_66 = parse_version(QT_VERSION) >= parse_version("6.6.0")
-
-
 class SchemaWidgetMixin:
     on_changed = Signal()
-
-    VALID_COLOUR = '#ffffff'
-    INVALID_COLOUR = '#f6989d'
 
     def __init__(
         self,
@@ -44,6 +35,7 @@ class SchemaWidgetMixin:
         self.schema = schema
         self.ui_schema = ui_schema
         self.widget_builder = widget_builder
+        self._error: Exception | None = None
 
         self.on_changed.connect(lambda _: self.clear_error())
         self.configure()
@@ -67,21 +59,16 @@ class SchemaWidgetMixin:
     def clear_error(self):
         self._set_valid_state(None)
 
-    def _set_valid_state(self, error: Exception = None):
-        palette = self.palette()
-        colour = QtGui.QColor()
-        if QT_GE_66:
-            colour.fromString(
-                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-            )
-        else:
-            colour.setNamedColor(
-                self.VALID_COLOUR if error is None else self.INVALID_COLOUR
-            )
-        palette.setColor(self.backgroundRole(), colour)
+    def _set_valid_state(self, error: Exception | None = None):
+        self._error = error
+        self.setProperty('invalid', error is not None)
+        self._repolish()
+        self.setToolTip('' if error is None else error.message)
 
-        self.setPalette(palette)
-        self.setToolTip("" if error is None else error.message)  # TODO
+    def _repolish(self) -> None:
+        """Re-evaluate the app stylesheet for this widget."""
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
@@ -175,24 +162,6 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
 
     def setDescription(self, description: str):
         self.description = description
-
-
-class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
-    @state_property
-    def state(self) -> int:
-        return self.value()
-
-    @state.setter
-    def state(self, state: int):
-        return None
-        # self.setValue(state)
-
-    def configure(self):
-        self.hook_list.order_changed.connect(self.on_changed.emit)
-
-    def setDescription(self, description: str):
-        self.description = description
-
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtSpinBox):
     @state_property
@@ -373,8 +342,8 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
 
     def file_filter(self) -> str:
-        if "json_schema_extra" in self.schema and 'file_extension' in self.schema['json_schema_extra']:
-            extension = self.schema['json_schema_extra']['file_extension']
+        if 'file_extension' in self.schema:
+            extension = self.schema['file_extension']
             return f"File (*.{extension})"
         return "All Files (*)"
 
@@ -708,6 +677,9 @@ class FontSizeSchemaWidget(SchemaWidgetMixin, QtFontSizeWidget):
 
 
 class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
+    # left indent (px) for per-field error labels, roughly a tab's width
+    ERROR_LABEL_INDENT = 20
+
     def __init__(
         self,
         schema: dict,
@@ -716,6 +688,8 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
     ):
         super().__init__(schema, ui_schema, widget_builder)
 
+        # per-field labels showing the validation message (see handle_error)
+        self.error_labels: dict[str, QtWidgets.QLabel] = {}
         self.widgets = self.populate_from_schema(
             schema, ui_schema, widget_builder
         )
@@ -729,12 +703,32 @@ class ObjectSchemaWidgetMinix(SchemaWidgetMixin):
         for name, value in state.items():
             self.widgets[name].state = value
 
+    def _new_error_label(self, name: str) -> QtWidgets.QLabel:
+        label = QtWidgets.QLabel()
+        label.setWordWrap(True)
+        label.setIndent(self.ERROR_LABEL_INDENT)  # roughly a tab width
+        # coloured by ``03_validation.qss`` via `QLabel[invalid-msg="true"]`
+        label.setProperty('invalid-msg', True)
+        label.style().unpolish(label)
+        label.style().polish(label)
+        label.hide()
+        self.error_labels[name] = label
+        return label
+
     def handle_error(self, path: Tuple[str], err: Exception):
         name, *tail = path
         self.widgets[name].handle_error(tail, err)
+        label = self.error_labels.get(name)
+        if label is not None:
+            label.setText(err.message)
+            label.show()
 
     def widget_on_changed(self, name: str, value):
         self.state[name] = value
+        label = self.error_labels.get(name)
+        if label is not None:
+            label.clear()
+            label.hide()
         self.on_changed.emit(self.state)
 
     def setDescription(self, description: str):
@@ -778,6 +772,7 @@ class HorizontalObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QWidget):
             layout.addWidget(label)
             layout.addWidget(widget)
             widgets[name] = widget
+            layout.addWidget(self._new_error_label(name))
 
         return widgets
 
@@ -804,11 +799,15 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
             label, widget = self._prepare_widget(name, sub_schema, widget_builder, ui_schema)
-            if len(schema['properties']) == 1:
+            # render a label unless the property explicitly has an empty title
+            # (intentional divergence from upstream qt_json_builder, which
+            # suppressed the label for any single-property schema)
+            if sub_schema.get('title') == '':
                 layout.addRow(widget)
             else:
                 layout.addRow(label, widget)
             widgets[name] = widget
+            layout.addRow(self._new_error_label(name))
 
         return widgets
 
@@ -853,32 +852,15 @@ class FormWidget(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
-        self.error_widget = QtWidgets.QGroupBox()
-        self.error_widget.setTitle("Errors")
-        self.error_layout = QtWidgets.QVBoxLayout()
-        self.error_widget.setLayout(self.error_layout)
-        self.error_widget.hide()
-
-        layout.addWidget(self.error_widget)
+        # intentional divergence from upstream qt_json_builder: the "Errors"
+        # group box is dropped; validation feedback is shown per-field via
+        # ``SchemaWidgetMixin.handle_error``
         layout.addWidget(widget)
 
         self.widget = widget
 
     def display_errors(self, errors: List[Exception]):
-        self.error_widget.show()
-
-        layout = self.error_widget.layout()
-        while True:
-            item = layout.takeAt(0)
-            if not item:
-                break
-            item.widget().deleteLater()
-
-        for err in errors:
-            widget = QtWidgets.QLabel(
-                f"<b>.{'.'.join(err.path)}</b> {err.message}"
-            )
-            layout.addWidget(widget)
+        pass
 
     def clear_errors(self):
-        self.error_widget.hide()
+        pass

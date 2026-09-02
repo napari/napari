@@ -2,6 +2,15 @@ from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
 
+BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = ('Alt',)
+
+
+def change_brush_size_on_mouse_move_modifiers(value: tuple[str]) -> None:
+    """Update the brush size on mouse move modifiers from settings."""
+    global BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+
+    BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = value
+
 
 def draw(layer, event):
     """Draw with the currently selected label to a coordinate.
@@ -25,6 +34,13 @@ def draw(layer, event):
 
     # Do not allow drawing while adjusting the brush size with the mouse
     if layer.cursor == 'circle_frozen':
+        return
+
+    # In PAINT mode the right button (and any click during an active stroke) is
+    # reserved for the encircle-and-fill brush stroke handled by the
+    # brush_stroke overlay.
+    brush_stroke = layer._overlays['brush_stroke']
+    if brush_stroke.active or (brush_stroke.enabled and event.button == 2):
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
@@ -82,13 +98,11 @@ class BrushSizeOnMouseMove:
         self.init_pos = None
         self.init_brush_size = None
 
-        get_settings().application.events.brush_size_on_mouse_move_modifiers.connect(
-            self._on_modifiers_change
-        )
-        self._on_modifiers_change()
-
     def __call__(self, layer, event):
-        if all(modifier in event.modifiers for modifier in self.modifiers):
+        if all(
+            modifier in event.modifiers
+            for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+        ):
             pos = event.pos  # position in the canvas coordinates (x, y)
 
             if self.init_pos is None:

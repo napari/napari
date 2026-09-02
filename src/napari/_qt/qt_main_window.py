@@ -3,15 +3,15 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 
+from __future__ import annotations
+
+import atexit
 import contextlib
 import inspect
 import os
 import sys
 import time
-import uuid
 import warnings
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,7 +23,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-import numpy as np
+from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -34,7 +34,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QHideEvent, QIcon, QImage, QShowEvent
+from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -52,17 +52,13 @@ from napari._app_model.context import create_context, get_context
 from napari._qt._qapp_model import build_qmodel_menu
 from napari._qt._qapp_model.qactions import add_dummy_actions, init_qactions
 from napari._qt._qapp_model.qactions._debug import _is_set_trace_active
-from napari._qt._qplugins import (
-    _rebuild_npe1_plugins_menu,
-    _rebuild_npe1_samples_menu,
-)
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari._qt.dialogs.preferences_dialog import PreferencesDialog
 from napari._qt.dialogs.qt_activity_dialog import QtActivityDialog
 from napari._qt.dialogs.qt_notification import NapariQtNotification
-from napari._qt.dialogs.shimmed_plugin_dialog import ShimmedPluginDialog
 from napari._qt.qt_event_loop import (
-    NAPARI_ICON_PATH,
+    _svg_path_to_icon,
+    get_icon_path,
     get_qapp,
     quit_app as quit_app_,
 )
@@ -78,7 +74,6 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
 from napari.plugins import (
     menu_item_template as plugin_menu_item_template,
-    plugin_manager,
 )
 from napari.plugins._npe2 import index_npe1_adapters
 from napari.settings import get_settings
@@ -92,19 +87,28 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification
+from napari.utils.notifications import Notification, show_warning
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from magicgui.widgets import Widget
-    from qtpy.QtGui import QImage
+    import uuid
+    from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from pathlib import Path
 
+    import numpy as np
+    from magicgui.widgets import Widget
+    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+
+    from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
 
 _sentinel = object()
 
+SHOW_QT_WARNING = QT5
+# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
+
+del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -117,31 +121,33 @@ MenuStr = Literal[
 
 
 class _QtMainWindow(QMainWindow):
-    # This was added so that someone can patch
-    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
-    # to their desired window icon
-    _window_icon = NAPARI_ICON_PATH
-
     # To track window instances and facilitate getting the "active" viewer...
     # We use this instead of QApplication.activeWindow for compatibility with
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
-    _instances: ClassVar[list['_QtMainWindow']] = []
+    _instances: ClassVar[list[_QtMainWindow]] = []
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
     # See https://github.com/napari/napari/pull/4826
     def __init__(
-        self, viewer: 'Viewer', window: 'Window', parent=None
+        self,
+        viewer: Viewer,
+        window: Window,
+        parent=None,
+        show_welcome_screen=True,
     ) -> None:
         super().__init__(parent)
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
-        self._qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_viewer: QtViewer = QtViewer(
+            viewer, show_welcome_screen=show_welcome_screen
+        )
         self._quit_app = False
+        self._viewer_tour: GuidedTour | None = None
 
-        self.setWindowIcon(QIcon(self._window_icon))
+        get_qapp().setWindowIcon(_svg_path_to_icon(self._get_window_icon()))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
@@ -163,8 +169,8 @@ class _QtMainWindow(QMainWindow):
         # this ia sa workaround for #5335 issue. The dict is used to not
         # collide shortcuts for close and close all windows
 
-        act_dlg = QtActivityDialog(self._qt_viewer._welcome_widget)
-        self._qt_viewer._welcome_widget.resized.connect(
+        act_dlg = QtActivityDialog(self._qt_viewer.canvas.native)
+        self._qt_viewer.canvas.native.resized.connect(
             act_dlg.move_to_bottom_right
         )
         act_dlg.hide()
@@ -181,13 +187,6 @@ class _QtMainWindow(QMainWindow):
         self._viewer_context['is_set_trace_active'] = _is_set_trace_active
 
         settings = get_settings()
-
-        # TODO:
-        # settings.plugins.defaults.call_order = plugin_manager.call_order()
-
-        # set the values in plugins to match the ones saved in settings
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
 
@@ -219,6 +218,14 @@ class _QtMainWindow(QMainWindow):
 
         self._command_palette = QCommandPalette(self)
 
+    def _get_window_icon(self) -> str:
+        if hasattr(self, '_window_icon'):
+            # This was added so that someone can patch
+            # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+            # to their desired window icon
+            return self._window_icon
+        return str(get_icon_path())
+
     def _toggle_status_thread(self, event: Event):
         if event.value:
             self.status_thread.start()
@@ -227,6 +234,8 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
+        global SHOW_QT_WARNING
+
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -235,6 +244,14 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
+
+        if SHOW_QT_WARNING:
+            show_warning(
+                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
+            )
+
+            SHOW_QT_WARNING = False
+
         super().showEvent(event)
 
     def enterEvent(self, a0):
@@ -264,11 +281,11 @@ class _QtMainWindow(QMainWindow):
         ) is not None:
             self._qt_viewer.viewer.help = active.help
 
-    def statusBar(self) -> 'ViewerStatusBar':
+    def statusBar(self) -> ViewerStatusBar:
         return super().statusBar()
 
     @classmethod
-    def current(cls) -> Optional['_QtMainWindow']:
+    def current(cls) -> Optional[_QtMainWindow]:
         return cls._instances[-1] if cls._instances else None
 
     @classmethod
@@ -288,7 +305,10 @@ class _QtMainWindow(QMainWindow):
                 if hasattr(e, 'globalPosition')
                 else e.globalPos()
             )
-            QToolTip.showText(pnt, self._qt_viewer.viewer.tooltip.text, self)
+            rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
+            QToolTip.showText(
+                pnt, self._qt_viewer.viewer.tooltip.text, self, rect
+            )
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
@@ -462,31 +482,6 @@ class _QtMainWindow(QMainWindow):
         if settings.application.save_window_state:
             settings.application.window_state = window_state
 
-    def _warn_on_shimmed_plugins(self) -> None:
-        """Warn about shimmed plugins if needed.
-
-        In 0.6.0, a plugin using the deprecated plugin engine will be automatically
-        converted so it can be used with npe2. By default, a dialog is displayed
-        with each startup listing all shimmed plugins. The user can change this setting
-        to only be warned about newly installed shimmed plugins.
-
-        """
-        from npe2 import plugin_manager as pm
-
-        settings = get_settings()
-        shimmed_plugins = set(pm.get_shimmed_plugins())
-        if settings.plugins.only_new_shimmed_plugins_warning:
-            new_plugins = (
-                shimmed_plugins
-                - settings.plugins.already_warned_shimmed_plugins
-            )
-        else:
-            new_plugins = shimmed_plugins
-
-        if new_plugins:
-            dialog = ShimmedPluginDialog(self, new_plugins)
-            dialog.exec_()
-
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
         if not quit_app and not self._qt_viewer.viewer.layers:
@@ -630,8 +625,7 @@ class _QtMainWindow(QMainWindow):
         if self._window._task_status_manager.is_busy():
             self._window._task_status_manager.cancel_all()
 
-        self.status_thread.close_terminate()
-        self.status_thread.wait()
+        self._stop_worker_threads()
 
         if self._ev and self._ev.isRunning():
             self._ev.quit()
@@ -652,12 +646,15 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
-        self._qt_viewer.dims.stop()
-
         if self._quit_app:
             quit_app_()
 
         event.accept()
+
+    def _stop_worker_threads(self) -> None:
+        self.status_thread.close_terminate()
+        self.status_thread.wait()
+        self._qt_viewer.dims.stop()
 
     def restart(self):
         """Restart the napari application in a detached process."""
@@ -687,6 +684,15 @@ class _QtMainWindow(QMainWindow):
         NapariQtNotification.show_notification(notification)
 
 
+@atexit.register
+def _shutdown_open_windows() -> None:
+    """Stop worker threads for windows still open at interpreter shutdown."""
+    for window in list(_QtMainWindow._instances):
+        # Qt may have deleted a window while leaving its Python wrapper alive.
+        with contextlib.suppress(RuntimeError):
+            window._stop_worker_threads()
+
+
 class Window:
     """Application window that contains the menu bar and viewer.
 
@@ -709,7 +715,13 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer: 'Viewer', *, show: bool = True) -> None:
+    def __init__(
+        self,
+        viewer: Viewer,
+        *,
+        show: bool = True,
+        show_welcome_screen: bool = True,
+    ) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_qapp()
 
@@ -724,7 +736,9 @@ class Window:
         self._task_status_manager = TaskStatusManager()
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer, self)
+        self._qt_window = _QtMainWindow(
+            viewer, self, show_welcome_screen=show_welcome_screen
+        )
         qapp.installEventFilter(self._qt_window)
 
         # connect theme events before collecting plugin-provided themes
@@ -733,7 +747,6 @@ class Window:
         _themes.events.removed.connect(self._remove_theme)
 
         # discover any themes provided by plugins
-        plugin_manager.discover_themes()
         self._setup_existing_themes()
 
         # import and index all discovered shimmed npe1 plugins
@@ -748,11 +761,11 @@ class Window:
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
         self._update_theme()
-        self._update_theme_font_size()
         get_settings().appearance.events.theme.connect(self._update_theme)
         get_settings().appearance.events.font_size.connect(
             self._update_theme_font_size
         )
+        get_settings().appearance.events.logo.connect(self._update_logo)
 
         self._add_viewer_dock_widget(self._qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -783,8 +796,6 @@ class Window:
                 [self._qt_viewer.dockLayerControls.minimumHeight(), 10000],
                 Qt.Orientation.Vertical,
             )
-            # TODO: where to put this?
-            self._qt_window._warn_on_shimmed_plugins()
 
     def _setup_existing_themes(self, connect: bool = True):
         """This function is only executed once at the startup of napari
@@ -867,13 +878,10 @@ class Window:
     @property
     def qt_viewer(self):
         warnings.warn(
-            trans._(
-                'Public access to Window.qt_viewer is deprecated and will be removed in\n'
-                'v0.7.0. It is considered an "implementation detail" of the napari\napplication, '
-                'not part of the napari viewer model. If your use case\n'
-                'requires access to qt_viewer, please open an issue to discuss.',
-                deferred=True,
-            ),
+            'Public access to Window.qt_viewer is deprecated and will be removed in\n'
+            'no earlier than v0.10.0. It is considered an "implementation detail" '
+            'of the napari\napplication, not part of the napari viewer model. If your use case\n'
+            'requires access to qt_viewer, please open an issue to discuss.',
             category=FutureWarning,
             stacklevel=2,
         )
@@ -944,25 +952,6 @@ class Window:
             task_status_id, status, description
         )
 
-    # TODO: Remove once npe1 deprecated
-    def _setup_npe1_samples_menu(self):
-        """Register npe1 sample data, build menu and connect to events."""
-        plugin_manager.discover_sample_data()
-        plugin_manager.events.enabled.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.disabled.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.registered.connect(_rebuild_npe1_samples_menu)
-        plugin_manager.events.unregistered.connect(_rebuild_npe1_samples_menu)
-        _rebuild_npe1_samples_menu()
-
-    # TODO: Remove once npe1 deprecated
-    def _setup_npe1_plugins_menu(self):
-        """Register npe1 widgets, build menu and connect to events"""
-        plugin_manager.discover_widgets()
-        plugin_manager.events.registered.connect(_rebuild_npe1_plugins_menu)
-        plugin_manager.events.disabled.connect(_rebuild_npe1_plugins_menu)
-        plugin_manager.events.unregistered.connect(_rebuild_npe1_plugins_menu)
-        _rebuild_npe1_plugins_menu()
-
     def _handle_trace_file_on_start(self):
         """Start trace of `trace_file_on_start` config set."""
         from napari._qt._qapp_model.qactions._debug import _start_trace
@@ -995,16 +984,15 @@ class Window:
         )
         # file menu
         self.file_menu = build_qmodel_menu(
-            MenuId.MENUBAR_FILE, title=trans._('&File'), parent=self._qt_window
+            MenuId.MENUBAR_FILE, title='&File', parent=self._qt_window
         )
-        self._setup_npe1_samples_menu()
         self.file_menu.aboutToShow.connect(
             self._update_file_menu_state,
         )
         self.main_menu.addMenu(self.file_menu)
         # view menu
         self.view_menu = build_qmodel_menu(
-            MenuId.MENUBAR_VIEW, title=trans._('&View'), parent=self._qt_window
+            MenuId.MENUBAR_VIEW, title='&View', parent=self._qt_window
         )
         self.view_menu.aboutToShow.connect(
             self._update_view_menu_state,
@@ -1013,7 +1001,7 @@ class Window:
         # layers menu
         self.layers_menu = build_qmodel_menu(
             MenuId.MENUBAR_LAYERS,
-            title=trans._('&Layers'),
+            title='&Layers',
             parent=self._qt_window,
         )
         self.layers_menu.aboutToShow.connect(
@@ -1023,10 +1011,9 @@ class Window:
         # plugins menu
         self.plugins_menu = build_qmodel_menu(
             MenuId.MENUBAR_PLUGINS,
-            title=trans._('&Plugins'),
+            title='&Plugins',
             parent=self._qt_window,
         )
-        self._setup_npe1_plugins_menu()
         self.plugins_menu.aboutToShow.connect(
             self._update_plugins_menu_state,
         )
@@ -1035,7 +1022,7 @@ class Window:
         if perf.perf_config is not None:
             self._debug_menu = build_qmodel_menu(
                 MenuId.MENUBAR_DEBUG,
-                title=trans._('&Debug'),
+                title='&Debug',
                 parent=self._qt_window,
             )
             self._handle_trace_file_on_start()
@@ -1046,7 +1033,7 @@ class Window:
         # window menu
         self.window_menu = build_qmodel_menu(
             MenuId.MENUBAR_WINDOW,
-            title=trans._('&Window'),
+            title='&Window',
             parent=self._qt_window,
         )
         self.plugins_menu.aboutToShow.connect(
@@ -1055,7 +1042,7 @@ class Window:
         self.main_menu.addMenu(self.window_menu)
         # help menu
         self.help_menu = build_qmodel_menu(
-            MenuId.MENUBAR_HELP, title=trans._('&Help'), parent=self._qt_window
+            MenuId.MENUBAR_HELP, title='&Help', parent=self._qt_window
         )
         self.help_menu.aboutToShow.connect(
             self._update_help_menu_state,
@@ -1129,18 +1116,6 @@ class Window:
         if result := _npe2.get_widget_contribution(plugin_name, widget_name):
             widget_class, widget_name = result
 
-        if widget_class is None:
-            widget_class, dock_kwargs = plugin_manager.get_widget(
-                plugin_name, widget_name
-            )
-
-        if not widget_name:
-            # if widget_name wasn't provided, `get_widget` will have
-            # ensured that there is a single widget available.
-            widget_name = next(
-                iter(plugin_manager._wrapped_dock_widgets[plugin_name])
-            )
-
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
@@ -1157,38 +1132,15 @@ class Window:
         )
         return dock_widget, wdg
 
-    def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
-        """Add plugin function widget if not already added.
-
-        Parameters
-        ----------
-        plugin_name : str
-            Name of a plugin providing a widget
-        widget_name : str, optional
-            Name of a widget provided by `plugin_name`. If `None`, and the
-            specified plugin provides only a single widget, that widget will be
-            returned, otherwise a ValueError will be raised, by default None
-        """
-        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
-        if full_name in self._wrapped_dock_widgets:
-            return None
-
-        func = plugin_manager._function_widgets[plugin_name][widget_name]
-
-        # Add function widget
-        return self.add_function_widget(
-            func, name=full_name, area=None, allowed_areas=None
-        )
-
     def add_dock_widget(
         self,
-        widget: Union[QWidget, 'Widget'],
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str | None = None,
         allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
-        add_vertical_stretch=True,
+        add_vertical_stretch=False,
         tabify: bool = False,
         menu: QMenu | None = None,
     ):
@@ -1235,10 +1187,7 @@ class Window:
         if not name:
             with contextlib.suppress(AttributeError):
                 name = widget.objectName()
-            name = name or trans._(
-                'Dock widget {number}',
-                number=self._unnamed_dockwidget_count,
-            )
+            name = name or f'Dock widget {self._unnamed_dockwidget_count}'
 
             self._unnamed_dockwidget_count += 1
 
@@ -1283,6 +1232,7 @@ class Window:
             layers_events.inserted.connect(widget.reset_choices)
             layers_events.removed.connect(widget.reset_choices)
             layers_events.reordered.connect(widget.reset_choices)
+            layers_events.renamed.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
         self._wrapped_dock_widgets[dock_widget.name] = dock_widget
@@ -1303,17 +1253,33 @@ class Window:
         # other widget we should keep this name for a longer period
         warnings.warn(
             'The `_dock_widgets` property is private and should not be used in any plugin code. '
-            'Please use the `dock_widgets` property instead.',
+            'To return the inner widget, use the `dock_widgets` property instead.'
+            'If you need the dock wrapper, return it via `dock_widgets[name].parent()`'
+            '(or `dock_widgets[name].native.parent()` for magicgui widgets).',
             FutureWarning,
             stacklevel=2,
         )
         return self._wrapped_dock_widgets
 
     @property
-    def dock_widgets(self) -> Mapping[str, 'QWidget | Widget']:
-        """Read only mapping of widgets docked in napari window.
+    def dock_widgets(self) -> Mapping[str, QWidget | Widget]:
+        """Read-only mapping of widgets docked in napari window.
 
-        For wrapping QtViewerDockWidget use `dock_widgets` property.
+        Notes
+        -----
+        This mapping returns the *inner* widget contained in each dock widget
+        (a Qt ``QWidget`` or a ``magicgui.widgets.Widget``), not the
+        :class:`~napari._qt.widgets.qt_viewer_dock_widget.QtViewerDockWidget`
+        wrapper.
+
+        If you need to control the dock widget itself (for example, to show or
+        raise a docked widget tab), access the wrapper via the Qt parent:
+
+        >>> name = "My widget"
+        >>> widget = viewer.window.dock_widgets[name]
+        >>> qt_widget = widget.native if hasattr(widget, "native") else widget
+        >>> dock_widget = qt_widget.parent()  # QtViewerDockWidget / QDockWidget
+        >>> dock_widget.show(); dock_widget.raise_()
         """
         return InnerWidgetMappingProxy(self._wrapped_dock_widgets)
 
@@ -1414,11 +1380,7 @@ class Window:
                     break
             else:
                 raise LookupError(
-                    trans._(
-                        'Could not find a dock widget containing: {widget}',
-                        deferred=True,
-                        widget=widget,
-                    )
+                    f'Could not find a dock widget containing: {widget}'
                 )
         else:
             _dw = widget
@@ -1565,10 +1527,7 @@ class Window:
             self._qt_window.show(block=block)
         except (AttributeError, RuntimeError) as e:
             raise RuntimeError(
-                trans._(
-                    'This viewer has already been closed and deleted. Please create a new one.',
-                    deferred=True,
-                )
+                'This viewer has already been closed and deleted. Please create a new one.'
             ) from e
 
         if settings.application.first_time:
@@ -1577,10 +1536,7 @@ class Window:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
             except (AttributeError, RuntimeError) as e:
                 raise RuntimeError(
-                    trans._(
-                        'This viewer has already been closed and deleted. Please create a new one.',
-                        deferred=True,
-                    )
+                    'This viewer has already been closed and deleted. Please create a new one.'
                 ) from e
         else:
             try:
@@ -1592,11 +1548,7 @@ class Window:
                 import warnings
 
                 warnings.warn(
-                    trans._(
-                        'The window geometry settings could not be loaded due to the following error: {err}',
-                        deferred=True,
-                        err=err,
-                    ),
+                    f'The window geometry settings could not be loaded due to the following error: {err}',
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
@@ -1658,6 +1610,11 @@ class Window:
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
 
+    def _update_logo(self):
+        get_qapp().setWindowIcon(
+            _svg_path_to_icon(self._qt_window._get_window_icon())
+        )
+
     def _status_changed(self, event):
         """Update status bar.
 
@@ -1713,7 +1670,7 @@ class Window:
         flash: bool = True,
         canvas_only: bool = False,
         fit_to_data_extent: bool = False,
-    ) -> 'QImage':
+    ) -> QImage:
         """Capture screenshot of the currently displayed viewer.
 
         Parameters
@@ -1749,11 +1706,8 @@ class Window:
             fit_to_data_extent or size is not None or scale is not None
         ):
             raise ValueError(
-                trans._(
-                    'scale, size, and fit_to_data_extent can only be set for '
-                    'canvas_only screenshots.',
-                    deferred=True,
-                )
+                'scale, size, and fit_to_data_extent can only be set for '
+                'canvas_only screenshots.'
             )
 
         # Part 2: take the screenshot
@@ -1952,7 +1906,7 @@ class Window:
             update_save_history(dial.selectedFiles()[0])
 
 
-def _instantiate_dock_widget(wdg_cls, viewer: 'Viewer'):
+def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
     # if the signature is looking a for a napari viewer, pass it.
     from napari.viewer import Viewer, ViewerModel
 
@@ -1991,7 +1945,7 @@ class InnerWidgetMappingProxy(MappingProxy):
     without exposing the QDockWidget itself.
     """
 
-    def __getitem__(self, key, /) -> 'QWidget | Widget':
+    def __getitem__(self, key, /) -> QWidget | Widget:
         """Get the inner widget of the QDockWidget."""
         return self._wrapped[key].inner_widget()
 

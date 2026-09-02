@@ -21,9 +21,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def disconnect_events(
-    signal_group: EmitterGroup | SignalGroup, listener: object
-) -> None:
+def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
     """Disconnect all events between an emitter group and a listener.
 
     Parameters

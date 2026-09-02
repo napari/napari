@@ -1,12 +1,9 @@
-from itertools import cycle
-
 import numpy as np
 import pytest
 from vispy.color import ColorArray
 
 from napari.layers.utils.color_transformations import (
     normalize_and_broadcast_colors,
-    transform_color_cycle,
     transform_color_with_defaults,
 )
 
@@ -86,18 +83,3 @@ def test_normalize_colors_zero_colors():
     ):
         colorarray = normalize_and_broadcast_colors(len(data), [])
     np.testing.assert_array_equal(colorarray, real)
-
-
-def test_transform_color_cycle():
-    colors = ['red', 'blue']
-    transformed_color_cycle, _transformed_colors = transform_color_cycle(
-        colors, elem_name='face_color', default='white'
-    )
-    transformed_result = np.array(
-        [next(transformed_color_cycle) for _ in range(10)]
-    )
-
-    color_cycle = cycle(np.array([[1, 0, 0, 1], [0, 0, 1, 1]]))
-    color_cycle_result = np.array([next(color_cycle) for _ in range(10)])
-
-    np.testing.assert_allclose(transformed_result, color_cycle_result)

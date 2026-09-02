@@ -4,7 +4,6 @@ import re
 import signal
 import socket
 import weakref
-from collections.abc import Callable, Iterable, Sequence
 from contextlib import contextmanager, suppress
 from enum import auto
 from functools import partial
@@ -35,12 +34,13 @@ from qtpy.QtWidgets import (
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
-from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
 RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
     from magicgui.widgets import Widget
 
 
@@ -96,10 +96,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            trans._(
-                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
-                QBYTE_FLAG=QBYTE_FLAG,
-            )
+            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -268,10 +265,8 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._(
-            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
-            'such types'
-        )
+        '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+        'such types'
     )
 
 
@@ -421,6 +416,7 @@ def in_qt_main_thread() -> bool:
 def get_color(
     color: str | np.ndarray | QColor | None = None,
     mode: ColorMode | Literal['hex', 'qcolor', 'array'] = ColorMode.HEX,
+    parent: QWidget | None = None,
 ) -> np.ndarray | None:
     """
     Helper function to get a color from q QColorDialog.
@@ -431,6 +427,8 @@ def get_color(
         Initial color to display in the dialog. Color will be automatically converted to QColor.
     mode : ColorMode
         Mode to return the color in (hex, array, QColor).
+    parent : QWidget | None
+        Parent widget for the QColorDialog. Allow to inherit stylesheet from parent.
 
     Returns
     -------
@@ -442,8 +440,10 @@ def get_color(
         color = QColor(color)
     elif isinstance(color, np.ndarray):
         color = QColor(*color.astype(int))
+    if color is None:
+        color = QColor('#ffffff')
 
-    dlg = QColorDialog(color)
+    dlg = QColorDialog(color, parent=parent)
     new_color: str | np.ndarray | QColor | None = None
     if dlg.exec_():
         new_color = dlg.currentColor()
