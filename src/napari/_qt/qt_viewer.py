@@ -333,6 +333,7 @@ class QtViewer(QSplitter):
             layerListLayout.addWidget(self.viewerButtons)
             layerListLayout.setContentsMargins(8, 4, 8, 6)
             layerList.setLayout(layerListLayout)
+            prev_policy = layerList.sizePolicy()
             self._dockLayerList = QtViewerDockWidget(
                 self,
                 layerList,
@@ -342,6 +343,9 @@ class QtViewer(QSplitter):
                 object_name='layer list',
                 close_btn=False,
             )
+            # restore policy to avoid empty space below buttons
+            # See https://github.com/napari/napari/pull/9447
+            layerList.setSizePolicy(prev_policy)
         return self._dockLayerList
 
     @property
@@ -629,7 +633,7 @@ class QtViewer(QSplitter):
                     data_displayed=False,
                     thumbnail=True,
                     highlight=True,
-                    extent=True,
+                    extent=False,  # already updated via Layer.refresh()
                 )
 
     def _on_active_change(self) -> None:

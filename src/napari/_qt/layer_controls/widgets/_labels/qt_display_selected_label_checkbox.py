@@ -56,7 +56,9 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
 
         self.selected_color_checkbox_label = QtWrappedLabel('show\nselected:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.selected_color_checkbox_label, self.selected_color_checkbox)
         ]

@@ -619,5 +619,10 @@ authors:
   family-names: Nagineni
   alias: VenkateswarluNagineni
   affiliation: Texas A&M University
+- given-names: Suyash
+  family-names: Naik
+  affiliation: Institute of Science and Technology Austria
+  orcid: https://orcid.org/0000-0001-8421-5508
+  alias: Suyash-Naik
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
