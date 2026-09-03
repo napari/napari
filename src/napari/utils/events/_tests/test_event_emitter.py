@@ -402,6 +402,10 @@ def test_renamed_emitter_simple():
 
     mock.assert_called_once()
 
+    n.events.old_event.disconnect(mock)
+
+    assert not n.events.new_event.callbacks
+
 
 def test_renamed_emitter_composite():
     class DummyEventEmitterComposite:

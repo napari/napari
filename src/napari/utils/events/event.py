@@ -877,7 +877,7 @@ class RenamedEmitter(WarningEmitter):
 
     def _get_new_emitter(self):
         target = self.source
-        if self.source is None:
+        if self.source is None:  # pragma: no cover
             raise RuntimeError(
                 f'Cannot connect to renamed emitter {self._new_name} because source is None'
             )
