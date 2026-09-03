@@ -862,7 +862,7 @@ class RenamedEmitter(WarningEmitter):
     """
     Warning emitter to be used when an attribute was renamed or moved to a composition object.
     It will connect to the new event once the callback is connected to the old one.
-     It will also warn the user that the attribute was renamed.
+    It will also warn the user that the attribute was renamed.
     """
 
     def __init__(
