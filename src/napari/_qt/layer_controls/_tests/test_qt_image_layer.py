@@ -117,7 +117,7 @@ def test_auto_contrast_buttons(qtbot):
     qtctrl = QtImageControls(layer)
     qtbot.addWidget(qtctrl)
     assert layer.contrast_limits == [0, 1]
-    qtctrl._contrast_limits_control.auto_scale_bar._once_btn.click()
+    qtctrl._contrast_limits_control.auto_scale_buttons.once_btn.click()
     assert layer.contrast_limits == [0, 63]
 
     # change slice
@@ -129,7 +129,7 @@ def test_auto_contrast_buttons(qtbot):
     assert layer.contrast_limits == [0, 63]
 
     # with auto_btn, it should always change
-    qtctrl._contrast_limits_control.auto_scale_bar._auto_btn.click()
+    qtctrl._contrast_limits_control.auto_scale_buttons.auto_btn.click()
     assert layer.contrast_limits == [64, 127]
     dims.point = (2, 8, 8)
     layer._slice_dims(dims)
@@ -139,7 +139,7 @@ def test_auto_contrast_buttons(qtbot):
     assert layer.contrast_limits == [192, 255]
 
     # once button turns off continuous
-    qtctrl._contrast_limits_control.auto_scale_bar._once_btn.click()
+    qtctrl._contrast_limits_control.auto_scale_buttons.once_btn.click()
     dims.point = (4, 8, 8)
     layer._slice_dims(dims)
     assert layer.contrast_limits == [192, 255]
