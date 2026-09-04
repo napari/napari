@@ -9,7 +9,7 @@ from typing import Any, Literal
 from warnings import warn
 
 import npe2
-from pydantic import field_validator
+from pydantic import ValidationError, field_validator
 from pydantic_extra_types.color import Color
 
 from napari.resources._icons import (
@@ -110,6 +110,10 @@ class Theme(EventedModel):
             for (k, v) in th.items()
         }
 
+    @property
+    def full_id(self) -> str:
+        return f'{self.id}-{self.type}'
+
 
 increase_pattern = re.compile(r'{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}')
 decrease_pattern = re.compile(r'{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}')
@@ -152,25 +156,25 @@ def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
     return color.as_rgb_tuple()[:3]
 
 
-def _shift_luminance(
-    color: tuple[float, float, float], percentage: float
+def _luminance(
+    color: tuple[float, float, float],
+) -> float:
+    r, g, b = color
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def _change_luminance(
+    color: tuple[float, float, float],
+    target: float,
 ) -> tuple[int, int, int]:
-    """Darkens or lightens a color preserving hue and perceived saturation."""
+    """Remaps a color to a target luminance preserving hue/saturation feel."""
     r, g, b = color
 
-    percentage /= 100
-    # use perceived luminance for darken/lighten
-    lum = 0.299 * r + 0.587 * g + 0.114 * b
-
-    if percentage >= 0:
-        target = lum + (255.0 - lum) * percentage
-    else:
-        target = lum * (1.0 + percentage)
-
+    lum = _luminance(color)
     target = max(0.0, min(255.0, target))
 
     if lum < 1.0:
-        v = max(0, min(255, int(target)))
+        v = int(target)
         return (v, v, v)
 
     scale = target / lum
@@ -179,18 +183,14 @@ def _shift_luminance(
     g *= scale
     b *= scale
 
-    # desaturate colors that were lightened a lot
-    # this is kinda arbitrary, but light colors seem a lot more
-    # saturated than dark colors with the same values
-    # the coefficients at the right are tunable
-    if scale > 1.0:
-        # brighten -> desaturate
-        sat = 1.0 / (1.0 + (scale - 1.0) * 0.5)
-    else:
-        # darken -> saturate
-        sat = 1.0 + (1.0 - scale) * 0.5
+    # tweak saturation depending on brighten/darken amount
+    tweak_amount = 0.5
+    sat = (
+        1.0 / (1.0 + (scale - 1.0) * tweak_amount)
+        if scale > 1.0
+        else 1.0 + (1.0 - scale) * tweak_amount
+    )
 
-    # blend toward a mid-gray as bright as the rgb
     gray = (r + g + b) / 3.0
     r = gray + (r - gray) * sat
     g = gray + (g - gray) * sat
@@ -201,6 +201,17 @@ def _shift_luminance(
         max(0, min(255, int(g))),
         max(0, min(255, int(b))),
     )
+
+
+def _shift_luminance(
+    color: tuple[float, float, float],
+    percentage: float,
+) -> tuple[int, int, int]:
+    """Darkens or lightens a color."""
+    lum = _luminance(color)
+    p = percentage / 100.0
+    target = lum + (255.0 - lum) * p if p >= 0 else lum * (1.0 + p)
+    return _change_luminance(color, target)
 
 
 def darken(
@@ -223,6 +234,18 @@ def lighten(
     percentage *= -1 if theme_type == 'light' else 1
     r, g, b = _shift_luminance(rgb, percentage)
     return f'rgb({r}, {g}, {b})'
+
+
+def _invert_luminance(
+    color: tuple[float, float, float] | Color,
+) -> tuple[int, int, int]:
+    """Inverts luminance around mid-gray."""
+    color_rgb: tuple[float, float, float]
+    if isinstance(color, Color):
+        color_rgb = color.as_rgb_tuple(alpha=False)  # type:ignore[assignment]
+    else:
+        color_rgb = color
+    return _change_luminance(color_rgb, 255.0 - _luminance(color_rgb))
 
 
 def opacity(color: str | Color, value: int = 255) -> str:
@@ -274,6 +297,10 @@ def template(css: str, **theme):
         return gradient(stops, horizontal)
 
     for k, v in theme.items():
+        if k == 'id':
+            # workaround to replace the `id` with `full_id` to avoid
+            # replacing everything in the qss and add a new entry in the model_dump
+            v = f'{v}-{theme["type"]}'
         css = increase_pattern.sub(_increase_match, css)
         css = decrease_pattern.sub(_decrease_match, css)
         css = gradient_pattern.sub(gradient_match, css)
@@ -341,7 +368,7 @@ def get_theme(theme_id: str):
         side effects.
     """
     if theme_id == 'system':
-        theme_id = get_system_theme()
+        theme_id = f'napari-{get_system_theme()}'
 
     if theme_id not in _themes:
         raise ValueError(
@@ -351,30 +378,52 @@ def get_theme(theme_id: str):
     return theme
 
 
+def invert_theme(theme, **kwargs):
+    new_type = 'dark' if theme.type == 'light' else 'light'
+    inverted_kwargs = {
+        'id': theme.id,
+        'type': new_type,
+        'label': f'{theme.label} - {new_type.capitalize()}',
+        'background': _invert_luminance(theme.background),
+        'foreground': _invert_luminance(theme.foreground),
+        'primary': _invert_luminance(theme.primary),
+        'secondary': _invert_luminance(theme.secondary),
+        'highlight': _invert_luminance(theme.highlight),
+        'text': _invert_luminance(theme.text),
+        'icon': _invert_luminance(theme.icon),
+        'warning': _invert_luminance(theme.warning),
+        'error': _invert_luminance(theme.error),
+        'current': _invert_luminance(theme.current),
+        'syntax_style': theme.syntax_style,
+        'console': _invert_luminance(theme.console),
+        'canvas': _invert_luminance(theme.canvas),
+        'font_size': theme.font_size,
+    } | kwargs
+
+    return Theme(**inverted_kwargs)
+
+
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(theme_id, theme, source):
+def register_theme(theme: Theme, source: str):
     """Register a new or updated theme.
 
     Parameters
     ----------
-    theme_id : str
-        id of requested theme.
-    theme : dict of str: str, Theme
+    theme : Theme
         Theme mapping elements to colors.
     source : str
         Source plugin of theme
     """
-    if isinstance(theme, dict):
-        theme = Theme(**theme)
-    assert isinstance(theme, Theme)
-    _themes[theme_id] = theme
+    if theme.full_id in _themes:
+        raise ValueError(f'theme "{theme.full_id}" already registered.')
+    _themes[theme.full_id] = theme
 
-    build_theme_svgs(theme_id, source)
+    build_theme_svgs(theme.full_id, source)
 
 
-def unregister_theme(theme_id):
+def unregister_theme(full_theme_id):
     """Remove existing theme.
 
     Parameters
@@ -382,7 +431,7 @@ def unregister_theme(theme_id):
     theme_id : str
         id of the theme to be removed.
     """
-    _themes.pop(theme_id, None)
+    _themes.pop(full_theme_id, None)
 
 
 def available_themes() -> list[str]:
@@ -396,7 +445,7 @@ def available_themes() -> list[str]:
     return [*_themes, 'system']
 
 
-def is_theme_available(theme_id):
+def is_theme_available(full_theme_id):
     """Check if a theme is available.
 
     Parameters
@@ -409,10 +458,10 @@ def is_theme_available(theme_id):
     bool
         True if the theme is available, False otherwise.
     """
-    if theme_id == 'system':
+    if full_theme_id == 'system':
         return True
-    if theme_id not in _themes and _theme_path(theme_id).exists():
-        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
+    if full_theme_id not in _themes and _theme_path(full_theme_id).exists():
+        plugin_name_file = _theme_path(full_theme_id) / PLUGIN_FILE_NAME
         if not plugin_name_file.exists():
             return False
         plugin_name = plugin_name_file.read_text()
@@ -420,7 +469,7 @@ def is_theme_available(theme_id):
             npe2.PluginManager.instance().register(plugin_name)
         _install_npe2_themes(_themes)
 
-    return theme_id in _themes
+    return full_theme_id in _themes
 
 
 def rebuild_theme_settings():
@@ -437,7 +486,7 @@ def rebuild_theme_settings():
 
 # Note: these colors are sometimes lightened / darkened in the qss file.
 DARK = Theme(
-    id='dark',
+    id='napari',
     type='dark',
     label='Default Dark',
     background='rgb(35, 36, 43)',
@@ -456,7 +505,7 @@ DARK = Theme(
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
-    id='light',
+    id='napari',
     type='light',
     label='Default Light',
     background='rgb(235, 231, 230)',
@@ -475,8 +524,8 @@ LIGHT = Theme(
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
-register_theme('dark', DARK, 'builtin')
-register_theme('light', LIGHT, 'builtin')
+register_theme(DARK, 'napari')
+register_theme(LIGHT, 'napari')
 
 
 # this function here instead of plugins._npe2 to avoid circular import
@@ -488,22 +537,32 @@ def _install_npe2_themes(themes=None):
     for manifest in npe2.PluginManager.instance().iter_manifests(
         disabled=False
     ):
-        for theme in manifest.contributions.themes or ():
+        for theme_contrib in manifest.contributions.themes or ():
             # get fallback values
-            theme_dict = themes[theme.type].model_dump()
+            fallback = DARK if theme_contrib.type == 'dark' else LIGHT
+            theme_dict = themes[fallback.full_id].model_dump()
             # update available values
-            theme_info = theme.model_dump(
+            theme_info = theme_contrib.model_dump(
                 exclude={'colors'}, exclude_unset=True
             )
-            theme_colors = theme.colors.model_dump(exclude_unset=True)
+            theme_colors = theme_contrib.colors.model_dump(exclude_unset=True)
             theme_dict.update(theme_info)
             theme_dict.update(theme_colors)
             try:
-                register_theme(theme.id, theme_dict, manifest.name)
-            except ValueError:
+                theme = Theme(**theme_dict)
+            except ValidationError:
                 logging.getLogger('napari').exception(
-                    'Registration theme failed.'
+                    'Registration of theme %s failed.', theme.id
                 )
+            else:
+                register_theme(theme, manifest.name)
+                # register inverted theme if not already existing
+                inverted = invert_theme(theme)
+                if inverted.full_id not in set(themes) | {
+                    f'{t.id}-{t.type}'
+                    for t in manifest.contributions.themes or ()
+                }:
+                    register_theme(inverted, manifest.name)
 
 
 _install_npe2_themes(_themes)
