@@ -419,7 +419,7 @@ class QtViewer(QSplitter):
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, str(shortcut))
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
         """Create the dock widget that shows performance metrics."""
