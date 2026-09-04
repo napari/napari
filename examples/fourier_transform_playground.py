@@ -54,6 +54,8 @@ def wave_2d(frequency, angle, phase_shift):
 
 
 # set up viewer with grid-mode enabled
+# check if one exists to circumvent the forced napari.run() teardown at the end of this script
+existing_viewer = napari.current_viewer()
 viewer = napari.Viewer()
 viewer.canvas.grid.enabled = True
 
@@ -120,21 +122,34 @@ def update_viewer():
     # keep track of each wave in a dictionary by id, this way we can modify/remove
     # existing waves or add new ones
     wave_args = {}
-    new_params = None
     while True:
         sleep(1 / FPS)
         # see https://napari.org/stable/guides/threading.html#full-two-way-communication
-        # this receives new_params from thread.send() and yields {} for the `yielded` callback
+        # this receives new_params from thread.send() and yields the current
+        # wave_args for the `yielded` callback (one yield per frame)
         new_params = yield wave_args
         if new_params is not None:
             # note that these come from thread.send() in moving_wave()!
             wave_id, *args = new_params
             wave_args[wave_id] = args
-        yield wave_args
 
 
 # start the thread responsible for updating the viewer
 thread = update_viewer()
+
+# wait until the worker has yielded once to ensure the viewer is ready to receive updates
+worker_primed = False
+
+
+def _on_first_yield(_value):
+    global worker_primed
+    worker_primed = True
+    thread.yielded.disconnect(_on_first_yield)
+
+
+thread.yielded.connect(_on_first_yield)
+while not worker_primed:
+    QApplication.processEvents()
 
 
 @magic_factory(
@@ -165,15 +180,17 @@ wdg = moving_wave()
 
 # add the widget to the window and run it once
 viewer.window.add_dock_widget(wdg, area='bottom')
+
 wdg()
 
 # wait for the layers to be added before running the viewer
 wait_for_layers(viewer, ['wave 0'])
 viewer.fit_to_view()
 
-if __name__ == '__main__':
+# Only tear the animation thread down when this script is the main script and
+# owns the napari event loop. Drag and drop would otherwise result in the
+# thread being torn down while the viewer is running.
+if existing_viewer is None:
     napari.run()
-
-thread.quit()
-FINISHED = True
-
+    thread.quit()
+    FINISHED = True
