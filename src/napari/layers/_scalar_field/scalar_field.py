@@ -252,7 +252,7 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine dimensionality of the data
         if ndim is None:
-            ndim = len(data.shape)
+            ndim = len(data.shape)  # pyrefly: ignore [missing-attribute]
         self._data = data
 
         # Xarray metadata inference is a no-op if data is not xarray-like
@@ -263,9 +263,9 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        rgb = len(xr_source.shape) != ndim
+        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
         xr_metadata = _get_xr_metadata(
-            xr_source,
+            xr_source,  # pyrefly: ignore [bad-argument-type]
             rgb=rgb,
             axis_labels=axis_labels,
             scale=scale,
@@ -371,7 +371,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return normalize_dtype(self._data.dtype)
+        return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
 
     @property
     def data_raw(
@@ -383,13 +383,13 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data
+        return self._data  # pyrefly: ignore [bad-return]
 
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         self._data_raw = data
         # note, we don't support changing from/to multiscale after construction
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
         self._reset_data_level()
         self._reset_thumbnail_level_data()
         self._update_dims()
@@ -620,7 +620,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _reset_plane_parameters(self):
         """Set plane attributes to something valid."""
-        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.position = np.array(self.data.shape) / 2  # pyrefly: ignore [bad-assignment]
         self.plane.normal = (1, 0, 0)
 
     def _update_plane_callbacks(self):
@@ -711,7 +711,7 @@ class ScalarFieldBase(Layer, ABC):
 
         raw = self._slice.image.raw
         shape = (
-            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape  # pyrefly: ignore [missing-attribute]
         )
 
         if self.ndim < len(coord):
@@ -960,7 +960,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             if locked is not None:
                 data_level = locked
             elif slice_input.ndisplay == 3:
-                data_level = len(data) - 1  # type: ignore[arg-type]
+                data_level = len(data) - 1  # pyrefly: ignore [bad-argument-type]
             else:
                 data_level = self.layer.data_level
         else:

@@ -210,7 +210,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._world_units = self.layer.units
             self._world_to_layer_units_scale = (1,) * self.layer.ndim
 
-        # mypy: self.layer._transforms.simplified cannot be None
+        # pyrefly: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear

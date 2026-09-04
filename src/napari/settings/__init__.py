@@ -74,7 +74,7 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
 
     if _SETTINGS is None:
         if path is not _NOT_SET:
-            path = Path(path).resolve() if path is not None else None
+            path = Path(path).resolve() if path is not None else None  # pyrefly: ignore [bad-argument-type]
         _SETTINGS = NapariSettings(config_path=path)
         _SETTINGS._connect_events()
 

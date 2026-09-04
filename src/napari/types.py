@@ -132,11 +132,11 @@ def _register_types_with_magicgui():
     from napari.utils import _magicgui as _mgui
 
     for type_ in (LayerDataTuple, list[LayerDataTuple]):
-        register_type(
+        register_type(  # pyrefly: ignore [no-matching-overload]
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        future_type = Future[type_]  # type: ignore [valid-type]
+        future_type = Future[type_]
         register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
@@ -146,17 +146,17 @@ def _register_types_with_magicgui():
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         register_type(
-            Future[data_type],  # type: ignore [valid-type]
+            Future[data_type],
             choices=_mgui.get_layers_data,
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )
         register_type(
-            Optional[data_type],  # type: ignore [call-overload]
+            Optional[data_type],
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         register_type(
-            Future[Optional[data_type]],  # type: ignore [valid-type]
+            Future[Optional[data_type]],
             choices=_mgui.get_layers_data,
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )

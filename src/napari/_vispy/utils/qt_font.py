@@ -96,8 +96,7 @@ def _load_glyph_qt(
         bytes_per_line = image.bytesPerLine()
 
         # Create array with proper stride, then extract only the actual image data
-        # Type ignore: voidptr is a valid buffer but not recognized by mypy
-        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # type: ignore[call-overload]
+        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # pyrefly: ignore [no-matching-overload]
             (height, bytes_per_line)
         )
         bitmap = full_array[:, :width].copy()

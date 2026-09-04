@@ -1,4 +1,3 @@
-# mypy: disable-error-code="attr-defined"
 import warnings
 from copy import deepcopy
 from typing import TYPE_CHECKING

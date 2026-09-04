@@ -348,7 +348,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulties.
+    norm: Any  # float or array or float, pyrefly has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -674,7 +674,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)
+        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
     except TypeError:
         return None
     if chunk_size <= 0:

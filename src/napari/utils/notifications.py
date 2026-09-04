@@ -152,7 +152,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=True)
+        return fmt(exc_info, as_html=True)  # pyrefly: ignore [bad-argument-count, bad-argument-type, unexpected-keyword]
 
     def as_text(self):
         from napari.utils._tracebacks import get_tb_formatter
@@ -163,7 +163,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False, color='NoColor')
+        return fmt(exc_info, as_html=False, color='NoColor')  # pyrefly: ignore [bad-argument-count, bad-argument-type, unexpected-keyword]
 
     def __str__(self):
         from napari.utils._tracebacks import get_tb_formatter
@@ -174,7 +174,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False)
+        return fmt(exc_info, as_html=False)  # pyrefly: ignore [bad-argument-count, bad-argument-type, unexpected-keyword]
 
 
 class WarningNotification(Notification):
@@ -253,13 +253,13 @@ class NotificationManager:
         """
         # TODO: we might want to display the additional thread information
         self._originals_thread_except_hooks.append(threading.excepthook)
-        threading.excepthook = self.receive_thread_error
+        threading.excepthook = self.receive_thread_error  # pyrefly: ignore [bad-assignment]
 
         self._originals_except_hooks.append(sys.excepthook)
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
         sys.excepthook = self.receive_error
-        warnings.showwarning = self.receive_warning
+        warnings.showwarning = self.receive_warning  # pyrefly: ignore [bad-assignment]
 
     def restore_hooks(self):
         """

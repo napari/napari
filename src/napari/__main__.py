@@ -38,7 +38,7 @@ class PluginInfoAction(argparse.Action):
         cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
-            format='table',
+            format='table',  # pyrefly: ignore [bad-argument-type]
         )
         sys.exit()
 
@@ -312,7 +312,7 @@ def _build_viewer() -> Viewer:
                 for name, (
                     _pname,
                     wnames_collection,
-                ) in _npe2.widget_iterator():
+                ) in _npe2.widget_iterator():  # pyrefly: ignore [unbound-name]
                     if name == 'dock' and pname == _pname:
                         wnames = wnames_collection
                         break

@@ -137,7 +137,7 @@ def generate_vector_meshes_2D(
             vectors, width, length, p
         )
 
-    return vertices, triangles
+    return vertices, triangles  # pyrefly: ignore [unbound-name]
 
 
 def generate_meshes_line_2D(vectors, width, length, p):

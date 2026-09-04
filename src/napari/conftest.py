@@ -388,14 +388,14 @@ def qt_viewer_(
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
-    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
-    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
-    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
-    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
 
     def hide_widget(widget):
         widget.hide()
@@ -406,37 +406,37 @@ def qt_viewer_(
 
     def patched_controls(self):
         if self._controls is None:
-            self._controls = original_controls(self)
+            self._controls = original_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._controls, before_close_func=hide_widget)
         return self._controls
 
     def patched_layers(self):
         if self._layers is None:
-            self._layers = original_layers(self)
+            self._layers = original_layers(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layers, before_close_func=hide_widget)
         return self._layers
 
     def patched_layer_buttons(self):
         if self._layersButtons is None:
-            self._layersButtons = original_layer_buttons(self)
+            self._layersButtons = original_layer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
         return self._layersButtons
 
     def patched_viewer_buttons(self):
         if self._viewerButtons is None:
-            self._viewerButtons = original_viewer_buttons(self)
+            self._viewerButtons = original_viewer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
         return self._viewerButtons
 
     def patched_dock_layer_list(self):
         if self._dockLayerList is None:
-            self._dockLayerList = original_dock_layer_list(self)
+            self._dockLayerList = original_dock_layer_list(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
         return self._dockLayerList
 
     def patched_dock_layer_controls(self):
         if self._dockLayerControls is None:
-            self._dockLayerControls = original_dock_layer_controls(self)
+            self._dockLayerControls = original_dock_layer_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockLayerControls, before_close_func=hide_widget
             )
@@ -444,13 +444,13 @@ def qt_viewer_(
 
     def patched_dock_console(self):
         if self._dockConsole is None:
-            self._dockConsole = original_dock_console(self)
+            self._dockConsole = original_dock_console(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
         return self._dockConsole
 
     def patched_dock_performance(self):
         if self._dockPerformance is None:
-            self._dockPerformance = original_dock_performance(self)
+            self._dockPerformance = original_dock_performance(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockPerformance, before_close_func=hide_widget
             )
@@ -757,7 +757,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
         """
         if 'coverage' in sys.modules:
             # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
-            sys.settrace(threading._trace_hook)
+            sys.settrace(threading._trace_hook)  # pyrefly: ignore [missing-attribute]
         self._base_run()
 
     def init_with_trace(self, *args, **kwargs):
@@ -776,12 +776,12 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     if 'disable_qthread_start' in request.keywords:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Dummy function to prevent thread starts."""
 
     else:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
@@ -906,7 +906,7 @@ def _dangling_qtimers(monkeypatch, request):
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):
+            def start(self, time=None):  # pyrefly: ignore [bad-override]
                 if time is not None:
                     base_start(self, time)
                 else:
@@ -1036,7 +1036,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:
+        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
@@ -1132,7 +1132,7 @@ with contextlib.suppress(ImportError):
             # As Qt6 autodetect High dpi scaling, we need to
             # enable it only on Qt5 bindings.
             # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # pyrefly: ignore [missing-attribute]
         return QApplication
 
     @pytest.fixture(autouse=True)

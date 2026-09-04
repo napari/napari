@@ -27,7 +27,7 @@ class IntensityLayerWrapper:
 
     @property
     def contrast_limits(self) -> tuple[float, float]:
-        return self.layer.contrast_limits
+        return self.layer.contrast_limits  # pyrefly: ignore [bad-return]
 
     @property
     def dtype(self) -> DTypeLike:

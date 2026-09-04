@@ -34,7 +34,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: Iterable[QModelIndex]) -> QMimeData | None:
+    def mimeData(self, indices: Iterable[QModelIndex]) -> QMimeData | None:  # pyrefly: ignore [bad-override-param-name]
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -47,7 +47,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         )
         return ItemMimeData(items, indices)
 
-    def dropMimeData(
+    def dropMimeData(  # pyrefly: ignore [bad-override-param-name]
         self,
         data: QMimeData | None,
         action: Qt.DropAction,
@@ -94,7 +94,7 @@ class ItemMimeData(QMimeData):
         self, items: Sequence[ItemType], indices: Sequence[int]
     ) -> None:
         super().__init__()
-        self.items = items
+        self.items = items  # pyrefly: ignore [invalid-type-var]
         self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))

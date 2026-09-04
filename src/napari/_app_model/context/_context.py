@@ -87,13 +87,13 @@ class SettingsAwareContext(Context):
                 return val
         return super().__missing__(key)
 
-    def new_child(self, m: dict | None = None) -> Context:  # type: ignore
+    def new_child(self, m: dict | None = None) -> Context:  # pyrefly: ignore
         """New ChainMap with a new map followed by all previous maps.
 
         If no map is provided, an empty dict is used.
         """
         # important to use self, not *self.maps
-        return Context(m or {}, self)  # type: ignore
+        return Context(m or {}, self)
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):

@@ -134,7 +134,7 @@ class StatusChecker(QThread):
             notification_manager.dispatch(Notification.from_exception(e))
             return
         # Emit the signal with the updated status
-        self.status_and_tooltip_changed.emit(res)
+        self.status_and_tooltip_changed.emit(res)  # pyrefly: ignore [missing-attribute]
 
 
 if os.environ.get('ASV') == 'true':
@@ -142,4 +142,4 @@ if os.environ.get('ASV') == 'true':
     # running when the benchmark is running. This is because the
     # StatusChecker thread may introduce some noise in the benchmark
     # results from waiting on its termination.
-    StatusChecker.start = lambda self, priority=0: None
+    StatusChecker.start = lambda self, priority=0: None  # pyrefly: ignore [bad-assignment]

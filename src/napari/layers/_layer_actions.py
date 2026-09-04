@@ -49,7 +49,7 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
     ll.extend(images)
-    ll.selection = set(images)  # type: ignore
+    ll.selection = set(images)  # pyrefly: ignore
 
 
 def _split_rgb(ll: LayerList) -> None:
