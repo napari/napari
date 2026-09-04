@@ -51,7 +51,7 @@ class ExperimentalSettings(EventedSettings):
         json_schema_extra={'requires_restart': True},
     )
     multisampling: bool = Field(
-        True,
+        False,
         title='Enable multisampling.',
         description='Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.',
         json_schema_extra={'requires_restart': True},
