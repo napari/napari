@@ -25,10 +25,17 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     node: ScaleBar
 
     def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
-        self._target_length = 150.0
-        self._current_length = 150.0
+        # starting values, don't really matter as they get updated immediately
+        self._canvas_length = 150.0
+        self._canvas_tick_length = 11.0
+        self._canvas_thickness = 3
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
+
+        # minimum dimesnions, to avoid degenerate cases
+        self._min_canvas_length = 75
+        self._min_canvas_tick_length = 11.0
+        self._min_canvas_thickness = 3
 
         super().__init__(
             node=ScaleBar(font_info=font_info),
@@ -45,6 +52,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.unit.connect(self._on_unit_change)
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
         self.overlay.events.visible.connect(self._on_rendering_change)
+        self.overlay.events.gridded.connect(self._on_size_or_zoom_change)
 
         self.viewer.scene.camera.events.zoom.connect(
             self._on_size_or_zoom_change
@@ -54,6 +62,8 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.viewer.canvas.events.background_color.connect(
             self._on_rendering_change
         )
+        self.viewer.canvas.events.size.connect(self._on_size_or_zoom_change)
+        self.viewer.canvas.grid.events.connect(self._on_size_or_zoom_change)
 
         self.reset()
 
@@ -137,34 +147,46 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     def _on_size_or_zoom_change(self, *, force: bool = False):
         """Update length based on scale bar size and zoom."""
 
-        # If scale has not changed, do not redraw
         scale = 1 / self.viewer.scene.camera.zoom
-        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
-            return
-        self._scale = scale
 
-        scale_canvas2world = self._scale
-        target_canvas_pixels = self._target_length
+        if self.overlay.gridded:
+            view_height, view_width = self.viewer.canvas.viewbox_size(
+                self.viewer.layers
+            )
+        else:
+            view_height, view_width = self.viewer.canvas.size
+
+        target_canvas_length = max(view_width / 4, self._min_canvas_length)
         # convert desired length to world size
-        target_world_pixels = scale_canvas2world * target_canvas_pixels
+        target_world_pixels = scale * target_canvas_length
 
         # If length is set, use that value to calculate the scale bar length
         if self.overlay.length is not None:
-            target_canvas_pixels = self.overlay.length / scale_canvas2world
-            new_dim = self.overlay.length * self._unit.units
+            canvas_length = self.overlay.length / scale
+            dim_with_unit = self.overlay.length * self._unit.units
         else:
             # calculate the desired length as well as update the value and units
-            target_world_pixels_rounded, new_dim = self._calculate_best_length(
-                target_world_pixels
+            target_world_pixels_rounded, dim_with_unit = (
+                self._calculate_best_length(target_world_pixels)
             )
-            target_canvas_pixels = (
-                target_world_pixels_rounded / scale_canvas2world
-            )
+            canvas_length = target_world_pixels_rounded / scale
 
-        self._current_length = target_canvas_pixels
+        self._canvas_length = canvas_length
+        self._scale = scale
+
+        # some magic numbers
+        self._canvas_thickness = max(
+            (view_width + view_height) // 700, self._min_canvas_thickness
+        )
+        # prefer odd numbers as they look nicer
+        self._canvas_thickness += (self._canvas_thickness + 1) % 2
+
+        self._canvas_tick_length = max(
+            self._canvas_thickness * 3, self._min_canvas_tick_length
+        )
 
         # Update scalebar and text
-        self.node.text.text = f'{new_dim:g~#P}'
+        self.node.text.text = f'{dim_with_unit:g~#P}'
         self._on_rendering_change()
 
     def _on_rendering_change(self):
@@ -178,10 +200,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             color = self._get_fgcolor()
 
         width, height = self.node.set_data(
-            length=self._current_length,
-            color=color,
-            ticks=self.overlay.ticks,
+            length=self._canvas_length,
+            tick_length=self._canvas_tick_length if self.overlay.ticks else 0,
+            thickness=self._canvas_thickness,
             font_size=self.overlay.font_size,
+            color=color,
         )
 
         size_changed = width != self.x_size or height != self.y_size
