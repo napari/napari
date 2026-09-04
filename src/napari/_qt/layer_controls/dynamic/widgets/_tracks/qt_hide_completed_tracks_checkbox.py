@@ -1,0 +1,80 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QWidget,
+)
+
+from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
+    QtWidgetControlsBase,
+    QtWrappedLabel,
+)
+from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from napari.layers import Tracks
+
+
+class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
+    """
+    Class that wraps the connection of events/signals between the hide completed
+    tracks attribute and Qt widgets.
+
+    Parameters
+    ----------
+    parent: qtpy.QtWidgets.QWidget
+        An instance of QWidget that will be used as widgets parent
+    layers : list[napari.layers.Tracks]
+        A list of napari Tracks layers.
+
+    Attributes
+    ----------
+    hide_completed_tracks_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox controlling if completed tracks should be hidden.
+    hide_completed_tracks_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for showing the option checkbox.
+    """
+
+    _layers: list[Tracks]
+
+    def __init__(
+        self, layers: list[Tracks], parent: QWidget | None = None
+    ) -> None:
+        super().__init__(layers, parent)
+        self._layers = layers
+        # Setup layer
+
+        # Setup widgets
+        self.hide_completed_tracks_checkbox = QCheckBox()
+        self._callbacks.append(
+            attr_to_settr(
+                self._layers[0],
+                'hide_completed_tracks',
+                self.hide_completed_tracks_checkbox,
+                'setChecked',
+            )
+        )
+        for layer in self._layers:
+            connect_setattr(
+                self.hide_completed_tracks_checkbox.stateChanged,
+                layer,
+                'hide_completed_tracks',
+                convert_fun=checked_to_bool,
+            )
+
+        self.hide_completed_tracks_checkbox_label = QtWrappedLabel(
+            'hide completed:'
+        )
+
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
+        return [
+            (
+                self.hide_completed_tracks_checkbox_label,
+                self.hide_completed_tracks_checkbox,
+            )
+        ]

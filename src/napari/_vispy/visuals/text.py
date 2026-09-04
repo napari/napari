@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from vispy.scene.visuals import Text as BaseText
 
 from napari._vispy.utils.text import (
+    get_text_metrics,
     get_text_width_height,
 )
 
@@ -30,6 +31,10 @@ class Text(BaseText):
     def get_width_height(self) -> tuple[float, float]:
         width, height = get_text_width_height(self)
         return width * self._vispy_dpi_ratio, height * self._vispy_dpi_ratio
+
+    def get_line_height(self) -> float:
+        metrics = get_text_metrics(self)
+        return metrics.height() * self._vispy_dpi_ratio
 
     @property
     def font_size(self) -> float:
