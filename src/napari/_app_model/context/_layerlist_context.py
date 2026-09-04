@@ -201,6 +201,10 @@ def _all_support_face_colorbar(s: LayerSel) -> bool:
     return bool(s and all(hasattr(x, 'face_colorbar') for x in s))
 
 
+def _all_support_edge_colorbar(s: LayerSel) -> bool:
+    return bool(s and all(hasattr(x, 'edge_colorbar') for x in s))
+
+
 def _any_deletion_locked(s: LayerSel) -> bool:
     from napari.layers.base import LayerLock
 
@@ -362,6 +366,11 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         'True when all selected layers support a face colorbar.',
         _all_support_face_colorbar,
+    )
+    all_selected_layers_support_edge_colorbar = ContextKey(
+        False,
+        'True when all selected layers support an edge colorbar.',
+        _all_support_edge_colorbar,
     )
     selected_empty_shapes_layer = CallableContextKey(
         False,
