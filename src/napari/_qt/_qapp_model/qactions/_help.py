@@ -13,7 +13,7 @@ from napari._qt.dialogs.qt_about import QtAbout
 from napari._qt.qt_main_window import Window
 from napari._qt.widgets.qt_logger import LogWidget
 from napari._qt.widgets.qt_tips import TipsWidget
-from napari._qt.widgets.qt_viewer_tour import GuidedTour, build_viewer_tour
+from napari._qt.widgets.qt_viewer_tour import build_viewer_tour
 
 
 def _show_about(window: Window):
@@ -30,24 +30,11 @@ def _show_tips(window: Window):
     window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
 
 
-def _start_viewer_tour(window: Window, *, tour: GuidedTour | None = None):
-    """Start a guided tour on ``window``.
-
-    Parameters
-    ----------
-    window : Window
-        The napari window to start the tour on.
-    tour : GuidedTour, optional
-        A pre-built tour to run instead of napari's built-in viewer tour.
-        Use this to run a custom tour, e.g. one built with
-        ``build_viewer_tour(window._qt_window, sample=...)`` against
-        different sample data, or an entirely different set of steps.
-    """
+def _take_viewer_tour(window: Window):
     qt_window = window._qt_window
     if qt_window._viewer_tour is not None:
         return
-    if tour is None:
-        tour = build_viewer_tour(qt_window)
+    tour = build_viewer_tour(qt_window)
     qt_window._viewer_tour = tour
     tour.finished.connect(lambda: setattr(qt_window, '_viewer_tour', None))
     tour.start()
@@ -93,7 +80,7 @@ Q_HELP_ACTIONS: list[Action] = [
     Action(
         id='napari.window.help.viewer_tour',
         title='Take a tour',
-        callback=_start_viewer_tour,
+        callback=_take_viewer_tour,
         menus=[{'id': MenuId.MENUBAR_HELP}],
         status_tip='Start a guided tour of the napari viewer',
     ),

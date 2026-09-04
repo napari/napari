@@ -249,18 +249,22 @@ QtDimSliderWidget > QLineEdit {
 
 /* ------------- Guided viewer tour ------------- */
 
-#qt_viewer_tour_tooltip {
+#qt_tour_tooltip {
   border: 1px solid {{ foreground }};
   border-radius: 5px;
 }
 
-#qt_viewer_tour_tooltip QPushButton {
+#qt_tour_title {
+  font-weight: bold;
+}
+
+#qt_tour_tooltip QPushButton {
   background: {{ secondary }};
   border-radius: 3px;
   padding: 5px 12px;
 }
 
-#qt_viewer_tour_tooltip QPushButton:hover {
+#qt_tour_tooltip QPushButton:hover {
   background: {{ primary }};
 }
 
