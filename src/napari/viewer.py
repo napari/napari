@@ -3,16 +3,26 @@ from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
+from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
     # helpful for IDE support
     from pathlib import Path
 
-    from napari._qt.qt_main_window import Window
+    from napari.window import (
+        Window,
+    )
+
+
+_TITLE_DEPRECATION_MSG = (
+    'viewer.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
+    ' There is currently no planned date for removal of the legacy attribute.'
+)
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -50,12 +60,23 @@ class Viewer(ViewerModel):
         **kwargs,
     ) -> None:
         super().__init__(
-            title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
             **kwargs,
         )
+
+        # to ensure the warning is different from a pure ViewerModel, we need to pop
+        # the emitter here and recreate it as a DeprecationWarning with our message
+        # this will be removed together with the deprecated field
+        del self.events.title
+        self.events.emitters.pop('title')
+        self.events.add(
+            title=WarningEmitter(
+                _TITLE_DEPRECATION_MSG, DeprecationWarning, stacklevel=2
+            )
+        )
+
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
         from napari.plugins import _initialize_plugins
@@ -67,7 +88,10 @@ class Viewer(ViewerModel):
         _initialize_plugins()
 
         self._window = Window(
-            self, show=show, show_welcome_screen=show_welcome_screen
+            self,
+            show=show,
+            show_welcome_screen=show_welcome_screen,
+            title=title,
         )
         self._instances.add(self)
 
@@ -97,10 +121,39 @@ class Viewer(ViewerModel):
         """
         return super().__new__(cls)
 
+    def __str__(self):
+        return f'napari.Viewer: {self.window.title}'
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
         return self._window
+
+    @property
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self.window.title
+
+    @title.setter
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self.window.title = title
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
