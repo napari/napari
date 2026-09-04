@@ -453,6 +453,7 @@ DARK = Theme(
     syntax_style='native',
     console='rgb(18, 18, 18)',
     canvas='black',
+    font='',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 LIGHT = Theme(
@@ -472,6 +473,7 @@ LIGHT = Theme(
     syntax_style='default',
     console='white',
     canvas='white',
+    font='',
     font_size='12pt' if sys.platform == 'darwin' else '9pt',
 )
 
