@@ -309,14 +309,24 @@ class TestQtProjectionModeControl:
         control = QtProjectionModeControl([image])
         qt_wrap.add_control(control)
 
+        # check default
+        default_proj_mode = 'none'
+        assert image.projection_mode == default_proj_mode
+        assert control.projection_combobox.currentText() == default_proj_mode
+
+        # check changing control changes layer
+        control.projection_combobox.setCurrentText('mean')
         assert image.projection_mode == 'mean'
-        assert control.projection_combobox.currentText() == 'mean'
 
         control.projection_combobox.setCurrentText('max')
         assert image.projection_mode == 'max'
 
+        # check changing layer mode changes control
         image.projection_mode = 'sum'
         assert control.projection_combobox.currentText() == 'sum'
+
+        image.projection_mode = 'none'
+        assert control.projection_combobox.currentText() == 'none'
 
 
 class TestQtOpacityBlendingControls:
