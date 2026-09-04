@@ -362,6 +362,7 @@ fallback_version = "0.7.1.dev0"
 
 [tool.check-manifest]
 ignore = [
+  ".circleci/continue_config.yml",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
