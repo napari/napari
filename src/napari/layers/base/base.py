@@ -438,10 +438,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    cursor : str
-        String identifying which cursor displayed over canvas.
-    cursor_size : int | None
-        Size of cursor if custom. None yields default size
     help : str
         Displayed in status bar bottom right.
     mouse_pan : bool
@@ -523,10 +519,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-    }
     events: EmitterGroup
 
     def __init__(  # type: ignore[no-untyped-def]
@@ -578,8 +570,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
-        self._cursor = 'standard'
-        self._cursor_size = 1
         self._mouse_pan = True
         self._mouse_zoom = True
         self._value = None
@@ -656,8 +646,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             metadata=Event,
             affine=Event,
             blending=Event,
-            cursor=Event,
-            cursor_size=Event,
             editable=Event,
             locked=Event,
             extent=Event,
@@ -761,7 +749,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             if mode_dict[self._mode] in callback_list:
                 callback_list.remove(mode_dict[self._mode])
             callback_list.append(mode_dict[mode])
-        self.cursor = self._cursor_modes[mode]
 
         self.mouse_pan = mode == PAN_ZOOM
         self._overlays['transform_box'].visible = mode == TRANSFORM
@@ -1377,30 +1364,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             return
         self._mouse_zoom = mouse_zoom
         self.events.mouse_zoom(mouse_zoom=mouse_zoom)
-
-    @property
-    def cursor(self) -> str:
-        """str: String identifying cursor displayed over canvas."""
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, cursor: str) -> None:
-        if cursor == self.cursor:
-            return
-        self._cursor = cursor
-        self.events.cursor(cursor=cursor)
-
-    @property
-    def cursor_size(self) -> int:
-        """int: Size of cursor if custom. None yields default size."""
-        return self._cursor_size
-
-    @cursor_size.setter
-    def cursor_size(self, cursor_size: int) -> None:
-        if cursor_size == self.cursor_size:
-            return
-        self._cursor_size = cursor_size
-        self.events.cursor_size(cursor_size=cursor_size)
 
     @property
     def experimental_clipping_planes(self) -> ClippingPlaneList:

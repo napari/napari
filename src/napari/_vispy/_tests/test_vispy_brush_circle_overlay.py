@@ -1,18 +1,18 @@
+import numpy as np
+
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.components.overlays import BrushCircleOverlay
+from napari.layers import Labels
 
 
 def test_vispy_brush_circle_overlay():
-    brush_circle_model = BrushCircleOverlay()
+    brush_circle = BrushCircleOverlay()
     viewer = ViewerModel()
+    labels = Labels(data=np.zeros((10, 10), dtype=np.int32))
 
-    vispy_brush_circle = VispyBrushCircleOverlay(
-        viewer=viewer, overlay=brush_circle_model, font_info=FontInfo()
+    _ = VispyBrushCircleOverlay(
+        layer=labels, viewer=viewer, overlay=brush_circle, font_info=FontInfo()
     )
-    brush_circle_model.size = 100
-    brush_circle_model.position = 10, 20
-
-    assert vispy_brush_circle._white_circle.radius == 50
-    assert vispy_brush_circle._black_circle.radius == 49
+    assert brush_circle.visible is False
