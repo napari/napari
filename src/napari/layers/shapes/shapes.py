@@ -51,6 +51,7 @@ from napari.layers.shapes._shapes_utils import (
     validate_num_vertices,
 )
 from napari.layers.shapes.shape_types import BoxArray
+from napari.layers.utils.color_manager import DEFAULT_COLOR_CYCLE
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
     map_property,
@@ -79,14 +80,11 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from itertools import cycle
 
     import pandas as pd
-
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
 class Shapes(Layer):
@@ -485,12 +483,7 @@ class Shapes(Layer):
             data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError(
-                    trans._(
-                        'Shape dimensions must be equal to ndim',
-                        deferred=True,
-                    )
-                )
+                raise ValueError('Shape dimensions must be equal to ndim')
             ndim = data_ndim
 
         super().__init__(
@@ -809,10 +802,7 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for face_color dropped',
-                    deferred=True,
-                ),
+                'property used for face_color dropped',
                 RuntimeWarning,
             )
 
@@ -821,10 +811,7 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                trans._(
-                    'property used for edge_color dropped',
-                    deferred=True,
-                ),
+                'property used for edge_color dropped',
                 RuntimeWarning,
             )
 
@@ -1038,7 +1025,7 @@ class Shapes(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -1096,7 +1083,7 @@ class Shapes(Layer):
         self._face_colormap = ensure_colormap(colormap)
 
     @property
-    def face_contrast_limits(self) -> None | tuple[float, float]:
+    def face_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -1104,7 +1091,7 @@ class Shapes(Layer):
 
     @face_contrast_limits.setter
     def face_contrast_limits(
-        self, contrast_limits: None | tuple[float, float]
+        self, contrast_limits: tuple[float, float] | None
     ):
         self._face_contrast_limits = contrast_limits
 
@@ -1151,20 +1138,11 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        trans._(
-                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
-                            deferred=True,
-                            attribute=attribute,
-                            new_color_property=new_color_property,
-                        )
+                        f'_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        trans._(
-                            'There must be a valid Shapes.properties to use {color_mode}',
-                            deferred=True,
-                            color_mode=color_mode,
-                        )
+                        f'There must be a valid Shapes.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -1173,10 +1151,7 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    trans._(
-                        'selected property must be numeric to use ColorMode.COLORMAP',
-                        deferred=True,
-                    )
+                    'selected property must be numeric to use ColorMode.COLORMAP'
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
@@ -1227,7 +1202,7 @@ class Shapes(Layer):
         if isinstance(width, list):
             if not len(width) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             widths = width
@@ -1256,7 +1231,7 @@ class Shapes(Layer):
         if isinstance(z_index, list):
             if not len(z_index) == self.nshapes:
                 raise ValueError(
-                    trans._('Length of list does not match number of shapes')
+                    'Length of list does not match number of shapes'
                 )
 
             z_indices = z_index
@@ -1278,7 +1253,16 @@ class Shapes(Layer):
         self._selected_data.replace_selection(selected_data)
 
     def _on_selection_changed(self, added, removed):
-        self._selected_box = self.interaction_box(self.selected_data)
+        # Drop a stale hover value if the hovered shape is no longer in view.
+        if (
+            self._value[0] is not None
+            and self._value[0] not in self._view_indices
+        ):
+            self._value = (None, None)
+
+        # The interaction box (and its handles) is only drawn around the
+        # selected shapes that are currently in view.
+        self._selected_box = self.interaction_box(self._selected_data_in_view)
 
         # Update properties based on selected shapes
         if len(self.selected_data) > 0:
@@ -1602,10 +1586,7 @@ class Shapes(Layer):
             return False
 
         raise ValueError(
-            trans._(
-                'Should be the name of a color, an array of colors, or the name of a property',
-                deferred=True,
-            )
+            'Should be the name of a color, an array of colors, or the name of a property'
         )
 
     def _get_state(self) -> dict[str, Any]:
@@ -1649,8 +1630,19 @@ class Shapes(Layer):
         return state
 
     @property
-    def _indices_view(self):
+    def _view_indices(self):
         return np.where(self._data_view._displayed)[0]
+
+    @property
+    def _selected_data_in_view(self) -> list[int]:
+        """Indices of selected shapes that are currently in view.
+
+        The selection is preserved across slices and ndisplay changes, but the
+        highlights (interaction box, vertices, and outlines) are only drawn for
+        the shapes visible in the current slice.
+        """
+        view_indices = set(self._view_indices.tolist())
+        return [i for i in self.selected_data if i in view_indices]
 
     @property
     def _view_text(self) -> np.ndarray:
@@ -1664,7 +1656,7 @@ class Shapes(Layer):
         # This may be triggered when the string encoding instance changed,
         # in which case it has no cached values, so generate them here.
         self.text.string._apply(self.features)
-        return self.text.view_text(self._indices_view)
+        return self.text.view_text(self._view_indices)
 
     @property
     def _view_text_coords(self) -> tuple[np.ndarray, str, str]:
@@ -1684,7 +1676,7 @@ class Shapes(Layer):
 
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
-            self._data_view.data[i] for i in self._indices_view
+            self._data_view.data[i] for i in self._view_indices
         ]
 
         # get the coordinates for the dimensions being displayed
@@ -1702,7 +1694,7 @@ class Shapes(Layer):
     def _view_text_color(self) -> np.ndarray:
         """Get the colors of the text elements at the given indices."""
         self.text.color._apply(self.features)
-        return self.text._view_color(self._indices_view)
+        return self.text._view_color(self._view_indices)
 
     @property
     def mode(self):
@@ -2410,8 +2402,10 @@ class Shapes(Layer):
 
         This is often needed when calculating screen-space sizes and distances
         of vertices for interactivity (rescaling, adding vertices, etc).
+        We use only the magnitude of the layer scale, because sizes and
+        distances must remain positive.
         """
-        return self.scale_factor / self.scale[-1]
+        return self.scale_factor / abs(self.scale[-1])
 
     @property
     def _normalized_vertex_radius(self):
@@ -2420,27 +2414,42 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
+        view_changed = False
         with self._data_view.batched_updates():
             ndisplay = self._slice_input.ndisplay
             if ndisplay != self._ndisplay_stored:
-                self.selected_data = set()
                 self._data_view.ndisplay = min(self.ndim, ndisplay)
                 self._ndisplay_stored = ndisplay
                 self._clipboard = {}
+                view_changed = True
 
             if self._slice_input.order != self._display_order_stored:
-                self.selected_data = set()
                 self._data_view.update_dims_order(self._slice_input.order)
                 self._display_order_stored = copy(self._slice_input.order)
                 # Clear clipboard if dimensions swap
                 self._clipboard = {}
+                view_changed = True
 
             slice_key = np.array(self._data_slice.point)[
                 self._slice_input.not_displayed
             ]
             if not np.array_equal(slice_key, self._data_view.slice_key):
-                self.selected_data = set()
+                view_changed = True
             self._data_view.slice_key = slice_key
+
+        # The selection is preserved across slice/ndisplay/order changes, but
+        # the set of shapes *in view* changes, so the highlight state must be
+        # refreshed. This is done after the batched update exits: inside the
+        # batch ``_data_view._displayed`` is not yet updated, so
+        # ``_view_indices`` would still report the previous view and the
+        # interaction box would lag one step behind. The redraw itself is
+        # triggered by the refresh that wraps slicing (``_refresh_sync``).
+        if view_changed:
+            self._value = (None, None)
+            self._outlines_cache.clear()
+            self._selected_box = self.interaction_box(
+                self._selected_data_in_view
+            )
 
     def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
         """Create the interaction box around a shape or list of shapes.
@@ -2533,6 +2542,11 @@ class Shapes(Layer):
     def _outline_shapes(self):
         """Find outlines of any selected or hovered shapes.
 
+        Only shapes on the currently viewed slice are outlined. The outline
+        geometry is built from in-plane vertices and is not slice-aware, so a
+        selected or hovered shape sitting on another slice would otherwise draw
+        its highlight over the viewed slice.
+
         Returns
         -------
         vertices : None | np.ndarray
@@ -2541,20 +2555,28 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
+        # Only highlight selected shapes that are in view.
+        selected_in_view = self._selected_data_in_view
         if (
             self._highlight_visible
             and self._value is not None
-            and (self._value[0] is not None or len(self.selected_data) > 0)
+            and (self._value[0] is not None or len(selected_in_view) > 0)
         ):
+            # Only consider the hovered shape if it is in view and not already
+            # selected (selected shapes are highlighted via selected_in_view).
             value = self._value[0]
-            if value in self.selected_data:
+            if value is not None and value not in self._view_indices:
                 value = None
+            if value in selected_in_view:
+                value = None
+            if value is None and not selected_in_view:
+                return None, None
 
             if value in self._outlines_cache:
                 centers, offsets, triangles = self._outlines_cache[value]
             else:
-                if len(self.selected_data) > 0:
-                    index = list(self.selected_data)
+                if len(selected_in_view) > 0:
+                    index = list(selected_in_view)
                     if value is not None:
                         index.append(value)
                     index.sort()
@@ -2562,7 +2584,7 @@ class Shapes(Layer):
                     index = value
 
                 centers, offsets, triangles = self._data_view.outline(index)
-                self._outlines_cache[self._value[0]] = (
+                self._outlines_cache[value] = (
                     centers,
                     offsets,
                     triangles,
@@ -2594,10 +2616,17 @@ class Shapes(Layer):
         width : float
             Width of the box edge
         """
-        if self._highlight_visible and len(self.selected_data) > 0:
+        # Only highlight selected shapes that are in view.
+        selected_in_view = self._selected_data_in_view
+
+        if self._highlight_visible and len(selected_in_view) > 0:
             if self._mode == Mode.SELECT and self._selected_box is not None:
-                # If in select mode just show the interaction bounding box
-                # including its vertices and the rotation handle
+                # In select mode show the interaction bounding box (with its
+                # vertices and rotation handle). ``_selected_box`` is the single
+                # source of truth: it is rebuilt from the in-view selection on
+                # selection/view changes and transformed in place while
+                # dragging (so it stays rotated/scaled with the shape).
+                # Hover-only highlights are drawn separately by _outline_shapes.
                 box = self._selected_box[Box.WITH_HANDLE]
                 if self._value[0] is None or self._value[1] is None:
                     face_color = 'white'
@@ -2626,7 +2655,7 @@ class Shapes(Layer):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(
                     self._data_view.displayed_vertices_to_shape_num,
-                    list(self.selected_data),
+                    list(selected_in_view),
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
@@ -2723,15 +2752,13 @@ class Shapes(Layer):
                     if len(vertices) <= 3 and prev_vertices > 3:
                         # https://github.com/napari/napari/issues/7903
                         show_warning(
-                            trans._(
-                                'Polygons must have three or more vertices. '
-                                'Lasso polygons are simplified using the '
-                                'RDP algorithm, which may cause polygons '
-                                'smaller than RDP epsilon to disappear. If  '
-                                'you face issues drawing small polygons, '
-                                'try reducing napari > Settings > '
-                                'Experimental > RDP epsilon. '
-                            ),
+                            'Polygons must have three or more vertices. '
+                            'Lasso polygons are simplified using the '
+                            'RDP algorithm, which may cause polygons '
+                            'smaller than RDP epsilon to disappear. If  '
+                            'you face issues drawing small polygons, '
+                            'try reducing napari > Settings > '
+                            'Experimental > RDP epsilon. ',
                         )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
@@ -3003,9 +3030,10 @@ class Shapes(Layer):
 
         coord = [position[i] for i in self._slice_input.displayed]
 
-        # Check selected shapes
+        # Check selected shapes. Only shapes in view have a drawn interaction
+        # box / vertices to hit-test against, so restrict to those.
         value = None
-        selected_index = list(self.selected_data)
+        selected_index = self._selected_data_in_view
 
         if len(selected_index) > 0:
             self.scale[self._slice_input.displayed]
@@ -3098,7 +3126,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[None | float | int, None | np.ndarray]:
+    ) -> tuple[float | int | None, np.ndarray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
