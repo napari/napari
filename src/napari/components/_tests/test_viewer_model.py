@@ -1364,6 +1364,11 @@ def test_dims_axis_labels_reset_to_default_when_layer_resets():
     layer.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
 
+    # a partial reset resets only the positions returned to default
+    layer.axis_labels = ['Z', 'c', 'Y', 'x']
+    layer.axis_labels = ['-4', '-3', 'Y', 'x']
+    assert viewer.dims.axis_labels == ('-4', '-3', 'Y', 'x')
+
 
 def test_dims_axis_labels_default_when_all_layers_default():
     """Non-default layer labels win until every layer is back to the default."""
@@ -1377,3 +1382,18 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_dims_axis_labels_reset_mixed_dimensionality():
+    """Mixed-dimensionality layers merge per axis, then reset to default."""
+    viewer = ViewerModel()
+    layer0 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
+    layer1 = viewer.add_image(np.zeros((4, 4, 4)), axis_labels=list('zyx'))
+    assert viewer.dims.axis_labels == tuple('tzyx')
+
+    # only the last 3 axes stay annotated once the 4d layer is default
+    layer0.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')
+
+    layer1.axis_labels = ['-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
