@@ -1508,6 +1508,21 @@ def test_removing_shapes():
     layer.remove([])
 
 
+def test_removing_selected_shapes_mid_draw_cancels_the_draw():
+    from napari.layers.shapes._shapes_mouse_bindings import (
+        initiate_polygon_draw,
+    )
+
+    layer = Shapes()
+    layer.mode = 'add_polygon'
+    initiate_polygon_draw(layer, np.array([1.0, 1.0]))
+
+    layer.remove_selected()
+
+    assert layer._is_creating is False
+    assert layer.nshapes == 0
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
