@@ -56,7 +56,7 @@ jobs:
         backend: [pyqt5]
         include:
           - python: "3.11"
-            platform: macos-15
+            platform: macos-latest
             backend: pyqt5
           # test with minimum specified requirements
           - python: "3.11"
