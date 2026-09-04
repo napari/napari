@@ -50,6 +50,12 @@ class ExperimentalSettings(EventedSettings):
         validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
         json_schema_extra={'requires_restart': True},
     )
+    multisampling: bool = Field(
+        False,
+        title='Enable multisampling.',
+        description='Multisampling improves quality by rendering more fragments to reduce aliasing, at the cost of some performance.',
+        json_schema_extra={'requires_restart': True},
+    )
 
     rdp_epsilon: float = Field(
         0.5,
