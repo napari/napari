@@ -42,4 +42,9 @@ class Cursor(EventedModel):
     scaled: bool = True
     size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD
+    _canvas_position: tuple[int, int] | None = None
     _view_direction: np.ndarray | None = None
+
+    @property
+    def canvas_position(self) -> tuple[int, int] | None:
+        return self._canvas_position

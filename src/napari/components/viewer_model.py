@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Union,
     cast,
 )
 from urllib.parse import urlparse
@@ -42,7 +41,6 @@ from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.scene import Scene
-from napari.components.tooltip import Tooltip
 from napari.errors import (
     MultipleReaderError,
     NoAvailableReaderError,
@@ -88,6 +86,7 @@ from napari.utils.events import (
     EventedModel,
     disconnect_events,
 )
+from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
@@ -139,6 +138,12 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
             raise FileNotFoundError(f'Path {p_str!r} does not exist.')
 
 
+_TITLE_DEPRECATION_MSG = (
+    'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    ' A pure ViewerModel no longer has access to window-related attributes.'
+)
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -167,22 +172,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
-    help: str
-        A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
-    mouse_over_canvas: bool
-        Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
 
         .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
-    title: str
-        The title of the viewer model
-    tooltip: napari.components.tooltip.Tooltip
-        A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
     _ctx: Mapping
@@ -200,15 +197,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
-    help: str = ''
-    status: Union[str, Dict[str, str]] = 'Ready'
-    tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
-    title: str = 'napari'
     _ctx: Context = PrivateAttr()
-    # To check if mouse is over canvas to avoid race conditions between
-    # different events systems
-    mouse_over_canvas: bool = False
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -216,6 +206,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # stub to be removed after deprecation cycle; only here to support
+    # tests and other edge cases that use pure ViewerModels and access
+    # window properties such as the title.
+    _title: str = PrivateAttr()
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -239,10 +233,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
-        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
-        settings.appearance.events.layer_tooltip_visibility.connect(
-            self._tooltip_visible_update
-        )
 
         self._update_camera_orientation()
         settings.application.events.depth_axis_orientation.connect(
@@ -263,7 +253,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add extra reset_view event. Ideally this should be removed in the
         # future.
-        self.events.add(reset_view=Event)
+        self.events.add(
+            reset_view=Event,
+            title=WarningEmitter(
+                _TITLE_DEPRECATION_MSG, FutureWarning, stacklevel=2
+            ),
+        )
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
@@ -288,7 +283,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
-        self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
@@ -302,6 +296,34 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
+
+    @property
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self._title
+
+    @title.setter
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.10.0
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self._title = title
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -402,9 +424,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         return self.canvas.grid
 
-    def _tooltip_visible_update(self, event):
-        self.tooltip.visible = event.value
-
     def _update_camera_orientation(self):
         """Update camera orientation based on settings."""
         settings = get_settings()
@@ -455,7 +474,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def __str__(self):
         """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
+        return 'napari.ViewerModel'
 
     @property
     def _sliced_extent_world_augmented(self) -> np.ndarray:
@@ -794,7 +813,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             for layer in self.layers:
                 layer.update_transform_box_visibility(False)
                 layer.update_highlight_visibility(False)
-            self.help = ''
             self.cursor.style = CursorStyle.STANDARD
             self.scene.camera.mouse_pan = True
             self.scene.camera.mouse_zoom = True
@@ -805,12 +823,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 if layer != active_layer:
                     layer.update_transform_box_visibility(False)
                     layer.update_highlight_visibility(False)
-            self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
-            self.update_status_from_cursor()
 
     def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
         """Combine layerlist axis labels onto the current dims labels.
@@ -880,8 +896,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
-        if not self.mouse_over_canvas:
-            return None
         coord2val: dict[str, list[str]] = {}
         coord_str = ''
         status_str = ''
@@ -891,11 +905,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
 
         # Compute the tooltip first since it is always needed.
-        if (
-            self.tooltip.visible
-            and active is not None
-            and active._slicing_state._loaded
-        ):
+        if active is not None and active._slicing_state._loaded:
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
                 view_direction=self.cursor._view_direction,
@@ -963,14 +973,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return status_str, tooltip_text
 
-    def update_status_from_cursor(self):
-        """Update the status and tooltip from the cursor position."""
-        status = self._calc_status_from_cursor()
-        if status is not None:
-            self.status, self.tooltip.text = status
-        if (active := self.layers.selection.active) is not None:
-            self.help = active.help
-
     @property
     def experimental(self):
         """Experimental commands for IPython console.
@@ -1010,9 +1012,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.axis_labels.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
-        if hasattr(layer.events, 'mode'):
-            layer.events.mode.connect(self._on_layer_mode_change)
-        self._layer_help_from_mode(layer)
 
         # Update dims
         self._on_layers_change()
@@ -1024,11 +1023,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.reset_view()
             self.dims._go_to_center_step()
 
-    @staticmethod
-    def _layer_help_from_mode(layer: Layer):
+    def _layer_help_from_active(self):
         """
-        Update layer help text base on layer mode.
+        Get the help text relative to the current active layer
         """
+        if (active := self.layers.selection.active) is None:
+            return ''
+
         layer_to_func_and_mode: dict[type[Layer], list] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
@@ -1042,8 +1043,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         help_li = []
         shortcuts = get_settings().shortcuts.shortcuts
 
-        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
-            if mode_ == layer.mode:
+        for fun, mode_ in layer_to_func_and_mode.get(active.__class__, []):
+            if mode_ == active.mode:
                 continue
             action_name = f'napari:{fun.__name__}'
             desc = action_manager._actions[action_name].description.lower()
@@ -1051,12 +1052,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 continue
             help_li.append(f'use <{shortcuts[action_name][0]}> for {desc}')
 
-        layer.help = ', '.join(help_li)
-
-    def _on_layer_mode_change(self, event):
-        self._layer_help_from_mode(event.source)
-        if (active := self.layers.selection.active) is not None:
-            self.help = active.help
+        return ', '.join(help_li)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.

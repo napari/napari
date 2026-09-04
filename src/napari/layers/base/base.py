@@ -6,6 +6,7 @@ import itertools
 import logging
 import os.path
 import uuid
+import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
@@ -442,8 +443,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         String identifying which cursor displayed over canvas.
     cursor_size : int | None
         Size of cursor if custom. None yields default size
-    help : str
-        Displayed in status bar bottom right.
     mouse_pan : bool
         Determine if canvas interactive panning is enabled with the mouse.
     mouse_zoom : bool
@@ -577,7 +576,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._visible_mode: str | None = None
         self._freeze = False
         self._status = 'Ready'
-        self._help = ''
         self._cursor = 'standard'
         self._cursor_size = 1
         self._mouse_pan = True
@@ -661,7 +659,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             editable=Event,
             locked=Event,
             extent=Event,
-            help=Event,
             loaded=Event,
             mode=Event,
             mouse_pan=Event,
@@ -765,11 +762,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         self.mouse_pan = mode == PAN_ZOOM
         self._overlays['transform_box'].visible = mode == TRANSFORM
-
-        if mode == TRANSFORM:
-            self.help = 'hold <space> to move camera, hold <shift> to preserve aspect ratio and rotate in 45° increments'
-        elif mode == PAN_ZOOM:
-            self.help = ''
 
         return mode
 
@@ -1345,14 +1337,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     @property
     def help(self) -> str:
         """str: displayed in status bar bottom right."""
-        return self._help
+        warnings.warn(
+            'Layer.help is deprecated.',
+            FutureWarning,
+            stacklevel=2,
+        )
+        return ''
 
     @help.setter
     def help(self, help_text: str) -> None:
-        if help_text == self.help:
-            return
-        self._help = help_text
-        self.events.help(help=help_text)
+        warnings.warn(
+            'Layer.help is deprecated.',
+            FutureWarning,
+            stacklevel=2,
+        )
 
     @property
     def mouse_pan(self) -> bool:
