@@ -21,7 +21,8 @@ blobs = np.stack(
     ],
     axis=0,
 )
-viewer = napari.view_image(blobs.astype(float))
+viewer = napari.Viewer()
+layer = viewer.add_image(blobs.astype(float))
 
 # add the points
 points = np.array(
@@ -34,10 +35,13 @@ points = np.array(
     ]
 )
 viewer.add_points(
-    points, size=10, face_color='blue', out_of_slice_display=True
+    points, size=10, face_color='blue',
 )
 
 viewer.dims.order = (0, 2, 1, 3)
+
+# enable thick slicing on each dimension
+viewer.dims.thickness = (10, 10, 10, 10)
 
 if __name__ == '__main__':
     napari.run()

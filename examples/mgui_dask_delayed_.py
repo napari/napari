@@ -7,14 +7,19 @@ Note: this example requires python >= 3.9
 
 .. tags:: gui
 """
+from __future__ import annotations
+
 import time
-from concurrent.futures import Future
+from typing import TYPE_CHECKING
 
 import dask.array as da
 from magicgui import magicgui
 
 import napari
 from napari.types import ImageData
+
+if TYPE_CHECKING:
+    from concurrent.futures import Future
 
 
 def _slow_function(nz):
@@ -32,7 +37,7 @@ if __name__ == '__main__':
         return client.submit(_slow_function, nz)
 
     viewer = napari.Viewer()
-    viewer.window.add_dock_widget(widget, area="right")
+    viewer.window.add_dock_widget(widget, area='right')
 
 if __name__ == '__main__':
     napari.run()

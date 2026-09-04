@@ -24,9 +24,9 @@ import os
 # important: if this is not set, the entire ~4GB array will be created!
 os.environ.setdefault('NAPARI_OCTREE', '1')
 
-import dask.array as da  # noqa: E402
+import dask.array as da
 
-import napari  # noqa: E402
+import napari
 
 ndim = 2
 data = da.random.randint(
@@ -41,7 +41,7 @@ viewer.add_image(data, contrast_limits=[0, 255])
 #viewer.layers[0].display.show_grid = False
 
 # set small zoom so we don't try to load the whole image at once
-viewer.camera.zoom = 0.75
+viewer.scene.camera.zoom = 0.75
 
 # run the example — try to pan around!
 if __name__ == '__main__':

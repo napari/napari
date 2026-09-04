@@ -64,18 +64,18 @@ viewer.window.resize(900, 600)
 
 viewer.theme = "light"
 viewer.dims.ndisplay = 3
-viewer.axes.visible = True
-viewer.axes.colored = False
-viewer.axes.labels = False
-viewer.text_overlay.visible = True
-viewer.text_overlay.text = "Hello World!"
+viewer.scene.overlays.axes.visible = True
+viewer.scene.overlays.axes.colored = False
+viewer.scene.overlays.axes.labels = False
+viewer.canvas.overlays.text.visible = True
+viewer.canvas.overlays.text.text = "Hello World!"
 
 # Not yet implemented, but can be added as soon as this feature exisits (syntax might change): 
 # viewer.controls.visible = False
 
-viewer.add_labels(myball, name="result" , opacity=1)
-viewer.camera.angles = (19, -33, -121)
-viewer.camera.zoom = 1.3
+viewer.add_labels(myball, name="result" , opacity=1.0)
+viewer.scene.camera.angles = (19, -33, -121)
+viewer.scene.camera.zoom = 1.3
 ```
 
 Next, the loop run is defined.  
@@ -93,7 +93,7 @@ def loop_run():
 def update_layer(image_text_tuple):
     image, text = image_text_tuple
     viewer.layers["result"].data = image
-    viewer.text_overlay.text = text
+    viewer.canvas.overlays.text.text = text
     make_screenshot(viewer)
 ```
 

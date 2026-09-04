@@ -39,7 +39,7 @@ def main(argv=sys.argv[1:]):
     fractions = np.linspace(0.05, 0.5, n)
     os.makedirs(outdir, exist_ok=True)
     for i, f in enumerate(fractions):
-        # We are using skimage binary_blobs which generate's synthetic binary
+        # We are using skimage binary_blobs which generates synthetic binary
         # image with several rounded blob-like objects and write them into files.
         curr_vol = 255 * data.binary_blobs(
             length=128, blob_size_fraction=0.05, n_dim=3, volume_fraction=f
