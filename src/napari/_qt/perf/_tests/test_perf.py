@@ -33,13 +33,8 @@ napari.run()
 CONFIG = {
     'trace_qt_events': True,
     'trace_file_on_start': '',
-    'trace_callables': ['chunk_loader'],
-    'callable_lists': {
-        'chunk_loader': [
-            'napari.components.experimental.chunk._loader.ChunkLoader.load_request',
-            'napari.components.experimental.chunk._loader.ChunkLoader._on_done',
-        ]
-    },
+    'trace_callables': [],
+    'callable_lists': {},
 }
 
 
