@@ -571,6 +571,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
         self._metadata = dict(metadata or {})
+        self._errored = False
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -663,6 +664,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             extent=Event,
             help=Event,
             loaded=Event,
+            errored=Event,
             mode=Event,
             mouse_pan=Event,
             mouse_zoom=Event,
@@ -886,6 +888,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def loaded(self) -> bool:
         """bool: Whether the layer has been loaded into memory."""
         return self._slicing_state.loaded
+
+    @property
+    def errored(self) -> bool:
+        """Return if this layer presented an error while loading."""
+        return self._errored
+
+    @errored.setter
+    def errored(self, errored):
+        self._errored = errored
+        self.events.errored()
 
     @property
     def opacity(self) -> float:

@@ -207,6 +207,10 @@ def _any_deletion_locked(s: LayerSel) -> bool:
     return any(bool(x.locked & LayerLock.DELETION) for x in s)
 
 
+def _any_errored_selected(s: LayerSel) -> bool:
+    return any(x.errored for x in s)
+
+
 A = TypeVar('A')
 
 
@@ -377,4 +381,9 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         False,
         'True when any selected layer has DELETION lock engaged.',
         _any_deletion_locked,
+    )
+    any_selected_layers_errored = ContextKey(
+        False,
+        'True when there is any errored layer selected.',
+        _any_errored_selected,
     )
