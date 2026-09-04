@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -11,9 +11,11 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QAbstractSpinBox,
     QComboBox,
+    QDialog,
     QDoubleSpinBox,
     QFileDialog,
     QLineEdit,
+    QMessageBox,
     QSpinBox,
 )
 
@@ -209,7 +211,7 @@ def test_features_table_edit(qtbot):
     w.table.edit(idx)
     assert w.table.state() != QAbstractItemView.State.EditingState
 
-    w.toggle.click()
+    w.editable_toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
     assert w.table.state() == QAbstractItemView.State.EditingState
@@ -219,6 +221,58 @@ def test_features_table_edit(qtbot):
     assert editor.text() == 'hello'
     w.table.commitData(editor)
     assert layer.features.loc[0, 'a'] == 'hello'
+
+
+def test_features_table_add_columns(qtbot):
+    v = ViewerModel()
+    w = FeaturesTable(v)
+    qtbot.add_widget(w)
+    model = w.table.model().sourceModel()
+
+    layer = v.add_points(np.zeros((2, 2)), features={'a': [1, 2]})
+
+    assert 'b' not in model.df.columns
+    with (
+        patch(
+            'napari_builtins._qt.features_table.AddColumnDialog.exec_',
+            lambda x: QDialog.Accepted,
+        ),
+        patch(
+            'napari_builtins._qt.features_table.AddColumnDialog.get_values',
+            lambda x: ('b', 'df["a"] + 10', 'float'),
+        ),
+    ):
+        w._add_column()
+
+    assert 'b' in layer.features.columns
+    assert all(layer.features['b'] == [11, 12])
+
+
+def test_features_table_delete_columns(qtbot):
+    v = ViewerModel()
+    features = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+    w = FeaturesTable(v)
+    qtbot.add_widget(w)
+
+    model = w.table.model()
+
+    layer = v.add_points(np.zeros((2, 2)), features=features)
+
+    assert 'b' in layer.features.columns
+
+    index = model.index(0, 2)
+
+    w.table.selectionModel().select(
+        QItemSelection(index, index), QItemSelectionModel.Select
+    )
+
+    with patch(
+        'napari_builtins._qt.features_table.QMessageBox.question',
+        return_value=QMessageBox.Yes,
+    ):
+        w._delete_column()
+
+    assert 'b' not in layer.features.columns
 
 
 def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
@@ -234,7 +288,7 @@ def test_features_table_save_csv(qtbot, tmp_path, monkeypatch):
         QFileDialog, 'getSaveFileName', MagicMock(return_value=(path, None))
     )
 
-    w.save.click()
+    w.save_button.click()
 
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
 
@@ -276,7 +330,7 @@ def test_features_table_copy_paste(qtbot, qapp):
         QItemSelectionModel.SelectionFlag.ClearAndSelect,
     )
 
-    w.toggle.click()
+    w.editable_toggle.click()
     QGuiApplication.clipboard().setText('3\t8\t7')
     # we test here that presence of additional columns does not
     # cause issues when pasting and we just discard them
@@ -326,7 +380,7 @@ def test_features_tables_dtypes(
         == rendered_val
     )
 
-    w.toggle.click()
+    w.editable_toggle.click()
     w.table.edit(idx)
 
     if editor_class is None:
@@ -588,7 +642,7 @@ def test_features_table_multilayer_edit(qtbot):
     w.table.edit(idx)
     assert w.table.state() != QAbstractItemView.State.EditingState
 
-    w.toggle.click()
+    w.editable_toggle.click()
     assert proxy.sourceModel().editable
     w.table.edit(idx)
     assert w.table.state() == QAbstractItemView.State.EditingState
@@ -620,6 +674,6 @@ def test_features_table_multilayer_save_csv(qtbot, tmp_path, monkeypatch):
         QFileDialog, 'getSaveFileName', MagicMock(return_value=(path, None))
     )
 
-    w.save.click()
+    w.save_button.click()
 
     pd.testing.assert_frame_equal(pd.read_csv(path, index_col=0), df)
