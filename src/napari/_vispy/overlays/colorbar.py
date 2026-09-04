@@ -6,6 +6,7 @@ import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
+from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -106,6 +107,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
+        get_settings().appearance.events.font_size.connect(
+            self._on_ticks_change
+        )
         self.viewer.canvas.events.background_color.connect(
             self._on_data_change
         )
@@ -165,9 +169,15 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else get_settings().appearance.font_size
+        )
+
         text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
             clim=_coerce_contrast_limits(
                 self.source_wrapper.contrast_limits
             ).contrast_limits,

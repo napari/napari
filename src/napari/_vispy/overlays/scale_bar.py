@@ -10,6 +10,7 @@ import pint
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.scale_bar import ScaleBar
+from napari.settings import get_settings
 from napari.utils._units import PREFERRED_VALUES
 from napari.utils.notifications import show_warning
 
@@ -55,6 +56,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             self._on_rendering_change
         )
 
+        get_settings().appearance.events.font_size.connect(
+            self._on_font_size_change
+        )
+
         self.reset()
 
     def _on_unit_change(self):
@@ -79,7 +84,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_size_or_zoom_change(force=True)
 
     def _on_font_size_change(self):
-        self._on_size_or_zoom_change(force=True)
+        self._on_rendering_change()
 
     def _calculate_best_length(
         self, desired_length: float
@@ -177,11 +182,17 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else get_settings().appearance.font_size
+        )
+
         width, height = self.node.set_data(
             length=self._current_length,
             color=color,
             ticks=self.overlay.ticks,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
         )
 
         size_changed = width != self.x_size or height != self.y_size

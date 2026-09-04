@@ -16,8 +16,8 @@ class ColorBarOverlay(CanvasOverlay):
         The size of the colorbar in pixels (width, height).
     tick_length : float
         The length of the ticks in pixels.
-    font_size : float
-        The font size of the tick labels.
+    font_size : float, optional
+        The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -40,7 +40,7 @@ class ColorBarOverlay(CanvasOverlay):
     color: ColorValue | None = None
     size: tuple[float, float] = 25, 150
     tick_length: float = 5
-    font_size: float = 10
+    font_size: float | None = None
     position: CanvasPosition = CanvasPosition.TOP_RIGHT
     colormanager_attribute: str | None = Field(
         default=None, frozen=True, repr=False
