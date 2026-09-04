@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.utils import use_fixed_pitch_font, use_tabular_numerals
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -56,6 +57,19 @@ class ViewerStatusBar(QStatusBar):
             self._help,
         )
         self.addWidget(main_widget, 1)
+
+        for label in (
+            self._status,
+            self._layer_base,
+            self._source_type,
+            self._plugin_reader,
+            self._coordinates,
+            self._help,
+        ):
+            use_tabular_numerals(label)
+
+        for label in (self._status, self._coordinates):
+            use_fixed_pitch_font(label)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
@@ -145,11 +159,12 @@ class StatusBarWidget(QWidget):
         return super().event(event)
 
     @staticmethod
-    def _calc_width(fm: QFontMetrics, label: QLabel) -> int:
+    def _calc_width(label: QLabel) -> int:
         # magical nuber +2 is from superqt code
         # magical number +12 is from experiments
         # Adding this values is required to avoid the text to be elided
         # if there is enough space to show it.
+        fm = QFontMetrics(label.font())
         return (
             (
                 fm.boundingRect(label.text()).width()
@@ -165,13 +180,11 @@ class StatusBarWidget(QWidget):
         width = self.width()
         height = self.height()
 
-        fm = QFontMetrics(self._status_label.font())
-
-        status_width = self._calc_width(fm, self._status_label)
-        layer_width = self._calc_width(fm, self._layer_label)
-        source_width = self._calc_width(fm, self._source_label)
-        plugin_width = self._calc_width(fm, self._plugin_label)
-        coordinates_width = self._calc_width(fm, self._coordinates_label)
+        status_width = self._calc_width(self._status_label)
+        layer_width = self._calc_width(self._layer_label)
+        source_width = self._calc_width(self._source_label)
+        plugin_width = self._calc_width(self._plugin_label)
+        coordinates_width = self._calc_width(self._coordinates_label)
 
         base_width = (
             status_width
