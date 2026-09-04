@@ -1058,7 +1058,9 @@ class EmitterGroup(EventEmitter):
             self.source.first_callback_connect()
         return res
 
-    def disconnect(self, callback: Callback | None = None):
+    def disconnect(
+        self, callback: Callback | CallbackRef | object | None = None
+    ):
         """Disconnect the callback from this group. See
         :func:`connect()` and :func:`EventEmitter.connect()`` for
         more information.
