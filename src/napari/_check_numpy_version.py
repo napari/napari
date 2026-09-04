@@ -79,7 +79,7 @@ def limit_numpy1x_threads_on_macos_arm() -> (
         )
         return
 
-    blas = ctypes.CDLL(str(blas_lib[0]), mode=os.RTLD_NOLOAD)
+    blas = ctypes.CDLL(str(blas_lib[0]), mode=getattr(os, 'RTLD_NOLOAD', 0))
     for suffix in ('', '64_', '_64'):
         openblas_set_num_threads = getattr(
             blas, f'openblas_set_num_threads{suffix}', None

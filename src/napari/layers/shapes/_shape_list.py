@@ -216,12 +216,12 @@ def _preallocate_arrays(
 
     return {
         'z_index': z_index,
-        'vertices': vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices': mesh_vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices_centers': mesh_vertices_centers,  # type: ignore[typeddict-item]
-        'mesh_vertices_offsets': mesh_vertices_offsets,  # type: ignore[typeddict-item]
-        'mesh_triangles': mesh_triangles,  # type: ignore[typeddict-item]
-        'mesh_triangles_colors': mesh_triangles_colors,  # type: ignore[typeddict-item]
+        'vertices': vertices,
+        'mesh_vertices': mesh_vertices,
+        'mesh_vertices_centers': mesh_vertices_centers,
+        'mesh_vertices_offsets': mesh_vertices_offsets,
+        'mesh_triangles': mesh_triangles,
+        'mesh_triangles_colors': mesh_triangles_colors,
         'vertices_index': vertices_index,
         'mesh_triangles_index': mesh_triangles_index,
         'mesh_vertices_index': mesh_vertices_index,
@@ -440,8 +440,8 @@ class ShapeList:
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
-        self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
-        self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+        self._edge_color: ShapeColorArray = np.empty((0, 4))
+        self._face_color: ShapeColorArray = np.empty((0, 4))
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -1102,7 +1102,7 @@ class ShapeList:
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
-        self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
+        self._vertices = np.empty((0, self.ndisplay))
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
@@ -1416,7 +1416,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index, kind='stable')  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
@@ -1793,7 +1793,8 @@ class ShapeList:
         )
 
     def shapes_in_box(
-        self, corners: np.ndarray[tuple[Literal[2], Literal[2]]]
+        self,
+        corners: np.ndarray[tuple[Literal[2], Literal[2]]],
     ) -> list[int]:
         """Determines which shapes, if any, are inside an axis-aligned box.
 

@@ -926,7 +926,9 @@ def normalize_vertices_and_edges(
     if (
         vertices[0, 0] == vertices[-1, 0] and vertices[0, 1] == vertices[-1, 1]
     ):  # closed polygon
-        vertices = vertices[:-1]  # make closing implicit
+        vertices = vertices[
+            :-1
+        ]  # make closing implicit  # type: ignore[ty:invalid-assignment]
         close = True
     # Now, we make sure the vertices are unique (repeated vertices cause
     # problems in spatial algorithms, and those problems can manifest as
@@ -970,4 +972,4 @@ def normalize_vertices_and_edges(
     for i, vertex in enumerate(new_vertices):
         new_vertices_array[i] = vertex
     edges_array = np.array(list(edges), dtype=np.int64)
-    return new_vertices_array, edges_array  # type: ignore[return-value]
+    return new_vertices_array, edges_array  # type: ignore[ty:invalid-return-type]

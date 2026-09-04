@@ -110,7 +110,7 @@ def _build_single_config_model(
         field_type: Any = props.python_type
         if data.get('enum'):
             field_type = Annotated[
-                props.python_type,
+                props.python_type,  # type: ignore[ty:invalid-type-form]
                 AfterValidator(_enum_validator(data['enum'])),
             ]
 

@@ -35,7 +35,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: 'Window' = None
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(

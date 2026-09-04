@@ -389,7 +389,7 @@ class ScalarFieldBase(Layer, ABC):
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         self._data_raw = data
         # note, we don't support changing from/to multiscale after construction
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[ty:invalid-argument-type]
         self._reset_data_level()
         self._reset_thumbnail_level_data()
         self._update_dims()
@@ -960,7 +960,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             if locked is not None:
                 data_level = locked
             elif slice_input.ndisplay == 3:
-                data_level = len(data) - 1  # type: ignore[arg-type]
+                data_level = len(data) - 1  # type: ignore[ty:invalid-argument-type]
             else:
                 data_level = self.layer.data_level
         else:

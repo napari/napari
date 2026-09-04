@@ -467,7 +467,7 @@ def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
             continue  # pragma: no cover
         d = data
         while True:
-            base, *key = key  # type: ignore
+            base, *key = key
             if not key:
                 break
             # since no pydantic fields will be integers, integers usually

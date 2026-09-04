@@ -352,7 +352,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
         """
-        return self.canvas.overlays.axes  # type: ignore[return-value]
+        return self.canvas.overlays.axes
 
     @property
     @deprecated(
@@ -368,7 +368,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
         """
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        return self.canvas.overlays.scale_bar
 
     @property
     @deprecated(
@@ -384,7 +384,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
         """
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        return self.canvas.overlays.text
 
     @property
     @deprecated(

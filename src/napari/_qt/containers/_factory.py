@@ -8,7 +8,7 @@ from napari.utils.events import SelectableEventedList
 from napari.utils.tree import Group
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 def create_view(

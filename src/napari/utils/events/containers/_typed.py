@@ -230,7 +230,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def _ipython_key_completions_(self):
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
-        return None  # type: ignore
+        return None
 
 
 def _noop(x: _T) -> _T:

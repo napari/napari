@@ -154,7 +154,7 @@ class QtHistogramWidget(QWidget):
         worker = cast(
             GeneratorWorker,
             create_worker(
-                self._histogram.compute,  # type: ignore[arg-type]
+                self._histogram.compute,
                 _progress={'desc': 'Computing histogram'},
             ),
         )
