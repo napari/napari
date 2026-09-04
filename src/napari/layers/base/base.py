@@ -601,9 +601,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2physical`: The main transform mapping data to a world-like
         #   physical coordinate that may also encode acquisition parameters or
-        #   sample spacing.
+        #   sample spacing. Note that this is where layer.scale/translation/rotate/shear
+        #   are stored.
         # 3. `physical2world`: An extra transform applied in world-coordinates that
-        #   typically aligns this layer with another.
+        #   typically aligns this layer with another. Note that this is where layer.affine is
+        #   stored.
         if scale is None:
             scale = [1] * ndim
         if translate is None:
