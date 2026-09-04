@@ -50,6 +50,7 @@ dependencies = [
     "magicgui>=0.7.0",
     "napari-console>=0.1.4",
     "napari-plugin-engine>=0.2.1",
+    "napari-resources>=1.0.1",
     "napari-svg>=0.1.8",
     "npe2>=0.9.0",
     "numpy>=1.25",
