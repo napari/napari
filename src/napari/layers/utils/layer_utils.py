@@ -1256,6 +1256,19 @@ def _unique_element(array: Array) -> Any | None:
     if len(array) == 0:
         return None
     el = array[0]
+    if len(array) == 1:
+        return el
+    if isinstance(el, (list, tuple, np.ndarray)):
+        # Container-valued elements (e.g. list-valued features, or a 2D
+        # array of per-point RGBA colors) can't be safely compared via
+        # numpy broadcasting: `array[1:] != el` raises on ragged/differently
+        # shaped elements, and `np.equal(array[1:], array[:1])` raises
+        # "ambiguous truth value" once any element has more than one entry.
+        # Compare them individually with np.array_equal instead, which
+        # returns False rather than raising on a shape mismatch.
+        if all(np.array_equal(x, el) for x in array[1:]):
+            return el
+        return None
     if np.any(array[1:] != el):
         return None
     return el
