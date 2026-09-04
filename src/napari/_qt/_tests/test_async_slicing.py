@@ -13,7 +13,6 @@ from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.layers.points import VispyPointsLayer
 from napari._vispy.layers.vectors import (
     VispyVectorsLayer,
-    generate_vector_meshes_2D,
 )
 from napari.layers import Image, Layer, Points, Vectors
 from napari.utils.events import Event
@@ -234,7 +233,7 @@ def test_async_slice_vectors_on_current_step_change(make_napari_viewer, qtbot):
     viewer.dims.current_step = (2, 0, 0)
 
     wait_until_vispy_vectors_data_equal(
-        qtbot, vispy_vectors, np.array([[[2, 4, 5], [0, -3, 3]]])
+        qtbot, vispy_vectors, np.array([5, 4, 0])
     )
 
 
@@ -298,15 +297,9 @@ def wait_until_vispy_vectors_data_equal(
     qtbot, vispy_layer: VispyVectorsLayer, expected_data: np.ndarray
 ) -> None:
     def assert_vispy_vectors_data_equal() -> None:
-        displayed = expected_data[..., -2:]
-        exp_vertices, exp_faces = generate_vector_meshes_2D(
-            displayed, 1, 1, 'triangle'
-        )
-        meshdata = vispy_layer.node._meshdata
-        vertices = meshdata.get_vertices()
-        faces = meshdata.get_faces()
+        positions = vispy_layer.node._data.item()[0]
         # invert for vispy
-        np.testing.assert_array_equal(vertices, exp_vertices[..., ::-1])
-        np.testing.assert_array_equal(faces, exp_faces)
+        np.testing.assert_array_equal(positions, expected_data)
+        np.testing.assert_array_equal(positions, expected_data)
 
     qtbot.waitUntil(assert_vispy_vectors_data_equal)
