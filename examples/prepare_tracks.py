@@ -29,14 +29,10 @@ df = pd.DataFrame(
     }
 )
 
-column_map = {
-    'track_id': 'particle',
-    't': 'frame',
-    'y': 'row',
-    'x': 'col',
-}
-
-tracks = prepare_tracks_data(df, column_map)
+tracks = prepare_tracks_data(df, track_id="particle",
+    t="frame",
+    y="row",
+    x="col",)
 
 viewer = napari.Viewer()
 viewer.add_tracks(tracks, name="cell tracks")
