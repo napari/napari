@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
     from typing import Protocol
 
+    from app_model.types import KeyBinding
+
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
