@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 ItemType = TypeVar('ItemType')
 
 
-class QtListView(_BaseEventedItemView[ItemType], QListView):  # type: ignore[misc]
+class QtListView(_BaseEventedItemView[ItemType], QListView):
     """A QListView for a :class:`~napari.utils.events.SelectableEventedList`.
 
     Designed to work with :class:`~napari._qt.containers.QtListModel`.

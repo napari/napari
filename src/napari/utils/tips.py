@@ -37,6 +37,7 @@ NAPARI_TIPS: Final[tuple[str, ...]] = (
     'Hold {napari:hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting).',
     'While painting labels, hold {Alt} and move the cursor left/right to quickly decrease/increase the brush size.',
     'If you have questions, you can reach out on our community chat at https://napari.zulipchat.com!',
+    'New to napari? Open Help → Take a tour for a quick walkthrough of the viewer.',
     'The community at https://forum.image.sc is full of imaging experts sharing knowledge and tools for napari and much, much more!',
 )
 

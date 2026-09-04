@@ -14,7 +14,6 @@ from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._qt._qapp_model._tests.utils import get_submenu_action
 from napari.layers import Image
-from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 from napari.utils.action_manager import action_manager
 
 if TYPE_CHECKING:
@@ -152,7 +151,7 @@ def test_sample_menu_single_data(
 
 
 def test_sample_menu_sorted(
-    mock_pm,  # noqa: F811
+    mock_pm,
     mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
