@@ -731,6 +731,8 @@ class VispyCanvas:
 
         # The canvas corners in full world coordinates (i.e. across all layers).
         viewbox_corners_world = self._viewbox_corners_in_world
+        camera = self.viewer.scene.camera
+        view_dir = np.asarray(camera.view_direction, dtype=float)
         for layer in self.viewer.layers:
             # The following condition should mostly be False. One case when it can
             # be True is when a callback connected to self.viewer.dims.events.ndisplay
@@ -742,6 +744,11 @@ class VispyCanvas:
                 displayed_axes = displayed_sorted
             else:
                 displayed_axes = list(self.viewer.dims.displayed[-nd:])
+            # Layers that use the camera direction for multiscale corner
+            # computations (see ScalarFieldBase._view_direction_data) read
+            # it from here rather than reaching up to the viewer.
+            if hasattr(layer, '_camera_view_direction'):
+                layer._camera_view_direction = view_dir
             layer._update_draw(
                 scale_factor=1 / self.viewer.scene.camera.zoom,
                 corner_pixels_displayed=viewbox_corners_world[

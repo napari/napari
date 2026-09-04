@@ -74,6 +74,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 self._on_locked_data_level_change
             )
             self._layer.events.data.connect(self._update_level_labels)
+            # set_data fires after every slice, when data_level is up to date
             self._layer.events.set_data.connect(self._update_auto_label)
             self.level_combobox.show()
             self.level_label.show()
@@ -104,11 +105,17 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
-
-            self._update_auto_label()
+        self._update_auto_label()
 
     def _update_auto_label(self) -> None:
-        """Update the 'Auto' entry to show the currently rendered level."""
+        """Show the level currently being rendered in the "Auto" entry.
+
+        With automatic level selection the rendered resolution changes
+        with the zoom; surfacing it as e.g. ``"Auto (2)"`` gives a live
+        indicator of the level in use.
+        """
+        if not self._layer.multiscale:
+            return
         label = f'Auto ({self._layer.data_level})'
         if self.level_combobox.itemText(0) != label:
             self.level_combobox.setItemText(0, label)

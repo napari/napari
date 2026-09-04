@@ -6,6 +6,7 @@ import zarr
 from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
+from napari.components.dims import Dims
 from napari.layers import Image
 from napari.utils import Colormap
 
@@ -512,6 +513,95 @@ def test_update_draw_variable_canvas_size_fixed_fov(
 
     assert layer.data_level == exp_level
     np.testing.assert_equal(layer.corner_pixels, exp_corner_pixels_data)
+
+
+# The progressive loading hooks below live on ScalarFieldBase but are only
+# configured by napari.experimental. These tests pin the vanilla behavior
+# (hooks unset) and the effect of setting them, so that regressions in
+# either direction are caught outside the experimental test suite.
+
+
+def _multiscale_3d_layer():
+    shapes = [(32, 32, 32), (16, 16, 16), (8, 8, 8)]
+    layer = Image(
+        [np.zeros(s, dtype=np.uint8) for s in shapes], multiscale=True
+    )
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    return layer
+
+
+def test_3d_multiscale_renders_full_coarsest_level():
+    """Without tile caps, 3D slices the whole coarsest level."""
+    layer = _multiscale_3d_layer()
+
+    assert layer.data_level == 2
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0, 0], [7, 7, 7]])
+    assert layer._slice.image.raw.shape == (8, 8, 8)
+
+
+def test_3d_multiscale_corners_ignore_viewport_bbox():
+    """A zoomed-in 3D viewport does not shrink the rendered region."""
+    layer = _multiscale_3d_layer()
+
+    layer._update_draw(
+        scale_factor=1,
+        corner_pixels_displayed=np.array([[8, 8, 8], [16, 16, 16]]),
+        shape_threshold=(10, 10),
+    )
+
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0, 0], [7, 7, 7]])
+
+
+def test_3d_multiscale_locked_level_renders_full_extent():
+    """Locking a level in 3D renders all of it when no tile cap is set."""
+    layer = _multiscale_3d_layer()
+
+    layer.locked_data_level = 0
+
+    assert layer.data_level == 0
+    np.testing.assert_equal(layer.corner_pixels, [[0, 0, 0], [31, 31, 31]])
+
+
+def test_3d_multiscale_tile_extent_crops_slice():
+    """With a tile cap set, 3D renders a sub-volume tile of that size."""
+    shapes = [(128, 128, 128), (64, 64, 64)]
+    layer = Image(
+        [np.zeros(s, dtype=np.uint8) for s in shapes], multiscale=True
+    )
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    assert layer._slice.image.raw.shape == (64, 64, 64)
+
+    # tile extents are quantized to multiples of 32 voxels
+    layer._max_tile_extent_3d = 32
+    layer.refresh()
+
+    extent = layer.corner_pixels[1] - layer.corner_pixels[0] + 1
+    np.testing.assert_equal(extent, [32, 32, 32])
+    assert layer._slice.image.raw.shape == (32, 32, 32)
+
+
+def test_render_margin_2d_pads_corners():
+    """The 2D render margin widens the sliced region around the viewport."""
+    shapes = [(64, 64), (32, 32), (16, 16)]
+    data = [np.zeros(s, dtype=np.uint8) for s in shapes]
+    unpadded = Image(data, multiscale=True)
+    padded = Image(data, multiscale=True)
+
+    assert unpadded._render_margin_2d == 1.0
+    padded._render_margin_2d = 2.0
+
+    for layer in (unpadded, padded):
+        layer._update_draw(
+            scale_factor=1,
+            corner_pixels_displayed=np.array([[16, 16], [32, 32]]),
+            shape_threshold=(16, 16),
+        )
+
+    assert unpadded.data_level == padded.data_level
+    np.testing.assert_equal(unpadded.corner_pixels, [[16, 16], [32, 32]])
+    # the margin is centered on the viewport, so it extends by half the
+    # viewport size on each side (clipped to the level extent)
+    np.testing.assert_equal(padded.corner_pixels, [[8, 8], [40, 40]])
 
 
 @pytest.mark.parametrize(
