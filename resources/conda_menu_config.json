@@ -1,6 +1,6 @@
 {
-    "$schema": "https://json-schema.org/draft-07/schema",
-    "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+    "$schema": "https://schemas.conda.org/menuinst/menuinst-1-1-0.schema.json",
+    "$id": "https://schemas.conda.org/menuinst/menuinst-1-1-0.schema.json",
     "menu_name": "napari (__PKG_VERSION__)",
     "menu_items": [
         {
@@ -18,21 +18,510 @@
             "platforms": {
                 "win": {
                     "precommand": "set \"PYTHONHOME=\" & set \"PYTHONPATH=\"",
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-m",
+                        "napari",
+                        "%*"
+                    ],
                     "desktop": true,
-                    "app_user_model_id": "napari.napari.viewer.__PKG_VERSION__"
+                    "app_user_model_id": "napari.napari.viewer.__PKG_VERSION__",
+                    "file_extensions": [
+                        ".3fr",
+                        ".arw",
+                        ".avi",
+                        ".avs",
+                        ".bay",
+                        ".bif",
+                        ".bmp",
+                        ".bmq",
+                        ".bsdf",
+                        ".btf",
+                        ".bufr",
+                        ".bw",
+                        ".cap",
+                        ".cine",
+                        ".cr2",
+                        ".crw",
+                        ".cs1",
+                        ".csv",
+                        ".ct",
+                        ".cur",
+                        ".cut",
+                        ".dc2",
+                        ".dcm",
+                        ".dcr",
+                        ".dcx",
+                        ".dds",
+                        ".dicom",
+                        ".dng",
+                        ".drf",
+                        ".dsc",
+                        ".ecw",
+                        ".eer",
+                        ".emf",
+                        ".eps",
+                        ".erf",
+                        ".exr",
+                        ".fff",
+                        ".fit",
+                        ".fits",
+                        ".flc",
+                        ".fli",
+                        ".fpx",
+                        ".ftc",
+                        ".fts",
+                        ".ftu",
+                        ".fz",
+                        ".g3",
+                        ".gbr",
+                        ".gdcm",
+                        ".gel",
+                        ".gif",
+                        ".gipl",
+                        ".grib",
+                        ".h264",
+                        ".h5",
+                        ".hdf",
+                        ".hdf5",
+                        ".hdp",
+                        ".hdr",
+                        ".ia",
+                        ".icns",
+                        ".ico",
+                        ".iff",
+                        ".iim",
+                        ".iiq",
+                        ".im",
+                        ".img.gz",
+                        ".img",
+                        ".ipl",
+                        ".j2c",
+                        ".j2k",
+                        ".jfif",
+                        ".jif",
+                        ".jng",
+                        ".jp2",
+                        ".jpc",
+                        ".jpe",
+                        ".jpeg",
+                        ".jpf",
+                        ".jpg",
+                        ".jpx",
+                        ".jxr",
+                        ".k25",
+                        ".kc2",
+                        ".kdc",
+                        ".koa",
+                        ".lbm",
+                        ".lfp",
+                        ".lfr",
+                        ".lsm",
+                        ".mdc",
+                        ".mef",
+                        ".mgh",
+                        ".mha",
+                        ".mhd",
+                        ".mic",
+                        ".mkv",
+                        ".mnc",
+                        ".mnc2",
+                        ".mos",
+                        ".mov",
+                        ".mp4",
+                        ".mpeg",
+                        ".mpg",
+                        ".mpo",
+                        ".mri",
+                        ".mrw",
+                        ".msp",
+                        ".ndpi",
+                        ".nef",
+                        ".nhdr",
+                        ".nia",
+                        ".nii.gz",
+                        ".nii",
+                        ".npy",
+                        ".npz",
+                        ".nrrd",
+                        ".nrw",
+                        ".ome.tif",
+                        ".orf",
+                        ".pbm",
+                        ".pcd",
+                        ".pcoraw",
+                        ".pct",
+                        ".pcx",
+                        ".pef",
+                        ".pfm",
+                        ".pgm",
+                        ".pic",
+                        ".pict",
+                        ".png",
+                        ".ppm",
+                        ".ps",
+                        ".psd",
+                        ".ptif",
+                        ".ptiff",
+                        ".ptx",
+                        ".pxn",
+                        ".pxr",
+                        ".qpi",
+                        ".qptiff",
+                        ".qtk",
+                        ".raf",
+                        ".ras",
+                        ".raw",
+                        ".rdc",
+                        ".rgb",
+                        ".rgba",
+                        ".rw2",
+                        ".rwl",
+                        ".rwz",
+                        ".scn",
+                        ".seq",
+                        ".sgi",
+                        ".sr2",
+                        ".srf",
+                        ".srw",
+                        ".sti",
+                        ".stk",
+                        ".svs",
+                        ".swf",
+                        ".targa",
+                        ".tf2",
+                        ".tf8",
+                        ".tga",
+                        ".tif",
+                        ".tiff",
+                        ".vtk",
+                        ".wap",
+                        ".wbm",
+                        ".wbmp",
+                        ".wdp",
+                        ".webm",
+                        ".webp",
+                        ".wmf",
+                        ".wmv",
+                        ".xbm",
+                        ".xpm",
+                        ".zarr",
+                        ".zif"
+                    ]
                 },
                 "linux": {
                     "Categories": [
                         "Graphics",
                         "Science"
                     ],
-                    "StartupWMClass": "napari"
+                    "command": [
+                        "{{ PYTHON }}",
+                        "-m",
+                        "napari",
+                        "%F"
+                    ],
+                    "StartupWMClass": "napari",
+                    "MimeType": [
+                        "image/bmp",
+                        "image/gif",
+                        "image/jpeg",
+                        "image/png",
+                        "image/tiff",
+                        "application/x-napari-3fr",
+                        "image/x-sony-arw",
+                        "application/x-napari-avi",
+                        "application/x-napari-avs",
+                        "application/x-napari-bay",
+                        "application/x-napari-bif",
+                        "application/x-napari-bmq",
+                        "application/x-napari-bsdf",
+                        "application/x-napari-btf",
+                        "application/x-napari-bufr",
+                        "application/x-napari-bw",
+                        "application/x-napari-cap",
+                        "application/x-napari-cine",
+                        "image/x-canon-cr2",
+                        "image/x-canon-crw",
+                        "application/x-napari-cs1",
+                        "text/csv",
+                        "application/x-napari-ct",
+                        "application/x-napari-cur",
+                        "application/x-napari-cut",
+                        "application/x-napari-dc2",
+                        "application/x-napari-dcm",
+                        "image/x-kodak-dcr",
+                        "application/x-napari-dcx",
+                        "application/x-napari-dds",
+                        "application/x-napari-dicom",
+                        "image/x-adobe-dng",
+                        "application/x-napari-drf",
+                        "application/x-napari-dsc",
+                        "application/x-napari-ecw",
+                        "application/x-napari-eer",
+                        "application/x-napari-emf",
+                        "application/postscript",
+                        "image/x-epson-erf",
+                        "application/x-napari-exr",
+                        "application/x-napari-fff",
+                        "application/x-napari-fit",
+                        "application/x-napari-fits",
+                        "application/x-napari-flc",
+                        "video/x-fli",
+                        "image/vnd.fpx",
+                        "application/vnd.fluxtime.clip",
+                        "application/x-napari-fts",
+                        "application/x-napari-ftu",
+                        "application/x-napari-fz",
+                        "image/g3fax",
+                        "application/vnd.gerber",
+                        "application/x-napari-gdcm",
+                        "application/x-napari-gel",
+                        "application/x-napari-gipl",
+                        "application/x-napari-grib",
+                        "video/h264",
+                        "application/x-napari-h5",
+                        "application/x-hdf",
+                        "application/x-napari-hdf5",
+                        "application/x-napari-hdp",
+                        "application/x-napari-hdr",
+                        "application/x-napari-ia",
+                        "image/x-icns",
+                        "image/x-icon",
+                        "application/x-napari-iff",
+                        "application/x-napari-iim",
+                        "application/x-napari-iiq",
+                        "application/x-napari-im",
+                        "application/x-napari-img",
+                        "application/x-napari-img-gz",
+                        "application/x-napari-ipl",
+                        "application/x-napari-j2c",
+                        "application/x-napari-j2k",
+                        "application/x-napari-jng",
+                        "application/x-napari-jp2",
+                        "application/x-napari-jpc",
+                        "application/x-napari-jpf",
+                        "application/x-napari-jpx",
+                        "application/x-napari-jxr",
+                        "image/x-kodak-k25",
+                        "application/x-napari-kc2",
+                        "image/x-kodak-kdc",
+                        "application/x-napari-koa",
+                        "application/x-napari-lbm",
+                        "application/x-napari-lfp",
+                        "application/x-napari-lfr",
+                        "application/x-napari-lsm",
+                        "application/x-napari-mdc",
+                        "application/x-napari-mef",
+                        "application/x-napari-mgh",
+                        "application/x-napari-mha",
+                        "application/x-napari-mhd",
+                        "application/x-napari-mic",
+                        "video/x-matroska",
+                        "application/x-napari-mnc",
+                        "application/x-napari-mnc2",
+                        "application/x-napari-mos",
+                        "video/quicktime",
+                        "video/mp4",
+                        "video/mpeg",
+                        "application/x-napari-mpo",
+                        "application/x-napari-mri",
+                        "image/x-minolta-mrw",
+                        "application/x-napari-msp",
+                        "application/x-napari-ndpi",
+                        "image/x-nikon-nef",
+                        "application/x-napari-nhdr",
+                        "application/x-napari-nia",
+                        "application/x-napari-nii",
+                        "application/x-napari-nii-gz",
+                        "application/x-napari-npy",
+                        "application/x-napari-npz",
+                        "application/x-napari-nrrd",
+                        "application/x-napari-nrw",
+                        "application/x-napari-ome",
+                        "image/x-olympus-orf",
+                        "image/x-portable-bitmap",
+                        "application/x-napari-pcd",
+                        "application/x-napari-pcoraw",
+                        "image/x-pict",
+                        "image/x-pcx",
+                        "image/x-pentax-pef",
+                        "application/x-napari-pfm",
+                        "image/x-portable-graymap",
+                        "application/x-napari-pict",
+                        "image/x-portable-pixmap",
+                        "image/vnd.adobe.photoshop",
+                        "application/x-napari-ptif",
+                        "application/x-napari-ptiff",
+                        "application/x-napari-pxn",
+                        "application/x-napari-pxr",
+                        "application/x-napari-qpi",
+                        "application/x-napari-qptiff",
+                        "application/x-napari-qtk",
+                        "image/x-fuji-raf",
+                        "image/x-cmu-raster",
+                        "image/x-panasonic-raw",
+                        "application/x-napari-rdc",
+                        "image/x-rgb",
+                        "application/x-napari-rgba",
+                        "application/x-napari-rwz",
+                        "application/x-napari-scn",
+                        "application/x-napari-seq",
+                        "application/x-napari-sgi",
+                        "image/x-sony-sr2",
+                        "image/x-sony-srf",
+                        "application/x-napari-srw",
+                        "application/x-napari-sti",
+                        "application/x-napari-stk",
+                        "application/x-napari-svs",
+                        "application/x-shockwave-flash",
+                        "application/x-napari-targa",
+                        "application/x-napari-tf2",
+                        "application/x-napari-tf8",
+                        "application/x-napari-tga",
+                        "application/x-napari-vtk",
+                        "application/x-napari-wap",
+                        "application/x-napari-wbm",
+                        "application/x-napari-wbmp",
+                        "application/x-napari-wdp",
+                        "video/webm",
+                        "image/webp",
+                        "application/x-msmetafile",
+                        "video/x-ms-wmv",
+                        "image/x-xbitmap",
+                        "image/x-xpixmap",
+                        "application/x-napari-zarr",
+                        "application/x-napari-zif"
+                    ],
+                    "glob_patterns": {
+                        "application/x-napari-3fr": "*.3fr",
+                        "application/x-napari-avi": "*.avi",
+                        "application/x-napari-avs": "*.avs",
+                        "application/x-napari-bay": "*.bay",
+                        "application/x-napari-bif": "*.bif",
+                        "application/x-napari-bmq": "*.bmq",
+                        "application/x-napari-bsdf": "*.bsdf",
+                        "application/x-napari-btf": "*.btf",
+                        "application/x-napari-bufr": "*.bufr",
+                        "application/x-napari-bw": "*.bw",
+                        "application/x-napari-cap": "*.cap",
+                        "application/x-napari-cine": "*.cine",
+                        "application/x-napari-cs1": "*.cs1",
+                        "application/x-napari-ct": "*.ct",
+                        "application/x-napari-cur": "*.cur",
+                        "application/x-napari-cut": "*.cut",
+                        "application/x-napari-dc2": "*.dc2",
+                        "application/x-napari-dcm": "*.dcm",
+                        "application/x-napari-dcx": "*.dcx",
+                        "application/x-napari-dds": "*.dds",
+                        "application/x-napari-dicom": "*.dicom",
+                        "application/x-napari-drf": "*.drf",
+                        "application/x-napari-dsc": "*.dsc",
+                        "application/x-napari-ecw": "*.ecw",
+                        "application/x-napari-eer": "*.eer",
+                        "application/x-napari-emf": "*.emf",
+                        "application/x-napari-exr": "*.exr",
+                        "application/x-napari-fff": "*.fff",
+                        "application/x-napari-fit": "*.fit",
+                        "application/x-napari-fits": "*.fits",
+                        "application/x-napari-flc": "*.flc",
+                        "application/x-napari-fts": "*.fts",
+                        "application/x-napari-ftu": "*.ftu",
+                        "application/x-napari-fz": "*.fz",
+                        "application/x-napari-gdcm": "*.gdcm",
+                        "application/x-napari-gel": "*.gel",
+                        "application/x-napari-gipl": "*.gipl",
+                        "application/x-napari-grib": "*.grib",
+                        "application/x-napari-h5": "*.h5",
+                        "application/x-napari-hdf5": "*.hdf5",
+                        "application/x-napari-hdp": "*.hdp",
+                        "application/x-napari-hdr": "*.hdr",
+                        "application/x-napari-ia": "*.ia",
+                        "application/x-napari-iff": "*.iff",
+                        "application/x-napari-iim": "*.iim",
+                        "application/x-napari-iiq": "*.iiq",
+                        "application/x-napari-im": "*.im",
+                        "application/x-napari-img": "*.img",
+                        "application/x-napari-img-gz": "*.img.gz",
+                        "application/x-napari-ipl": "*.ipl",
+                        "application/x-napari-j2c": "*.j2c",
+                        "application/x-napari-j2k": "*.j2k",
+                        "application/x-napari-jng": "*.jng",
+                        "application/x-napari-jp2": "*.jp2",
+                        "application/x-napari-jpc": "*.jpc",
+                        "application/x-napari-jpf": "*.jpf",
+                        "application/x-napari-jpx": "*.jpx",
+                        "application/x-napari-jxr": "*.jxr",
+                        "application/x-napari-kc2": "*.kc2",
+                        "application/x-napari-koa": "*.koa",
+                        "application/x-napari-lbm": "*.lbm",
+                        "application/x-napari-lfp": "*.lfp",
+                        "application/x-napari-lfr": "*.lfr",
+                        "application/x-napari-lsm": "*.lsm",
+                        "application/x-napari-mdc": "*.mdc",
+                        "application/x-napari-mef": "*.mef",
+                        "application/x-napari-mgh": "*.mgh",
+                        "application/x-napari-mha": "*.mha",
+                        "application/x-napari-mhd": "*.mhd",
+                        "application/x-napari-mic": "*.mic",
+                        "application/x-napari-mnc": "*.mnc",
+                        "application/x-napari-mnc2": "*.mnc2",
+                        "application/x-napari-mos": "*.mos",
+                        "application/x-napari-mpo": "*.mpo",
+                        "application/x-napari-mri": "*.mri",
+                        "application/x-napari-msp": "*.msp",
+                        "application/x-napari-ndpi": "*.ndpi",
+                        "application/x-napari-nhdr": "*.nhdr",
+                        "application/x-napari-nia": "*.nia",
+                        "application/x-napari-nii": "*.nii",
+                        "application/x-napari-nii-gz": "*.nii.gz",
+                        "application/x-napari-npy": "*.npy",
+                        "application/x-napari-npz": "*.npz",
+                        "application/x-napari-nrrd": "*.nrrd",
+                        "application/x-napari-nrw": "*.nrw",
+                        "application/x-napari-ome": "*.ome.tif",
+                        "application/x-napari-pcd": "*.pcd",
+                        "application/x-napari-pcoraw": "*.pcoraw",
+                        "application/x-napari-pfm": "*.pfm",
+                        "application/x-napari-pict": "*.pict",
+                        "application/x-napari-ptif": "*.ptif",
+                        "application/x-napari-ptiff": "*.ptiff",
+                        "application/x-napari-pxn": "*.pxn",
+                        "application/x-napari-pxr": "*.pxr",
+                        "application/x-napari-qpi": "*.qpi",
+                        "application/x-napari-qptiff": "*.qptiff",
+                        "application/x-napari-qtk": "*.qtk",
+                        "application/x-napari-rdc": "*.rdc",
+                        "application/x-napari-rgba": "*.rgba",
+                        "application/x-napari-rwz": "*.rwz",
+                        "application/x-napari-scn": "*.scn",
+                        "application/x-napari-seq": "*.seq",
+                        "application/x-napari-sgi": "*.sgi",
+                        "application/x-napari-srw": "*.srw",
+                        "application/x-napari-sti": "*.sti",
+                        "application/x-napari-stk": "*.stk",
+                        "application/x-napari-svs": "*.svs",
+                        "application/x-napari-targa": "*.targa",
+                        "application/x-napari-tf2": "*.tf2",
+                        "application/x-napari-tf8": "*.tf8",
+                        "application/x-napari-tga": "*.tga",
+                        "application/x-napari-vtk": "*.vtk",
+                        "application/x-napari-wap": "*.wap",
+                        "application/x-napari-wbm": "*.wbm",
+                        "application/x-napari-wbmp": "*.wbmp",
+                        "application/x-napari-wdp": "*.wdp",
+                        "application/x-napari-zarr": "*.zarr",
+                        "application/x-napari-zif": "*.zif"
+                    }
                 },
                 "osx": {
                     "link_in_bundle": {
                         "{{ PREFIX }}/bin/python": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python"
                     },
-                    "command": ["{{ MENU_ITEM_LOCATION }}/Contents/Resources/python", "-m", "napari"],
+                    "command": [
+                        "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python",
+                        "-m",
+                        "napari"
+                    ],
                     "CFBundleName": "napari",
                     "CFBundleDisplayName": "napari",
                     "CFBundleVersion": "__PKG_VERSION__",
@@ -42,6 +531,2014 @@
                         "com.apple.security.assets.pictures.read-write",
                         "com.apple.security.assets.music.read-write",
                         "com.apple.security.assets.movies.read-write"
+                    ],
+                    "event_handler": "{{ MENU_ITEM_LOCATION }}/Contents/Resources/python -m napari $*",
+                    "CFBundleDocumentTypes": [
+                        {
+                            "CFBundleTypeName": "org.napari.napari",
+                            "CFBundleTypeRole": "Viewer",
+                            "LSItemContentTypes": [
+                                "com.microsoft.bmp",
+                                "com.compuserve.gif",
+                                "public.jpeg",
+                                "public.png",
+                                "public.tiff",
+                                "org.napari.napari.3fr",
+                                "org.napari.napari.arw",
+                                "public.avi",
+                                "org.napari.napari.avs",
+                                "org.napari.napari.bay",
+                                "org.napari.napari.bif",
+                                "org.napari.napari.bmq",
+                                "org.napari.napari.bsdf",
+                                "org.napari.napari.btf",
+                                "org.napari.napari.bufr",
+                                "org.napari.napari.bw",
+                                "org.napari.napari.cap",
+                                "org.napari.napari.cine",
+                                "org.napari.napari.cr2",
+                                "org.napari.napari.crw",
+                                "org.napari.napari.cs1",
+                                "org.napari.napari.csv",
+                                "org.napari.napari.ct",
+                                "org.napari.napari.cur",
+                                "org.napari.napari.cut",
+                                "org.napari.napari.dc2",
+                                "org.napari.napari.dcm",
+                                "org.napari.napari.dcr",
+                                "org.napari.napari.dcx",
+                                "org.napari.napari.dds",
+                                "org.napari.napari.dicom",
+                                "org.napari.napari.dng",
+                                "org.napari.napari.drf",
+                                "org.napari.napari.dsc",
+                                "org.napari.napari.ecw",
+                                "org.napari.napari.eer",
+                                "org.napari.napari.emf",
+                                "com.adobe.encapsulated-postscript",
+                                "org.napari.napari.erf",
+                                "org.napari.napari.exr",
+                                "org.napari.napari.fff",
+                                "org.napari.napari.fit",
+                                "org.napari.napari.fits",
+                                "org.napari.napari.flc",
+                                "org.napari.napari.fli",
+                                "com.kodak.flashpix.image",
+                                "org.napari.napari.ftc",
+                                "org.napari.napari.fts",
+                                "org.napari.napari.ftu",
+                                "org.napari.napari.fz",
+                                "org.napari.napari.g3",
+                                "org.napari.napari.gbr",
+                                "org.napari.napari.gdcm",
+                                "org.napari.napari.gel",
+                                "org.napari.napari.gipl",
+                                "org.napari.napari.grib",
+                                "org.napari.napari.h264",
+                                "org.napari.napari.h5",
+                                "org.napari.napari.hdf",
+                                "org.napari.napari.hdf5",
+                                "org.napari.napari.hdp",
+                                "org.napari.napari.hdr",
+                                "org.napari.napari.ia",
+                                "com.apple.icns",
+                                "com.microsoft.ico",
+                                "org.napari.napari.iff",
+                                "org.napari.napari.iim",
+                                "org.napari.napari.iiq",
+                                "org.napari.napari.im",
+                                "org.napari.napari.img.gz",
+                                "org.napari.napari.img",
+                                "org.napari.napari.ipl",
+                                "org.napari.napari.j2c",
+                                "org.napari.napari.j2k",
+                                "org.napari.napari.jng",
+                                "public.jpeg-2000",
+                                "org.napari.napari.jpc",
+                                "org.napari.napari.jpf",
+                                "org.napari.napari.jpx",
+                                "org.napari.napari.jxr",
+                                "org.napari.napari.k25",
+                                "org.napari.napari.kc2",
+                                "org.napari.napari.kdc",
+                                "org.napari.napari.koa",
+                                "org.napari.napari.lbm",
+                                "org.napari.napari.lfp",
+                                "org.napari.napari.lfr",
+                                "org.napari.napari.lsm",
+                                "org.napari.napari.mdc",
+                                "org.napari.napari.mef",
+                                "org.napari.napari.mgh",
+                                "org.napari.napari.mha",
+                                "org.napari.napari.mhd",
+                                "org.napari.napari.mic",
+                                "org.napari.napari.mkv",
+                                "org.napari.napari.mnc",
+                                "org.napari.napari.mnc2",
+                                "org.napari.napari.mos",
+                                "com.apple.quicktime-movie",
+                                "public.mpeg",
+                                "public.mpeg-4",
+                                "org.napari.napari.mpo",
+                                "org.napari.napari.mri",
+                                "org.napari.napari.mrw",
+                                "org.napari.napari.msp",
+                                "org.napari.napari.ndpi",
+                                "org.napari.napari.nef",
+                                "org.napari.napari.nhdr",
+                                "org.napari.napari.nia",
+                                "org.napari.napari.nii.gz",
+                                "org.napari.napari.nii",
+                                "org.napari.napari.npy",
+                                "org.napari.napari.npz",
+                                "org.napari.napari.nrrd",
+                                "org.napari.napari.nrw",
+                                "org.napari.napari.ome.tif",
+                                "org.napari.napari.orf",
+                                "org.napari.napari.pbm",
+                                "org.napari.napari.pcd",
+                                "org.napari.napari.pcoraw",
+                                "org.napari.napari.pcx",
+                                "org.napari.napari.pef",
+                                "org.napari.napari.pfm",
+                                "org.napari.napari.pgm",
+                                "com.apple.pict",
+                                "org.napari.napari.ppm",
+                                "com.adobe.postscript",
+                                "com.adobe.photoshop-image",
+                                "org.napari.napari.ptif",
+                                "org.napari.napari.ptiff",
+                                "org.napari.napari.ptx",
+                                "org.napari.napari.pxn",
+                                "org.napari.napari.pxr",
+                                "org.napari.napari.qpi",
+                                "org.napari.napari.qptiff",
+                                "org.napari.napari.qtk",
+                                "org.napari.napari.raf",
+                                "org.napari.napari.ras",
+                                "org.napari.napari.raw",
+                                "org.napari.napari.rdc",
+                                "org.napari.napari.rgb",
+                                "org.napari.napari.rgba",
+                                "org.napari.napari.rw2",
+                                "org.napari.napari.rwl",
+                                "org.napari.napari.rwz",
+                                "org.napari.napari.scn",
+                                "org.napari.napari.seq",
+                                "org.napari.napari.sgi",
+                                "org.napari.napari.sr2",
+                                "org.napari.napari.srf",
+                                "org.napari.napari.srw",
+                                "org.napari.napari.sti",
+                                "org.napari.napari.stk",
+                                "org.napari.napari.svs",
+                                "org.napari.napari.swf",
+                                "org.napari.napari.targa",
+                                "org.napari.napari.tf2",
+                                "org.napari.napari.tf8",
+                                "com.truevision.tga-image",
+                                "org.napari.napari.vtk",
+                                "org.napari.napari.wap",
+                                "org.napari.napari.wbm",
+                                "org.napari.napari.wbmp",
+                                "org.napari.napari.wdp",
+                                "org.napari.napari.webm",
+                                "image/webp",
+                                "org.napari.napari.wmf",
+                                "com.microsoft.windows-media-wmv",
+                                "public.xbitmap-image",
+                                "org.napari.napari.xpm",
+                                "org.napari.napari.zarr",
+                                "org.napari.napari.zif"
+                            ],
+                            "LSHandlerRank": "Alternate"
+                        }
+                    ],
+                    "UTExportedTypeDeclarations": [
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.3fr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "3fr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.arw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "arw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.avs",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "avs"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bay",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bay"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bif",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bif"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bmq",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bmq"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bsdf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bsdf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.btf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "btf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bufr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bufr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.bw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "bw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cap",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cap"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cine",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cine"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cr2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cr2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.crw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "crw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cs1",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cs1"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.csv",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "csv"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ct",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ct"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cur",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cur"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.cut",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "cut"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dc2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dc2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dcm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dcm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dcr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dcr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dcx",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dcx"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dds",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dds"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dicom",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dicom"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dng",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dng"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.drf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "drf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.dsc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "dsc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ecw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ecw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.eer",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "eer"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.emf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "emf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.erf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "erf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.exr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "exr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fff",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fff"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fit",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fit"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fits",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fits"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.flc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "flc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fli",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fli"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ftc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ftc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fts",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fts"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ftu",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ftu"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.fz",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "fz"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.g3",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "g3"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.gbr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "gbr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.gdcm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "gdcm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.gel",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "gel"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.gipl",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "gipl"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.grib",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "grib"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.h264",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "h264"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.h5",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "h5"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.hdf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "hdf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.hdf5",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "hdf5"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.hdp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "hdp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.hdr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "hdr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ia",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ia"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.iff",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "iff"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.iim",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "iim"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.iiq",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "iiq"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.im",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "im"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.img.gz",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "img.gz"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.img",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "img"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ipl",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ipl"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.j2c",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "j2c"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.j2k",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "j2k"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.jng",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "jng"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.jpc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "jpc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.jpf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "jpf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.jpx",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "jpx"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.jxr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "jxr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.k25",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "k25"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.kc2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "kc2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.kdc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "kdc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.koa",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "koa"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.lbm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "lbm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.lfp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "lfp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.lfr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "lfr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.lsm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "lsm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mdc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mdc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mef",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mef"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mgh",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mgh"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mha",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mha"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mhd",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mhd"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mic",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mic"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mkv",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mkv"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mnc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mnc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mnc2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mnc2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mos",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mos"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mpo",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mpo"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mri",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mri"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.mrw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "mrw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.msp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "msp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ndpi",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ndpi"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nef",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nef"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nhdr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nhdr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nia",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nia"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nii.gz",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nii.gz"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nii",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nii"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.npy",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "npy"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.npz",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "npz"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nrrd",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nrrd"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.nrw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "nrw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ome.tif",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ome.tif"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.orf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "orf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pbm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pbm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pcd",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pcd"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pcoraw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pcoraw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pcx",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pcx"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pef",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pef"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pfm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pfm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pgm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pgm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ppm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ppm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ptif",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ptif"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ptiff",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ptiff"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ptx",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ptx"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pxn",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pxn"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.pxr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "pxr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.qpi",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "qpi"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.qptiff",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "qptiff"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.qtk",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "qtk"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.raf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "raf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.ras",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "ras"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.raw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "raw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rdc",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rdc"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rgb",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rgb"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rgba",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rgba"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rw2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rw2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rwl",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rwl"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.rwz",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "rwz"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.scn",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "scn"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.seq",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "seq"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.sgi",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "sgi"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.sr2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "sr2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.srf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "srf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.srw",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "srw"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.sti",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "sti"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.stk",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "stk"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.svs",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "svs"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.swf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "swf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.targa",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "targa"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.tf2",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "tf2"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.tf8",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "tf8"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.vtk",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "vtk"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.wap",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "wap"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.wbm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "wbm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.wbmp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "wbmp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.wdp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "wdp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.webm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "webm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.webp",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "webp"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.wmf",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "wmf"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.xpm",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "xpm"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.zarr",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "zarr"
+                                ]
+                            }
+                        },
+                        {
+                            "UTTypeConformsTo": [
+                                "public.data",
+                                "public.content"
+                            ],
+                            "UTTypeIdentifier": "org.napari.napari.zif",
+                            "UTTypeTagSpecification": {
+                                "public.filename-extension": [
+                                    "zif"
+                                ]
+                            }
+                        }
                     ]
                 }
             }

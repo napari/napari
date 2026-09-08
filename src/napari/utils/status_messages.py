@@ -1,0 +1,141 @@
+from collections.abc import Iterable
+
+import numpy as np
+import numpy.typing as npt
+
+DEFAULT_PRECISION = 3
+
+
+def format_float(value, precision=None, format_mode='g'):
+    """Nice float formatting into strings."""
+    if precision is None:
+        precision = DEFAULT_PRECISION
+    return f'{value:0.{precision}{format_mode}}'
+
+
+def format_feature_value(value):
+    """Format a single feature value for display in the status bar."""
+    if isinstance(value, float) or np.issubdtype(type(value), np.floating):
+        return format_float(value)
+    return str(value)
+
+
+def status_format(value, precision=None, format_mode='g'):
+    """Return a "nice" string representation of a value.
+
+    Parameters
+    ----------
+    value : Any
+        The value to be printed.
+
+    Returns
+    -------
+    formatted : str
+        The string resulting from formatting.
+
+    Examples
+    --------
+    >>> values = np.array([1, 10, 100, 1000, 1e6, 6.283, 123.932021,
+    ...                    1123.9392001, 2 * np.pi, np.exp(1)])
+    >>> status_format(values)
+    '[1, 10, 100, 1e+03, 1e+06, 6.28, 124, 1.12e+03, 6.28, 2.72]'
+    """
+    if precision is None:
+        precision = DEFAULT_PRECISION
+    if isinstance(value, str):
+        return value
+    if isinstance(value, Iterable):
+        # FIMXE: use an f-string?
+        return (
+            '['
+            + str.join(
+                ', ',
+                [
+                    status_format(
+                        v, precision=precision, format_mode=format_mode
+                    )
+                    for v in value
+                ],
+            )
+            + ']'
+        )
+    if value is None:
+        return ''
+    if isinstance(value, float) or np.issubdtype(type(value), np.floating):
+        return format_float(
+            value, precision=precision, format_mode=format_mode
+        )
+
+    return str(value)
+
+
+def generate_layer_status_strings(
+    position: npt.ArrayLike | None,
+    value: tuple | None,
+    precision: int | None = None,
+) -> tuple[str, str]:
+    if position is not None:
+        position = np.asarray(position)
+        # format mode 'd' is for decimal integers, 'f' is for fixed point
+        # (specific number of decimals). See:
+        # https://docs.python.org/3/library/string.html#:~:text=The%20available%20integer%20presentation%20types%20are
+        format_mode = 'd' if np.issubdtype(position.dtype, np.integer) else 'f'
+        pos_str = status_format(
+            position, precision=precision, format_mode=format_mode
+        )
+    else:
+        pos_str = ''
+
+    val_str = ''
+    if value is not None:
+        if isinstance(value, tuple) and value != (None, None):
+            # it's a multiscale -> value = (data_level, value)
+            val_str = f'{status_format(value[0])}'
+            if value[1] is not None:
+                val_str += f', {status_format(value[1])}'
+        else:
+            # it's either a grayscale or rgb image (scalar or list)
+            val_str = f'{status_format(value)}'
+
+    return pos_str, val_str
+
+
+def generate_layer_coords_status(
+    position: npt.ArrayLike | None, value: tuple | None
+) -> str:
+    return ': '.join(generate_layer_status_strings(position, value))
+
+
+def generate_layer_status(name, position, value):
+    """Generate a status message based on the coordinates and value
+
+    Parameters
+    ----------
+    name : str
+        Name of the layer.
+    position : tuple or list
+        List of coordinates, say of the cursor.
+    value : Any
+        The value to be printed.
+
+    Returns
+    -------
+    msg : string
+        String containing a message that can be used as a status update.
+    """
+    if position is not None:
+        full_coord = map(str, np.round(position).astype(int))
+        msg = f'{name} [{" ".join(full_coord)}]'
+    else:
+        msg = f'{name}'
+
+    if value is not None:
+        if isinstance(value, tuple) and value != (None, None):
+            # it's a multiscale -> value = (data_level, value)
+            msg += f': {status_format(value[0])}'
+            if value[1] is not None:
+                msg += f', {status_format(value[1])}'
+        else:
+            # it's either a grayscale or rgb image (scalar or list)
+            msg += f': {status_format(value)}'
+    return msg

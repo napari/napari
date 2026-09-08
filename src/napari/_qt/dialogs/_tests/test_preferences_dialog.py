@@ -1,0 +1,439 @@
+import sys
+
+import numpy.testing as npt
+import pytest
+from pydantic import BaseModel
+from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtGui import QKeyEvent
+from qtpy.QtTest import QTest
+from qtpy.QtWidgets import QApplication
+
+from napari._pydantic_util import get_inner_type
+from napari._qt.dialogs.preferences_dialog import (
+    PreferencesDialog,
+    QMessageBox,
+)
+from napari._tests.utils import skip_local_focus, skip_on_mac_ci
+from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
+    EnumSchemaWidget,
+    FontSizeSchemaWidget,
+    HighlightPreviewWidget,
+    HorizontalObjectSchemaWidget,
+)
+from napari.settings import NapariSettings, get_plugin_settings, get_settings
+from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.settings._plugin_config_generator import (
+    plugin_configuration_generator,
+)
+from napari.utils.interactions import Shortcut
+from napari.utils.key_bindings import KeyBinding
+
+PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
+
+
+@pytest.fixture
+def pref(qtbot):
+    dlg = PreferencesDialog()
+    qtbot.addWidget(dlg)
+    # check settings default values and change them for later checks
+    settings = get_settings()
+    # change theme setting (default `dark`)
+    assert settings.appearance.theme == 'dark'
+    dlg._settings.appearance.theme = 'light'
+    assert get_settings().appearance.theme == 'light'
+    # change highlight setting related value (default thickness `1`)
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    dlg._settings.appearance.highlight.highlight_thickness = 5
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    # change `napari:toggle_selected_visibility` shortcut/keybinding (default keybinding `V`)
+    # a copy of the initial `shortcuts` dictionary needs to be done since, to trigger an
+    # event update from the `ShortcutsSettings` model, the whole `shortcuts` dictionary
+    # needs to be reassigned.
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
+    shortcuts = dlg._settings.shortcuts.shortcuts.copy()
+    shortcuts['napari:toggle_selected_visibility'] = [KeyBinding.from_str('U')]
+    dlg._settings.shortcuts.shortcuts = shortcuts
+    assert dlg._settings.shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('U')]
+    return dlg
+
+
+def test_prefdialog_populated(pref):
+    subfields = filter(
+        lambda f: (
+            isinstance(ff := get_inner_type(f.annotation), type)
+            and issubclass(ff, BaseModel)
+        ),
+        NapariSettings.model_fields.values(),
+    )
+    # one page per napari setting, plus a separator page, plus one page
+    # per plugin that contributes a configuration
+    number_of_plugins = len(plugin_configuration_generator())
+    assert pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
+
+
+def test_add_plugin(mock_pm, pref):
+    assert len(get_plugin_settings()) == len(
+        plugin_configuration_generator(mock_pm)
+    )
+
+    with pytest.raises(KeyError):
+        get_plugin_settings('random-plugin')
+
+    get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()
+
+
+def test_plugin_settings_restored_on_cancel(mock_pm, pref):
+    settings = get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()  # snapshot plugin settings (defaults)
+
+    settings.reader.lazy = True
+    assert settings.reader.lazy is True
+
+    pref.reject()
+
+    # Cancel reverts plugin settings, like it reverts napari's own settings
+    assert settings.reader.lazy is False
+
+
+def test_plugin_settings_saved_on_accept(mock_pm, pref, qtbot):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    with qtbot.waitSignal(pref.finished):
+        pref.accept()
+
+    # OK persists plugin settings to their own config file
+    assert 'lazy: true' in settings.config_path.read_text()
+
+
+def test_plugin_settings_restore_defaults(mock_pm, pref, monkeypatch):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    monkeypatch.setattr(
+        QMessageBox,
+        'question',
+        lambda *a, **k: QMessageBox.StandardButton.RestoreDefaults,
+    )
+    pref._restore_default_dialog()
+
+    # Restore defaults resets plugin settings, like it resets napari's own
+    assert settings.reader.lazy is False
+
+
+def test_dask_widget(qtbot, pref):
+    dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
+    def_dask_enabled = True
+    settings = pref._settings
+
+    # check custom widget definition and default value for dask cache `enabled` setting
+    assert isinstance(dask_widget, HorizontalObjectSchemaWidget)
+    assert settings.application.dask.enabled == def_dask_enabled
+    assert dask_widget.state['enabled'] == def_dask_enabled
+
+    # check changing dask cache `enabled` setting via widget
+    new_dask_enabled = False
+    dask_widget.state = {
+        'enabled': new_dask_enabled,
+        'cache': dask_widget.state['cache'],
+    }
+    assert settings.application.dask.enabled == new_dask_enabled
+    assert dask_widget.state['enabled'] == new_dask_enabled
+    assert dask_widget.widgets['enabled'].state == new_dask_enabled
+
+    # check changing dask `enabled` setting via settings object (to default value)
+    settings.application.dask.enabled = def_dask_enabled
+    assert dask_widget.state['enabled'] == def_dask_enabled
+    assert dask_widget.widgets['enabled'].state == def_dask_enabled
+
+
+def test_font_size_widget(qtbot, pref):
+    font_size_widget = (
+        pref._stack.widget(1).widget().widget.widgets['font_size']
+    )
+    def_font_size = 12 if sys.platform == 'darwin' else 9
+
+    # check custom widget definition usage for the font size setting
+    # and default values
+    assert isinstance(font_size_widget, FontSizeSchemaWidget)
+    assert get_settings().appearance.font_size == def_font_size
+    assert font_size_widget.state == def_font_size
+
+    # check setting a new font size value via widget
+    new_font_size = 14
+    font_size_widget.state = new_font_size
+    assert get_settings().appearance.font_size == new_font_size
+
+    # verify that a theme change preserves the font size value
+    assert get_settings().appearance.theme == 'light'
+    get_settings().appearance.theme = 'dark'
+    assert get_settings().appearance.font_size == new_font_size
+    assert font_size_widget.state == new_font_size
+
+    # check reset button works
+    font_size_widget._reset_button.click()
+    assert get_settings().appearance.font_size == def_font_size
+    assert font_size_widget.state == def_font_size
+
+
+@pytest.mark.parametrize(
+    ('enum_setting_name', 'enum_setting_class'),
+    [
+        ('new_labels_dtype', LabelDTypes),
+        ('brush_size_on_mouse_move_modifiers', BrushSizeOnMouseModifiers),
+    ],
+)
+def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
+    enum_widget = (
+        pref._stack.currentWidget().widget().widget.widgets[enum_setting_name]
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget value follows setting
+    assert isinstance(enum_widget, EnumSchemaWidget)
+    assert enum_widget.state == getattr(
+        settings.application, enum_setting_name
+    )
+
+    # check changing setting via widget
+    for idx in range(enum_widget.count()):
+        item_text = enum_widget.itemText(idx)
+        item_data = enum_widget.itemData(idx)
+        enum_widget.setCurrentText(item_text)
+        assert getattr(settings.application, enum_setting_name) == item_data
+        assert enum_widget.state == item_data
+
+    # check changing setting updates widget
+    for enum_value in enum_setting_class:
+        setattr(settings.application, enum_setting_name, enum_value)
+        assert enum_widget.state == enum_value
+
+
+def test_highlight_widget(qtbot, pref):
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+    settings = pref._settings
+
+    # check custom widget definition and widget follows settings values
+    assert isinstance(highlight_widget, HighlightPreviewWidget)
+    assert (
+        highlight_widget.state['highlight_color']
+        == settings.appearance.highlight.highlight_color
+    )
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == settings.appearance.highlight.highlight_thickness
+    )
+
+    # check changing setting via widget
+    new_widget_values = {
+        'highlight_thickness': 5,
+        'highlight_color': [0.6, 0.6, 1.0, 1.0],
+    }
+    highlight_widget.setValue(new_widget_values)
+    npt.assert_allclose(
+        settings.appearance.highlight.highlight_color,
+        new_widget_values['highlight_color'],
+    )
+    assert (
+        settings.appearance.highlight.highlight_thickness
+        == new_widget_values['highlight_thickness']
+    )
+
+    # check changing setting updates widget
+    new_setting_values = {
+        'highlight_thickness': 1,
+        'highlight_color': [0.5, 0.6, 1.0, 1.0],
+    }
+
+    settings.appearance.highlight.highlight_color = new_setting_values[
+        'highlight_color'
+    ]
+    npt.assert_allclose(
+        highlight_widget.state['highlight_color'],
+        new_setting_values['highlight_color'],
+    )
+
+    settings.appearance.highlight.highlight_thickness = new_setting_values[
+        'highlight_thickness'
+    ]
+    assert (
+        highlight_widget.state['highlight_thickness']
+        == new_setting_values['highlight_thickness']
+    )
+
+
+def test_preferences_dialog_accept(qtbot, pref):
+    with qtbot.waitSignal(pref.finished):
+        pref.accept()
+    assert get_settings().appearance.theme == 'light'
+
+
+def test_preferences_dialog_ok(qtbot, pref):
+    with qtbot.waitSignal(pref.finished):
+        pref._button_ok.click()
+    assert get_settings().appearance.theme == 'light'
+
+
+def test_preferences_dialog_close(qtbot, pref):
+    with qtbot.waitSignal(pref.finished):
+        pref.close()
+    assert get_settings().appearance.theme == 'dark'
+
+
+def test_preferences_dialog_escape(qtbot, pref):
+    with qtbot.waitSignal(pref.finished):
+        qtbot.keyPress(pref, Qt.Key_Escape)
+    assert get_settings().appearance.theme == 'dark'
+
+
+@pytest.mark.key_bindings
+def test_preferences_dialog_cancel(qtbot, pref):
+    with qtbot.waitSignal(pref.finished):
+        pref._button_cancel.click()
+    assert get_settings().appearance.theme == 'dark'
+    assert get_settings().shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
+
+
+@pytest.mark.key_bindings
+def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
+    theme_widget = pref._stack.widget(1).widget().widget.widgets['theme']
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+    shortcut_widget = (
+        pref._stack.widget(3).widget().widget.widgets['shortcuts']
+    )
+
+    assert get_settings().appearance.theme == 'light'
+    assert theme_widget.state == 'light'
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    assert highlight_widget.state['highlight_thickness'] == 5
+    assert get_settings().shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('U')]
+    assert KeyBinding.from_str(
+        Shortcut.parse_platform(
+            # 12 is the row for 'napari:toggle_selected_visibility'
+            shortcut_widget._table.item(
+                12, shortcut_widget._shortcut_col
+            ).text()
+        )
+    ) == KeyBinding.from_str('U')
+
+    monkeypatch.setattr(
+        QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
+    )
+    pref._restore_default_dialog()
+
+    assert get_settings().appearance.theme == 'dark'
+    assert theme_widget.state == 'dark'
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    assert highlight_widget.state['highlight_thickness'] == 1
+    assert get_settings().shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('V')]
+    assert KeyBinding.from_str(
+        Shortcut.parse_platform(
+            shortcut_widget._table.item(
+                # 12 is the row index for 'napari:toggle_selected_visibility'
+                12,
+                shortcut_widget._shortcut_col,
+            ).text()
+        )
+    ) == KeyBinding.from_str('V')
+
+
+@skip_local_focus
+@skip_on_mac_ci
+@pytest.mark.key_bindings
+@pytest.mark.parametrize(
+    'confirm_key',
+    ['enter', 'return', 'tab'],
+)
+def test_preferences_dialog_not_dismissed_by_keybind_confirm(
+    qtbot, pref, confirm_key
+):
+    """This test ensures that when confirming a keybinding change, the dialog is not dismissed.
+
+    Notes:
+        * Skipped on macOS CI due to accessibility permissions not being
+          settable on macOS GitHub Actions runners.
+    """
+    shortcut_widget = (
+        pref._stack.widget(3).widget().widget.widgets['shortcuts']
+    )
+    pref._stack.setCurrentIndex(3)
+    # ensure the dialog is showing
+    pref.show()
+    qtbot.waitExposed(pref)
+    assert pref.isVisible()
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    shortcut = shortcut_widget._table.item(
+        12, shortcut_widget._shortcut_col
+    ).text()
+    assert shortcut == 'U'
+
+    x = shortcut_widget._table.columnViewportPosition(
+        shortcut_widget._shortcut_col
+    )
+    # 12 is the row for 'napari:toggle_selected_visibility'
+    y = shortcut_widget._table.rowViewportPosition(12)
+
+    item_pos = QPoint(x, y)
+    qtbot.mouseClick(
+        shortcut_widget._table.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=item_pos,
+    )
+    qtbot.mouseDClick(
+        shortcut_widget._table.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=item_pos,
+    )
+    qtbot.waitUntil(lambda: QApplication.focusWidget() is not None)
+
+    editor = QApplication.focusWidget()
+    assert editor is not None
+    # Send a ShortcutOverride event to trigger Delete handling,
+    # which clears the selected shortcut text
+    delete_event = QKeyEvent(
+        QEvent.Type.ShortcutOverride,
+        Qt.Key.Key_Delete,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(editor, delete_event)
+    qtbot.wait(100)
+
+    # Confirm the change with the given key
+    confirm_key_map = {
+        'enter': Qt.Key.Key_Enter,
+        'return': Qt.Key.Key_Return,
+        'tab': Qt.Key.Key_Tab,
+    }
+    QTest.keyClick(editor, confirm_key_map[confirm_key])
+    qtbot.wait(100)
+
+    # ensure the dialog is still open
+    assert pref.isVisible()
+
+    # verify that the keybind is changed
+    shortcut = shortcut_widget._table.item(
+        12, shortcut_widget._shortcut_col
+    ).text()
+    assert shortcut == ''
+
+
+def test_startup_script_file_extension(pref):
+    startup_script_widget = (
+        pref._stack.widget(0).widget().widget.widgets['startup_script']
+    )
+    assert startup_script_widget.file_filter() == 'File (*.py)'

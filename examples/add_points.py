@@ -15,7 +15,8 @@ from skimage.color import rgb2gray
 import napari
 
 # add the image
-viewer = napari.view_image(rgb2gray(data.astronaut()))
+viewer = napari.Viewer()
+layer = viewer.add_image(rgb2gray(data.astronaut()))
 # add the points
 points = np.array([[100, 100], [200, 200], [333, 111]])
 size = np.array([10, 20, 20])
@@ -45,9 +46,6 @@ layer.opacity = 0.9
 
 # change the layer point symbol using an alias
 layer.symbol = '+'
-
-# change the layer point out_of_slice_display status
-layer.out_of_slice_display = True
 
 # change the layer mode
 layer.mode = 'add'

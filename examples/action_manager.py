@@ -38,7 +38,8 @@ def rotate45(viewer: napari.Viewer):
 
 
 # create the viewer with an image
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.Viewer()
+layer = viewer.add_image(data.astronaut(), rgb=True)
 
 layer_buttons = viewer.window.qt_viewer.layerButtons
 
@@ -56,7 +57,7 @@ def register_action():
     # we give an action name to the action for configuration purposes as we need
     # it to be storable in json.
 
-    # By convention (may be enforce later), we do give an action name which is iprefixed
+    # By convention (may be enforced later), we do give an action name which is prefixed
     # by the name of the package it is defined in, here napari,
     action_manager.register_action(
         name='napari:rotate45',

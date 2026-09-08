@@ -1,6 +1,6 @@
 ---
 name: "\U0001F9F0 Task"
-about: Submit a proposal/request for a new napari feature
+about: Maintenance, follow-ups, and other defined to-do items
 title: ''
 labels: task
 assignees: ''

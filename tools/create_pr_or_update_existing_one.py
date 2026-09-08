@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "requests>=2.32.5",
+# ]
+# ///
 """
 This file contains the code to create a PR or update an existing one based on the state of the current branch.
 """
@@ -15,7 +21,8 @@ from check_updated_packages import get_changed_dependencies
 REPO_DIR = Path(__file__).parent.parent / 'napari_repo'
 # GitHub API base URL
 BASE_URL = 'https://api.github.com'
-DEFAULT_BRANCH_NAME = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME_PREFIX = 'auto-update-dependencies'
+DEFAULT_BRANCH_NAME = f'{DEFAULT_BRANCH_NAME_PREFIX}-main'
 
 
 @contextmanager
@@ -62,36 +69,48 @@ def push(branch_name: str, update: bool = False):
     """
     Push the current branch to the remote.
     """
-    with cd(REPO_DIR):
-        logging.info('go to dir %s', REPO_DIR)
-        if update:
-            logging.info('Pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'napari-bot',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )
-        else:
-            logging.info('Force pushing to %s', branch_name)
-            subprocess.run(
-                [
-                    'git',
-                    'push',
-                    '--force',
-                    '--set-upstream',
-                    'origin',
-                    branch_name,
-                ],
-                check=True,
-                capture_output=True,
-            )  # nosec
+    try:
+        with cd(REPO_DIR):
+            logging.info('go to dir %s', REPO_DIR)
+            if update:
+                logging.info('Pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'napari-bot',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            else:
+                logging.info('Force pushing to %s', branch_name)
+                subprocess.run(
+                    [
+                        'git',
+                        'push',
+                        '--force',
+                        '--set-upstream',
+                        'napari-bot',
+                        branch_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )  # nosec
+    except subprocess.CalledProcessError as e:
+        stdout = e.stdout.decode() if e.stdout else ''
+        stderr = e.stderr.decode() if e.stderr else ''
+        logging.exception(
+            'Error pushing to branch %s:\n\nstdout: %s\n\nstderr: %s\n\nWith error %d',
+            branch_name,
+            stdout,
+            stderr,
+            e.returncode,
+        )
+        raise
 
 
 def commit_message(branch_name) -> str:
@@ -99,7 +118,9 @@ def commit_message(branch_name) -> str:
         changed_direct = get_changed_dependencies(
             all_packages=False,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     if not changed_direct:
@@ -112,7 +133,9 @@ def long_description(branch_name: str) -> str:
         all_changed = get_changed_dependencies(
             all_packages=True,
             base_branch=branch_name,
-            python_version='3.11',
+            python_version=os.environ.get(
+                'PYTHON_VERSION_FOR_DESCRIPTION', '3.14'
+            ),
             src_dir=REPO_DIR,
         )
     return 'Updated packages: ' + ', '.join(f'`{x}`' for x in all_changed)
@@ -122,10 +145,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
     """
     Create a PR.
     """
-    if branch_name == 'main':
-        new_branch_name = DEFAULT_BRANCH_NAME
-    else:
-        new_branch_name = f'{DEFAULT_BRANCH_NAME}-{branch_name}'
+    new_branch_name = f'{DEFAULT_BRANCH_NAME_PREFIX}-{branch_name}'
 
     if not repo:
         repo = os.environ.get('GITHUB_REPOSITORY', 'napari/napari')
@@ -145,6 +165,7 @@ def create_pr_with_push(branch_name: str, access_token: str, repo=''):
             new_branch=new_branch_name,
             access_token=access_token,
             repo=repo,
+            source_user='napari-bot',
         )
 
 
@@ -159,13 +180,33 @@ def update_own_pr(pr_number: int, access_token: str, base_branch: str, repo):
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
 
+    url_labels = f'{BASE_URL}/repos/{repo}/issues/{pr_number}/labels'
+    response = requests.get(url_labels, headers=headers)
+    response.raise_for_status()
 
-def list_pr_for_branch(branch_name: str, access_token: str, repo=''):
+    remove_label_url = (
+        f'{BASE_URL}/repos/{repo}/issues/{pr_number}/labels/ready%20to%20merge'
+    )
+
+    # following lines is to check if "ready to merge" label is added to PR,
+    # if it is present, then remove it to point that PR was changed
+    for label in response.json():
+        if label['name'] == 'ready to merge':
+            response = requests.delete(remove_label_url, headers=headers)
+            response.raise_for_status()
+            break
+
+
+def list_pr_for_branch(
+    branch_name: str,
+    access_token: str,
+    repo: str = 'napari/napari',
+    user: str = 'napari-bot',
+):
     """
     check if PR for branch exists
     """
-    org_name = repo.split('/')[0]
-    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={org_name}:{branch_name}'
+    url = f'{BASE_URL}/repos/{repo}/pulls?state=open&head={user}:{branch_name}'
     response = requests.get(url)
     response.raise_for_status()
     if response.json():
@@ -219,7 +260,7 @@ def add_comment_to_pr(
     Add a comment to an existing PR.
     """
     # Prepare the headers with the access token
-    headers = {'Authorization': f"token {os.environ.get('GITHUB_TOKEN')}"}
+    headers = {'Authorization': f'token {os.environ.get("GITHUB_TOKEN")}'}
 
     # publish the comment
     payload = {'body': message}
@@ -258,7 +299,7 @@ def update_pr(branch_name: str):
                 '\n\n This PR contains changes to the workflow file. '
             )
             comment_content += 'Please download the artifact and update the constraints files manually. '
-            comment_content += f"Artifact: https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'napari/napari')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
+            comment_content += f'Artifact: https://github.com/{os.environ.get("GITHUB_REPOSITORY", "napari/napari")}/actions/runs/{os.environ.get("GITHUB_RUN_ID")}'
         else:
             raise
     else:
@@ -285,7 +326,7 @@ def update_external_pr_comment(
     comment += 'You could also get the updated files from the '
     comment += f'https://github.com/napari-bot/napari/tree/{new_branch_name}/resources/constraints. '
     comment += 'Or ask the maintainers to provide you the contents of the constraints artifact '
-    comment += f"from the run https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'napari/napari')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
+    comment += f'from the run https://github.com/{os.environ.get("GITHUB_REPOSITORY", "napari/napari")}/actions/runs/{os.environ.get("GITHUB_RUN_ID")}'
     return comment
 
 
@@ -317,7 +358,7 @@ def main():
     if event_name in {'schedule', 'workflow_dispatch'}:
         logging.info('Creating PR')
         create_pr_with_push(branch_name, access_token)
-    elif event_name == 'issue_comment':
+    elif event_name in {'issue_comment', 'workflow_call'}:
         logging.info('Updating PR')
         update_pr(branch_name)
     elif event_name == 'pull_request':

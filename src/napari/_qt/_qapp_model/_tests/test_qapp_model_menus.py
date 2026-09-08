@@ -1,0 +1,122 @@
+import numpy as np
+import pytest
+from app_model.types import Action, SubmenuItem
+
+from napari._app_model import get_app_model
+from napari._app_model.constants import MenuId
+from napari._app_model.context import LayerListContextKeys as LLCK
+from napari._qt._qapp_model import build_qmodel_menu
+from napari._qt._qapp_model._tests.utils import get_submenu_action
+from napari._qt._qapp_model.qactions._layers_actions import LAYERS_SUBMENUS
+from napari.layers import Image
+
+
+# `builtins` required so there are samples registered, so samples menu exists
+@pytest.mark.parametrize('menu_id', list(MenuId))
+def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
+    """Test that we can build qmenus for all registered menu IDs."""
+    app = get_app_model()
+
+    # Configures `app`, registers actions and initializes plugins
+    make_napari_viewer()
+
+    menu = build_qmodel_menu(menu_id)
+    qtbot.addWidget(menu)
+
+    # `>=` because separator bars count as actions
+    # only check non-empty menus
+    if menu_id in app.menus:
+        assert len(menu.actions()) >= len(app.menus.get_menu(menu_id))
+
+
+def test_update_menu_state_context(make_napari_viewer):
+    """Test `_update_menu_state` correctly updates enabled/visible state."""
+    app = get_app_model()
+    viewer = make_napari_viewer()
+
+    action = Action(
+        id='dummy_id',
+        title='dummy title',
+        callback=lambda: None,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'when': (LLCK.num_layers > 0)}],
+        enablement=(LLCK.num_layers == 2),
+    )
+    app.register_action(action)
+
+    dummy_action = viewer.window.file_menu.findAction('dummy_id')
+
+    assert 'dummy_id' in app.commands
+    assert len(viewer.layers) == 0
+    # `dummy_action` should be disabled & not visible as num layers == 0
+    viewer.window._update_file_menu_state()
+    assert not dummy_action.isVisible()
+    assert not dummy_action.isEnabled()
+
+    layer_a = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer_a)
+    assert len(viewer.layers) == 1
+    viewer.window._update_file_menu_state()
+    # `dummy_action` should be visible but not enabled after adding layer
+    assert dummy_action.isVisible()
+    assert not dummy_action.isEnabled()
+
+    layer_b = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer_b)
+    assert len(viewer.layers) == 2
+    # `dummy_action` should be enabled and visible after adding second layer
+    viewer.window._update_file_menu_state()
+    assert dummy_action.isVisible()
+    assert dummy_action.isEnabled()
+
+
+@pytest.mark.parametrize(
+    ('submenu_id', 'submenu_title'),
+    [
+        (item.submenu, item.title)
+        for menu_id, item in LAYERS_SUBMENUS
+        if menu_id == MenuId.MENUBAR_LAYERS
+    ],
+)
+def test_layers_menu_has_declared_submenus(
+    make_napari_viewer, submenu_id, submenu_title
+):
+    app = get_app_model()
+    make_napari_viewer()
+    layers_menu = app.menus.get_menu(MenuId.MENUBAR_LAYERS)
+    submenus = [
+        item
+        for item in layers_menu
+        if isinstance(item, SubmenuItem) and item.submenu == submenu_id
+    ]
+
+    assert len(submenus) == 1
+    assert submenus[0].title == submenu_title
+    assert app.menus.get_menu(submenu_id)
+
+
+@pytest.mark.parametrize(
+    ('submenu_label', 'action_label', 'layer_attr'),
+    [
+        ('Measure', 'Colorbar', 'colorbar'),
+        ('Visualize', 'Bounding Box', 'bounding_box'),
+    ],
+)
+def test_layers_menu_colorbar_checked(
+    make_napari_viewer, submenu_label, action_label, layer_attr
+):
+    """Ensure menu item check state reflects layer overlay visibility."""
+    viewer = make_napari_viewer()
+    layer = Image(np.random.random((10, 10)))
+    viewer.layers.append(layer)
+    viewer.layers.selection.active = layer
+    viewer.window.layers_menu.aboutToShow.emit()
+    action, submenu_action = get_submenu_action(
+        viewer.window.layers_menu, submenu_label, action_label
+    )
+    submenu = submenu_action.menu()
+    submenu.aboutToShow.emit()
+    assert not action.isChecked()
+
+    getattr(layer, layer_attr).visible = True
+    submenu.aboutToShow.emit()
+    assert action.isChecked()

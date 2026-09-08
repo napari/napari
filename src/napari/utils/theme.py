@@ -1,0 +1,511 @@
+# syntax_style for the console must be one of the supported styles from
+# pygments - see here for examples https://help.farbox.com/pygments.html
+import logging
+import re
+import sys
+from ast import literal_eval
+from contextlib import suppress
+from typing import Any, Literal
+from warnings import warn
+
+import npe2
+from pydantic import field_validator
+from pydantic_extra_types.color import Color
+
+from napari.resources._icons import (
+    PLUGIN_FILE_NAME,
+    _theme_path,
+    build_theme_svgs,
+)
+from napari.utils.events import EventedModel
+from napari.utils.events.containers._evented_dict import EventedDict
+
+
+class Theme(EventedModel):
+    """Theme model.
+
+    Attributes
+    ----------
+    id : str
+        id of the theme and name of the virtual folder where icons
+        will be saved to.
+    label : str
+        Name of the theme as it should be shown in the ui.
+    type: str
+        Whether the theme is "dark" or "light" type.
+    syntax_style : str
+        Name of the console style.
+        See for more details: https://pygments.org/docs/styles/
+    canvas : Color
+        Background color of the canvas.
+    background : Color
+        Color of the application background.
+    foreground : Color
+        Color to contrast with the background.
+    primary : Color
+        Color used to make part of a widget more visible.
+    secondary : Color
+        Alternative color used to make part of a widget more visible.
+    highlight : Color
+        Color used to highlight visual element.
+    text : Color
+        Color used to display text.
+    warning : Color
+        Color used to indicate something needs attention.
+    error : Color
+        Color used to indicate something is wrong or could stop functionality.
+    current : Color
+        Color used to highlight Qt widget.
+    font_size : str
+        Font size (in points, pt) used in the application.
+    """
+
+    id: str
+    label: str
+    type: Literal['dark', 'light']
+    syntax_style: str
+    canvas: Color
+    console: Color
+    background: Color
+    foreground: Color
+    primary: Color
+    secondary: Color
+    highlight: Color
+    text: Color
+    icon: Color
+    warning: Color
+    error: Color
+    current: Color
+    # base font sizes differ between platforms
+    # macOS uses 72 dpi while windows and linux use 96
+    # which is a factor of 4/3 so 12 and 9 should be similar
+    font_size: str = '12pt' if sys.platform == 'darwin' else '9pt'
+
+    @field_validator('syntax_style', mode='before')
+    @classmethod
+    def _ensure_syntax_style(cls, value: str) -> str:
+        from pygments.styles import STYLE_MAP
+
+        valid_styles = ', '.join(STYLE_MAP)
+        assert value in STYLE_MAP, (
+            f'Incorrect `syntax_style` value: {value} provided. '
+            f'Please use one of the following: {valid_styles}'
+        )
+        return value
+
+    @field_validator('font_size', mode='before')
+    @classmethod
+    def _ensure_font_size(cls, value: str) -> str:
+        assert value.endswith('pt'), 'Font size must be in points (pt).'
+        assert int(value[:-2]) > 0, 'Font size must be greater than 0.'
+        return value
+
+    def to_rgb_dict(self) -> dict[str, Any]:
+        """
+        This differs from baseclass `dict()` by converting colors to rgb.
+        """
+        th = super().model_dump()
+        return {
+            k: v if not isinstance(v, Color) else v.as_rgb()
+            for (k, v) in th.items()
+        }
+
+
+increase_pattern = re.compile(r'{{\s?increase\((\w+),?\s?([-\d]+)?\)\s?}}')
+decrease_pattern = re.compile(r'{{\s?decrease\((\w+),?\s?([-\d]+)?\)\s?}}')
+gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
+darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
+lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
+opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
+
+
+def _platform_aware_font_size_adjustment(pt: str) -> float:
+    """Rescale font size adjustments to 72 dpi (macOS)
+
+    Account for platform DPI differences in font size adjustments.
+    macOS uses 72 dpi while windows and linux use 96, so in order for
+    increases and decreases in font size remain proportional,
+    they also need to be scaled by a factor of 96/72.
+    """
+    if sys.platform == 'darwin':
+        return float(pt) * 96 / 72
+    return float(pt)
+
+
+def decrease(font_size: str, pt: str) -> str:
+    """Decrease fontsize."""
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) - _pt}pt'
+
+
+def increase(font_size: str, pt: str) -> str:
+    """Increase fontsize."""
+    _pt = _platform_aware_font_size_adjustment(pt)
+    return f'{int(font_size[:-2]) + _pt}pt'
+
+
+def _parse_color_as_rgb(color: str | Color) -> tuple[int, int, int]:
+    if isinstance(color, str):
+        if color.startswith('rgb('):
+            return literal_eval(color.lstrip('rgb(').rstrip(')'))
+        return Color(color).as_rgb_tuple()[:3]
+    return color.as_rgb_tuple()[:3]
+
+
+def _shift_luminance(
+    color: tuple[float, float, float], percentage: float
+) -> tuple[int, int, int]:
+    """Darkens or lightens a color preserving hue and perceived saturation."""
+    r, g, b = color
+
+    percentage /= 100
+    # use perceived luminance for darken/lighten
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    if percentage >= 0:
+        target = lum + (255.0 - lum) * percentage
+    else:
+        target = lum * (1.0 + percentage)
+
+    target = max(0.0, min(255.0, target))
+
+    if lum < 1.0:
+        v = max(0, min(255, int(target)))
+        return (v, v, v)
+
+    scale = target / lum
+
+    r *= scale
+    g *= scale
+    b *= scale
+
+    # desaturate colors that were lightened a lot
+    # this is kinda arbitrary, but light colors seem a lot more
+    # saturated than dark colors with the same values
+    # the coefficients at the right are tunable
+    if scale > 1.0:
+        # brighten -> desaturate
+        sat = 1.0 / (1.0 + (scale - 1.0) * 0.5)
+    else:
+        # darken -> saturate
+        sat = 1.0 + (1.0 - scale) * 0.5
+
+    # blend toward a mid-gray as bright as the rgb
+    gray = (r + g + b) / 3.0
+    r = gray + (r - gray) * sat
+    g = gray + (g - gray) * sat
+    b = gray + (b - gray) * sat
+
+    return (
+        max(0, min(255, int(r))),
+        max(0, min(255, int(g))),
+        max(0, min(255, int(b))),
+    )
+
+
+def darken(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'dark' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
+
+
+def lighten(
+    color: str | Color,
+    percentage: float = 10,
+    theme_type: Literal['dark', 'light'] = 'dark',
+) -> str:
+    rgb = _parse_color_as_rgb(color)
+    percentage *= -1 if theme_type == 'light' else 1
+    r, g, b = _shift_luminance(rgb, percentage)
+    return f'rgb({r}, {g}, {b})'
+
+
+def opacity(color: str | Color, value: int = 255) -> str:
+    red, green, blue = _parse_color_as_rgb(color)
+    return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
+
+
+def gradient(stops, horizontal: bool = True) -> str:
+
+    if horizontal:
+        grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
+    else:
+        grad = 'qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, '
+
+    _stops = [f'stop: {n} {stop}' for n, stop in enumerate(stops)]
+    grad += ', '.join(_stops) + ')'
+
+    return grad
+
+
+def template(css: str, **theme):
+    def _increase_match(matchobj):
+        font_size, to_add = matchobj.groups()
+        return increase(theme[font_size], to_add)
+
+    def _decrease_match(matchobj):
+        font_size, to_subtract = matchobj.groups()
+        return decrease(theme[font_size], to_subtract)
+
+    def darken_match(matchobj):
+        color, percentage = matchobj.groups()
+        return darken(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
+
+    def lighten_match(matchobj):
+        color, percentage = matchobj.groups()
+        return lighten(
+            theme[color], float(percentage), theme_type=theme['type']
+        )
+
+    def opacity_match(matchobj):
+        color, value = matchobj.groups()
+        return opacity(theme[color], int(value))
+
+    def gradient_match(matchobj):
+        horizontal = matchobj.groups()[1] == 'h'
+        stops = [i.strip() for i in matchobj.groups()[1].split('-')]
+        return gradient(stops, horizontal)
+
+    for k, v in theme.items():
+        css = increase_pattern.sub(_increase_match, css)
+        css = decrease_pattern.sub(_decrease_match, css)
+        css = gradient_pattern.sub(gradient_match, css)
+        css = darken_pattern.sub(darken_match, css)
+        css = lighten_pattern.sub(lighten_match, css)
+        css = opacity_pattern.sub(opacity_match, css)
+        if isinstance(v, Color):
+            v = v.as_rgb()
+        css = css.replace(f'{{{{ {k} }}}}', v)
+    return css
+
+
+def get_system_theme() -> str:
+    """Return the system default theme, either 'dark', or 'light'.
+
+    Note: uses Qt6 (version >6.5) property colorScheme
+    """
+    try:
+        from qtpy import QT6
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QGuiApplication
+    except (ImportError, RuntimeError):
+        return 'dark'
+
+    if not QT6:
+        # can remove this check once pyqt5 support is dropped
+        warn(
+            'System theme detection requires a Qt6 backend. '
+            'Please switch to PyQt6 or PySide6 to use it.',
+            stacklevel=2,
+        )
+        return 'dark'
+
+    style_hints = QGuiApplication.styleHints()
+    if style_hints is None:
+        return 'dark'
+
+    scheme = style_hints.colorScheme()
+    match scheme:
+        case Qt.ColorScheme.Dark:
+            return 'dark'
+        case Qt.ColorScheme.Light:
+            return 'light'
+        case _:
+            return 'dark'
+
+
+def get_theme(theme_id: str):
+    """Get a copy of theme based on its id.
+
+    If you get a copy of the theme, changes to the theme model will not be
+    reflected in the UI unless you replace or add the modified theme to
+    the `_themes` container.
+
+    Parameters
+    ----------
+    theme_id : str
+        ID of requested theme.
+
+    Returns
+    -------
+    theme: dict of str: str
+        Theme mapping elements to colors. A copy is created
+        so that manipulating this theme can be done without
+        side effects.
+    """
+    if theme_id == 'system':
+        theme_id = get_system_theme()
+
+    if theme_id not in _themes:
+        raise ValueError(
+            f'Unrecognized theme {theme_id}. Available themes are {available_themes()}'
+        )
+    theme = _themes[theme_id].model_copy()
+    return theme
+
+
+_themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
+
+
+def register_theme(theme_id, theme, source):
+    """Register a new or updated theme.
+
+    Parameters
+    ----------
+    theme_id : str
+        id of requested theme.
+    theme : dict of str: str, Theme
+        Theme mapping elements to colors.
+    source : str
+        Source plugin of theme
+    """
+    if isinstance(theme, dict):
+        theme = Theme(**theme)
+    assert isinstance(theme, Theme)
+    _themes[theme_id] = theme
+
+    build_theme_svgs(theme_id, source)
+
+
+def unregister_theme(theme_id):
+    """Remove existing theme.
+
+    Parameters
+    ----------
+    theme_id : str
+        id of the theme to be removed.
+    """
+    _themes.pop(theme_id, None)
+
+
+def available_themes() -> list[str]:
+    """List available themes.
+
+    Returns
+    -------
+    list of str
+        ids of available themes.
+    """
+    return [*_themes, 'system']
+
+
+def is_theme_available(theme_id):
+    """Check if a theme is available.
+
+    Parameters
+    ----------
+    theme_id : str
+        id of requested theme.
+
+    Returns
+    -------
+    bool
+        True if the theme is available, False otherwise.
+    """
+    if theme_id == 'system':
+        return True
+    if theme_id not in _themes and _theme_path(theme_id).exists():
+        plugin_name_file = _theme_path(theme_id) / PLUGIN_FILE_NAME
+        if not plugin_name_file.exists():
+            return False
+        plugin_name = plugin_name_file.read_text()
+        with suppress(ModuleNotFoundError):
+            npe2.PluginManager.instance().register(plugin_name)
+        _install_npe2_themes(_themes)
+
+    return theme_id in _themes
+
+
+def rebuild_theme_settings():
+    """update theme information in settings.
+
+    here we simply update the settings to reflect current list of available
+    themes.
+    """
+    from napari.settings import get_settings
+
+    settings = get_settings()
+    settings.appearance.refresh_themes()
+
+
+# Note: these colors are sometimes lightened / darkened in the qss file.
+DARK = Theme(
+    id='dark',
+    type='dark',
+    label='Default Dark',
+    background='rgb(35, 36, 43)',
+    foreground='rgb(46, 51, 62)',
+    primary='rgb(66, 74, 84)',
+    secondary='rgb(86, 95, 108)',
+    highlight='rgb(97, 105, 110)',
+    text='rgb(240, 241, 242)',
+    icon='rgb(209, 210, 212)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(153, 18, 31)',
+    current='rgb(69, 96, 196)',
+    syntax_style='native',
+    console='rgb(18, 18, 18)',
+    canvas='black',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+)
+LIGHT = Theme(
+    id='light',
+    type='light',
+    label='Default Light',
+    background='rgb(235, 231, 230)',
+    foreground='rgb(221, 218, 216)',
+    primary='rgb(197, 195, 193)',
+    secondary='rgb(180, 178, 175)',
+    highlight='rgb(175, 172, 170)',
+    text='rgb(30, 30, 33)',
+    icon='rgb(62, 63, 65)',
+    warning='rgb(227, 182, 23)',
+    error='rgb(255, 18, 31)',
+    current='rgb(160, 184, 255)',
+    syntax_style='default',
+    console='white',
+    canvas='white',
+    font_size='12pt' if sys.platform == 'darwin' else '9pt',
+)
+
+register_theme('dark', DARK, 'builtin')
+register_theme('light', LIGHT, 'builtin')
+
+
+# this function here instead of plugins._npe2 to avoid circular import
+def _install_npe2_themes(themes=None):
+    if themes is None:
+        themes = _themes
+    import npe2
+
+    for manifest in npe2.PluginManager.instance().iter_manifests(
+        disabled=False
+    ):
+        for theme in manifest.contributions.themes or ():
+            # get fallback values
+            theme_dict = themes[theme.type].model_dump()
+            # update available values
+            theme_info = theme.model_dump(
+                exclude={'colors'}, exclude_unset=True
+            )
+            theme_colors = theme.colors.model_dump(exclude_unset=True)
+            theme_dict.update(theme_info)
+            theme_dict.update(theme_colors)
+            try:
+                register_theme(theme.id, theme_dict, manifest.name)
+            except ValueError:
+                logging.getLogger('napari').exception(
+                    'Registration theme failed.'
+                )
+
+
+_install_npe2_themes(_themes)
+_themes.events.added.connect(rebuild_theme_settings)
+_themes.events.removed.connect(rebuild_theme_settings)

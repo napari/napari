@@ -6,12 +6,12 @@ from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari.layers import Tracks
 
 
-@pytest.fixture()
+@pytest.fixture
 def null_data() -> np.ndarray:
     return np.zeros((2, 4))
 
 
-@pytest.fixture()
+@pytest.fixture
 def features() -> dict[str, list]:
     return {
         'track_id': [0, 0],
@@ -23,7 +23,7 @@ def features() -> dict[str, list]:
 def test_tracks_controls_color_by(null_data, features, qtbot):
     """Check updating of the color_by combobox."""
     initial_color_by = 'time'
-    with pytest.warns(UserWarning) as wrn:
+    with pytest.warns(UserWarning, match='features') as wrn:
         layer = Tracks(null_data, features=features, color_by=initial_color_by)
     assert "Previous color_by key 'time' not present" in str(wrn[0].message)
     qtctrl = QtTracksControls(layer)

@@ -1,0 +1,113 @@
+from app_model.types import Action, SubmenuItem
+
+from napari._app_model.constants import MenuGroup, MenuId
+
+LAYERS_SUBMENUS = [
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_VISUALIZE,
+            title='Visualize',
+            group=MenuGroup.NAVIGATION,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_ANNOTATE,
+            title='Annotate',
+            group=MenuGroup.NAVIGATION,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_DATA,
+            title='Data',
+            group=MenuGroup.LAYERS.CONVERT,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_METADATA,
+            title='Metadata',
+            group=MenuGroup.LAYERS.CONVERT,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_LAYER_TYPE,
+            title='Layer Type',
+            group=MenuGroup.LAYERS.CONVERT,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_TRANSFORM,
+            title='Transform',
+            group=MenuGroup.LAYERS.GEOMETRY,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_MEASURE,
+            title='Measure',
+            group=MenuGroup.LAYERS.GEOMETRY,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_FILTER,
+            title='Filter',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_REGISTER,
+            title='Register',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_PROJECT,
+            title='Project',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_SEGMENT,
+            title='Segment',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_TRACK,
+            title='Track',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+    (
+        MenuId.MENUBAR_LAYERS,
+        SubmenuItem(
+            submenu=MenuId.LAYERS_CLASSIFY,
+            title='Classify',
+            group=MenuGroup.LAYERS.GENERATE,
+        ),
+    ),
+]
+
+# placeholder, add actions here!
+LAYERS_ACTIONS: list[Action] = []
