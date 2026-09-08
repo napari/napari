@@ -2812,21 +2812,21 @@ def test_outline_not_drawn_off_slice():
 
 
 def test_shapes_colorbar_overlays_registered():
-    """Shapes exposes face and edge colorbar overlays with correct attributes."""
+    """Shapes exposes face and border colorbar overlays with correct attributes."""
 
     layer = Shapes([np.array([[0, 0], [0, 10], [10, 10], [10, 0]])])
 
     assert isinstance(layer.face_colorbar, ColorBarOverlay)
-    assert isinstance(layer.edge_colorbar, ColorBarOverlay)
+    assert isinstance(layer.border_colorbar, ColorBarOverlay)
     assert layer.face_colorbar.layer_attribute == 'face'
-    assert layer.edge_colorbar.layer_attribute == 'edge'
+    assert layer.border_colorbar.layer_attribute == 'edge'
     # colorbars are hidden until explicitly toggled on
     assert layer.face_colorbar.visible is False
-    assert layer.edge_colorbar.visible is False
+    assert layer.border_colorbar.visible is False
 
 
 def test_shapes_colorbar_layer_attribute_frozen():
-    """The layer_attribute tying a colorbar to edge/face cannot be reassigned."""
+    """The layer_attribute tying a colorbar to border/face cannot be reassigned."""
     layer = Shapes([np.array([[0, 0], [0, 10], [10, 10], [10, 0]])])
     with pytest.raises(ValidationError):
         layer.face_colorbar.layer_attribute = 'edge'

@@ -631,7 +631,7 @@ class Shapes(Layer):
         self._overlays.update(
             {
                 'face_colorbar': ColorBarOverlay(layer_attribute='face'),
-                'edge_colorbar': ColorBarOverlay(layer_attribute='edge'),
+                'border_colorbar': ColorBarOverlay(layer_attribute='edge'),
             }
         )
 
@@ -1058,9 +1058,13 @@ class Shapes(Layer):
         return self._overlays['face_colorbar']
 
     @property
-    def edge_colorbar(self):
-        """ColorBarOverlay: colorbar for the edge color colormap."""
-        return self._overlays['edge_colorbar']
+    def border_colorbar(self):
+        """ColorBarOverlay: colorbar for the edge color colormap.
+
+        Named ``border_colorbar`` to match the Points layer so both layers
+        share the same "Border Colorbar" action.
+        """
+        return self._overlays['border_colorbar']
 
     @property
     def face_color(self):

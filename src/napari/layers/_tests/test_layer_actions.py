@@ -6,7 +6,7 @@ import zarr
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
-    _are_edge_colorbars_visible,
+    _are_border_colorbars_visible,
     _are_face_colorbars_visible,
     _convert,
     _convert_dtype,
@@ -20,7 +20,7 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _split_rgb,
     _split_stack,
-    _toggle_edge_colorbar,
+    _toggle_border_colorbar,
     _toggle_face_colorbar,
     _toggle_lock,
     _toggle_visibility,
@@ -433,19 +433,19 @@ def _shapes_with_colormap(attribute):
     return layer
 
 
-def test_toggle_edge_colorbar_shapes():
-    """Edge colorbar toggles on and off for a shapes layer."""
+def test_toggle_border_colorbar_shapes():
+    """Border colorbar toggles on and off for a shapes layer."""
 
     layer_list = LayerList()
     layer_list.append(_shapes_with_colormap('edge'))
     layer_list.selection.active = layer_list[0]
 
-    assert _are_edge_colorbars_visible(layer_list) is False
-    _toggle_edge_colorbar(layer_list)
-    assert layer_list[0].edge_colorbar.visible is True
-    assert _are_edge_colorbars_visible(layer_list) is True
-    _toggle_edge_colorbar(layer_list)
-    assert layer_list[0].edge_colorbar.visible is False
+    assert _are_border_colorbars_visible(layer_list) is False
+    _toggle_border_colorbar(layer_list)
+    assert layer_list[0].border_colorbar.visible is True
+    assert _are_border_colorbars_visible(layer_list) is True
+    _toggle_border_colorbar(layer_list)
+    assert layer_list[0].border_colorbar.visible is False
 
 
 def test_toggle_face_colorbar_shapes():
@@ -460,15 +460,15 @@ def test_toggle_face_colorbar_shapes():
     assert _are_face_colorbars_visible(layer_list) is True
 
 
-def test_toggle_edge_colorbar_unsupported_layer():
-    """Edge colorbar toggle raises for layers that do not support it."""
+def test_toggle_border_colorbar_unsupported_layer():
+    """Border colorbar toggle raises for unsupported layers."""
 
     layer_list = LayerList()
-    layer_list.append(Points([[0, 0]]))
+    layer_list.append(Image(np.random.rand(8, 8)))
     layer_list.selection.active = layer_list[0]
 
-    with pytest.raises(NotImplementedError, match='Edge Colorbar'):
-        _toggle_edge_colorbar(layer_list)
+    with pytest.raises(NotImplementedError, match='Border Colorbar'):
+        _toggle_border_colorbar(layer_list)
 
 
 @pytest.mark.parametrize(
