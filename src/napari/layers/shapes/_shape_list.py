@@ -1430,6 +1430,7 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
         self._update_displayed()
 
+    @_batch_dec
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
     ):
