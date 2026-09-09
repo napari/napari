@@ -853,7 +853,11 @@ class Shapes(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
+        ndim = (
+            self.ndim
+            if self.nshapes == 0
+            else self._data_view.shapes[0].data.shape[1]
+        )
         return ndim
 
     @property
@@ -2932,7 +2936,7 @@ class Shapes(Layer):
             }
 
         info = {
-            'data': self.data[index],
+            'data': self._data_view.shapes[index].data,
             'shape_type': self.shape_type[index],
             'edge_width': self.edge_width[index],
             'edge_color': self.edge_color[index],
