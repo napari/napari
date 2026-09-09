@@ -704,8 +704,9 @@ def _move_selected_layer(
         # Check where dragging box from to move whole object
         center = layer._selected_box[Box.CENTER]
         shift = coord - center - layer._drag_start
-        for index in layer.selected_data:
-            layer._data_view.shift(index, shift)
+        with layer._data_view.batched_updates():
+            for index in layer.selected_data:
+                layer._data_view.shift(index, shift)
         layer._selected_box = layer._selected_box + shift
         layer.refresh()
     elif vertex < Box.LEN:
@@ -770,18 +771,20 @@ def _move_selected_layer(
 
         # check orientation of box
         if abs(handle_offset_norm[0]) == 1:
-            for index in layer.selected_data:
-                layer._data_view.scale(
-                    index, drag_scale, center=layer._fixed_vertex
-                )
+            with layer._data_view.batched_updates():
+                for index in layer.selected_data:
+                    layer._data_view.scale(
+                        index, drag_scale, center=layer._fixed_vertex
+                    )
             layer._scale_box(drag_scale, center=layer._fixed_vertex)
         else:
             scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
             transform = rot @ scale_mat @ inv_rot
-            for index in layer.selected_data:
-                layer._data_view.shift(index, -layer._fixed_vertex)
-                layer._data_view.transform(index, transform)
-                layer._data_view.shift(index, layer._fixed_vertex)
+            with layer._data_view.batched_updates():
+                for index in layer.selected_data:
+                    layer._data_view.shift(index, -layer._fixed_vertex)
+                    layer._data_view.transform(index, transform)
+                    layer._data_view.shift(index, layer._fixed_vertex)
             layer._transform_box(transform, center=layer._fixed_vertex)
         layer.refresh()
     elif vertex == 8:
@@ -803,8 +806,11 @@ def _move_selected_layer(
         else:
             angle = new_angle - fixed_angle
 
-        for index in layer.selected_data:
-            layer._data_view.rotate(index, angle, center=layer._fixed_vertex)
+        with layer._data_view.batched_updates():
+            for index in layer.selected_data:
+                layer._data_view.rotate(
+                    index, angle, center=layer._fixed_vertex
+                )
         layer._rotate_box(angle, center=layer._fixed_vertex)
         layer.refresh()
 
@@ -895,9 +901,10 @@ def _add_rectangle_ellipse_line(
     scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
     transform = rot @ scale_mat @ inv_rot
     index = next(iter(layer.selected_data))
-    layer._data_view.shift(index, -layer._fixed_vertex)
-    layer._data_view.transform(index, transform)
-    layer._data_view.shift(index, layer._fixed_vertex)
+    with layer._data_view.batched_updates():
+        layer._data_view.shift(index, -layer._fixed_vertex)
+        layer._data_view.transform(index, transform)
+        layer._data_view.shift(index, layer._fixed_vertex)
     layer._transform_box(transform, center=layer._fixed_vertex)
     layer.refresh()
 
