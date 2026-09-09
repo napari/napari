@@ -1677,16 +1677,12 @@ class Shapes(Layer):
         """
         ndisplay = self._slice_input.ndisplay
         order = self._slice_input.order
-
-        # get the coordinates of the vertices for the shapes in view
-        in_view_shapes_coords = [
-            self._data_view.data[i] for i in self._view_indices
-        ]
-
+        # avoid rebuilding lists
+        displayed = self._slice_input.displayed
+        shapes = self._data_view.shapes
         # get the coordinates for the dimensions being displayed
         sliced_in_view_coords = [
-            position[:, self._slice_input.displayed]
-            for position in in_view_shapes_coords
+            shapes[i].data[:, displayed] for i in self._view_indices
         ]
         # TODO: fix types here with np.asarray(sliced_in_view_coords)
         # but blocked by https://github.com/napari/napari/issues/6294
