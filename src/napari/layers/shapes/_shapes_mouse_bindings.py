@@ -119,10 +119,7 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     # only emit data once dragging has finished
     if layer._is_moving:
         vertex_indices = tuple(
-            tuple(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
-            )
+            tuple(range(len(layer._data_view.shapes[i].data)))
             for i in layer.selected_data
         )
         layer.events.data(
@@ -685,10 +682,7 @@ def _move_selected_layer(
 ) -> None:
     if layer._mode == Mode.SELECT and not layer._is_moving:
         vertex_indices = tuple(
-            tuple(
-                vertex_index
-                for vertex_index, coord in enumerate(layer.data[i])
-            )
+            tuple(range(len(layer._data_view.shapes[i].data)))
             for i in layer.selected_data
         )
         layer.events.data(
