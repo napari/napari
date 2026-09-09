@@ -669,7 +669,7 @@ class ShapeList:
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        n_shapes = len(self.data)
+        n_shapes = len(self.shapes)
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
                 f'{attribute}_color must have shape ({n_shapes}, 4)'
