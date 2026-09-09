@@ -1240,9 +1240,7 @@ class Shapes(Layer):
         else:
             z_indices = [z_index for _ in range(self.nshapes)]
 
-        with self._data_view.batched_updates():
-            for i, z_idx in enumerate(z_indices):
-                self._data_view.update_z_index(i, z_idx)
+        self._data_view.update_z_indices(range(self.nshapes), z_indices)
 
     @property
     def selected_data(self) -> Selection[int]:
@@ -3241,9 +3239,7 @@ class Shapes(Layer):
         if len(self.selected_data) == 0:
             return
         new_z_index = max(self._data_view._z_index) + 1
-        with self._data_view.batched_updates():
-            for index in self.selected_data:
-                self._data_view.update_z_index(index, new_z_index)
+        self._data_view.update_z_indices(self.selected_data, new_z_index)
         self.refresh(extent=False, highlight=False)
 
     def move_to_back(self) -> None:
@@ -3251,9 +3247,7 @@ class Shapes(Layer):
         if len(self.selected_data) == 0:
             return
         new_z_index = min(self._data_view._z_index) - 1
-        with self._data_view.batched_updates():
-            for index in self.selected_data:
-                self._data_view.update_z_index(index, new_z_index)
+        self._data_view.update_z_indices(self.selected_data, new_z_index)
         self.refresh(extent=False, highlight=False)
 
     def _copy_data(self) -> None:
