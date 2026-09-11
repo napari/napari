@@ -54,12 +54,13 @@ class LayerList(SelectableEventedList[Layer]):
         emitted before an item is moved from ``index`` to ``new_index``
     moved : (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
+    replaced : (index: int, old_value: T, value: T)
+        emitted after the layer at ``index`` is replaced by ``value``
+        (``layers[index] = layer``), where ``old_value`` is the layer that
+        was previously at ``index``
     changed : (index: int, old_value: T, value: T)
-        emitted when item at ``index`` is changed from ``old_value`` to
-        ``value``
-    changed <OVERLOAD> : (index: slice, old_value: List[_T], value: List[_T])
-        emitted when items at ``index``es are changed from ``old_value`` to
-        ``value``
+        deprecated alias of ``replaced`` since 0.10.0; it will be removed in
+        0.12.0
     reordered : (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     renamed : (index: int)
@@ -79,16 +80,19 @@ class LayerList(SelectableEventedList[Layer]):
     Notes
     -----
 
-    Note that ``changed`` events are only emitted when an element of the
-    list changes, *not* when the list itself changes (for example when items
-    are added or removed). For example, ``layerlist.append(layer)`` will emit
-    an ``inserted`` event. ``layerlist[idx] = layer`` *will* emit a ``changed``
-    event.
+    Note that ``replaced`` events are only emitted when an element of the
+    list is replaced by another one, *not* when the list itself changes (for
+    example when items are added or removed). For example,
+    ``layerlist.append(layer)`` will emit an ``inserted`` event, whereas
+    ``layerlist[idx] = layer`` *will* emit a ``replaced`` event.
 
-    However, the layerlist does not have a way of detecting when an object in
+    The layerlist also does not have a way of detecting when an object in
     the list is modified in-place. Therefore, although
     ``layerlist[idx].scale = [2, 1, 1]`` changes the *value* of the layer at
-    position ``idx``, a ``changed`` event will not be emitted.
+    position ``idx``, a ``replaced`` event will not be emitted. Such changes
+    are instead forwarded by the layerlist: a callback connected to
+    ``layerlist.events`` receives the layer's own event (here ``scale``) with
+    an added ``index`` attribute giving the position of the layer.
 
     Examples
     --------

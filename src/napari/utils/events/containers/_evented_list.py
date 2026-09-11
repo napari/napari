@@ -32,7 +32,7 @@ from napari.utils.events.containers._typed import (
     Index,
     TypedMutableSequence,
 )
-from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.event import EmitterGroup, Event, RenamedEmitter
 from napari.utils.events.types import SupportsEvents
 
 logger = logging.getLogger(__name__)
@@ -69,10 +69,16 @@ class EventedList(TypedMutableSequence[_T]):
         emitted before an item is moved from ``index`` to ``new_index``
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
+    replaced (index: int, old_value: T, value: T)
+        emitted after the item at ``index`` is replaced by ``value``
+        (i.e. after ``lst[index] = value``), where ``old_value`` is the item
+        that was previously stored at ``index``. Assigning to a slice does
+        not emit ``replaced``: it emits ``removing``/``removed`` and
+        ``inserting``/``inserted`` events for the affected items instead
+        (or one ``replaced`` event per item for extended slices).
     changed (index: int, old_value: T, value: T)
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
+        deprecated alias of ``replaced`` (since 0.10.0, to be removed in
+        0.12.0).
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -95,7 +101,16 @@ class EventedList(TypedMutableSequence[_T]):
             'removed': None,  # Tuple[int, Any] - (idx, value)
             'moving': None,  # Tuple[int, int]
             'moved': None,  # Tuple[Tuple[int, int], Any]
-            'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
+            'replaced': None,  # Tuple[int, Any, Any] - (idx, old, new)
+            'changed': RenamedEmitter(
+                new_name='replaced',
+                message=(
+                    f'{type(self).__name__}.events.changed is deprecated since '
+                    f'0.10.0 and will be removed in 0.12.0. Please use '
+                    f'{type(self).__name__}.events.replaced instead.'
+                ),
+                type_name='changed',
+            ),
             'reordered': None,  # None
         }
 
@@ -144,7 +159,7 @@ class EventedList(TypedMutableSequence[_T]):
             if value is old:
                 return
             super().__setitem__(key, value)
-            self.events.changed(index=key, old_value=old, value=value)
+            self.events.replaced(index=key, old_value=old, value=value)
 
     def _delitem_indices(
         self, key: Index
@@ -338,6 +353,6 @@ class EventedList(TypedMutableSequence[_T]):
         """Reverse list *IN PLACE*."""
         # reimplementing this method to emit a change event
         # If this method were removed, .reverse() would still be available,
-        # it would just emit a "changed" event for each moved index in the list
+        # it would just emit a "replaced" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
