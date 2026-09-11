@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
@@ -26,6 +27,9 @@ _COMMON_ALIASES = {
     'visualize': 'visualise',
     'preferences': 'settings',
 }
+
+
+_history = deque(maxlen=1000)
 
 
 class QCommandPalette(QtW.QWidget):
@@ -413,6 +417,9 @@ class QCommandList(QtW.QListView):
             if _enabled(command, self._app_model_context):
                 score += 101
 
+            if prev_runs := _history.count(command.id):
+                score += 51 + min(prev_runs, 50)
+
             commands.setdefault(command, 0)
             # get the max score between aliases
             commands[command] = max(score, commands[command])
@@ -582,4 +589,6 @@ def _iter_highlight_slices(
 
 def _exec_action(action: CommandRule) -> Any:
     app = get_app_model()
-    return app.commands.execute_command(action.id).result()
+    result = app.commands.execute_command(action.id).result()
+    _history.append(action.id)
+    return result
