@@ -29,7 +29,7 @@ from napari.types import LayerDataType
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events import Event
 from napari.utils.events.event_utils import connect_no_arg
-from napari.utils.geometry import find_nearest_triangle_intersection
+from napari.utils.geometry import iter_all_triangle_intersections
 from napari.utils.misc import StringEnum
 
 if TYPE_CHECKING:
@@ -701,32 +701,28 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     def _iter_values_along_ray(
         self,
-        start_point: np.ndarray | None,
-        end_point: np.ndarray | None,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: list[int],
     ) -> Generator[tuple[float, np.ndarray], None, None]:
-        """Get value and intersection point along a ray.
+        """Get all vertices along a ray in 3D.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
+            End of ray in data coordinates.
         dims_displayed : list of int
-            The indices of the dimensions currently displayed in the Viewer.
+            Displayed dimensions.
 
         Yields
         ------
-        hits : tuple of (value, position)
-            The interpolated surface value and the nD
-            data-space position of the intersection point.
+        hits : tuple of (vertex_index, position)
+            Each tuple contains the index and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
         """
-        if len(dims_displayed) != 3:
-            return
-        if (start_point is None) or (end_point is None):
-            return
-
         start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
             start_point=start_point,
             end_point=end_point,
@@ -737,33 +733,30 @@ class Surface(IntensityVisualizationMixin, Layer):
         mesh_triangles = self._view_vertices[self._view_faces]
 
         # get the triangles intersection
-        intersection_index, intersection = find_nearest_triangle_intersection(
+        for (
+            intersection_index,
+            intersection,
+        ) in iter_all_triangle_intersections(
             ray_position=start_position,
             ray_direction=ray_direction,
             triangles=mesh_triangles,
-        )
-
-        if (
-            intersection_index is None
-            or intersection is None
-            or self._view_vertex_values is None
         ):
-            return
+            # add the full nD coords to intersection
+            intersection_point = start_point.copy()
+            intersection_point[dims_displayed] = intersection
 
-        # add the full nD coords to intersection
-        intersection_point = start_point.copy()
-        intersection_point[dims_displayed] = intersection
+            # calculate the value from the intersection
+            triangle_vertex_indices = self._view_faces[intersection_index]
+            triangle_vertices = self._view_vertices[triangle_vertex_indices]
+            barycentric_coordinates = calculate_barycentric_coordinates(
+                intersection, triangle_vertices
+            )
+            vertex_values = self._view_vertex_values[triangle_vertex_indices]
+            intersection_value = (
+                barycentric_coordinates * vertex_values
+            ).sum()
 
-        # calculate the value from the intersection
-        triangle_vertex_indices = self._view_faces[intersection_index]
-        triangle_vertices = self._view_vertices[triangle_vertex_indices]
-        barycentric_coordinates = calculate_barycentric_coordinates(
-            intersection, triangle_vertices
-        )
-        vertex_values = self._view_vertex_values[triangle_vertex_indices]
-        intersection_value = (barycentric_coordinates * vertex_values).sum()
-
-        yield intersection_value, intersection_point
+            yield intersection_value, intersection_point
 
     def __copy__(self):
         """Create a copy of this layer.

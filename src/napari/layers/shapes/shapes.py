@@ -3022,9 +3022,6 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._slice_input.ndisplay == 3:
-            return None, None
-
         if self._is_moving:
             return self._moving_value
 
