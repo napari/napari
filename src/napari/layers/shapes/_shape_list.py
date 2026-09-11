@@ -1975,12 +1975,11 @@ class ShapeList:
         )
         start_to_intersection = intersection_points - ray_position
         distances = np.linalg.norm(start_to_intersection, axis=1)
-        closest_shape_index = np.argmin(distances)
-        shape = self._mesh.displayed_triangles_to_shape_index[inside][
-            closest_shape_index
-        ]
-        intersection = intersection_points[closest_shape_index]
-        return shape, intersection
+        shape_idx_sorted = np.argsort(distances)
+        for idx in shape_idx_sorted:
+            shape = self._mesh.displayed_triangles_to_shape_index[inside][idx]
+            intersection = intersection_points[idx]
+            yield shape, intersection
 
     def _triangle_intersection(
         self,
