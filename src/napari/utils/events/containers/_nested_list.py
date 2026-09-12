@@ -134,14 +134,10 @@ class NestableEventedList(EventedList[_T]):
         emitted before an item is moved from ``index`` to ``new_index``
     moved (index: Index, new_index: Index, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
-    replaced (index: Index, old_value: T, value: T)
-        emitted after the item at ``index`` is replaced by ``value``, where
-        ``old_value`` is the item that was previously stored at ``index``.
-        Assigning to a slice emits ``removing``/``removed`` and
-        ``inserting``/``inserted`` events instead.
     changed (index: Index, old_value: T, value: T)
-        deprecated alias of ``replaced`` (since 0.10.0, to be removed in
-        0.12.0).
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``
+    changed <OVERLOAD> (index: slice, old_value: list[_T], value: list[_T])
+        emitted when slice at ``index`` is changed from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """

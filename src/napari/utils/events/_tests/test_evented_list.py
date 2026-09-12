@@ -26,17 +26,9 @@ def test_list(request, regular_list):
         # primary interface
         ('insert', (2, 10), ('inserting', 'inserted')),  # create
         ('__getitem__', (2,), ()),  # read
-        ('__setitem__', (2, 3), ('replaced',)),  # update
-        (  # update slice: items are removed, then the new ones inserted
-            '__setitem__',
-            (slice(2), [1, 2]),
-            ('removing', 'removed') * 2 + ('inserting', 'inserted') * 2,
-        ),
-        (  # update empty slice: nothing to remove, new items inserted
-            '__setitem__',
-            (slice(2, 2), [1, 2]),
-            ('inserting', 'inserted') * 2,
-        ),
+        ('__setitem__', (2, 3), ('changed',)),  # update
+        ('__setitem__', (slice(2), [1, 2]), ('changed',)),  # update slice
+        ('__setitem__', (slice(2, 2), [1, 2]), ('changed',)),  # update slice
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
         (
             '__delitem__',
@@ -288,7 +280,7 @@ def test_nested_indexing():
         # primary interface
         ('insert', (0, 10), ('inserting', 'inserted')),
         ('__getitem__', (2,), ()),  # read
-        ('__setitem__', (2, 3), ('replaced',)),  # update
+        ('__setitem__', (2, 3), ('changed',)),  # update
         ('__delitem__', ((),), ('removing', 'removed')),  # delete
         ('__delitem__', ((1,),), ('removing', 'removed')),  # delete
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
@@ -476,47 +468,3 @@ def test_array_like_setitem():
     array = np.array((10, 10))
     evented_list = EventedList([array])
     evented_list[0] = array
-
-
-@pytest.mark.parametrize('cls', [EventedList, NestableEventedList])
-def test_setitem_emits_replaced(cls):
-    """``lst[i] = v`` emits ``replaced`` with the old and new values."""
-    lst = cls(range(5))
-    all_events, replaced = [], []
-    lst.events.connect(all_events.append)
-    lst.events.replaced.connect(replaced.append)
-
-    new = object()
-    lst[2] = new
-    assert lst[2] is new
-    assert [(e.index, e.old_value, e.value) for e in replaced] == [(2, 2, new)]
-    assert [e.type for e in all_events] == ['replaced']
-
-    lst[2] = new  # same object: no-op, no event
-    assert len(replaced) == 1
-
-
-def test_nested_setitem_reemits_replaced():
-    """A child's ``replaced`` bubbles up with the nested index."""
-    lst = NestableEventedList([[0, 1], [2, 3]])
-    events = []
-    lst.events.connect(events.append)
-    lst[(1, 0)] = 99
-    assert [(e.type, e.index) for e in events] == [('replaced', (1, 0))]
-
-
-def test_changed_event_is_deprecated():
-    """``changed`` warns on connect, forwards ``replaced``, and disconnects."""
-    lst = EventedList(range(5))
-    changed = []
-    with pytest.warns(
-        FutureWarning, match='EventedList.events.changed is deprecated'
-    ):
-        lst.events.changed.connect(changed.append)
-
-    lst[0] = 10
-    assert [(e.index, e.old_value, e.value) for e in changed] == [(0, 0, 10)]
-
-    lst.events.changed.disconnect(changed.append)
-    lst[0] = 11
-    assert len(changed) == 1
