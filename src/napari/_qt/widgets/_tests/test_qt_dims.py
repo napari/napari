@@ -361,6 +361,17 @@ def test_last_used_style_property_set_at_creation(qtbot):
     ] == [False, True, False, False]
 
 
+def test_frame_request_that_moves_nothing_keeps_playback_armed(qtbot):
+    dims = Dims(ndim=3, range=((0, 10, 1),) * 3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    dims._play_ready = True
+    view._set_frame(0, dims.current_step[0])
+
+    assert dims._play_ready
+
+
 @pytest.mark.skipif(
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',

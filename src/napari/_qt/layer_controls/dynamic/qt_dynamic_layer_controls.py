@@ -283,8 +283,8 @@ class QtDynamicLayerControls(QFrame):
         self._controls.append(wrapper)
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     @property
     def ndisplay(self) -> int:
@@ -323,10 +323,8 @@ class QtDynamicLayerControls(QFrame):
             control = self.findChild(cls)
             if control is None:
                 continue
-            for label, widget in control.get_widget_controls():
-                set_widgets_enabled_with_opacity(
-                    self, (label, widget), enabled
-                )
+            for widgets in control.get_widget_controls():
+                set_widgets_enabled_with_opacity(self, widgets, enabled)
 
     def _disconnect_child_widget_controls(self, child) -> None:
         disconnect_method = getattr(child, 'disconnect_widget_controls', None)
