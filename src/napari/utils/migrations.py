@@ -78,50 +78,6 @@ def rename_argument(
     return _wrapper
 
 
-def add_deprecated_property(
-    obj: Any,
-    previous_name: str,
-    new_name: str,
-    version: str,
-    since_version: str,
-) -> None:
-    """
-    Adds deprecated property and links to new property name setter and getter.
-
-    Parameters
-    ----------
-    obj:
-        Class instances to add property
-    previous_name : str
-        Name of previous property, its methods must be removed.
-    new_name : str
-        Name of new property, must have its getter (and setter if applicable) implemented.
-    version : str
-        Version where deprecated property will be removed.
-    since_version : str
-        version when new property was added
-    """
-
-    if hasattr(obj, previous_name):
-        raise RuntimeError(f'{previous_name} property already exists.')
-
-    if not hasattr(obj, new_name):
-        raise RuntimeError(f'{new_name} property must exist.')
-
-    name = f'{obj.__name__}.{previous_name}'
-    msg = f'{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}'
-
-    def _getter(instance) -> Any:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
-        return getattr(instance, new_name)
-
-    def _setter(instance, value: Any) -> None:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
-        setattr(instance, new_name, value)
-
-    setattr(obj, previous_name, property(_getter, _setter))
-
-
 def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
     """
     Decorator to deprecate a constructor argument and remove it from the signature.

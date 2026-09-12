@@ -4,7 +4,6 @@ import pytest
 from napari.utils.geometry import (
     bounding_box_to_face_vertices,
     clamp_point_to_bounding_box,
-    distance_between_point_and_line_3d,
     face_coordinate_from_bounding_box,
     find_front_back_face,
     find_nearest_triangle_intersection,
@@ -17,7 +16,6 @@ from napari.utils.geometry import (
     line_in_triangles_3d,
     point_in_quadrilateral_2d,
     project_points_onto_plane,
-    rotation_matrix_from_vectors_2d,
     rotation_matrix_from_vectors_3d,
 )
 
@@ -51,25 +49,6 @@ def test_project_point_to_plane(
 
     np.testing.assert_allclose(projected_point, expected_projected_point)
     np.testing.assert_allclose(distance_to_plane, expected_distances)
-
-
-@pytest.mark.parametrize(
-    ('vec_1', 'vec_2'),
-    [
-        (np.array([10, 0]), np.array([0, 5])),
-        (np.array([0, 5]), np.array([0, 5])),
-        (np.array([0, 5]), np.array([0, -5])),
-    ],
-)
-def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
-    rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
-
-    rotated_1 = rotation_matrix.dot(vec_1)
-    unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)
-
-    unit_vec_2 = vec_2 / np.linalg.norm(vec_2)
-
-    np.testing.assert_allclose(unit_rotated_1, unit_vec_2)
 
 
 @pytest.mark.parametrize(
@@ -458,27 +437,6 @@ def test_intersect_line_with_axis_aligned_bounding_box_3d(
         line_position, line_direction, bounding_box, face_normal
     )
     np.testing.assert_allclose(expected, result)
-
-
-def test_distance_between_point_and_line_3d():
-    """Test that distance between points and lines are correctly computed."""
-    line_position = np.random.random(size=3)
-    line_direction = np.array([0, 0, 1])
-
-    # find a point a random distance away on the line
-    point_on_line = line_position + np.random.random(1) * line_direction
-
-    # find a point a fixed distance from the point in a direction perpendicular
-    # to the line direction.
-    expected_distance = np.random.random(1)
-    point = point_on_line + expected_distance * np.array([0, 1, 0])
-
-    # calculate distance and check that it is correct
-    distance = distance_between_point_and_line_3d(
-        point, line_position, line_direction
-    )
-
-    np.testing.assert_allclose(distance, expected_distance)
 
 
 def test_line_in_triangles_3d():

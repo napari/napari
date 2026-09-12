@@ -417,40 +417,6 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     raise NotImplementedError
 
 
-def get_current_properties(
-    properties: dict[str, np.ndarray],
-    choices: dict[str, np.ndarray],
-    num_data: int = 0,
-) -> dict[str, Any]:
-    """Get the current property values from the properties or choices.
-
-    Parameters
-    ----------
-    properties : dict[str, np.ndarray]
-        The property values.
-    choices : dict[str, np.ndarray]
-        The property value choices.
-    num_data : int
-        The length of data that the properties represent (e.g. number of points).
-
-    Returns
-    -------
-    dict[str, Any]
-        A dictionary where the key is the property name and the value is the current
-        value of that property.
-    """
-    current_properties = {}
-    if num_data > 0:
-        current_properties = {
-            k: np.asarray([v[-1]]) for k, v in properties.items()
-        }
-    elif num_data == 0 and len(choices) > 0:
-        current_properties = {
-            k: np.asarray([v[0]]) for k, v in choices.items()
-        }
-    return current_properties
-
-
 def dataframe_to_properties(
     dataframe: pd.DataFrame,
 ) -> dict[str, np.ndarray]:

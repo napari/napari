@@ -52,15 +52,6 @@ def _provide_qt_viewer() -> QtViewer | None:
     return None
 
 
-def _provide_qt_viewer_or_raise(msg: str = '') -> QtViewer:
-    qt_viewer = _provide_qt_viewer()
-    if qt_viewer:
-        return qt_viewer
-    if msg:
-        msg = ' ' + msg
-    raise RuntimeError(f'No current `QtViewer` found.{msg}')
-
-
 def _provide_window() -> Window | None:
     from napari._qt.qt_main_window import _QtMainWindow
 
