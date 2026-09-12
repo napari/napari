@@ -16,18 +16,6 @@ from napari.plugins import _npe2
 
 PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
 PLUGIN_DISPLAY_NAME = 'My Plugin'  # this matches the sample_manifest
-MANIFEST_PATH = Path(__file__).parent / '_sample_manifest.yaml'
-
-
-@pytest.fixture
-def mock_pm(npe2pm: 'TestPluginManager'):
-    from napari.plugins import _initialize_plugins
-
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=MANIFEST_PATH):
-        yield npe2pm
 
 
 def test_read_no_stack(mock_pm: 'TestPluginManager'):

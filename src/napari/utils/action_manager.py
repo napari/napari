@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
     from typing import Protocol
 
+    from app_model.types import KeyBinding
+
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
@@ -235,7 +237,7 @@ class ActionManager:
         until = getattr(button, 'destroyed', None)
         self.events.shortcut_changed.connect(_update_tt, until=until)
 
-    def bind_shortcut(self, name: str, shortcut: str) -> None:
+    def bind_shortcut(self, name: str, shortcut: KeyBinding | str) -> None:
         """
         bind shortcut `shortcut` to trigger action `name`
 
@@ -243,7 +245,7 @@ class ActionManager:
         ----------
         name : str
             name of the corresponding action in the form ``packagename:name``
-        shortcut : str
+        shortcut : KeyBinding | str
             Shortcut to assign to this action use dash as separator. See
             `Shortcut` for known modifiers.
 
