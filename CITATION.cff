@@ -619,5 +619,9 @@ authors:
   family-names: Nagineni
   alias: VenkateswarluNagineni
   affiliation: Texas A&M University
+- given-names: Aditya
+  family-names: Nikam
+  alias: adityaanikam
+  affiliation: Pune University
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
