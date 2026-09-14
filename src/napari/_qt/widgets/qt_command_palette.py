@@ -493,8 +493,7 @@ def _iter_matched_actions(
 
         order_score = fuzz.WRatio(s1, s2)
 
-        # Weighted combination
-        score = 0.7 * token_score + 0.3 * order_score
+        score = max(token_score, order_score)
 
         return score if score_cutoff and score >= score_cutoff else 0
 
