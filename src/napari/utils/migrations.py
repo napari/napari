@@ -109,6 +109,10 @@ class RenamedProperty(property):
     @property
     def name(self) -> str:
         """Alias name."""
+        if self._name is None:
+            raise RuntimeError(
+                'RenamedProperty has not been assigned to a class yet.'
+            )
         return self._name
 
     @property
@@ -155,17 +159,17 @@ class RenamedProperty(property):
             f'{schedule} Please use {new_name} instead.'
         )
 
-    def _get_value(self, instance):
+    def _get_value(self, instance: object) -> object:
         """Warn and read the target attribute."""
         warnings.warn(self.message, self._category, stacklevel=2)
         return getattr(self._resolve_parent(instance), self._target_name)
 
-    def _set_value(self, instance, value):
+    def _set_value(self, instance: object, value: object) -> None:
         """Warn and assign to the target attribute."""
         warnings.warn(self.message, self._category, stacklevel=2)
         setattr(self._resolve_parent(instance), self._target_name, value)
 
-    def _resolve_parent(self, instance):
+    def _resolve_parent(self, instance: object) -> object:
         """Resolve the object that holds the final attribute in the target path."""
         target = instance
         for part in self._parent_path:
