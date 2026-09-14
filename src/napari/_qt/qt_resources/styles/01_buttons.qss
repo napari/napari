@@ -284,26 +284,6 @@ QtModePushButton[mode="histogram"]:disabled {
   background-color: {{ darken(foreground, 20) }};
 }
 
-QtModePushButton[mode="extract_multiscale"] {
-    image: url("theme_{{ id }}:/extract_multiscale.svg");
-}
-
-QtModePushButton[mode="extract_multiscale"] {
-    image: url("theme_{{ id }}:/extract_multiscale.svg");
-}
-
-QtModePushButton[mode="extract_multiscale"]:hover:!checked {
-  background-color: {{ highlight }};
-}
-
-QtModePushButton[mode="extract_multiscale"]:checked {
-  background-color: {{ current }};
-}
-
-QtModePushButton[mode="extract_multiscale"]:disabled {
-  background-color: {{ darken(foreground, 20) }};
-}
-
 QtModePushButton[mode="shuffle"] {
    image: url("theme_{{ id }}:/shuffle.svg");
 }

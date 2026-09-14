@@ -316,8 +316,8 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         ],
         enablement=(
             LLSCK.all_selected_layers_multiscale_and_same_locked_data_level
+            & (LLSCK.num_selected_layers == 1)
         ),
-        tooltip='Requires all multiscale layers and same locked resolution levels',
     ),
 ]
 

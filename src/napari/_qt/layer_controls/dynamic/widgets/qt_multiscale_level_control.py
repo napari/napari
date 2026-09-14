@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import numpy as np
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QWidget
+from typing import TYPE_CHECKING
 
-from napari._app_model import get_app_model
+import numpy as np
+from qtpy.QtWidgets import QComboBox, QWidget
+
 from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari._qt.widgets.qt_mode_buttons import QtModePushButton
-from napari.layers import Image, Labels
 from napari.utils.misc import human_readable_size
+
+if TYPE_CHECKING:
+    from napari.layers import Image, Labels
 
 
 def _format_level_label(
@@ -66,23 +68,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
     def __init__(
         self, layers: list[Image | Labels], parent: QWidget | None = None
     ) -> None:
-        super().__init__(layers, parent)  # type: ignore
+        super().__init__(layers, parent)
 
-        self.resolution_row = QWidget()
-        resolution_layout = QHBoxLayout(self.resolution_row)
-        resolution_layout.setContentsMargins(0, 0, 0, 0)
-        resolution_layout.setSpacing(2)
-
-        self.level_extraction_button = QtModePushButton(
-            layer=layers[0],
-            button_name='extract_multiscale',
-            slot=self._on_extract_data_level_button_pressed,
-        )
         self.level_combobox = QComboBox(parent)
-
-        resolution_layout.addWidget(self.level_combobox)
-        resolution_layout.addWidget(self.level_extraction_button)
-
         self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
@@ -105,11 +93,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                     self._update_level_labels
                 )  # TODO: should this connection also happen when data is not multiscale
                 layer.events.set_data.connect(self._update_auto_label)
-            self.level_extraction_button.show()
             self.level_combobox.show()
             self.level_label.show()
         else:
-            self.level_extraction_button.hide()
             self.level_combobox.hide()
             self.level_label.hide()
 
@@ -137,7 +123,6 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             else:
                 self.level_combobox.setCurrentIndex(0)
 
-            self._update_extraction_button_state()
             self._update_auto_label()
 
     def _update_auto_label(self) -> None:
@@ -159,30 +144,6 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         for layer in self._layers:
             layer.locked_data_level = level
 
-        self._update_auto_label()
-
-    def _update_extraction_button_state(self) -> None:
-        """Update the extraction button to enabled or disabled based on
-        the layer's locked data levels.
-        """
-        locked_levels = {
-            getattr(layer, 'locked_data_level', None) for layer in self._layers
-        }
-        if (
-            bool(self._layers)
-            and None not in locked_levels
-            and len(locked_levels) == 1
-        ):
-            self.level_extraction_button.setEnabled(True)
-            self.level_extraction_button.setToolTip(
-                'Extract locked resolution level to new layer'
-            )
-        else:
-            self.level_extraction_button.setEnabled(False)
-            self.level_extraction_button.setToolTip(
-                'All selected layers must have the same locked resolution to extract level'
-            )
-
     def _on_locked_data_level_change(self) -> None:
         """Sync the combobox when locked_data_level is set programmatically."""
         locked = self._layers[0].locked_data_level
@@ -191,14 +152,6 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
                 self.level_combobox.setCurrentIndex(locked + 1)
             else:
                 self.level_combobox.setCurrentIndex(0)
-        self._update_extraction_button_state()
-
-    def _on_extract_data_level_button_pressed(self) -> None:
-        """Extract the data levels of the layers to new layers using the _layer_actions methods"""
-        get_app_model().commands.execute_command(
-            'napari.layer.extract_multiscale_level',
-            level=self.level_combobox.currentData(),
-        )
 
     def get_widget_controls(
         self,
@@ -210,4 +163,4 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
             Single-element list containing the resolution label and combobox.
         """
-        return [(self.level_label, self.resolution_row)]
+        return [(self.level_label, self.level_combobox)]
