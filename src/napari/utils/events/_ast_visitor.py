@@ -27,7 +27,7 @@ class FunctionDependencies:
         )
 
 
-def attribute_path(node: ast.Attribute | ast.Name) -> str:
+def attribute_path(node: ast.expr) -> str | None:
     parts = []
     current: ast.expr = node
 
@@ -39,7 +39,7 @@ def attribute_path(node: ast.Attribute | ast.Name) -> str:
         parts.append(current.id)
         return '.'.join(reversed(parts))
 
-    raise ValueError('Unexpected node type')
+    return None
 
 
 class DependencyVisitor(ast.NodeVisitor):
@@ -58,22 +58,38 @@ class DependencyVisitor(ast.NodeVisitor):
         self.attributes: set[str] = set()
         self.names: set[str] = set()
 
+    def visit_Call(self, node: ast.Call) -> None:
+        if isinstance(node.func, ast.Attribute):
+            # For `self.value.copy()`, visit `self.value` but not `.copy`.
+            self.visit(node.func.value)
+        else:
+            # Preserve bare calls such as `tuple(...)` and `round(...)`.
+            self.visit(node.func)
+
+        for argument in node.args:
+            self.visit(argument)
+
+        for keyword in node.keywords:
+            self.visit(keyword.value)
+
     def visit_Attribute(self, node: ast.Attribute) -> None:
         path = attribute_path(node)
         if not isinstance(node.ctx, ast.Load):
             return
-        name, tail = path.split('.', 1)
-        if name in self.parameters:
-            self.attributes.add(tail)
-        elif (
-            name in self.globals
-            or name in self.nonlocals
-            or name in self.builtins
-        ):
-            self.names.add(name)
-        else:
-            raise ValueError(f'Unexpected attribute access: {path}')
-        return  # Do not also report the inner self.b separately
+        if path:
+            name, tail = path.split('.', 1)
+            if name in self.parameters:
+                self.attributes.add(tail)
+                return
+            if (
+                name in self.globals
+                or name in self.nonlocals
+                or name in self.builtins
+            ):
+                self.names.add(name)
+                return
+
+        self.generic_visit(node)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         for el in node.body:

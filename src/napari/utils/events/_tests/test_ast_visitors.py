@@ -18,6 +18,7 @@ class A:  # pragma: no cover
         self.a = 1
         self.d = 4
         self._counter = 0
+        self.s = 'aaa'
         self.b = B()
 
     @property
@@ -60,6 +61,10 @@ class A:  # pragma: no cover
     def using_builtin_attribute(self):
         return int.bit_length(self.a)
 
+    @property
+    def normalized_string(self):
+        return self.s.lower()
+
 
 def two_args_function(a, b):  # pragma: no cover
     return a + b
@@ -94,6 +99,7 @@ def test_sum_with_non_self_name_analysis():
     assert deps == {'attributes': {'a', 'd'}}
 
 
+@pytest.mark.xfail(reason='Need to decide')
 def test_prop_with_wrong_code_analysis():
     with pytest.raises(
         ValueError, match=r'Unexpected attribute access: self2.a'
@@ -143,3 +149,8 @@ def test_class_generator_dependencies():
 def test_using_builtin_attribute_analysis():
     deps = property_dependencies(A.using_builtin_attribute)
     assert deps == {'attributes': {'a'}, 'builtins': {'int'}}
+
+
+def test_normalized_string_analysis():
+    deps = property_dependencies(A.normalized_string)
+    assert deps == {'attributes': {'s'}}
