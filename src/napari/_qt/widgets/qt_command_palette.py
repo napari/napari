@@ -361,28 +361,27 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
-        row = 0
+        row = -1
         for row, action in enumerate(self.iter_top_hits(input_text)):
-            self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
-                self._current_max_index = row
+                # we hit the end of available row widgets
                 break
-            lw.set_command(action)
-            if _enabled(action, self._app_model_context):
-                lw.setEnabled(True)
-                lw.set_text_colors(input_text, color=self._match_color)
-            else:
-                lw.setDisabled(True)
 
+            self.setRowHidden(row, False)
+            lw.set_command(action)
+            lw.set_text_colors(input_text, color=self._match_color)
+            lw.setEnabled(_enabled(action, self._app_model_context))
+
+            # we don't want to show more than these lines
             if row >= max_matches:
-                self._current_max_index = max_matches
                 break
-        else:
-            # if the loop completes without break
-            self._current_max_index = row
-            for r in range(row, max_matches):
-                self.setRowHidden(r, True)
+
+        self._current_max_index = row
+
+        # remove all remaining rows
+        for r in range(row + 1, max_matches):
+            self.setRowHidden(r, True)
         self.update_selection()
         return
 
@@ -408,9 +407,6 @@ class QCommandList(QtW.QListView):
         for score, command in _iter_matched_actions(
             input_text, name_to_command
         ):
-            if score == 0:
-                continue
-
             if _enabled(command, self._app_model_context):
                 score += 101
 
@@ -478,8 +474,6 @@ def _iter_matched_actions(
             name = name.lower()
             if all(word in name for word in words):
                 yield 100, command
-            else:
-                yield 0, command
         return
 
     # fuzzy finding
