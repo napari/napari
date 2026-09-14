@@ -218,9 +218,9 @@ def rgb_to_luminance(
     if rgb.shape[-1] == 3:
         return rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
     if rgb.shape[-1] == 4:
-        return (
-            rgb[..., :3]
-            @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
-            * rgb[..., 4]
+        luminance = rgb[..., :3] @ np.array(
+            [0.2126, 0.7152, 0.0722], dtype=np.float32
         )
+        # scale by alpha
+        return luminance * rgb[..., 3]
     raise ValueError('can only convert rgb or rgba')
