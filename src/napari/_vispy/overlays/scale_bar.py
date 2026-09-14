@@ -86,10 +86,10 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             unit = pint.get_application_registry()('dimensionless')
         self._unit = unit * 1  # convert unit to quantity
-        self._on_size_or_zoom_change(force=True)
+        self._on_size_or_zoom_change()
 
     def _on_font_size_change(self):
-        self._on_size_or_zoom_change(force=True)
+        self._on_size_or_zoom_change()
 
     def _calculate_best_length(
         self, desired_length: float
@@ -144,7 +144,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
-    def _on_size_or_zoom_change(self, *, force: bool = False):
+    def _on_size_or_zoom_change(self):
         """Update length based on scale bar size and zoom."""
 
         scale = 1 / self.viewer.scene.camera.zoom
