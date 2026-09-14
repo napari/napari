@@ -291,6 +291,7 @@ class EventEmitter:
 
         # used to detect emitter loops
         self._emitting = False
+        self._source = lambda: None
         self.source = source
         self.default_args = {}
         if type_name is not None:
@@ -301,6 +302,9 @@ class EventEmitter:
 
         self._ignore_callback_errors: bool = False  # True
         self.print_callback_errors = 'reminders'  # 'reminders'
+
+    def _on_source_change(self):
+        pass
 
     @property
     def ignore_callback_errors(self) -> bool:
@@ -360,6 +364,7 @@ class EventEmitter:
     @source.setter
     def source(self, s):
         self._source = None if s is None else weakref.ref(s)
+        self._on_source_change()
 
     def _is_core_callback(self, callback: CallbackRef | Callback, core: str):
         """
@@ -858,25 +863,21 @@ class WarningEmitter(EventEmitter):
         self._warned = True
 
 
-class RenamedEmitter(WarningEmitter):
-    """
-    Warning emitter to be used when an attribute was renamed or moved to a composition object.
-    It will connect to the new event once the callback is connected to the old one.
-    It will also warn the user that the attribute was renamed.
+class ChildrenEmitterMixin:
+    """Mixin to provide implementation for reemit of event based on children objects"""
 
-    Intermediate attributes in the target path may be replaced, but must
-    always resolve to objects while listeners are connected. Assigning None
-    to an intermediate attribute is not supported.
-    """
+    source: object
 
     def __init__(
         self,
-        new_name: str,
         *args,
+        source_path: str,
+        current_name: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        *self._new_name_path, self._new_name = new_name.split('.')
+        *self._source_path, self._source_attr = source_path.split('.')
+        self._current_name = current_name
         self._target_emitter: Callable[[], EventEmitter | None] | None = None
         # Entries correspond to path components; None means no replacement event.
         self._replacement_emitters: list[
@@ -887,12 +888,19 @@ class RenamedEmitter(WarningEmitter):
         """Disconnect the target and replacement events from a path index onward."""
         if self._target_emitter is not None:
             if (emitter := self._target_emitter()) is not None:
-                emitter.disconnect(self)
+                emitter.disconnect(self._trigger_reemit)
             self._target_emitter = None
         for reference in self._replacement_emitters[index:]:
             if reference is not None and (emitter := reference()) is not None:
                 emitter.disconnect(self._on_parent_replaced)
         del self._replacement_emitters[index:]
+
+    def _trigger_reemit(self, event=None) -> None:
+        if self._current_name is None:
+            self(event) if event is not None else self()
+        else:
+            value = getattr(self.source, self._current_name)
+            self(value=value)
 
     def _on_parent_replaced(self) -> None:
         """Reconnect and notify listeners without comparing or caching values.
@@ -901,11 +909,7 @@ class RenamedEmitter(WarningEmitter):
         event without a value payload.
         """
         self._reconnect_emitter()
-        target = self.source
-        for attr in self._new_name_path:
-            target = getattr(target, attr)
-        value = getattr(target, self._new_name)
-        self(value=value)
+        self._trigger_reemit()
 
     def _reconnect_emitter(self) -> None:
         """Preserve matching path connections and rebuild changed downstream ones.
@@ -916,10 +920,10 @@ class RenamedEmitter(WarningEmitter):
         target = self.source
         if target is None:
             raise RuntimeError(
-                f'Cannot connect to renamed emitter {self._new_name} because source is None'
+                f'Cannot connect to renamed emitter {self._source_attr} because source is None'
             )
         for index, (attr, emitter_reference) in enumerate(
-            zip(self._new_name_path, self._replacement_emitters, strict=False)
+            zip(self._source_path, self._replacement_emitters, strict=False)
         ):
             # check if any object on path has been replaced or removed, and disconnect the suffix if so.
             emitter: EventEmitter | None = getattr(
@@ -940,7 +944,7 @@ class RenamedEmitter(WarningEmitter):
 
         index = len(self._replacement_emitters)
 
-        for attr in self._new_name_path[index:]:
+        for attr in self._source_path[index:]:
             # Try to rebuild the path to the renamed event, connecting to any replacement events along the way.
             emitter = getattr(getattr(target, 'events', None), attr, None)
             if emitter is None:
@@ -951,7 +955,7 @@ class RenamedEmitter(WarningEmitter):
                 ):
                     warnings.warn(
                         f'Cannot automatically reconnect renamed emitter '
-                        f'{self._new_name}: {type(target).__name__}.{attr} '
+                        f'{self._source_attr}: {type(target).__name__}.{attr} '
                         f'has no replacement event. Call _reconnect_emitter() '
                         f'after replacing it.',
                         UserWarning,
@@ -964,16 +968,44 @@ class RenamedEmitter(WarningEmitter):
                 self._replacement_emitters.append(None)
             target = getattr(target, attr)
 
-        new_emitter: EventEmitter = getattr(target.events, self._new_name)
+        new_emitter: EventEmitter = getattr(target.events, self._source_attr)
         if (
             self._target_emitter is not None
             and (target_emitter := self._target_emitter()) is not None
         ):
             if target_emitter is new_emitter:
                 return
-            target_emitter.disconnect(self)
-        new_emitter.connect(self)
+            target_emitter.disconnect(self._trigger_reemit)
+        new_emitter.connect(self._trigger_reemit)
         self._target_emitter = weakref.ref(new_emitter)
+
+    # def __call__(self, value: Any) -> None:
+    #     raise NotImplementedError
+
+
+class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
+    """
+    Warning emitter to be used when an attribute was renamed or moved to a composition object.
+    It will connect to the new event once the callback is connected to the old one.
+    It will also warn the user that the attribute was renamed.
+
+    Intermediate attributes in the target path may be replaced, but must
+    always resolve to objects while listeners are connected. Assigning None
+    to an intermediate attribute is not supported.
+    """
+
+    def _trigger_reemit(self, event=None) -> None:
+        if self._current_name is None:
+            if event is not None:
+                self(event)
+            else:
+                target = self.source
+                for el in self._source_path:
+                    target = getattr(target, el)
+                self(value=getattr(target, self._source_attr))
+        else:
+            value = getattr(self.source, self._current_name)
+            self(value=value)
 
     def connect(self, cb, *args, **kwargs) -> None:
         if self._target_emitter is None:
@@ -986,6 +1018,65 @@ class RenamedEmitter(WarningEmitter):
         super().disconnect(callback)
         if not self.callbacks:
             self._disconnect_from(0)
+
+
+class SubDependantEmitter(ChildrenEmitterMixin, EventEmitter):
+    pass
+
+
+class DependantEmitter(EventEmitter):
+    """
+    Warning emitter to be used when an attribute was renamed or moved to a composition object.
+    It will connect to the new event once the callback is connected to the old one.
+    It will also warn the user that the attribute was renamed.
+
+    Intermediate attributes in the target path may be replaced, but must
+    always resolve to objects while listeners are connected. Assigning None
+    to an intermediate attribute is not supported.
+    """
+
+    def __init__(
+        self, *args, sources_list: list[str], property_name: str, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self._property_name = property_name
+        self._sub_emitters = [
+            SubDependantEmitter(
+                source=self.source,
+                source_path=source_path,
+                type_name=source_path,
+            )
+            for source_path in sources_list
+        ]
+        for sub_emitter in self._sub_emitters:
+            sub_emitter.connect(self._recalculate_and_emit)
+        self._connected = False
+
+    def _on_source_change(self):
+        for sub_emitter in getattr(
+            self, '_sub_emitters', []
+        ):  # in case __init__ hasn't finished yet
+            sub_emitter.source = self.source
+
+    def _recalculate_and_emit(self, event=None):
+        value = getattr(self.source, self._property_name)
+        self(value=value)
+
+    def connect(self, cb, *args, **kwargs) -> None:
+        if not self._connected:
+            for sub_emitter in self._sub_emitters:
+                sub_emitter._reconnect_emitter()
+            self._connected = True
+        super().connect(cb, *args, **kwargs)
+
+    def disconnect(
+        self, callback: Callback | CallbackRef | object | None = None
+    ) -> None:
+        super().disconnect(callback)
+        if not self.callbacks:
+            for sub_emitter in self._sub_emitters:
+                sub_emitter._disconnect_from(0)
+            self._connected = False
 
 
 class EmitterGroup(EventEmitter):
