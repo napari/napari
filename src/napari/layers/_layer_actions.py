@@ -285,9 +285,16 @@ def extract_multiscale_level(
         layer_state.pop('data', None)
         layer_state['name'] = f'{layer.name}-level({extracting_data_level})'
         layer_state['multiscale'] = False
-        layer_state['scale'] = (
-            np.asarray(layer_state['scale'])
-            * layer.downsample_factors[extracting_data_level]
+
+        downsample_factor = np.asarray(
+            layer.downsample_factors[extracting_data_level]
+        )
+        layer_scale = np.asarray(layer_state['scale'])
+
+        layer_state['scale'] = (layer_scale * downsample_factor).tolist()
+        layer_state['translate'] = (
+            np.asarray(layer_state['translate'])
+            + (downsample_factor - 1) / 2 * layer_scale
         ).tolist()
 
         if isinstance(layer, Image):

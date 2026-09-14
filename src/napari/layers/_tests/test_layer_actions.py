@@ -512,8 +512,16 @@ def test_zarr_projection_is_lazy(mode):
 @pytest.mark.parametrize(('level', 'expected_level'), [(0, 0), (None, 1)])
 def test_extract_multiscale_level(layer_type, level, expected_level):
     layer_name = 'test_layer'
-    data = (np.zeros((16, 16), dtype=int), np.zeros((8, 8), dtype=int))
-    layer = layer_type(data, name=layer_name)
+    data = (
+        np.zeros((16, 16, 16), dtype=int),
+        np.zeros((8, 8, 8), dtype=int),
+    )
+    layer = layer_type(
+        data,
+        name=layer_name,
+        scale=[2, 3, 4],
+        translate=[10, 20, 30],
+    )
     layer.data_level = 1
 
     new_layer = extract_multiscale_level((layer,), level=level)[0]
@@ -525,6 +533,13 @@ def test_extract_multiscale_level(layer_type, level, expected_level):
     np.testing.assert_array_equal(
         new_layer.scale,
         np.asarray(layer.scale) * layer.downsample_factors[expected_level],
+    )
+    np.testing.assert_array_equal(
+        new_layer.translate,
+        np.asarray(layer.translate)
+        + (layer.downsample_factors[expected_level] - 1)
+        / 2
+        * np.asarray(layer.scale),
     )
 
 
