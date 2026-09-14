@@ -1021,16 +1021,14 @@ def test_renamed_property_in_parent_class_used_in_subclass():
             due_date='fall 2027',
         )
 
-    with pytest.warns(FutureWarning, match='The property b is renamed to a'):
+    class Sub(Base):
+        @property
+        def c(self):
+            return self.b + 2
 
-        class Sub(Base):
-            @property
-            def c(self):
-                return self.b + 2
-
-            @c.setter
-            def c(self, value):
-                self.b = value - 2
+        @c.setter
+        def c(self, value):
+            self.b = value - 2
 
     s = Sub()
     mock = Mock()
@@ -1044,36 +1042,91 @@ def test_renamed_property_in_parent_class_used_in_subclass():
     mock.assert_called_once()
 
 
-@pytest.mark.xfail(reason='need to be fixed', strict=True)
 def test_renamed_nested_dependency_tracks_child_replacement():
     class Child(EventedModel):
         value: int = 1
         value2: int = 2
 
-    with pytest.warns(
-        FutureWarning, match="Cannot fully track dependencies of 'doubled'"
-    ):
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+        old_value = RenamedProperty(
+            new_name='child.value',
+            since_version='0.9.2',
+        )
 
-        class Model(EventedModel):
-            child: Child = Field(default_factory=Child)
-            old_value = RenamedProperty(
-                new_name='child.value',
-                since_version='0.9.2',
-            )
+        @property
+        def doubled(self):
+            return self.old_value * 2
 
-            @property
-            def doubled(self):
-                return self.old_value * 2
+        @doubled.setter
+        def doubled(self, value):
+            self.old_value = value // 2
 
     model = Model()
     callback = Mock()
     model.events.doubled.connect(callback)
 
-    # with pytest.warns(FutureWarning, match='Model.old_value is deprecated since 0.9.2'):
-    model.child.value = 3
-
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child.value = 3
     callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6
     callback.reset_mock()
 
     model.child.value2 = 3
+    callback.assert_not_called()
+
+    previous_child = model.child
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child = Child(value=4)
     callback.assert_called_once()
+    assert callback.call_args.args[0].value == 8
+    callback.reset_mock()
+
+    previous_child.value = 5
+    callback.assert_not_called()
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child.value = 6
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 12
+    callback.reset_mock()
+
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.doubled = 16
+    assert (
+        callback.call_count == 2
+    )  # TODO check if we could reduce this to 1 call
+    assert callback.call_args.args[0].value == 16
+    assert model.child.value == 8
+
+
+@pytest.mark.parametrize('group_listener', [False])
+def test_nested_dependency_is_lazy_and_batched(group_listener):
+
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+        offset: int = 0
+        old_value = RenamedProperty(
+            new_name='child.value', since_version='0.9'
+        )
+
+        @property
+        def total(self):
+            return self.old_value + self.offset
+
+    model = Model()
+    assert not model.child.events.value.callbacks
+    callback = Mock()
+    emitter = model.events if group_listener else model.events.total
+    emitter.connect(callback)
+    assert model.child.events.value.callbacks
+    with pytest.warns(FutureWarning, match='old_value is deprecated'):
+        model.child.value = 3
+    callback.assert_called_once()
+    emitter.disconnect(callback)
+    assert not model.child.events.value.callbacks
+    # Internal subscriptions must not consume the public alias warning.
+    with pytest.warns(FutureWarning, match='events.old_value is deprecated'):
+        model.events.old_value.connect(Mock())
