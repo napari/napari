@@ -204,7 +204,7 @@ def _patched_viewer_new():
         if not kwargs and not args:
             viewer = current_viewer()
             if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay  # pyrefly: ignore
+                viewer.dims.ndisplay = ndisplay  # pyrefly: ignore [missing-attribute]
             if viewer is not None:
                 Viewer.__new__ = _saved_new
                 return viewer

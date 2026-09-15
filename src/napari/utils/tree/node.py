@@ -61,7 +61,7 @@ class Node:
         item = self
         indices: list[int] = []
         while item.parent is not None:
-            indices.insert(0, item.index_in_parent())  # pyrefly: ignore
+            indices.insert(0, item.index_in_parent())  # pyrefly: ignore [bad-argument-type]
             item = item.parent
         return tuple(indices)
 
