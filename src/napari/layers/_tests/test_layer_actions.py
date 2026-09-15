@@ -9,6 +9,7 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _extract_multiscale_level,
     _extract_multiscale_level_from_selection,
     _hide_selected,
     _hide_unselected,
@@ -21,7 +22,6 @@ from napari.layers._layer_actions import (
     _split_stack,
     _toggle_lock,
     _toggle_visibility,
-    _extract_multiscale_level,
 )
 from napari.utils.transforms import Affine
 
