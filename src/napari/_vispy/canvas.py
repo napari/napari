@@ -24,6 +24,7 @@ from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
+from napari.layers import Labels
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
@@ -387,35 +388,66 @@ class VispyCanvas:
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
+    def _disconnect_labels_cursor(self, layer: Labels) -> None:
+        # on layer init this might not exist yet
+        if brush_circle := layer._overlays.get('brush_circle', None):
+            brush_circle.visible = False
+        layer.events.mode.disconnect(self._on_cursor)
+        layer.events.brush_size.disconnect(self._on_cursor)
+        layer.events.brush_size_is_canvas.disconnect(self._on_cursor)
+
+    def _connect_labels_cursor(self, layer: Labels) -> None:
+        layer.events.brush_size.connect(self._on_cursor)
+        layer.events.brush_size_is_canvas.connect(self._on_cursor)
+
     def _on_active_layer_change(self, event=None) -> None:
         """Track the active layer and rewire its mode event to refresh the cursor."""
         # at this point, self._active_layer holds the *previously* active layer;
         # we know that's changed so we make its overlays invisible and disconnect
         # its events.
         if self._active_layer is not None:
-            if brush_overlay := self._active_layer._overlays.get(
-                'brush_circle', None
-            ):
-                brush_overlay.visible = False
             self._active_layer.events.mode.disconnect(self._on_cursor)
-            if hasattr(self._active_layer, 'brush_size'):
-                self._active_layer.events.brush_size.disconnect(
-                    self._on_cursor
-                )
-                self._active_layer.events.brush_size_is_canvas.disconnect(
-                    self._on_cursor
-                )
+            if isinstance(self._active_layer, Labels):
+                self._disconnect_labels_cursor(self._active_layer)
         # Now we update self._active_layer and wire its mode changes
         # to the cursor state
         self._active_layer = self.viewer.layers.selection.active
         if self._active_layer is not None:
             self._active_layer.events.mode.connect(self._on_cursor)
-            if hasattr(self._active_layer, 'brush_size'):
-                self._active_layer.events.brush_size.connect(self._on_cursor)
-                self._active_layer.events.brush_size_is_canvas.connect(
-                    self._on_cursor
-                )
+            if isinstance(self._active_layer, Labels):
+                self._connect_labels_cursor(self._active_layer)
+
         self._on_cursor()
+
+    def _update_labels_brush_and_get_cursor(
+        self, layer: Labels, cursor: str
+    ) -> QCursor | Qt.CursorShape:
+        # on layer init this might not exist yet
+        if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
+            return self.cursor
+
+        if cursor != 'circle':
+            brush_circle.visible = False
+            return QtCursorVisual[cursor].value
+
+        if layer.brush_size_is_canvas:
+            size = layer.brush_size
+        else:
+            size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+
+        # if too big or small, show a normal cursor instead
+        if size < 8 or size > (min(*self.size) - 4):
+            brush_circle.visible = False
+            qt_cursor = QtCursorVisual['standard'].value
+        elif layer._is_resizing_brush:
+            # brush is being resized: also show standard cursor
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual['standard'].value
+        else:
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.blank()
+
+        return qt_cursor
 
     def _on_cursor(self) -> None:
         """Create a QCursor based on the active layer mode and brush overlay."""
@@ -425,35 +457,11 @@ class VispyCanvas:
             return
 
         cursor = get_cursor_style(layer)
-        brush_overlay = layer._overlays.get('brush_circle', None)
-        if cursor == 'circle':
-            if brush_overlay is None:
-                raise RuntimeError('unreachable')
-            if layer.brush_size_is_canvas:
-                size = layer.brush_size
-            else:
-                size = layer._get_brush_size_canvas(
-                    self.viewer.scene.camera.zoom
-                )
-            # make sure the circle fits within the current canvas
-            if size < 8 or size > (min(*self.size) - 4):
-                brush_overlay.visible = False
-                self.cursor = QtCursorVisual['standard'].value
-            elif layer._is_resizing_brush:
-                # brush is being resized: show standard cursor, keep circle
-                brush_overlay.visible = True
-                self.cursor = QtCursorVisual['standard'].value
-            else:
-                brush_overlay.visible = True
-                self.cursor = QtCursorVisual.blank()
-
-        elif cursor == 'crosshair':
-            if brush_overlay:
-                brush_overlay.visible = False
-            self.cursor = QtCursorVisual.crosshair()
+        if isinstance(layer, Labels):
+            self.cursor = self._update_labels_brush_and_get_cursor(
+                layer, cursor
+            )
         else:
-            if brush_overlay:
-                brush_overlay.visible = False
             self.cursor = QtCursorVisual[cursor].value
 
     def delete(self) -> None:
