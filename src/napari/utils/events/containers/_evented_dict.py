@@ -131,10 +131,10 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             key = f'{self.key(source)}.{event.path}'
         else:
             key = self.key(source)
-        event = Event(value=event.args, key=key, type_name='')
-        event._push_source(source)
+        new_event = Event(value=event.args, key=key, type_name='')
+        new_event._push_source(source)
 
-        self.events(event)
+        self.events(new_event)
 
     def _disconnect_child_emitters(self, child: _T) -> None:
         """Disconnect all events from the child from the re-emitter."""
