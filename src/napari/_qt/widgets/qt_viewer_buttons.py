@@ -29,6 +29,7 @@ from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
+    AxisOrientation,
     DepthAxisOrientation,
     DepthAxisOrientationStr,
     HorizontalAxisOrientation,
@@ -594,11 +595,7 @@ class QtViewerButtons(QFrame):
 
     def _update_orientation(
         self,
-        orientation_type: type[
-            DepthAxisOrientation
-            | VerticalAxisOrientation
-            | HorizontalAxisOrientation
-        ],
+        orientation_type: AxisOrientation,
         orientation_value: (
             DepthAxisOrientationStr
             | VerticalAxisOrientationStr
@@ -609,7 +606,7 @@ class QtViewerButtons(QFrame):
 
         Parameters
         ----------
-        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+        orientation_type : AxisOrientation
             The orientation type (which implies the position/axis) to update.
         value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
             New orientation value for the updated axis.
