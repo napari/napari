@@ -960,7 +960,7 @@ class EmitterGroup(EventEmitter):
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
-        self.add(**emitters)  # pyrefly: ignore
+        self.add(**emitters)
 
     def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
@@ -979,7 +979,7 @@ class EmitterGroup(EventEmitter):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})  # pyrefly: ignore
+        self.add(**{name: emitter})
 
     def add(
         self,
@@ -1020,11 +1020,11 @@ class EmitterGroup(EventEmitter):
             if emitter is None:
                 emitter = Event
 
-            if inspect.isclass(emitter) and issubclass(emitter, Event):  # pyrefly: ignore
+            if inspect.isclass(emitter) and issubclass(emitter, Event):
                 emitter = EventEmitter(
                     source=self.source,
                     type_name=name,
-                    event_class=emitter,  # pyrefly: ignore
+                    event_class=emitter,
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(

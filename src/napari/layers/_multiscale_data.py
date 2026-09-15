@@ -65,9 +65,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    def __getitem__(  # pyrefly: ignore
-        self, key: int | tuple[slice, ...]
-    ) -> LayerDataProtocol:
+    def __getitem__(self, key: int | tuple[slice, ...]) -> LayerDataProtocol:
         """Multiscale indexing."""
         return self._data[key]
 
