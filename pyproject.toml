@@ -670,12 +670,14 @@ project-excludes = [
 ]
 
 python-platform = "all"
+python-version = "3.12"
 
 [tool.pyrefly.errors]
 bad-override-mutable-attribute = "ignore"
 implicit-import = "ignore"
 missing-import = "ignore"
-# unused-ignore and unused-type-ignore are set to error when a type is resolved, so they are removed.
+# unused-ignore and unused-type-ignore are set to error when a type is resolved
+# `pyrefly suppress --remove-unused=all` cleans them up.
 unused-ignore = "error"
 unused-type-ignore = "error"
 
@@ -707,13 +709,14 @@ source = [
 
 [tool.coverage.paths]
 source = [
-    "src/napari",
-    "**/site-packages/napari",
+  "src/napari",
+  "**/site-packages/napari",
 ]
 builtins = [
-    "src/napari_builtins",
-    "**/site-packages/napari_builtins",
+  "src/napari_builtins",
+  "**/site-packages/napari_builtins",
 ]
+
 
 [tool.importlinter]
 root_package = "napari"
