@@ -326,7 +326,7 @@ def _extract_multiscale_level_from_selection(
         layer for layer in ll.selection if isinstance(layer, (Image, Labels))
     )
 
-    adding_layers = extract_multiscale_level(layers, level)
+    adding_layers = _extract_multiscale_level(layers, level)
     for layer, new_layer in zip(layers, adding_layers, strict=True):
         ll.insert(ll.index(layer) + 1, new_layer)
 

@@ -21,7 +21,7 @@ from napari.layers._layer_actions import (
     _split_stack,
     _toggle_lock,
     _toggle_visibility,
-    extract_multiscale_level,
+    _extract_multiscale_level,
 )
 from napari.utils.transforms import Affine
 
@@ -524,7 +524,7 @@ def test_extract_multiscale_level(layer_type, level, expected_level):
     )
     layer.data_level = 1
 
-    new_layer = extract_multiscale_level((layer,), level=level)[0]
+    new_layer = _extract_multiscale_level((layer,), level=level)[0]
 
     np.testing.assert_array_equal(new_layer.data, data[expected_level])
     assert not new_layer.multiscale
