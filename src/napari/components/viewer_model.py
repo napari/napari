@@ -159,6 +159,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
+    canvas : napari.components.canvas.Canvas
+        The canvas model, controlling grid mode and canvas overlays.
+
+        .. versionadded:: 0.9.0
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -169,6 +173,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         List of contained layers.
     mouse_over_canvas: bool
         Indicating whether the mouse cursor is on the viewer canvas.
+    scene : napari.components.scene.Scene
+        The scene model, controlling the camera and scene overlays.
+
+        .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
     title: str
@@ -206,6 +214,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
     _layer_list_scroll_progress: float = 0
+    # True if any layer had custom axis labels the last time layers changed
+    _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -305,6 +315,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def camera(self) -> Camera:
+        """The camera model controlling the view of the scene.
+
+        .. deprecated:: 0.9.0
+            The camera property is deprecated. Use `viewer.scene.camera` instead.
+        """
         return self.scene.camera
 
     @property
@@ -316,6 +331,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def axes(self) -> SceneAxesOverlay:
+        """The overlay controlling the display of the scene axes.
+
+        .. deprecated:: 0.9.0
+            The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
+        """
         return self.scene.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -327,6 +347,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> CanvasAxesOverlay:
+        """The overlay controlling the display of the canvas axes.
+
+        .. deprecated:: 0.9.0
+            The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
+        """
         return self.canvas.overlays.axes  # type: ignore[return-value]
 
     @property
@@ -338,6 +363,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
+        """The overlay controlling the display of the scale bar.
+
+        .. deprecated:: 0.9.0
+            The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
+        """
         return self.canvas.overlays.scale_bar  # type: ignore[return-value]
 
     @property
@@ -349,6 +379,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
+        """The overlay controlling the display of text on the canvas.
+
+        .. deprecated:: 0.9.0
+            The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
+        """
         return self.canvas.overlays.text  # type: ignore[return-value]
 
     @property
@@ -360,6 +395,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:
+        """The model controlling the display of the grid mode.
+
+        .. deprecated:: 0.9.0
+            The grid property is deprecated. Use `viewer.canvas.grid` instead.
+        """
         return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
@@ -787,13 +827,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
+            self._layers_had_custom_axis_labels = False
         else:
             ranges = self.layers._ranges
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
-            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels()
+            layers_are_default = all(
+                layer._has_default_axis_labels() for layer in self.layers
+            )
+            if self._layers_had_custom_axis_labels and layers_are_default:
+                # All layers are back to default, so reset the stale dims labels
+                self.dims.axis_labels = self.layers.axis_labels
+            else:
+                self.dims.axis_labels = (
+                    self._merge_dims_and_layers_axis_labels()
+                )
+            self._layers_had_custom_axis_labels = not layers_are_default
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)

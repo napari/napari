@@ -116,6 +116,9 @@ def get_widget_contribution(
     if widget_name and widgets_seen:
         msg = f'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {widgets_seen}'
         raise KeyError(msg)
+    if widget_name:
+        msg = f'Plugin {plugin_name!r} does not provide any widgets.'
+        raise KeyError(msg)
     return None
 
 

@@ -247,6 +247,23 @@ QtDimSliderWidget > QLineEdit {
   color: {{ text }};
 }
 
+/* ------------- Guided viewer tour ------------- */
+
+#qt_viewer_tour_tooltip {
+  border: 1px solid {{ foreground }};
+  border-radius: 5px;
+}
+
+#qt_viewer_tour_tooltip QPushButton {
+  background: {{ secondary }};
+  border-radius: 3px;
+  padding: 5px 12px;
+}
+
+#qt_viewer_tour_tooltip QPushButton:hover {
+  background: {{ primary }};
+}
+
 #playDirectionCheckBox::indicator {
    image: url("theme_{{ id }}:/long_right_arrow.svg");
    width: 22px;
@@ -651,4 +668,14 @@ QCommandLineEdit, QCommandList {
 
 QCommandList::item:selected {
   background-color: {{ primary }};
+}
+
+/* ------------- JSON-schema form validation state --------- */
+/* see qt_json_builder.qt_jsonschema_form.widgets.SchemaWidgetMixin */
+*[invalid="true"] {
+  background-color: {{ error }};
+}
+
+QLabel[invalid-msg="true"] {
+  color: {{ opacity(text, 178) }};
 }

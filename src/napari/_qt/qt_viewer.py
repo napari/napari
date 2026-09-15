@@ -170,7 +170,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-        self.dims = QtDims(self.viewer.dims)
+        self.dims: QtDims = QtDims(self.viewer.dims)
         self._controls: QtLayerControlsContainer | None = None
         self._layers: QtLayerList | None = None
         self._layersButtons: QtLayerButtons | None = None
@@ -194,7 +194,7 @@ class QtViewer(QSplitter):
         main_layout.setSpacing(0)
 
         # This dictionary holds the corresponding vispy visual for each layer
-        self.canvas = canvas_class(
+        self.canvas: VispyCanvas = canvas_class(
             viewer=viewer,
             parent=main_widget,
             font_manager=self._font_manager,
@@ -415,7 +415,7 @@ class QtViewer(QSplitter):
         for action, shortcuts in get_settings().shortcuts.shortcuts.items():
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, str(shortcut))
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_performance_dock_widget(self) -> QtViewerDockWidget | None:
         """Create the dock widget that shows performance metrics."""
@@ -629,7 +629,7 @@ class QtViewer(QSplitter):
                     data_displayed=False,
                     thumbnail=True,
                     highlight=True,
-                    extent=True,
+                    extent=False,  # already updated via Layer.refresh()
                 )
 
     def _on_active_change(self) -> None:
