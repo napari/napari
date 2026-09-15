@@ -71,7 +71,7 @@ def mouse_wheel_callbacks(obj, event):
             yield
 
             # on subsequent scrolls
-            while (some_condition)
+            while (some_falsifiable_condition)
                 print(event.pos)
                 yield
 
@@ -92,7 +92,7 @@ def mouse_wheel_callbacks(obj, event):
 def mouse_double_click_callbacks(obj, event) -> None:
     """Run mouse double_click callbacks on either layer or viewer object.
 
-    Note that unlike other press and release callback those can't be generators:
+    Note that unlike other callbacks, these can't be generators:
 
     .. code-block:: python
 
@@ -121,6 +121,9 @@ def mouse_double_click_callbacks(obj, event) -> None:
 
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
+
+    Drag callbacks go through this machinery too on setup (since the first
+    step of a drack is a press).
 
     Note that drag callbacks should have the following form:
 
@@ -154,22 +157,21 @@ def mouse_press_callbacks(obj, event):
 def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
     """Run mouse move callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form:
+    Note that move callbacks should have the following form:
 
     .. code-block:: python
 
         def hello_world(layer, event):
-            "dragging"
-            # on press
+            # initial setup
             print('hello world!')
             yield
 
-            # on move
-            while event.type == 'mouse_move':
+            # on subsequent moves
+            while (some_falsifiable_condition)
                 print(event.pos)
                 yield
 
-            # on release
+            # when done
             print('goodbye world ;(')
 
     Parameters
@@ -189,7 +191,9 @@ def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
 def mouse_release_callbacks(obj, event):
     """Run mouse release callbacks on either layer or viewer object.
 
+    Drag callbacks go through this machinery at the end.
     Note that drag callbacks should have the following form:
+
 
     .. code-block:: python
 
