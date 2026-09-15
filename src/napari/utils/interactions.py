@@ -1,8 +1,7 @@
-import contextlib
 import inspect
 import sys
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from napari.utils.key_bindings import (
     KeyBindingLike,
@@ -14,25 +13,69 @@ if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
 
 
+def _run_callbacks_and_maybe_store_generators(
+    obj, event, callback_type: Literal['move', 'drag', 'wheel']
+):
+    callbacks = getattr(obj, f'mouse_{callback_type}_callbacks')
+    gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
+    for func in callbacks:
+        if func in gen_dict:
+            # we're already handling this callback via generator; do not start anew
+            continue
+
+        # execute function to run it if it is a simple function, or get the generator
+        gen = func(obj, event)
+        if inspect.isgenerator(gen):
+            # if function returns a generator then try to iterate it (the first step should
+            # set up the initial state) and set up for later iterations by storing the
+            # generator itself and the event wrapper
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+            else:
+                # The event passed to the generator (and stored here) is actually a wrapper.
+                # On later calls, we just replace the inner wrapped event transparently,
+                # so subsequent calls of next(gen) will use the updated event values
+                gen_dict[func] = gen
+                obj._persisted_mouse_event[gen] = event
+
+
+def _step_active_generators(
+    obj, event, callback_type: Literal['move', 'drag', 'wheel']
+):
+    gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
+    for func, gen in tuple(gen_dict.items()):
+        # update the wrapper with the current event
+        # (see _run_callbacks_and_maybe_store_generators for an explanation)
+        obj._persisted_mouse_event[gen].__wrapped__ = event.__wrapped__
+        try:
+            next(gen)
+        except StopIteration:
+            # done, delete the generator and stored event
+            del gen_dict[func]
+            del obj._persisted_mouse_event[gen]
+
+
 def mouse_wheel_callbacks(obj, event):
     """Run mouse wheel callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form:
+    Note that wheel callbacks can be single function callbacks, or
+    generators which should have the following form:
 
     .. code-block:: python
 
         def hello_world(layer, event):
-            "dragging"
-            # on press
+            # initial setup
             print('hello world!')
             yield
 
-            # on move
-            while event.type == 'mouse_move':
+            # on subsequent scrolls
+            while (some_condition)
                 print(event.pos)
                 yield
 
-            # on release
+            # when done
             print('goodbye world ;(')
 
     Parameters
@@ -42,20 +85,8 @@ def mouse_wheel_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    # iterate through drag callback functions
-    for mouse_wheel_func in obj.mouse_wheel_callbacks:
-        # execute function to run press event code
-        gen = mouse_wheel_func(obj, event)
-        # if function returns a generator then try to iterate it
-        if inspect.isgenerator(gen):
-            try:
-                next(gen)
-                # now store iterated generator
-                obj._mouse_wheel_gen[mouse_wheel_func] = gen
-                # and now store event that initially triggered the press
-                obj._persisted_mouse_event[gen] = event
-            except StopIteration:
-                pass
+    _step_active_generators(obj, event, 'wheel')
+    _run_callbacks_and_maybe_store_generators(obj, event, 'wheel')
 
 
 def mouse_double_click_callbacks(obj, event) -> None:
@@ -116,20 +147,8 @@ def mouse_press_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    # iterate through drag callback functions
-    for mouse_drag_func in obj.mouse_drag_callbacks:
-        # execute function to run press event code
-        gen = mouse_drag_func(obj, event)
-        # if function returns a generator then try to iterate it
-        if inspect.isgenerator(gen):
-            try:
-                next(gen)
-                # now store iterated generator
-                obj._mouse_drag_gen[mouse_drag_func] = gen
-                # and now store event that initially triggered the press
-                obj._persisted_mouse_event[gen] = event
-            except StopIteration:
-                pass
+    _step_active_generators(obj, event, 'drag')
+    _run_callbacks_and_maybe_store_generators(obj, event, 'drag')
 
 
 def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
@@ -160,22 +179,11 @@ def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
     event : NapariMouseEvent
         Mouse event
     """
-    if not event.is_dragging:
-        # if not dragging simply call the mouse move callbacks
-        for mouse_move_func in obj.mouse_move_callbacks:
-            mouse_move_func(obj, event)
+    _step_active_generators(obj, event, 'move')
+    _run_callbacks_and_maybe_store_generators(obj, event, 'move')
 
-    # for each drag callback get the current generator
-    for func, gen in tuple(obj._mouse_drag_gen.items()):
-        # save the event current event
-        obj._persisted_mouse_event[gen].__wrapped__ = event
-        try:
-            # try to advance the generator
-            next(gen)
-        except StopIteration:
-            # If done deleted the generator and stored event
-            del obj._mouse_drag_gen[func]
-            del obj._persisted_mouse_event[gen]
+    if event.is_dragging:
+        _step_active_generators(obj, event, 'drag')
 
 
 def mouse_release_callbacks(obj, event):
@@ -206,12 +214,9 @@ def mouse_release_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    _step_active_generators(obj, event, 'drag')
+    # ensure these are deleted regardless of conclusion
     for func, gen in tuple(obj._mouse_drag_gen.items()):
-        obj._persisted_mouse_event[gen].__wrapped__ = event
-        with contextlib.suppress(StopIteration):
-            # Run last part of the function to trigger release event
-            next(gen)
-        # Finally delete the generator and stored event
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]
 
