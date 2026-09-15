@@ -5,9 +5,7 @@ annotated-doc==0.0.5
 annotated-types==0.8.0
     # via pydantic
 app-model==0.5.1
-    # via -r resources/requirements_mypy.in
-ast-serialize==0.11.2
-    # via mypy
+    # via -r resources/requirements_pyrefly.in
 build==1.6.1
     # via npe2
 certifi==2026.7.22
@@ -31,15 +29,13 @@ markdown-it-py==4.2.0
 mdurl==0.1.2
     # via markdown-it-py
 npe2==0.9.0
-    # via -r resources/requirements_mypy.in
+    # via -r resources/requirements_pyrefly.in
 numpy==2.5.3
-    # via -r resources/requirements_mypy.in
+    # via -r resources/requirements_pyrefly.in
 packaging==26.3
     # via
     #   build
     #   qtpy
-pathspec==1.1.1
-    # via mypy
 platformdirs==4.11.8
     # via npe2
 psygnal==0.16.1
@@ -95,9 +91,9 @@ tomli-w==1.2.0
 typer==0.27.2
     # via npe2
 types-pyyaml==6.0.12.20260906
-    # via -r resources/requirements_mypy.in
+    # via -r resources/requirements_pyrefly.in
 types-requests==2.33.0.20260906
-    # via -r resources/requirements_mypy.in
+    # via -r resources/requirements_pyrefly.in
 types-setuptools==84.0.0.20260812
     # via -r resources/requirements_pyrefly.in
 typing-extensions==4.16.0
