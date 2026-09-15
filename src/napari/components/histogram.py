@@ -489,9 +489,11 @@ class HistogramModel(EventedModel):
         # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
-            dtype_size = (
-                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-            )
+            if hasattr(data, 'dtype'):
+                dtype = np.dtype(data.dtype)  # pyrefly: ignore [no-matching-overload]
+                dtype_size = dtype.itemsize
+            else:
+                dtype_size = 8
             est_mb = (data_size * dtype_size) / (1024 * 1024)
             warnings.warn(
                 f'Skipping full-data histogram: materializing '

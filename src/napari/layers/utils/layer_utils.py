@@ -384,7 +384,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
     Float images are multiplied by 255 and then cast to uint8.
     """
-    out_dtype = np.dtype(np.uint8)
+    out_dtype: np.dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
     if data.dtype == out_dtype:
         return data

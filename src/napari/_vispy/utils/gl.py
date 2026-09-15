@@ -95,7 +95,7 @@ def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:
         Data that is of right type and will be passed to vispy.
     """
 
-    dtype = np.dtype(data.dtype)
+    dtype = np.dtype(data.dtype)  # pyrefly: ignore [no-matching-overload]
     if dtype in texture_dtypes:
         return data
 
