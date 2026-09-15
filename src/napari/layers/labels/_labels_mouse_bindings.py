@@ -101,7 +101,9 @@ def resize_brush_on_mouse_move(layer, event):
     layer._is_resizing_brush = True
     yield
 
-    while event.type == 'mouse_move':
+    while event.type == 'mouse_move' and all(
+        modifier in event.modifiers for modifier in modifiers
+    ):
         brush_size_delta = round(
             (event.pos[0] - start_pos[0]) / event.camera_zoom
         )
@@ -109,5 +111,6 @@ def resize_brush_on_mouse_move(layer, event):
 
         bounded_brush_size = max(new_brush_size, min_brush_size)
         layer.brush_size = bounded_brush_size
+        yield
 
     layer._is_resizing_brush = False

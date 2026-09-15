@@ -36,6 +36,7 @@ class MousemapProvider:
 
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_move_gen = {}
         self._mouse_wheel_gen = {}
 
 
@@ -60,4 +61,5 @@ class MousemapProviderPydantic(BaseModel):
     mouse_double_click_callbacks: list[Callable] = Field(default_factory=list)
     _persisted_mouse_event: dict = PrivateAttr(default_factory=dict)
     _mouse_drag_gen: dict = PrivateAttr(default_factory=dict)
+    _mouse_move_gen: dict = PrivateAttr(default_factory=dict)
     _mouse_wheel_gen: dict = PrivateAttr(default_factory=dict)
