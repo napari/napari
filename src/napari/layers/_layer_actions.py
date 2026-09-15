@@ -297,8 +297,7 @@ def _extract_multiscale_level(
             + (downsample_factor - 1) / 2 * layer_scale
         ).tolist()
 
-        if isinstance(layer, Image):
-            layer_state['locked_data_level'] = None
+        layer_state.pop('locked_data_level', None)
 
         new_layers.append(
             Layer.create(
