@@ -274,7 +274,7 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     ll.append(new)
 
 
-def extract_multiscale_level(
+def _extract_multiscale_level(
     layers: Collection[Image | Labels], level: int | None = None
 ) -> list[Layer]:
     new_layers: list[Layer] = []
