@@ -544,6 +544,19 @@ def test_extract_multiscale_level(layer_type, level, expected_level):
 
 
 @pytest.mark.parametrize('layer_type', [Image, Labels])
+def test_extract_multiscale_level_uses_locked_data_level(layer_type):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    layer = layer_type(data)
+    layer.locked_data_level = 1
+    assert layer.data_level == 1
+    extracted_layer = _extract_multiscale_level((layer,))[0]
+    np.testing.assert_array_equal(extracted_layer.data, layer.data[1])
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
 def test_extract_multiscale_level_from_selection(layer_type):
     data = (
         np.zeros((16, 16), dtype=int),
