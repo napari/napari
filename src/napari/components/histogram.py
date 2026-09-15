@@ -490,7 +490,7 @@ class HistogramModel(EventedModel):
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
             if hasattr(data, 'dtype'):
-                dtype = np.dtype(data.dtype)  # pyrefly: ignore [no-matching-overload]
+                dtype = np.dtype(data.dtype)
                 dtype_size = dtype.itemsize
             else:
                 dtype_size = 8
