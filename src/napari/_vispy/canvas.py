@@ -1291,8 +1291,9 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _update_overlay_font_sizes(self):
-        font_size = get_settings().appearance.font_size
+    def _update_overlay_font_sizes(self, *, font_size: float | None = None):
+        if font_size is None:
+            font_size = get_settings().appearance.font_size
         for vispy_overlays in self._viewer_overlay_to_visual.values():
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.set_default_font_size(font_size)
