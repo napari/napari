@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
@@ -233,7 +233,7 @@ class QCommandLabel(QtW.QLabel):
 
     def set_command(self, cmd: CommandRule) -> None:
         """Set command to this widget."""
-        command_text = _command_to_name(cmd)
+        command_text = _command_to_path(cmd)
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
@@ -396,23 +396,36 @@ class QCommandList(QtW.QListView):
 
         commands: dict[CommandRule, float] = {}
 
-        # we have to pass these as a list to rapidfuzz, cause it takes {result: string}
-        # as mapping, not allowing us to have multuple strings point to the same
-        # result without doing weird stuff
-        name_to_command = {_command_to_name(c): c for c in self.all_commands}
-        for n, c in list(name_to_command.items()):
-            for alias in _action_to_aliases(n):
-                name_to_command[alias] = c
+        # mapping of titles (or their aliasees) to commands
+        title_to_command = {c.title: c for c in self.all_commands}
+        for n, c in list(title_to_command.items()):
+            for alias in _apply_aliases(n):
+                title_to_command[alias] = c
+        # same thing but with full path (for further lower-priority matching)
+        path_to_command = {_command_to_path(c): c for c in self.all_commands}
+        for n, c in list(path_to_command.items()):
+            for alias in _apply_aliases(n):
+                path_to_command[alias] = c
 
         for score, command in _iter_matched_actions(
-            input_text, name_to_command
+            input_text, title_to_command, mode='strict'
         ):
-            if _enabled(command, self._app_model_context):
-                score += 101
-
-            commands.setdefault(command, 0)
+            # boost score for strict title matches so they float to the top
+            score += 100
             # get the max score between aliases
-            commands[command] = max(score, commands[command])
+            commands[command] = max(score, commands.get(command, 0))
+
+        for score, command in _iter_matched_actions(
+            input_text, path_to_command, mode='tokens'
+        ):
+            # get the max score between aliases
+            commands[command] = max(score, commands.get(command, 0))
+
+        # boost scores of all enabled commands
+        for command in commands:
+            if _enabled(command, self._app_model_context):
+                commands[command] += 100
+
         for command, _ in sorted(
             commands.items(), key=lambda x: x[1], reverse=True
         ):
@@ -437,13 +450,13 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
 
 def _match_score(action: CommandRule, input_text: str) -> float:
     """Return a match score (between 0 and 1) for the input text."""
-    name = _command_to_name(action).lower()
+    name = _command_to_path(action).lower()
     if all(word in name for word in input_text.lower().split(' ')):
         return 1.0
     return 0.0
 
 
-def _command_to_name(cmd: CommandRule) -> str:
+def _command_to_path(cmd: CommandRule) -> str:
     *contexts, _ = cmd.id.split('.')
     title = ' > '.join(contexts)
     desc = cmd.title
@@ -452,7 +465,7 @@ def _command_to_name(cmd: CommandRule) -> str:
     return desc
 
 
-def _action_to_aliases(action_name: str) -> list[str]:
+def _apply_aliases(action_name: str) -> list[str]:
     return [
         re.sub(word, alias, action_name, flags=re.IGNORECASE)
         for word, alias in _COMMON_ALIASES.items()
@@ -461,7 +474,9 @@ def _action_to_aliases(action_name: str) -> list[str]:
 
 
 def _iter_matched_actions(
-    input_text: str, name_to_command: dict[str, CommandRule]
+    input_text: str,
+    command_dict: dict[str, CommandRule],
+    mode: Literal['strict', 'tokens'] = 'strict',
 ) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
     if (
@@ -470,39 +485,29 @@ def _iter_matched_actions(
     ):
         # basic word matching
         words = input_text.lower().split(' ')
-        for name, command in name_to_command.items():
-            name = name.lower()
-            if all(word in name for word in words):
+        for string, command in command_dict.items():
+            string = string.lower()
+            if all(word in string for word in words):
                 yield 100, command
         return
 
     # fuzzy finding
     from rapidfuzz import fuzz, process, utils
 
-    names = list(name_to_command)
-    commands = list(name_to_command.values())
+    # we have to pass these as a list to rapidfuzz, cause it otherwise
+    # would take dicts like {result: string} as mapping and treat them
+    # differently, not allowing us to have multuple strings (aliases)
+    # point to the same "result" without doing weird stuff
+    strings = list(command_dict)
+    commands = list(command_dict.values())
 
-    def custom_scorer(
-        s1: str, s2: str, *, score_cutoff: float | None = 0
-    ) -> float:
-        # this acts mainly like partial_token_set_ratio (scoring
-        # higher the more tokens in any order are in the candidate),
-        # but down-weighs a bit those that are in the wrong order or
-        # contain the wrong tokens
-        token_score = fuzz.partial_token_set_ratio(s1, s2)
-
-        order_score = fuzz.WRatio(s1, s2)
-
-        score = max(token_score, order_score)
-
-        return score if score_cutoff and score >= score_cutoff else 0
-
+    scorer = fuzz.ratio if mode == 'strict' else fuzz.partial_token_set_ratio
     for _, score, command_idx in process.extract(
         input_text,
-        names,
+        strings,
         limit=100,
         score_cutoff=exp.command_palette_fuzzy_search_threshold,
-        scorer=custom_scorer,
+        scorer=scorer,
         processor=utils.default_process,
     ):
         yield score, commands[command_idx]
