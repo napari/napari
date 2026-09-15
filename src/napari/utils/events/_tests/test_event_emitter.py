@@ -263,7 +263,7 @@ def test_no_event_arg():
 
 
 def test_to_many_positional():
-    class TestOb:
+    class TestOb:  # pragma: no cover
         def fun(self, a, b, c=1):
             pass
 
@@ -750,7 +750,7 @@ def test_dependant_emitter():
             return self._b
 
         @b.setter
-        def b(self, value):
+        def b(self, value):  # pragma: no cover
             self._b = value
             self.events.b(value=value)
 
@@ -785,3 +785,11 @@ def test_dependant_emitter():
     b.a.a = 3
     assert mock.call_count == 4
     assert mock.call_args.args[0].value == 5
+
+    b.aa = 10
+    assert b.a.a == 5
+    assert b.b.a == 5
+    assert (
+        mock.call_count == 6
+    )  # double emission because of two events being set
+    assert mock.call_args.args[0].value == 10

@@ -420,7 +420,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 self._changes_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
-        self._super_setattr_(name, value)
+        with getattr(self.events, name).blocker():
+            self._super_setattr_(name, value)
 
     # expose the private EmitterGroup publicly
     @property

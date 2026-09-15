@@ -1,5 +1,6 @@
 import inspect
 import operator
+from contextlib import nullcontext
 from enum import auto
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
@@ -64,8 +65,10 @@ def test_evented_model():
     # ClassVars are excluded from events
     assert 'age' not in user.events
     # mocking EventEmitters to spy on events
-    user.events.id = Mock(user.events.id)
-    user.events.name = Mock(user.events.name)
+    user.events.id = Mock(spec=user.events.id)
+    user.events.id.blocker = nullcontext
+    user.events.name = Mock(spec=user.events.name)
+    user.events.name.blocker = nullcontext
     # setting an attribute should, by default, emit an event with the value
     user.id = 4
     user.events.id.assert_called_with(value=4)
@@ -129,6 +132,7 @@ def test_evented_model_array_updates():
 
     # Mock events
     model.events.values = Mock(model.events.values)
+    model.events.values.blocker = nullcontext
 
     np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
 
@@ -217,10 +221,12 @@ def test_values_updated():
     user2 = User(id=1, name='K')
 
     # Add mocks
-    user1_events = Mock(user1.events)
+    user1_events = Mock()
     user1.events.connect(user1_events)
     user1.events.id = Mock(user1.events.id)
+    user1.events.id.blocker = nullcontext
     user2.events.id = Mock(user2.events.id)
+    user2.events.id.blocker = nullcontext
 
     # Check user1 and user2 dicts
     assert user1.model_dump() == {'id': 0, 'name': 'A'}
@@ -536,10 +542,15 @@ def test_inheritance_and_calculated_helpers():
 def mocked_object():
     t = T()
     t.events.a = Mock(t.events.a)
+    t.events.a.blocker = nullcontext
     t.events.b = Mock(t.events.b)
+    t.events.b.blocker = nullcontext
     t.events.c = Mock(t.events.c)
+    t.events.c.blocker = nullcontext
     t.events.d = Mock(t.events.d)
+    t.events.d.blocker = nullcontext
     t.events.e = Mock(t.events.e)
+    t.events.e.blocker = nullcontext
     return t
 
 
@@ -590,7 +601,9 @@ def test_evented_model_with_provided_dependencies():
 
     t = T()
     t.events.a = Mock(t.events.a)
+    t.events.a.blocker = nullcontext
     t.events.b = Mock(t.events.b)
+    t.events.b.blocker = nullcontext
 
     t.a = 2
     t.events.a.assert_called_with(value=2)
@@ -1027,7 +1040,7 @@ def test_renamed_property_in_parent_class_used_in_subclass():
             return self.b + 2
 
         @c.setter
-        def c(self, value):
+        def c(self, value):  # pragma: no cover
             self.b = value - 2
 
     s = Sub()
@@ -1093,7 +1106,7 @@ def test_renamed_nested_dependency_tracks_child_replacement():
     with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
         model.doubled = 16
     assert (
-        callback.call_count == 2
+        callback.call_count == 1
     )  # TODO check if we could reduce this to 1 call
     assert callback.call_args.args[0].value == 16
     assert model.child.value == 8
