@@ -543,7 +543,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
-        dtype = np.dtype(image.dtype)  # pyrefly: ignore [no-matching-overload]
+        dtype = np.dtype(image.dtype)
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)
 
