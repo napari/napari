@@ -51,6 +51,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.ticks.connect(self._on_rendering_change)
         self.overlay.events.unit.connect(self._on_unit_change)
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
+        self.overlay.events.canvas_ratio.connect(self._on_size_or_zoom_change)
         self.overlay.events.visible.connect(self._on_rendering_change)
         self.overlay.events.gridded.connect(self._on_size_or_zoom_change)
 
@@ -156,7 +157,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             view_height, view_width = self.viewer.canvas.size
 
-        target_canvas_length = max(view_width / 4, self._min_canvas_length)
+        target_canvas_length = max(
+            view_width * self.overlay.canvas_ratio, self._min_canvas_length
+        )
         # convert desired length to world size
         target_world_pixels = scale * target_canvas_length
 
