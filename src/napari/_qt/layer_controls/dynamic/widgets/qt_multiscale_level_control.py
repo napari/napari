@@ -11,7 +11,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import qt_signals_blocked
 from napari.utils.misc import human_readable_size
-from napari.utils.tips import format_tip
 
 if TYPE_CHECKING:
     from napari.layers import Image, Labels
@@ -73,13 +72,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
 
         self.level_combobox = QComboBox(parent)
         self.level_combobox.setToolTip(
-            format_tip(
-                'You can extract a locked data level as a new layer '
-                'by opening the layer list context menu with right click '
-                "and selecting 'Extract locked multiscale level'."
-                '\nAlternatively use the command palette ( {napari.window.view.toggle_command_palette} )'
-                " and run 'Extract locked multiscale level'."
-            )
+            'Extract a locked data level as a new layer by '
+            'opening the layer list context menu and selecting '
+            '"Extract locked multiscale level".'
         )
         self.level_label = QtWrappedLabel('resolution:')
 
