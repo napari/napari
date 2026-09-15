@@ -415,11 +415,14 @@ class QCommandList(QtW.QListView):
             # get the max score between aliases
             commands[command] = max(score, commands.get(command, 0))
 
+        loose_matches = {}
         for score, command in _iter_matched_actions(
             input_text, path_to_command, mode='tokens'
         ):
-            # get the max score between aliases
-            commands[command] = max(score, commands.get(command, 0))
+            loose_matches[command] = max(score, loose_matches.get(command, 0))
+
+        for command, score in loose_matches.items():
+            commands[command] = commands.get(command, 0) + score
 
         # boost scores of all enabled commands
         for command in commands:
@@ -501,7 +504,11 @@ def _iter_matched_actions(
     strings = list(command_dict)
     commands = list(command_dict.values())
 
-    scorer = fuzz.ratio if mode == 'strict' else fuzz.partial_token_set_ratio
+    scorer = (
+        fuzz.partial_ratio
+        if mode == 'strict'
+        else fuzz.partial_token_set_ratio
+    )
     for _, score, command_idx in process.extract(
         input_text,
         strings,
