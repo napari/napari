@@ -298,7 +298,7 @@ class QCommandList(QtW.QListView):
         self._selected_index += dx
         self._selected_index = max(0, self._selected_index)
         self._selected_index = min(
-            self._current_max_index - 1, self._selected_index
+            self._current_max_index, self._selected_index
         )
         self.update_selection()
         return
