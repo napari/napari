@@ -75,7 +75,7 @@ def _step_active_generators(
 
 def mouse_wheel_callbacks(
     obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
-):
+) -> None:
     """Run mouse wheel callbacks on either layer or viewer object.
 
     Note that wheel callbacks can be single function callbacks, or
@@ -143,7 +143,7 @@ def mouse_double_click_callbacks(
 
 def mouse_press_callbacks(
     obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
-):
+) -> None:
     """Run mouse press callbacks on either layer or viewer object.
 
     Drag callbacks go through this machinery too on setup (since the first
@@ -182,7 +182,7 @@ def mouse_press_callbacks(
 
 def mouse_move_callbacks(
     obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
-):
+) -> None:
     """Run mouse move callbacks on either layer or viewer object.
 
     Note that move callbacks should have the following form:
@@ -220,7 +220,7 @@ def mouse_move_callbacks(
 
 def mouse_release_callbacks(
     obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
-):
+) -> None:
     """Run mouse release callbacks on either layer or viewer object.
 
     Drag callbacks go through this machinery at the end.
@@ -366,11 +366,13 @@ class Shortcut:
         """
         return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.platform
 
 
-def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+def get_key_bindings_summary(
+    keymap: dict, col: str = 'rgb(134, 142, 147)'
+) -> str:
     """Get summary of key bindings in keymap.
 
     Parameters
@@ -389,12 +391,12 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = '+'.join(
+        keycodes_str = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
-            f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
+            f"<span style='color: rgb(66, 72, 80)'>{keycodes_str}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
             f'{keymap[key]}</td></tr>'
         )
