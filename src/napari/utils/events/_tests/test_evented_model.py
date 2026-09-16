@@ -852,6 +852,22 @@ def test_events_called():
     e_m.assert_called_once()
 
 
+def test_identical_assignment_evented_model_emit():
+    class SubClass(EventedModel):
+        a: int = 1
+
+    class SampleClass(EventedModel):
+        s: SubClass = Field(default_factory=SubClass)
+
+    s = SampleClass()
+    mock = Mock()
+    s.events.s.connect(mock)
+
+    s.s = SubClass()
+
+    mock.assert_called_once()
+
+
 def test_property_deprecation():
     class SampleClass(EventedModel):
         a: int = 1

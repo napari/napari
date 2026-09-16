@@ -1,3 +1,4 @@
+import operator
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -35,6 +36,27 @@ _BASE_JSON_ENCODERS = {
 }
 
 
+def _pick_equality_operator(field_type: Any) -> Callable[[Any, Any], bool]:
+    """Pick an equality operator for a given field type.
+
+    Parameters
+    ----------
+    field_type : type
+        The type of the field.
+
+    Returns
+    -------
+    Callable[[Any, Any], bool]
+        A function that takes two arguments and returns True if they are equal,
+        False otherwise.
+    """
+
+    if isinstance(field_type, type) and issubclass(field_type, EventedModel):
+        return operator.is_
+
+    return pick_equality_operator(field_type)
+
+
 class EventedMetaclass(ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
@@ -60,7 +82,7 @@ class EventedMetaclass(ModelMetaclass):
         cls.__eq_operators__ = {**getattr(cls, '__eq_operators__', {})}
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
-            cls.__eq_operators__[n] = pick_equality_operator(field_type)
+            cls.__eq_operators__[n] = _pick_equality_operator(field_type)
             # If a field type has a _json_encode method, add it to the json
             # encoders for this model.
             # NOTE: a _json_encode field must return an object that can be
