@@ -18,15 +18,13 @@ out vec2 v_center;
 void main()
 {
     // depending on the index of this vertex, we decide which case we're in
-    int segment = int(a_idx) / 2;
-    int endpoint = int(a_idx) % 2;
-    int axis = segment / 2;
-    int sign = (segment % 2 == 0) ? 1 : -1;
+    int axis = int(a_idx) / 2;
+    float side = (int(a_idx) % 2 == 0) ? -1.0 : 1.0;
 
     vec3 direction =
-        axis == 0 ? vec3(sign, 0, 0) :
-        axis == 1 ? vec3(0, sign, 0) :
-                    vec3(0, 0, sign) ;
+        axis == 0 ? vec3(side, 0, 0) :
+        axis == 1 ? vec3(0, side, 0) :
+                    vec3(0, 0, side);
 
     vec2 axis_dir = $visual_to_render(vec4(direction, 0)).xy;
 
@@ -41,27 +39,32 @@ void main()
     // camera-space cursor center
     vec4 center = $visual_to_render(vec4($center, 1));
 
+    vec2 center_ndc = (center.xy / center.w);
+    v_center = center_ndc;
+
     // projected direction in screen space
     vec2 dir_ndc = normalize(axis_dir);
-    vec2 center_ndc = (center.xy / center.w);
 
     float extent = 5.0;  // should be enough to always go out of screen
-
-    vec2 pos;
-    if (endpoint == 0) {
-        // inner point
-        pos = center_ndc + dir_ndc * $gap;
-    } else {
-        // outer point
-        pos = center_ndc + dir_ndc * extent;
-    }
+    vec2 pos = center_ndc + dir_ndc * extent;
 
     gl_Position = vec4(pos, center.z / center.w, 1.0);
 }
 """
 
 _FRAGMENT_SHADER = """#version 330
+in vec2 v_center;
+
 void main() {
+    // gl_FragCoord is in physical pixels; $canvas_size is logical pixels
+    vec2 screen_pos = gl_FragCoord.xy / $pixel_ratio;
+    vec2 center_px = (v_center * 0.5 + 0.5) * $canvas_size;
+    float dist_from_center = length(screen_pos - center_px);
+
+    // discard fragments inside the circular gap
+    if (dist_from_center < $gap / 2.0) {
+        discard;
+    }
     gl_FragColor = $color;
 }
 """
@@ -71,12 +74,12 @@ class CrosshairVisual(Visual):
     def __init__(self) -> None:
         super().__init__(vcode=_VERTEX_SHADER, fcode=_FRAGMENT_SHADER)
         self.shared_program['a_idx'] = VertexBuffer(
-            np.arange(12, dtype=np.float32)
+            np.arange(6, dtype=np.float32)
         )
         self._draw_mode = 'lines'
         self.position = np.array((0, 0, 0))
         self.color = np.array((1, 1, 1, 1))
-        self.gap = 0.05
+        self.gap = 20
 
     @property
     def position(self) -> np.ndarray:
@@ -105,7 +108,7 @@ class CrosshairVisual(Visual):
     @gap.setter
     def gap(self, value: float) -> None:
         self._gap = float(value)
-        self.shared_program.vert['gap'] = self._gap
+        self.shared_program.frag['gap'] = self._gap
         self.update()
 
     def _prepare_transforms(self, view: VisualView | None = None) -> None:
@@ -124,6 +127,10 @@ class CrosshairVisual(Visual):
         px_scale = self.transforms.pixel_scale
         width = px_scale * 1
         self.update_gl_state(line_width=max(width, 1.0))
+
+        if view is not None:
+            self.shared_program.frag['canvas_size'] = view.canvas.size
+            self.shared_program.frag['pixel_ratio'] = px_scale
 
 
 Crosshair = create_visual_node(CrosshairVisual)
