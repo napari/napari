@@ -98,9 +98,9 @@ if TYPE_CHECKING:
 
     import numpy as np
     from magicgui.widgets import Widget
+    from qt_tour import GuidedTour
     from qtpy.QtGui import QHideEvent, QImage, QShowEvent
 
-    from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
 
 _sentinel = object()
