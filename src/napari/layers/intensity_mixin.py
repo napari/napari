@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import ensure_colormap
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
 from napari.utils.status_messages import format_float
 from napari.utils.validators import _validate_increasing, validate_n_seq
@@ -36,6 +36,7 @@ class IntensityVisualizationMixin:
             contrast_limits_range=Event,
             gamma=Event,
             colormap=Event,
+            auto_contrast=Event,
         )
         self._gamma = 1.0
         self._colormap_name = ''
@@ -49,7 +50,7 @@ class IntensityVisualizationMixin:
             None,
         )
         self._auto_contrast_source = 'slice'
-        self._keep_auto_contrast = False
+        self._auto_contrast = False
 
         # circular import
         from napari.components.overlays import ColorBarOverlay
@@ -100,7 +101,7 @@ class IntensityVisualizationMixin:
     @property
     def colormaps(self):
         """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
+        return tuple(AVAILABLE_COLORMAPS.keys())
 
     @property
     def colorbar(self):
@@ -177,3 +178,15 @@ class IntensityVisualizationMixin:
         self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()
+
+    @property
+    def auto_contrast(self):
+        """bool: Whether to automatically set contrast limits to the data range of each slice."""
+        return self._auto_contrast
+
+    @auto_contrast.setter
+    def auto_contrast(self, value):
+        self._auto_contrast = bool(value)
+        self.events.auto_contrast()
+        if self._auto_contrast:
+            self.reset_contrast_limits()

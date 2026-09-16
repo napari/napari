@@ -16,7 +16,6 @@ from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
-from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -208,8 +207,7 @@ def parse_sys_argv():
     return args, kwargs
 
 
-def _run() -> None:
-    from napari import run
+def _build_viewer() -> Viewer:
     from napari.settings import get_settings
 
     """Main program."""
@@ -245,6 +243,8 @@ def _run() -> None:
         # so remove --plugin from sys.argv to prevent that warning
         sys.argv.remove('--plugin')
 
+    npe2_plugins = []
+
     if args.with_:
         from napari.plugins import (
             _initialize_plugins,
@@ -255,7 +255,6 @@ def _run() -> None:
         # if the requested plugin/widget is not available.
         _initialize_plugins()
 
-        npe2_plugins = []
         for plugin in args.with_:
             pname, *wnames = plugin
             for name, (w_pname, wnames) in _npe2.widget_iterator():
@@ -286,9 +285,7 @@ def _run() -> None:
     # just set stack to True similar to the previous store_true action
     if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
         warnings.warn(
-            trans._(
-                "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-            ),
+            "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -344,6 +341,13 @@ def _run() -> None:
         maybe_patch_conda_exe()
     # now that we've processed all the args, show viewer
     viewer.show()
+    return viewer
+
+
+def _run() -> None:
+    from napari import run
+
+    _viewer = _build_viewer()
     run(gui_exceptions=True)
 
 
@@ -370,9 +374,10 @@ def _run_plugin_module(mod, plugin_name):
     run()
 
 
-def main():
+def main() -> None:
     _run()
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+    sys.exit(0)

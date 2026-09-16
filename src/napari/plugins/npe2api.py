@@ -23,8 +23,7 @@ from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
 PyPIname = str
 

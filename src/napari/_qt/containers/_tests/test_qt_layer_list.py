@@ -1,14 +1,13 @@
-import threading
-
 import numpy as np
 from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
 from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
+from napari._qt.containers.qt_layer_model import LockedRole
 from napari._tests.utils import skip_local_focus
 from napari.components import LayerList
-from napari.layers import Image, Shapes
+from napari.layers import Image, Labels, Shapes
 
 
 def test_set_layer_invisible_makes_item_unchecked(qtbot):
@@ -186,6 +185,111 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
         ).isEnabled()
 
 
+def _lock_blocks_action(qtbot, monkeypatch, layers_factory, action_id):
+    from napari._app_model import get_app_model
+
+    layer_list, lock_target = layers_factory()
+    layer_list._create_contexts()
+    view = QtLayerList(layer_list)
+    qtbot.addWidget(view)
+    delegate = view.itemDelegate()
+    for lay in layer_list:
+        layer_list.selection.add(lay)
+    index = layer_to_model_index(view, 0)
+
+    monkeypatch.setattr(
+        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+    )
+    app = get_app_model()
+
+    def menu_action_enabled():
+        with app.injection_store.register(providers={LayerList: layer_list}):
+            delegate.show_context_menu(
+                index, view.model(), QPoint(10, 10), parent=view
+            )
+            return delegate._context_menu.findAction(action_id).isEnabled()
+
+    assert menu_action_enabled()
+    lock_target.locked = True
+    assert not menu_action_enabled()
+    lock_target.locked = False
+    assert menu_action_enabled()
+
+
+def test_locked_blocks_convert_to_labels(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3)))
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.convert_to_labels'
+    )
+
+
+def test_locked_blocks_convert_to_image(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        labels = Labels(np.zeros((4, 3), dtype=int))
+        layer_list.append(labels)
+        return layer_list, labels
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.convert_to_image'
+    )
+
+
+def test_locked_blocks_split_stack(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3, 3)))
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.split_stack'
+    )
+
+
+def test_locked_blocks_split_rgb(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image = Image(np.zeros((4, 3, 3)), rgb=True)
+        layer_list.append(image)
+        return layer_list, image
+
+    _lock_blocks_action(qtbot, monkeypatch, factory, 'napari.layer.split_rgb')
+
+
+def test_locked_blocks_merge_stack(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image_a = Image(np.zeros((4, 3)))
+        image_b = Image(np.zeros((4, 3)))
+        layer_list.append(image_a)
+        layer_list.append(image_b)
+        return layer_list, image_a
+
+    _lock_blocks_action(
+        qtbot, monkeypatch, factory, 'napari.layer.merge_stack'
+    )
+
+
+def test_locked_blocks_merge_rgb(qtbot, monkeypatch):
+    def factory():
+        layer_list = LayerList()
+        image_a = Image(np.zeros((4, 3)))
+        image_b = Image(np.zeros((4, 3)))
+        image_c = Image(np.zeros((4, 3)))
+        layer_list.append(image_a)
+        layer_list.append(image_b)
+        layer_list.append(image_c)
+        return layer_list, image_a
+
+    _lock_blocks_action(qtbot, monkeypatch, factory, 'napari.layer.merge_rgb')
+
+
 def make_qt_layer_list_with_delegate(qtbot):
     image1 = Image(np.zeros((4, 3)))
     image2 = Image(np.zeros((4, 3)))
@@ -203,15 +307,19 @@ def make_qt_layer_list_with_delegate(qtbot):
 @skip_local_focus
 def test_drag_and_drop_layers(qtbot):
     """
-    Test drag and drop actions with pyautogui to change layer list order.
+    Test layer reordering via drag-and-drop mime data protocol.
 
-    Notes:
-        * For this test to pass locally on macOS, you need to give the Terminal/iTerm
-          application accessibility permissions:
-              `System Settings > Privacy & Security > Accessibility`
+    Drag-and-drop simulation via QTest/QMouseEvent does not work on Windows
+    because QDrag.exec() uses a native event loop that cannot see
+    programmatically-sent Qt events. Only OS-level input injection (like
+    pyautogui) can feed that queue.
 
-        See https://github.com/asweigart/pyautogui/issues/247 and
-        https://github.com/asweigart/pyautogui/issues/247#issuecomment-437668855.
+    This test instead exercises the drag-drop data pipeline directly:
+    - model.mimeData()  — encodes the selection (same as view.startDrag)
+    - model.dropMimeData() — decodes and applies the drop (same as view.dropEvent)
+
+    These are the napari-specific parts of the drag-and-drop implementation.
+    The mouse gesture itself is pure Qt framework code tested upstream.
     """
     view, images = make_qt_layer_list_with_layers(qtbot)
     with qtbot.waitExposed(view):
@@ -223,38 +331,24 @@ def test_drag_and_drop_layers(qtbot):
     )
     assert name == images[-1].name
 
-    # drag and drop event simulation
-    base_pos = view.mapToGlobal(view.rect().topLeft())
-    start_pos = base_pos + QPoint(50, 10)
-    start_x = start_pos.x()
-    start_y = start_pos.y()
-    end_pos = base_pos + QPoint(100, 100)
-    end_x = end_pos.x()
-    end_y = end_pos.y()
+    # Create mime data for image2 (view row 0, which is source row 1).
+    # The view model (ReverseProxyModel) handles index mapping.
+    src_view_index = layer_to_model_index(view, 0)
+    mime_data = view.model().mimeData([src_view_index])
+    assert mime_data is not None
 
-    drag_drop = threading.Thread(
-        target=drag_and_drop, args=(start_x, start_y, end_x, end_y)
+    # Drop at the end of the view (destRow=-1), which ReverseProxyModel
+    # maps to source row 0, effectively moving image2 to the front.
+    result = view.model().dropMimeData(
+        mime_data, Qt.DropAction.MoveAction, -1, 0, QModelIndex()
     )
-    drag_drop.start()
+    assert result
 
-    def check_drag_and_drop():
-        # check layerlist first element corresponds with first layer in the GUI
-        name = view.model().data(
-            layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
-        )
-        return name == images[0].name
-
-    qtbot.waitUntil(check_drag_and_drop)
-
-
-def drag_and_drop(start_x, start_y, end_x, end_y):
-    # simulate a drag and drop action with pyautogui
-    import pyautogui
-
-    pyautogui.moveTo(start_x, start_y, duration=0.2)
-    pyautogui.mouseDown()
-    pyautogui.moveTo(end_x, end_y, duration=0.2)
-    pyautogui.mouseUp()
+    # Verify new order — image2 moved to the front, so view row 0 = image1
+    name = view.model().data(
+        layer_to_model_index(view, 0), Qt.ItemDataRole.DisplayRole
+    )
+    assert name == images[0].name
 
 
 def make_qt_layer_list_with_layer(qtbot) -> tuple[QtLayerList, Image]:
@@ -296,3 +390,44 @@ def test_createEditor(qtbot):
     assert isinstance(editor, QLineEdit)
     delegate.setEditorData(editor, model_index)
     assert editor.text() == image.name
+
+
+def test_lock_role_data(qtbot):
+    """LockedRole should return the layer's locked property."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    model_index = layer_to_model_index(view, 0)
+    assert not view.model().data(model_index, LockedRole)
+    image.locked = True
+    assert view.model().data(model_index, LockedRole)
+
+
+def test_lock_role_set_data(qtbot):
+    """setData with LockedRole should change layer.locked."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    model_index = layer_to_model_index(view, 0)
+    view.model().setData(model_index, True, LockedRole)
+    assert image.locked
+
+
+def test_process_event_locked(qtbot):
+    """locked event should trigger dataChanged signal."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    changed_signals = []
+    view.model().dataChanged.connect(lambda *a: changed_signals.append(a))
+    image.locked = True
+    assert len(changed_signals) >= 1
+
+
+def test_paint_lock_icon_locked(qtbot):
+    """Painting locked layer should not raise errors."""
+    view, image = make_qt_layer_list_with_layer(qtbot)
+    image.locked = True
+    view.viewport().update()
+    qtbot.wait(100)
+
+
+def test_paint_lock_icon_unlocked(qtbot):
+    """Painting unlocked layer should not raise errors."""
+    view, _image = make_qt_layer_list_with_layer(qtbot)
+    view.viewport().update()
+    qtbot.wait(100)

@@ -769,7 +769,6 @@ class FeaturesTable(QWidget):
         self.layout().addWidget(self.join_toggle)
         self.layout().addWidget(self.save)
         self.layout().addWidget(self.table)
-        self.layout().addStretch()
 
         self.toggle.toggled.connect(self._on_editable_change)
         self.join_toggle.toggled.connect(self._on_join_change)

@@ -14,7 +14,6 @@ from napari._qt.containers._base_item_model import (
 from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_list_view import QtListView
 from napari.layers import Layer
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
@@ -60,7 +59,7 @@ class QtLayerList(QtListView[Layer]):
 
         layer_delegate.loading_frame_changed.connect(viewport.update)
 
-        self.setToolTip(trans._('Layer list'))
+        self.setToolTip('Layer list')
 
         # This reverses the order of the items in the view,
         # so items at the end of the list are at the top.

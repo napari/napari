@@ -8,7 +8,6 @@ to server as a graphical user interface for napari.
 
 __all__ = ['Window']
 
-from napari.utils.translations import trans
 
 try:
     from napari._qt import Window
@@ -25,7 +24,5 @@ except ImportError as e:
 
         def __getattr__(self, name):
             raise type(err)(
-                trans._(
-                    'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above',
-                )
+                'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above'
             ) from err

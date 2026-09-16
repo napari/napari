@@ -6,7 +6,6 @@ from pydantic import field_validator
 
 from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.geometry import intersect_line_with_plane_3d
-from napari.utils.translations import trans
 
 Point3D: TypeAlias = tuple[float, float, float]
 
@@ -184,11 +183,7 @@ class ClippingPlaneList(SelectableEventedList):
         """
         if array.ndim != 3 or array.shape[1:] != (2, 3):
             raise ValueError(
-                trans._(
-                    'Planes can only be constructed from arrays of shape (N, 2, 3), not {shape}',
-                    deferred=True,
-                    shape=array.shape,
-                )
+                f'Planes can only be constructed from arrays of shape (N, 2, 3), not {array.shape}'
             )
         planes = [
             ClippingPlane.from_array(sub_arr, enabled=enabled)

@@ -12,8 +12,9 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     from vispy.color import Colormap as VispyColormap
-    from vispy.visuals.text.text import FontManager
+    from vispy.visuals.filters.clipper import Clipper
 
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.utils.color import ColorValue
 
 
@@ -28,11 +29,7 @@ class ColorBar(Node):
         ]
     )
 
-    def __init__(
-        self,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
-    ) -> None:
+    def __init__(self, font_info: FontInfo) -> None:
         super().__init__()
         self.ticks = Axis(
             pos=self._box_data[2:4],
@@ -47,8 +44,7 @@ class ColorBar(Node):
         self.ticks._text = Text(
             font_size=self.ticks.tick_font_size,
             color=self.ticks.text_color,
-            font_manager=font_manager,
-            face=font_family,
+            font_info=font_info,
         )
         self.ticks.add_subvisual(self.ticks._text)
 
@@ -126,5 +122,16 @@ class ColorBar(Node):
         text = self.ticks._text
         self.ticks._update_subvisuals()  # triggers computing of the tick labels
 
-        width, height = text.get_width_height()
-        return width + self.ticks.tick_label_margin, height
+        width, _ = text.get_width_height()
+        return width + self.ticks.tick_label_margin, text.get_line_height()
+
+    def _set_clipper(self, node: Node, clipper: Clipper) -> None:
+        """Propagate clipper to child visuals.
+
+        ColorBar is just a Node (not VisualNode) so it doesn't have the filter
+        attach/detach logic; using Compound instead of Node is an alternative
+        that doesn't require these extra tricks, but has other issues (due to
+        our parenting hijacking) which are more complex to solve.
+        """
+        for child in self.children:
+            child._set_clipper(node, clipper)
