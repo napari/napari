@@ -4,7 +4,7 @@ from pydantic import Field
 
 from napari.components.camera import Camera
 from napari.components.overlays import (
-    CursorLocatorOverlay,
+    CrosshairOverlay,
     SceneAxesOverlay,
     SceneOverlay,
 )
@@ -35,7 +35,7 @@ class Scene(EventedModel):
         default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
-                'cursor_locator': CursorLocatorOverlay(),
+                'crosshair': CrosshairOverlay(),
             }
         )
     )

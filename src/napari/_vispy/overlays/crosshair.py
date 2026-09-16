@@ -7,14 +7,14 @@ import numpy as np
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 
 if TYPE_CHECKING:
-    from napari._vispy.visuals.cursor_locator import Crosshair
-    from napari.components.overlays import CursorLocatorOverlay
+    from napari._vispy.visuals.crosshair import Crosshair
+    from napari.components.overlays import CrosshairOverlay
 
 
-class VispyCursorLocatorOverlay(ViewerOverlayMixin, VispySceneOverlay):
+class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
     """Overlay indicating the position of the cursor in the world."""
 
-    overlay: CursorLocatorOverlay
+    overlay: CrosshairOverlay
     node: Crosshair
 
     def __init__(self, **kwargs: Any) -> None:
