@@ -6,7 +6,6 @@ import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
-from napari.components.camera import DEFAULT_ORIENTATION_TYPED
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
@@ -103,18 +102,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         if self.viewer.dims.ndisplay == 3:
             view_direction = np.sign(self.viewer.scene.camera.view_direction)
-            orientation_flip = tuple(
-                1 if ori == default_ori else -1
-                for ori, default_ori in zip(
-                    self.viewer.scene.camera.orientation,
-                    DEFAULT_ORIENTATION_TYPED,
-                    strict=True,
-                )
-            )
-
-            view_is_flipped = tuple((view_direction * orientation_flip) >= 0)[
-                ::-1
-            ]
+            view_is_flipped = tuple(view_direction >= 0)[::-1]
         else:
             view_is_flipped = (False, False, False)
             ranges = ranges + ((0, 0),)

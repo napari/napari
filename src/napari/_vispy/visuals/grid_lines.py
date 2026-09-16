@@ -172,7 +172,8 @@ class GridLines3D(Node):
             text.transform.move((0, -offset, start_prev - offset))
         else:
             if axis == 0:
-                # special case one axis so it's visually nicer (all axes are on the "outside")
+                # special case one axis so it's visually nicer (all axes are
+                # on the "outside" and all are on the "same side")
                 text.transform.move((0, -offset, stop_prev + offset))
             else:
                 text.transform.move(
