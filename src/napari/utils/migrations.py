@@ -68,7 +68,7 @@ class RenamedProperty(property):
         doc: str | None = None,
     ):
         parts = new_name.split('.')
-        if any(not part.isidentifier() for part in parts):
+        if any(not part.isidentifier() for part in parts):  # pragma: no cover
             raise ValueError(f'Invalid attribute path: {new_name!r}')
 
         self._new_name = new_name
@@ -109,7 +109,7 @@ class RenamedProperty(property):
     @property
     def name(self) -> str:
         """Alias name."""
-        if self._name is None:
+        if self._name is None:  # pragma: no cover
             raise RuntimeError(
                 'RenamedProperty has not been assigned to a class yet.'
             )

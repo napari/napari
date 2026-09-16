@@ -111,6 +111,33 @@ def test_deprecated_property_legacy_version(due_date):
     assert instance.new == 2
 
 
+def test_deprecated_property_legacy_version_old_usage():
+    class Sample:
+        new = 1
+
+    with pytest.warns(
+        FutureWarning,
+        match='Using positional arguments for add_deprecated_property',
+    ):
+        add_deprecated_property(
+            Sample, 'old', 'new', version='0.1.0', since_version='0.0.0'
+        )
+    assert Sample.old is not None
+
+    with pytest.warns(
+        FutureWarning,
+        match="Using 'obj' keyword argument for add_deprecated_property",
+    ):
+        add_deprecated_property(
+            obj=Sample,
+            previous_name='old2',
+            new_name='new',
+            version='0.1.0',
+            since_version='0.0.0',
+        )
+    assert Sample.old2 is not None
+
+
 @pytest.mark.parametrize(
     ('previous_name', 'new_name', 'message'),
     [
