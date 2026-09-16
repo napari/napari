@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
+from napari._vispy.visuals.crosshair import Crosshair
 
 if TYPE_CHECKING:
-    from napari._vispy.visuals.crosshair import Crosshair
     from napari.components.overlays import CrosshairOverlay
 
 
@@ -19,6 +19,7 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(
+            node=Crosshair(),
             **kwargs,
         )
         self.overlay.events.color.connect(self._on_color_change)
