@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class VispyCursorLocatorOverlay(ViewerOverlayMixin, VispySceneOverlay):
     overlay: CursorLocatorOverlay
     node: Crosshair
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(
             **kwargs,
         )
@@ -31,7 +31,7 @@ class VispyCursorLocatorOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def _on_position_change(self) -> None:
         displayed = list(self.viewer.dims.displayed[::-1])
         if len(displayed) == 2:
-            displayed = np.concat([displayed, [0]])
+            displayed = displayed + [0]
         self.node.position = np.array(self.viewer.cursor.position)[displayed]
 
     def _on_color_change(self) -> None:

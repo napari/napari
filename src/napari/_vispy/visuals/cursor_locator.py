@@ -108,13 +108,13 @@ class CrosshairVisual(Visual):
         self.shared_program.vert['gap'] = self._gap
         self.update()
 
-    def _prepare_transforms(self, view: VisualView | None = None):
+    def _prepare_transforms(self, view: VisualView | None = None) -> None:
         if view is not None:
             view.view_program.vert['visual_to_render'] = (
                 view.transforms.get_transform('visual', 'render')
             )
 
-    def _prepare_draw(self, view=None):
+    def _prepare_draw(self, view: VisualView | None = None) -> None:
         """This method is called immediately before each draw.
 
         The *view* argument indicates which view is about to be drawn.
