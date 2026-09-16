@@ -705,7 +705,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
             attenuated = (  # pyrefly: ignore [unsupported-operation]
-                luminance - self.contrast_limits[0]
+                luminance - self.contrast_limits[0]  # pyrefly: ignore [unsupported-operation]
             ) / self.contrast_limits[1]
             # approx, step size is actually calculated with int(lenght(ray) * 2)
             step_size = 0.5
