@@ -175,9 +175,13 @@ def test_grid_mode(qt_viewer):
     # on grid shape changes. Also check grid shapes respond correctly.
     viewer.canvas.grid.enabled = True
     viewer.canvas.grid.stride = 2
-    viewer.add_image(np.ones((10, 10, 10)))
+    l1 = viewer.add_image(np.ones((10, 10, 10)))
     l2 = viewer.add_image(np.ones((10, 10, 10)))
-    viewer.add_image(np.ones((10, 10, 10)))
+    l3 = viewer.add_image(np.ones((10, 10, 10)))
+    l1.colorbar.visible = True
+    l2.colorbar.visible = True
+    l3.colorbar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
     canvas.on_draw(None)
     assert len(canvas.grid_views) == 2
 
