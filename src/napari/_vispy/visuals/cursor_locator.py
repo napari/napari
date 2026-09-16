@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from vispy.gloo import VertexBuffer
 from vispy.scene.visuals import create_visual_node
 from vispy.visuals import Visual
+
+if TYPE_CHECKING:
+    from vispy.visuals.visual import VisualView
 
 _VERTEX_SHADER = """#version 330
 in float a_idx;  // int attribvutes not working, so we use a float
@@ -61,14 +68,14 @@ void main() {
 
 
 class CrosshairVisual(Visual):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(vcode=_VERTEX_SHADER, fcode=_FRAGMENT_SHADER)
         self.shared_program['a_idx'] = VertexBuffer(
             np.arange(12, dtype=np.float32)
         )
         self._draw_mode = 'lines'
-        self.position = (0, 0, 0)
-        self.color = (1, 1, 1, 1)
+        self.position = np.array((0, 0, 0))
+        self.color = np.array((1, 1, 1, 1))
         self.gap = 0.05
 
     @property
@@ -101,10 +108,11 @@ class CrosshairVisual(Visual):
         self.shared_program.vert['gap'] = self._gap
         self.update()
 
-    def _prepare_transforms(self, view=None):
-        view.view_program.vert['visual_to_render'] = (
-            view.transforms.get_transform('visual', 'render')
-        )
+    def _prepare_transforms(self, view: VisualView | None = None):
+        if view is not None:
+            view.view_program.vert['visual_to_render'] = (
+                view.transforms.get_transform('visual', 'render')
+            )
 
     def _prepare_draw(self, view=None):
         """This method is called immediately before each draw.
