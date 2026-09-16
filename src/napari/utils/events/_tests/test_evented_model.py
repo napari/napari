@@ -2,6 +2,7 @@ import inspect
 import operator
 from contextlib import nullcontext
 from enum import auto
+from functools import wraps
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
 
@@ -1164,3 +1165,69 @@ def test_nested_dependency_property_deprecation():
         model.child.value = 3
     callback.assert_called_once()
     assert callback.call_args.args[0].value == 6
+
+
+def test_deprecated_property_without_category():
+    class Model(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=None)
+        def b(self):
+            return self.a * 2
+
+    model = Model()
+
+    assert model.b == 2
+
+    mock = Mock()
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        model.events.b.connect(mock)
+
+    model.a = 3
+    mock.assert_called_once()
+
+
+def test_deprecated_without_category_with_additional_decorator():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(arg):
+            return func(arg)
+
+        return wrapper
+
+    class Model(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=None)
+        @decorator
+        def b(self):
+            return self.a * 2
+
+    model = Model()
+
+    assert model.b == 2
+
+    mock = Mock()
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        model.events.b.connect(mock)
+
+    model.a = 3
+    mock.assert_called_once()
+
+
+def test__non_evented_properties():
+    class Model(EventedModel):
+        __non_evented_properties__ = {'non_evented'}
+        a: int = 1
+
+        def non_evented(self):
+            return self.a * 2
+
+    m = Model()
+
+    assert m.non_evented() == 2
+    assert 'non_evented' not in m.events
+    assert 'a' in m.events
+    assert 'events' not in m.events

@@ -877,7 +877,6 @@ class ChildrenEmitterMixin:
     ) -> None:
         super().__init__(*args, **kwargs)
         *self._source_path, self._source_attr = source_path.split('.')
-        self._current_name = current_name
         self._target_emitter: Callable[[], EventEmitter | None] | None = None
         # Entries correspond to path components; None means no replacement event.
         self._replacement_emitters: list[
@@ -896,11 +895,7 @@ class ChildrenEmitterMixin:
         del self._replacement_emitters[index:]
 
     def _trigger_reemit(self, event=None) -> None:
-        if self._current_name is None:
-            self(event) if event is not None else self()
-        else:
-            value = getattr(self.source, self._current_name)
-            self(value=value)
+        self(event) if event is not None else self()
 
     def _on_parent_replaced(self) -> None:
         """Reconnect and notify listeners without comparing or caching values.
@@ -918,7 +913,7 @@ class ChildrenEmitterMixin:
         fields. Without an event, only read-only properties are assumed stable.
         """
         target = self.source
-        if target is None:
+        if target is None:  # pragma: no cover
             raise RuntimeError(
                 f'Cannot connect to renamed emitter {self._source_attr} because source is None'
             )
@@ -995,17 +990,13 @@ class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
     """
 
     def _trigger_reemit(self, event=None) -> None:
-        if self._current_name is None:
-            if event is not None:
-                self(event)
-            else:
-                target = self.source
-                for el in self._source_path:
-                    target = getattr(target, el)
-                self(value=getattr(target, self._source_attr))
+        if event is not None:
+            self(event)
         else:
-            value = getattr(self.source, self._current_name)
-            self(value=value)
+            target = self.source
+            for el in self._source_path:
+                target = getattr(target, el)
+            self(value=getattr(target, self._source_attr))
 
     def connect(self, cb, *args, **kwargs) -> None:
         if self._target_emitter is None:

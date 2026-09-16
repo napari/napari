@@ -143,7 +143,7 @@ def _get_properties_dependence(
     deps: dict[str, set[str]] = {}
     for prop_name, prop in cls.__properties__.items():
         dep = _get_property_dependence_from_code(cls, prop, set())
-        if 'prop_name' in dep:
+        if prop_name in dep:
             dep.remove(prop_name)
         deps[prop_name] = dep
     return deps
@@ -195,9 +195,8 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
 
     deps: dict[str, set[str]] = {}
 
-    _deps = cls.model_config.get('dependencies')
-    if _deps:
-        for prop_name, fields in _deps.items():
+    if deps_ := cls.model_config.get('dependencies', {}):
+        for prop_name, fields in deps_.items():
             if prop_name not in cls.__properties__:
                 raise ValueError(
                     'Fields with dependencies must be properties. '
@@ -212,7 +211,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
         # them from the property.fget code object:
         for prop_name, fields in cls.__properties_dependence__.items():
             if prop_name not in cls.__properties__:
-                raise ValueError(
+                raise ValueError(  # pragma: no cover
                     'Fields with dependencies must be properties. '
                     f'{prop_name!r} is not.'
                 )
@@ -222,7 +221,9 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
                 if '.' in field:
                     continue
                 if field not in cls.model_fields:
-                    warnings.warn(f'Unrecognized field dependency: {field}')
+                    warnings.warn(
+                        f'Unrecognized field dependency: {field}'
+                    )  # pragma: no cover
                 deps.setdefault(field, set()).add(prop_name)
     return deps
 
@@ -598,14 +599,15 @@ class _DeprecatedParam(TypedDict):
 
 def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
     message = getattr(function, '__deprecated__', '')
-    if (closure := function.__closure__) is None:
+    if (
+        closure := getattr(function, '__closure__', None)
+    ) is None or not hasattr(function, '__code__'):
+        # access with getattr as compiled functions may not have a __code__ or __closure__ attribute
         return _DeprecatedParam(message=message)
 
-    for idx, name in enumerate(function.__code__.co_freevars):
-        if idx >= len(closure):
-            break
+    for name, cell in zip(function.__code__.co_freevars, closure, strict=True):
         if name == 'category':
-            category = closure[idx].cell_contents
+            category = cell.cell_contents
             return _DeprecatedParam(message=message, category=category)
     return _DeprecatedParam(message=message)
 
@@ -632,11 +634,6 @@ def _property_to_event_emitter(
             property_name=type_name,
             sources_list=non_direct,
         )
-
-    dep = property_dependencies(prop)
-    if any('.' in d for d in dep.attributes):
-        # non-direct dependencies
-        pass
 
     if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
         return WarningEmitter(

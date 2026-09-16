@@ -104,7 +104,9 @@ def property_dependencies(prop: Callable | property) -> FunctionDependencies:
     func: Callable
     if isinstance(prop, property):
         if prop.fget is None:
-            raise ValueError('Property has no getter function')
+            raise ValueError(
+                'Property has no getter function'
+            )  # pragma: no cover
         func = prop.fget
     else:
         func = prop
