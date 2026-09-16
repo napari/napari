@@ -46,6 +46,72 @@ def create_known_shapes_layer():
     return layer, n_shapes, known_non_shape
 
 
+def _assert_last_shape_is_committed(layer: Shapes) -> None:
+    index = layer.nshapes - 1
+    shape = layer._data_view.shapes[index]
+    assert layer._data_view.staged_index is None
+    assert shape.z_index == max(layer.z_index)
+
+    vertices_slice = layer._data_view._vertices_slice_available(index)
+    np.testing.assert_allclose(
+        layer._data_view._vertices[vertices_slice], shape.data_displayed
+    )
+
+    mesh_vertices_slice = layer._data_view._mesh_vertices_slice_available(
+        index
+    )
+    expected_vertices = np.concatenate(
+        [
+            shape._face_vertices,
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets,
+        ]
+    )
+    np.testing.assert_allclose(
+        layer._data_view._mesh.vertices[mesh_vertices_slice],
+        expected_vertices,
+    )
+
+    mesh_triangles_slice = layer._data_view._mesh_triangles_slice_available(
+        index
+    )
+    expected_triangles = np.concatenate(
+        [
+            shape._face_triangles + mesh_vertices_slice.start,
+            shape._edge_triangles
+            + mesh_vertices_slice.start
+            + shape.face_vertices_count,
+        ]
+    )
+    np.testing.assert_array_equal(
+        layer._data_view._mesh.triangles[mesh_triangles_slice],
+        expected_triangles,
+    )
+    expected_colors = np.concatenate(
+        [
+            np.repeat(
+                [layer.face_color[index]],
+                shape.face_triangles_count,
+                axis=0,
+            ),
+            np.repeat(
+                [layer.edge_color[index]],
+                shape.edge_triangles_count,
+                axis=0,
+            ),
+        ]
+    )
+    np.testing.assert_allclose(
+        layer._data_view._mesh.triangles_colors[mesh_triangles_slice],
+        expected_colors,
+    )
+    np.testing.assert_allclose(
+        layer._data_view._mesh.displayed_triangles_colors[
+            -shape.triangles_count :
+        ],
+        expected_colors,
+    )
+
+
 def test_not_adding_or_selecting_shape(create_known_shapes_layer):
     """Don't add or select a shape by clicking on one in pan_zoom mode."""
     layer, n_shapes, _ = create_known_shapes_layer
@@ -109,6 +175,188 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    _assert_last_shape_is_committed(layer)
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
+def test_gui_creation_defers_aggregate_geometry_until_release(
+    shape_type, create_known_shapes_layer
+):
+    layer, n_shapes, start = create_known_shapes_layer
+    layer.mode = f'add_{shape_type}'
+    set_data = Mock()
+    layer.events.set_data.connect(set_data)
+    aggregate_sizes = (
+        len(layer._data_view._vertices),
+        len(layer._data_view._mesh.vertices),
+        len(layer._data_view._mesh.triangles),
+    )
+
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_press', position=start),
+    )
+
+    index = n_shapes
+    assert layer._data_view.staged_index == index
+    assert len(layer.data) == n_shapes + 1
+    assert aggregate_sizes == (
+        len(layer._data_view._vertices),
+        len(layer._data_view._mesh.vertices),
+        len(layer._data_view._mesh.triangles),
+    )
+    assert set_data.call_count == 0
+
+    end = [40, 60]
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', is_dragging=True, position=end
+        ),
+    )
+
+    assert aggregate_sizes == (
+        len(layer._data_view._vertices),
+        len(layer._data_view._mesh.vertices),
+        len(layer._data_view._mesh.triangles),
+    )
+    assert set_data.call_count == 0
+
+    mouse_release_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_release', position=end),
+    )
+
+    assert layer._data_view.staged_index is None
+    assert set_data.call_count == 1
+    assert len(layer._data_view._vertices) > aggregate_sizes[0]
+    assert len(layer._data_view._mesh.vertices) > aggregate_sizes[1]
+    assert len(layer._data_view._mesh.triangles) > aggregate_sizes[2]
+
+
+def test_invalid_gui_shape_removes_zero_width_staging_ranges(
+    create_known_shapes_layer,
+):
+    layer, n_shapes, start = create_known_shapes_layer
+    layer.mode = 'add_polyline'
+    aggregate_arrays = (
+        layer._data_view._vertices.copy(),
+        layer._data_view._mesh.vertices.copy(),
+        layer._data_view._mesh.triangles.copy(),
+    )
+
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_press', position=start, pos=np.asarray(start)
+        ),
+    )
+    assert layer._data_view.staged_index == n_shapes
+
+    mouse_double_click_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_double_click', position=start, pos=np.asarray(start)
+        ),
+    )
+
+    assert layer._data_view.staged_index is None
+    assert len(layer.data) == n_shapes
+    np.testing.assert_array_equal(
+        layer._data_view._vertices, aggregate_arrays[0]
+    )
+    np.testing.assert_array_equal(
+        layer._data_view._mesh.vertices, aggregate_arrays[1]
+    )
+    np.testing.assert_array_equal(
+        layer._data_view._mesh.triangles, aggregate_arrays[2]
+    )
+
+
+@pytest.mark.parametrize(
+    'operation',
+    ['move_to_front', 'move_to_back', 'z_index', 'remove_selected'],
+)
+def test_public_mutation_finishes_staged_shape(
+    operation, create_known_shapes_layer
+):
+    layer, n_shapes, start = create_known_shapes_layer
+    layer.mode = 'add_rectangle'
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_press', position=start),
+    )
+    assert layer._data_view.staged_index == n_shapes
+
+    if operation == 'z_index':
+        layer.z_index = -1
+    else:
+        getattr(layer, operation)()
+
+    assert layer._data_view.staged_index is None
+    if operation == 'remove_selected':
+        assert layer.nshapes == n_shapes
+    else:
+        assert layer.nshapes == n_shapes + 1
+
+
+def test_visibility_change_finishes_staged_shape(create_known_shapes_layer):
+    layer, n_shapes, start = create_known_shapes_layer
+    layer.mode = 'add_rectangle'
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_press', position=start),
+    )
+    assert layer._data_view.staged_index == n_shapes
+
+    layer.visible = False
+
+    assert layer._data_view.staged_index is None
+
+
+def test_not_displayed_axis_uses_aggregate_geometry():
+    """A layer with a non-displayed axis keeps the aggregate creation path.
+
+    The aggregate arrays then hold only the shapes on the current slice, so
+    those on other slices make the displayed index runs discontiguous and a
+    staged shape with no aggregate range of its own cannot be addressed.
+    """
+
+    def rectangle(z, offset):
+        return [
+            [z, offset, offset],
+            [z, offset, offset + 5],
+            [z, offset + 5, offset + 5],
+            [z, offset + 5, offset],
+        ]
+
+    layer = Shapes([rectangle(0, 0), rectangle(1, 10), rectangle(0, 20)])
+    layer.scale_factor = 0.001
+    assert layer._data_view._displayed.tolist() == [True, False, True]
+
+    layer.mode = 'add_rectangle'
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_press', position=[0, 40, 40]),
+    )
+    assert layer._data_view.staged_index is None
+
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', is_dragging=True, position=[0, 50, 60]
+        ),
+    )
+    mouse_release_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_release', position=[0, 50, 60]),
+    )
+
+    assert layer.nshapes == 4
+    np.testing.assert_allclose(
+        layer.data[-1],
+        [[0, 40, 40], [0, 40, 60], [0, 50, 60], [0, 50, 40]],
+    )
 
 
 def test_line_fixed_angles(create_known_shapes_layer):
@@ -290,6 +538,7 @@ def test_path_tablet(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] == 'path'
+    assert layer._data_view.staged_index == n_shapes
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
@@ -317,6 +566,7 @@ def test_path_tablet(create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    _assert_last_shape_is_committed(layer)
 
 
 def test_polyline_mouse(create_known_shapes_layer):
@@ -332,6 +582,7 @@ def test_polyline_mouse(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] == 'path'
+    assert layer._data_view.staged_index == n_shapes
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
@@ -356,6 +607,7 @@ def test_polyline_mouse(create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    _assert_last_shape_is_committed(layer)
 
 
 def test_polygon_lasso_tablet(create_known_shapes_layer):
@@ -375,6 +627,7 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     mouse_press_callbacks(layer, event)
 
     assert layer.shape_type[-1] != 'polygon'
+    assert layer._data_view.staged_index == n_shapes
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
@@ -401,6 +654,7 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    _assert_last_shape_is_committed(layer)
 
 
 def test_polygon_lasso_mouse(create_known_shapes_layer):
@@ -478,7 +732,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     # Add shape at location where non exists
     layer.mode = f'add_{shape_type}'
 
-    for coord in desired_shape:
+    for i, coord in enumerate(desired_shape):
         # Simulate move, click, and release
         event = read_only_mouse_event(
             type='mouse_move',
@@ -492,6 +746,8 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
             pos=np.array(coord, dtype=float),
         )
         mouse_press_callbacks(layer, event)
+        if i == 0:
+            assert layer._data_view.staged_index == n_shapes
         event = read_only_mouse_event(
             type='mouse_release',
             position=coord,
@@ -517,6 +773,7 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    _assert_last_shape_is_committed(layer)
 
 
 @pytest.mark.parametrize(

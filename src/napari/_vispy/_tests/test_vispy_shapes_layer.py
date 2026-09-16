@@ -2,7 +2,63 @@ import numpy as np
 
 from napari._vispy.layers.shapes import VispyShapesLayer
 from napari._vispy.utils.qt_font import FontInfo
+from napari.components import ViewerModel
 from napari.layers import Shapes
+from napari.utils._test_utils import read_only_mouse_event
+from napari.utils.interactions import (
+    mouse_move_callbacks,
+    mouse_press_callbacks,
+    mouse_release_callbacks,
+)
+
+
+def test_active_shape_overlay_tracks_staged_geometry():
+    viewer = ViewerModel()
+    layer = viewer.add_shapes([np.array([[0, 0], [0, 2], [2, 2], [2, 0]])])
+    vispy_layer = VispyShapesLayer(layer, font_info=FontInfo())
+    assert vispy_layer.node._subvisuals[0] is vispy_layer.node.shape_faces
+    assert vispy_layer.node._subvisuals[1] is vispy_layer.node.shape_highlights
+    assert vispy_layer.node._subvisuals[2] is vispy_layer.node.highlight_lines
+    layer.mode = 'add_rectangle'
+
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_press', position=[5, 5]),
+    )
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', is_dragging=True, position=[10, 12]
+        ),
+    )
+
+    vertices = vispy_layer.node.shape_highlights.mesh_data.get_vertices()
+    index = layer._data_view.staged_index
+    assert index is not None
+    shape = layer._data_view.shapes[index]
+    expected_vertices = np.concatenate(
+        [
+            shape._face_vertices,
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets,
+        ]
+    )[:, ::-1]
+    np.testing.assert_allclose(
+        vertices[: len(expected_vertices)], expected_vertices
+    )
+
+    mouse_release_callbacks(
+        layer,
+        read_only_mouse_event(type='mouse_release', position=[10, 12]),
+    )
+
+    outline_vertices, outline_faces = layer._outline_shapes()
+    np.testing.assert_allclose(
+        vispy_layer.node.shape_highlights.mesh_data.get_vertices(),
+        outline_vertices,
+    )
+    np.testing.assert_array_equal(
+        vispy_layer.node.shape_highlights.mesh_data.get_faces(), outline_faces
+    )
 
 
 def test_remove_selected_with_derived_text():

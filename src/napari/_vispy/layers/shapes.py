@@ -25,6 +25,16 @@ class VispyShapesLayer(VispyBaseLayer):
         node = ShapesVisual(font_info=font_info)
         super().__init__(layer, node, font_info=font_info)
 
+        (
+            self._active_shape_vertices,
+            self._active_shape_faces,
+        ) = self._empty_shape_geometry()
+        self._active_shape_colors = np.empty((0, 4))
+        (
+            self._highlight_shape_vertices,
+            self._highlight_shape_faces,
+        ) = self._empty_shape_geometry()
+
         self._on_highlight_change_debounc = qdebounced(
             self._on_highlight_change_impl
         )
@@ -33,6 +43,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
+        self.layer.events._active_shape.connect(self._on_active_shape_change)
         self.layer.text.events.connect(self._on_text_change)
         self.layer.events.scale_factor.connect(self._update_text)
 
@@ -42,6 +53,109 @@ class VispyShapesLayer(VispyBaseLayer):
 
         self.reset()
         self._on_data_change()
+
+    def _empty_shape_geometry(self) -> tuple[np.ndarray, np.ndarray]:
+        return (
+            np.empty((0, self.layer._slice_input.ndisplay)),
+            np.empty((0, 3), dtype=int),
+        )
+
+    def _on_active_shape_change(self) -> None:
+        index = self.layer._data_view.staged_index
+        if index is None:
+            (
+                self._active_shape_vertices,
+                self._active_shape_faces,
+            ) = self._empty_shape_geometry()
+            self._active_shape_colors = np.empty((0, 4))
+            self._update_shape_highlight_mesh()
+            return
+
+        shape = self.layer._data_view.shapes[index]
+        face_vertices = shape._face_vertices
+        edge_vertices = (
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets
+        )
+        vertices = np.concatenate([face_vertices, edge_vertices], axis=0)
+        faces = np.concatenate(
+            [
+                shape._face_triangles,
+                shape._edge_triangles + len(face_vertices),
+            ],
+            axis=0,
+        )
+        colors = np.concatenate(
+            [
+                np.repeat(
+                    [self.layer._data_view.face_color[index]],
+                    len(shape._face_triangles),
+                    axis=0,
+                ),
+                np.repeat(
+                    [self.layer._data_view.edge_color[index]],
+                    len(shape._edge_triangles),
+                    axis=0,
+                ),
+            ],
+            axis=0,
+        )
+        vertices = vertices[:, ::-1]
+        if self.layer._slice_input.ndisplay == 3 and self.layer.ndim == 2:
+            vertices = np.pad(vertices, ((0, 0), (0, 1)))
+
+        if len(vertices) == 0 or len(faces) == 0:
+            vertices, faces = self._empty_shape_geometry()
+            colors = np.empty((0, 4))
+
+        self._active_shape_vertices = vertices
+        self._active_shape_faces = faces
+        self._active_shape_colors = colors
+        self._update_shape_highlight_mesh()
+
+    def _update_shape_highlight_mesh(self) -> None:
+        if len(self._active_shape_faces) == 0:
+            if len(self._highlight_shape_faces) == 0:
+                vertices = np.zeros((3, self.layer._slice_input.ndisplay))
+                faces = np.array([[0, 1, 2]])
+                self.node.shape_highlights.set_data(
+                    vertices=vertices,
+                    faces=faces,
+                    face_colors=np.zeros((1, 4)),
+                )
+            else:
+                self.node.shape_highlights.set_data(
+                    vertices=self._highlight_shape_vertices,
+                    faces=self._highlight_shape_faces,
+                    color=self.layer._highlight_color,
+                )
+            self.node.update()
+            return
+
+        vertices = np.concatenate(
+            [self._active_shape_vertices, self._highlight_shape_vertices],
+            axis=0,
+        )
+        faces = np.concatenate(
+            [
+                self._active_shape_faces,
+                self._highlight_shape_faces + len(self._active_shape_vertices),
+            ],
+            axis=0,
+        )
+        highlight_colors = np.repeat(
+            [self.layer._highlight_color],
+            len(self._highlight_shape_faces),
+            axis=0,
+        )
+        colors = np.concatenate(
+            [self._active_shape_colors, highlight_colors],
+            axis=0,
+        )
+
+        self.node.shape_highlights.set_data(
+            vertices=vertices, faces=faces, face_colors=colors
+        )
+        self.node.update()
 
     def _on_data_change(self):
         faces = self.layer._data_view._mesh.displayed_triangles
@@ -94,14 +208,14 @@ class VispyShapesLayer(VispyBaseLayer):
         vertices, faces = self.layer._outline_shapes()
 
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
-            vertices = np.zeros((3, self.layer._slice_input.ndisplay))
-            faces = np.array([[0, 1, 2]])
-
-        self.node.shape_highlights.set_data(
-            vertices=vertices,
-            faces=faces,
-            color=self.layer._highlight_color,
-        )
+            (
+                self._highlight_shape_vertices,
+                self._highlight_shape_faces,
+            ) = self._empty_shape_geometry()
+        else:
+            self._highlight_shape_vertices = vertices
+            self._highlight_shape_faces = faces
+        self._update_shape_highlight_mesh()
 
         # Compute the location and properties of the vertices and box that
         # need to get rendered
@@ -174,6 +288,16 @@ class VispyShapesLayer(VispyBaseLayer):
 
     def reset(self):
         super().reset()
+        (
+            self._active_shape_vertices,
+            self._active_shape_faces,
+        ) = self._empty_shape_geometry()
+        self._active_shape_colors = np.empty((0, 4))
+        (
+            self._highlight_shape_vertices,
+            self._highlight_shape_faces,
+        ) = self._empty_shape_geometry()
+        self._on_active_shape_change()
         self._on_highlight_change()
         self._on_blending_change()
 

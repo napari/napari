@@ -394,7 +394,10 @@ def add_vertex_to_path(
         value = layer._moving_value
     layer._value = (value[0], value[1] + 1)
     layer._moving_value = copy(layer._value)
-    layer._data_view.edit(index, vertices, new_type=new_type)
+    if index == layer._data_view.staged_index:
+        layer._data_view.edit_staged(index, vertices, new_type=new_type)
+    else:
+        layer._data_view.edit(index, vertices, new_type=new_type)
     layer._last_cursor_position = np.array(event.pos)
 
 
@@ -895,9 +898,14 @@ def _add_rectangle_ellipse_line(
     scale_mat = np.array([[drag_scale[0], 0], [0, drag_scale[1]]])
     transform = rot @ scale_mat @ inv_rot
     index = next(iter(layer.selected_data))
-    layer._data_view.shift(index, -layer._fixed_vertex)
-    layer._data_view.transform(index, transform)
-    layer._data_view.shift(index, layer._fixed_vertex)
+    if index == layer._data_view.staged_index:
+        layer._data_view.shift_staged(index, -layer._fixed_vertex)
+        layer._data_view.transform_staged(index, transform)
+        layer._data_view.shift_staged(index, layer._fixed_vertex)
+    else:
+        layer._data_view.shift(index, -layer._fixed_vertex)
+        layer._data_view.transform(index, transform)
+        layer._data_view.shift(index, layer._fixed_vertex)
     layer._transform_box(transform, center=layer._fixed_vertex)
     layer.refresh()
 
@@ -961,5 +969,10 @@ def _move_active_element_under_cursor(
                     vertices[0] = coordinates
             vertices[vertex] = coordinates
 
-            layer._data_view.edit(index, vertices, new_type=new_type)
+            if index == layer._data_view.staged_index:
+                layer._data_view.edit_staged(
+                    index, vertices, new_type=new_type
+                )
+            else:
+                layer._data_view.edit(index, vertices, new_type=new_type)
             layer.refresh()

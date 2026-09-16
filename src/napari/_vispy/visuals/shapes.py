@@ -18,7 +18,7 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
 
     Components:
         - Mesh for shape faces (vispy.MeshVisual)
-        - Mesh for highlights (vispy.MeshVisual)
+        - Mesh for the active shape and highlights (vispy.MeshVisual)
         - Lines for highlights (vispy.LineVisual)
         - Vertices for highlights (vispy.MarkersVisual)
         - Text labels (vispy.TextVisual)
@@ -43,7 +43,7 @@ class ShapesVisual(ClippingPlanesMixin, Compound):
 
     @property
     def shape_highlights(self) -> Mesh:
-        """Mesh for shape highlights"""
+        """Mesh for the active shape and shape highlights."""
         return self._subvisuals[1]
 
     @property

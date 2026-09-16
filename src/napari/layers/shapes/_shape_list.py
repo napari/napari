@@ -437,6 +437,7 @@ class ShapeList:
         self._vertices_index: IndexArray = np.zeros(1, dtype=IndexDtype)
         self._z_index: IndexArray = np.empty(0, dtype=IndexDtype)
         self._z_order: IndexArray = np.empty(0, dtype=IndexDtype)
+        self._staged_index: int | None = None
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
@@ -452,6 +453,132 @@ class ShapeList:
         if not isinstance(data, Sequence):
             data = list(data)
         self.add(data)
+
+    @property
+    def staged_index(self) -> int | None:
+        """Index of the shape excluded from aggregate geometry, if any."""
+        return self._staged_index
+
+    def _guard_not_staged(self, index: int, operation: str) -> None:
+        if index == self._staged_index:
+            raise RuntimeError(
+                f'{operation} cannot update staged shape {index}; '
+                'use the staged-shape operation instead'
+            )
+
+    def add_staged(
+        self,
+        shape: Shape,
+        *,
+        face_color: ShapeColor,
+        edge_color: ShapeColor,
+    ) -> int:
+        """Append one topmost shape without adding its aggregate geometry."""
+        if self._staged_index is not None:
+            raise RuntimeError('Only one shape can be staged at a time')
+        if not isinstance(shape, Shape):
+            raise TypeError('shape must be subclass of Shape')
+        if len(self._z_index) and shape.z_index < np.max(self._z_index):
+            raise ValueError('A staged shape must be topmost')
+
+        index = len(self.shapes)
+        self.shapes.append(shape)
+        self._z_index = np.append(self._z_index, shape.z_index)
+        self._z_order = np.append(self._z_order, index)
+        self._face_color = np.vstack([self._face_color, face_color])
+        self._edge_color = np.vstack([self._edge_color, edge_color])
+
+        self._vertices_index = np.append(
+            self._vertices_index, self._vertices_index[-1]
+        )
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index, self._mesh.vertices_index[-1]
+        )
+        self._mesh.triangles_index = np.append(
+            self._mesh.triangles_index, self._mesh.triangles_index[-1]
+        )
+
+        slice_key = np.array([self.slice_key, self.slice_key])
+        displayed = np.all(np.abs(shape.slice_key - slice_key) < 0.5)
+        self._displayed = np.append(self._displayed, displayed)
+        self._staged_index = index
+        self._clear_cache()
+        return index
+
+    def edit_staged(self, index: int, data, new_type=None) -> None:
+        """Update the live geometry for the staged shape only."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+
+        if new_type is not None:
+            cur_shape = self.shapes[index]
+            if isinstance(new_type, str):
+                shape_type = ShapeType(new_type)
+                try:
+                    shape_cls = shape_classes[shape_type]
+                except KeyError as e:
+                    raise ValueError(
+                        f'{shape_type} must be one of {set(shape_classes)}'
+                    ) from e
+            else:
+                shape_cls = new_type
+            self.shapes[index] = shape_cls(
+                data,
+                edge_width=cur_shape.edge_width,
+                z_index=cur_shape.z_index,
+                dims_order=cur_shape.dims_order,
+                ndisplay=cur_shape.ndisplay,
+            )
+        else:
+            self.shapes[index].data = data
+        self._clear_cache()
+
+    def shift_staged(self, index: int, shift) -> None:
+        """Shift the staged shape without touching aggregate geometry."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+        self.shapes[index].shift(shift)
+        self._clear_cache()
+
+    def transform_staged(self, index: int, transform) -> None:
+        """Transform the staged shape without touching aggregate geometry."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+        self.shapes[index].transform(transform)
+        self._clear_cache()
+
+    def update_staged_edge_width(self, index: int, edge_width: float) -> None:
+        """Update the staged shape edge width without aggregate mesh writes."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+        self.shapes[index].edge_width = edge_width
+        self._clear_cache()
+
+    def commit_staged(self, index: int) -> None:
+        """Materialize the staged shape into aggregate geometry once."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+        self._staged_index = None
+        self.update(index)
+
+    def remove_staged(self, index: int) -> None:
+        """Remove the trailing staged shape without materializing it."""
+        if index != self._staged_index:
+            raise RuntimeError(f'Shape {index} is not staged')
+        if index != len(self.shapes) - 1:
+            raise RuntimeError('The staged shape must be the final shape')
+
+        self.shapes.pop()
+        self._z_index = self._z_index[:-1]
+        self._z_order = self._z_order[self._z_order != index]
+        self._face_color = self._face_color[:-1]
+        self._edge_color = self._edge_color[:-1]
+        self._vertices_index = self._vertices_index[:-1]
+        self._mesh.vertices_index = self._mesh.vertices_index[:-1]
+        self._mesh.triangles_index = self._mesh.triangles_index[:-1]
+        self._displayed = self._displayed[:-1]
+        self._staged_index = None
+        self._clear_cache()
 
     def _vertices_slice(self, shape_index: int | np.integer) -> slice:
         """Return the slice of vertices for a given shape index."""
@@ -1101,6 +1228,7 @@ class ShapeList:
     @_batch_dec
     def remove_all(self):
         """Removes all shapes"""
+        self._staged_index = None
         self.shapes = []
         self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
@@ -1114,6 +1242,7 @@ class ShapeList:
     @_batch_dec
     def update(self, index: int) -> None:
         """update shape at index `index`"""
+        self._guard_not_staged(index, 'update')
         self._update_vertices(index)
         self._update_mesh_triangles(index)
         self._update_mesh_vertices(index, edge=True, face=True)
@@ -1154,6 +1283,7 @@ class ShapeList:
         index : int
             Location in list of the shape to be changed.
         """
+        self._guard_not_staged(index, '_update_mesh_triangles')
         shape = self.shapes[index]
         if index == 0:
             triangle_shift = 0
@@ -1260,6 +1390,11 @@ class ShapeList:
         """
         if not indices:
             return
+        if self._staged_index in indices:
+            raise RuntimeError(
+                'remove_multiple cannot update a staged shape; '
+                'use remove_staged instead'
+            )
 
         # Remove indices
         vert_slices = [self._vertices_slice_available(i) for i in indices]
@@ -1346,6 +1481,7 @@ class ShapeList:
             Bool to indicate whether to update mesh vertices corresponding to
             faces and to update the underlying shape vertices
         """
+        self._guard_not_staged(index, '_update_mesh_vertices')
         shape = self.shapes[index]
         if edge and face:
             shape_slice = self._mesh_vertices_slice_available(index)
@@ -1446,6 +1582,7 @@ class ShapeList:
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".
         """
+        self._guard_not_staged(index, 'edit')
         if new_type is not None:
             cur_shape = self.shapes[index]
             if isinstance(new_type, str):
@@ -1487,6 +1624,7 @@ class ShapeList:
         edge_width : float
             thickness of lines and edges.
         """
+        self._guard_not_staged(index, 'update_edge_width')
         self.shapes[index].edge_width = edge_width
         self._update_mesh_vertices(index, edge=True)
 
@@ -1601,6 +1739,7 @@ class ShapeList:
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others.
         """
+        self._guard_not_staged(index, 'update_z_index')
         self.shapes[index].z_index = z_index
         self._z_index[index] = z_index
         self._update_z_order()
@@ -1615,6 +1754,7 @@ class ShapeList:
         shift : np.ndarray
             length 2 array specifying shift of shapes.
         """
+        self._guard_not_staged(index, 'shift')
         self.shapes[index].shift(shift)
         self._update_mesh_vertices(index, edge=True, face=True)
 
@@ -1630,6 +1770,7 @@ class ShapeList:
         center : list
             length 2 list specifying coordinate of center of scaling.
         """
+        self._guard_not_staged(index, 'scale')
         self.shapes[index].scale(scale, center=center)
         self.update(index)
         self._update_z_order()
@@ -1646,6 +1787,7 @@ class ShapeList:
         center : list
             length 2 list specifying coordinate of center of rotation.
         """
+        self._guard_not_staged(index, 'rotate')
         self.shapes[index].rotate(angle, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
@@ -1662,6 +1804,7 @@ class ShapeList:
         center : list
             length 2 list specifying coordinate of center of flip axes.
         """
+        self._guard_not_staged(index, 'flip')
         self.shapes[index].flip(axis, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
@@ -1675,6 +1818,7 @@ class ShapeList:
         transform : np.ndarray
             2x2 array specifying linear transform.
         """
+        self._guard_not_staged(index, 'transform')
         self.shapes[index].transform(transform)
         self.update(index)
         self._update_z_order()
