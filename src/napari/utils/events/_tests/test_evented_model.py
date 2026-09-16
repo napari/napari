@@ -863,9 +863,16 @@ def test_identical_assignment_evented_model_emit():
     mock = Mock()
     s.events.s.connect(mock)
 
+    previous = s.s
     s.s = SubClass()
 
+    assert s.s == previous
+    assert s.s is not previous
     mock.assert_called_once()
+
+    mock.reset_mock()
+    s.s = s.s
+    mock.assert_not_called()
 
 
 def test_property_deprecation():
@@ -1247,3 +1254,20 @@ def test__non_evented_properties():
     assert 'non_evented' not in m.events
     assert 'a' in m.events
     assert 'events' not in m.events
+
+
+def test_complex_array_object():
+    class Model(EventedModel):
+        c: complex = Field(default=1 + 2j)
+
+        @property
+        def real(self):
+            return self.c.real
+
+    model = Model()
+    mock = Mock()
+    model.events.real.connect(mock)
+
+    model.c = 3 + 5j
+
+    mock.assert_called_once()

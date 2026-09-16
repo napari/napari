@@ -1,4 +1,3 @@
-import operator
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -36,27 +35,6 @@ _BASE_JSON_ENCODERS = {
 }
 
 
-def _pick_equality_operator(field_type: Any) -> Callable[[Any, Any], bool]:
-    """Pick an equality operator for a given field type.
-
-    Parameters
-    ----------
-    field_type : type
-        The type of the field.
-
-    Returns
-    -------
-    Callable[[Any, Any], bool]
-        A function that takes two arguments and returns True if they are equal,
-        False otherwise.
-    """
-
-    if isinstance(field_type, type) and issubclass(field_type, EventedModel):
-        return operator.is_
-
-    return pick_equality_operator(field_type)
-
-
 class EventedMetaclass(ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
@@ -82,7 +60,7 @@ class EventedMetaclass(ModelMetaclass):
         cls.__eq_operators__ = {**getattr(cls, '__eq_operators__', {})}
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
-            cls.__eq_operators__[n] = _pick_equality_operator(field_type)
+            cls.__eq_operators__[n] = pick_equality_operator(field_type)
             # If a field type has a _json_encode method, add it to the json
             # encoders for this model.
             # NOTE: a _json_encode field must return an object that can be
@@ -158,6 +136,28 @@ def _get_property_dependence_from_code(
     return res
 
 
+def _event_dependency_path(cls: type['EventedModel'], path: str) -> str:
+    parts = path.split('.')
+    current = cls
+
+    for index, name in enumerate(parts[:-1]):
+        field = current.model_fields.get(name)
+        if field is None:
+            # Properties need separate resolution.
+            return path
+
+        field_type = get_inner_type(field.annotation)
+        if not (
+            isinstance(field_type, type)
+            and issubclass(field_type, EventedModel)
+        ):
+            return '.'.join(parts[: index + 1])
+
+        current = field_type
+
+    return path
+
+
 def _get_properties_dependence(
     cls: type['EventedModel'],
 ) -> dict[str, set[str]]:
@@ -167,7 +167,7 @@ def _get_properties_dependence(
         dep = _get_property_dependence_from_code(cls, prop, set())
         if prop_name in dep:
             dep.remove(prop_name)
-        deps[prop_name] = dep
+        deps[prop_name] = {_event_dependency_path(cls, x) for x in dep}
     return deps
 
 
@@ -336,6 +336,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         Returns True if data changed, else False. Return current value.
         """
         new_value = getattr(self, name, object())
+        # Equal-valued children still have distinct event emitters, so replacing
+        # one must notify listeners without changing model value equality.
+        if isinstance(new_value, EventedModel) or isinstance(
+            old_value, EventedModel
+        ):
+            return new_value is not old_value, new_value
         if name in self.__eq_operators__:
             are_equal = self.__eq_operators__[name]
         else:
