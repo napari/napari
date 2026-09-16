@@ -787,6 +787,16 @@ class Labels(ScalarFieldBase):
                 upper_bound=dtype_lims[1],
             )
 
+    def _warn_if_affine_slice(self) -> None:
+        """Warn that drawing is not properly supported on an affine slice."""
+        if self._slice.is_affine_slice:
+            warnings.warn(
+                'Drawing on a non-orthogonal slice is not fully '
+                'supported and may paint the wrong region.',
+                category=UserWarning,
+                stacklevel=3,
+            )
+
     def _validate_non_painted_coord(
         self, slice_coord: list[int], dims_to_paint: list[int]
     ) -> None:
@@ -1265,6 +1275,7 @@ class Labels(ScalarFieldBase):
             calls.
         """
         self._validate_label_in_range(new_label)
+        self._warn_if_affine_slice()
         _, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         slice_coord = [int(np.round(c)) for c in coord]
@@ -1454,6 +1465,7 @@ class Labels(ScalarFieldBase):
             calls.
         """
         self._validate_label_in_range(new_label)
+        self._warn_if_affine_slice()
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         slice_coord = [int(np.round(c)) for c in coord]
@@ -1562,6 +1574,7 @@ class Labels(ScalarFieldBase):
             Value of the new label to be filled in.
         """
         self._validate_label_in_range(new_label)
+        self._warn_if_affine_slice()
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
         points = np.array(points, dtype=int)
@@ -2355,6 +2368,11 @@ class Labels(ScalarFieldBase):
         self, data: LayerDataType, cache: bool
     ) -> _LabelsSlicingState:
         return _LabelsSlicingState(self, data, cache)
+
+    @property
+    def affine_slicing_sampling_order(self) -> int:
+        """Interpolation order for affine non-orthogonal sampling."""
+        return 0
 
 
 class _LabelsSlicingState(ScalarFieldSlicingState):

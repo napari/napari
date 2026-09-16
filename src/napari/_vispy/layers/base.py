@@ -210,6 +210,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._world_units = self.layer.units
             self._world_to_layer_units_scale = (1,) * self.layer.ndim
 
+        # If self.layer._transforms.simplified (the composition of the layer's transforms)
+        # contains a linear part that is not identity, Vispy will use this linear part
+        # to transform the shape of the pixels it displays, i.e this is what allows napari
+        # to display sheared/rotated pixels. For affine slicing, the first element of
+        # layer._transforms is designed to insure that the linear part of the total compose
+        # is identity.
         # mypy: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
