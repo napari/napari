@@ -182,6 +182,7 @@ def test_grid_mode(qt_viewer):
     l2.colorbar.visible = True
     l3.colorbar.visible = True
     viewer.canvas.overlays.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.gridded = True
     canvas.on_draw(None)
     assert len(canvas.grid_views) == 2
 
