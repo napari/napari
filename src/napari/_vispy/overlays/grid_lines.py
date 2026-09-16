@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.grid_lines import GridLines3D
+from napari.components.dims import RangeTuple
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
@@ -21,8 +22,8 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self,
         *,
         font_info: FontInfo,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
             node=GridLines3D(
                 font_info=font_info,
@@ -57,28 +58,30 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _get_ranges_and_axis_labels(self):
+    def _get_ranges_and_axis_labels(
+        self,
+    ) -> tuple[list[RangeTuple], list[str]]:
         # napari dims are zyx, but vispy uses xyz
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
         axis_labels = [self.viewer.dims.axis_labels[i] for i in displayed]
         return ranges, axis_labels
 
-    def _on_axis_labels_change(self):
+    def _on_axis_labels_change(self) -> None:
         ranges, axis_labels = self._get_ranges_and_axis_labels()
         self.node.set_axis_labels(
             self.overlay.axis_labels, ranges, axis_labels
         )
         self._on_blending_change()  # needed to ensure new grids/ticks are up to date
 
-    def _on_ticks_change(self):
+    def _on_ticks_change(self) -> None:
         ranges, _ = self._get_ranges_and_axis_labels()
         self.node.set_ticks(
             self.overlay.tick_labels, self.overlay.n_ticks, ranges
         )
         self._on_blending_change()  # needed to ensure new grids/ticks are up to date
 
-    def _on_extent_change(self):
+    def _on_extent_change(self) -> None:
         ranges, _ = self._get_ranges_and_axis_labels()
         self.node.set_extents(ranges)
         self._on_ticks_change()
@@ -105,7 +108,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             view_is_flipped = tuple(view_direction >= 0)[::-1]
         else:
             view_is_flipped = (False, False, False)
-            ranges = ranges + ((0, 0),)
+            ranges = ranges + (RangeTuple(0, 0, 1),)
 
         self.node.set_view_direction(
             ranges,

@@ -130,10 +130,6 @@ def _current_theme() -> str:
     return get_settings().appearance.theme
 
 
-def _current_theme() -> str:
-    return get_settings().appearance.theme
-
-
 def _validate_paths_exist(paths: list[PathLike]) -> None:
     """Raise FileNotFoundError if any local (non-URL) path does not exist."""
     for p in paths:

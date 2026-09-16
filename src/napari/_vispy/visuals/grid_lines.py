@@ -95,7 +95,7 @@ class GridLines3D(Node):
 
     def set_view_direction(
         self,
-        ranges: tuple[RangeTuple],
+        ranges: tuple[RangeTuple, ...],
         view_is_flipped: tuple[bool, ...],
         zoom: float,
     ) -> None:
@@ -152,8 +152,14 @@ class GridLines3D(Node):
             self.grids[axis].transform.rotate(angle=120 * axis, axis=(1, 1, 1))
 
     def _translate_text_based_on_camera(
-        self, text, axis, far_bounds, ranges, offset, view_is_flipped
-    ):
+        self,
+        text: Text,
+        axis: int,
+        far_bounds: list[float],
+        ranges: tuple[RangeTuple, ...],
+        offset: float,
+        view_is_flipped: tuple[bool, ...],
+    ) -> None:
         prev_axis = (axis - 1) % 3
         next_axis = (axis + 1) % 3
 

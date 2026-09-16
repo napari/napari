@@ -30,5 +30,5 @@ class GridLinesOverlay(SceneOverlay):
     color: ColorValue | None = None
     axis_labels: bool = True
     tick_labels: bool = True
-    n_ticks: int = Field(5, ge=2)
+    n_ticks: int = Field(default=5, ge=2)
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
