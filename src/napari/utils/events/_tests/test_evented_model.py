@@ -1112,8 +1112,7 @@ def test_renamed_nested_dependency_tracks_child_replacement():
     assert model.child.value == 8
 
 
-@pytest.mark.parametrize('group_listener', [False])
-def test_nested_dependency_is_lazy_and_batched(group_listener):
+def test_nested_dependency_is_lazy_and_batched():
 
     class Child(EventedModel):
         value: int = 1
@@ -1132,7 +1131,7 @@ def test_nested_dependency_is_lazy_and_batched(group_listener):
     model = Model()
     assert not model.child.events.value.callbacks
     callback = Mock()
-    emitter = model.events if group_listener else model.events.total
+    emitter = model.events.total
     emitter.connect(callback)
     assert model.child.events.value.callbacks
     with pytest.warns(FutureWarning, match='old_value is deprecated'):
@@ -1143,3 +1142,25 @@ def test_nested_dependency_is_lazy_and_batched(group_listener):
     # Internal subscriptions must not consume the public alias warning.
     with pytest.warns(FutureWarning, match='events.old_value is deprecated'):
         model.events.old_value.connect(Mock())
+
+
+def test_nested_dependency_property_deprecation():
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+
+        @property
+        @deprecated('use child.doubled instead', category=FutureWarning)
+        def doubled(self):
+            return self.child.value * 2
+
+    model = Model()
+    callback = Mock()
+    model.events.doubled.connect(callback)
+
+    with pytest.warns(FutureWarning, match='use child.doubled instead'):
+        model.child.value = 3
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6
