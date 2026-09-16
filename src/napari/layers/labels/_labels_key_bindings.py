@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import TypeVar, cast
 
-import numpy as np
 from app_model.types import KeyCode, KeyMod
 
 from napari.layers.labels._labels_constants import Mode
@@ -10,7 +9,7 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.utils.notifications import show_info, show_warning
+from napari.utils.notifications import show_warning
 
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
@@ -83,22 +82,11 @@ labels_fun_to_mode = [
 )
 def new_label(layer: Labels) -> None:
     """Set the currently selected label to the largest used label plus one."""
-    if isinstance(layer.data, np.ndarray):
-        new_selected_label = int(np.max(layer.data)) + 1
-        if layer.selected_label == new_selected_label:
-            show_info(
-                'Current selected label is not being used. You will need to use it first '
-                'to be able to set the current select label to the next one available'
-            )
-        else:
-            try:
-                layer.selected_label = new_selected_label
-            except WrongSelectedLabelError as e:
-                show_warning(f'{e.text}\n{CONVERT_TEXT}')
-    else:
-        show_info(
-            'Calculating empty label on non-numpy array is not supported'
-        )
+    new_selected_label = layer.next_unused()
+    try:
+        layer.selected_label = new_selected_label
+    except WrongSelectedLabelError as e:
+        show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
 @register_label_action(
@@ -109,24 +97,30 @@ def swap_selected_and_background_labels(layer: Labels) -> None:
     layer.swap_selected_and_background_labels()
 
 
-@register_label_action(
-    'Decrease the currently selected label by one',
-)
+@register_label_action('Select the previous label')
 def decrease_label_id(layer: Labels) -> None:
-    try:
-        layer.selected_label -= 1
-    except WrongSelectedLabelError as e:
-        show_warning(f'{e.text}\n{CONVERT_TEXT}')
+    if layer.categories is None:
+        try:
+            layer.selected_label -= 1
+        except WrongSelectedLabelError as e:
+            show_warning(f'{e.text}\n{CONVERT_TEXT}')
+    else:
+        labels = list(layer.categories)
+        prev_index = labels.index(layer.selected_label) - 1
+        layer.selected_label = labels[prev_index % len(labels)]
 
 
-@register_label_action(
-    'Increase the currently selected label by one',
-)
+@register_label_action('Select the next label')
 def increase_label_id(layer: Labels) -> None:
-    try:
-        layer.selected_label += 1
-    except WrongSelectedLabelError as e:
-        show_warning(f'{e.text}\n{CONVERT_TEXT}')
+    if layer.categories is None:
+        try:
+            layer.selected_label += 1
+        except WrongSelectedLabelError as e:
+            show_warning(f'{e.text}\n{CONVERT_TEXT}')
+    else:
+        labels = list(layer.categories)
+        next_index = labels.index(layer.selected_label) + 1
+        layer.selected_label = labels[next_index % len(labels)]
 
 
 @register_label_action(
