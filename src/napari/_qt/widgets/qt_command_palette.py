@@ -363,6 +363,10 @@ class QCommandList(QtW.QListView):
         max_matches = self.model()._max_matches
         row = -1
         for row, action in enumerate(self.iter_top_hits(input_text)):
+            # we don't want to show more than these lines
+            if row >= max_matches:
+                break
+
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
                 # we hit the end of available row widgets
@@ -372,10 +376,6 @@ class QCommandList(QtW.QListView):
             lw.set_command(action)
             lw.set_text_colors(input_text, color=self._match_color)
             lw.setEnabled(_enabled(action, self._app_model_context))
-
-            # we don't want to show more than these lines
-            if row >= max_matches:
-                break
 
         self._current_max_index = row
 
