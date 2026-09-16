@@ -27,6 +27,7 @@ from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.layers.utils.layer_utils import calc_data_range
 from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
+from napari.utils.color import rgb_to_luminance
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 
@@ -235,6 +236,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         3D Depiction mode used by vispy. Must be one of our supported modes.
     iso_threshold : float
         Threshold for isosurface.
+        When in RGB, this threshold applies to the perceived luminance.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
     plane : SlicingPlane or dict
@@ -657,50 +659,63 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._auto_contrast = prev
 
-    def _calculate_value_from_ray(self, values: npt.NDArray) -> float | None:
+    def _calculate_value_from_ray(
+        self, values: npt.NDArray
+    ) -> float | npt.NDArray | None:
+        if not values.size:
+            return None
+
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
-            return np.ravel(values)[0]
-        # iso is weird too: just return None always
-        if self.rendering == ImageRendering.ISO:
-            return None
+            return values[0]
 
         # if the whole ray is NaN, we should see nothing, so return None
         # this check saves us some warnings later as well, so better do it now
         if np.all(np.isnan(values)):
             return None
 
+        luminance = rgb_to_luminance(values) if self.rgb else values
+
+        # in isosurface we return the value at the hit surface;
+        # in non-rgb it's ~= iso_threshold. Return None if nothing was hit.
+        if self.rendering == ImageRendering.ISO:
+            hits = luminance >= self.iso_threshold
+            if np.any(hits):
+                return values[np.nanargmax(hits)]
+            return None
+
         # "summary" renderings; they do not represent a specific pixel, so we just
         # return the summary value. We should probably differentiate these somehow.
         # these are also probably not the same as how the gpu does it...
+        # TODO: this is "broken" cause same pixel gets multisampled, getting worse
+        #       when the sampling rate is high (and especially bad for additive).
+        #       But it looks like it's also similarly overdoing it in vispy vis too.
+        #       I don't know if there's a way to *not* do it...
         if self.rendering == ImageRendering.AVERAGE:
-            return np.nanmean(values)
+            return np.nanmean(values, axis=0)
         if self.rendering == ImageRendering.ADDITIVE:
-            # TODO: this is "broken" cause same pixel gets multisampled...
-            #       but it looks like it's also overdoing it in vispy vis too?
-            #       I don't know if there's a way to *not* do it...
-            return np.nansum(values)
+            return np.nansum(values, axis=0)
 
         # all the following cases are returning the *actual* value of the image at the
         # "selected" pixel, whose position changes depending on the rendering mode.
         if self.rendering == ImageRendering.MIP:
-            return np.nanmax(values)
+            return values[np.nanargmax(luminance)]
         if self.rendering == ImageRendering.MINIP:
-            return np.nanmin(values)
+            return values[np.nanargmin(luminance)]
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
-            values_attenuated = (  # pyrefly: ignore [unsupported-operation]
-                values - self.contrast_limits[0]
+            attenuated = (  # pyrefly: ignore [unsupported-operation]
+                luminance - self.contrast_limits[0]
             ) / self.contrast_limits[1]
             # approx, step size is actually calculated with int(lenght(ray) * 2)
             step_size = 0.5
             sumval = (
                 step_size
-                * np.cumsum(np.clip(values_attenuated, 0, 1))
-                * len(values_attenuated)
+                * np.cumsum(np.clip(attenuated, 0, 1))
+                * len(attenuated)
             )
             scale = np.exp(-self.attenuation * (sumval - 1))
-            return values[np.nanargmin(values_attenuated * scale)]
+            return values[np.nanargmin(attenuated * scale)]
 
         raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'
