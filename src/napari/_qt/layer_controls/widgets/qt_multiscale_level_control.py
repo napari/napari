@@ -62,6 +62,11 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
+        self.level_combobox.setToolTip(
+            'Extract a locked data level as a new layer by '
+            'opening the layer list context menu and selecting '
+            '"Extract locked multiscale level".'
+        )
         self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
