@@ -20,7 +20,7 @@ _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
 _SURF = (
     np.random.random((10, 2)),
     np.random.randint(10, size=(6, 3)),
-    np.arange(100).astype(float),
+    np.arange(10).astype(float),
 )
 
 
