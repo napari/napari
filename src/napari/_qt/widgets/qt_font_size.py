@@ -4,7 +4,6 @@ from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari.settings import get_settings
 from napari.utils.theme import get_system_theme, get_theme
-from napari.utils.translations import trans
 
 
 class QtFontSizeWidget(QWidget):
@@ -15,10 +14,10 @@ class QtFontSizeWidget(QWidget):
 
     valueChanged = Signal(int)
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self._spinbox = QtSpinBox()
-        self._reset_button = QPushButton(trans._('Reset font size'))
+        self._reset_button = QPushButton('Reset font size')
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -33,7 +32,7 @@ class QtFontSizeWidget(QWidget):
         """
         Reset the widget value to the current selected theme font size value.
         """
-        current_theme_name = get_settings().appearance.theme
+        current_theme_name: str = get_settings().appearance.theme
         if current_theme_name == 'system':
             # system isn't a theme, so get the name
             current_theme_name = get_system_theme()

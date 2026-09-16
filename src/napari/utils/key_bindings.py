@@ -42,8 +42,6 @@ from typing import Union
 from app_model.types import KeyBinding, KeyCode, KeyMod
 from vispy.util import keys
 
-from napari.utils.translations import trans
-
 KeyBindingLike = Union[KeyBinding, str, int]
 Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
@@ -204,23 +202,14 @@ def bind_key(
 
     if func is not None and key_bind in keymap and not overwrite:
         raise ValueError(
-            trans._(
-                "keybinding {key} already used! specify 'overwrite=True' to bypass this check",
-                deferred=True,
-                key=str(key_bind),
-            )
+            f"keybinding {key_bind!s} already used! specify 'overwrite=True' to bypass this check"
         )
 
     unbound = keymap.pop(key_bind, None)
 
     if func is not None:
         if func is not Ellipsis and not callable(func):
-            raise TypeError(
-                trans._(
-                    "'func' must be a callable",
-                    deferred=True,
-                )
-            )
+            raise TypeError("'func' must be a callable")
         keymap[key_bind] = func
 
     return unbound
@@ -417,13 +406,7 @@ class KeymapHandler:
         if func is Ellipsis:  # blocker
             return False
         if not callable(func):
-            raise TypeError(
-                trans._(
-                    'expected {func} to be callable',
-                    deferred=True,
-                    func=func,
-                )
-            )
+            raise TypeError(f'expected {func} to be callable')
 
         generator_or_callback = func()
 
@@ -493,10 +476,14 @@ class KeymapHandler:
 
         repeatables = {
             *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            'Up',
-            'Down',
-            'Left',
-            'Right',
+            # Nav keys are exempt however they were bound. They must be
+            # KeyBinding, not str: the set is tested against a KeyBinding, which
+            # never compares equal to a str, so str literals here silently never
+            # matched and no key bound via bind_key() auto-repeated. See #9203.
+            *(
+                KeyBinding.from_str(key)
+                for key in ('Up', 'Down', 'Left', 'Right')
+            ),
         }
 
         if (

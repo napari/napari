@@ -29,7 +29,6 @@ from napari.layers.shapes.shape_types import (
     TriangleArray,
 )
 from napari.utils.misc import argsort
-from napari.utils.translations import trans
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
@@ -140,15 +139,15 @@ class Shape(ABC):
         self._face_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
         self._edge_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
         self._edge_offsets: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
-        self._box: BoxArray = np.empty((9, 2), dtype=np.float32)  # type: ignore[assignment]
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._box: BoxArray = np.empty((9, 2), dtype=np.float32)
 
         self._closed = False
         self._filled = True
@@ -310,11 +309,11 @@ class Shape(ABC):
     def _set_empty_edge(self) -> None:
         self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_empty_face(self) -> None:
         self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)  # type: ignore[assignment]
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def _set_meshes_compiled_3d(
         self,
@@ -772,12 +771,7 @@ class Shape(ABC):
         elif axis == 1:
             transform = np.array([[-1, 0], [0, 1]])
         else:
-            raise ValueError(
-                trans._(
-                    'Axis not recognized, must be one of "{{0, 1}}"',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Axis not recognized, must be one of "{{0, 1}}"')
         if center is None:
             self.transform(transform)
         else:
@@ -823,12 +817,7 @@ class Shape(ABC):
             shape_plane = [mask_shape[d] for d in self.dims_displayed]
         else:
             raise ValueError(
-                trans._(
-                    'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.',
-                    deferred=True,
-                    expected=self.data.shape[1],
-                    received=len(mask_shape),
-                )
+                f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
         if self._use_face_vertices:

@@ -3,33 +3,31 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from vispy.scene import MatrixTransform, STTransform
-from vispy.scene.visuals import GridLines, Node, Text
+from vispy.scene.visuals import GridLines, Node
 
+from napari._vispy.visuals.text import Text
 from napari.components.dims import RangeTuple
 from napari.utils._units import compute_nice_ticks
 
 if TYPE_CHECKING:
-    from vispy.visuals.text.text import FontManager
-
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.utils.color import ColorValue
 
 
 class GridLines3D(Node):
     def __init__(
         self,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        font_info: FontInfo,
     ):
         super().__init__()
-        self.font_manager = font_manager
-        self.font_family = font_family
+        self.font_info = font_info
         self.font_size = 8
 
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
         self.tick_labels: dict[int, list[Text]] = {0: [], 1: [], 2: []}
         self.axis_labels: list[Text] = [
-            Text(font_manager=font_manager, face=font_family) for _ in range(3)
+            Text(font_info=font_info) for _ in range(3)
         ]
         self.color: ColorValue | str = 'white'
         self.scale = (1, 1, 1)
@@ -208,9 +206,7 @@ class GridLines3D(Node):
                 if i >= len(tick_visuals):
                     # more ticks than before, make a new one
                     tick = Text(
-                        font_size=self.font_size,
-                        font_manager=self.font_manager,
-                        face=self.font_family,
+                        font_info=self.font_info,
                     )
                     tick.transform = STTransform()
                     tick_visuals.append(tick)

@@ -23,7 +23,6 @@ from napari.layers.shapes.shape_types import (
     EdgeArray,
     TriangleArray,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -69,7 +68,7 @@ def find_planar_axis(
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
             return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
-    return np.empty((0, 2), dtype=points.dtype), None, None  # type: ignore[return-value]
+    return np.empty((0, 2), dtype=points.dtype), None, None
 
 
 @typing.overload
@@ -486,10 +485,7 @@ def rectangle_to_box(
     """
     if data.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle'
         )
     box = np.array(
         [
@@ -596,10 +592,7 @@ def triangulate_ellipse(
     """
     if corners.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse'
         )
     assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
@@ -1341,13 +1334,7 @@ def validate_num_vertices(
             min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
-                trans._(
-                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
-                    deferred=True,
-                    shape_type=shape_type,
-                    shape=shape,
-                    shape_length=len(shape),
-                )
+                f'{shape_type} {shape} has invalid number of vertices: {len(shape)}.'
             )
 
 

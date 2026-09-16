@@ -10,8 +10,6 @@ from collections.abc import Callable
 from importlib import import_module
 from typing import Union
 
-from napari.utils.translations import trans
-
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]
 
@@ -42,13 +40,7 @@ def _patch_attribute(
     # We expect attribute_str is <function> or <class>.<method>. We could
     # allow nested classes and functions if we wanted to extend this some.
     if attribute_str.count('.') > 1:
-        raise PatchError(
-            trans._(
-                'Nested attribute not found: {attribute_str}',
-                deferred=True,
-                attribute_str=attribute_str,
-            )
-        )
+        raise PatchError(f'Nested attribute not found: {attribute_str}')
 
     if '.' in attribute_str:
         # Assume attribute_str is <class>.<method>
@@ -57,12 +49,7 @@ def _patch_attribute(
             parent = getattr(module, class_str)
         except AttributeError as e:
             raise PatchError(
-                trans._(
-                    'Module {module_name} has no attribute {attribute_str}',
-                    deferred=True,
-                    module_name=module.__name__,
-                    attribute_str=attribute_str,
-                )
+                f'Module {module.__name__} has no attribute {attribute_str}'
             ) from e
         parent_str = class_str
     else:
@@ -76,12 +63,7 @@ def _patch_attribute(
         getattr(parent, callable_str)
     except AttributeError as e:
         raise PatchError(
-            trans._(
-                'Parent {parent_str} has no attribute {callable_str}',
-                deferred=True,
-                parent_str=parent_str,
-                callable_str=callable_str,
-            )
+            f'Parent {parent_str} has no attribute {callable_str}'
         ) from e
 
     label = (
@@ -132,13 +114,7 @@ def _import_module(
         except ModuleNotFoundError as e:
             if module is None:
                 # The very first top-level module import failed!
-                raise PatchError(
-                    trans._(
-                        'Module not found: {module_path}',
-                        deferred=True,
-                        module_path=module_path,
-                    )
-                ) from e
+                raise PatchError(f'Module not found: {module_path}') from e
 
             # We successfully imported part of the target_str but then
             # we got a failure. Usually this is because we tried

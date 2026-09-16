@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 from collections import defaultdict
 
 from napari.utils.events.event import WarningEmitter
-from napari.utils.translations import trans
 
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
@@ -104,12 +103,7 @@ def link_layers(
         extra = attr_set - valid_attrs
         if extra:
             raise ValueError(
-                trans._(
-                    'Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}',
-                    deferred=True,
-                    extra=extra,
-                    valid_attrs=valid_attrs,
-                )
+                f'Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}'
             )
     else:
         # if no attributes are specified, ALL valid attributes are linked.
@@ -169,9 +163,7 @@ def unlink_layers(
         between the provided layers will be unlinked.
     """
     if not layers:
-        raise ValueError(
-            trans._('Must provide at least one layer to unlink', deferred=True)
-        )
+        raise ValueError('Must provide at least one layer to unlink')
     layer_refs = [ref(layer) for layer in layers]
     if len(layer_refs) == 1:
         # If a single layer was provided, find all keys that include that layer
@@ -251,10 +243,7 @@ def _get_common_evented_attributes(
         first_layer = next(iter(layers))
     except StopIteration:
         raise ValueError(
-            trans._(
-                '``layers`` iterable must have at least one layer',
-                deferred=True,
-            )
+            '``layers`` iterable must have at least one layer'
         ) from None
 
     layer_events = [

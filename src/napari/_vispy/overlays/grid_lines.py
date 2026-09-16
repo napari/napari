@@ -10,11 +10,8 @@ from napari.components.camera import DEFAULT_ORIENTATION_TYPED
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
-    from vispy.scene import Node
-    from vispy.visuals.text.text import FontManager
-
-    from napari.components.overlays import GridLinesOverlay, Overlay
-    from napari.components.viewer_model import ViewerModel
+    from napari._vispy.utils.qt_font import FontInfo
+    from napari.components.overlays import GridLinesOverlay
 
 
 class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
@@ -24,19 +21,15 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
     def __init__(
         self,
         *,
-        viewer: ViewerModel,
-        overlay: Overlay,
-        parent: Node = None,
-        font_manager: FontManager | None = None,
-        font_family: str = 'OpenSans',
+        font_info: FontInfo,
+        **kwargs,
     ):
         super().__init__(
             node=GridLines3D(
-                font_manager=font_manager, font_family=font_family
+                font_info=font_info,
             ),
-            viewer=viewer,
-            overlay=overlay,
-            parent=parent,
+            font_info=font_info,
+            **kwargs,
         )
 
         self.overlay.events.color.connect(self._rebuild_all)
@@ -51,13 +44,15 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         )
 
         # would be nice to fire this less often to save performance
-        self.viewer.camera.events.angles.connect(
+        self.viewer.scene.camera.events.angles.connect(
             self._on_view_direction_change
         )
-        self.viewer.camera.events.orientation.connect(
+        self.viewer.scene.camera.events.orientation.connect(
             self._on_view_direction_change
         )
-        self.viewer.camera.events.zoom.connect(self._on_view_direction_change)
+        self.viewer.scene.camera.events.zoom.connect(
+            self._on_view_direction_change
+        )
         get_settings().appearance.events.theme.connect(self._rebuild_all)
         self.viewer.events.theme.connect(self._rebuild_all)
 
@@ -107,11 +102,11 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         ranges = tuple(self.viewer.dims.range[i] for i in displayed)
 
         if self.viewer.dims.ndisplay == 3:
-            view_direction = np.sign(self.viewer.camera.view_direction)
+            view_direction = np.sign(self.viewer.scene.camera.view_direction)
             orientation_flip = tuple(
                 1 if ori == default_ori else -1
                 for ori, default_ori in zip(
-                    self.viewer.camera.orientation,
+                    self.viewer.scene.camera.orientation,
                     DEFAULT_ORIENTATION_TYPED,
                     strict=True,
                 )
@@ -127,7 +122,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.set_view_direction(
             ranges,
             view_is_flipped,
-            zoom=self.viewer.camera.zoom,
+            zoom=self.viewer.scene.camera.zoom,
         )
 
     def reset(self) -> None:

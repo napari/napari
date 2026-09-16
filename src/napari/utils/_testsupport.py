@@ -162,6 +162,70 @@ def mock_app_model():
 
 
 @pytest.fixture
+def plugin_settings(npe2pm, tmp_path, monkeypatch):
+    """Make `napari.settings.get_plugin_settings` fresh for each test.
+
+    Clears the `_PLUGIN_SETTINGS` cache and redirects the default plugin
+    settings directory to this test's `tmp_path` (by patching `_CFG_PATH`,
+    the same variable `get_plugin_settings` uses to locate napari's own
+    settings file), so plugin settings are never read from or written to
+    the real config directory.
+
+    This depends on npe2's `npe2pm` fixture, so plugin discovery is
+    blocked and any plugins you register only exist for this test.
+
+    It also connects `_clear_plugin_settings_cache` to `npe2pm`'s
+    `plugins_registered` and `enablement_changed` signals for the duration
+    of the test to allow dynamic registration/enablement during testing.
+
+    Examples
+    --------
+    >>> def test_my_settings(plugin_settings, npe2pm):
+    ...     if 'example-plugin' not in npe2pm:
+    ...         npe2pm.register(
+    ...             PluginManifest.from_distribution('example-plugin')
+    ...         )
+    ...     from napari.settings import get_plugin_settings
+    ...     s = get_plugin_settings('example-plugin')
+    ...     assert s.reader.max_size_mb == 512 # default value
+    ...     s.reader.max_size_mb = 1024  # auto-saves under tmp_path
+    ...     assert 'max_size_mb: 1024' in s.config_path.read_text()
+    """
+    from napari import settings as napari_settings
+
+    npe2pm.events.plugins_registered.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+    # redirect the default plugin-settings directory to this test's tmp_path
+    monkeypatch.setattr(
+        napari_settings, '_CFG_PATH', str(tmp_path / 'settings.yaml')
+    )
+
+    yield
+
+    npe2pm.events.plugins_registered.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+
+
+@pytest.fixture(autouse=True)
+def _disable_qt_warnings(monkeypatch):
+    try:
+        from napari._qt import qt_main_window
+    except ImportError:
+        return
+    monkeypatch.setattr(qt_main_window, 'SHOW_QT_WARNING', False)
+
+
+@pytest.fixture
 def make_napari_viewer(
     qtbot,
     request: 'FixtureRequest',

@@ -29,19 +29,19 @@ if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
 
 
 class Array(np.ndarray):
-    def __class_getitem__(cls, t):
+    def __class_getitem__(cls, t: object) -> type:  # type: ignore[override]
         return type('Array', (Array,), {'__dtype__': t})
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source, handler: GetCoreSchemaHandler
-    ):
+        cls, source: type, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate_type, core_schema.any_schema()
         )
 
     @classmethod
-    def validate_type(cls, val):
+    def validate_type(cls, val: object) -> np.ndarray:
         dtype = getattr(cls, '__dtype__', None)
         if isinstance(dtype, tuple):
             dtype, shape = dtype
@@ -61,17 +61,17 @@ class Array(np.ndarray):
 
 
 class NotEqual:
-    def __init__(self, ne):
+    def __init__(self, ne: 'Number') -> None:
         self.ne = ne
 
     def __get_pydantic_core_schema__(
-        self, source, handler: GetCoreSchemaHandler
-    ):
+        self, source: type, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             self._validate, handler(source)
         )
 
-    def _validate(self, v):
+    def _validate(self, v: 'Number') -> 'Number':
         if v == self.ne:
             raise ValueError(f'value must not be equal to {self.ne}')
         return v

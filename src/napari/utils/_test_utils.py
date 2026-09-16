@@ -17,6 +17,7 @@ class MouseEvent:
 
     type: str
     is_dragging: bool = False
+    button: int | None = None
     modifiers: list[str] = field(default_factory=list)
     position: tuple[int, int] | tuple[int, int, int] = (
         0,

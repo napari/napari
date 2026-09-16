@@ -131,7 +131,7 @@ viewer = napari.Viewer(ndisplay=3)
 viewer.add_layer(photo_texture_layer)
 viewer.add_layer(generated_texture_layer)
 
-viewer.camera.angles = (70, -20, 5)
+viewer.scene.camera.angles = (70, -20, 5)
 viewer.fit_to_view()
 
 if __name__ == '__main__':
