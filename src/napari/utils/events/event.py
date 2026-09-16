@@ -119,7 +119,7 @@ class Event:
         """
         return self._sources
 
-    def _push_source(self, source):
+    def _push_source(self, source: Any) -> None:
         self._sources.append(source)
 
     def _pop_source(self):
