@@ -25,3 +25,4 @@ class CrosshairOverlay(SceneOverlay):
 
     color: ColorValue = ColorValue('red')
     gap: float = 0.05
+    opacity: float = 0.7
