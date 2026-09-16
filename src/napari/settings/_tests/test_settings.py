@@ -496,10 +496,10 @@ def test_settings_no_import_qt(tmp_path):
 @pytest.fixture
 def test_settings_2():
     """A fixture that mimics plugin_configuration_generator()."""
-    from napari.settings import PluginPreferences
+    from napari.settings import PluginSettings
     from napari.settings._base import SettingsConfigDict
 
-    class TestPluginSettings(PluginPreferences):
+    class TestPluginSettings(PluginSettings):
         model_config = SettingsConfigDict(env_prefix='testnapari_plugin_')
 
         display_name: str = 'demo'
@@ -594,8 +594,8 @@ def test_get_plugin_settings_default_path_dir_disabled(
     assert s['test-plugin'].config_path is None
 
 
-def test_plugin_preferences_str(tmp_path, monkeypatch, test_settings_2):
-    """``str(plugin_preferences)`` shows only non-default values."""
+def test_plugin_settings_str(tmp_path, monkeypatch, test_settings_2):
+    """``str(plugin_settings)`` shows only non-default values."""
     monkeypatch.setattr(
         settings,
         'plugin_configuration_generator',

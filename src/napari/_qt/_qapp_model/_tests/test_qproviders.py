@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pytest
 from app_model.types import Action
 
@@ -21,7 +20,7 @@ from napari._qt._qapp_model.injection._qproviders import (
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
 from napari.components import LayerList
-from napari.layers import Image, Shapes
+from napari.layers import Shapes
 from napari.utils._proxies import PublicOnlyProxy
 from napari.viewer import Viewer
 
@@ -106,22 +105,43 @@ def test_provide_window_or_raise(make_napari_viewer):
     assert isinstance(viewer, Window)
 
 
-def test_provide_active_layer_and_layer_list(make_napari_viewer):
+def test_provide_active_layer(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+):
     """Check `_provide_active_layer/_list` returns correct object."""
-    shape = (10, 10)
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
 
-    viewer = make_napari_viewer()
-    layer_a = Image(np.random.random(shape))
-    viewer.layers.append(layer_a)
+    layer_a = viewer_model.add_layer(Shapes())
+    viewer_model.add_layer(Shapes())
+    viewer_model.layers.selection.active = layer_a
 
     provided_layer = _provide_active_layer()
-    assert isinstance(provided_layer, Image)
-    assert provided_layer.data.shape == shape
+    assert provided_layer is layer_a
+
+    viewer_model.layers.selection = []
+
+    provided_layer = _provide_active_layer()
+    assert provided_layer is None
+
+
+def test_provide_layer_list(
+    monkeypatch: MonkeyPatch, viewer_model: ViewerModel
+):
+    monkeypatch.setattr(
+        'napari._qt._qapp_model.injection._qproviders._provide_viewer',
+        lambda: viewer_model,
+    )
+
+    layer_a = viewer_model.add_layer(Shapes())
+    layer_b = viewer_model.add_layer(Shapes())
 
     provided_layers = _provide_active_layer_list()
     assert isinstance(provided_layers, LayerList)
-    assert isinstance(provided_layers[0], Image)
-    assert provided_layers[0].data.shape == shape
+    assert provided_layers[0] is layer_a
+    assert provided_layers[1] is layer_b
 
 
 def test_provide_selected_layers(

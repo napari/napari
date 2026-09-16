@@ -498,9 +498,10 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
             layers=self._layers,
-            parent=self.contrast_limits_slider.parent(),
+            parent=self.parent(),
         )
-        self.clim_popup.move_to('top', min_length=650)
+        if self.parent():
+            self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
 
     def _on_contrast_limits_change(self):
@@ -605,7 +606,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             disconnect_events(layer.histogram.events, self)
         super().disconnect_widget_controls()
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),

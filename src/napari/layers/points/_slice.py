@@ -167,7 +167,7 @@ class _PointSliceRequest:
                 # reduce to one dimension by getting the ndimensional "in slice portion"
                 # of the point, and multiplying them together
                 out_of_slice_portion = np.prod(
-                    1 - (radius_segment / radius[:, None])
+                    1 - (radius_segment / radius[:, None]), axis=1
                 )
                 radius_segment = (1 - out_of_slice_portion) * radius
 

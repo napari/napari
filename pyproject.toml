@@ -74,7 +74,7 @@ dependencies = [
     "toolz>=0.12.1",
     "tqdm>=4.56.0",
     "typing_extensions>=4.12",
-    "vispy>=0.16.2,<0.17",
+    "vispy>=0.17.0,<0.18",
     "wrapt>=1.14.1",
 ]
 dynamic = [

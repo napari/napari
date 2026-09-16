@@ -340,7 +340,7 @@ def plugin_settings_(plugin_settings):
 
     Without this, whichever test happens to call `get_plugin_settings`
     first (e.g. by constructing a `PreferencesDialog`) would populate and
-    freeze `_PLUGIN_PREFERENCES` for the rest of the session, against the
+    freeze `_PLUGIN_SETTINGS` for the rest of the session, against the
     real user config directory.
     """
     return plugin_settings
