@@ -9,7 +9,7 @@ try:
     use(gl='gl+')
 except RuntimeError:
     logger.warning(
-        'Could not use gl+ for instanced rendering of points.'
+        'Could not use gl+ for instanced rendering of points. '
         'Falling back to GL point rendering.'
     )
     rendering_method = 'points'

@@ -27,7 +27,9 @@ class ClippingPlanesMixin:
     and provides property getter and setter
     """
 
-    def __init__(self: _PVisual, *args, font_info: FontInfo, **kwargs) -> None:
+    def __init__(
+        self: _PVisual, *args, font_info: FontInfo | None, **kwargs
+    ) -> None:
         clip_filter = PlanesClipper()
         self._clip_filter = clip_filter
         self.font_info = font_info
