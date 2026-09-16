@@ -28,11 +28,11 @@ void main()
         axis == 1 ? vec3(0, sign, 0) :
                     vec3(0, 0, sign) ;
 
-    vec2 view_dir = $visual_to_render(vec4(direction, 0)).xy;
+    vec2 axis_dir = $visual_to_render(vec4(direction, 0)).xy;
 
-    if (length(view_dir) < 1e-5)
+    if (length(axis_dir) < 1e-5)
     {
-        // basically axis-aligned view direction, so we drop this axis
+        // basically view-aligned axis direction, so we drop this axis
         // by putting it outside of the clip range
         gl_Position = vec4(-2, -2, 0, 1);
         return;
@@ -42,7 +42,7 @@ void main()
     vec4 center = $visual_to_render(vec4($center, 1));
 
     // projected direction in screen space
-    vec2 dir_ndc = normalize(view_dir);
+    vec2 dir_ndc = normalize(axis_dir);
     vec2 center_ndc = (center.xy / center.w);
 
     float extent = 5.0;  // should be enough to always go out of screen
