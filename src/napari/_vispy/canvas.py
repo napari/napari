@@ -604,31 +604,36 @@ class VispyCanvas:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
         self.viewer.cursor._viewbox = grid_coords
-        self.viewer.cursor._canvas_position = event.pos[
-            ::-1
-        ]  # flip to napari-land
+        # flip to napari-land
+        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
+
+        # TODO: this will be cleaned up by followup PRs, as it shouldn't be
+        #       calculated via vispy, and it probably shouldn't live on the cursor
+        self.viewer.cursor._view_direction = self._calculate_view_direction(
+            event.pos
+        )
+        self.viewer.cursor.position = self._map_canvas2world(
+            event.pos, viewbox
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=self.viewer.cursor._view_direction,
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self._map_canvas2world(event.pos, viewbox),
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
