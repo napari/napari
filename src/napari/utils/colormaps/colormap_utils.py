@@ -83,7 +83,7 @@ class ColormapDict(UserDict[str, Colormap]):
     Prevent overriding of existing keys.
     """
 
-    def __setitem__(self, key: str, value: Colormap) -> None:
+    def __setitem__(self, key: str, value: Colormap) -> None:  # pyrefly: ignore [bad-override-param-name]
         if key in self:
             raise KeyError(f"Colormap with name '{key}' already exists")
         super().__setitem__(key, value)
@@ -499,7 +499,7 @@ def label_colormap(
         display_name='low discrepancy colors',
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
-        interpolation='zero',
+        interpolation='zero',  # pyrefly: ignore [bad-argument-type]
         background_value=background_value,
         seed=seed,
     )
@@ -586,7 +586,7 @@ def shuffle_and_extend_colormap(
         name=colormap.name,
         colors=extended_colors,
         controls=np.linspace(0, 1, len(extended_colors) + 1),
-        interpolation='zero',
+        interpolation='zero',  # pyrefly: ignore [bad-argument-type]
         background_value=colormap.background_value,
     )
     return new_colormap
