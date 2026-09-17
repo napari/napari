@@ -11,13 +11,19 @@ if TYPE_CHECKING:
     from vispy.visuals.visual import VisualView
 
 _VERTEX_SHADER = """#version 330
-in float a_idx;  // int attribvutes not working, so we use a float
+
+// this shader has no vertices; instead, it uses indices to distinguish
+// between which case we're in (i.e: which axis and which extremity).
+// `axis` will be 0, 1 or 2, and `side` either -1 or 1. Those are used to
+// output the segment extremities far past the screen so the lines look
+// infinite. The central gap is then discarded in the fragment shader.
+
+in float a_idx;  // int attributes not working, so we use a float
 
 out vec2 v_center;
 
 void main()
 {
-    // depending on the index of this vertex, we decide which case we're in
     int axis = int(a_idx) / 2;
     float side = (int(a_idx) % 2 == 0) ? -1.0 : 1.0;
 
@@ -26,27 +32,27 @@ void main()
         axis == 1 ? vec3(0, side, 0) :
                     vec3(0, 0, side);
 
+    // axis vector on screen (non-normalized)
     vec2 axis_dir = $visual_to_render(vec4(direction, 0)).xy;
 
     if (length(axis_dir) < 1e-5)
     {
-        // basically view-aligned axis direction, so we drop this axis
-        // by putting it outside of the clip range
+        // very small, so we're basically looking straight down this axis; we drop
+        // it by putting it outside of the clip range (cannot discard in vertex)
         gl_Position = vec4(-2, -2, 0, 1);
         return;
     }
 
-    // camera-space cursor center
+    // pass the center position in ndc coordinates to the fragment shader
     vec4 center = $visual_to_render(vec4($center, 1));
-
     vec2 center_ndc = (center.xy / center.w);
     v_center = center_ndc;
 
-    // projected direction in screen space
-    vec2 dir_ndc = normalize(axis_dir);
-
     float extent = 5.0;  // should be enough to always go out of screen
-    vec2 pos = center_ndc + dir_ndc * extent;
+
+    // position of this vertex (the extremity), far past the screen edge
+    // in the direction of the axis, starting from the center
+    vec2 pos = center_ndc + normalize(axis_dir) * extent;
 
     gl_Position = vec4(pos, center.z / center.w, 1.0);
 }
@@ -71,6 +77,12 @@ void main() {
 
 
 class CrosshairVisual(Visual):
+    """Crosshair visual with a central gap.
+
+    Displays an "infinite" 3D crosshair around a central point, with
+    a circular gap around the center defined in screen pixels.
+    """
+
     def __init__(self) -> None:
         super().__init__(vcode=_VERTEX_SHADER, fcode=_FRAGMENT_SHADER)
         self.shared_program['a_idx'] = VertexBuffer(
