@@ -80,6 +80,12 @@ QtViewerPushButton[mode="transpose"] {
 QtViewerPushButton[mode="home"] {
   image: url("theme_{{ id }}:/home.svg");
 }
+QtViewerPushButton[mode="add_button"] {
+    image: url("theme_{{ id }}:/add.svg");
+}
+QtViewerPushButton[mode="save"] {
+  image: url("theme_{{ id }}:/save.svg");
+}
 
 QtViewerPushButton[mode="ndisplay_button"]:checked {
   image: url("theme_{{ id }}:/3D-toggle.svg");

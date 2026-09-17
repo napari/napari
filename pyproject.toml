@@ -123,6 +123,7 @@ optional-base = [
     "napari-metadata>=0.1.0",
     "napari-plugin-manager >=0.1.10, <0.2.0",
     "rapidfuzz>=3",  # fuzzy search in command palette
+    "numexpr",  # expression calculations in features table widget
 ]
 optional-numba = [
     "numba>=0.58.0,<=0.62.1 ; platform_system == 'Darwin' and platform_machine == 'x86_64'",
