@@ -255,7 +255,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'True when the active layer is RGB.',
         _is_rgb,
     )
-    active_layer_type = ContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey['LayerSel', Optional[str]](  # pyrefly: ignore [not-a-type]
         None,
         'Lowercase name of active layer type, or None of none active.',
         _active_type,
@@ -298,12 +298,12 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'Number of selected tracks layers.',
         _n_selected_tracks,
     )
-    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+    active_layer_ndim = ContextKey['LayerSel', Optional[int]](  # pyrefly: ignore [not-a-type]
         None,
         'Number of dimensions in the active layer, or `None` if nothing is active.',
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](  # pyrefly: ignore [not-a-type]
         (),
         'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,

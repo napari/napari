@@ -18,6 +18,7 @@ from weakref import WeakSet, ref
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import (
+    QDragEnterEvent,
     QGuiApplication,
     QImage,
 )
@@ -206,7 +207,8 @@ class QtViewer(QSplitter):
         self._welcome_widget = QtWelcomeWidget(
             self.canvas.native, viewer=self.viewer, tips=tips
         )
-        self._welcome_widget.urls_dropped.connect(self.dropEvent)
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)  # pyrefly: ignore [missing-attribute]
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)  # pyrefly: ignore [missing-attribute]
 
         main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)
@@ -215,7 +217,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # pyrefly: ignore [bad-argument-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -257,11 +259,11 @@ class QtViewer(QSplitter):
         # set up welcome screen
         self._set_welcome_visible(False)
 
-    def showEvent(self, event: QShowEvent | None) -> None:
+    def showEvent(self, event: QShowEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         super().showEvent(event)
         self._update_welcome_screen()
 
-    def hideEvent(self, event: QHideEvent | None) -> None:
+    def hideEvent(self, event: QHideEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         super().hideEvent(event)
 
     @property
@@ -585,7 +587,7 @@ class QtViewer(QSplitter):
     def console(self, console: QtConsole | None) -> None:
         self._console = console
         if console is not None:
-            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
+            self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
     @ensure_main_thread
@@ -603,7 +605,7 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
+                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
                 layer._slicing_state._update_loaded_slice_id(
@@ -1161,10 +1163,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
         )
-        self.viewerButtons.consoleButton.style().unpolish(
+        self.viewerButtons.consoleButton.style().unpolish(  # pyrefly: ignore [missing-attribute]
             self.viewerButtons.consoleButton
         )
-        self.viewerButtons.consoleButton.style().polish(
+        self.viewerButtons.consoleButton.style().polish(  # pyrefly: ignore [missing-attribute]
             self.viewerButtons.consoleButton
         )
 
@@ -1181,7 +1183,7 @@ class QtViewer(QSplitter):
         """
         self._welcome_widget.set_welcome_visible(visible)
 
-    def keyPressEvent(self, event: QKeyEvent | None) -> None:
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Called whenever a key is pressed.
 
         Parameters
@@ -1196,7 +1198,7 @@ class QtViewer(QSplitter):
         )
         event.accept()
 
-    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:
+    def keyReleaseEvent(self, event: QKeyEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Called whenever a key is released.
 
         Parameters
@@ -1210,6 +1212,31 @@ class QtViewer(QSplitter):
             self.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
+
+    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
+        """Ignore event if not dragging & dropping a file or URL to open.
+
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDragEvent
+            Event from the Qt context.
+        """
+        if event is None:
+            return
+        mime = event.mimeData()
+        if mime is not None and mime.hasUrls():
+            self._set_drag_status()
+            event.accept()
+        else:
+            event.ignore()
+
+    def _set_drag_status(self) -> None:
+        """Set dedicated status message when dragging files into viewer"""
+        self.viewer.status = 'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
 
     def _image_from_clipboard(self) -> None:
         """Insert image from clipboard as a new layer if clipboard contains an image or link."""
@@ -1253,7 +1280,7 @@ class QtViewer(QSplitter):
                 return
         show_info('No image or link in clipboard.')
 
-    def dropEvent(self, event: QDropEvent | None) -> None:
+    def dropEvent(self, event: QDropEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Add local files and web URLS with drag and drop.
 
         For each file, attempt to open with existing associated reader
@@ -1303,7 +1330,7 @@ class QtViewer(QSplitter):
             choose_plugin=choose_plugin,
         )
 
-    def closeEvent(self, event: QCloseEvent | None) -> None:
+    def closeEvent(self, event: QCloseEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         """Cleanup and close.
 
         Parameters
@@ -1319,7 +1346,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()
+        self.dims.stop()  # pyrefly: ignore [missing-argument]
         self.canvas.delete()
         if self._console is not None:
             self._console.close()
