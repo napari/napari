@@ -47,12 +47,14 @@ class _Value:
     paths: frozenset[tuple[str, ...]] = frozenset()
     reads: frozenset[tuple[str, ...]] = frozenset()
     inplace: frozenset[tuple[str, ...]] = frozenset()
+    unresolved: frozenset[str] = frozenset()
 
     def merge(self, other: '_Value') -> '_Value':
         return _Value(
             self.paths | other.paths,
             self.reads | other.reads,
             self.inplace | other.inplace,
+            self.unresolved | other.unresolved,
         )
 
     @property
@@ -65,7 +67,8 @@ _SELF = _Value(paths=frozenset({()}))
 
 
 class _BytecodeDependencies:
-    def __init__(self, func: Callable):
+    def __init__(self, func: Callable, *, strict: bool = False):
+        self.strict = strict
         self.globals = func.__globals__
         self.builtins = func.__builtins__
         self.attributes: set[str] = set()
@@ -336,11 +339,19 @@ class _CodeScanner:
         elif op in {'DELETE_FAST', 'DELETE_DEREF', 'DELETE_NAME'}:
             frame.locals.pop(name, None)
         elif op in {'LOAD_GLOBAL', 'LOAD_NAME'}:
+            value = _UNKNOWN
             if name in self.dependencies.globals:
                 self.dependencies.global_names.add(name)
             elif name in self.dependencies.builtins:
                 self.dependencies.builtin_names.add(name)
-            frame.stack.extend([_UNKNOWN] * _stack_effect(instruction))
+            elif op == 'LOAD_NAME' and name in frame.locals:
+                value = frame.locals[name]
+            elif self.dependencies.strict:
+                value = _Value(unresolved=frozenset({name}))
+            values = [_UNKNOWN] * _stack_effect(instruction)
+            # LOAD_GLOBAL may also push NULL for a subsequent call.
+            values[0 if sys.version_info >= (3, 13) else -1] = value
+            frame.stack.extend(values)
         elif op in {
             'LOAD_CONST',
             'LOAD_SMALL_INT',
@@ -358,6 +369,9 @@ class _CodeScanner:
         op = instruction.opname
         arg = instruction.arg or 0
         name = instruction.argval
+        if op in {'LOAD_ATTR', 'LOAD_METHOD'} and frame.stack:
+            for root in sorted(frame.stack[-1].unresolved):
+                raise ValueError(f'Unexpected attribute access: {root}.{name}')
         if op == 'LOAD_ATTR':
             receiver = frame.pop()
             if sys.version_info >= (3, 12) and arg & 1:
@@ -523,12 +537,17 @@ class _CodeScanner:
         return True
 
 
-def property_dependencies(prop: Callable | property) -> FunctionDependencies:
+def property_dependencies(
+    prop: Callable | property, *, strict: bool = False
+) -> FunctionDependencies:
     """Inspect bytecode for static attribute reads made by a property getter.
 
     Supports source-less functions, decorated getters, local aliases, branches,
     and nested functions. Calls are not executed or followed into other methods;
     dynamic getattr and attributes of computed objects need explicit dependencies.
+
+    With ``strict=True``, attribute reads on unresolved global names raise
+    ValueError. This is opt-in because globals can be bound after class creation.
     """
     if isinstance(prop, property):
         if prop.fget is None:
@@ -546,7 +565,7 @@ def property_dependencies(prop: Callable | property) -> FunctionDependencies:
         raise ValueError(
             f'Expected a property getter with a single parameter, got {len(parameters)} parameters: {parameters}'
         )
-    visitor = _BytecodeDependencies(func)
+    visitor = _BytecodeDependencies(func, strict=strict)
     visitor.scan(
         func.__code__, {parameters[0]: _SELF}, set(func.__code__.co_freevars)
     )

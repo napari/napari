@@ -99,12 +99,35 @@ def test_sum_with_non_self_name_analysis():
     assert deps == {'attributes': {'a', 'd'}}
 
 
-@pytest.mark.xfail(reason='Need to decide')
 def test_prop_with_wrong_code_analysis():
     with pytest.raises(
-        ValueError, match=r'Unexpected attribute access: self2.a'
+        ValueError, match=r'Unexpected attribute access: self2\.a'
     ):
-        property_dependencies(A.prop_with_wrong_code)
+        property_dependencies(A.prop_with_wrong_code, strict=True)
+
+
+def test_unresolved_globals_are_allowed_by_default():
+    assert property_dependencies(A.prop_with_wrong_code).attributes == {'a'}
+
+
+def test_strict_analysis_with_known_global():
+    assert property_dependencies(A.using_math, strict=True) == {
+        'attributes': {'a'},
+        'globals': {'math'},
+    }
+
+
+@pytest.mark.parametrize('expression', ['missing.value', 'missing.method()'])
+def test_strict_analysis_with_unresolved_alias(expression):
+    namespace = {}
+    exec(
+        f'def getter(self):\n    missing = self2\n    return {expression}',
+        namespace,
+    )
+    with pytest.raises(
+        ValueError, match=r'Unexpected attribute access: self2\.'
+    ):
+        property_dependencies(namespace['getter'], strict=True)
 
 
 def test_complex_analysis():
