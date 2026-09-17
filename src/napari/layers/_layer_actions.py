@@ -295,7 +295,7 @@ def _toggle_face_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'face_colorbar'):
             raise NotImplementedError(
-                'Face Colorbar is only implemented for Points'
+                'Face Colorbar is only implemented for Points and Shapes'
             )
         layer.face_colorbar.visible = not layer.face_colorbar.visible
 
@@ -304,7 +304,7 @@ def _toggle_border_colorbar(ll: LayerList) -> None:
     for layer in ll.selection:
         if not hasattr(layer, 'border_colorbar'):
             raise NotImplementedError(
-                'Border Colorbar is only implemented for Points'
+                'Border Colorbar is only implemented for Points and Shapes'
             )
         layer.border_colorbar.visible = not layer.border_colorbar.visible
 

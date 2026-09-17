@@ -45,3 +45,4 @@ class ColorBarOverlay(CanvasOverlay):
     colormanager_attribute: str | None = Field(
         default=None, frozen=True, repr=False
     )
+    layer_attribute: str | None = Field(default=None, frozen=True, repr=False)

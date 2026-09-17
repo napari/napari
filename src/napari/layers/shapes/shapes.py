@@ -11,6 +11,7 @@ import numpy.typing as npt
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
+from napari.components.overlays import ColorBarOverlay
 from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
@@ -627,6 +628,12 @@ class Shapes(Layer):
         )
 
         self.refresh()
+        self._overlays.update(
+            {
+                'face_colorbar': ColorBarOverlay(layer_attribute='face'),
+                'border_colorbar': ColorBarOverlay(layer_attribute='edge'),
+            }
+        )
 
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
@@ -1044,6 +1051,20 @@ class Shapes(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: str | ColorMode):
         self._set_color_mode(edge_color_mode, 'edge')
+
+    @property
+    def face_colorbar(self):
+        """ColorBarOverlay: colorbar for the face color colormap."""
+        return self._overlays['face_colorbar']
+
+    @property
+    def border_colorbar(self):
+        """ColorBarOverlay: colorbar for the edge color colormap.
+
+        Named ``border_colorbar`` to match the Points layer so both layers
+        share the same "Border Colorbar" action.
+        """
+        return self._overlays['border_colorbar']
 
     @property
     def face_color(self):
