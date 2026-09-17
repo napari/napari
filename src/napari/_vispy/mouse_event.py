@@ -16,7 +16,7 @@ class NapariMouseEvent(MouseEvent):
     ----------
     event : MouseEvent
         The MouseEvent object to extend.
-    view_direction : npt.NDArray[np.float64]
+    view_direction : Optional[npt.NDArray[np.float64]]
         The direction of the camera view.
     up_direction : Optional[np.ndarray]
         The direction of the camera up vector.
@@ -35,7 +35,7 @@ class NapariMouseEvent(MouseEvent):
     def __init__(
         self,
         event: MouseEvent,
-        view_direction: npt.NDArray[np.float64],
+        view_direction: npt.NDArray[np.float64] | None,
         up_direction: np.ndarray | None,
         camera_zoom: float,
         position: tuple[float, float],

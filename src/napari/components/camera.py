@@ -180,11 +180,9 @@ class Camera(EventedModel):
     ) -> npt.NDArray[np.float64] | None:
         """Calculate the nD view direction vector of the camera.
 
-        When ``canvas_position`` and ``canvas_size`` are given and the camera
-        uses a perspective projection, the view direction is calculated for the
-        ray going from the eye through that canvas position (accounting for the
-        field of view). Otherwise, the view direction is that of the center of
-        the view.
+        If canvas position and size are given, returns the view direction at
+        the pixel on the canvas: this will account for perspective>0 and differ
+        from the normal view direction through the camera center.
 
         Parameters
         ----------
@@ -193,12 +191,9 @@ class Camera(EventedModel):
         dims_displayed : Tuple[int]
             Dimensions in which to embed the 3D view vector.
         canvas_position : tuple of float, optional
-            Position in the canvas in pixels, as ``(x, y)`` where ``x`` is the
-            column and ``y`` is the row. If ``None``, the view direction is
-            calculated for the center of the canvas.
+            Canvas position in (y, x). If None, the center of the canvas.
         canvas_size : tuple of int, optional
-            Size of the canvas in pixels, as ``(height, width)``. Only used when
-            ``canvas_position`` is given.
+            Size of the canvas in (y, x). Used only if canvas_position is given.
 
         Returns
         -------
@@ -230,34 +225,27 @@ class Camera(EventedModel):
 
         Parameters
         ----------
-        canvas_position : tuple of float
-            Position in the canvas in pixels, as ``(x, y)`` where ``x`` is the
-            column and ``y`` is the row.
-        canvas_size : tuple of int
-            Size of the canvas in pixels, as ``(height, width)``.
+        canvas_position : tuple of float, optional
+            Canvas position in (y, x). If None, the center of the canvas.
+        canvas_size : tuple of int, optional
+            Size of the canvas in (y, x). Used only if canvas_position is given.
 
         Returns
         -------
         view_direction : np.ndarray
-            Normalized 3D view direction vector in scene coordinates, in the
-            world coordinate system of the three displayed dimensions.
+            Normalized 3D view direction vector in scene coordinates
         """
         x, y = canvas_position
         h, w = canvas_size
 
         view_direction = np.asarray(self.view_direction)
         up_direction = np.asarray(self.up_direction)
-        # vector pointing to the right of the canvas, in scene coordinates
         right_direction = np.cross(view_direction, up_direction)
 
-        # distance of the eye from the center of the view, in world
-        # coordinates. This matches the perspective projection used by
-        # vispy, combined with the zoom-to-scale factor relation
-        # (see napari/_vispy/camera.py).
+        # distance of the eye from the center of the view
         dist = h / (2 * self.zoom * np.tan(np.radians(self.perspective) / 2))
 
-        # offset of the canvas position from the canvas center, in world
-        # coordinates
+        # offset of the canvas position from the canvas center
         dx = (x - w / 2) / self.zoom
         dy = (y - h / 2) / self.zoom
 

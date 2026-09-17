@@ -564,15 +564,15 @@ class VispyCanvas:
             return
 
         position = self._map_canvas2world(event.pos, viewbox)
+        canvas_pos = event.pos[::-1]
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self.viewer.cursor.view_direction(
-                camera=self.viewer.scene.camera,
-                canvas_size=self.viewer.canvas.size,
-                canvas_position=event.pos,
+            view_direction=self.viewer.scene.camera.calculate_nd_view_direction(
                 ndim=self.viewer.dims.ndim,
                 dims_displayed=self.viewer.dims.displayed,
+                canvas_position=canvas_pos,
+                canvas_size=self.viewer.canvas.size,
             ),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
