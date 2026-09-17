@@ -316,9 +316,9 @@ class Labels(ScalarFieldBase):
 
     _modeclass = Mode
 
-    _drag_modes: ClassVar[
+    _drag_modes: ClassVar[  # pyrefly: ignore [bad-override]
         dict[Mode, Callable[[Labels, Event], Generator | None]]
-    ] = {  # type: ignore[assignment]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.PICK: pick,
@@ -330,9 +330,9 @@ class Labels(ScalarFieldBase):
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
 
-    _move_modes: ClassVar[
+    _move_modes: ClassVar[  # pyrefly: ignore [bad-override]
         dict[StringEnum, Callable[[Labels, Event], None]]
-    ] = {  # type: ignore[assignment]
+    ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
@@ -342,7 +342,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # type: ignore[assignment]
+    _cursor_modes: ClassVar[dict[Mode, str]] = {  # pyrefly: ignore [bad-override]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -498,7 +498,7 @@ class Labels(ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def rendering(self):
+    def rendering(self):  # pyrefly: ignore [bad-override]
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -649,10 +649,10 @@ class Labels(ScalarFieldBase):
         self.events.selected_label()
         self.refresh(extent=False)
 
-    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        data = self._ensure_int_labels(data)
-        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
+        data = self._ensure_int_labels(data)  # pyrefly: ignore [bad-assignment]
+        ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         self.events.features()
 
     @property
@@ -734,12 +734,12 @@ class Labels(ScalarFieldBase):
         for data_level in data:
             # normalize_dtype turns e.g. tensorstore or torch dtypes into
             # numpy dtypes
-            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
+            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):  # pyrefly: ignore [missing-attribute]
                 raise TypeError(
-                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'
+                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'  # pyrefly: ignore [missing-attribute]
                 )
-            if data_level.dtype == bool:
-                int_data.append(data_level.view(np.uint8))
+            if data_level.dtype == bool:  # pyrefly: ignore [missing-attribute]
+                int_data.append(data_level.view(np.uint8))  # pyrefly: ignore [missing-attribute]
             else:
                 int_data.append(data_level)
         data = int_data
@@ -781,7 +781,7 @@ class Labels(ScalarFieldBase):
         dtype_lims = get_dtype_limits(layer_dtype)
         if dtype_lims[0] > label or dtype_lims[1] < label:
             raise WrongSelectedLabelError(
-                dtype=layer_dtype,
+                dtype=layer_dtype,  # pyrefly: ignore [bad-argument-type]
                 value=label,
                 lower_bound=dtype_lims[0],
                 upper_bound=dtype_lims[1],
@@ -879,9 +879,9 @@ class Labels(ScalarFieldBase):
     @mode.setter
     def mode(self, mode):
         # See https://github.com/python/mypy/issues/16426 for type ignore reason
-        Layer.mode.fset(self, mode)  # type: ignore[attr-defined]
+        Layer.mode.fset(self, mode)  # pyrefly: ignore [not-callable]
 
-    def _mode_setter_helper(self, mode):
+    def _mode_setter_helper(self, mode):  # pyrefly: ignore [bad-override-param-name]
         mode = super()._mode_setter_helper(mode)
         if mode == self._mode:
             return mode
@@ -1134,7 +1134,7 @@ class Labels(ScalarFieldBase):
                 self._replay_masked_atom(atom, undoing=True)
                 continue
             indices, prev_values, _ = atom
-            self.data[indices] = prev_values
+            self.data[indices] = prev_values  # pyrefly: ignore [unsupported-operation]
         self._staged_history = []
         self._block_history = False
         self.refresh()
@@ -1208,7 +1208,7 @@ class Labels(ScalarFieldBase):
                 self._replay_masked_atom(atom, undoing)
                 continue
             prev_indices, prev_values, next_values = atom
-            self.data[prev_indices] = prev_values if undoing else next_values
+            self.data[prev_indices] = prev_values if undoing else next_values  # pyrefly: ignore [unsupported-operation]
 
         self.refresh()
 
@@ -1224,11 +1224,11 @@ class Labels(ScalarFieldBase):
         values = atom.old_values if undoing else atom.new_value
         if atom.mask is None:
             # The whole bounding box changed: assign directly.
-            self.data[atom.slice_key] = values
+            self.data[atom.slice_key] = values  # pyrefly: ignore [unsupported-operation]
             return
         region = np.asarray(self.data[atom.slice_key])
         region[atom.mask] = values
-        self.data[atom.slice_key] = region
+        self.data[atom.slice_key] = region  # pyrefly: ignore [unsupported-operation]
 
     def undo(self) -> None:
         self._load_history(
@@ -1713,7 +1713,7 @@ class Labels(ScalarFieldBase):
             for i in range(ndim)
         )
 
-        return dist_sq <= radius**2
+        return dist_sq <= radius**2  # pyrefly: ignore [bad-return]
 
     @staticmethod
     def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -1867,7 +1867,7 @@ class Labels(ScalarFieldBase):
         # _apply_mask_to_data already wrote through and this assignment is a
         # no-op; for copy-returning backends (zarr, tensorstore, dask, ...)
         # this is the actual write-back.
-        self.data[slice_key] = region_data
+        self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
 
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
@@ -2164,7 +2164,7 @@ class Labels(ScalarFieldBase):
         )
 
         # update the labels image
-        self.data[indices] = value
+        self.data[indices] = value  # pyrefly: ignore [unsupported-operation]
 
         pt_not_disp = self._get_pt_not_disp()
         displayed_indices = index_in_slice(
