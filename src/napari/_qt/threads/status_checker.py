@@ -120,6 +120,9 @@ class StatusChecker(QThread):
         viewer = self.viewer_ref()
         if viewer is None:
             return
+        if viewer.cursor.canvas_position is None:
+            self.status_and_tooltip_changed.emit(('Ready', ''))
+            return
 
         try:
             # Calculate the status change from cursor's movement

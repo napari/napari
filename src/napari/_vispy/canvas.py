@@ -7,7 +7,6 @@ import gc
 import warnings
 from functools import partial
 from itertools import zip_longest
-from types import MethodType
 from typing import TYPE_CHECKING, Any
 from weakref import WeakSet
 
@@ -60,37 +59,6 @@ if TYPE_CHECKING:
 
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        orig_enterEvent = self.native.enterEvent
-        orig_leaveEvent = self.native.leaveEvent
-
-        def _qtviewer(widget):
-            parent = widget.parentWidget()
-            while parent is not None:
-                if hasattr(parent, '_enter_canvas') and hasattr(
-                    parent, '_leave_canvas'
-                ):
-                    return parent
-                parent = parent.parentWidget()
-            return None
-
-        def enterEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._enter_canvas()
-            orig_enterEvent(event)
-
-        def leaveEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._leave_canvas()
-            orig_leaveEvent(event)
-
-        self.native.enterEvent = MethodType(enterEvent, self.native)
-        self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
     def _process_mouse_event(self, event: MouseEvent):
         """Ignore mouse wheel events which have modifiers."""
@@ -546,9 +514,6 @@ class VispyCanvas:
         -------
         None
         """
-        if event.pos is None:
-            return
-
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
@@ -556,29 +521,37 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor._viewbox = grid_coords
+        # flip to napari-land
+        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
+
+        # TODO: this will be cleaned up by followup PRs, as it shouldn't be
+        #       calculated via vispy, and it probably shouldn't live on the cursor
+        self.viewer.cursor._view_direction = self._calculate_view_direction(
+            event.pos
+        )
+        self.viewer.cursor.position = self._map_canvas2world(
+            event.pos, viewbox
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=self.viewer.cursor._view_direction,
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self._map_canvas2world(event.pos, viewbox),
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
