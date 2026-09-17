@@ -336,7 +336,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
         """
-        return self.scene.overlays.axes  # type: ignore[return-value]
+        return self.scene.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -352,7 +352,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
         """
-        return self.canvas.overlays.axes  # type: ignore[return-value]
+        return self.canvas.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -368,7 +368,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
         """
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        return self.canvas.overlays.scale_bar  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -384,7 +384,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
         """
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        return self.canvas.overlays.text  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -953,6 +953,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         separator = '    '
         values = '[empty]' if not statuses else separator.join(statuses)
 
+        separator = '    '
+        values = '[empty]' if not statuses else separator.join(statuses)
+
         status_str = f'{coords} » {values}'
         return status_str, ''
 
@@ -1333,12 +1336,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     raise TypeError(
                         f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
-            layer = Image(data, **kwargs)
+            layer = Image(data, **kwargs)  # pyrefly: ignore [bad-argument-type]
             self.layers.append(layer)
 
             return layer
 
-        layerdata_list = split_channels(data, channel_axis, **kwargs)
+        layerdata_list = split_channels(data, channel_axis, **kwargs)  # pyrefly: ignore [bad-argument-type]
 
         layer_list = [
             Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
@@ -1418,7 +1421,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 added = []
                 needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(
-                    list(data(**kwargs))
+                    list(data(**kwargs))  # pyrefly: ignore [bad-argument-type]
                 ):
                     if datum[0] is not None:
                         needs_error = False
@@ -1862,7 +1865,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)
+    return tuple(_data)  # pyrefly: ignore [bad-return]
 
 
 def _unify_data_and_user_kwargs(
@@ -1997,4 +2000,4 @@ for _layer in (
     layers.Vectors,
 ):
     func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)
+    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]
