@@ -42,6 +42,7 @@ class VispyBaseOverlay:
         super().__init__()
         self.overlay = overlay
         self._font_info = font_info
+        self._default_font_size = 9
         self.viewer = viewer
 
         self.node = node
@@ -67,10 +68,19 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
+    def _on_font_size_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
+
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
+        self._on_font_size_change()
 
     def close(self) -> None:
         self.overlay.events.visible.disconnect(self._on_visible_change)

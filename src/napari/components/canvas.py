@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import numpy as np
 from pydantic import Field
@@ -71,6 +71,10 @@ class Canvas(EventedModel):
         publicly 'scale_bar', 'text', 'current_slice' and 'axes'
     overlay_tiling : OverlayTiling
         Controls for the overlay tiling direction and padding.
+    overlay_font_size : float or None
+        Default font size for all overlays in the canvas, unless otherwise
+        specified on the individual overlay.
+        If unset, use global application font size.
     size : tuple[int, int]
         The canvas size following the Numpy convention of height x width
     """
@@ -92,6 +96,7 @@ class Canvas(EventedModel):
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, frozen=True
     )
+    overlay_font_size: Annotated[float, Field(ge=1)] | None = None
     size: tuple[int, int] = (800, 600)
 
     def __init__(self, **kwargs: Any) -> None:
