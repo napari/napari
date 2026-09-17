@@ -682,7 +682,7 @@ class Shapes(Layer):
     def data(self, data):
         self._finish_drawing()
         self.selected_data = set()
-        prior_data = len(self.data) > 0
+        prior_data = self.nshapes > 0
         data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
         # not given a shape_type through data
@@ -729,7 +729,7 @@ class Shapes(Layer):
         kwargs = {
             'value': self.data,
             'vertex_indices': ((),),
-            'data_indices': tuple(i for i in range(len(self.data))),
+            'data_indices': tuple(i for i in range(self.nshapes)),
         }
         if prior_data and data_not_empty:
             kwargs['action'] = ActionType.CHANGING
@@ -851,7 +851,11 @@ class Shapes(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        ndim = self.ndim if self.nshapes == 0 else self.data[0].shape[1]
+        ndim = (
+            self.ndim
+            if self.nshapes == 0
+            else self._data_view.shapes[0].data.shape[1]
+        )
         return ndim
 
     @property
@@ -862,7 +866,7 @@ class Shapes(Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        if len(self.data) == 0:
+        if self.nshapes == 0:
             return np.full((2, self.ndim), np.nan)
 
         bounding_boxes = np.array(
@@ -1330,15 +1334,15 @@ class Shapes(Layer):
             self.refresh_colors(update_color_mapping=True)
 
         else:
-            if len(self.data) > 0:
+            if self.nshapes > 0:
                 transformed_color = transform_color_with_defaults(
-                    num_entries=len(self.data),
+                    num_entries=self.nshapes,
                     colors=color,
                     elem_name='face_color',
                     default='white',
                 )
                 colors = normalize_and_broadcast_colors(
-                    len(self.data), transformed_color
+                    self.nshapes, transformed_color
                 )
             else:
                 colors = np.empty((0, 4))
@@ -1673,16 +1677,12 @@ class Shapes(Layer):
         """
         ndisplay = self._slice_input.ndisplay
         order = self._slice_input.order
-
-        # get the coordinates of the vertices for the shapes in view
-        in_view_shapes_coords = [
-            self._data_view.data[i] for i in self._view_indices
-        ]
-
+        # avoid rebuilding lists
+        displayed = self._slice_input.displayed
+        shapes = self._data_view.shapes
         # get the coordinates for the dimensions being displayed
         sliced_in_view_coords = [
-            position[:, self._slice_input.displayed]
-            for position in in_view_shapes_coords
+            shapes[i].data[:, displayed] for i in self._view_indices
         ]
         # TODO: fix types here with np.asarray(sliced_in_view_coords)
         # but blocked by https://github.com/napari/napari/issues/6294
@@ -2799,7 +2799,7 @@ class Shapes(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         # if the shapes layer is empty, don't update, just leave it black
-        if len(self.data) == 0:
+        if self.nshapes == 0:
             self.thumbnail = colormapped
         # don't update the thumbnail if dragging a shape
         elif self._is_moving is False and self._allow_thumbnail_update is True:
@@ -2852,7 +2852,7 @@ class Shapes(Layer):
 
             self._value = (None, None)
 
-            if len(self.data) == 0 and self.selected_data:
+            if self.nshapes == 0 and self.selected_data:
                 self.selected_data.clear()
             elif self.selected_data:
                 selected_not_removed = self.selected_data - set(indices)
@@ -2906,7 +2906,7 @@ class Shapes(Layer):
             A dictionary containing all relevant details of the shape.
         """
 
-        if not (0 <= index < len(self.data)):
+        if not (0 <= index < self.nshapes):
             return {
                 'data': None,
                 'shape_type': None,
@@ -2918,7 +2918,7 @@ class Shapes(Layer):
             }
 
         info = {
-            'data': self.data[index],
+            'data': self._data_view.shapes[index].data,
             'shape_type': self.shape_type[index],
             'edge_width': self.edge_width[index],
             'edge_color': self.edge_color[index],
@@ -2943,7 +2943,7 @@ class Shapes(Layer):
             Dictionary containing the removed shape's data.
         """
         if index == -1:
-            index = len(self.data) - 1
+            index = self.nshapes - 1
         info = self.get_shape_info(index)
         self.remove([index])
         return info

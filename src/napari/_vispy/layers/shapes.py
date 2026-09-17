@@ -59,7 +59,7 @@ class VispyShapesLayer(VispyBaseLayer):
             colors = np.array([[0, 0, 0, 0]])
 
         if (
-            len(self.layer.data)
+            self.layer.nshapes
             and self.layer._slice_input.ndisplay == 3
             and self.layer.ndim == 2
         ):
