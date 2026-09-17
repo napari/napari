@@ -567,7 +567,7 @@ class VispyCanvas:
             return
 
         # TODO: this will be cleaned up by followup PRs, as it shouldn't be
-        #       calculated via vispy
+        #       calculated via vispy, and it probably shouldn't live on the cursor
         self.viewer.cursor._view_direction = self._calculate_view_direction(
             event.pos
         )
@@ -577,7 +577,7 @@ class VispyCanvas:
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self.viewer.cursor.view_direction,
+            view_direction=self.viewer.cursor._view_direction,
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),

@@ -17,9 +17,6 @@ class Cursor(EventedModel):
     canvas_position : tuple of int or None
         Position of the cursor in canvas pixel coordinates (y, x).
         None when cursor is outside the canvas.
-    view_direction : Optional[np.ndarray]
-        The vector describing the direction of the camera in the scene
-        in world coordinates. This is None when viewing in 2D.
     viewbox : tuple[int, int] or None
         Position of the cursor in the grid.
     scaled : bool
@@ -54,12 +51,6 @@ class Cursor(EventedModel):
     @property
     def canvas_position(self) -> tuple[int, int] | None:
         return self._canvas_position
-
-    @property
-    def view_direction(
-        self,
-    ) -> np.ndarray[tuple[int], np.dtype[np.floating]] | None:
-        return self._view_direction
 
     @property
     def viewbox(self) -> tuple[int, int] | None:
