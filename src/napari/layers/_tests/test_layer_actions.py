@@ -14,6 +14,7 @@ from napari.layers._layer_actions import (
     _link_selected_layers,
     _merge_stack,
     _project,
+    _project_points,
     _show_selected,
     _show_unselected,
     _split_rgb,
@@ -301,6 +302,56 @@ def test_projections(mode):
     assert tuple(ll[-1].translate) == (5, 5)
     assert ll[-1].units == (REG.um, REG.um)
     assert ll[-1].axis_labels == ('y', 'x')
+
+
+def test_project_points():
+    ll = LayerList()
+    data = np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
+    ll.append(
+        Points(
+            data,
+            size=7,
+            symbol='cross',
+            features={'label': ['a', 'b']},
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
+    assert len(ll) == 1
+    assert ll[-1].ndim == 3
+
+    _project_points(ll)
+
+    assert len(ll) == 2
+    new = ll[-1]
+    # the leading (z) axis is dropped; every point is kept
+    assert new.ndim == 2
+    np.testing.assert_array_equal(new.data, data[:, 1:])
+    # transforms/units/labels drop the projected axis
+    assert tuple(new.scale) == (2, 2)
+    assert tuple(new.translate) == (5, 5)
+    assert new.units == (REG.um, REG.um)
+    assert new.axis_labels == ('y', 'x')
+    # per-point state is preserved
+    np.testing.assert_array_equal(new.size, [7, 7])
+    assert list(new.symbol) == list(ll[0].symbol)
+    assert list(new.features['label']) == ['a', 'b']
+
+
+def test_project_points_rejects_non_points():
+    ll = LayerList()
+    ll.append(Image(np.random.rand(4, 5, 5)))
+    with pytest.raises(NotImplementedError):
+        _project_points(ll)
+
+
+def test_project_points_no_active_layer():
+    # with nothing selected the action is a no-op, matching image projection
+    ll = LayerList()
+    _project_points(ll)
+    assert len(ll) == 0
 
 
 @pytest.mark.parametrize(

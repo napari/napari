@@ -124,7 +124,9 @@ def _active_type(s: LayerSel) -> str | None:
 
 
 def _active_ndim(s: LayerSel) -> int | None:
-    return getattr(s.active.data, 'ndim', None) if s.active else None
+    # Use `layer.ndim`, not `data.ndim`: it already excludes the RGB channel
+    # axis and reflects point/shape coordinates.
+    return s.active.ndim if s.active else None
 
 
 def _active_shape(s: LayerSel) -> tuple[int, ...] | None:
@@ -162,15 +164,6 @@ def _active_dtype(s: LayerSel) -> str | None:
 
 def _same_type(s: LayerSel) -> bool:
     return len({x._type_string for x in s}) == 1
-
-
-def _active_is_image_3d(s: LayerSel) -> bool:
-    _activ_ndim = _active_ndim(s)
-    return (
-        _active_type(s) == 'image'
-        and _activ_ndim is not None
-        and (_activ_ndim > 3 or ((_activ_ndim) > 2 and not _is_rgb(s)))
-    )
 
 
 def _shapes_selection_check(s: ReferenceType[LayerSel]) -> bool:
@@ -307,11 +300,6 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         (),
         'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,
-    )
-    active_layer_is_image_3d = ContextKey(
-        False,
-        'True when the active layer is a 3D image.',
-        _active_is_image_3d,
     )
     active_layer_dtype = ContextKey(
         None,
