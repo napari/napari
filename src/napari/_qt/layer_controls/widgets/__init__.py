@@ -29,7 +29,6 @@ __all__ = [
     'QtContrastLimitsControl',
     'QtFaceColorControl',
     'QtGammaSliderControl',
-    'QtInterpolationComboBoxControl',
     'QtMultiscaleLevelControl',
     'QtOpacityBlendingControls',
     'QtProjectionModeControl',
