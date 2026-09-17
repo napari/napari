@@ -44,7 +44,7 @@ class QCommandPalette(QtW.QWidget):
 
         self._line.setPlaceholderText('Type to search commands...')
         self._line.textChanged.connect(self._on_text_changed)
-        self._list.commandClicked.connect(self._on_command_clicked)
+        self._list.commandClicked.connect(self._on_command_clicked)  # pyrefly: ignore [missing-attribute]
         self._line.editingFinished.connect(self.hide)
         self.hide()
 
@@ -139,7 +139,7 @@ class QCommandPalette(QtW.QWidget):
 
     def hide(self) -> None:
         """Hide this widget."""
-        self.hidden.emit()
+        self.hidden.emit()  # pyrefly: ignore [missing-attribute]
         return super().hide()
 
     def text(self) -> str:
@@ -154,7 +154,7 @@ class QCommandLineEdit(QtW.QLineEdit):
         """The parent command palette widget."""
         return cast(QCommandPalette, self.parent())
 
-    def event(self, e: QtCore.QEvent | None) -> bool:
+    def event(self, e: QtCore.QEvent | None) -> bool:  # pyrefly: ignore [bad-override-param-name]
         if e is None or e.type() != QtCore.QEvent.Type.KeyPress:
             return super().event(e)
         e = cast(QtGui.QKeyEvent, e)
@@ -290,7 +290,7 @@ class QCommandList(QtW.QListView):
 
     def _on_clicked(self, index: QtCore.QModelIndex) -> None:
         if index.isValid():
-            self.commandClicked.emit(index.row())
+            self.commandClicked.emit(index.row())  # pyrefly: ignore [missing-attribute]
             return
 
     def move_selection(self, dx: int) -> None:
