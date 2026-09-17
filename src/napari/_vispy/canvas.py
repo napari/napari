@@ -576,10 +576,13 @@ class VispyCanvas:
             viewbox=grid_coords,
         )
 
-        # Update the cursor position
+        # update the cursor state
+        # TODO: IMO ideally, all of this should be handled in the viewer mouse callbacks
+        #       and the event itself should just contain the actual event info.
+        #       Listeners who need more info should rather connect to `viewer.cursor` then.
         self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.canvas_position = tuple(event.pos)[::-1]
         self.viewer.cursor.position = napari_event.position
+        self.viewer.cursor.canvas_position = tuple(event.pos)[::-1]
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(

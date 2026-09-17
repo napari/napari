@@ -1536,15 +1536,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             Value of the data.
         """
         if dims_displayed is None or view_direction is None:
-            return self._get_value(position)
+            value = self._get_value(position)
+        else:
+            hits = self.iter_values_along_ray(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+            value, _ = next(hits, (None, None))
 
-        hits = self.iter_values_along_ray(
-            position,
-            view_direction=view_direction,
-            dims_displayed=dims_displayed,
-            world=world,
-        )
-        value, _ = next(hits, (None, None))
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':

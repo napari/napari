@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from collections.abc import (
+    Iterable,
     Iterator,
     Mapping,
     MutableMapping,
@@ -13,12 +14,7 @@ from collections.abc import (
 )
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Union, cast
 from urllib.parse import urlparse
 
 import numpy as np
@@ -37,6 +33,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_cursor_model,
 )
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
@@ -297,6 +294,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
+        self.mouse_move_callbacks.append(update_cursor_model)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
@@ -1005,6 +1003,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # consistency (zyx actually describes a different rotation order)
             rot = R.from_euler('xyz', camera.angles, degrees=True)
             rot_matrix = rot.as_matrix()
+            # TODO: the depth is set by default to 0, but we could/should pick
+            #       a more sensible spot, like the plane passing by the camera center
             canvas_position_3d = np.array([0, *canvas_position])
             canvas_center_3d = np.array([0, *canvas_center])
             world_displayed = (
@@ -1024,7 +1024,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self,
         canvas_position: tuple[int, int] | None = None,
         view_direction: npt.ArrayLike | None = None,
-        layers: Sequence[Layer] | None = None,
+        layers: Iterable[Layer] | None = None,
     ) -> list[tuple[Layer, Any, np.ndarray]]:
         """Get all layer values at canvas position, sorted by distance from camera.
 
