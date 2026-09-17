@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from numpy import testing as npt
 from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
-from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
+from qtpy.QtGui import QEnterEvent, QFontInfo, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
@@ -312,6 +312,23 @@ def test_qt_viewer_with_console(make_napari_viewer):
     # Check console is created when requested
     assert view.console is not None
     assert view.dockConsole.widget() is view.console
+
+
+@pytest.mark.enable_console
+@pytest.mark.filterwarnings('ignore::DeprecationWarning:jupyter_client')
+def test_qt_viewer_console_fixed_width_font(make_napari_viewer):
+    """Console should keep a monospace font, including after a restyle.
+
+    Applying the stylesheet resets the console document font to the (variable
+    width) widget font, so it has to be re-applied on every theme update.
+    """
+    viewer = make_napari_viewer()
+    view = viewer.window._qt_viewer
+
+    assert QFontInfo(view.console.font).fixedPitch()
+
+    viewer.window._update_theme()
+    assert QFontInfo(view.console.font).fixedPitch()
 
 
 def test_qt_viewer_toggle_console(make_napari_viewer):
