@@ -24,11 +24,7 @@ def test_paint():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
 
@@ -37,20 +33,13 @@ def test_paint():
         type='mouse_move',
         is_dragging=True,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_mouse_event(
         type='mouse_release',
-        is_dragging=False,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -75,11 +64,7 @@ def test_paint_scale():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
 
@@ -88,20 +73,13 @@ def test_paint_scale():
         type='mouse_move',
         is_dragging=True,
         position=(39, 39),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_mouse_event(
         type='mouse_release',
-        is_dragging=False,
         position=(39, 39),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -126,11 +104,7 @@ def test_erase():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
 
@@ -139,20 +113,13 @@ def test_erase():
         type='mouse_move',
         is_dragging=True,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_mouse_event(
         type='mouse_release',
-        is_dragging=False,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -178,11 +145,7 @@ def test_pick():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 2
@@ -190,11 +153,7 @@ def test_pick():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 3
@@ -217,13 +176,10 @@ def test_fill():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5]) == 4
     assert np.unique(layer.data[-5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
@@ -234,13 +190,10 @@ def test_fill():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(19, 19),
-        view_direction=None,
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5]) == 4
     assert np.unique(layer.data[-5:, -5:]) == 5
     assert np.unique(layer.data[:5, -5:]) == 1
@@ -266,13 +219,11 @@ def test_fill_nD_plane():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0, 0),
         view_direction=(1, 0, 0),
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[0, :5, :5]) == 4
     assert np.unique(layer.data[1:5, :5, :5]) == 2
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
@@ -285,13 +236,12 @@ def test_fill_nD_plane():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 19, 19),
         view_direction=(1, 0, 0),
-        dims_displayed=(0, 1),
         dims_point=(0, 0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[0, :5, :5]) == 4
     assert np.unique(layer.data[1:5, :5, :5]) == 2
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
@@ -322,13 +272,11 @@ def test_fill_nD_all():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 0, 0),
         view_direction=(1, 0, 0),
-        dims_displayed=(0, 1),
-        dims_point=(0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5, :5]) == 4
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 1
@@ -340,13 +288,12 @@ def test_fill_nD_all():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 19, 19),
         view_direction=(1, 0, 0),
-        dims_displayed=(0, 1),
         dims_point=(0, 0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     assert np.unique(layer.data[:5, :5, :5]) == 4
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 5
@@ -369,13 +316,13 @@ def test_paint_3d():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0.1, 0, 0),
         view_direction=np.full(3, np.sqrt(3)),
         dims_displayed=(0, 1, 2),
         dims_point=(0, 0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
     np.testing.assert_array_equal(np.unique(layer.data), [0, 4])
     num_filled = np.bincount(layer.data.ravel())[4]
     assert num_filled > 1
@@ -385,13 +332,13 @@ def test_paint_3d():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(0, 10, 10),
         view_direction=(1, 0, 0),
         dims_displayed=(0, 1, 2),
         dims_point=(0, 0, 0),
     )
     mouse_press_callbacks(layer, event)
+    mouse_release_callbacks(layer, event)
 
     new_num_filled = np.bincount(layer.data.ravel())[4]
     assert new_num_filled < num_filled
@@ -414,7 +361,6 @@ def test_erase_3d_undo():
     # Simulate click
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(-1, -1, -1),
         view_direction=(1, 0, 0),
         dims_displayed=(0, 1, 2),
@@ -446,7 +392,6 @@ def test_erase_3d_undo():
     # Simulate release
     event = read_only_mouse_event(
         type='mouse_release',
-        is_dragging=False,
         position=(-1, 21, 21),
         view_direction=(1, 0, 0),
         dims_displayed=(0, 1, 2),
@@ -475,7 +420,6 @@ def test_erase_3d_undo_empty():
     # Simulate click, outside data
     event = read_only_mouse_event(
         type='mouse_press',
-        is_dragging=False,
         position=(-1, -1, -1),
         view_direction=(1, 0, 0),
         dims_displayed=(0, 1, 2),
@@ -486,7 +430,6 @@ def test_erase_3d_undo_empty():
     # Simulate release
     event = read_only_mouse_event(
         type='mouse_release',
-        is_dragging=False,
         position=(-1, -1, -1),
         view_direction=(1, 0, 0),
         dims_displayed=(0, 1, 2),
