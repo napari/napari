@@ -1333,3 +1333,16 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_deprecated_title():
+    viewer = ViewerModel()
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        assert viewer.title == 'napari'
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        viewer.title = 'new'
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        viewer.events.title.connect(lambda _: None)

@@ -138,7 +138,7 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
 
 
 _TITLE_DEPRECATION_MSG = (
-    'ViewerModel.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    'ViewerModel.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
     ' A pure ViewerModel no longer has access to window-related attributes.'
 )
 
@@ -208,7 +208,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # stub to be removed after deprecation cycle; only here to support
     # tests and other edge cases that use pure ViewerModels and access
     # window properties such as the title.
-    _title: str = PrivateAttr()
+    _title: str = PrivateAttr(default='napari')
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -221,7 +221,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
-            title=title,
             dims={
                 'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
@@ -230,6 +229,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             },
         )
         self.model_config['extra'] = 'ignore'
+
+        # see above, this will be removed
+        self._title = title
 
         settings = get_settings()
 
@@ -302,7 +304,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def title(self) -> str:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         return self._title
@@ -316,7 +318,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def title(self, title: str) -> None:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         self._title = title

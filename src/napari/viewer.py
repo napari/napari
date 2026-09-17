@@ -7,6 +7,7 @@ from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
+from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
@@ -19,7 +20,7 @@ if typing.TYPE_CHECKING:
 
 
 _TITLE_DEPRECATION_MSG = (
-    'viewer.title is a deprecated attribute since 0.10.0. Use viewer.window.title instead.'
+    'viewer.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
     ' There is currently no planned date for removal of the legacy attribute.'
 )
 
@@ -64,6 +65,18 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
             **kwargs,
         )
+
+        # to ensure the warning is different from a pure ViewerModel, we need to pop
+        # the emitter here and recreate it as a DeprecationWarning with our message
+        # this will be removed together with the deprecated field
+        del self.events.title
+        self.events.emitters.pop('title')
+        self.events.add(
+            title=WarningEmitter(
+                _TITLE_DEPRECATION_MSG, DeprecationWarning, stacklevel=2
+            )
+        )
+
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
         from napari.plugins import _initialize_plugins
@@ -74,8 +87,11 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(  # pyrefly: ignore [bad-assignment]
-            self, show=show, show_welcome_screen=show_welcome_screen
+        self._window = Window(
+            self,
+            show=show,
+            show_welcome_screen=show_welcome_screen,
+            title=title,
         )
         self._instances.add(self)
 
@@ -121,7 +137,7 @@ class Viewer(ViewerModel):
     def title(self) -> str:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         return self.window.title
@@ -134,7 +150,7 @@ class Viewer(ViewerModel):
     def title(self, title: str) -> None:
         """Title of the viewer window.
 
-        .. deprecated:: 0.10.0
+        .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
         self.window.title = title
