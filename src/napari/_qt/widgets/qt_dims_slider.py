@@ -184,6 +184,11 @@ class QtDimSliderWidget(QWidget):
         slider.setPageStep(1)
         slider.setValue(self.dims.current_step[self.axis])
 
+        slider.setToolTip(
+            'Dimension slider: move to scroll through this non-displayed dimension.\n'
+            'Right click to open the thich slicing controls.'
+        )
+
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 

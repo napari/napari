@@ -1125,7 +1125,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         name=None,
         opacity=1.0,
         plane=None,
-        projection_mode='mean',
+        projection_mode='none',
         rendering='mip',
         rgb=None,
         rotate=None,

@@ -72,6 +72,14 @@ class QtProjectionModeControl(QtWidgetControlsBase):
 
         self.projection_combobox_label = QtWrappedLabel('projection mode:')
 
+        self.projection_combobox.setToolTip(
+            'Choose how data contained in the current thick slice is\n'
+            'projected onto the displayed dimensions.\n'
+            'For this to have an effect, slice thickness must be\n'
+            'greater than zero. Right click on a dimension slider\n'
+            'to set slice thickness for that dimension.'
+        )
+
     def _on_projection_mode_change(self) -> None:
         with qt_signals_blocked(self.projection_combobox):
             self.projection_combobox.setCurrentText(
