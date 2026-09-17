@@ -1168,6 +1168,49 @@ def test_nested_dependency_is_lazy_and_batched():
         model.events.old_value.connect(Mock())
 
 
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason='Child-derived properties bypass parent setter batching and emit intermediate values',
+)
+def test_nested_dependent_property_is_batched_during_setter():
+    class Child(EventedModel):
+        x: int = 1
+        y: int = 2
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+
+        @property
+        def total(self):
+            return self.child.x + self.child.y
+
+        @total.setter
+        def total(self, value):
+            self.child.x = value // 2
+            self.child.y = value - self.child.x
+
+        @property
+        def twice(self):
+            return self.total * 2
+
+    model = Model()
+    total_callback = Mock()
+    twice_callback = Mock()
+    model.events.total.connect(total_callback)
+    model.events.twice.connect(twice_callback)
+
+    model.total = 10
+
+    assert model.child.x == model.child.y == 5
+    # The assigned property's blocker already suppresses intermediate events.
+    total_callback.assert_called_once()
+    assert total_callback.call_args.args[0].value == 10
+    # Other dependent properties should also emit only the completed value.
+    twice_callback.assert_called_once()
+    assert twice_callback.call_args.args[0].value == 20
+
+
 def test_nested_dependency_property_deprecation():
     class Child(EventedModel):
         value: int = 1
