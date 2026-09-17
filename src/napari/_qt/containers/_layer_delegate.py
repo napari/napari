@@ -54,6 +54,7 @@ from napari._qt.containers.qt_layer_model import (
 )
 from napari._qt.qt_resources import QColoredSVGIcon
 from napari.resources import LOADING_GIF_PATH
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from qtpy import QtCore
@@ -130,9 +131,8 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources(icon_name)
         except ValueError:
             return
-        # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        theme = get_settings().appearance.theme
+        option.icon = icon.colored(theme=theme)
         option.decorationSize = QSize(18, 18)
         option.decorationPosition = (
             option.Position.Right
