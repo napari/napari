@@ -556,29 +556,43 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor._viewbox = grid_coords
+        # flip to napari-land
+        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
+
+        self.viewer.cursor.position = self._map_canvas2world(
+            event.pos, viewbox
+        )
+
+        viewbox_size = self.viewer.canvas.viewbox_size(self.viewer.layers)
+        # TODO: do we need to calculate this _relative_ to the original viewbox as well?
+        viewbox_position = (
+            np.array(self.viewer.cursor.canvas_position) % viewbox_size
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=self.viewer.scene.camera.calculate_nd_view_direction(
+                ndim=self.viewer.dims.ndim,
+                dims_displayed=self.viewer.dims.displayed,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
+            ),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self._map_canvas2world(event.pos, viewbox),
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
@@ -1286,49 +1300,6 @@ class VispyCanvas:
             vispy_overlay.node.transform.translate = [x, y, 0, 0]
 
         self._needs_overlay_position_update = False
-
-    def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
-        """calculate view direction by ray shot from the camera"""
-        # this method is only implemented for 3 dimension
-        if self.viewer.dims.ndisplay == 2:
-            return None
-
-        if self.viewer.dims.ndim == 2:
-            return self.viewer.scene.camera.calculate_nd_view_direction(
-                self.viewer.dims.ndim, self.viewer.dims.displayed
-            )
-        x, y = event_pos
-        w, h = self.size
-        nd = self.viewer.dims.ndisplay
-
-        view = self._get_viewbox_at(event_pos)[0] or self.view
-        # combine the viewbox transform wit the scene transform
-        # so each viewbox in grid mode maps back to the main scene
-        transform = view.transform * view.scene.transform
-
-        # map click pos to scene coordinates
-        click_scene = transform.imap([x, y, 0, 1])
-        # canvas center at infinite far z- (eye position in canvas coordinates)
-        eye_canvas = [w / 2, h / 2, -1e10, 1]
-        # map eye pos to scene coordinates
-        eye_scene = transform.imap(eye_canvas)
-        # homogeneous coordinate to cartesian
-        click_scene = click_scene[0:nd] / click_scene[nd]
-        # homogeneous coordinate to cartesian
-        eye_scene = eye_scene[0:nd] / eye_scene[nd]
-
-        # calculate direction of the ray
-        d = click_scene - eye_scene
-        d = d[0:nd]
-        d = d / np.linalg.norm(d)
-        # xyz to zyx
-        d: list[float] = list(d[::-1])
-        # convert to nd view direction
-        view_direction_nd = np.zeros(self.viewer.dims.ndim, dtype=np.float64)
-        view_direction_nd[list(self.viewer.dims.displayed)] = d
-        return view_direction_nd
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
