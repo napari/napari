@@ -130,7 +130,7 @@ def _get_property_dependence_from_code(
         elif dep in cls.__properties__:
             res.update(
                 _get_property_dependence_from_code(
-                    cls, cls.__properties__[dep], res
+                    cls, cls.__properties__[dep], res | visited
                 )
             )
     return res
