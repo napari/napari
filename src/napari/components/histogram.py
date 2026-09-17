@@ -477,21 +477,23 @@ class HistogramModel(EventedModel):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
         # as-is for the progressive sampler in _compute_chunked_progressive.
         if self._has_chunks(data):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Last resort: cast to numpy.  Guard against accidentally
         # materializing a very large object (contiguous h5py) by
         # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
-            dtype_size = (
-                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-            )
+            if hasattr(data, 'dtype'):
+                dtype = np.dtype(data.dtype)
+                dtype_size = dtype.itemsize
+            else:
+                dtype_size = 8
             est_mb = (data_size * dtype_size) / (1024 * 1024)
             warnings.warn(
                 f'Skipping full-data histogram: materializing '

@@ -45,7 +45,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
@@ -361,4 +361,4 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()
+        return _QtMainWindow.current_viewer()  # pyrefly: ignore [bad-return]
