@@ -12,12 +12,11 @@ from napari._vispy.layers.shapes import VispyShapesLayer
 from napari._vispy.layers.surface import VispySurfaceLayer
 from napari._vispy.layers.tracks import VispyTracksLayer
 from napari._vispy.layers.vectors import VispyVectorsLayer
-from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+from napari._vispy.overlays.canvas_axes import VispyCanvasAxesOverlay
 from napari._vispy.overlays.colorbar import VispyColorBarOverlay
-from napari._vispy.overlays.floating_axes import VispyFloatingAxesOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
@@ -27,6 +26,7 @@ from napari._vispy.overlays.labels_brush_stroke import (
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+from napari._vispy.overlays.scene_axes import VispySceneAxesOverlay
 from napari._vispy.overlays.text import (
     VispyCurrentSliceOverlay,
     VispyLayerNameOverlay,
@@ -34,17 +34,17 @@ from napari._vispy.overlays.text import (
 )
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
-    AxesOverlay,
     BoundingBoxOverlay,
     BrushCircleOverlay,
+    CanvasAxesOverlay,
     ColorBarOverlay,
     CurrentSliceOverlay,
-    FloatingAxesOverlay,
     LabelsBrushStrokeOverlay,
     LabelsPolygonOverlay,
     LayerNameOverlay,
     Overlay,
     ScaleBarOverlay,
+    SceneAxesOverlay,
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
@@ -78,8 +78,8 @@ layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
 overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
-    AxesOverlay: VispyAxesOverlay,
-    FloatingAxesOverlay: VispyFloatingAxesOverlay,
+    SceneAxesOverlay: VispySceneAxesOverlay,
+    CanvasAxesOverlay: VispyCanvasAxesOverlay,
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,

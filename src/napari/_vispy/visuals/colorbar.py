@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
     from vispy.color import Colormap as VispyColormap
+    from vispy.visuals.filters.clipper import Clipper
 
     from napari._vispy.utils.qt_font import FontInfo
     from napari.utils.color import ColorValue
@@ -123,3 +124,14 @@ class ColorBar(Node):
 
         width, _ = text.get_width_height()
         return width + self.ticks.tick_label_margin, text.get_line_height()
+
+    def _set_clipper(self, node: Node, clipper: Clipper) -> None:
+        """Propagate clipper to child visuals.
+
+        ColorBar is just a Node (not VisualNode) so it doesn't have the filter
+        attach/detach logic; using Compound instead of Node is an alternative
+        that doesn't require these extra tricks, but has other issues (due to
+        our parenting hijacking) which are more complex to solve.
+        """
+        for child in self.children:
+            child._set_clipper(node, clipper)

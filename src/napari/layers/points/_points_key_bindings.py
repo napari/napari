@@ -79,7 +79,7 @@ def paste(layer: Points) -> None:
 )
 def select_all_in_slice(layer: Points) -> None:
     """Select only the points in the current view slice, don't append."""
-    new_selected = set(layer._indices_view[: len(layer._view_data)])
+    new_selected = set(layer._view_indices[: len(layer._view_data)])
 
     # If all visible points are already selected, deselect the visible points
     if new_selected & layer.selected_data == new_selected:
@@ -103,7 +103,7 @@ def select_all_in_slice(layer: Points) -> None:
 )
 def select_append_all_in_slice(layer: Points) -> None:
     """Select all points in the current view slice, appending to existing selection"""
-    new_selected = set(layer._indices_view[: len(layer._view_data)])
+    new_selected = set(layer._view_indices[: len(layer._view_data)])
 
     # If all visible points are already selected, deselect the visible points
     if new_selected & layer.selected_data == new_selected:
@@ -133,7 +133,7 @@ def select_all_data(layer: Points) -> None:
     else:
         new_selected = set(range(layer.data.shape[0]))
         # Needed for the notification
-        view_selected = set(layer._indices_view[: len(layer._view_data)])
+        view_selected = set(layer._view_indices[: len(layer._view_data)])
         layer.selected_data = new_selected
         show_info(
             f'Selected {len(new_selected)} points across all slices, including {len(new_selected - view_selected)} points not currently visible. ({len(layer.selected_data)})'
