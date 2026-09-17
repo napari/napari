@@ -645,14 +645,10 @@ class VispyCanvas:
             Coordinates of top left and bottom right canvas pixel in the world.
         """
         # viewboxes are all the same for this purpose, just take the first one
-        if self.viewer.canvas.grid.enabled and self.grid_views:
-            view = self.grid_views[0]
-        else:
-            view = self.view
-
-        # Find corners of canvas in world coordinates
         top_left = self.viewer.canvas_to_world((0, 0), (0, 0))
-        bottom_right = self.viewer.canvas_to_world(view.rect.size, (0, 0))
+        bottom_right = self.viewer.canvas_to_world(
+            self.viewer.canvas.viewbox_size(self.viewer.layers), (0, 0)
+        )
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event: DrawEvent | None = None) -> None:
