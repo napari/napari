@@ -111,6 +111,280 @@ def test_add_simple_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse', 'line'])
+def test_add_simple_shape_from_center(shape_type, create_known_shapes_layer):
+    """Add a simple shape from its center while dragging."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+    layer._draw_from_center = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_shape_end = [40, 60]
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_shape_end,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=known_non_shape_end,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    np.testing.assert_allclose(layer.data[-1].min(axis=0), [0, 0])
+    np.testing.assert_allclose(layer.data[-1].max(axis=0), known_non_shape_end)
+    np.testing.assert_allclose(
+        (layer.data[-1].min(axis=0) + layer.data[-1].max(axis=0)) / 2,
+        known_non_shape,
+    )
+    assert layer.shape_type[-1] == shape_type
+    assert layer.selected_data == {n_shapes}
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+def test_add_simple_shape_from_center_fixed_aspect(
+    shape_type, create_known_shapes_layer
+):
+    """Draw a centered square or circle when aspect ratio is fixed."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+    layer._draw_from_center = True
+    layer._fixed_aspect = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[40, 60],
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[40, 60],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    bounds = np.array([layer.data[-1].min(axis=0), layer.data[-1].max(axis=0)])
+    np.testing.assert_allclose(bounds.mean(axis=0), known_non_shape)
+    np.testing.assert_allclose(*(bounds[1] - bounds[0]))
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+def test_add_simple_shape_from_center_shift_after_alt(
+    shape_type, create_known_shapes_layer
+):
+    """Alt then Shift during creation: centered shape with locked aspect ratio."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[40, 60],
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Press Alt → centering on
+    hold_center = key_bindings.hold_to_draw_shape_from_center(layer)
+    next(hold_center)
+
+    # Capture ratio of the centered box (before Shift locks it)
+    box = layer._selected_box
+    size = box[Box.BOTTOM_RIGHT] - box[Box.TOP_LEFT]
+    expected_ratio = size[1] / size[0]
+
+    # Press Shift → locks aspect ratio
+    hold_aspect = key_bindings.hold_to_lock_aspect_ratio(layer)
+    next(hold_aspect)
+
+    # Release mouse (still at drag position)
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[40, 60],
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Release Shift then Alt
+    list(hold_aspect)
+    list(hold_center)
+
+    assert len(layer.data) == n_shapes + 1
+    bounds = np.array([layer.data[-1].min(axis=0), layer.data[-1].max(axis=0)])
+    np.testing.assert_allclose(bounds.mean(axis=0), known_non_shape)
+    actual_ratio = (bounds[1] - bounds[0])[1] / (bounds[1] - bounds[0])[0]
+    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-4)
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+def test_add_simple_shape_from_center_shift_before_alt(
+    shape_type, create_known_shapes_layer
+):
+    """Shift then Alt during creation: centered shape with locked aspect ratio."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[40, 60],
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Press Shift first → locks current (uncentered) aspect ratio
+    hold_aspect = key_bindings.hold_to_lock_aspect_ratio(layer)
+    next(hold_aspect)
+
+    # Capture ratio before centering
+    box = layer._selected_box
+    size = box[Box.BOTTOM_RIGHT] - box[Box.TOP_LEFT]
+    expected_ratio = size[1] / size[0]
+
+    # Press Alt → centering on (ratio remains locked)
+    hold_center = key_bindings.hold_to_draw_shape_from_center(layer)
+    next(hold_center)
+
+    # Release mouse (still at drag position)
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[40, 60],
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Release Alt then Shift
+    list(hold_center)
+    list(hold_aspect)
+
+    assert len(layer.data) == n_shapes + 1
+    bounds = np.array([layer.data[-1].min(axis=0), layer.data[-1].max(axis=0)])
+    np.testing.assert_allclose(bounds.mean(axis=0), known_non_shape)
+    actual_ratio = (bounds[1] - bounds[0])[1] / (bounds[1] - bounds[0])[0]
+    assert np.isclose(actual_ratio, expected_ratio, rtol=1e-4)
+
+
+@pytest.mark.parametrize('shape_type', ['rectangle', 'ellipse'])
+@pytest.mark.parametrize(
+    'drag_to',
+    [
+        [40, 60],
+        [0, 10],
+        [0, 60],
+        [40, 10],
+        [40, 30],
+        [0, 30],
+        [20, 60],
+        [20, 10],
+    ],
+)
+def test_add_centered_fixed_aspect_shape_in_drag_direction(
+    shape_type,
+    drag_to,
+    create_known_shapes_layer,
+):
+    """Alt+Shift should yield a centered and "square" shape."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = f'add_{shape_type}'
+    layer._fixed_aspect = True
+    layer._draw_from_center = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=drag_to,
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=drag_to,
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    new_shape = layer.data[-1]
+    start = np.asarray(known_non_shape, dtype=float)
+
+    # shape must be centered at press point
+    np.testing.assert_allclose(new_shape.mean(axis=0), start)
+    # bounding box must be square (equal width and height, since _aspect_ratio defaults to 1)
+    bbox_size = np.max(new_shape, axis=0) - np.min(new_shape, axis=0)
+    assert np.isclose(bbox_size[0], bbox_size[1], rtol=1e-3)
+
+
+def test_add_centered_line_fixed_angles(create_known_shapes_layer):
+    """Draw a centered line with locked aspect ratio (Alt+Shift) snaps to 45°."""
+    layer, n_shapes, known_non_shape = create_known_shapes_layer
+
+    layer.mode = 'add_line'
+    layer._draw_from_center = True
+    layer._fixed_aspect = True
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=known_non_shape,
+    )
+    mouse_press_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=[40, 50],
+    )
+    mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=[40, 50],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    new_line = layer.data[-1]
+    # centered at press point
+    np.testing.assert_allclose(new_line.mean(axis=0), known_non_shape)
+    # line snapped to 45° (dx == dy in absolute value)
+    start, end = new_line
+    delta = end - start
+    assert np.isclose(abs(delta[0]), abs(delta[1]), rtol=1e-3)
+
+
 def test_line_fixed_angles(create_known_shapes_layer):
     """Draw line with fixed angles."""
     layer, n_shapes, known_non_shape = create_known_shapes_layer
@@ -887,6 +1161,44 @@ def test_rotate_shape(create_known_shapes_layer):
 
     # Check shape was rotated
     np.testing.assert_allclose(layer.data[1][2], original_data[0])
+
+
+def test_resize_shape_from_center(create_known_shapes_layer):
+    """Alt-drag a resize handle in SELECT mode grows the shape from its center."""
+    layer = create_known_shapes_layer[0]
+
+    layer.mode = 'select'
+    layer.selected_data = {1}
+    center = layer._selected_box[Box.CENTER].copy()
+    corner = layer._selected_box[Box.TOP_LEFT]
+    # drag the corner handle outward, away from the box center
+    target = tuple(corner + (corner - center))
+
+    # Alt held: resize symmetrically about the center
+    layer._draw_from_center = True
+
+    # grab the corner handle
+    event = read_only_mouse_event(
+        type='mouse_press', is_dragging=True, position=tuple(corner)
+    )
+    mouse_press_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_move', is_dragging=True, position=tuple(corner)
+    )
+    mouse_move_callbacks(layer, event)
+    # drag it out
+    event = read_only_mouse_event(
+        type='mouse_move', is_dragging=True, position=target
+    )
+    mouse_move_callbacks(layer, event)
+    event = read_only_mouse_event(
+        type='mouse_release', is_dragging=True, position=target
+    )
+    mouse_release_callbacks(layer, event)
+
+    # the center is preserved (grown symmetrically), not the opposite corner
+    np.testing.assert_allclose(layer._selected_box[Box.CENTER], center)
+    np.testing.assert_allclose(layer.data[1].mean(axis=0), center)
 
 
 def test_drag_vertex(create_known_shapes_layer):
