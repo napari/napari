@@ -15,7 +15,7 @@ import sys
 from collections import deque
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from types import CodeType
+from types import CodeType, FunctionType
 
 
 @dataclass(frozen=True)
@@ -67,10 +67,12 @@ _SELF = _Value(paths=frozenset({()}))
 
 
 class _BytecodeDependencies:
-    def __init__(self, func: Callable, *, strict: bool = False):
+    def __init__(self, func: FunctionType, *, strict: bool = False):
         self.strict = strict
         self.globals = func.__globals__
-        self.builtins = func.__builtins__
+        # Mypy's cached FunctionType can omit __builtins__; read the runtime
+        # attribute explicitly, without substituting a different namespace.
+        self.builtins: Mapping[str, object] = getattr(func, '__builtins__', {})
         self.attributes: set[str] = set()
         self.global_names: set[str] = set()
         self.nonlocal_names: set[str] = set()
@@ -147,7 +149,8 @@ class _CodeScanner:
             instruction.offset: i
             for i, instruction in enumerate(self.instructions)
         }
-        self.exception_entries = dis.Bytecode(code).exception_entries
+        # CPython exposes this attribute, but typeshed does not declare it.
+        self.exception_entries = dis.Bytecode(code).exception_entries  # type: ignore[attr-defined]
         self.captured = dict(bindings)
         self.states: dict[int, _Frame] = {}
         self.pending: deque[int] = deque()
