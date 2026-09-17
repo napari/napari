@@ -349,7 +349,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulties.
+    norm: Any  # float or array or float, pyrefly has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -385,7 +385,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
     Float images are multiplied by 255 and then cast to uint8.
     """
-    out_dtype = np.dtype(np.uint8)
+    out_dtype: np.dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
     if data.dtype == out_dtype:
         return data
@@ -675,7 +675,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)
+        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
     except TypeError:
         return None
     if chunk_size <= 0:
@@ -1258,6 +1258,19 @@ def _unique_element(array: ArrayLike) -> Any | None:
     if len(array) == 0:
         return None
     el = array[0]
+    if len(array) == 1:
+        return el
+    if isinstance(el, (list, tuple, np.ndarray)):
+        # Container-valued elements (e.g. list-valued features, or a 2D
+        # array of per-point RGBA colors) can't be safely compared via
+        # numpy broadcasting: `array[1:] != el` raises on ragged/differently
+        # shaped elements, and `np.equal(array[1:], array[:1])` raises
+        # "ambiguous truth value" once any element has more than one entry.
+        # Compare them individually with np.array_equal instead, which
+        # returns False rather than raising on a shape mismatch.
+        if all(np.array_equal(x, el) for x in array[1:]):
+            return el
+        return None
     if np.any(array[1:] != el):
         return None
     return el

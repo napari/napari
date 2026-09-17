@@ -81,11 +81,11 @@ class Mesh:
 
     def clear(self) -> None:
         """Resets mesh data"""
-        self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)  # type: ignore[assignment]
-        self.vertices_centers = np.empty(  # type: ignore[assignment]
+        self.vertices = np.empty((0, self.ndisplay), dtype=CoordinateDtype)  # pyrefly: ignore [bad-assignment]
+        self.vertices_centers = np.empty(  # pyrefly: ignore [bad-assignment]
             (0, self.ndisplay), dtype=CoordinateDtype
         )
-        self.vertices_offsets = np.empty(  # type: ignore[assignment]
+        self.vertices_offsets = np.empty(  # pyrefly: ignore [bad-assignment]
             (0, self.ndisplay), dtype=CoordinateDtype
         )
         self.vertices_index = np.zeros(1, dtype=IndexDtype)

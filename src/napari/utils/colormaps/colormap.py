@@ -208,7 +208,7 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
+    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(  # pyrefly: ignore [bad-override]
         ColormapInterpolationMode.ZERO, frozen=True
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
