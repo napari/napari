@@ -55,15 +55,11 @@ def _is_rgb(s: LayerSel) -> bool:
     return getattr(s.active, 'rgb', False)
 
 
-def _only_img(s: LayerSel) -> bool:
-    return bool(s and all(x._type_string == 'image' for x in s))
-
-
 def _n_selected_imgs(s: LayerSel) -> int:
     return sum(x._type_string == 'image' for x in s)
 
 
-def _only_image(s: LayerSel) -> bool:
+def _only_images(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'image' for x in s))
 
 
@@ -93,10 +89,6 @@ def _only_surfaces(s: LayerSel) -> bool:
 
 def _n_selected_shapes(s: LayerSel) -> int:
     return sum(x._type_string == 'shapes' for x in s)
-
-
-def _only_surface(s: LayerSel) -> bool:
-    return bool(s and all(x._type_string == 'surface' for x in s))
 
 
 def _n_selected_surfaces(s: LayerSel) -> int:
@@ -255,7 +247,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'True when the active layer is RGB.',
         _is_rgb,
     )
-    active_layer_type = ContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey['LayerSel', Optional[str]](  # pyrefly: ignore [not-a-type]
         None,
         'Lowercase name of active layer type, or None of none active.',
         _active_type,
@@ -298,12 +290,12 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'Number of selected tracks layers.',
         _n_selected_tracks,
     )
-    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+    active_layer_ndim = ContextKey['LayerSel', Optional[int]](  # pyrefly: ignore [not-a-type]
         None,
         'Number of dimensions in the active layer, or `None` if nothing is active.',
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](  # pyrefly: ignore [not-a-type]
         (),
         'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,
@@ -331,7 +323,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     all_selected_layers_image = ContextKey(
         False,
         'True when all selected layers are images.',
-        _only_image,
+        _only_images,
     )
     all_selected_layers_labels = ContextKey(
         False,

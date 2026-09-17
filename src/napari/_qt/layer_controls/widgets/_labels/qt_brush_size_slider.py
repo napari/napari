@@ -47,7 +47,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        connect_setattr(sld.valueChanged, self._layer, 'brush_size')
+        connect_setattr(sld.valueChanged, self._layer, 'brush_size')  # pyrefly: ignore [bad-argument-type]
         self.brush_size_slider = sld
         self._on_brush_size_change()
 

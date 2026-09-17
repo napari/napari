@@ -330,7 +330,7 @@ class Vectors(Layer):
         return self._slicing_state._view_alphas
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> np.ndarray:  # pyrefly: ignore [bad-override-param-name]
         """(N, 2, D) array: start point and projections of vectors."""
         return self._data
 
@@ -400,7 +400,7 @@ class Vectors(Layer):
             else:
                 edge_color_name = self._edge.color_properties.name
                 property_values = self.features[edge_color_name].to_numpy()
-                self._edge.color_properties = {
+                self._edge.color_properties = {  # pyrefly: ignore [bad-assignment]
                     'name': edge_color_name,
                     'values': property_values,
                     'current_value': self.feature_defaults[edge_color_name][0],
@@ -622,7 +622,7 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    self._edge.color_properties = {
+                    self._edge.color_properties = {  # pyrefly: ignore [bad-assignment]
                         'name': color_property,
                         'values': self.features[color_property].to_numpy(),
                         'current_value': self.feature_defaults[color_property][
@@ -662,7 +662,7 @@ class Vectors(Layer):
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
-        self._edge.categorical_colormap = edge_color_cycle
+        self._edge.categorical_colormap = edge_color_cycle  # pyrefly: ignore [bad-assignment]
 
     @property
     def edge_colormap(self) -> Colormap:
@@ -677,14 +677,14 @@ class Vectors(Layer):
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        self._edge.continuous_colormap = colormap
+        self._edge.continuous_colormap = colormap  # pyrefly: ignore [bad-assignment]
 
     @property
     def edge_contrast_limits(self) -> tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
-        return self._edge.contrast_limits
+        return self._edge.contrast_limits  # pyrefly: ignore [bad-return]
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
@@ -839,7 +839,7 @@ class _VectorsSlicingState(_LayerSlicingState):
             slice_input=slice_input,
             data=self.layer.data,
             data_slice=data_slice,
-            projection_mode=self.layer.projection_mode,
+            projection_mode=self.layer.projection_mode,  # pyrefly: ignore [bad-argument-type]
             length=self.layer.length,
         )
 
