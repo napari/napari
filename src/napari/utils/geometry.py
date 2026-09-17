@@ -65,37 +65,6 @@ def project_points_onto_plane(
     return projected_points, signed_distance_to_plane
 
 
-def rotation_matrix_from_vectors_2d(
-    vec_1: np.ndarray, vec_2: np.ndarray
-) -> np.ndarray:
-    """Calculate the 2D rotation matrix to rotate vec_1 onto vec_2
-
-    Parameters
-    ----------
-    vec_1 : np.ndarray
-        The (2,) array containing the starting vector.
-    vec_2 : np.ndarray
-        The (2,) array containing the destination vector.
-
-    Returns
-    -------
-    rotation_matrix : np.ndarray
-        The (2, 2) tranformation matrix that rotates vec_1 to vec_2.
-    """
-    # ensure unit vectors
-    vec_1 = vec_1 / np.linalg.norm(vec_1)
-    vec_2 = vec_2 / np.linalg.norm(vec_2)
-
-    # calculate the rotation matrix
-    diagonal_1 = (vec_1[0] * vec_2[0]) + (vec_1[1] * vec_2[1])
-    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_2[0] * vec_1[0])
-    rotation_matrix = np.array(
-        [[diagonal_1, -1 * diagonal_2], [diagonal_2, diagonal_1]]
-    )
-
-    return rotation_matrix
-
-
 def rotation_matrix_from_vectors_3d(
     vec_1: np.ndarray, vec_2: np.ndarray
 ) -> np.ndarray:
@@ -744,39 +713,6 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     )
 
     return intersection_point
-
-
-def distance_between_point_and_line_3d(
-    point: np.ndarray, line_position: np.ndarray, line_direction: np.ndarray
-):
-    """Determine the minimum distance between a point and a line in 3D.
-
-    Parameters
-    ----------
-    point : np.ndarray
-        (3,) array containing coordinates of a point in 3D space.
-    line_position : np.ndarray
-        (3,) array containing coordinates of a point on a line in 3D space.
-    line_direction : np.ndarray
-        (3,) array containing a vector describing the direction of a line in
-        3D space.
-
-    Returns
-    -------
-    distance : float
-        The minimum distance between `point` and the line defined by
-        `line_position` and `line_direction`.
-    """
-    line_direction_normalized = line_direction / np.linalg.norm(line_direction)
-    projection_on_line_direction = np.dot(
-        (point - line_position), line_direction
-    )
-    closest_point_on_line = (
-        line_position
-        + line_direction_normalized * projection_on_line_direction
-    )
-    distance = np.linalg.norm(point - closest_point_on_line)
-    return distance
 
 
 def find_nearest_triangle_intersection(
