@@ -1271,3 +1271,31 @@ def test_complex_array_object():
     model.c = 3 + 5j
 
     mock.assert_called_once()
+
+
+@pytest.mark.parametrize('nested', [False, True])
+def test_property_dependencies_without_source(nested, monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise AssertionError('Dependency discovery must not read source')
+
+    monkeypatch.setattr(inspect, 'getsource', unavailable)
+    namespace = {}
+    expression = 'self.child.value' if nested else 'self.value'
+    exec(f'def doubled(self):\n    return {expression} * 2', namespace)
+
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        value: int = 1
+        child: Child = Field(default_factory=Child)
+        doubled = property(namespace['doubled'])
+
+    model = Model()
+    callback = Mock()
+    model.events.doubled.connect(callback)
+    target = model.child if nested else model
+    target.value = 3
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6

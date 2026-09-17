@@ -14,7 +14,7 @@ from pydantic import (
 from pydantic._internal._model_construction import ModelMetaclass
 
 from napari._pydantic_util import get_inner_type, get_outer_type
-from napari.utils.events._ast_visitor import property_dependencies
+from napari.utils.events._property_dependencies import property_dependencies
 from napari.utils.events.event import (
     DependantEmitter,
     EmitterGroup,
