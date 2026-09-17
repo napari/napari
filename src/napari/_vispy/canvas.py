@@ -556,12 +556,14 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
-        self.viewer.cursor._canvas_position = event.pos[::-1]
+        self.viewer.cursor._viewbox = grid_coords
+        # flip to napari-land
+        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
 
         self.viewer.cursor.position = self._map_canvas2world(
@@ -591,9 +593,6 @@ class VispyCanvas:
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
