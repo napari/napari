@@ -884,7 +884,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             return None
         if view_direction is None:
             view_direction = self.scene.camera.calculate_nd_view_direction(
-                self.dims.ndim, self.dims.displayed
+                self.dims.ndim,
+                self.dims.displayed,
+                self.cursor.canvas_position,
+                self.canvas.size,
             )
         coord2val: dict[str, list[str]] = {}
         coord_str = ''

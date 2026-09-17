@@ -557,28 +557,30 @@ class VispyCanvas:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
         self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor._canvas_position = event.pos[::-1]
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
 
-        position = self._map_canvas2world(event.pos, viewbox)
-        canvas_pos = event.pos[::-1]
+        self.viewer.cursor.position = self._map_canvas2world(
+            event.pos, viewbox
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self.viewer.scene.camera.calculate_nd_view_direction(
                 ndim=self.viewer.dims.ndim,
                 dims_displayed=self.viewer.dims.displayed,
-                canvas_position=canvas_pos,
+                canvas_position=self.viewer.cursor.canvas_position,
                 canvas_size=self.viewer.canvas.size,
             ),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=position,
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
