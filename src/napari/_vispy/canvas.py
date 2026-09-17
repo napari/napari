@@ -315,10 +315,14 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
-        self.destroyed.connect(self._disconnect_events)
+        self.viewer.canvas.events.font_size.connect(
+            self._update_overlay_font_sizes
+        )
         get_settings().appearance.events.font_size.connect(
             self._update_overlay_font_sizes
         )
+
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -1293,7 +1297,10 @@ class VispyCanvas:
 
     def _update_overlay_font_sizes(self, *, font_size: float | None = None):
         if font_size is None:
-            font_size = get_settings().appearance.font_size
+            font_size = (
+                self.viewer.canvas.font_size
+                or get_settings().appearance.font_size
+            )
         for vispy_overlays in self._viewer_overlay_to_visual.values():
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.set_default_font_size(font_size)
