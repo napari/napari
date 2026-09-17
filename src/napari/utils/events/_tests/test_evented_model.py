@@ -505,6 +505,31 @@ def test_evented_model_with_property_setters():
         t.e = 100
 
 
+def test_inheritance_and_calculated_helpers():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        def b(self) -> int:  # pragma: no cover
+            return self.a * 2
+
+    class Sub(Base):
+        c: int = 3
+
+        @property
+        def d(self) -> int:  # pragma: no cover
+            return self.c + self.b
+
+    assert Sub.__properties__ == {'b': Base.b, 'd': Sub.d}
+    assert Sub.__eq_operators__ == {
+        'a': operator.eq,
+        'b': operator.eq,
+        'c': operator.eq,
+        'd': operator.eq,
+    }
+    assert Sub.__field_dependents__ == {'a': {'b', 'd'}, 'c': {'d'}}
+
+
 @pytest.fixture
 def mocked_object():
     t = T()
