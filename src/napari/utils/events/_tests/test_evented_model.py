@@ -1299,7 +1299,7 @@ def test__non_evented_properties():
     assert 'events' not in m.events
 
 
-def test_complex_array_object():
+def test_complex_value():
     class Model(EventedModel):
         c: complex = Field(default=1 + 2j)
 
@@ -1314,6 +1314,28 @@ def test_complex_array_object():
     model.c = 3 + 5j
 
     mock.assert_called_once()
+
+
+def test_complex_nested_value():
+    class Model(EventedModel):
+        c: complex = 1 + 2j
+
+        @property
+        def value(self):
+            return self.c
+
+        @property
+        def real(self):
+            return self.value.real
+
+    model = Model()
+    callback = Mock()
+    model.events.real.connect(callback)
+
+    model.c = 3 + 5j
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 3.0
 
 
 @pytest.mark.parametrize('nested', [False, True])

@@ -963,7 +963,9 @@ class ChildrenEmitterMixin:
                 self._replacement_emitters.append(None)
             target = getattr(target, attr)
 
-        new_emitter: EventEmitter = getattr(target.events, self._source_attr)
+        new_emitter: EventEmitter | None = getattr(
+            getattr(target, 'events', None), self._source_attr, None
+        )
         if (
             self._target_emitter is not None
             and (target_emitter := self._target_emitter()) is not None
@@ -971,11 +973,11 @@ class ChildrenEmitterMixin:
             if target_emitter is new_emitter:
                 return
             target_emitter.disconnect(self._trigger_reemit)
-        new_emitter.connect(self._trigger_reemit)
-        self._target_emitter = weakref.ref(new_emitter)
-
-    # def __call__(self, value: Any) -> None:
-    #     raise NotImplementedError
+        if new_emitter is not None:
+            new_emitter.connect(self._trigger_reemit)
+            self._target_emitter = weakref.ref(new_emitter)
+        else:
+            self._target_emitter = None
 
 
 class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
