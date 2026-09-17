@@ -184,6 +184,9 @@ class Camera(EventedModel):
         the pixel on the canvas: this will account for perspective>0 and differ
         from the normal view direction through the camera center.
 
+        Note that canvas position and size should actually be viewbox position and
+        size, in order to get proper results when in grid mode.
+
         Parameters
         ----------
         ndim : int
@@ -235,12 +238,14 @@ class Camera(EventedModel):
         view_direction : np.ndarray
             Normalized 3D view direction vector in scene coordinates
         """
-        x, y = canvas_position
+        y, x = canvas_position
         h, w = canvas_size
 
         view_direction = np.asarray(self.view_direction)
         up_direction = np.asarray(self.up_direction)
         right_direction = np.cross(view_direction, up_direction)
+        if self.handedness == Handedness.LEFT:
+            right_direction = -right_direction
 
         # distance of the eye from the center of the view
         dist = h / (2 * self.zoom * np.tan(np.radians(self.perspective) / 2))

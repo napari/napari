@@ -883,11 +883,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if not self.mouse_over_canvas:
             return None
         if view_direction is None:
+            # TODO: this will actually replace mouse_over_canvas in #9417
+            if self.cursor.canvas_position is None:
+                return None
+            viewbox_size = self.canvas.viewbox_size(self.layers)
+            viewbox_position = (
+                np.array(self.cursor.canvas_position) % viewbox_size
+            )
             view_direction = self.scene.camera.calculate_nd_view_direction(
-                self.dims.ndim,
-                self.dims.displayed,
-                self.cursor.canvas_position,
-                self.canvas.size,
+                ndim=self.dims.ndim,
+                dims_displayed=self.dims.displayed,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
             )
         coord2val: dict[str, list[str]] = {}
         coord_str = ''

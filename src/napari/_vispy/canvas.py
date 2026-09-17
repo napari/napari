@@ -568,13 +568,19 @@ class VispyCanvas:
             event.pos, viewbox
         )
 
+        viewbox_size = self.viewer.canvas.viewbox_size(self.viewer.layers)
+        # TODO: do we need to calculate this _relative_ to the original viewbox as well?
+        viewbox_position = (
+            np.array(self.viewer.cursor.canvas_position) % viewbox_size
+        )
+
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self.viewer.scene.camera.calculate_nd_view_direction(
                 ndim=self.viewer.dims.ndim,
                 dims_displayed=self.viewer.dims.displayed,
-                canvas_position=self.viewer.cursor.canvas_position,
-                canvas_size=self.viewer.canvas.size,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
             ),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
