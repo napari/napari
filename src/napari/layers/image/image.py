@@ -353,13 +353,13 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits: tuple[float, float] = self.contrast_limits_range
+        self._contrast_limits: tuple[float, float] = self.contrast_limits_range  # pyrefly: ignore [bad-assignment]
         self.contrast_limits = self._contrast_limits
         self.auto_contrast = auto_contrast
 
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
-            self._iso_threshold = cmin + (cmax - cmin) / 2
+            self._iso_threshold = cmin + (cmax - cmin) / 2  # pyrefly: ignore [unsupported-operation]
         else:
             self._iso_threshold = iso_threshold
 
@@ -367,7 +367,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.locked_data_level = locked_data_level
 
     @property
-    def rendering(self) -> str:
+    def rendering(self) -> str:  # pyrefly: ignore [bad-override]
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -465,9 +465,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self._histogram = HistogramModel(self)
         return self._histogram
 
-    @ScalarFieldBase.data.setter  # type: ignore[attr-defined]
+    @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        ScalarFieldBase.data.fset(self, data)  # type: ignore[attr-defined]
+        ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         if self.auto_contrast:
             self.reset_contrast_limits()
 
@@ -584,10 +584,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             )
             low, high = self.contrast_limits
             if np.issubdtype(downsampled.dtype, np.integer):
-                low = max(low, np.iinfo(downsampled.dtype).min)
-                high = min(high, np.iinfo(downsampled.dtype).max)
+                low = max(low, np.iinfo(downsampled.dtype).min)  # pyrefly: ignore [bad-specialization]
+                high = min(high, np.iinfo(downsampled.dtype).max)  # pyrefly: ignore [bad-specialization]
             downsampled = np.clip(downsampled, low, high)
-            color_range = high - low
+            color_range = high - low  # pyrefly: ignore [unsupported-operation]
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled**self.gamma
@@ -605,7 +605,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         """
         input_data: np.ndarray
         if mode == 'data':
-            input_data = self.data[-1] if self.multiscale else self.data
+            input_data = self.data[-1] if self.multiscale else self.data  # pyrefly: ignore [bad-assignment]
         elif mode == 'slice':
             input_data = self._slice.image.raw  # ugh
         else:
@@ -635,20 +635,21 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         image : array
             Displayed array.
         """
-        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)
+        fixed_contrast_info = _coerce_contrast_limits(self.contrast_limits)  # pyrefly: ignore [bad-argument-type]
         if np.allclose(
-            fixed_contrast_info.contrast_limits, self.contrast_limits
+            fixed_contrast_info.contrast_limits,
+            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
         ):
             return raw
 
         return fixed_contrast_info.coerce_data(raw)
 
-    @IntensityVisualizationMixin.contrast_limits.setter  # type: ignore [attr-defined]
+    @IntensityVisualizationMixin.contrast_limits.setter
     def contrast_limits(self, contrast_limits: tuple[float, float]) -> None:
-        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # type: ignore [attr-defined]
+        IntensityVisualizationMixin.contrast_limits.fset(self, contrast_limits)  # pyrefly: ignore [not-callable]
         if not np.allclose(
-            _coerce_contrast_limits(self.contrast_limits).contrast_limits,
-            self.contrast_limits,
+            _coerce_contrast_limits(self.contrast_limits).contrast_limits,  # pyrefly: ignore [bad-argument-type]
+            self.contrast_limits,  # pyrefly: ignore [bad-argument-type]
         ):
             # we use the private attribute here to avoid triggering the setter again
             prev = self._auto_contrast
@@ -736,8 +737,8 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
-            attenuated = (
-                sample_values - self.contrast_limits[0]
+            attenuated = (  # pyrefly: ignore [unsupported-operation]
+                sample_values - self.contrast_limits[0]  # pyrefly: ignore [unsupported-operation]
             ) / self.contrast_limits[1]
             step_size = 0.5
             sumval = (
