@@ -74,17 +74,18 @@ def update_cursor_model(viewer: Viewer, event: NapariMouseEvent) -> None:
         The mouse move event. Its ``position`` attribute is the world position
         of the mouse, used as a fallback when no layer is hit.
     """
-    # TODO: view direction should be computed here instead of vispy?
-    #       same goes for position itself using viewer.canvas_to_world?
-    #       see vispy/_canvas.py's _process_mouse_event for more questions...
-
     # no need to pass in events for now cause everything was already updated on the cursor
     # model itself by the vispy canvas code...
     if viewer.dims.ndisplay == 2:
         # there is no ambiguity as to where the cursor should be in 2D
         return
 
-    hits = viewer.get_layer_values()
+    # TODO: view direction should be computed here instead of vispy?
+    #       same goes for position itself using viewer.canvas_to_world?
+    #       see vispy/_canvas.py's _process_mouse_event for more questions...
+    hits = viewer.get_layer_values(
+        canvas_position=event.pos[::-1], view_direction=event.view_direction
+    )
     if hits:
         # get_layer_values returns the hits sorted from closest to farthest
         viewer.cursor.position = tuple(hits[0][2])

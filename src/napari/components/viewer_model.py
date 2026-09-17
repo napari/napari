@@ -295,6 +295,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add mouse callback
         self.mouse_move_callbacks.append(update_cursor_model)
+        # TODO: this second connectionwill not be necessary if #9513 is merged
+        self.mouse_drag_callbacks.append(update_cursor_model)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
