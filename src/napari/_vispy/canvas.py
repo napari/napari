@@ -439,7 +439,7 @@ class VispyCanvas:
         if size < 8 or size > (min(*self.size) - 4):
             brush_circle.visible = False
             qt_cursor = QtCursorVisual['standard'].value
-        elif layer._is_resizing_brush:
+        elif brush_circle._is_resizing:
             # brush is being resized: also show standard cursor
             brush_circle.visible = True
             qt_cursor = QtCursorVisual['standard'].value

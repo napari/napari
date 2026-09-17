@@ -1,3 +1,5 @@
+from pydantic import PrivateAttr
+
 from napari.components.overlays.base import CanvasOverlay
 
 
@@ -23,3 +25,5 @@ class BrushCircleOverlay(CanvasOverlay):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the overlay get mixed with the visuals below.
     """
+
+    _is_resizing: bool = PrivateAttr(False)

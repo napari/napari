@@ -79,7 +79,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._set_position(event.pos)
 
     def _set_position(self, pos: tuple[int, int]) -> None:
-        if not self.layer._is_resizing_brush:
+        if not self.overlay._is_resizing:
             self.node.transform.translate = [pos[0], pos[1], 0, 0]
 
     def _on_canvas_change(self, event: Event) -> None:
@@ -97,7 +97,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             self.node.visible = self.overlay.visible
         else:
             if self.overlay.visible:
-                self.node.visible = self.layer._is_resizing_brush
+                self.node.visible = self.overlay._is_resizing
             else:
                 self.node.visible = False
 

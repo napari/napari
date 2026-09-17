@@ -97,8 +97,9 @@ def resize_brush_on_mouse_move(layer, event):
     min_brush_size = 1
     start_pos = event.pos
     start_brush_size = layer.brush_size
+    brush_overlay = layer._overlays['brush_circle']
 
-    layer._is_resizing_brush = True
+    brush_overlay._is_resizing = True
     yield
 
     while event.type == 'mouse_move' and all(
@@ -113,4 +114,4 @@ def resize_brush_on_mouse_move(layer, event):
         layer.brush_size = bounded_brush_size
         yield
 
-    layer._is_resizing_brush = False
+    brush_overlay._is_resizing = False

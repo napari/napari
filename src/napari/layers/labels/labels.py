@@ -453,7 +453,6 @@ class Labels(ScalarFieldBase):
         self._contiguous = True
         self._brush_size = 10
         self._brush_size_is_canvas = False
-        self._is_resizing_brush = False
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
