@@ -16,6 +16,7 @@ from typing import (
 import dask
 import numpy as np
 
+from napari.types import ArrayLike
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
 from napari.utils.transforms import Affine
@@ -1246,13 +1247,14 @@ def _features_to_properties(features: pd.DataFrame) -> dict[str, np.ndarray]:
     return {name: series.to_numpy() for name, series in features.items()}
 
 
-def _unique_element(array: Array) -> Any | None:
+def _unique_element(array: ArrayLike) -> Any | None:
     """
     Returns the unique element along the 0th axis, if it exists; otherwise, returns None.
 
     This is faster than np.unique, does not require extra tricks for nD arrays, and
     does not fail for non-sortable elements.
     """
+    array = np.asarray(array)
     if len(array) == 0:
         return None
     el = array[0]
