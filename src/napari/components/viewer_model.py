@@ -1000,7 +1000,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ) / camera.zoom + view_center[-2:]
 
         else:
-            rot = R.from_euler('zyx', camera.angles, degrees=True)
+            # note that while we call napari axes "zyx", in terms of angles to
+            # rot conversion we need to treat them as normal xyz for internal
+            # consistency (zyx actually describes a different rotation order)
+            rot = R.from_euler('xyz', camera.angles, degrees=True)
             rot_matrix = rot.as_matrix()
             canvas_position_3d = np.array([0, *canvas_position])
             canvas_center_3d = np.array([0, *canvas_center])
