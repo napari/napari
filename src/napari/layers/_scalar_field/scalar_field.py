@@ -789,12 +789,12 @@ class ScalarFieldBase(Layer, ABC):
         # from slice coordinates (hence `* ds`)
         for (
             value,
-            pos,
+            hit_position,
         ) in self._calculate_values_and_positions_from_ray_samples(
             values, sample_points_clamped
         ):
             position = start_point.copy()
-            position[dims_displayed] = pos * ds
+            position[dims_displayed] = hit_position * ds
             if self.multiscale:
                 yield (self.data_level, value), position
             else:
