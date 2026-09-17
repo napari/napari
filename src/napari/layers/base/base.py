@@ -1630,8 +1630,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             value = self._get_value(position=tuple(position_data))
             if value is None:
                 return
-            pos = position if world else position_data
-            yield (value, pos)
+            hit_position = position if world else position_data
+            yield (value, hit_position)
             return
 
         # 3D case: ray-casting
@@ -1646,13 +1646,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         if start_point is None or end_point is None:
             return
 
-        for value, pos in self._iter_values_along_ray(
+        for value, hit_position in self._iter_values_along_ray(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         ):
-            # convert hit positions back to world if needed
-            pos = self.data_to_world(pos) if world else pos
+            if world:
+                # convert hit positions back to world, embedding it in
+                # the original position so we get the non-displayed dimension
+                # coordinates correctly as well (as they are in the input position)
+                pos = position.copy()
+                dims_displayed_layer = dims_displayed_world_to_layer(
+                    dims_displayed_world=dims_displayed,
+                    ndim_world=len(position),
+                    ndim_layer=self.ndim,
+                )
+                pos[dims_displayed] = np.array(
+                    self.data_to_world(hit_position)
+                )[dims_displayed_layer]
+            else:
+                pos = hit_position
             yield value, pos
 
     def projected_distance_from_mouse_drag(
