@@ -86,7 +86,6 @@ from napari.utils.events import (
     EventedModel,
     disconnect_events,
 )
-from napari.utils.events.event import WarningEmitter
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
@@ -255,9 +254,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # future.
         self.events.add(
             reset_view=Event,
-            title=WarningEmitter(
-                _TITLE_DEPRECATION_MSG, FutureWarning, stacklevel=2
-            ),
         )
 
         # Connect events
