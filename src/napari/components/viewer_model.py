@@ -214,8 +214,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # is required for default values.
     _layer_slicer: _LayerSlicer = PrivateAttr(default_factory=_LayerSlicer)
     _layer_list_scroll_progress: float = 0
-    # True if any layer had custom axis labels the last time layers changed
-    _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # The labels the layers gave us last time, so we can tell which dims
+    # labels came from a layer and which the user set directly
+    _layers_axis_labels: tuple[str, ...] = PrivateAttr(default=())
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -812,39 +813,47 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
             self.update_status_from_cursor()
 
-    def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
+    def _merge_dims_and_layers_axis_labels(
+        self, layers_axis_labels: tuple[str, ...]
+    ) -> tuple[str, ...]:
         """Combine layerlist axis labels onto the current dims labels.
 
-        Replaces dims axis label at indices where layers axis labels exist.
+        A layer's label wins on any axis it names. On the other axes we keep
+        whatever label dims already has, unless that label came from a layer
+        that has since gone back to its default - then it is stale and is
+        reset to the default too.
         """
+        ndim = self.dims.ndim
+        default_labels = [str(i) for i in range(-ndim, 0)]
+
+        previous = default_labels.copy()
+        overlap = min(len(self._layers_axis_labels), ndim)
+        previous[ndim - overlap :] = self._layers_axis_labels[-overlap:]
+
         updated_axis_labels = list(self.dims.axis_labels)
-        for pos, label in enumerate(self.layers.axis_labels):
-            if label != str(pos - self.dims.ndim):
+        for pos, label in enumerate(layers_axis_labels):
+            if label != default_labels[pos]:
                 updated_axis_labels[pos] = label
+            elif updated_axis_labels[pos] == previous[pos]:
+                updated_axis_labels[pos] = default_labels[pos]
         return tuple(updated_axis_labels)
 
     def _on_layers_change(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
-            self._layers_had_custom_axis_labels = False
+            self._layers_axis_labels = ()
         else:
             ranges = self.layers._ranges
             # TODO: can be optimized with dims.update(), but events need fixing
             self.dims.ndim = len(ranges)
             self.dims.range = ranges
             self.dims.units = self.layers.units
-            layers_are_default = all(
-                layer._has_default_axis_labels() for layer in self.layers
+            layers_axis_labels = self.layers.axis_labels
+            self.dims.axis_labels = self._merge_dims_and_layers_axis_labels(
+                layers_axis_labels
             )
-            if self._layers_had_custom_axis_labels and layers_are_default:
-                # All layers are back to default, so reset the stale dims labels
-                self.dims.axis_labels = self.layers.axis_labels
-            else:
-                self.dims.axis_labels = (
-                    self._merge_dims_and_layers_axis_labels()
-                )
-            self._layers_had_custom_axis_labels = not layers_are_default
+            self._layers_axis_labels = layers_axis_labels
 
         new_dim = self.dims.ndim
         dim_diff = new_dim - len(self.cursor.position)
