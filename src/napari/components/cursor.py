@@ -13,7 +13,7 @@ class Cursor(EventedModel):
         Position of the cursor in world coordinates. If the cursor is outside of,
         the canvas, then the last known position is stored instead.
     canvas_position : tuple of int or None
-        Position of the cursor in canvas pixel coordinates (x, y).
+        Position of the cursor in canvas pixel coordinates (y, x).
         None when cursor is outside the canvas.
     viewbox : tuple[int, int] or None
         Position of the cursor in the grid.

@@ -1000,11 +1000,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ) / camera.zoom + view_center[-2:]
 
         else:
-            view_center = np.array(camera.center)
-            rot = R.from_euler('xyz', camera.angles, degrees=True)
+            rot = R.from_euler('zyx', camera.angles, degrees=True)
             rot_matrix = rot.as_matrix()
-            canvas_position_3d = np.array([*canvas_position, 0])
-            canvas_center_3d = np.append(canvas_center, 0)
+            canvas_position_3d = np.array([0, *canvas_position])
+            canvas_center_3d = np.array([0, *canvas_center])
             world_displayed = (
                 rot_matrix.T
                 @ (canvas_position_3d - canvas_center_3d)
@@ -1016,7 +1015,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         position_world = list(self.dims.point)
         for i, d in enumerate(self.dims.displayed):
             position_world[d] = world_displayed[i]
-
         return np.array(position_world)
 
     def get_layer_values(
@@ -1063,7 +1061,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 'can only get values of layers that are in this viewer'
             )
 
-        # loop layers front to back: in case of identical hits,
+        # loop layers front to back: in case of identical hit depths,
         # the frontmost is prioritized (as in 2D)
         layers = sorted(
             layers, key=lambda layer: self.layers.index(layer), reverse=True

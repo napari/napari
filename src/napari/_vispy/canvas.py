@@ -578,7 +578,7 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.canvas_position = tuple(event.pos)
+        self.viewer.cursor.canvas_position = tuple(event.pos)[::-1]
         self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
