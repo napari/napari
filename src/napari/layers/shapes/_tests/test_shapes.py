@@ -2808,3 +2808,27 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_is_creating_is_edge_triggered():
+    layer = Shapes()
+    started, finished = Mock(), Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+    assert layer.is_creating is False
+
+    layer._is_creating = False  # same value: no event
+    started.assert_not_called()
+
+    layer._is_creating = True
+    assert layer.is_creating is True
+    started.assert_called_once()
+    layer._is_creating = True
+    started.assert_called_once()
+    finished.assert_not_called()
+
+    layer._is_creating = False
+    assert layer.is_creating is False
+    finished.assert_called_once()
+    layer._is_creating = False
+    finished.assert_called_once()

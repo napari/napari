@@ -1022,6 +1022,10 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
     def is_creating_is_False(event):
         assert not event.source._is_creating
 
+    started, finished = Mock(), Mock()
+    layer.events.drawing_started.connect(started)
+    layer.events.drawing_finished.connect(finished)
+
     assert not layer._is_creating
     layer.events.set_data.connect(is_creating_is_True)
 
@@ -1044,6 +1048,8 @@ def test_is_creating_is_false_on_creation(mode, create_known_shapes_layer):
     mouse_double_click_callbacks(layer, end_click)
 
     assert not layer._is_creating
+    started.assert_called_once()
+    finished.assert_called_once()
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
