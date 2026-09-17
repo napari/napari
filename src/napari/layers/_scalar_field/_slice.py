@@ -198,6 +198,11 @@ class _ScalarFieldSliceRequest:
         The dtype of the layer's data.
     data_slice : _ThickNDSlice
         The slicing coordinates and margins in data space.
+    crop_to_corners_3d : bool
+        Whether ``corner_pixels`` describes a 3D sub-volume tile to crop to.
+        False (the default) slices the full level in 3D; set by the
+        experimental progressive loader, which renders view-centered tiles
+        of levels too large for a single texture.
     others
         See the corresponding attributes in `Layer` and `Image`.
     id : int
@@ -218,6 +223,7 @@ class _ScalarFieldSliceRequest:
     thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
+    crop_to_corners_3d: bool = field(default=False, repr=False)
     id: int = field(default_factory=_next_request_id)
 
     def __call__(self) -> _ScalarFieldSliceResponse:
@@ -264,9 +270,12 @@ class _ScalarFieldSliceRequest:
 
         data = self.data_at_data_level
 
+        # Crop the displayed dimensions to the corner pixels: in 2D the
+        # visible canvas region, in 3D only when the corners describe a
+        # sub-volume tile (see ``_max_tile_extent_3d``).
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
-        if self.slice_input.ndisplay == 2:
+        if self.slice_input.ndisplay == 2 or self.crop_to_corners_3d:
             for d in self.slice_input.displayed:
                 disp_slice[d] = slice(
                     self.corner_pixels[0, d],
