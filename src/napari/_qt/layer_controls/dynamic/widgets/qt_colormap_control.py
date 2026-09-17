@@ -223,5 +223,7 @@ class QtColormapControl(QtWidgetControlsBase):
             for layer in self._layers:
                 layer.colormap = colormap
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.colormap_widget_label, self.colormapWidget)]
