@@ -14,10 +14,12 @@ _K = TypeVar('_K', bound=Hashable)
 _V = TypeVar('_V')
 
 
-class ReadOnlyWrapper(wrapt.ObjectProxy):
+class ReadOnlyWrapper(wrapt.ObjectProxy, Generic[_T]):
     """
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
+
+    __wrapped__: _T
 
     def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
         super().__init__(wrapped)

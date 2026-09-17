@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import sys
 import warnings
@@ -10,17 +12,25 @@ from napari.utils.key_bindings import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Collection
+
     from napari._vispy.mouse_event import NapariMouseEvent
+    from napari.utils._proxies import ReadOnlyWrapper
+    from napari.utils.mouse_bindings import MousemapProvider
 
 
 def _run_callbacks_and_maybe_store_generators(
-    obj, event, callback_type: Literal['move', 'drag', 'wheel']
-):
+    obj: MousemapProvider,
+    event: ReadOnlyWrapper[NapariMouseEvent],
+    callback_type: Literal['move', 'drag', 'wheel'],
+    ignore: Collection[Callable] = (),
+) -> None:
     callbacks = getattr(obj, f'mouse_{callback_type}_callbacks')
     gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
     for func in callbacks:
-        if func in gen_dict:
-            # we're already handling this callback via generator; do not start anew
+        if func in gen_dict or func in ignore:
+            # we're already handling this callback via generator, or we just finised handling
+            # it within the same event; do not start anew
             continue
 
         # execute function to run it if it is a simple function, or get the generator
@@ -42,9 +52,12 @@ def _run_callbacks_and_maybe_store_generators(
 
 
 def _step_active_generators(
-    obj, event, callback_type: Literal['move', 'drag', 'wheel']
-):
+    obj: MousemapProvider,
+    event: ReadOnlyWrapper[NapariMouseEvent],
+    callback_type: Literal['move', 'drag', 'wheel'],
+) -> list[Callable]:
     gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
+    completed = []
     for func, gen in tuple(gen_dict.items()):
         # update the wrapper with the current event
         # (see _run_callbacks_and_maybe_store_generators for an explanation)
@@ -55,9 +68,14 @@ def _step_active_generators(
             # done, delete the generator and stored event
             del gen_dict[func]
             del obj._persisted_mouse_event[gen]
+            # we communicate back to the caller which generators were just completed
+            completed.append(func)
+    return completed
 
 
-def mouse_wheel_callbacks(obj, event):
+def mouse_wheel_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
     """Run mouse wheel callbacks on either layer or viewer object.
 
     Note that wheel callbacks can be single function callbacks, or
@@ -71,7 +89,7 @@ def mouse_wheel_callbacks(obj, event):
             yield
 
             # on subsequent scrolls
-            while (some_condition)
+            while (some_falsifiable_condition)
                 print(event.pos)
                 yield
 
@@ -85,14 +103,18 @@ def mouse_wheel_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    _step_active_generators(obj, event, 'wheel')
-    _run_callbacks_and_maybe_store_generators(obj, event, 'wheel')
+    completed = _step_active_generators(obj, event, 'wheel')
+    _run_callbacks_and_maybe_store_generators(
+        obj, event, 'wheel', ignore=completed
+    )
 
 
-def mouse_double_click_callbacks(obj, event) -> None:
+def mouse_double_click_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
     """Run mouse double_click callbacks on either layer or viewer object.
 
-    Note that unlike other press and release callback those can't be generators:
+    Note that unlike other callbacks, these can't be generators:
 
     .. code-block:: python
 
@@ -119,8 +141,13 @@ def mouse_double_click_callbacks(obj, event) -> None:
         mouse_click_func(obj, event)
 
 
-def mouse_press_callbacks(obj, event):
+def mouse_press_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
     """Run mouse press callbacks on either layer or viewer object.
+
+    Drag callbacks go through this machinery too on setup (since the first
+    step of a drack is a press).
 
     Note that drag callbacks should have the following form:
 
@@ -147,29 +174,32 @@ def mouse_press_callbacks(obj, event):
     event : Event
         Mouse event
     """
-    _step_active_generators(obj, event, 'drag')
-    _run_callbacks_and_maybe_store_generators(obj, event, 'drag')
+    completed = _step_active_generators(obj, event, 'drag')
+    _run_callbacks_and_maybe_store_generators(
+        obj, event, 'drag', ignore=completed
+    )
 
 
-def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
+def mouse_move_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
     """Run mouse move callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form:
+    Note that move callbacks should have the following form:
 
     .. code-block:: python
 
         def hello_world(layer, event):
-            "dragging"
-            # on press
+            # initial setup
             print('hello world!')
             yield
 
-            # on move
-            while event.type == 'mouse_move':
+            # on subsequent moves
+            while (some_falsifiable_condition)
                 print(event.pos)
                 yield
 
-            # on release
+            # when done
             print('goodbye world ;(')
 
     Parameters
@@ -179,17 +209,23 @@ def mouse_move_callbacks(obj, event: 'NapariMouseEvent'):
     event : NapariMouseEvent
         Mouse event
     """
-    _step_active_generators(obj, event, 'move')
-    _run_callbacks_and_maybe_store_generators(obj, event, 'move')
+    completed = _step_active_generators(obj, event, 'move')
+    _run_callbacks_and_maybe_store_generators(
+        obj, event, 'move', ignore=completed
+    )
 
     if event.is_dragging:
         _step_active_generators(obj, event, 'drag')
 
 
-def mouse_release_callbacks(obj, event):
+def mouse_release_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
     """Run mouse release callbacks on either layer or viewer object.
 
+    Drag callbacks go through this machinery at the end.
     Note that drag callbacks should have the following form:
+
 
     .. code-block:: python
 
@@ -330,11 +366,13 @@ class Shortcut:
         """
         return self._kb.to_text(use_symbols=True, joinchar=JOINCHAR)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.platform
 
 
-def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+def get_key_bindings_summary(
+    keymap: dict, col: str = 'rgb(134, 142, 147)'
+) -> str:
     """Get summary of key bindings in keymap.
 
     Parameters
@@ -353,12 +391,12 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = '+'.join(
+        keycodes_str = '+'.join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
-            f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
+            f"<span style='color: rgb(66, 72, 80)'>{keycodes_str}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
             f'{keymap[key]}</td></tr>'
         )
