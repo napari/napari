@@ -55,7 +55,9 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             )
 
     def _on_position_change(self, event: Event | None = None) -> None:
-        self._set_position(self.viewer.cursor.canvas_position)
+        # TODO: this overrides behaviuour of tiled overlays. To be removed
+        #       with #9083
+        pass
 
     def _on_size_change(self, event: Event | None = None) -> None:
         if self.layer.brush_size_is_canvas:

@@ -17,9 +17,9 @@ class Cursor(EventedModel):
         the canvas, then the last known position is stored instead.
     viewbox : tuple[int, int] or None
         Position of the cursor in the grid.
-    canvas_position : tuple of ints or None
-        Position of the mouse cursor in canvas coordinates (y, x). If the mouse
-        is not on the canvas, canvas_position is None.
+    canvas_position : tuple of int or None
+        Position of the cursor in canvas pixel coordinates (y, x).
+        None when cursor is outside the canvas.
     view_direction : Optional[np.ndarray]
         The vector describing the direction of the camera in the scene
         in world coordinates. This is None when viewing in 2D.
