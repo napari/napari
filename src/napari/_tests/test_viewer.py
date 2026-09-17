@@ -81,7 +81,6 @@ def test_viewer(make_napari_viewer):
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
 
-    assert viewer.title == 'napari'
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
@@ -96,6 +95,16 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # check deprecations work
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
+        assert viewer.title == 'napari'
+
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
+        viewer.title = 'new'
+
+    with pytest.warns(DeprecationWarning, match='viewer.title'):
+        viewer.events.title.connect(lambda _: None)
 
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
