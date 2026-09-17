@@ -79,16 +79,19 @@ class LayerList(SelectableEventedList[Layer]):
     Notes
     -----
 
-    Note that ``changed`` events are only emitted when an element of the
-    list changes, *not* when the list itself changes (for example when items
-    are added or removed). For example, ``layerlist.append(layer)`` will emit
-    an ``inserted`` event. ``layerlist[idx] = layer`` *will* emit a ``changed``
-    event.
+    Note that ``changed`` events are only emitted when an element at a
+    specific index of the list is replaced, *not* when the list itself
+    changes (for example when items are added or removed). For example,
+    ``layerlist.append(layer)`` will emit an ``inserted`` event, whereas
+    ``layerlist[idx] = layer`` will emit a ``changed`` event.
 
-    However, the layerlist does not have a way of detecting when an object in
+    The layerlist also does not have a way of detecting when an object in
     the list is modified in-place. Therefore, although
     ``layerlist[idx].scale = [2, 1, 1]`` changes the *value* of the layer at
-    position ``idx``, a ``changed`` event will not be emitted.
+    position ``idx``, a ``changed`` event will not be emitted. Such changes
+    are instead forwarded by the layerlist: a callback connected to
+    ``layerlist.events`` receives the layer's own event (here ``scale``)
+    with an added ``index`` attribute giving the position of the layer.
 
     Examples
     --------
