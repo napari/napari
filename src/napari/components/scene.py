@@ -4,6 +4,7 @@ from pydantic import Field
 
 from napari.components.camera import Camera
 from napari.components.overlays import (
+    GridLinesOverlay,
     SceneAxesOverlay,
     SceneOverlay,
 )
@@ -34,6 +35,7 @@ class Scene(EventedModel):
         default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
+                'grid_lines': GridLinesOverlay(),
             }
         )
     )
