@@ -8,6 +8,8 @@ from napari.utils.events import EventedModel
 class Cursor(EventedModel):
     """Cursor object with position and properties of the cursor.
 
+    Canvas-related attributes are Read-Only and set internally by napari.
+
     Attributes
     ----------
     position : tuple of float
@@ -15,17 +17,30 @@ class Cursor(EventedModel):
         the canvas, then the last known position is stored instead.
     viewbox : tuple[int, int] or None
         Position of the cursor in the grid.
-    _view_direction : Optional[np.ndarray]
+    canvas_position : tuple of ints or None
+        Position of the mouse cursor in canvas coordinates (y, x). If the mouse
+        is not on the canvas, canvas_position is None.
+    view_direction : Optional[np.ndarray]
         The vector describing the direction of the camera in the scene
-        in world coordinates.
-        This is None when viewing in 2D.
+        in world coordinates. This is None when viewing in 2D.
     """
 
-    # fields
     position: tuple[float, ...] = (1.0, 1.0)
-    canvas_position: tuple[int, int] = (1, 1)
-    viewbox: tuple[int, int] | None = None
+    _viewbox: tuple[int, int] | None = None
     _view_direction: np.ndarray | None = None
+    _canvas_position: tuple[int, int] | None = None
+
+    @property
+    def viewbox(self):
+        return self._viewbox
+
+    @property
+    def canvas_position(self):
+        return self._canvas_position
+
+    @property
+    def view_direction(self):
+        return self._view_direction
 
     @property
     def style(self) -> None:
