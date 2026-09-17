@@ -236,6 +236,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         3D Depiction mode used by vispy. Must be one of our supported modes.
     iso_threshold : float
         Threshold for isosurface.
+        When in RGB, this threshold applies to the perceived luminance.
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
     plane : SlicingPlane or dict
