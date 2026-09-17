@@ -18,7 +18,6 @@ from weakref import WeakSet, ref
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
 from qtpy.QtGui import (
-    QDragEnterEvent,
     QGuiApplication,
     QImage,
 )
@@ -207,7 +206,6 @@ class QtViewer(QSplitter):
         self._welcome_widget = QtWelcomeWidget(
             self.canvas.native, viewer=self.viewer, tips=tips
         )
-        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)  # pyrefly: ignore [missing-attribute]
         self._welcome_widget.urls_dropped.connect(self.dropEvent)  # pyrefly: ignore [missing-attribute]
 
         main_layout.addWidget(self.canvas.native, stretch=1)
@@ -1212,27 +1210,6 @@ class QtViewer(QSplitter):
             self.canvas._scene_canvas.events.key_release, event
         )
         event.accept()
-
-    def dragEnterEvent(self, event: QDragEnterEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
-        """Ignore event if not dragging & dropping a file or URL to open.
-
-        Using event.ignore() here allows the event to pass through the
-        parent widget to its child widget, otherwise the parent widget
-        would catch the event and not pass it on to the child widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QDragEvent
-            Event from the Qt context.
-        """
-        if event is None:
-            return
-        mime = event.mimeData()
-        if mime is not None and mime.hasUrls():
-            self._set_drag_status()
-            event.accept()
-        else:
-            event.ignore()
 
     def _set_drag_status(self) -> None:
         """Set dedicated status message when dragging files into viewer"""
