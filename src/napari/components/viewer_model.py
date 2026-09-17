@@ -972,13 +972,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
-    def canvas_to_world(self, canvas_position: tuple[int, int]) -> np.ndarray:
+    def canvas_to_world(
+        self,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int] | None = None,
+    ) -> np.ndarray:
         """Convert canvas pixel position to world coordinates.
 
         Parameters
         ----------
         canvas_position : tuple of int
-            (x, y) position in canvas pixels.
+            (y, x) position in canvas pixels.
+        viewbox : tuple of int
+            (col, row) coordinates of the grid viewbox relative to which
+            to calculate the transformation. If None, use the first viewbox
+            or the whole canvas if the grid is disabled.
 
         Returns
         -------
@@ -990,30 +998,31 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ndisplay = self.dims.ndisplay
         camera = self.scene.camera
 
-        canvas_size = np.array(self.canvas.size)
-        canvas_center = canvas_size / 2
-        view_center = np.array(camera.center)
+        if viewbox is None:
+            viewbox = (0, 0)
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        world_center = np.array(camera.center)
 
         if ndisplay == 2:
             world_displayed = (
-                np.array(canvas_position) - canvas_center
-            ) / camera.zoom + view_center[-2:]
-
+                np.array(canvas_position) - viewbox_center
+            ) / camera.zoom + world_center[-2:]
         else:
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
             # consistency (zyx actually describes a different rotation order)
             rot = R.from_euler('xyz', camera.angles, degrees=True)
             rot_matrix = rot.as_matrix()
-            # TODO: the depth is set by default to 0, but we could/should pick
-            #       a more sensible spot, like the plane passing by the camera center
+            # the depth is set to zero because we want the position at the
+            # *screen*. Any modifications should be done by callers afterwards.
             canvas_position_3d = np.array([0, *canvas_position])
-            canvas_center_3d = np.array([0, *canvas_center])
+            viewbox_center_3d = np.array([0, *viewbox_center])
             world_displayed = (
                 rot_matrix.T
-                @ (canvas_position_3d - canvas_center_3d)
+                @ (canvas_position_3d - viewbox_center_3d)
                 / camera.zoom
-                + view_center
+                + world_center
             )
 
         # embed it in the world point
