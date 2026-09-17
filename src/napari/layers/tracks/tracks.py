@@ -299,52 +299,42 @@ class Tracks(Layer):
 
     def _iter_values_along_ray(
         self,
-        start_point: np.ndarray | None,
-        end_point: np.ndarray | None,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: list[int],
     ) -> Generator[tuple[int, np.ndarray], None, None]:
-        """Get track ID and position nearest to the ray.
+        """Get all tracks along a ray in 3D.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
+            End of ray in data coordinates.
         dims_displayed : list of int
-            The indices of the dimensions currently displayed in the Viewer.
+            Displayed dimensions.
 
         Yields
         ------
-        hits : tuple of (value, position)
-            The track ID and its nD data-space position.
+        hits : tuple of (track_index, position)
+            Each tuple contains the index and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
         """
-        if start_point is None or end_point is None:
-            return
-
-        # Use the start point to find the nearest track
-        # For 3D, we should ideally sample along the ray, but for now
-        # we'll use the start point as an approximation
+        # TODO: this is not really implemented. For now, just fall back to old
+        #       get_value (not really raycasting) and add the coordinate info.
         val = self._manager.get_value(start_point)
         if val is None:
             return
-
-        track_id = int(val)
-
-        # Find the position of this track point
-        # Query the KD-tree to get the actual point position
-        if self._manager._kdtree is None:
-            return
+        val = int(val)
 
         _d, idx = self._manager._kdtree.query(start_point, k=1)
         if idx >= self._manager._points.shape[0]:
             return
 
-        # Get the track point position (excluding time dimension)
-        # The track data includes time as the first column
         point_position = self._manager._points[idx]
 
-        yield track_id, point_position
+        yield val, point_position
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
