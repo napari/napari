@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter, deque
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, cast
 
@@ -26,6 +27,13 @@ _COMMON_ALIASES = {
     'visualize': 'visualise',
     'preferences': 'settings',
 }
+
+
+_HISTORY: deque[CommandRule] = deque(maxlen=1000)
+
+
+def _get_sorted_history_scores() -> dict[CommandRule, float]:
+    return dict(sorted(Counter(_HISTORY).items(), key=lambda x: x[1]))
 
 
 class QCommandPalette(QtW.QWidget):
@@ -298,7 +306,7 @@ class QCommandList(QtW.QListView):
         self._selected_index += dx
         self._selected_index = max(0, self._selected_index)
         self._selected_index = min(
-            self._current_max_index - 1, self._selected_index
+            self._current_max_index, self._selected_index
         )
         self.update_selection()
         return
@@ -361,38 +369,45 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
-        row = 0
+        row = -1
         for row, action in enumerate(self.iter_top_hits(input_text)):
-            self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
-                self._current_max_index = row
+                # we hit the end of available row widgets
                 break
-            lw.set_command(action)
-            if _enabled(action, self._app_model_context):
-                lw.set_text_colors(input_text, color=self._match_color)
-            else:
-                lw.setDisabled(True)
 
+            self.setRowHidden(row, False)
+            lw.set_command(action)
+            lw.set_text_colors(input_text, color=self._match_color)
+            lw.setEnabled(_enabled(action, self._app_model_context))
+
+            # we don't want to show more than these lines
             if row >= max_matches:
-                self._current_max_index = max_matches
                 break
-            row = row + 1
-        else:
-            # if the loop completes without break
-            self._current_max_index = row
-            for r in range(row, max_matches):
-                self.setRowHidden(r, True)
+
+        self._current_max_index = row
+
+        # remove all remaining rows
+        for r in range(row + 1, max_matches):
+            self.setRowHidden(r, True)
         self.update_selection()
         return
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
+        sorted_history_scores = _get_sorted_history_scores()
         if not input_text:
+            yield from [
+                c
+                for c in sorted_history_scores
+                if _enabled(c, self._app_model_context)
+            ]
+
             yield from [
                 c
                 for c in self.all_commands
                 if _enabled(c, self._app_model_context)
+                and c not in sorted_history_scores
             ]
 
         commands: dict[CommandRule, float] = {}
@@ -417,6 +432,11 @@ class QCommandList(QtW.QListView):
             commands.setdefault(command, 0)
             # get the max score between aliases
             commands[command] = max(score, commands[command])
+
+        for command, score in sorted_history_scores.items():
+            if command in commands:
+                commands[command] += 51 + min(score, 50)
+
         for command, _ in sorted(
             commands.items(), key=lambda x: x[1], reverse=True
         ):
@@ -583,4 +603,6 @@ def _iter_highlight_slices(
 
 def _exec_action(action: CommandRule) -> Any:
     app = get_app_model()
-    return app.commands.execute_command(action.id).result()
+    result = app.commands.execute_command(action.id).result()
+    _HISTORY.append(action)
+    return result
