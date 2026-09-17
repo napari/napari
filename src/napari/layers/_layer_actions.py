@@ -19,6 +19,8 @@ from napari.layers.utils._link_layers import get_linked_layers
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from napari.components import LayerList
     from napari.types import ArrayLike
 
@@ -270,6 +272,65 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _extract_multiscale_level(
+    layers: Collection[Image | Labels], level: int | None = None
+) -> list[Layer]:
+    new_layers: list[Layer] = []
+    for layer in layers:
+        extracting_data_level = layer.data_level if level is None else level
+
+        layer_state = layer._get_state()
+        layer_state.pop('data', None)
+        layer_state['name'] = f'{layer.name}-level({extracting_data_level})'
+        layer_state['multiscale'] = False
+
+        downsample_factor = np.asarray(
+            layer.downsample_factors[extracting_data_level]
+        )
+        layer_scale = np.asarray(layer_state['scale'])
+
+        layer_state['scale'] = (layer_scale * downsample_factor).tolist()
+        layer_state['translate'] = (
+            np.asarray(layer_state['translate'])
+            + (downsample_factor - 1) / 2 * layer_scale
+        ).tolist()
+
+        layer_state.pop('locked_data_level', None)
+
+        new_layers.append(
+            Layer.create(
+                layer.data[extracting_data_level],
+                layer_state,
+                layer._type_string,
+            )
+        )
+
+    return new_layers
+
+
+def _extract_multiscale_level_from_selection(
+    ll: LayerList, level: int | None = None
+) -> None:
+    if not ll.selection or not all(
+        isinstance(layer, (Image, Labels)) and layer.multiscale
+        for layer in ll.selection
+    ):
+        show_warning(
+            'Only multiscale Image and Labels layers can extract data levels'
+        )
+        return
+
+    layers = tuple(
+        layer for layer in ll.selection if isinstance(layer, (Image, Labels))
+    )
+
+    adding_layers = _extract_multiscale_level(layers, level)
+    for layer, new_layer in zip(layers, adding_layers, strict=True):
+        ll.insert(ll.index(layer) + 1, new_layer)
+
+    return
 
 
 def _toggle_bounding_box(ll: LayerList) -> None:

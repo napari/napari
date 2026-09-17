@@ -303,6 +303,22 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
+    Action(
+        id='napari.layer.extract_multiscale_level',
+        title='Extract locked multiscale level',
+        callback=_layer_actions._extract_multiscale_level_from_selection,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+                'when': LLSCK.all_selected_layers_multiscale,
+            }
+        ],
+        enablement=(
+            LLSCK.all_selected_layers_multiscale_and_same_locked_data_level
+            & (LLSCK.num_selected_layers == 1)
+        ),
+    ),
 ]
 
 for _dtype in (
