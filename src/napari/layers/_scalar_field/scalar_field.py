@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -43,7 +43,7 @@ from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from napari.components import Dims
 
@@ -731,108 +731,99 @@ class ScalarFieldBase(Layer, ABC):
 
         return value
 
-    def _get_value_ray(
+    def _iter_values_along_ray(
         self,
-        start_point: np.ndarray | None,
-        end_point: np.ndarray | None,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> int | None:
-        """Get the first non-background value encountered along a ray.
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Get value(s) and position(s) along a ray in 3D.
 
         Parameters
         ----------
         start_point : np.ndarray
-            (n,) array containing the start point of the ray in data coordinates.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            (n,) array containing the end point of the ray in data coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the viewer.
+            End of ray in data coordinates.
+        dims_displayed : list of int
+            Displayed dimensions.
 
-        Returns
-        -------
-        value : Optional[int]
-            The first non-background value encountered along the ray. If none
-            was encountered or the viewer is in 2D mode, returns None.
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and nD data-space position where it
+            was found. Sorted by distance from start_point (closest first).
         """
-        if start_point is None or end_point is None:
-            return None
-        if len(dims_displayed) == 3:
-            # only use get_value_ray on 3D for now
-            # we use dims_displayed because the image slice
-            # has its dimensions in the same order as the vispy
-            # Volume.
-            #
-            # Grab the slice data first, then derive the downsample
-            # factor from its actual shape so that coordinates and
-            # data are always consistent (data_level and the slice
-            # can be temporarily out of sync).
-            im_slice = self._slice.image.raw
-            # Use only the displayed spatial dims; an RGB slice carries a
-            # trailing channel axis that is absent from level_shapes.
-            slice_shape = np.array(im_slice.shape)[: len(dims_displayed)]
-            level0_shape = np.array(self.level_shapes[0])
-            ds = level0_shape[dims_displayed] / slice_shape
-            start_point = start_point[dims_displayed] / ds
-            end_point = end_point[dims_displayed] / ds
-            start_point = cast(np.ndarray, start_point)
-            end_point = cast(np.ndarray, end_point)
-            sample_ray = end_point - start_point
-            length_sample_vector = np.linalg.norm(sample_ray)
-            n_points = int(2 * length_sample_vector)
-            sample_points = np.linspace(
-                start_point, end_point, n_points, endpoint=True
-            )
-            # Build the bounding box from the actual slice shape
-            bounding_box = np.zeros((len(dims_displayed), 2))
-            bounding_box[:, 1] = slice_shape
+        im_slice = self._slice.image.raw
+        # Use only the displayed spatial dims; an RGB slice carries a
+        # trailing channel axis that is absent from level_shapes.
+        slice_shape = np.array(im_slice.shape)[: len(dims_displayed)]
+        level0_shape = np.array(self.level_shapes[0])
+        ds = level0_shape[dims_displayed] / slice_shape
 
-            clamped = clamp_point_to_bounding_box(
-                sample_points,
-                bounding_box,
-            ).astype(int)
-            values = im_slice[tuple(clamped.T)]
-            return self._calculate_value_from_ray(values)
+        start_displayed = start_point[dims_displayed] / ds
+        end_displayed = end_point[dims_displayed] / ds
+        start_displayed = cast(np.ndarray, start_displayed)
+        end_displayed = cast(np.ndarray, end_displayed)
 
-        return None
+        sample_ray = end_displayed - start_displayed
+        length_sample_vector = np.linalg.norm(sample_ray)
+        n_points = int(2 * length_sample_vector)
 
-    @abstractmethod
-    def _calculate_value_from_ray(self, values):
-        raise NotImplementedError
-
-    def _get_value_3d(
-        self,
-        start_point: np.ndarray | None,
-        end_point: np.ndarray | None,
-        dims_displayed: list[int],
-    ) -> int | tuple[int, int | None] | None:
-        """Get the first non-background value encountered along a ray.
-
-        Parameters
-        ----------
-        start_point : np.ndarray
-            (n,) array containing the start point of the ray in data coordinates.
-        end_point : np.ndarray
-            (n,) array containing the end point of the ray in data coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the viewer.
-
-        Returns
-        -------
-        value : int or tuple
-            The first non-zero value encountered along the ray. If a
-            non-zero value is not encountered, returns None.
-            If multiscale is True, returns a tuple of (data_level, value).
-        """
-        value = self._get_value_ray(
-            start_point=start_point,
-            end_point=end_point,
-            dims_displayed=dims_displayed,
+        sample_points = np.linspace(
+            start_displayed, end_displayed, n_points, endpoint=True
         )
 
-        if self.multiscale and value is not None:
-            return self.data_level, value
+        # Build the bounding box from the actual slice shape
+        bounding_box = np.zeros((len(dims_displayed), 2))
+        bounding_box[:, 1] = slice_shape
 
-        return value
+        sample_points_clamped = clamp_point_to_bounding_box(
+            sample_points,
+            bounding_box,
+        ).astype(int)
+        values = im_slice[tuple(sample_points_clamped.T)]
+
+        # subclasses implement the actual calculation of where the ray is considered
+        # to have hit. Positions need to be reconverted back to full-scale coordinates
+        # from slice coordinates (hence `* ds`)
+        for (
+            value,
+            hit_position,
+        ) in self._calculate_values_and_positions_from_ray_samples(
+            values, sample_points_clamped
+        ):
+            position = start_point.copy()
+            position[dims_displayed] = hit_position * ds
+            if self.multiscale:
+                yield (self.data_level, value), position
+            else:
+                yield value, position
+
+    @abstractmethod
+    def _calculate_values_and_positions_from_ray_samples(
+        self,
+        sample_values: npt.NDArray,
+        sample_points: npt.NDArray,
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Calculate values and positions from ray samples.
+
+        Parameters
+        ----------
+        sample_values : np.ndarray
+            Values sampled along the ray.
+        sample_points : np.ndarray
+            Points along the ray in displayed slice pixel coordinates,
+            clamped to the slice bounding box.
+
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and the position (in displayed
+            slice pixel coordinates) where it was found. The caller maps
+            these back to full nD data coordinates.
+        """
+        raise NotImplementedError
 
     def _get_offset_data_position(self, position: npt.NDArray) -> npt.NDArray:
         """Adjust position for offset between viewer and data coordinates.
