@@ -681,7 +681,6 @@ omit = [
     "*/_vendor/*",
     "*/_version.py",
     "*/benchmarks/*",
-    "napari/utils/indexing.py",
     "**/add_layer.py_tmpl",
     "*/.pytest_tmp/**",
 ]
