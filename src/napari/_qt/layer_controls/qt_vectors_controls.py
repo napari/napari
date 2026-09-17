@@ -50,8 +50,6 @@ class QtVectorsControls(QtLayerControls):
         self._add_widget_controls(self._width_spinbox_control)
         self._length_spinbox_control = QtLengthSpinBoxControl(self, layer)
         self._add_widget_controls(self._length_spinbox_control)
-        self._projection_mode_control = QtProjectionModeControl(self, layer)
-        self._add_widget_controls(self._projection_mode_control)
         self._vector_style_combobox_control = QtVectorStyleComboBoxControl(
             self, layer
         )
@@ -60,3 +58,5 @@ class QtVectorsControls(QtLayerControls):
             self, layer
         )
         self._add_widget_controls(self._edge_color_feature_control)
+        self._projection_mode_control = QtProjectionModeControl(self, layer)
+        self._add_widget_controls(self._projection_mode_control)

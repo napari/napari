@@ -8,7 +8,9 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import qt_signals_blocked
+from napari._qt.utils import (
+    qt_signals_blocked,
+)
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -77,6 +79,11 @@ class QtProjectionModeControl(QtWidgetControlsBase):
             self.projection_combobox.setCurrentText(
                 str(self._layers[0].projection_mode)
             )
+
+    def _change_is_thick(self, is_thick: bool) -> None:
+        super()._change_is_thick(is_thick)
+        self.projection_combobox_label.setVisible(is_thick)
+        self.projection_combobox.setVisible(is_thick)
 
     def get_widget_controls(
         self,
