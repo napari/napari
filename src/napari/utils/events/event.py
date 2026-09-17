@@ -824,14 +824,14 @@ class WarningEmitter(EventEmitter):
     def __init__(
         self,
         message: str,
-        category: type[Warning] = FutureWarning,
+        category: type[Warning] | None = FutureWarning,
         stacklevel: int = 3,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._message = message
-        self._warned = False
+        self._warned = category is None
         self._category = category
         self._stacklevel = stacklevel
 
@@ -1015,7 +1015,7 @@ class SubDependantEmitter(ChildrenEmitterMixin, EventEmitter):
     pass
 
 
-class DependantEmitter(EventEmitter):
+class DependantEmitter(WarningEmitter):
     """
     Warning emitter to be used when an attribute was renamed or moved to a composition object.
     It will connect to the new event once the callback is connected to the old one.
@@ -1027,9 +1027,15 @@ class DependantEmitter(EventEmitter):
     """
 
     def __init__(
-        self, *args, sources_list: list[str], property_name: str, **kwargs
+        self,
+        *args,
+        sources_list: list[str],
+        property_name: str,
+        category: type[Warning] | None = None,
+        message: str = '',
+        **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, message=message, category=category, **kwargs)
         self._property_name = property_name
         self._sub_emitters = [
             SubDependantEmitter(

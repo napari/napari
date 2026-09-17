@@ -1182,8 +1182,8 @@ def test_nested_dependency_property_deprecation():
 
     model = Model()
     callback = Mock()
-    model.events.doubled.connect(callback)
-
+    with pytest.warns(FutureWarning, match='use child.doubled instead'):
+        model.events.doubled.connect(callback)
     with pytest.warns(FutureWarning, match='use child.doubled instead'):
         model.child.value = 3
     callback.assert_called_once()

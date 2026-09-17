@@ -657,6 +657,13 @@ def _property_to_event_emitter(
 
     non_direct = [d for d in dependencies if '.' in d]
     if non_direct:
+        if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
+            return DependantEmitter(
+                type_name=type_name,
+                property_name=type_name,
+                sources_list=non_direct,
+                **_get_deprecated_params(prop.fget),
+            )
         return DependantEmitter(
             type_name=type_name,
             property_name=type_name,
