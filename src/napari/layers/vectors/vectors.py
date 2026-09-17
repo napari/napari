@@ -305,9 +305,7 @@ class Vectors(Layer):
                 else self._feature_table.currents()
             ),
         )
-        self._edge.events.color_mode.connect(
-            lambda _event: self.events.edge_color_mode()
-        )
+        self._edge.events.color_mode.connect(self.events.edge_color_mode)
 
         # now that everything is set up, make the layer visible (if set to visible)
         self.refresh()
