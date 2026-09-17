@@ -18,12 +18,13 @@ from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
-from napari._vispy.utils.cursor import QtCursorVisual
+from napari._vispy.utils.cursor import QtCursorVisual, get_cursor_style
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
+from napari.layers import Labels
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
@@ -254,8 +255,10 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
         self._scene_canvas.events.resize.connect(self._on_vispy_size_change)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
-        self.viewer.cursor.events.style.connect(self._on_cursor)
-        self.viewer.cursor.events.size.connect(self._on_cursor)
+        self._active_layer: Layer | None = None
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_layer_change
+        )
 
         self.viewer.events.theme.connect(self._on_bgcolor_change)
         self.viewer.canvas.events.background_color_override.connect(
@@ -315,6 +318,7 @@ class VispyCanvas:
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
         self.destroyed.connect(self._disconnect_events)
+        self._on_active_layer_change()
 
     @property
     def events(self):
@@ -348,7 +352,9 @@ class VispyCanvas:
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.layers.events, self)
-        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self.viewer.layers.selection.events, self)
+        if self._active_layer is not None:
+            disconnect_events(self._active_layer.events, self)
         disconnect_events(self._scene_canvas.events, self)
 
     @property
@@ -382,38 +388,79 @@ class VispyCanvas:
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
+    def _disconnect_labels_cursor(self, layer: Labels) -> None:
+        # on layer init this might not exist yet
+        if brush_circle := layer._overlays.get('brush_circle', None):
+            brush_circle.visible = False
+        layer.events.mode.disconnect(self._on_cursor)
+        layer.events.brush_size.disconnect(self._on_cursor)
+        layer.events.brush_size_is_canvas.disconnect(self._on_cursor)
+
+    def _connect_labels_cursor(self, layer: Labels) -> None:
+        layer.events.brush_size.connect(self._on_cursor)
+        layer.events.brush_size_is_canvas.connect(self._on_cursor)
+
+    def _on_active_layer_change(self, event=None) -> None:
+        """Track the active layer and rewire its mode event to refresh the cursor."""
+        # at this point, self._active_layer holds the *previously* active layer;
+        # we know that's changed so we make its overlays invisible and disconnect
+        # its events.
+        if self._active_layer is not None:
+            self._active_layer.events.mode.disconnect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._disconnect_labels_cursor(self._active_layer)
+        # Now we update self._active_layer and wire its mode changes
+        # to the cursor state
+        self._active_layer = self.viewer.layers.selection.active
+        if self._active_layer is not None:
+            self._active_layer.events.mode.connect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._connect_labels_cursor(self._active_layer)
+
+        self._on_cursor()
+
+    def _update_labels_brush_and_get_cursor(
+        self, layer: Labels, cursor: str
+    ) -> QCursor | Qt.CursorShape:
+        # on layer init this might not exist yet
+        if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
+            return self.cursor
+
+        if cursor != 'circle':
+            brush_circle.visible = False
+            return QtCursorVisual[cursor].value
+
+        if layer.brush_size_is_canvas:
+            size = layer.brush_size
+        else:
+            size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+
+        # if too big or small, show a normal cursor instead
+        if size < 8 or size > (min(*self.size) - 4):
+            brush_circle.visible = False
+            qt_cursor = QtCursorVisual['standard'].value
+        elif brush_circle._is_resizing:
+            # brush is being resized: also show standard cursor
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual['standard'].value
+        else:
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.blank()
+
+        return qt_cursor
+
     def _on_cursor(self) -> None:
-        """Create a QCursor based on the napari cursor settings and set in Vispy."""
-        cursor = self.viewer.cursor.style
-        brush_overlay = self.viewer.canvas.overlays._brush_circle
-        brush_overlay.visible = False
+        """Create a QCursor based on the active layer mode and brush overlay."""
+        layer = self.viewer.layers.selection.active
+        if layer is None:
+            self.cursor = QtCursorVisual['standard'].value
+            return
 
-        if cursor in {'square', 'circle', 'circle_frozen'}:
-            # Scale size by zoom if needed
-            size = self.viewer.cursor.size
-            if self.viewer.cursor.scaled:
-                size *= self.viewer.scene.camera.zoom
-
-            size = int(size)
-
-            # make sure the square fits within the current canvas
-            if (
-                size < 8 or size > (min(*self.size) - 4)
-            ) and cursor != 'circle_frozen':
-                self.cursor = QtCursorVisual['cross'].value
-            elif cursor.startswith('circle'):
-                brush_overlay.size = size
-                if cursor == 'circle_frozen':
-                    self.cursor = QtCursorVisual['standard'].value
-                    brush_overlay.position_is_frozen = True
-                else:
-                    self.cursor = QtCursorVisual.blank()
-                    brush_overlay.position_is_frozen = False
-                brush_overlay.visible = True
-            else:
-                self.cursor = QtCursorVisual.square(size)
-        elif cursor == 'crosshair':
-            self.cursor = QtCursorVisual.crosshair()
+        cursor = get_cursor_style(layer)
+        if isinstance(layer, Labels):
+            self.cursor = self._update_labels_brush_and_get_cursor(
+                layer, cursor
+            )
         else:
             self.cursor = QtCursorVisual[cursor].value
 
@@ -556,29 +603,37 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor._viewbox = grid_coords
+        # flip to napari-land
+        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
+
+        # TODO: this will be cleaned up by followup PRs, as it shouldn't be
+        #       calculated via vispy, and it probably shouldn't live on the cursor
+        self.viewer.cursor._view_direction = self._calculate_view_direction(
+            event.pos
+        )
+        self.viewer.cursor.position = self._map_canvas2world(
+            event.pos, viewbox
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=self.viewer.cursor._view_direction,
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self._map_canvas2world(event.pos, viewbox),
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(

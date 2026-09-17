@@ -18,10 +18,10 @@ class MousemapProvider:
         Callbacks from when mouse wheel is scrolled.
     """
 
-    mouse_move_callbacks: list[callable]
-    mouse_wheel_callbacks: list[callable]
-    mouse_drag_callbacks: list[callable]
-    mouse_double_click_callbacks: list[callable]
+    mouse_move_callbacks: list[Callable]
+    mouse_wheel_callbacks: list[Callable]
+    mouse_drag_callbacks: list[Callable]
+    mouse_double_click_callbacks: list[Callable]
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -34,8 +34,9 @@ class MousemapProvider:
         # Hold callbacks for when mouse wheel is scrolled
         self.mouse_wheel_callbacks = []
 
-        self._persisted_mouse_event = {}
+        self._persisted_mouse_event: dict = {}
         self._mouse_drag_gen = {}
+        self._mouse_move_gen = {}
         self._mouse_wheel_gen = {}
 
 
@@ -60,4 +61,5 @@ class MousemapProviderPydantic(BaseModel):
     mouse_double_click_callbacks: list[Callable] = Field(default_factory=list)
     _persisted_mouse_event: dict = PrivateAttr(default_factory=dict)
     _mouse_drag_gen: dict = PrivateAttr(default_factory=dict)
+    _mouse_move_gen: dict = PrivateAttr(default_factory=dict)
     _mouse_wheel_gen: dict = PrivateAttr(default_factory=dict)
