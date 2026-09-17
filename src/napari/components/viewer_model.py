@@ -984,7 +984,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             (y, x) position in canvas pixels.
         viewbox : tuple of int
             (col, row) coordinates of the grid viewbox relative to which
-            to calculate the transfor. If None, use the first viewbox
+            to calculate the transformation. If None, use the first viewbox
             or the whole canvas if the grid is disabled.
 
         Returns
