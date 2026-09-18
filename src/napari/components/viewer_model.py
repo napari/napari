@@ -583,7 +583,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if cached is not None:
             self.scene.camera.center = cached.center
             self.scene.camera.zoom = cached.zoom
-            self.scene.camera.angles = cached.angles
+            self.scene.camera.quaternion = cached.quaternion
         else:
             # First time in this mode — use fit_to_view defaults
             self.fit_to_view()
