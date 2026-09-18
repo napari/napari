@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import warnings
 from collections import UserDict
@@ -8,6 +10,171 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _UNSET = object()
+
+
+class RenamedProperty(property):
+    """A deprecated alias that forwards access to a renamed or moved attribute.
+
+    Reading or writing the alias emits a warning and accesses the target
+    attribute. Access through the class returns the descriptor without warning.
+
+    Parameters
+    ----------
+    new_name : str
+        Target attribute name or dotted path relative to the instance, such as
+        ``appearance.size``. Each path component must be a Python identifier.
+    since_version : str
+        Version in which the alias was deprecated. An empty string omits the
+        version from warning messages.
+    due_date : str, optional
+        Announced removal date or season, such as ``spring 2027``. If omitted,
+        no removal date is announced. This does not automatically disable access.
+    category : type of Warning, optional
+        Warning category used for access and assignment. Defaults to FutureWarning.
+    writable : bool, optional
+        Whether assignment through the alias is allowed. Defaults to True.
+        The target must also support assignment.
+    doc : str, optional
+        Documentation for the alias. A deprecation directive is appended unless
+        the text already contains ``.. deprecated::``.
+
+    Raises
+    ------
+    ValueError
+        If the target path is empty or contains an invalid component.
+
+    Notes
+    -----
+    Declare the descriptor in the class body to initialize its owner and name
+    automatically. When attaching it after class creation, call ``__set_name__``
+    explicitly. Define custom accessors on the target property; the inherited
+    ``getter``, ``setter``, and ``deleter`` helpers are not supported.
+
+    Examples
+    --------
+    >>> class Settings:
+    ...     size = 10
+    ...     old_size = RenamedProperty(new_name='size', since_version='0.7.0')
+    """
+
+    def __init__(
+        self,
+        *,
+        new_name: str,
+        since_version: str,
+        due_date: str | None = None,
+        category: type[Warning] = FutureWarning,
+        writable: bool = True,
+        doc: str | None = None,
+    ):
+        parts = new_name.split('.')
+        if any(not part.isidentifier() for part in parts):  # pragma: no cover
+            raise ValueError(f'Invalid attribute path: {new_name!r}')
+
+        self._new_name = new_name
+        self._since_version = since_version
+        self._due_date = due_date
+        self._category = category
+        self._owner_name: str | None = None
+        self._name: str | None = None
+        self._parent_path = tuple(parts[:-1])
+        self._target_name = parts[-1]
+        doc = doc or ''
+        if '.. deprecated::' not in doc:
+            doc += (
+                f'\n\n.. deprecated:: {since_version}\n'
+                f'    Use `{new_name}` instead.\n'
+            )
+        super().__init__(
+            fget=self._get_value,
+            fset=self._set_value if writable else None,
+            doc=doc,
+        )
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Record the owning class and alias name for warning messages."""
+        self._owner_name = owner.__qualname__
+        self._name = name
+
+    @property
+    def new_name(self) -> str:
+        """Target attribute name or dotted path relative to the instance."""
+        return self._new_name
+
+    @property
+    def category(self) -> type[Warning]:
+        """Warning category used when reading or writing the alias."""
+        return self._category
+
+    @property
+    def name(self) -> str:
+        """Alias name."""
+        if self._name is None:  # pragma: no cover
+            raise RuntimeError(
+                'RenamedProperty has not been assigned to a class yet.'
+            )
+        return self._name
+
+    @property
+    def message(self) -> str:
+        """Deprecation warning text for access to the aliased attribute."""
+        name = (
+            f'{self._owner_name}.{self._name}'
+            if self._name is not None
+            else 'This property'
+        )
+        since = f' since {self._since_version}' if self._since_version else ''
+        schedule = (
+            f' Removal is scheduled for {self._due_date}.'
+            if self._due_date is not None
+            else ''
+        )
+        return (
+            f'{name} is deprecated{since}.'
+            f'{schedule} Please use {self._new_name} instead.'
+        )
+
+    @property
+    def event_message(self) -> str:
+        """Deprecation warning text for the corresponding renamed event.
+
+        The replacement event belongs to the target attribute's parent object:
+        a target of ``appearance.size`` uses ``appearance.events.size``.
+        This property only provides the message; it does not create an emitter.
+        """
+        name = (
+            f'{self._owner_name}.events.{self._name}'
+            if self._name is not None
+            else 'This event'
+        )
+        since = f' since {self._since_version}' if self._since_version else ''
+        schedule = (
+            f' Removal is scheduled for {self._due_date}.'
+            if self._due_date is not None
+            else ''
+        )
+        new_name = f'{self._owner_name}.{".".join(self._parent_path + ("events", self._target_name))}'
+        return (
+            f'{name} is deprecated{since}.'
+            f'{schedule} Please use {new_name} instead.'
+        )
+
+    def _get_value(self, instance: object) -> object:
+        """Warn and read the target attribute."""
+        warnings.warn(self.message, self._category, stacklevel=2)
+        return getattr(self._resolve_parent(instance), self._target_name)
+
+    def _set_value(self, instance: object, value: object) -> None:
+        """Warn and assign to the target attribute."""
+        warnings.warn(self.message, self._category, stacklevel=2)
+        setattr(self._resolve_parent(instance), self._target_name, value)
+
+    def _resolve_parent(self, instance: object) -> object:
+        """Resolve the object that holds the final attribute in the target path."""
+        target = instance
+        for part in self._parent_path:
+            target = getattr(target, part)
+        return target
 
 
 class _RenamedAttribute(NamedTuple):
@@ -27,7 +194,7 @@ class _RenamedAttribute(NamedTuple):
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ''
-) -> 'Callable':
+) -> Callable:
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -78,51 +245,103 @@ def rename_argument(
     return _wrapper
 
 
+def _add_deprecated_property(func):
+    """To be used as a decorator for add_deprecated_property to support legacy positional arguments."""
+
+    @wraps(func)
+    def _func(*args, **kwargs):
+        if args or 'obj' in kwargs:
+            if args:
+                warnings.warn(
+                    'Using positional arguments for add_deprecated_property is deprecated. '
+                    'Please use keyword arguments instead. '
+                    'positional arguments will be removed in a spring 2027',
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            else:
+                warnings.warn(
+                    "Using 'obj' keyword argument for add_deprecated_property is deprecated. "
+                    'Please use add_deprecated_property(...)(obj) instead. ',
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            if 'obj' in kwargs:
+                obj = kwargs.pop('obj')
+            else:
+                obj = args[0]
+                args = args[1:]
+
+            legacy_names = (
+                'previous_name',
+                'new_name',
+                'version',
+                'since_version',
+            )
+            for name, value in zip(legacy_names, args, strict=False):
+                kwargs[name] = value
+            return func(**kwargs)(obj)
+        return func(**kwargs)
+
+    return _func
+
+
+@_add_deprecated_property
 def add_deprecated_property(
-    obj: Any,
+    *,
     previous_name: str,
     new_name: str,
-    version: str,
-    since_version: str,
-) -> None:
+    version: str | None = None,
+    since_version: str = '',
+    due_date: str | None = None,
+) -> Callable[[type], type]:
     """
     Adds deprecated property and links to new property name setter and getter.
 
     Parameters
     ----------
-    obj:
-        Class instances to add property
     previous_name : str
         Name of previous property, its methods must be removed.
     new_name : str
         Name of new property, must have its getter (and setter if applicable) implemented.
-    version : str
-        Version where deprecated property will be removed.
+    version : str, optional
+        Deprecated and ignored. Use ``due_date`` to announce a removal date.
     since_version : str
         version when new property was added
+    due_date : str, optional
+        Announced removal date or season, such as "spring 2027". If omitted,
+        no removal date is announced. This does not automatically disable access.
+
+    ..deprecated:: 0.9.2
+        `version` argument is deprecated and ignored. Use `due_date` to specify a removal date, or omit it for no announced removal date.
     """
+    if version is not None:
+        warnings.warn(
+            "The 'version' argument to add_deprecated_property is deprecated "
+            "and ignored. Use 'due_date' to specify a removal date, or omit "
+            'it for no announced removal date.',
+            FutureWarning,
+            stacklevel=3,
+        )
 
-    if hasattr(obj, previous_name):
-        raise RuntimeError(f'{previous_name} property already exists.')
+    def _func(obj: type) -> type:
+        if hasattr(obj, previous_name):
+            raise RuntimeError(f'{previous_name} property already exists.')
 
-    if not hasattr(obj, new_name):
-        raise RuntimeError(f'{new_name} property must exist.')
+        if not hasattr(obj, new_name):
+            raise RuntimeError(f'{new_name} property must exist.')
 
-    name = f'{obj.__name__}.{previous_name}'
-    msg = f'{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}'
+        prop = RenamedProperty(
+            new_name=new_name, since_version=since_version, due_date=due_date
+        )
+        setattr(obj, previous_name, prop)
+        prop.__set_name__(obj, previous_name)
+        return obj
 
-    def _getter(instance) -> Any:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
-        return getattr(instance, new_name)
-
-    def _setter(instance, value: Any) -> None:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
-        setattr(instance, new_name, value)
-
-    setattr(obj, previous_name, property(_getter, _setter))
+    return _func
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
+def deprecated_constructor_arg_by_attr(name: str) -> Callable:
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
@@ -197,7 +416,7 @@ def deprecated_class_name(
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
     _OldClass.__qualname__ = previous_name
-    _OldClass.__new__.__signature__ = prealloc_signature  # pyrefly: ignore [missing-attribute]
+    _OldClass.__new__.__signature__ = prealloc_signature  # type: ignore [attr-defined]
 
     return _OldClass
 
@@ -230,7 +449,7 @@ class _DeprecatingDict(UserDict[str, Any]):
         key = self._maybe_rename_key(key)
         return self.data.__getitem__(key)
 
-    def __setitem__(self, key: str, value: Any) -> None:  # pyrefly: ignore [bad-override-param-name]
+    def __setitem__(self, key: str, value: Any) -> None:
         key = self._maybe_rename_key(key)
         return self.data.__setitem__(key, value)
 
