@@ -95,7 +95,7 @@ else:
     )
 
 # Tilt the camera for a better 3D view
-viewer.camera.angles = (-10, 10, -10)
+viewer.scene.camera.angles = (-10, 10, -10)
 
 # -- Lock to the highest resolution level so you can see the "0" digit.
 # Without locking, 3D mode defaults to the coarsest level (digit "3").

@@ -268,10 +268,14 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
             color_texture = _select_colormap_texture(
-                colormap, view_dtype, raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype,
+                raw_dtype,
             )
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype=view_dtype,
+                raw_dtype=raw_dtype,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 color_texture,
@@ -281,7 +285,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.texture_data = color_texture
 
         elif not auto_mode:  # only for raw_dtype.itemsize > 2
-            color_dict = colormap._values_mapping_to_minimum_values_set()[1]
+            color_dict = colormap._values_mapping_to_minimum_values_set()[1]  # pyrefly: ignore [missing-attribute]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 

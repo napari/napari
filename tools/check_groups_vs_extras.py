@@ -22,7 +22,6 @@ SYNC_GROUPS = (
     'testing_extra',
     'gallery',
     'docs',
-    'release',
     'dev',
     'build',
 )
