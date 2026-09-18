@@ -35,5 +35,6 @@ class Scene(EventedModel):
             {
                 'axes': SceneAxesOverlay(),
             }
-        )
+        ),
+        frozen=True,
     )
