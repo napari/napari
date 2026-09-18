@@ -23,7 +23,7 @@ class ScaleBarOverlay(CanvasOverlay):
         See ``ColorValue.validate`` for supported values.
     ticks : bool
         If scale bar has ticks at ends or not.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
