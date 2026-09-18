@@ -93,6 +93,29 @@ class QtDims(QWidget):
         for widget in self.slider_widgets:
             widget._update_range()
 
+        animation_thread = self._animation_thread
+        if animation_thread.isRunning():
+            axis = animation_thread.axis
+            frame_range = animation_thread.frame_range
+            if (
+                axis is None
+                or axis >= len(self._displayed_sliders)
+                or not self._displayed_sliders[axis]
+            ) or (
+                frame_range != (0, 0)
+                and frame_range[1] >= self.dims.nsteps[axis]
+            ):
+                self.stop()
+            else:
+                animation_thread.set_frame_range(frame_range)
+                animation_thread.current = min(
+                    max(
+                        animation_thread.current,
+                        animation_thread.min_point,
+                    ),
+                    animation_thread.max_point - 1,
+                )
+
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
@@ -324,8 +347,9 @@ class QtDims(QWidget):
 
     @Slot()
     def stop(self) -> None:
-        """Stop axis animation"""
+        """Stop axis animation and wait for its thread to finish."""
         self._animation_thread._stop()
+        self._animation_thread.wait()
 
     @property
     def is_playing(self):
@@ -354,7 +378,11 @@ class QtDims(QWidget):
         if self.dims._play_ready:
             # disable additional point advance requests until this one draws
             self.dims._play_ready = False
+            before = self.dims.point
             self.dims.set_current_step(axis, frame)
+            if self.dims.point == before:
+                # nothing moved, so no draw is coming to re-enable playback
+                self.dims._play_ready = True
 
     def closeEvent(self, event):
         [w.deleteLater() for w in self.slider_widgets]

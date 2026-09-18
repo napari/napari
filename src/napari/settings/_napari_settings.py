@@ -10,6 +10,7 @@ from napari.settings._application import ApplicationSettings
 from napari.settings._base import (
     _NOT_SET,
     EventedConfigFileSettings,
+    _NotSetType,
     _remove_empty_dicts,
 )
 from napari.settings._experimental import ExperimentalSettings
@@ -82,11 +83,18 @@ class NapariSettings(EventedConfigFileSettings):
         populate_by_name=True,
     )
 
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+    def _connect_events(self) -> None:
+        """Connects the events for the settings to their respective update functions."""
+        self.application._connect_events()
+        self.experimental._connect_events()
+
+    def __init__(
+        self, config_path: Path | _NotSetType | None = _NOT_SET, **values: Any
+    ) -> None:
         super().__init__(config_path, **values)
         self._maybe_migrate()
 
-    def _save_dict(self, **kwargs):
+    def _save_dict(self, **kwargs: dict[Any, Any]) -> dict[str, Any]:
         # we always want schema_version written to the settings.yaml
         # TODO: is there a better way to always include schema version?
         return {
@@ -94,16 +102,16 @@ class NapariSettings(EventedConfigFileSettings):
             **super()._save_dict(**kwargs),
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = 'NapariSettings (defaults excluded)\n' + 34 * '-' + '\n'
         data = self.model_dump(exclude_defaults=True)
         out += self._yaml_dump(_remove_empty_dicts(data))
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def _maybe_migrate(self):
+    def _maybe_migrate(self) -> None:
         if self.schema_version < CURRENT_SCHEMA_VERSION:
             from napari.settings._migrations import do_migrations
 
