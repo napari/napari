@@ -23,6 +23,7 @@ from napari.layers.base._base_mouse_bindings import (
     transform_with_box,
 )
 from napari.layers.points._points_constants import (
+    ND_PROJECTION_MODES,
     Mode,
     PointsProjectionMode,
     Shading,
@@ -80,10 +81,10 @@ if TYPE_CHECKING:
 
 _OUT_SLICE_DISP_WARNING_MSG = (
     'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
-    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
+    'Setting projection_mode to rescale_linear_nd reproduces the previous behaviour, and '
+    'rescale_spherical_nd is the same but sizes points as spheres instead of a linear fade. '
+    'Alternatively, use thick slices by right-clicking on the dims scroll bar '
     '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
-    'Setting projection_mode to rescale_spherical may be more physically accurate '
-    'if your points correspond directly to objects with a physical size. '
 )
 
 
@@ -873,10 +874,7 @@ class Points(Layer):
             category=FutureWarning,
             stacklevel=2,
         )
-        return self._projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
-        )
+        return self._projection_mode in ND_PROJECTION_MODES
 
     @out_of_slice_display.setter
     def out_of_slice_display(self, out_of_slice_display: bool) -> None:
@@ -886,19 +884,13 @@ class Points(Layer):
                 category=FutureWarning,
                 stacklevel=2,
             )
-        old = self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
-        )
+        old = self.projection_mode in ND_PROJECTION_MODES
         self.projection_mode = (
-            PointsProjectionMode.RESCALE_LINEAR
+            PointsProjectionMode.RESCALE_LINEAR_ND
             if out_of_slice_display
             else PointsProjectionMode.ALL
         )
-        new = self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
-        )
+        new = self.projection_mode in ND_PROJECTION_MODES
         if old != new:
             self.events.out_of_slice_display()
             self.events.n_dimensional()
