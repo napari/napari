@@ -522,7 +522,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ----------
         layers : optional list of layers
             If given, only consider the extent of the given layers when
-            resetting the view. Otherwise, all layers in viewer.layers are
+            fitting to the view. Otherwise, all layers in viewer.layers are
             used.
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
