@@ -249,7 +249,7 @@ def combine_widgets(
     if isinstance(getattr(widgets, 'native', None), QWidget):
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
-        return widgets.native  # type: ignore
+        return widgets.native
     if isinstance(widgets, QWidget):
         return widgets
     if is_sequence(widgets):
@@ -416,6 +416,7 @@ def in_qt_main_thread() -> bool:
 def get_color(
     color: str | np.ndarray | QColor | None = None,
     mode: ColorMode | Literal['hex', 'qcolor', 'array'] = ColorMode.HEX,
+    parent: QWidget | None = None,
 ) -> np.ndarray | None:
     """
     Helper function to get a color from q QColorDialog.
@@ -426,6 +427,8 @@ def get_color(
         Initial color to display in the dialog. Color will be automatically converted to QColor.
     mode : ColorMode
         Mode to return the color in (hex, array, QColor).
+    parent : QWidget | None
+        Parent widget for the QColorDialog. Allow to inherit stylesheet from parent.
 
     Returns
     -------
@@ -437,8 +440,10 @@ def get_color(
         color = QColor(color)
     elif isinstance(color, np.ndarray):
         color = QColor(*color.astype(int))
+    if color is None:
+        color = QColor('#ffffff')
 
-    dlg = QColorDialog(color)
+    dlg = QColorDialog(color, parent=parent)
     new_color: str | np.ndarray | QColor | None = None
     if dlg.exec_():
         new_color = dlg.currentColor()

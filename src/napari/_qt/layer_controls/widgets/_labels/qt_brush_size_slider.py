@@ -34,6 +34,8 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         Label for the brush size chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -45,7 +47,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        connect_setattr(sld.valueChanged, self._layer, 'brush_size')
+        connect_setattr(sld.valueChanged, self._layer, 'brush_size')  # pyrefly: ignore [bad-argument-type]
         self.brush_size_slider = sld
         self._on_brush_size_change()
 
@@ -60,5 +62,7 @@ class QtBrushSizeSliderControl(QtWidgetControlsBase):
                 self.brush_size_slider.setMaximum(int(value))
             self.brush_size_slider.setValue(value)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.brush_size_slider_label, self.brush_size_slider)]

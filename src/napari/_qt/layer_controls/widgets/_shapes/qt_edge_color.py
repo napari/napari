@@ -5,6 +5,7 @@ from qtpy.QtWidgets import QWidget
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
+    _QtABCMeta,
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
@@ -12,7 +13,7 @@ from napari.layers import Shapes
 from napari.utils.events.event_utils import connect_setattr
 
 
-class QtEdgeColorControl(QtWidgetControlsBase):
+class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
     """
     Class that wraps the connection of events/signals between the current edge
     color layer attribute and Qt widgets.
@@ -34,6 +35,8 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         Label for the current edge color chooser widget.
     """
 
+    _layer: Shapes
+
     def __init__(
         self, parent: QWidget, layer: Shapes, tooltip: Optional[str] = None
     ) -> None:
@@ -44,7 +47,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
             tooltip=tooltip,
         )
         connect_setattr(
-            self.edge_color_edit.color_changed,
+            self.edge_color_edit.color_changed,  # pyrefly: ignore [bad-argument-type]
             self._layer,
             'current_edge_color',
         )
@@ -58,5 +61,7 @@ class QtEdgeColorControl(QtWidgetControlsBase):
         )
         self.edge_color_label = QtWrappedLabel('edge color:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.edge_color_label, self.edge_color_edit)]

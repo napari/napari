@@ -119,7 +119,7 @@ class Event:
         """
         return self._sources
 
-    def _push_source(self, source):
+    def _push_source(self, source: Any) -> None:
         self._sources.append(source)
 
     def _pop_source(self):
@@ -192,7 +192,7 @@ class Event:
         """Shorter string representation"""
         return self.__class__.__name__
 
-    # mypy fix for dynamic attribute access
+    # pyrefly fix for dynamic attribute access
     def __getattr__(self, name: str) -> Any:
         return object.__getattribute__(self, name)
 
@@ -541,7 +541,7 @@ class EventEmitter:
         return old_callback  # allows connect to be used as a decorator
 
     def disconnect(
-        self, callback: Callback | CallbackRef | None | object = None
+        self, callback: Callback | CallbackRef | object | None = None
     ):
         """Disconnect a callback from this emitter.
 
@@ -824,17 +824,21 @@ class WarningEmitter(EventEmitter):
         *args,
         **kwargs,
     ) -> None:
+        super().__init__(*args, **kwargs)
         self._message = message
         self._warned = False
         self._category = category
         self._stacklevel = stacklevel
-        EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
         self._warn(cb)
         return EventEmitter.connect(self, cb, *args, **kwargs)
 
     def _invoke_callback(self, cb, event):
+        """invoke callback with warn if not warned yet."""
+        # check if this is needed. The _invoke_callback is not called if there is a callback.
+        # but if there is a callback, then _warn was called in the connect.
+        # And warn emmit a warning only once.
         self._warn(cb)
         return EventEmitter._invoke_callback(self, cb, event)
 
@@ -852,6 +856,51 @@ class WarningEmitter(EventEmitter):
             self._message, category=self._category, stacklevel=self._stacklevel
         )
         self._warned = True
+
+
+class RenamedEmitter(WarningEmitter):
+    """
+    Warning emitter to be used when an attribute was renamed or moved to a composition object.
+    It will connect to the new event once the callback is connected to the old one.
+    It will also warn the user that the attribute was renamed.
+    """
+
+    def __init__(
+        self,
+        new_name: str,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        *self._new_name_path, self._new_name = new_name.split('.')
+        self._connected = False
+
+    def _get_new_emitter(self):
+        target = self.source
+        if self.source is None:  # pragma: no cover
+            raise RuntimeError(
+                f'Cannot connect to renamed emitter {self._new_name} because source is None'
+            )
+        for attr in self._new_name_path:
+            target = getattr(target, attr)
+        new_emitter = getattr(target.events, self._new_name)
+        return new_emitter
+
+    def connect(self, cb, *args, **kwargs):
+        if not self._connected:
+            new_emitter = self._get_new_emitter()
+            new_emitter.connect(self)
+            self._connected = True
+        super().connect(cb, *args, **kwargs)
+
+    def disconnect(
+        self, callback: Callback | CallbackRef | object | None = None
+    ):
+        super().disconnect(callback)
+        if not self.callbacks:
+            new_emitter = self._get_new_emitter()
+            new_emitter.disconnect(self)
+            self._connected = False
 
 
 class EmitterGroup(EventEmitter):
@@ -911,7 +960,7 @@ class EmitterGroup(EventEmitter):
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
-        self.add(**emitters)  # type: ignore
+        self.add(**emitters)
 
     def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
@@ -930,7 +979,7 @@ class EmitterGroup(EventEmitter):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})  # type: ignore
+        self.add(**{name: emitter})
 
     def add(
         self,
@@ -971,11 +1020,11 @@ class EmitterGroup(EventEmitter):
             if emitter is None:
                 emitter = Event
 
-            if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
+            if inspect.isclass(emitter) and issubclass(emitter, Event):
                 emitter = EventEmitter(
                     source=self.source,
                     type_name=name,
-                    event_class=emitter,  # type: ignore
+                    event_class=emitter,
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(

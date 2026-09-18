@@ -30,6 +30,8 @@ class QtBorderColorControl(QtWidgetControlsBase):
         Label for the current egde color chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup widgets
@@ -38,7 +40,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
             tooltip='Click to set the border color of currently selected points and any added afterwards.',
         )
         connect_setattr(
-            self.border_color_edit.color_changed,
+            self.border_color_edit.color_changed,  # pyrefly: ignore [bad-argument-type]
             self._layer,
             'current_border_color',
         )
@@ -61,5 +63,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
         self.border_color_edit_label = QtWrappedLabel('border color:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.border_color_edit_label, self.border_color_edit)]

@@ -10,6 +10,9 @@ contributions:
     - id: napari.get_py_reader
       python_name: napari_builtins.io:napari_get_py_reader
       title: Builtin Python Reader
+    - id: napari.get_obj_reader
+      python_name: napari_builtins.io:napari_get_obj_reader
+      title: Builtin Wavefront OBJ Reader
 
     # writers
     - id: napari.write_image
@@ -95,6 +98,9 @@ contributions:
     - id: napari.data.kidney
       title: Generate kidney sample
       python_name: napari_builtins._skimage_data:kidney
+    - id: napari.data.kidney_rgb
+      title: Generate kidney rgb sample
+      python_name: napari_builtins._skimage_data:kidney_rgb
     - id: napari.data.lfw_subset
       title: Generate lfw_subset sample
       python_name: napari_builtins._skimage_data:lfw_subset
@@ -147,6 +153,9 @@ contributions:
       enablement: active_layer_type == 'shapes'
 
   readers:
+    - command: napari.get_obj_reader
+      accepts_directories: false
+      filename_patterns: ['*.obj']
     - command: napari.get_reader
       accepts_directories: true
       filename_patterns:
@@ -256,7 +265,7 @@ contributions:
     - display_name: Cell
       key: cell
       command: napari.data.cell
-    - display_name: Cells (3D+2Ch)
+    - display_name: Cells (3D, 2Ch)
       key: cells3d
       command: napari.data.cells3d
     - display_name: Checkerboard
@@ -298,9 +307,12 @@ contributions:
     - display_name: Immunohistochemistry (RGB)
       key: immunohistochemistry
       command: napari.data.immunohistochemistry
-    - display_name: Kidney (3D+3Ch)
+    - display_name: Kidney (3D, 3Ch)
       key: kidney
       command: napari.data.kidney
+    - display_name: Kidney (3D, RGB)
+      key: kidney_rgb
+      command: napari.data.kidney_rgb
     - display_name: Labeled Faces in the Wild
       key: lfw_subset
       command: napari.data.lfw_subset

@@ -39,7 +39,7 @@ def parse_version(v: str) -> packaging.version._BaseVersion:
     try:
         return packaging.version.Version(v)
     except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)  # type: ignore[attr-defined]
+        return packaging.version.LegacyVersion(v)  # pyrefly: ignore [missing-attribute]
 
 
 def running_as_constructor_app() -> bool:
@@ -92,7 +92,7 @@ def in_python_repl() -> bool:
 
 
 def ensure_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
 ):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
@@ -104,7 +104,7 @@ def ensure_iterable(
 
 
 def is_iterable(
-    arg: None | str | Enum | float | list | npt.NDArray,
+    arg: str | Enum | float | list | npt.NDArray | None,
     allow_none: bool = False,
 ) -> bool:
     """Determine if a single argument is an iterable."""
@@ -204,7 +204,7 @@ def ensure_sequence_of_iterables(
 
 def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back
+    frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
     try:
         obj.__doc__ = obj.__doc__.format(
             **{**frame.f_globals, **frame.f_locals}

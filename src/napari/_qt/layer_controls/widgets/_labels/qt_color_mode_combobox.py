@@ -34,6 +34,8 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         Label for the color mode chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -69,5 +71,7 @@ class QtColorModeComboBoxControl(QtWidgetControlsBase):
         else:
             self.color_mode_combobox.setCurrentEnum(LabelColorMode.DIRECT)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.color_mode_combobox_label, self.color_mode_combobox)]
