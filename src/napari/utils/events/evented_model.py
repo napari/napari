@@ -513,8 +513,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         )
 
         return pydantic_core.core_schema.with_info_after_validator_function(
-            lambda value, info: value,
-            schema,
+            function=lambda value, info: value,
+            schema=schema,
             serialization=pydantic_core.core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 when_used='json',
