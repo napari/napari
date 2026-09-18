@@ -108,12 +108,16 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: str | None = None
-) -> tuple[WidgetCreator, str] | None:
+) -> tuple[WidgetCreator, str, str] | None:
     widgets_seen = set()
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
-                return contrib.get_callable(), contrib.display_name
+                return (
+                    contrib.get_callable(),
+                    contrib.display_name,
+                    getattr(contrib, 'default_area', 'right'),
+                )
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
         msg = f'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {widgets_seen}'

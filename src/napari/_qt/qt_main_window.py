@@ -1087,6 +1087,7 @@ class Window:
         self,
         plugin_name: str,
         widget_name: str | None = None,
+        area: str | None = None,
         tabify: bool = False,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -1099,6 +1100,9 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
         tabify : bool
             Flag to tabify dock widget or not.
 
@@ -1111,10 +1115,14 @@ class Window:
         from napari.plugins import _npe2
 
         widget_class = None
-        dock_kwargs = {}
 
         if result := _npe2.get_widget_contribution(plugin_name, widget_name):
-            widget_class, widget_name = result
+            widget_class, widget_name, default_area = result
+            settings = get_settings()
+            area = area or settings.application.plugin_widget_positions.get(
+                default_area,
+                'right',
+            )
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
@@ -1126,9 +1134,11 @@ class Window:
         )
 
         # Add dock widget
-        dock_kwargs.pop('name', None)
         dock_widget = self.add_dock_widget(
-            wdg, name=full_name, tabify=tabify, **dock_kwargs
+            wdg,
+            name=full_name,
+            tabify=tabify,
+            area=area or default_area,
         )
         return dock_widget, wdg
 
