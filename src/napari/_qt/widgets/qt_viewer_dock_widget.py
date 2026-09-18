@@ -31,6 +31,10 @@ _sentinel = object()
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
 
+# Floor the dock keeps on itself; the contained widget's minimum is added on
+# top of this by the layout (see ``event``).
+_MIN_DOCK_SIZE = 50
+
 dock_area_to_str = {
     Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
     Qt.DockWidgetArea.RightDockWidgetArea: 'right',
@@ -121,8 +125,7 @@ class QtViewerDockWidget(QDockWidget):
         else:
             allowed_areas = Qt.DockWidgetArea.AllDockWidgetAreas
         self.setAllowedAreas(allowed_areas)
-        self.setMinimumHeight(50)
-        self.setMinimumWidth(50)
+        self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
         # FIXME:
         self.setObjectName(object_name or name)
 
@@ -239,6 +242,15 @@ class QtViewerDockWidget(QDockWidget):
     def setFeatures(self, features):
         super().setFeatures(features)
         self._features = self.features()
+
+    def event(self, event):
+        if event.type() == QEvent.Type.LayoutRequest:
+            # QDockWidgetLayout folds the dock's current minimumSize into its
+            # own minimum, and its SetMinAndMaxSize constraint writes that back
+            # on every activation, so the minimum can only ever grow. Reset the
+            # explicit floor first so it is recomputed from the content.
+            self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
+        return super().event(event)
 
     def keyPressEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
