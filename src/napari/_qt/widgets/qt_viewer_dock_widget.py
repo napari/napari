@@ -245,10 +245,8 @@ class QtViewerDockWidget(QDockWidget):
 
     def event(self, event):
         if event.type() == QEvent.Type.LayoutRequest:
-            # QDockWidgetLayout folds the dock's current minimumSize into its
-            # own minimum, and its SetMinAndMaxSize constraint writes that back
-            # on every activation, so the minimum can only ever grow. Reset the
-            # explicit floor first so it is recomputed from the content.
+            # Reset the explicit floor first so it is recomputed from
+            # the content to avoid issue where minimum can only ever grow.
             self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
         return super().event(event)
 
