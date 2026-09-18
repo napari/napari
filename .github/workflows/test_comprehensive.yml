@@ -96,7 +96,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py312-pyqt6-examples
         timeout: 60
         python_version: 3.12
         constraints_suffix: _examples

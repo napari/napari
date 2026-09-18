@@ -201,9 +201,11 @@ class QtColormapControl(QtWidgetControlsBase):
         from napari._qt.utils import get_color
         from napari.utils.colormaps.colormap_utils import ensure_colormap
 
-        color = get_color(self.parent(), mode='hex')
+        color = get_color(parent=self.colorbar_label, mode='hex')
         if color:
             self._layer.colormap = ensure_colormap(color)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.colormap_widget_label, self.colormapWidget)]
