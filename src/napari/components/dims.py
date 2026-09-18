@@ -2,7 +2,6 @@ import contextlib
 from collections.abc import Sequence
 from numbers import Integral
 from typing import (
-    Annotated,
     Any,
     Literal,
     NamedTuple,
@@ -10,7 +9,7 @@ from typing import (
 
 import numpy as np
 import pint
-from pydantic import PlainSerializer, field_validator, model_validator
+from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
@@ -20,16 +19,6 @@ class RangeTuple(NamedTuple):
     start: float
     stop: float
     step: float
-
-
-Unit = Annotated[
-    pint.Unit,
-    PlainSerializer(
-        lambda value: str(value),
-        return_type=str,
-        when_used='json',
-    ),
-]
 
 
 class Dims(EventedModel):
@@ -117,7 +106,7 @@ class Dims(EventedModel):
     margin_left: tuple[float, ...] = ()
     margin_right: tuple[float, ...] = ()
     point: tuple[float, ...] = ()
-    units: tuple[Unit, ...] | None = None
+    units: tuple[pint.Unit, ...] | None = None
 
     last_used: int = 0
 

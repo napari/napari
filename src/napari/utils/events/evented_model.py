@@ -11,6 +11,7 @@ from functools import cache, partial
 from typing import Any, ClassVar, Union
 
 import numpy as np
+import pint
 import pydantic_core.core_schema
 from app_model.types import KeyBinding
 from pydantic import (
@@ -32,6 +33,7 @@ from napari.utils.misc import pick_equality_operator
 _BASE_JSON_ENCODERS = {
     np.ndarray: lambda arr: arr.tolist(),
     KeyBinding: lambda v: str(v),
+    pint.Unit: lambda u: str(u),
 }
 
 
