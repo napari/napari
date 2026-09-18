@@ -12,9 +12,6 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
-from napari.utils.translations import translator
-
-trans = translator.load()
 
 
 class QtStar(QFrame):
@@ -368,7 +365,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._triangle.setValue(self._thickness_value)
         self._triangle.setMinimum(min_value)
         self._triangle.setMaximum(max_value)
-        self._preview_label.setText(trans._('Preview'))
+        self._preview_label.setText('Preview')
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
         self._preview.setStyleSheet('border: 1px solid white;')
@@ -551,11 +548,7 @@ class QtHighlightPreviewWidget(QWidget):
         value = int(value)
         if value >= self._max_value:
             raise ValueError(
-                trans._(
-                    'Minimum value must be smaller than {max_value}',
-                    deferred=True,
-                    max_value=self._max_value,
-                )
+                f'Minimum value must be smaller than {self._max_value}'
             )
         self._min_value = value
         self._slider_min_label.setText(str(value))
@@ -588,11 +581,7 @@ class QtHighlightPreviewWidget(QWidget):
         value = int(value)
         if value <= self._min_value:
             raise ValueError(
-                trans._(
-                    'Maximum value must be larger than {min_value}',
-                    deferred=True,
-                    min_value=self._min_value,
-                )
+                f'Maximum value must be larger than {self._min_value}'
             )
         self._max_value = value
         self._slider_max_label.setText(str(value))

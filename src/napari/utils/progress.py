@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 from napari.utils.events.containers import EventedSet
 from napari.utils.events.event import EmitterGroup, Event
-from napari.utils.translations import trans
 
 __all__ = ['cancelable_progress', 'progrange', 'progress']
 
@@ -93,7 +92,7 @@ class progress(tqdm):
         if self.disable:
             self.desc = ''
         if not self.desc:
-            self.set_description(trans._('progress'))
+            self.set_description('progress')
         progress._all_instances.add(self)
         self.is_init = False
 

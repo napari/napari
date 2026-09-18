@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout
+from qtpy.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from napari._qt.qt_resources import get_stylesheet
 from napari.settings import get_settings
@@ -10,7 +10,7 @@ class WarnPopup(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: QWidget | None = None,
         text: str = '',
     ) -> None:
         super().__init__(parent)
@@ -45,5 +45,5 @@ class WarnPopup(QDialog):
         )
         self._xbutton.raise_()
 
-    def _close(self):
+    def _close(self) -> None:
         self.close()

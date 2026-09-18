@@ -1,8 +1,6 @@
 import numpy as np
 import numpy.typing as npt
 
-from napari.utils.translations import trans
-
 
 def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     """To convert an image-like array with elements (y-proj, x-proj) into a
@@ -33,11 +31,11 @@ def convert_image_to_coordinates(vectors: npt.NDArray) -> npt.NDArray:
     # TODO: consider whether it might be good to check for sparsity and
     # only include nonzero vectors. This can have up-front performance cost but may
     # lead to (significant) performance and memory savings
-    projections = np.reshape(vectors, (nvect, ndim))
+    projections = np.reshape(vectors, (int(nvect), int(ndim)))
     # TODO: consider whether it might be good to check for sparsity and
     # only include nonzero vectors. Up front performance cost but can
     # lead to (significant) performance and memory savings
-    projections = np.reshape(vectors, (nvect, ndim))
+    projections = np.reshape(vectors, (int(nvect), int(ndim)))
 
     # stack them along axis 1
     coord_vectors = np.stack([coordinates, projections], axis=1)
@@ -96,22 +94,12 @@ def fix_data_vectors(
             vectors = vectors[np.newaxis]
         if vectors.ndim != 3 or vectors.shape[1] != 2:
             raise ValueError(
-                trans._(
-                    'could not reshape Vector data from {vectors_shape} to (N, 2, {dimensions})',
-                    deferred=True,
-                    vectors_shape=vectors.shape,
-                    dimensions=ndim or 'D',
-                )
+                f'could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or "D"})'
             )
 
     data_ndim = vectors.shape[2]
     if ndim is not None and ndim != data_ndim:
         raise ValueError(
-            trans._(
-                'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})',
-                deferred=True,
-                data_ndim=data_ndim,
-                ndim=ndim,
-            )
+            f'Vectors dimensions ({data_ndim}) must be equal to ndim ({ndim})'
         )
     return vectors, data_ndim

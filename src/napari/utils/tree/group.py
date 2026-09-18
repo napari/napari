@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from napari.utils.events.containers._selectable_list import (
     SelectableNestableEventedList,
@@ -42,7 +42,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         self,
         children: Iterable[NodeType] = (),
         name: str = 'Group',
-        basetype=Node,
+        basetype: type[Node] = Node,
     ) -> None:
         Node.__init__(self, name=name)
         SelectableNestableEventedList.__init__(
@@ -52,7 +52,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
             lookup={str: lambda e: e.name},
         )
 
-    def __newlike__(self, iterable: Iterable):
+    def __newlike__(self, iterable: Iterable) -> Group[NodeType]:
         # NOTE: TRICKY!
         # whenever we slice into a group with group[start:end],
         # the super().__newlike__() call is going to create a new object
@@ -72,19 +72,19 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         new._list.extend(iterable)
         return new
 
-    def __getitem__(self, key) -> NodeType | Group[NodeType]:
-        return super().__getitem__(key)
+    def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # pyrefly: ignore [bad-override]
+        return super().__getitem__(key)  # pyrefly: ignore [bad-return]
 
-    def __delitem__(self, key: MaybeNestedIndex):
+    def __delitem__(self, key: MaybeNestedIndex) -> None:
         """Remove item at ``key``, and unparent."""
         if isinstance(key, int | tuple):
-            self[key].parent = None  # type: ignore
+            self[key].parent = None
         else:
-            for item in self[key]:
+            for item in self[key]:  # pyrefly: ignore [not-iterable]
                 item.parent = None
-        super().__delitem__(key)
+        super().__delitem__(key)  # pyrefly: ignore [bad-argument-type]
 
-    def insert(self, index: int, value):
+    def insert(self, index: int, value: NodeType) -> None:
         """Insert ``value`` as child of this group at position ``index``."""
         value.parent = self
         super().insert(index, value)
@@ -93,19 +93,19 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         """Return True, indicating that this ``Node`` is a ``Group``."""
         return True
 
-    def __contains__(self, other):
+    def __contains__(self, other: object) -> bool:  # pyrefly: ignore [bad-override-param-name]
         """Return true if ``other`` appears anywhere under this group."""
         return any(item is other for item in self.traverse())
 
     def traverse(
-        self, leaves_only=False, with_ancestors=False
+        self, leaves_only: bool = False, with_ancestors: bool = False
     ) -> Generator[NodeType, None, None]:
         """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield obj
-        for child in obj:
-            yield from child.traverse(leaves_only)
+            yield obj  # pyrefly: ignore [invalid-yield]
+        for child in obj:  # pyrefly: ignore [not-iterable]
+            yield from child.traverse(leaves_only)  # pyrefly: ignore [invalid-yield]
 
     def _render(self) -> list[str]:
         """Recursively return list of strings that can render ascii tree."""

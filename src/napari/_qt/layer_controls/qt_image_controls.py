@@ -69,8 +69,4 @@ class QtImageControls(QtBaseImageControls):
         else:
             self._render_control._on_display_change_show()
             self._depiction_control._on_display_change_show()
-        if self.layer.multiscale:
-            self._multiscale_level_control._on_display_change_show()
-        else:
-            self._multiscale_level_control._on_display_change_hide()
         super()._on_ndisplay_changed()

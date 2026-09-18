@@ -21,10 +21,11 @@ def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:
         return
-    if event.native.inverted():
-        viewer.dims._scroll_progress += event.delta[1]
-    else:
-        viewer.dims._scroll_progress -= event.delta[1]
+    # always scroll by 1 at most, even if scroll wheel is set to
+    # scroll many lines at once.
+    delta = np.clip(event.delta[1], -1, 1)
+    forward = 1 if event.native.inverted() else -1
+    viewer.dims._scroll_progress += delta * forward
     while abs(viewer.dims._scroll_progress) >= 1:
         if viewer.dims._scroll_progress < 0:
             viewer.dims._increment_dims_left()
@@ -32,6 +33,33 @@ def dims_scroll(viewer, event):
         else:
             viewer.dims._increment_dims_right()
             viewer.dims._scroll_progress -= 1
+
+
+def layers_scroll(viewer, event):
+    """Scroll through the layer list."""
+    if 'Alt' not in event.modifiers:
+        return
+
+    # Use the sum of both axes to handle axis flipping
+    delta = np.sum(event.delta)
+
+    # Clip delta to +/- 1.0 to prevent skipping layers
+    delta = np.clip(delta, -1, 1)
+
+    if event.native.inverted():
+        viewer._layer_list_scroll_progress -= delta
+    else:
+        viewer._layer_list_scroll_progress += delta
+
+    while abs(viewer._layer_list_scroll_progress) >= 1:
+        if viewer._layer_list_scroll_progress < 0:
+            # previous is down the list
+            viewer.layers.select_previous()
+            viewer._layer_list_scroll_progress += 1
+        else:
+            # next is up the list
+            viewer.layers.select_next()
+            viewer._layer_list_scroll_progress -= 1
 
 
 def double_click_to_zoom(viewer, event):
@@ -44,16 +72,18 @@ def double_click_to_zoom(viewer, event):
         return
     # if Alt held down, zoom out instead
     zoom_factor = 0.5 if 'Alt' in event.modifiers else 2
-    viewer.camera.zoom *= zoom_factor
+    viewer.scene.camera.zoom *= zoom_factor
     if viewer.dims.ndisplay == 3 and viewer.dims.ndim == 3:
-        viewer.camera.center = np.asarray(viewer.camera.center) + (
+        viewer.scene.camera.center = np.asarray(viewer.scene.camera.center) + (
             np.asarray(event.position)[np.asarray(viewer.dims.displayed)]
-            - np.asarray(viewer.camera.center)
+            - np.asarray(viewer.scene.camera.center)
         ) * (1 - 1 / zoom_factor)
     else:
-        viewer.camera.center = np.asarray(viewer.camera.center)[-2:] + (
+        viewer.scene.camera.center = np.asarray(viewer.scene.camera.center)[
+            -2:
+        ] + (
             np.asarray(event.position)[-2:]
-            - np.asarray(viewer.camera.center)[-2:]
+            - np.asarray(viewer.scene.camera.center)[-2:]
         ) * (1 - 1 / zoom_factor)
 
 
@@ -75,36 +105,36 @@ def drag_to_zoom(viewer, event):
         return
 
     # on mouse press
-    viewer._zoom_box.visible = True
+    viewer.canvas.overlays._zoom_box.visible = True
     press_pos = event.pos[::-1]
     press_position = event.position
     move_pos = press_pos
     move_position = press_position
-    viewer._zoom_box.position = (press_pos, press_pos)
+    viewer.canvas.overlays._zoom_box.position = (press_pos, press_pos)
     yield
     event.handled = True
 
     # on mouse move
     while event.type == 'mouse_move':
         if 'Alt' not in event.modifiers:
-            viewer._zoom_box.visible = False
+            viewer.canvas.overlays._zoom_box.visible = False
             yield
             return
 
         move_pos = event.pos[::-1]
-        viewer._zoom_box.position = (press_pos, move_pos)
+        viewer.canvas.overlays._zoom_box.position = (press_pos, move_pos)
         move_position = event.position
         yield
 
     # on mouse release
-    viewer._zoom_box.visible = False
+    viewer.canvas.overlays._zoom_box.visible = False
 
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > MIN_ZOOMBOX_SIZE:
         # Slice to the last two coordinates (displayed axes) for cases where
         # ndim>2 and ndisplay=2
-        viewer._zoom_box.zoom_area = (
+        viewer.canvas.overlays._zoom_box.zoom_area = (
             press_position[-2:],
             move_position[-2:],
         )

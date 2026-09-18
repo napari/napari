@@ -1,10 +1,8 @@
 import contextlib
 import os
-from enum import auto
+from enum import StrEnum, auto
 from importlib import metadata
 from pathlib import Path
-
-from napari.utils.compat import StrEnum
 
 
 class Environment(StrEnum):

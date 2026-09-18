@@ -67,8 +67,6 @@ from typing import (
 
 from vispy.util.logs import _handle_exception
 
-from napari.utils.translations import trans
-
 
 class Event:
     """Class describing events that occur and can be reacted to with callbacks.
@@ -121,7 +119,7 @@ class Event:
         """
         return self._sources
 
-    def _push_source(self, source):
+    def _push_source(self, source: Any) -> None:
         self._sources.append(source)
 
     def _pop_source(self):
@@ -194,7 +192,7 @@ class Event:
         """Shorter string representation"""
         return self.__class__.__name__
 
-    # mypy fix for dynamic attribute access
+    # pyrefly fix for dynamic attribute access
     def __getattr__(self, name: str) -> Any:
         return object.__getattribute__(self, name)
 
@@ -338,10 +336,7 @@ class EventEmitter:
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
-                trans._(
-                    'print_callback_errors must be "first", "reminders", "always", or "never"',
-                    deferred=True,
-                )
+                'print_callback_errors must be "first", "reminders", "always", or "never"'
             )
         self._print_callback_errors = val
 
@@ -478,25 +473,14 @@ class EventEmitter:
         elif isinstance(ref, str):
             _ref = ref
         else:
-            raise TypeError(
-                trans._(
-                    'ref must be a bool or string',
-                    deferred=True,
-                )
-            )
+            raise TypeError('ref must be a bool or string')
         if _ref is not None and _ref in self._callback_refs:
-            raise ValueError(
-                trans._('ref "{ref}" is not unique', deferred=True, ref=_ref)
-            )
+            raise ValueError(f'ref "{_ref}" is not unique')
 
         # positions
         if position not in ('first', 'last'):
             raise ValueError(
-                trans._(
-                    'position must be "first" or "last", not {position}',
-                    deferred=True,
-                    position=position,
-                )
+                f'position must be "first" or "last", not {position}'
             )
         core_callbacks_indexes = [
             i
@@ -530,14 +514,7 @@ class EventEmitter:
                     )
                     if count != 1:
                         raise ValueError(
-                            trans._(
-                                'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callbacks}',
-                                deferred=True,
-                                criteria=criteria,
-                                count=count,
-                                callback_refs=callback_refs,
-                                callbacks=callbacks,
-                            )
+                            f'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callbacks}'
                         )
                 matches = [
                     ci
@@ -549,13 +526,7 @@ class EventEmitter:
                 bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError(
-                trans._(
-                    'cannot place callback before "{before}" and after "{after}" for callbacks: {callback_refs}',
-                    deferred=True,
-                    before=before,
-                    after=after,
-                    callback_refs=callback_refs,
-                )
+                f'cannot place callback before "{before}" and after "{after}" for callbacks: {callback_refs}'
             )
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
@@ -570,7 +541,7 @@ class EventEmitter:
         return old_callback  # allows connect to be used as a decorator
 
     def disconnect(
-        self, callback: Callback | CallbackRef | None | object = None
+        self, callback: Callback | CallbackRef | object | None = None
     ):
         """Disconnect a callback from this emitter.
 
@@ -622,12 +593,7 @@ class EventEmitter:
                 if inspect.ismethod(meth) and meth == callback:
                     return obj, name
             raise RuntimeError(
-                trans._(
-                    'During bind method {callback} of object {obj} an error happen',
-                    deferred=True,
-                    callback=callback,
-                    obj=obj,
-                )
+                f'During bind method {callback} of object {obj} an error happen'
             )
         return obj, callback.__name__
 
@@ -641,10 +607,7 @@ class EventEmitter:
 
         if sum(map(_is_pos_arg, parameters_list)) > 1:
             raise RuntimeError(
-                trans._(
-                    'Binning function cannot have more than one positional argument',
-                    deferred=True,
-                )
+                'Binning function cannot have more than one positional argument'
             )
 
         return any(
@@ -732,13 +695,7 @@ class EventEmitter:
                     cb = getattr(obj, cb[1], None)
                     if cb is None:
                         warnings.warn(
-                            trans._(
-                                'Problem with function {old_cb} of {obj} connected to event {self_}',
-                                deferred=True,
-                                old_cb=old_cb[1],
-                                obj=obj,
-                                self_=self,
-                            ),
+                            f'Problem with function {old_cb[1]} of {obj} connected to event {self}',
                             stacklevel=2,
                             category=RuntimeWarning,
                         )
@@ -760,12 +717,7 @@ class EventEmitter:
             self._emitting = False
             ps = event._pop_source()
             if ps is not self.source:
-                raise RuntimeError(
-                    trans._(
-                        'Event source-stack mismatch.',
-                        deferred=True,
-                    )
-                )
+                raise RuntimeError('Event source-stack mismatch.')
 
         return event
 
@@ -808,10 +760,7 @@ class EventEmitter:
             event = self.event_class(**_kwargs)
         else:
             raise ValueError(
-                trans._(
-                    'Event emitters can be called with an Event instance or with keyword arguments only.',
-                    deferred=True,
-                )
+                'Event emitters can be called with an Event instance or with keyword arguments only.'
             )
         return event
 
@@ -840,12 +789,7 @@ class EventEmitter:
         """
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError(
-                trans._(
-                    'Cannot unblock {self_} for callback {callback}; emitter was not previously blocked.',
-                    deferred=True,
-                    self_=self,
-                    callback=callback,
-                )
+                f'Cannot unblock {self} for callback {callback}; emitter was not previously blocked.'
             )
         b = self._blocked[callback] - 1
         if b == 0 and callback is not None:
@@ -880,17 +824,21 @@ class WarningEmitter(EventEmitter):
         *args,
         **kwargs,
     ) -> None:
+        super().__init__(*args, **kwargs)
         self._message = message
         self._warned = False
         self._category = category
         self._stacklevel = stacklevel
-        EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
         self._warn(cb)
         return EventEmitter.connect(self, cb, *args, **kwargs)
 
     def _invoke_callback(self, cb, event):
+        """invoke callback with warn if not warned yet."""
+        # check if this is needed. The _invoke_callback is not called if there is a callback.
+        # but if there is a callback, then _warn was called in the connect.
+        # And warn emmit a warning only once.
         self._warn(cb)
         return EventEmitter._invoke_callback(self, cb, event)
 
@@ -908,6 +856,51 @@ class WarningEmitter(EventEmitter):
             self._message, category=self._category, stacklevel=self._stacklevel
         )
         self._warned = True
+
+
+class RenamedEmitter(WarningEmitter):
+    """
+    Warning emitter to be used when an attribute was renamed or moved to a composition object.
+    It will connect to the new event once the callback is connected to the old one.
+    It will also warn the user that the attribute was renamed.
+    """
+
+    def __init__(
+        self,
+        new_name: str,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        *self._new_name_path, self._new_name = new_name.split('.')
+        self._connected = False
+
+    def _get_new_emitter(self):
+        target = self.source
+        if self.source is None:  # pragma: no cover
+            raise RuntimeError(
+                f'Cannot connect to renamed emitter {self._new_name} because source is None'
+            )
+        for attr in self._new_name_path:
+            target = getattr(target, attr)
+        new_emitter = getattr(target.events, self._new_name)
+        return new_emitter
+
+    def connect(self, cb, *args, **kwargs):
+        if not self._connected:
+            new_emitter = self._get_new_emitter()
+            new_emitter.connect(self)
+            self._connected = True
+        super().connect(cb, *args, **kwargs)
+
+    def disconnect(
+        self, callback: Callback | CallbackRef | object | None = None
+    ):
+        super().disconnect(callback)
+        if not self.callbacks:
+            new_emitter = self._get_new_emitter()
+            new_emitter.disconnect(self)
+            self._connected = False
 
 
 class EmitterGroup(EventEmitter):
@@ -967,7 +960,7 @@ class EmitterGroup(EventEmitter):
         self._emitters: dict[str, EventEmitter] = {}
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
-        self.add(**emitters)  # type: ignore
+        self.add(**emitters)
 
     def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
@@ -986,7 +979,7 @@ class EmitterGroup(EventEmitter):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})  # type: ignore
+        self.add(**{name: emitter})
 
     def add(
         self,
@@ -1015,19 +1008,11 @@ class EmitterGroup(EventEmitter):
         for name in kwargs:
             if name in self._emitters:
                 raise ValueError(
-                    trans._(
-                        "EmitterGroup already has an emitter named '{name}'",
-                        deferred=True,
-                        name=name,
-                    )
+                    f"EmitterGroup already has an emitter named '{name}'"
                 )
             if hasattr(self, name):
                 raise ValueError(
-                    trans._(
-                        "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
-                        deferred=True,
-                        name=name,
-                    )
+                    f"The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup"
                 )
 
         # add each emitter specified in the keyword arguments
@@ -1035,20 +1020,15 @@ class EmitterGroup(EventEmitter):
             if emitter is None:
                 emitter = Event
 
-            if inspect.isclass(emitter) and issubclass(emitter, Event):  # type: ignore
+            if inspect.isclass(emitter) and issubclass(emitter, Event):
                 emitter = EventEmitter(
                     source=self.source,
                     type_name=name,
-                    event_class=emitter,  # type: ignore
+                    event_class=emitter,
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise RuntimeError(
-                    trans._(
-                        'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
-                        deferred=True,
-                        name=name,
-                        emitter=emitter,
-                    )
+                    f'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})'
                 )
 
             # give this emitter the same source as the group.

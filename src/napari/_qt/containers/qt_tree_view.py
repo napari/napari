@@ -11,13 +11,13 @@ from napari.utils.tree import Group, Node
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 NodeType = TypeVar('NodeType', bound=Node)
 
 
-class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # pyrefly: ignore [inconsistent-inheritance]
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
@@ -39,20 +39,22 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     ) -> None:
         super().__init__(parent)
         self.setHeaderHidden(True)
-        self.setDragDropMode(QTreeView.InternalMove)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QTreeView.ExtendedSelection)
+        self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]):
-        super().setRoot(root)
+    def setRoot(self, root: Group[Node]) -> None:  # pyrefly: ignore [bad-override]
+        super().setRoot(root)  # pyrefly: ignore [bad-argument-type]
 
         # make tree look like a list if it contains no lists.
         self.model().rowsRemoved.connect(self._redecorate_root)
         self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
 
-    def _redecorate_root(self, parent: QModelIndex = None, *_):
+    def _redecorate_root(
+        self, parent: QModelIndex | None = None, *args: object
+    ) -> None:
         """Add a branch/arrow column only if there are Groups in the root.
 
         This makes the tree fall back to looking like a simple list if there
@@ -63,4 +65,4 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
             self.setRootIsDecorated(hasgroup)
 
     def model(self) -> QtNodeTreeModel[NodeType]:
-        return super().model()
+        return super().model()  # pyrefly: ignore [bad-return]
