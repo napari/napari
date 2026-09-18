@@ -36,6 +36,8 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         Label for the size chooser widget.
     """
 
+    _layer: Points
+
     def __init__(self, parent: QWidget, layer: Points) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -59,7 +61,9 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         sld.setValue(int(value))
         self.size_slider = sld
         connect_setattr(
-            self.size_slider.valueChanged, self._layer, 'current_size'
+            self.size_slider.valueChanged,  # pyrefly: ignore [bad-argument-type]
+            self._layer,
+            'current_size',
         )
 
         self.size_slider_label = QtWrappedLabel('point size:')
@@ -77,5 +81,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
             with contextlib.suppress(TypeError):
                 self.size_slider.setValue(int(value))
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.size_slider_label, self.size_slider)]

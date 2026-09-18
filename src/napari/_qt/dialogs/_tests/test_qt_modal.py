@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMainWindow, QWidget
+from qtpy.QtWidgets import QMainWindow, QPushButton, QWidget
 
 from napari._qt.dialogs.qt_modal import QtPopup
 
@@ -58,11 +58,20 @@ class TestQtPopup:
         popup = QtPopup(widget)
         popup.move_to(pos)
 
-    def test_click(self, qtbot, monkeypatch):
+    def test_return_is_ignored_escape_closes(self, qtbot):
         popup = QtPopup(None)
-        monkeypatch.setattr(popup, 'close', MagicMock())
+        # a lone QPushButton in a QDialog is the auto-default button, which
+        # QDialog.keyPressEvent would click on return
+        button = QPushButton('button', popup.frame)
+        clicked = MagicMock()
+        button.clicked.connect(clicked)
         qtbot.addWidget(popup)
-        qtbot.keyClick(popup, Qt.Key_8)
-        popup.close.assert_not_called()
+        popup.show()
+        qtbot.waitUntil(popup.isVisible)
+
         qtbot.keyClick(popup, Qt.Key_Return)
-        popup.close.assert_called_once()
+        assert popup.isVisible()
+        clicked.assert_not_called()
+
+        qtbot.keyClick(popup, Qt.Key_Escape)
+        assert not popup.isVisible()

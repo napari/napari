@@ -884,7 +884,7 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
 
     layer_visual = qt_viewer.layer_to_visual[layer]
     axes_visual = qt_viewer.canvas._viewer_overlay_to_visual[
-        viewer_model._scene_overlays.axes
+        viewer_model.scene.overlays.axes
     ][0]
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
