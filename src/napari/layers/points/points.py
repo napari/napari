@@ -26,6 +26,7 @@ from napari.layers.points._points_constants import (
     Mode,
     PointsProjectionMode,
     Shading,
+    Symbol,
 )
 from napari.layers.points._points_mouse_bindings import add, highlight, select
 from napari.layers.points._points_utils import (
@@ -76,7 +77,6 @@ if TYPE_CHECKING:
 
     from napari.components.dims import Dims
 
-DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 _OUT_SLICE_DISP_WARNING_MSG = (
     'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
@@ -942,12 +942,14 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def current_symbol(self) -> int | float:
+    def current_symbol(self) -> Symbol:
         """float: symbol of marker for the next added point."""
         return self._current_symbol
 
     @current_symbol.setter
-    def current_symbol(self, symbol: float | None) -> None:
+    def current_symbol(
+        self, symbol: str | Symbol | Sequence[str | Symbol]
+    ) -> None:
         symbol = coerce_symbols(np.array([symbol]))[0]
         self._current_symbol = symbol
         if self._update_properties and len(self.selected_data) > 0:

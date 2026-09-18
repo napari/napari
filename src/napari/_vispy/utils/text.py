@@ -60,7 +60,7 @@ def update_text(
             positions = raw_positions
 
     node.text = text_values
-    node.pos = positions
+    node.pos = positions  # pyrefly: ignore [unbound-name]
     node.anchors = (anchor_x, anchor_y)
 
     text_manager = layer.text
