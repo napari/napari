@@ -137,7 +137,7 @@ class Dims(EventedModel):
         - start < stop
         - step > 0
         """
-        for axis, (start, stop, step) in enumerate(ranges):
+        for axis, (start, stop, step) in enumerate(ranges):  # pyrefly: ignore [bad-unpacking]
             if start > stop:
                 raise ValueError(
                     f'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}'
@@ -420,7 +420,7 @@ class Dims(EventedModel):
         # Don't reset axis labels
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
-        self.range = ((0, 2, 1),) * self.ndim
+        self.range = ((0, 2, 1),) * self.ndim  # pyrefly: ignore [bad-assignment]
         self.point = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
@@ -435,7 +435,7 @@ class Dims(EventedModel):
         """
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _increment_dims_right(self, axis: int | None = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -489,7 +489,7 @@ class Dims(EventedModel):
         # encodes axis by number
         valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
         order[valid] = np.roll(order[valid], shift=1)
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
@@ -518,8 +518,8 @@ class Dims(EventedModel):
             raise ValueError('axis and value sequences must have equal length')
 
         for ax in axis:
-            ensure_axis_in_bounds(ax, self.ndim)
-        return axis, value
+            ensure_axis_in_bounds(ax, self.ndim)  # pyrefly: ignore [bad-argument-type]
+        return axis, value  # pyrefly: ignore [bad-return]
 
     @contextlib.contextmanager
     def _validating_ctx(self):
