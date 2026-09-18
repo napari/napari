@@ -70,8 +70,7 @@ class _BytecodeDependencies:
     def __init__(self, func: FunctionType, *, strict: bool = False):
         self.strict = strict
         self.globals = func.__globals__
-        # Mypy's cached FunctionType can omit __builtins__; read the runtime
-        # attribute explicitly, without substituting a different namespace.
+        # Mypy is not knowing about the __builtins__ attribute, but it is always present in CPython.
         self.builtins: Mapping[str, object] = getattr(func, '__builtins__', {})
         self.attributes: set[str] = set()
         self.global_names: set[str] = set()
