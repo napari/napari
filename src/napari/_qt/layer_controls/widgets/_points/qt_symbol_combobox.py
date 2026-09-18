@@ -10,7 +10,7 @@ from napari.layers import Points
 from napari.layers.points._points_constants import Symbol
 
 
-class QtSymbolComboBoxControl(QtWidgetControlsBase):
+class QtSymbolComboBoxControl(QtWidgetControlsBase):  # type: ignore[metaclass]
     """
     Class that wraps the connection of events/signals between the current symbol
     layer attribute and Qt widgets.
