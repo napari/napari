@@ -116,7 +116,7 @@ def get_widget_contribution(
                 return (
                     contrib.get_callable(),
                     contrib.display_name,
-                    contrib.default_area,
+                    getattr(contrib, 'default_area', 'right'),
                 )
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
