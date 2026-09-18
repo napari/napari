@@ -29,10 +29,7 @@ from app_model.expressions import Context
 from pydantic import (
     Field,
     PrivateAttr,
-    SerializationInfo,
-    SerializerFunctionWrapHandler,
     field_validator,
-    model_serializer,
 )
 from typing_extensions import deprecated
 
@@ -426,27 +423,30 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return v
 
-    @model_serializer(mode='wrap')
-    def serialize(
-        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
-    ):
-        """Custom serialization logic to discard some fields."""
-        data = handler(self)
-
+    def model_dump_json(self, *args, **kwargs):
+        exclude = set(kwargs.pop('exclude', set()))
         # layers cannot be currently serialized properly. To be removed once they are
         # evented models.
-        data.pop('layers', None)
-
-        if info.mode == 'json':
-            # we can't serialize callables to json
-            for field in {
+        # we also can't serialize callables to json
+        exclude.update(
+            {
+                'layers',
                 'mouse_move_callbacks',
                 'mouse_drag_callbacks',
                 'mouse_wheel_callbacks',
-            }:
-                data.pop(field, None)
+                'mouse_double_click_callbacks',
+            }
+        )
+        kwargs['exclude'] = exclude
+        return super().model_dump_json(*args, **kwargs)
 
-        return data
+    def model_dump(self, *args, **kwargs):
+        exclude = set(kwargs.pop('exclude', set()))
+        # layers cannot be currently serialized properly. To be removed once they are
+        # evented models.
+        exclude.add('layers')
+        kwargs['exclude'] = exclude
+        return super().model_dump(*args, **kwargs)
 
     def __hash__(self):
         return id(self)
