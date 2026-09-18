@@ -1328,6 +1328,8 @@ def test_complex_nested_value():
         def real(self):
             return self.value.real
 
+    # assert Model.__properties_dependence__ == {'real': {'c'}, 'value': {'c'}}
+
     model = Model()
     callback = Mock()
     model.events.real.connect(callback)
