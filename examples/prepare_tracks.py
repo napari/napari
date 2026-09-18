@@ -24,6 +24,7 @@ df = pd.DataFrame(
     {
         'particle': [0, 0, 0, 1, 1, 1],
         'frame': [0, 1, 2, 0, 1, 2],
+        'depth': [5, 6, 7, 10, 11, 12],
         'row': [10, 15, 20, 50, 55, 60],
         'col': [10, 15, 20, 60, 65, 70],
     }
@@ -31,6 +32,7 @@ df = pd.DataFrame(
 
 tracks = prepare_tracks_data(df, track_id="particle",
     t="frame",
+    z="depth",
     y="row",
     x="col",)
 
