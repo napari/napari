@@ -150,7 +150,7 @@ class NestableEventedList(EventedList[_T]):
     # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
-    @overload  # type: ignore
+    @overload
     def __getitem__(
         self, key: int
     ) -> _T | NestableEventedList[_T]: ...  # pragma: no cover

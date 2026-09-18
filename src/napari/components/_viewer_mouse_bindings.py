@@ -72,16 +72,18 @@ def double_click_to_zoom(viewer, event):
         return
     # if Alt held down, zoom out instead
     zoom_factor = 0.5 if 'Alt' in event.modifiers else 2
-    viewer.camera.zoom *= zoom_factor
+    viewer.scene.camera.zoom *= zoom_factor
     if viewer.dims.ndisplay == 3 and viewer.dims.ndim == 3:
-        viewer.camera.center = np.asarray(viewer.camera.center) + (
+        viewer.scene.camera.center = np.asarray(viewer.scene.camera.center) + (
             np.asarray(event.position)[np.asarray(viewer.dims.displayed)]
-            - np.asarray(viewer.camera.center)
+            - np.asarray(viewer.scene.camera.center)
         ) * (1 - 1 / zoom_factor)
     else:
-        viewer.camera.center = np.asarray(viewer.camera.center)[-2:] + (
+        viewer.scene.camera.center = np.asarray(viewer.scene.camera.center)[
+            -2:
+        ] + (
             np.asarray(event.position)[-2:]
-            - np.asarray(viewer.camera.center)[-2:]
+            - np.asarray(viewer.scene.camera.center)[-2:]
         ) * (1 - 1 / zoom_factor)
 
 

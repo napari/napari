@@ -64,9 +64,9 @@ viewer.window.resize(900, 600)
 
 viewer.theme = "light"
 viewer.dims.ndisplay = 3
-viewer.axes.visible = True
-viewer.axes.colored = False
-viewer.axes.labels = False
+viewer.scene.overlays.axes.visible = True
+viewer.scene.overlays.axes.colored = False
+viewer.scene.overlays.axes.labels = False
 viewer.canvas.overlays.text.visible = True
 viewer.canvas.overlays.text.text = "Hello World!"
 
@@ -74,8 +74,8 @@ viewer.canvas.overlays.text.text = "Hello World!"
 # viewer.controls.visible = False
 
 viewer.add_labels(myball, name="result" , opacity=1.0)
-viewer.camera.angles = (19, -33, -121)
-viewer.camera.zoom = 1.3
+viewer.scene.camera.angles = (19, -33, -121)
+viewer.scene.camera.zoom = 1.3
 ```
 
 Next, the loop run is defined.  
