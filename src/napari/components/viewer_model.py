@@ -427,7 +427,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = set(kwargs.pop('exclude', set()))
         # layers cannot be currently serialized properly. To be removed once they are
         # evented models.
-        # we also can't serialize callables to json
+        # also callbacks functions should not be serialized
         exclude.update(
             {
                 'layers',
@@ -444,7 +444,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = set(kwargs.pop('exclude', set()))
         # layers cannot be currently serialized properly. To be removed once they are
         # evented models.
-        exclude.add('layers')
+        # also callbacks functions should not be serialized
+        exclude.update(
+            {
+                'layers',
+                'mouse_move_callbacks',
+                'mouse_drag_callbacks',
+                'mouse_wheel_callbacks',
+                'mouse_double_click_callbacks',
+            }
+        )
         kwargs['exclude'] = exclude
         return super().model_dump(*args, **kwargs)
 
