@@ -31,6 +31,12 @@ from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
 
+# Colors handed to a layer that asks for cycle mode without supplying a cycle. A single
+# color here would map every category to the same value, making the mode a no-op; two
+# contrasting colors make the grouping visible immediately and can then be replaced with a
+# purpose-chosen cycle.
+DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+
 
 @dataclass
 class ColorProperties:
@@ -505,7 +511,7 @@ class ColorManager(EventedModel):
 
         """
         if default_color_cycle is None:
-            default_color_cycle = np.array([1, 1, 1, 1])
+            default_color_cycle = DEFAULT_COLOR_CYCLE
 
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
