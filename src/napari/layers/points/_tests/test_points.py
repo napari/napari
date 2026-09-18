@@ -17,7 +17,10 @@ from napari._tests.utils import (
 from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
-from napari.layers.points._points_constants import Mode, PointsProjectionMode
+from napari.layers.points._points_constants import (
+    Mode,
+    PointsProjectionMode,
+)
 from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
@@ -1904,6 +1907,185 @@ def test_view_size():
     # test a slice with no points
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
+
+
+def _nd_ladder_layer(size=20.0):
+    """A column of points spaced along the not-displayed dimension.
+
+    The offsets are given in units of the point radius, so the layer can be
+    sliced with a thickness of zero or of some number of radii.
+    """
+    radius = size / 2
+    offsets = np.array([-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0])
+    data = np.zeros((offsets.size, 3))
+    # axis 0 is the one that is not displayed with the default order
+    data[:, 0] = offsets * radius
+    return Points(data, size=size)
+
+
+def test_nd_projection_reproduces_out_of_slice_display():
+    """The nd linear mode reproduces the pre-0.9 ``out_of_slice_display``.
+
+    See: https://github.com/napari/napari/issues/9449
+
+    The expected sizes are the values measured from napari 0.8.0 with
+    ``out_of_slice_display=True`` and no slice thickness, where a point is
+    visible when its own extent reaches the slice.
+    """
+    layer = _nd_ladder_layer()
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR_ND
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+
+    # every point within one radius of the slice is visible, the rest are not
+    assert layer._view_data.shape == (9, 2)
+    np.testing.assert_allclose(
+        layer._view_size,
+        [1.0, 6.0, 11.0, 16.0, 20.0, 16.0, 11.0, 6.0, 1.0],
+    )
+
+
+def test_nd_projection_sizes_the_extent_inside_the_slice():
+    """The nd linear mode fades points over their own radius."""
+    layer = _nd_ladder_layer()
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR_ND
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(2.5, 0, 0),
+            margin_right=(2.5, 0, 0),
+        )
+    )
+
+    # a thicker slice brings in the outer points, which fade over their own
+    # radius as they leave it rather than vanishing at the face
+    assert layer._view_data.shape == (9, 2)
+    np.testing.assert_allclose(
+        layer._view_size,
+        [5.0, 10.0, 15.0, 20.0, 20.0, 20.0, 15.0, 10.0, 5.0],
+    )
+
+
+def test_nd_projection_uses_thickness_to_expand_the_visible_set():
+    """Thickness decides which points the nd modes can reach."""
+    size = 20.0
+    radius = size / 2
+    # further than one radius from the slice, but within one radius of a slice
+    # that has a margin of four radii on each side
+    data = np.array([[4.5 * radius, 0.0, 0.0]])
+    layer = Points(data, size=size)
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR_ND
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert layer._view_data.shape == (0, 2)
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(0, 0, 0),
+            margin_left=(4 * radius, 0, 0),
+            margin_right=(4 * radius, 0, 0),
+        )
+    )
+    assert layer._view_data.shape == (1, 2)
+    np.testing.assert_allclose(layer._view_size, [size / 2])
+
+
+def test_nd_spherical_projection_sizes_the_sliced_sphere():
+    """The nd spherical mode shows the cross-section of the point's sphere."""
+    layer = _nd_ladder_layer()
+    layer.projection_mode = PointsProjectionMode.RESCALE_SPHERICAL_ND
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+
+    # a point inside the slice shows its equator, i.e. its full size, and the
+    # rest show the disc the slice cuts out of them
+    radius = 10.0
+    offsets = np.array([-1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0])
+    distance = np.clip(np.abs(offsets) * radius - 0.5, 0, None)
+    np.testing.assert_allclose(
+        layer._view_size, 2 * np.sqrt(radius**2 - distance**2)
+    )
+    np.testing.assert_allclose(
+        layer._view_size,
+        [6.2, 14.3, 17.9, 19.6, 20.0, 19.6, 17.9, 14.3, 6.2],
+        atol=0.05,
+    )
+
+
+@pytest.mark.parametrize(
+    ('mode', 'expected'),
+    [
+        # half a radius off the slice in both axes, so the portions multiply
+        (PointsProjectionMode.RESCALE_LINEAR_ND, 20.0 * 0.55**2),
+        (PointsProjectionMode.RESCALE_SPHERICAL_ND, 14.33),
+    ],
+)
+def test_nd_projection_multiplies_offsets_across_axes(mode, expected):
+    """With two off-slice axes, their portions are multiplied into one size."""
+    data = np.array([[5.0, 5.0, 0.0, 0.0]])
+    layer = Points(data, size=20.0)
+    layer.projection_mode = mode
+
+    layer._slice_dims(Dims(ndim=4, point=(0, 0, 0, 0), ndisplay=2))
+    np.testing.assert_allclose(layer._view_size, [expected], atol=0.01)
+
+
+@pytest.mark.parametrize(
+    ('mode', 'expected'),
+    [
+        (PointsProjectionMode.RESCALE_LINEAR_ND, 11.0),
+        (PointsProjectionMode.RESCALE_SPHERICAL_ND, 17.86),
+    ],
+)
+def test_nd_projection_ignores_points_without_extent(mode, expected):
+    """A point with no size cannot reach the slice, and must not divide by 0."""
+    data = np.array([[0.0, 0.0, 0.0], [5.0, 0.0, 0.0]])
+    layer = Points(data, size=[0.0, 20.0])
+    layer.projection_mode = mode
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    # the point with no size is dropped, the other one is rescaled to the part
+    # of its extent which is inside the slice
+    np.testing.assert_array_equal(layer._view_indices, [1])
+    np.testing.assert_allclose(layer._view_size, [expected], atol=0.01)
+
+
+def test_linear_projection_one_sided_margin():
+    """A point on the open face of a one sided slice is not a division by 0.
+
+    Prevents `src\napari\\layers\\points\\_slice.py:218: RuntimeWarning: invalid value encountered in divide!`
+    """
+    layer = Points([[0.0, 0.0, 0.0]], size=20.0)
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+
+    # the slice is [point - 5, point], so the point is on the open high face
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_left=(5.0, 0, 0)))
+    np.testing.assert_allclose(layer._view_size, [20.0])
+
+
+def test_out_of_slice_display_maps_to_nd_linear():
+    """The deprecated property now points at the mode which replaces it."""
+    layer = Points(np.zeros((1, 3)))
+
+    with pytest.warns(FutureWarning, match='out_of_slice_display'):
+        assert not layer.out_of_slice_display
+
+    # the thick slice rescaling modes keep their points' centres inside the
+    # slice, so they are not rendering points out of slice
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+    with pytest.warns(FutureWarning, match='out_of_slice_display'):
+        assert not layer.out_of_slice_display
+
+    with pytest.warns(FutureWarning, match='out_of_slice_display'):
+        layer.out_of_slice_display = True
+    assert layer.projection_mode == PointsProjectionMode.RESCALE_LINEAR_ND
+    with pytest.warns(FutureWarning, match='out_of_slice_display'):
+        assert layer.out_of_slice_display
+
+    layer.out_of_slice_display = False
+    assert layer.projection_mode == PointsProjectionMode.ALL
+    with pytest.warns(FutureWarning, match='out_of_slice_display'):
+        assert not layer.out_of_slice_display
 
 
 def test_view_colors():
