@@ -63,6 +63,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         self.layer = layer
         self.font_info = font_info
+        self._default_font_size = 9
         self._array_like = False
         self.node = node
         self.first_visible = False
@@ -313,6 +314,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_camera_move(self, event=None):
         return
+
+    def _on_font_size_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
 
     def reset(self):
         self._on_visible_change()
