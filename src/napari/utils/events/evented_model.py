@@ -1,5 +1,11 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from contextlib import contextmanager
 from typing import Any, ClassVar, Union
 
@@ -416,10 +422,32 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel) and recurse:
-                    field.update(value, recurse=recurse)
-                else:
-                    setattr(self, key, value)
+                if recurse:
+                    # directly update models
+                    if isinstance(field, EventedModel):
+                        field.update(value, recurse=True)
+                        continue
+                    # containers such as dicts and lists may contain models as values;
+                    # update those recusrively as welll
+                    if isinstance(field, MutableMapping) and isinstance(
+                        value, Mapping
+                    ):
+                        for dict_key, seq_value in tuple(field.items()):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[dict_key])
+                            else:
+                                field[dict_key] = value[dict_key]
+                        continue
+                    if isinstance(field, MutableSequence) and isinstance(
+                        value, Sequence
+                    ):
+                        for idx, seq_value in enumerate(tuple(field)):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[idx])
+                            else:
+                                field[idx] = value[idx]
+                        continue
+                setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
