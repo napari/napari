@@ -43,7 +43,7 @@ class _CameraState:
 
     center: tuple[float, float, float] | tuple[float, float]
     zoom: float
-    _quaternion: tuple[float, float, float, float]
+    quaternion: tuple[float, float, float, float]
 
 
 class Camera(EventedModel):
@@ -84,7 +84,9 @@ class Camera(EventedModel):
     mouse_zoom: bool = True
     orientation: AxesOrientation3D = DEFAULT_ORIENTATION_TYPED
     synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
-    _quaternion: tuple[float, float, float, float] = (0, 0, 0, 1)
+    quaternion: tuple[float, float, float, float] = Field(
+        (0, 0, 0, 1), repr=False
+    )
 
     # Per-mode camera state cache for the "separate" (synced=False) mode.
     _cached_2d_state: _CameraState | None = PrivateAttr(None)
@@ -95,7 +97,7 @@ class Camera(EventedModel):
         state = _CameraState(
             center=self.center,
             zoom=self.zoom,
-            _quaternion=self._quaternion,
+            quaternion=self.quaternion,
         )
         if ndisplay_mode == 2:
             self._cached_2d_state = state
@@ -112,7 +114,7 @@ class Camera(EventedModel):
             self._cached_3d_state = None
         return state
 
-    @field_validator('center', 'angles', mode='before')
+    @field_validator('center', mode='before')
     @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
@@ -121,7 +123,7 @@ class Camera(EventedModel):
     def angles(self) -> tuple[float, float, float]:
         from scipy.spatial.transform import Rotation
 
-        return Rotation.from_quat(self._quaternion).as_euler(
+        return Rotation.from_quat(self.quaternion).as_euler(
             'xyz', degrees=True
         )
 
@@ -129,7 +131,7 @@ class Camera(EventedModel):
     def angles(self, angles: tuple[float, float, float]) -> None:
         from scipy.spatial.transform import Rotation
 
-        self._quaternion = Rotation.from_euler(
+        self.quaternion = Rotation.from_euler(
             'xyz', angles, degrees=True
         ).as_quat()
 
