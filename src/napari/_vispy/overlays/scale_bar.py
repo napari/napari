@@ -46,7 +46,9 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.length.connect(self._on_size_or_zoom_change)
         self.overlay.events.visible.connect(self._on_rendering_change)
 
-        self.viewer.camera.events.zoom.connect(self._on_size_or_zoom_change)
+        self.viewer.scene.camera.events.zoom.connect(
+            self._on_size_or_zoom_change
+        )
         self.viewer.dims.events.order.connect(self._on_unit_change)
         self.viewer.dims.events.ndisplay.connect(self._on_unit_change)
         self.viewer.canvas.events.background_color.connect(
@@ -136,7 +138,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         """Update length based on scale bar size and zoom."""
 
         # If scale has not changed, do not redraw
-        scale = 1 / self.viewer.camera.zoom
+        scale = 1 / self.viewer.scene.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale

@@ -57,7 +57,7 @@ viewer.layers['path'].bounding_box.line_color = 'magenta'
 
 # set the view to 3D and rotate camera
 viewer.dims.ndisplay = 3
-viewer.camera.angles = (-27, 8, -58)
+viewer.scene.camera.angles = (-27, 8, -58)
 
 if __name__ == '__main__':
     napari.run()

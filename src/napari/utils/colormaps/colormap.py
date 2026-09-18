@@ -118,7 +118,7 @@ class Colormap(EventedModel):
         if v[0] != 0 or (len(v) > 1 and v[-1] != 1):
             raise ValueError(
                 'Control points must start with 0.0 and end with 1.0. '
-                'Got {v[0]} and {v[-1]}'
+                f'Got {v[0]} and {v[-1]}'
             )
 
         # Check control points are sorted correctly
@@ -208,7 +208,7 @@ class LabelColormapBase(Colormap):
     use_selection: bool = False
     selection: int = 0
     background_value: int = 0
-    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(
+    interpolation: Literal[ColormapInterpolationMode.ZERO] = Field(  # pyrefly: ignore [bad-override]
         ColormapInterpolationMode.ZERO, frozen=True
     )
     _cache_mapping: dict[tuple[np.dtype, np.dtype], np.ndarray] = PrivateAttr(
