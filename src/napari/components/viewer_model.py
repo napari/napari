@@ -26,7 +26,14 @@ from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
-from pydantic import Field, PrivateAttr, field_validator, model_serializer
+from pydantic import (
+    Field,
+    PrivateAttr,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+)
 from typing_extensions import deprecated
 
 from napari import layers
@@ -96,7 +103,6 @@ from napari.utils.theme import available_themes, is_theme_available
 
 if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
-    from pydantic import SerializationInfo, SerializerFunctionWrapHandler
 
     from napari.components.camera import Camera
     from napari.components.grid import GridCanvas
