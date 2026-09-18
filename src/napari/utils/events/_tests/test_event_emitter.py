@@ -1,10 +1,17 @@
 import weakref
+from contextlib import nullcontext
 from functools import partial
 from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import EventEmitter, RenamedEmitter, WarningEmitter
+from napari.utils.events import (
+    EmitterGroup,
+    EventEmitter,
+    RenamedWarningEmitter,
+    WarningEmitter,
+)
+from napari.utils.events.event import DependantEmitter
 
 
 def test_event_blocker_count_none():
@@ -256,7 +263,7 @@ def test_no_event_arg():
 
 
 def test_to_many_positional():
-    class TestOb:
+    class TestOb:  # pragma: no cover
         def fun(self, a, b, c=1):
             pass
 
@@ -375,9 +382,9 @@ def test_renamed_emitter_simple():
     class DummyEventEmitter:
         def __init__(self, parent):
             self.new_event = EventEmitter(type_name='new_event')
-            self.old_event = RenamedEmitter(
+            self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                new_name='new_event',
+                source_path='new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -398,7 +405,7 @@ def test_renamed_emitter_simple():
 
     mock.assert_not_called()
 
-    n.events.new_event()
+    n.events.new_event(value=7)
 
     mock.assert_called_once()
 
@@ -414,9 +421,9 @@ def test_renamed_emitter_composite():
 
     class DummyEventEmitterBase:
         def __init__(self, parent):
-            self.old_event = RenamedEmitter(
+            self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                new_name='composite.new_event',
+                source_path='composite.new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -444,3 +451,345 @@ def test_renamed_emitter_composite():
     o.composite.events.new_event()
 
     mock.assert_called_once()
+
+
+def test_renamed_emitter_reconnects_nested_objects():
+    class Leaf:
+        def __init__(self, value=1):
+            self.events = EmitterGroup(source=self, value=None)
+            self._value = value
+
+        @property
+        def value(self):
+            return self._value
+
+        @value.setter
+        def value(self, value):
+            self._value = value
+            self.events.value(value=value)
+
+    class Branch:
+        def __init__(self, leaf: Leaf):
+            self.events = EmitterGroup(source=self, leaf=None)
+            self._leaf = leaf
+
+        @property
+        def leaf(self):
+            return self._leaf
+
+        @leaf.setter
+        def leaf(self, value):
+            self._leaf = value
+            self.events.leaf(value=value)
+
+    class Root:
+        def __init__(self, branch: Branch):
+            self.events = EmitterGroup(source=self, branch=None)
+            self._branch = branch
+
+        @property
+        def branch(self):
+            return self._branch
+
+        @branch.setter
+        def branch(self, value):
+            self._branch = value
+            self.events.branch(value=value)
+
+    root = Root(branch=Branch(leaf=Leaf()))
+    alias = RenamedWarningEmitter(
+        source=root,
+        type_name='old_value',
+        source_path='branch.leaf.value',
+        message='renamed',
+    )
+    callback = Mock()
+    with pytest.warns(FutureWarning, match='renamed'):
+        alias.connect(callback)
+
+    old_branch = root.branch
+    old_leaf = old_branch.leaf
+    callback.assert_not_called()
+    root.branch = Branch(leaf=Leaf(value=2))
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 2
+    callback.reset_mock()
+    old_leaf.value = 3
+    callback.assert_not_called()
+    assert not old_branch.events.leaf.callbacks
+    assert not old_leaf.events.value.callbacks
+
+    root.branch.leaf.value = 4
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 4
+    callback.reset_mock()
+
+    previous_leaf = root.branch.leaf
+    root.branch.leaf = Leaf(value=5)
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 5
+    callback.reset_mock()
+    previous_leaf.value = 6
+    callback.assert_not_called()
+    root.branch.leaf.value = 7
+    callback.assert_called_once()
+    callback.reset_mock()
+
+    # Replacing a parent invalidates the alias even when the value is equal.
+    root.branch = Branch(leaf=Leaf(value=7))
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 7
+
+    alias.disconnect(callback)
+    assert not root.events.branch.callbacks
+    assert not root.branch.events.leaf.callbacks
+    assert not root.branch.leaf.events.value.callbacks
+
+
+@pytest.mark.parametrize('writable', [False, True])
+def test_renamed_emitter_missing_replacement_event(writable):
+    class Child:
+        def __init__(self):
+            self.events = EmitterGroup(source=self, value=None)
+
+    class Root:
+        def __init__(self):
+            self._child = Child()
+
+        @property
+        def child(self):
+            return self._child
+
+        if writable:
+
+            @child.setter
+            def child(self, value):  # pragma: no cover
+                self._child = value
+
+    root = Root()
+    alias = RenamedWarningEmitter(
+        source=root,
+        type_name='old_value',
+        source_path='child.value',
+        message='renamed',
+    )
+    callback = Mock()
+
+    expectation = (
+        pytest.warns(UserWarning, match='has no replacement event')
+        if writable
+        else nullcontext()
+    )
+    with expectation, pytest.warns(FutureWarning, match='renamed'):
+        alias.connect(callback)
+
+    root.child.events.value(value=2)
+    callback.assert_called_once()
+    alias.disconnect(callback)
+
+
+def test_renamed_emitter_reconnects_property():
+    from napari.utils.events import EmitterGroup
+
+    class Child:
+        def __init__(self, value=1):
+            self.events = EmitterGroup(source=self, value=None)
+            self.value = value
+
+    class Root:
+        def __init__(self):
+            self.events = EmitterGroup(source=self, child=None)
+            self._child = Child()
+
+        @property
+        def child(self):
+            return self._child
+
+        @child.setter
+        def child(self, value):
+            self._child = value
+            self.events.child(value=value)
+
+    root = Root()
+    alias = RenamedWarningEmitter(
+        source=root,
+        type_name='old_value',
+        source_path='child.value',
+        message='renamed',
+    )
+    callback = Mock()
+    with pytest.warns(FutureWarning, match='renamed'):
+        alias.connect(callback)
+    old_child = root.child
+    root.child = Child(value=3)
+    assert not old_child.events.value.callbacks
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 3
+    callback.reset_mock()
+    root.child.events.value(value=2)
+    callback.assert_called_once()
+    alias.disconnect(callback)
+    assert not root.events.child.callbacks
+    assert not root.child.events.value.callbacks
+
+
+@pytest.mark.parametrize(
+    ('old_has_event', 'new_has_event'),
+    [(False, False), (False, True), (True, False)],
+    ids=['eventless-step', 'event-appears', 'event-disappears'],
+)
+def test_renamed_emitter_reconnects_across_event_interfaces(
+    old_has_event, new_has_event
+):
+    class Leaf:
+        def __init__(self, value):
+            self.value = value
+            self.events = EmitterGroup(source=self, value=None)
+
+    class Branch:
+        def __init__(self, value, has_event):
+            self._leaf = Leaf(value)
+            self.events = EmitterGroup(source=self)
+            if has_event:
+                self.events.add(leaf=None)
+
+        @property
+        def leaf(self):
+            return self._leaf
+
+    class Root:
+        def __init__(self, branch):
+            self._branch = branch
+            self.events = EmitterGroup(source=self, branch=None)
+
+        @property
+        def branch(self):
+            return self._branch
+
+        @branch.setter
+        def branch(self, value):
+            self._branch = value
+            self.events.branch(value=value)
+
+    old_branch = Branch(1, old_has_event)
+    root = Root(old_branch)
+    alias = RenamedWarningEmitter(
+        source=root,
+        type_name='old_value',
+        source_path='branch.leaf.value',
+        message='renamed',
+    )
+    callback = Mock()
+    with pytest.warns(FutureWarning, match='renamed'):
+        alias.connect(callback)
+
+    root.branch = Branch(2, new_has_event)
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 2
+    callback.reset_mock()
+    assert not old_branch.leaf.events.value.callbacks
+    if old_has_event:
+        assert not old_branch.events.leaf.callbacks
+
+    old_branch.leaf.events.value(value=3)
+    callback.assert_not_called()
+    root.branch.leaf.events.value(value=4)
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 4
+    if new_has_event:
+        assert root.branch.events.leaf.callbacks
+
+    alias.disconnect(callback)
+    assert not root.events.branch.callbacks
+    assert not root.branch.leaf.events.value.callbacks
+    if new_has_event:
+        assert not root.branch.events.leaf.callbacks
+
+
+def test_dependant_emitter():
+    class A:
+        def __init__(self):
+            self.events = EmitterGroup(source=self, a=None, b=None)
+            self._a = 1
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+    class B:
+        def __init__(self):
+            self.events = EmitterGroup(
+                source=self,
+                a=None,
+                b=None,
+                aa=DependantEmitter(
+                    sources_list=['a.a', 'b.a'],
+                    property_name='aa',
+                    type_name='aa',
+                ),
+            )
+            self._a = A()
+            self._b = A()
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+        @property
+        def b(self):
+            return self._b
+
+        @b.setter
+        def b(self, value):  # pragma: no cover
+            self._b = value
+            self.events.b(value=value)
+
+        @property
+        def aa(self):
+            return self.a.a + self.b.a
+
+        @aa.setter
+        def aa(self, value):
+            self.a.a = value / 2
+            self.b.a = value / 2
+
+    b = B()
+
+    assert b.aa == 2
+    b.a.a = 2
+    assert b.aa == 3
+
+    mock = Mock()
+    b.events.aa.connect(mock)
+    b.a.a = 3
+    assert mock.call_args.args[0].value == 4
+    mock.assert_called_once()
+    b.b.a = 2
+    assert mock.call_count == 2
+    assert mock.call_args.args[0].value == 5
+
+    b.a = A()
+    assert mock.call_count == 3
+    assert mock.call_args.args[0].value == 3
+
+    b.a.a = 3
+    assert mock.call_count == 4
+    assert mock.call_args.args[0].value == 5
+
+    b.aa = 10
+    assert b.a.a == 5
+    assert b.b.a == 5
+    assert (
+        mock.call_count == 6
+    )  # double emission because of two events being set
+    assert mock.call_args.args[0].value == 10
