@@ -30,7 +30,6 @@ from napari.errors.reader_errors import MultipleReaderError
 from napari.plugins import menu_item_template
 from napari.plugins._npe2 import _when_group_order, get_widget_contribution
 from napari.utils.events import Event
-from napari.utils.translations import trans
 from napari.viewer import Viewer, ViewerModel
 
 if TYPE_CHECKING:
@@ -59,7 +58,7 @@ def _get_contrib_parent_menu(
                 parent_menu,
                 SubmenuItem(
                     submenu=submenu_id,
-                    title=trans._(mf.display_name),
+                    title=mf.display_name,
                     group=group,
                 ),
             ),
@@ -166,11 +165,7 @@ def _get_widget_viewer_param(
         widget_param = ''
     else:
         raise TypeError(
-            trans._(
-                "'{widget}' must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or function. Please raise an issue in napari GitHub with the plugin and widget you were trying to use.",
-                deferred=True,
-                widget=widget_name,
-            )
+            f"'{widget_name}' must be `QtWidgets.QWidget` or `magicgui.widgets.Widget` subclass, `MagicFactory` instance or function. Please raise an issue in napari GitHub with the plugin and widget you were trying to use."
         )
     return widget_param
 
@@ -196,7 +191,7 @@ def _toggle_or_get_widget(
         return None
 
     # Get widget param name (if any) and check type
-    widget_callable, _ = get_widget_contribution(plugin, widget_name)  # type: ignore [misc]
+    widget_callable, _ = get_widget_contribution(plugin, widget_name)  # pyrefly: ignore [not-iterable]
     widget_param = _get_widget_viewer_param(widget_callable, widget_name)
 
     kwargs = {}

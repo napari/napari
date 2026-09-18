@@ -43,7 +43,7 @@ from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypedDict
 from unittest.mock import MagicMock
 from weakref import WeakKeyDictionary
 
@@ -104,6 +104,44 @@ def layer_data_and_types():
         layer.name + e for layer, e in zip(layers, extensions, strict=False)
     ]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture
+def surface_data() -> tuple[
+    np.ndarray[tuple[int, Literal[2]], np.dtype[np.float32]],
+    np.ndarray[tuple[int], np.dtype[np.int32]],
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+]:
+    data = np.array([[0, 0], [0, 20], [10, 0], [10, 10]], dtype=np.float32)
+    faces = np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32)
+    values = np.linspace(0, 1, len(data), dtype=np.float32)
+    return (data, faces, values)
+
+
+class TrackDataDict(TypedDict):
+    data: np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]]
+    properties: dict[Literal['track_id', 'time', 'speed'], list]
+
+
+@pytest.fixture
+def tracks_data() -> TrackDataDict:
+    data = np.array(
+        [[0, 0, 0, 0], [0, 1, 0, 20], [1, 0, 10, 0], [1, 1, 10, 10]],
+        dtype=np.float32,
+    )
+    properties: dict[Literal['track_id', 'time', 'speed'], list[int]] = {
+        'track_id': [0, 0, 1, 1],
+        'time': [0, 1, 0, 1],
+        'speed': [50, 30, 20, 10],
+    }
+    return {'data': data, 'properties': properties}
+
+
+@pytest.fixture
+def vectors_data() -> np.ndarray[
+    tuple[int, Literal[2], Literal[2]], np.dtype[np.float32]
+]:
+    return np.array([[[0, 0], [0, 20]], [[10, 0], [10, 10]]], dtype=np.float32)
 
 
 @pytest.fixture(
@@ -286,6 +324,29 @@ def npe2pm_(npe2pm, monkeypatch):
 
 
 @pytest.fixture
+def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+    from napari.plugins import _initialize_plugins
+
+    _initialize_plugins.cache_clear()
+    mock_reg = MagicMock()
+    npe2pm._command_registry = mock_reg
+    with npe2pm.tmp_plugin(manifest=manifest_path):
+        yield npe2pm
+
+
+@pytest.fixture(autouse=True)
+def plugin_settings_(plugin_settings):
+    """Autouse `plugin_settings` so `get_plugin_settings` is fresh for each test.
+
+    Without this, whichever test happens to call `get_plugin_settings`
+    first (e.g. by constructing a `PreferencesDialog`) would populate and
+    freeze `_PLUGIN_SETTINGS` for the rest of the session, against the
+    real user config directory.
+    """
+    return plugin_settings
+
+
+@pytest.fixture
 def builtins(npe2pm_: TestPluginManager):
     with npe2pm_.tmp_plugin(package='napari') as plugin:
         yield plugin
@@ -299,6 +360,17 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
+
+
+@pytest.fixture
+def manifest_path() -> str:
+    path_to = (
+        Path(__file__)
+        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+        .resolve()
+    )
+    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+    return str(path_to)
 
 
 @pytest.fixture
@@ -316,14 +388,14 @@ def qt_viewer_(
 
     viewer = QtViewer(viewer_model)
 
-    original_controls = viewer.__class__.controls.fget  # type: ignore[attr-defined]
-    original_layers = viewer.__class__.layers.fget  # type: ignore[attr-defined]
-    original_layer_buttons = viewer.__class__.layerButtons.fget  # type: ignore[attr-defined]
-    original_viewer_buttons = viewer.__class__.viewerButtons.fget  # type: ignore[attr-defined]
-    original_dock_layer_list = viewer.__class__.dockLayerList.fget  # type: ignore[attr-defined]
-    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget  # type: ignore[attr-defined]
-    original_dock_console = viewer.__class__.dockConsole.fget  # type: ignore[attr-defined]
-    original_dock_performance = viewer.__class__.dockPerformance.fget  # type: ignore[attr-defined]
+    original_controls = viewer.__class__.controls.fget
+    original_layers = viewer.__class__.layers.fget
+    original_layer_buttons = viewer.__class__.layerButtons.fget
+    original_viewer_buttons = viewer.__class__.viewerButtons.fget
+    original_dock_layer_list = viewer.__class__.dockLayerList.fget
+    original_dock_layer_controls = viewer.__class__.dockLayerControls.fget
+    original_dock_console = viewer.__class__.dockConsole.fget
+    original_dock_performance = viewer.__class__.dockPerformance.fget
 
     def hide_widget(widget):
         widget.hide()
@@ -334,37 +406,37 @@ def qt_viewer_(
 
     def patched_controls(self):
         if self._controls is None:
-            self._controls = original_controls(self)
+            self._controls = original_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._controls, before_close_func=hide_widget)
         return self._controls
 
     def patched_layers(self):
         if self._layers is None:
-            self._layers = original_layers(self)
+            self._layers = original_layers(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layers, before_close_func=hide_widget)
         return self._layers
 
     def patched_layer_buttons(self):
         if self._layersButtons is None:
-            self._layersButtons = original_layer_buttons(self)
+            self._layersButtons = original_layer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._layersButtons, before_close_func=hide_widget)
         return self._layersButtons
 
     def patched_viewer_buttons(self):
         if self._viewerButtons is None:
-            self._viewerButtons = original_viewer_buttons(self)
+            self._viewerButtons = original_viewer_buttons(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._viewerButtons, before_close_func=hide_widget)
         return self._viewerButtons
 
     def patched_dock_layer_list(self):
         if self._dockLayerList is None:
-            self._dockLayerList = original_dock_layer_list(self)
+            self._dockLayerList = original_dock_layer_list(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockLayerList, before_close_func=hide_widget)
         return self._dockLayerList
 
     def patched_dock_layer_controls(self):
         if self._dockLayerControls is None:
-            self._dockLayerControls = original_dock_layer_controls(self)
+            self._dockLayerControls = original_dock_layer_controls(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockLayerControls, before_close_func=hide_widget
             )
@@ -372,13 +444,13 @@ def qt_viewer_(
 
     def patched_dock_console(self):
         if self._dockConsole is None:
-            self._dockConsole = original_dock_console(self)
+            self._dockConsole = original_dock_console(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(self._dockConsole, before_close_func=hide_widget)
         return self._dockConsole
 
     def patched_dock_performance(self):
         if self._dockPerformance is None:
-            self._dockPerformance = original_dock_performance(self)
+            self._dockPerformance = original_dock_performance(self)  # pyrefly: ignore [not-callable]
             qtbot.addWidget(
                 self._dockPerformance, before_close_func=hide_widget
             )
@@ -685,7 +757,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
         """
         if 'coverage' in sys.modules:
             # https://github.com/nedbat/coveragepy/issues/686#issuecomment-634932753
-            sys.settrace(threading._trace_hook)
+            sys.settrace(threading._trace_hook)  # pyrefly: ignore [missing-attribute]
         self._base_run()
 
     def init_with_trace(self, *args, **kwargs):
@@ -704,12 +776,12 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     if 'disable_qthread_start' in request.keywords:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Dummy function to prevent thread starts."""
 
     else:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):
+        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
@@ -834,7 +906,7 @@ def _dangling_qtimers(monkeypatch, request):
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):
+            def start(self, time=None):  # pyrefly: ignore [bad-override]
                 if time is not None:
                     base_start(self, time)
                 else:
@@ -964,7 +1036,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:
+        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
@@ -1060,7 +1132,7 @@ with contextlib.suppress(ImportError):
             # As Qt6 autodetect High dpi scaling, we need to
             # enable it only on Qt5 bindings.
             # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # pyrefly: ignore [missing-attribute]
         return QApplication
 
     @pytest.fixture(autouse=True)

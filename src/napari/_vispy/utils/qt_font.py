@@ -8,6 +8,7 @@ This allows for uniform fonts across the entire napari application.
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -95,8 +96,7 @@ def _load_glyph_qt(
         bytes_per_line = image.bytesPerLine()
 
         # Create array with proper stride, then extract only the actual image data
-        # Type ignore: voidptr is a valid buffer but not recognized by mypy
-        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # type: ignore[call-overload]
+        full_array = np.frombuffer(ptr, dtype=np.uint8).reshape(  # pyrefly: ignore [no-matching-overload]
             (height, bytes_per_line)
         )
         bitmap = full_array[:, :width].copy()
@@ -290,3 +290,12 @@ class QtFontManager:
             font = {'face': face, 'bold': bold, 'italic': italic}
             self._fonts[key] = QtTextureFont(font, self._renderer)
         return self._fonts[key]
+
+
+# using dataclass to not play with pydantic serialization till we want to add events
+@dataclass
+class FontInfo:
+    """Font information for vispy text visuals."""
+
+    face: str = 'Open Sans'
+    font_manager: QtFontManager = field(default_factory=QtFontManager)

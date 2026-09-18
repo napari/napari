@@ -8,7 +8,6 @@ from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
-from napari.utils.translations import _load_language, get_language_packs, trans
 
 
 class StrField(str):
@@ -34,17 +33,12 @@ class StrField(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise TypeError(trans._('must be a string', deferred=True))
+            raise TypeError('must be a string')
 
         value = v.lower()
         if not cls._valid_option(v):
             raise ValueError(
-                trans._(
-                    '"{value}" is not valid. It must be one of {options}',
-                    deferred=True,
-                    value=value,
-                    options=', '.join(cls._available_options()),
-                )
+                f'"{value}" is not valid. It must be one of {", ".join(cls._available_options())}'
             )
 
         return value
@@ -84,20 +78,6 @@ class Theme(StrField):
     @classmethod
     def _valid_option(cls, v):
         return is_theme_available(v)
-
-
-class Language(StrField):
-    """
-    Custom theme type to dynamically load all installed language packs.
-    """
-
-    @classmethod
-    def _available_options(cls):
-        return list(get_language_packs(_load_language()).keys())
-
-    @classmethod
-    def _valid_option(cls, v):
-        return v in cls._available_options()
 
 
 @total_ordering
@@ -143,13 +123,7 @@ class Version:
             version = version.decode('UTF-8')
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
-            raise ValueError(
-                trans._(
-                    '{version} is not valid SemVer string',
-                    deferred=True,
-                    version=version,
-                )
-            )
+            raise ValueError(f'{version} is not valid SemVer string')
         matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 
@@ -177,12 +151,7 @@ class Version:
             other = Version(*other)
         elif not isinstance(other, Version):
             raise TypeError(
-                trans._(
-                    'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}',
-                    deferred=True,
-                    cls=cls,
-                    other_type=type(other),
-                )
+                f'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {type(other)}'
             )
         return other
 

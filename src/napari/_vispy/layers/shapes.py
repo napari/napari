@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 
 import numpy as np
@@ -11,16 +13,17 @@ from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
+    from napari._vispy.utils.qt_font import FontInfo
     from napari.layers import Shapes
 
 
 class VispyShapesLayer(VispyBaseLayer):
     node: ShapesVisual
-    layer: 'Shapes'
+    layer: Shapes
 
-    def __init__(self, layer: 'Shapes') -> None:
-        node = ShapesVisual()
-        super().__init__(layer, node)
+    def __init__(self, layer: Shapes, font_info: FontInfo) -> None:
+        node = ShapesVisual(font_info=font_info)
+        super().__init__(layer, node, font_info=font_info)
 
         self._on_highlight_change_debounc = qdebounced(
             self._on_highlight_change_impl
@@ -84,13 +87,13 @@ class VispyShapesLayer(VispyBaseLayer):
             settings.appearance.highlight.highlight_thickness
         )
         self.layer._highlight_color = (
-            settings.appearance.highlight.highlight_color
+            settings.appearance.highlight.highlight_color  # pyrefly: ignore [bad-assignment]
         )
 
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
 
-        if vertices is None or len(vertices) == 0 or len(faces) == 0:
+        if vertices is None or len(vertices) == 0 or len(faces) == 0:  # pyrefly: ignore [bad-argument-type]
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
 
@@ -153,13 +156,13 @@ class VispyShapesLayer(VispyBaseLayer):
     def _on_text_change(self, event=None):
         if event is not None:
             if event.type == 'blending':
-                self._on_blending_change(event)
+                self._on_blending_change(event)  # pyrefly: ignore [bad-argument-count]
                 return
             if event.type == 'values':
                 return
         self._update_text()
 
-    def _on_blending_change(self):
+    def _on_blending_change(self):  # pyrefly: ignore [bad-override]
         """Function to set the blending mode"""
         shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**shapes_blending_kwargs)

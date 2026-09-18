@@ -1,9 +1,7 @@
-from collections import OrderedDict
 from enum import auto
 from typing import Literal
 
 from napari.utils.misc import StringEnum
-from napari.utils.translations import trans
 
 InterpolationStr = Literal[
     'bessel',
@@ -129,14 +127,6 @@ class VolumeDepiction(StringEnum):
 
     VOLUME = auto()
     PLANE = auto()
-
-
-VOLUME_DEPICTION_TRANSLATION = OrderedDict(
-    [
-        (VolumeDepiction.VOLUME, trans._('volume')),
-        (VolumeDepiction.PLANE, trans._('plane')),
-    ]
-)
 
 
 class ImageProjectionMode(StringEnum):
