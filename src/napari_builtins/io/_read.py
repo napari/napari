@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import os
 import re
 import tokenize
@@ -571,7 +572,11 @@ def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
             )
         )
 
-    with open(path_or_paths, encoding='utf-8') as obj_file:
+    with (
+        gzip.open(path_or_paths, mode='rt', encoding='utf-8')
+        if str(path_or_paths).endswith('.gz')
+        else open(path_or_paths, encoding='utf-8')
+    ) as obj_file:
         vertices, faces = _read_wavefront_obj_lines(obj_file)
         surface = (vertices, faces)
 
@@ -603,7 +608,7 @@ def napari_get_obj_reader(path: str) -> ReaderFunction | None:
     if not os.path.exists(path):
         return None
 
-    if os.path.splitext(path)[1] != '.obj':
+    if not path.endswith(('.obj', '.obj.gz')):
         return None
 
     return _read_wavefront_obj
