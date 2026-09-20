@@ -5,7 +5,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
-from napari.layers.base.base import Layer
+from napari.layers import Points, Shapes
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
 
@@ -19,7 +19,7 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
     ----------
     parent: qtpy.QtWidgets.QWidget
         An instance of QWidget that will be used as widgets parent
-    layer : napari.layers.Layer
+    layer : napari.layers.Points or napari.layers.Shapes
         An instance of a napari layer.
 
     Attributes
@@ -30,7 +30,9 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         Label for the text visibility widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Layer) -> None:
+    _layer: Points | Shapes
+
+    def __init__(self, parent: QWidget, layer: Points | Shapes) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.text.events.visible.connect(
