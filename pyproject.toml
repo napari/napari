@@ -641,7 +641,6 @@ project-excludes = [
     'src/napari/layers/utils/text_manager.py',
     'src/napari/utils/_magicgui.py',
     'src/napari/utils/_testsupport.py',
-    'src/napari/utils/action_manager.py',
     'src/napari/utils/events/containers/_evented_list.py',
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/debugging.py',
@@ -652,7 +651,6 @@ project-excludes = [
     'src/napari/utils/mouse_bindings.py',
     'src/napari/utils/stubgen.py',
     'src/napari/utils/transforms/transforms.py',
-    'src/napari/view_layers.py',
 ]
 
 python-platform = "all"
