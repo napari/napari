@@ -28,19 +28,19 @@ from napari.layers.utils._slice_input import (
 )
 from napari.layers.utils.layer_utils import (
     compute_multiscale_level_and_corners,
+    expand_corners_to_chunk_boundaries,
 )
 from napari.layers.utils.plane import SlicingPlane
 from napari.types import LayerDataType
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import AVAILABLE_COLORMAPS
+from napari.utils._xarray_utils import _get_xr_metadata
 from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
 from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -203,7 +203,6 @@ class ScalarFieldBase(Layer, ABC):
         `True`.
     """
 
-    _colormaps = AVAILABLE_COLORMAPS
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
     _level_materializer: Callable[[int], np.ndarray] | None
@@ -242,9 +241,7 @@ class ScalarFieldBase(Layer, ABC):
             data = list(data)
 
         if getattr(data, 'ndim', 2) < 2:
-            raise ValueError(
-                trans._('Image data must have at least 2 dimensions.')
-            )
+            raise ValueError('Image data must have at least 2 dimensions.')
 
         # Determine if data is a multiscale
         self._data_raw = data
@@ -255,8 +252,30 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine dimensionality of the data
         if ndim is None:
-            ndim = len(data.shape)
+            ndim = len(data.shape)  # pyrefly: ignore [missing-attribute]
         self._data = data
+
+        # Xarray metadata inference is a no-op if data is not xarray-like
+        # and is only done for args that are None, so explicitly provided
+        # values pass through unchanged.
+        xr_source = (
+            data[0]
+            if isinstance(data, (list, tuple, MultiScaleData))
+            else data
+        )
+        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
+        xr_metadata = _get_xr_metadata(
+            xr_source,  # pyrefly: ignore [bad-argument-type]
+            rgb=rgb,
+            axis_labels=axis_labels,
+            scale=scale,
+            translate=translate,
+            units=units,
+        )
+        axis_labels = xr_metadata.axis_labels
+        scale = xr_metadata.scale
+        translate = xr_metadata.translate
+        units = xr_metadata.units
 
         super().__init__(
             data,
@@ -285,10 +304,7 @@ class ScalarFieldBase(Layer, ABC):
             depiction=Event,
             locked_data_level=Event,
             interpolation=WarningEmitter(
-                trans._(
-                    "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
-                    deferred=True,
-                ),
+                "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
                 type_name='select',
             ),
             interpolation2d=Event,
@@ -355,7 +371,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return normalize_dtype(self._data.dtype)
+        return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
 
     @property
     def data_raw(
@@ -367,13 +383,13 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data
+        return self._data  # pyrefly: ignore [bad-return]
 
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
         self._data_raw = data
         # note, we don't support changing from/to multiscale after construction
-        self._data = MultiScaleData(data) if self.multiscale else data  # type: ignore[arg-type]
+        self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
         self._reset_data_level()
         self._reset_thumbnail_level_data()
         self._update_dims()
@@ -516,6 +532,9 @@ class ScalarFieldBase(Layer, ABC):
             )
             if any(s == 0 for s in display_shape):
                 return
+            corners = expand_corners_to_chunk_boundaries(
+                corners, self.data[level], displayed_axes
+            )
             # Only update when level changes or
             # when new view is outside current corner_pixels
             if (
@@ -601,7 +620,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _reset_plane_parameters(self):
         """Set plane attributes to something valid."""
-        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.position = np.array(self.data.shape) / 2  # pyrefly: ignore [bad-assignment]
         self.plane.normal = (1, 0, 0)
 
     def _update_plane_callbacks(self):
@@ -692,7 +711,7 @@ class ScalarFieldBase(Layer, ABC):
 
         raw = self._slice.image.raw
         shape = (
-            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape  # pyrefly: ignore [missing-attribute]
         )
 
         if self.ndim < len(coord):
@@ -785,7 +804,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | None | tuple[int, int | None]:
+    ) -> int | tuple[int, int | None] | None:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -941,7 +960,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             if locked is not None:
                 data_level = locked
             elif slice_input.ndisplay == 3:
-                data_level = len(data) - 1  # type: ignore[arg-type]
+                data_level = len(data) - 1  # pyrefly: ignore [bad-argument-type]
             else:
                 data_level = self.layer.data_level
         else:

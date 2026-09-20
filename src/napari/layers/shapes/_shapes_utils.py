@@ -23,7 +23,6 @@ from napari.layers.shapes.shape_types import (
     EdgeArray,
     TriangleArray,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -64,11 +63,11 @@ def find_planar_axis(
     """
     ndim = points.shape[1]
     if ndim == 2:
-        return points, None, None  # type: ignore[return-value]
+        return points, None, None  # pyrefly: ignore [bad-return]
     for axis_idx in range(ndim):
         values = np.unique(points[:, axis_idx])
         if len(values) == 1:
-            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]
+            return np.delete(points, axis_idx, axis=1), axis_idx, values[0]  # pyrefly: ignore [bad-return]
     return np.empty((0, 2), dtype=points.dtype), None, None
 
 
@@ -108,7 +107,7 @@ def _fan_triangulation(
     triangles = np.zeros((len(poly) - 2, 3), dtype=np.uint32)
     triangles[:, 1] = np.arange(1, len(poly) - 1)
     triangles[:, 2] = np.arange(2, len(poly))
-    return vertices, triangles  # type: ignore[return-value]
+    return vertices, triangles  # pyrefly: ignore [bad-return]
 
 
 def inside_boxes(boxes):
@@ -462,7 +461,7 @@ def create_box(data: CoordinateArray2D) -> BoxArray:
             (tl + tr + br + bl) / 4,
         ]
     )
-    return box
+    return box  # pyrefly: ignore [bad-return]
 
 
 def rectangle_to_box(
@@ -486,10 +485,7 @@ def rectangle_to_box(
     """
     if data.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the rectangle'
         )
     box = np.array(
         [
@@ -596,10 +592,7 @@ def triangulate_ellipse(
     """
     if corners.shape[0] != 4:
         raise ValueError(
-            trans._(
-                'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse',
-                deferred=True,
-            )
+            'Data shape does not match expected `[4, D]` shape specifying corners for the ellipse'
         )
     assert corners.shape in {(4, 2), (4, 3)}
     center = corners.mean(axis=0)
@@ -729,7 +722,7 @@ def triangulate_face_and_edges(
             np.empty((0, 3), dtype=np.int32),
         )
         edge_tri = triangulate_edge(polygon_vertices, closed=True)
-        return face_tri, edge_tri  # type: ignore[return-value]
+        return face_tri, edge_tri  # pyrefly: ignore [bad-return]
 
     if _triangulate_dispatch.is_convex(data2d):
         vertices, triangles = _fan_triangulation(data2d)
@@ -901,7 +894,7 @@ def triangulate_face_triangle(
     edges: EdgeArray,
     polygon_vertices: CoordinateArray,
 ) -> tuple[CoordinateArray, TriangleArray]:
-    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')
+    res = triangulate({'vertices': raw_vertices, 'segments': edges}, opts='p')  # pyrefly: ignore [not-callable]
     vertices = res['vertices']
     raw_triangles = res['triangles']
     # triangle's constrained Delaunay triangulation
@@ -1048,7 +1041,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         index_d = i * tube_points + jp
 
         indices.extend(
-            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # type: ignore[arg-type]
+            ([index_a, index_b, index_d], [index_b, index_c, index_d])  # pyrefly: ignore [bad-argument-type]
         )
     triangles = np.array(indices, dtype=np.uint32)
 
@@ -1341,13 +1334,7 @@ def validate_num_vertices(
             min_vertices and len(shape) < min_vertices
         ):
             raise ValueError(
-                trans._(
-                    '{shape_type} {shape} has invalid number of vertices: {shape_length}.',
-                    deferred=True,
-                    shape_type=shape_type,
-                    shape=shape,
-                    shape_length=len(shape),
-                )
+                f'{shape_type} {shape} has invalid number of vertices: {len(shape)}.'
             )
 
 

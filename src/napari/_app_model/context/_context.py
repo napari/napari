@@ -9,8 +9,6 @@ from app_model.expressions import (
     get_context as _get_context,
 )
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
     from napari.utils.events import Event
 
@@ -89,23 +87,17 @@ class SettingsAwareContext(Context):
                 return val
         return super().__missing__(key)
 
-    def new_child(self, m: dict | None = None) -> Context:  # type: ignore
+    def new_child(self, m: dict | None = None) -> Context:  # pyrefly: ignore [bad-override]
         """New ChainMap with a new map followed by all previous maps.
 
         If no map is provided, an empty dict is used.
         """
         # important to use self, not *self.maps
-        return Context(m or {}, self)  # type: ignore
+        return Context(m or {}, self)
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
-            raise ValueError(
-                trans._(
-                    'Cannot set key starting with {prefix!r}',
-                    deferred=True,
-                    prefix=self._PREFIX,
-                )
-            )
+            raise ValueError(f'Cannot set key starting with {self._PREFIX!r}')
 
         return super().__setitem__(k, v)
 

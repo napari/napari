@@ -7,7 +7,6 @@ from napari.layers.shapes._shapes_utils import (
     triangulate_edge,
     triangulate_ellipse,
 )
-from napari.utils.translations import trans
 
 
 class Ellipse(Shape):
@@ -69,11 +68,7 @@ class Ellipse(Shape):
 
         if len(data) != 4:
             raise ValueError(
-                trans._(
-                    'Data shape does not match a ellipse. Ellipse expects four corner vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Data shape does not match a ellipse. Ellipse expects four corner vertices, {len(data)} provided.'
             )
 
         self._data = data
@@ -94,7 +89,7 @@ class Ellipse(Shape):
         self._face_vertices = vertices
         self._face_triangles = triangles
         # The data displayed are in this case the four corners
-        self._box = rectangle_to_box(self.data_displayed)  # type: ignore[arg-type]
+        self._box = rectangle_to_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'

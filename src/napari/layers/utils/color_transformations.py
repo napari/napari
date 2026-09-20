@@ -10,7 +10,6 @@ import numpy as np
 
 from napari.utils.colormaps.colormap_utils import ColorType
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.translations import trans
 
 
 def transform_color_with_defaults(
@@ -39,25 +38,13 @@ def transform_color_with_defaults(
         transformed = transform_color(colors)
     except (AttributeError, ValueError, KeyError):
         warnings.warn(
-            trans._(
-                'The provided {elem_name} parameter contained illegal values, resetting all {elem_name} values to {default}.',
-                deferred=True,
-                elem_name=elem_name,
-                default=default,
-            )
+            f'The provided {elem_name} parameter contained illegal values, resetting all {elem_name} values to {default}.'
         )
         transformed = transform_color(default)
     else:
         if (len(transformed) != 1) and (len(transformed) != num_entries):
             warnings.warn(
-                trans._(
-                    'The provided {elem_name} parameter has {length} entries, while the data contains {num_entries} entries. Setting {elem_name} to {default}.',
-                    deferred=True,
-                    elem_name=elem_name,
-                    length=len(colors),
-                    num_entries=num_entries,
-                    default=default,
-                )
+                f'The provided {elem_name} parameter has {len(colors)} entries, while the data contains {num_entries} entries. Setting {elem_name} to {default}.'
             )
             transformed = transform_color(default)
     return transformed
@@ -123,12 +110,7 @@ def normalize_and_broadcast_colors(
     # color for all inputs
     if len(colors) != 1:
         warnings.warn(
-            trans._(
-                'The number of supplied colors mismatch the number of given data points. Length of data is {num_entries}, while the number of colors is {length}. Color for all points is reset to white.',
-                deferred=True,
-                num_entries=num_entries,
-                length=len(colors),
-            )
+            f'The number of supplied colors mismatch the number of given data points. Length of data is {num_entries}, while the number of colors is {len(colors)}. Color for all points is reset to white.'
         )
         tiled = np.ones((num_entries, 4), dtype=np.float32)
         return tiled

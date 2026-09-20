@@ -7,7 +7,6 @@ from napari.layers.shapes._shapes_models.shape import (
     Shape,
     remove_path_duplicates,
 )
-from napari.utils.translations import trans
 
 
 class PolygonBase(Shape):
@@ -76,11 +75,7 @@ class PolygonBase(Shape):
 
         if len(data) < 2:
             raise ValueError(
-                trans._(
-                    'Shape needs at least two unique vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Shape needs at least two unique vertices, {len(data)} provided.'
             )
 
         self._data = data

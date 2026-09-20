@@ -12,12 +12,11 @@ from napari._vispy.layers.shapes import VispyShapesLayer
 from napari._vispy.layers.surface import VispySurfaceLayer
 from napari._vispy.layers.tracks import VispyTracksLayer
 from napari._vispy.layers.vectors import VispyVectorsLayer
-from napari._vispy.overlays.axes import VispyAxesOverlay
 from napari._vispy.overlays.base import VispyBaseOverlay
 from napari._vispy.overlays.bounding_box import VispyBoundingBoxOverlay
 from napari._vispy.overlays.brush_circle import VispyBrushCircleOverlay
+from napari._vispy.overlays.canvas_axes import VispyCanvasAxesOverlay
 from napari._vispy.overlays.colorbar import VispyColorBarOverlay
-from napari._vispy.overlays.floating_axes import VispyFloatingAxesOverlay
 from napari._vispy.overlays.interaction_box import (
     VispySelectionBoxOverlay,
     VispyTransformBoxOverlay,
@@ -27,6 +26,7 @@ from napari._vispy.overlays.labels_brush_stroke import (
 )
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
 from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
+from napari._vispy.overlays.scene_axes import VispySceneAxesOverlay
 from napari._vispy.overlays.text import (
     VispyCurrentSliceOverlay,
     VispyLayerNameOverlay,
@@ -34,17 +34,17 @@ from napari._vispy.overlays.text import (
 )
 from napari._vispy.overlays.zoom import VispyZoomOverlay
 from napari.components.overlays import (
-    AxesOverlay,
     BoundingBoxOverlay,
     BrushCircleOverlay,
+    CanvasAxesOverlay,
     ColorBarOverlay,
     CurrentSliceOverlay,
-    FloatingAxesOverlay,
     LabelsBrushStrokeOverlay,
     LabelsPolygonOverlay,
     LayerNameOverlay,
     Overlay,
     ScaleBarOverlay,
+    SceneAxesOverlay,
     SelectionBoxOverlay,
     TextOverlay,
     TransformBoxOverlay,
@@ -60,7 +60,6 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from vispy.scene.widgets.viewbox import ViewBox
@@ -79,8 +78,8 @@ layer_to_visual: dict[type[Layer], type[VispyBaseLayer]] = {
 overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ScaleBarOverlay: VispyScaleBarOverlay,
     TextOverlay: VispyTextOverlay,
-    AxesOverlay: VispyAxesOverlay,
-    FloatingAxesOverlay: VispyFloatingAxesOverlay,
+    SceneAxesOverlay: VispySceneAxesOverlay,
+    CanvasAxesOverlay: VispyCanvasAxesOverlay,
     BoundingBoxOverlay: VispyBoundingBoxOverlay,
     TransformBoxOverlay: VispyTransformBoxOverlay,
     SelectionBoxOverlay: VispySelectionBoxOverlay,
@@ -115,11 +114,7 @@ def create_vispy_layer(
             return layer_to_visual[cls](layer, *args, **kwargs)
 
     raise TypeError(
-        trans._(
-            'Could not find VispyLayer for layer of type {dtype}',
-            deferred=True,
-            dtype=type(layer),
-        )
+        f'Could not find VispyLayer for layer of type {type(layer)}'
     )
 
 
@@ -142,11 +137,7 @@ def create_vispy_overlay(overlay: Overlay, **kwargs) -> VispyBaseOverlay:
             return overlay_to_visual[cls](overlay=overlay, **kwargs)
 
     raise TypeError(
-        trans._(
-            'Could not find VispyOverlay for overlay of type {dtype}',
-            deferred=True,
-            dtype=type(overlay),
-        )
+        f'Could not find VispyOverlay for overlay of type {type(overlay)}'
     )
 
 

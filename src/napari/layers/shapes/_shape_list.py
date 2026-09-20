@@ -30,7 +30,6 @@ from napari.utils.geometry import (
     intersect_line_with_triangles,
     line_in_triangles_3d,
 )
-from napari.utils.translations import trans
 
 
 class MeshArrayDict(TypedDict):
@@ -122,10 +121,7 @@ def _ensure_color_arrays(shapes, face_colors=None, edge_colors=None):
 
     if not len(face_colors) == len(edge_colors) == len(shapes):
         raise ValueError(
-            trans._(
-                'shapes, face_colors, and edge_colors must be the same length',
-                deferred=True,
-            )
+            'shapes, face_colors, and edge_colors must be the same length'
         )
 
     return face_colors, edge_colors
@@ -220,12 +216,12 @@ def _preallocate_arrays(
 
     return {
         'z_index': z_index,
-        'vertices': vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices': mesh_vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices_centers': mesh_vertices_centers,  # type: ignore[typeddict-item]
-        'mesh_vertices_offsets': mesh_vertices_offsets,  # type: ignore[typeddict-item]
-        'mesh_triangles': mesh_triangles,  # type: ignore[typeddict-item]
-        'mesh_triangles_colors': mesh_triangles_colors,  # type: ignore[typeddict-item]
+        'vertices': vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices': mesh_vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_centers': mesh_vertices_centers,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_offsets': mesh_vertices_offsets,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles': mesh_triangles,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles_colors': mesh_triangles_colors,  # pyrefly: ignore [bad-assignment]
         'vertices_index': vertices_index,
         'mesh_triangles_index': mesh_triangles_index,
         'mesh_vertices_index': mesh_vertices_index,
@@ -444,8 +440,8 @@ class ShapeList:
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
-        self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
-        self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+        self._edge_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
+        self._face_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -676,12 +672,7 @@ class ShapeList:
         n_shapes = len(self.data)
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
-                trans._(
-                    '{attribute}_color must have shape ({n_shapes}, 4)',
-                    deferred=True,
-                    attribute=attribute,
-                    n_shapes=n_shapes,
-                )
+                f'{attribute}_color must have shape ({n_shapes}, 4)'
             )
 
         update_method = getattr(self, f'update_{attribute}_colors')
@@ -709,7 +700,7 @@ class ShapeList:
     def slice_key(self, slice_key):
         slice_key = list(slice_key)
         if not np.array_equal(self._slice_key, slice_key):
-            self._slice_key = slice_key
+            self._slice_key = slice_key  # pyrefly: ignore [bad-assignment]
             self._clear_cache()
             self._update_displayed()
 
@@ -780,7 +771,7 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
-        disp_indices: IndexArray = np.nonzero(self._displayed)[0]
+        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # pyrefly: ignore [bad-assignment]
 
         z_order = self._mesh.triangles_z_order
 
@@ -788,8 +779,8 @@ class ShapeList:
         vertices_range: IndexArray | slice
 
         if disp_indices.size == 0:
-            triangle_ranges = np.array([], dtype=np.int64)
-            vertices_range = np.array([], dtype=np.int64)
+            triangle_ranges = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
+            vertices_range = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
         else:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
@@ -852,10 +843,7 @@ class ShapeList:
         elif isinstance(shape, Iterable):
             if shape_index is not None:
                 raise ValueError(
-                    trans._(
-                        'shape_index must be None when adding multiple shapes',
-                        deferred=True,
-                    )
+                    'shape_index must be None when adding multiple shapes'
                 )
             self._add_multiple_shapes(
                 shapes=shape,
@@ -864,12 +852,7 @@ class ShapeList:
                 z_refresh=z_refresh,
             )
         else:
-            raise TypeError(
-                trans._(
-                    'Cannot add single nor multiple shape',
-                    deferred=True,
-                )
-            )
+            raise TypeError('Cannot add single nor multiple shape')
 
     def _add_single_shape(
         self,
@@ -898,12 +881,7 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise TypeError(
-                trans._(
-                    'shape must be subclass of Shape',
-                    deferred=True,
-                )
-            )
+            raise TypeError('shape must be subclass of Shape')
 
         if shape_index is None:
             self.shapes.append(shape)
@@ -1087,12 +1065,7 @@ class ShapeList:
 
         # Validate inputs and prepare colors
         if not all(issubclass(type(shape), Shape) for shape in shapes):
-            raise ValueError(
-                trans._(
-                    'all shapes must be subclass of Shape',
-                    deferred=True,
-                )
-            )
+            raise ValueError('all shapes must be subclass of Shape')
         face_colors, edge_colors = _ensure_color_arrays(
             shapes, face_colors, edge_colors
         )
@@ -1129,7 +1102,7 @@ class ShapeList:
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
-        self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
+        self._vertices = np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-assignment]
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
@@ -1293,7 +1266,7 @@ class ShapeList:
         vert_indices_to_del = np.concatenate(
             [np.arange(s.start, s.stop) for s in vert_slices]
         )
-        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)
+        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)  # pyrefly: ignore [no-matching-overload]
 
         vert_counts = np.diff(self._vertices_index)
         new_vert_counts = np.delete(vert_counts, indices)
@@ -1312,13 +1285,13 @@ class ShapeList:
         deleted_vertex_shift = np.zeros(len(self._mesh.vertices), dtype=int)
         deleted_vertex_shift[mesh_vert_indices_to_del] = 1
         deleted_vertex_shift = np.cumsum(deleted_vertex_shift)
-        self._mesh.vertices = np.delete(
+        self._mesh.vertices = np.delete(  # pyrefly: ignore [no-matching-overload]
             self._mesh.vertices, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_centers = np.delete(
+        self._mesh.vertices_centers = np.delete(  # pyrefly: ignore [no-matching-overload]
             self._mesh.vertices_centers, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_offsets = np.delete(
+        self._mesh.vertices_offsets = np.delete(  # pyrefly: ignore [no-matching-overload]
             self._mesh.vertices_offsets, mesh_vert_indices_to_del, axis=0
         )
 
@@ -1336,10 +1309,10 @@ class ShapeList:
             [np.arange(s.start, s.stop) for s in mesh_tri_slices]
         )
         self._mesh.triangles -= deleted_vertex_shift[self._mesh.triangles]
-        self._mesh.triangles = np.delete(
+        self._mesh.triangles = np.delete(  # pyrefly: ignore [no-matching-overload]
             self._mesh.triangles, mesh_tri_indices_to_del, axis=0
         )
-        self._mesh.triangles_colors = np.delete(
+        self._mesh.triangles_colors = np.delete(  # pyrefly: ignore [no-matching-overload]
             self._mesh.triangles_colors, mesh_tri_indices_to_del, axis=0
         )
 
@@ -1443,7 +1416,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index, kind='stable')  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')  # pyrefly: ignore [bad-assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
@@ -1454,7 +1427,7 @@ class ShapeList:
             triangles_z_order = [
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
-            self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
+            self._mesh.triangles_z_order = np.concatenate(triangles_z_order)  # pyrefly: ignore [bad-assignment]
         self._update_displayed()
 
     def edit(
@@ -1481,12 +1454,7 @@ class ShapeList:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        trans._(
-                            '{shape_type} must be one of {shape_classes}',
-                            deferred=True,
-                            shape_type=shape_type,
-                            shape_classes=set(shape_classes),
-                        )
+                        f'{shape_type} must be one of {set(shape_classes)}'
                     )
             else:
                 shape_cls = new_type
@@ -1891,7 +1859,7 @@ class ShapeList:
     @cached_property
     def _visible_shapes(self) -> list[tuple[int, Shape]]:
         slice_key = self.slice_key
-        if len(slice_key):
+        if len(slice_key):  # pyrefly: ignore [bad-argument-type]
             return [
                 (i, s)
                 for i, s in enumerate(self.shapes)
@@ -1911,7 +1879,7 @@ class ShapeList:
     ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-return]
         return data[:, 0], data[:, 1]
 
     @cached_property

@@ -3,7 +3,6 @@ import numpy as np
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import find_corners, rectangle_to_box
 from napari.types import ArrayLike
-from napari.utils.translations import trans
 
 
 class Rectangle(Shape):
@@ -61,11 +60,7 @@ class Rectangle(Shape):
 
         if len(data) != 4:
             raise ValueError(
-                trans._(
-                    'Data shape does not match a rectangle. Rectangle expects four corner vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Data shape does not match a rectangle. Rectangle expects four corner vertices, {len(data)} provided.'
             )
 
         self._data = data
@@ -86,7 +81,7 @@ class Rectangle(Shape):
         self._face_vertices = data_displayed
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         # The data displayed are in this case the four corners
-        self._box = rectangle_to_box(data_displayed)  # type: ignore[arg-type]
+        self._box = rectangle_to_box(data_displayed)  # pyrefly: ignore [bad-argument-type]
         self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
             'int'
         )

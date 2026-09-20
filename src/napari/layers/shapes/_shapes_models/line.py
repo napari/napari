@@ -2,7 +2,6 @@ import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
-from napari.utils.translations import trans
 
 
 class Line(Shape):
@@ -54,11 +53,7 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                trans._(
-                    'Data shape does not match a line. A line expects two end vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Data shape does not match a line. A line expects two end vertices, {len(data)} provided.'
             )
 
         self._data = data
@@ -77,7 +72,7 @@ class Line(Shape):
         self._clean_cache()
         self._set_meshes(self.data_displayed, face=False, closed=False)
         # in this case we have only 2D data (based on docstring)
-        self._box = create_box(self.data_displayed)  # type: ignore[arg-type]
+        self._box = create_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
         self.slice_key = np.round(
             self._bounding_box[:, self.dims_not_displayed]

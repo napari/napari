@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from npe2 import DynamicPlugin
 
+from napari._app_model.actions._file import new_points, new_shapes
 from napari._tests.utils import (
     count_warning_events,
     good_layer_data,
@@ -427,25 +428,25 @@ def test_grid():
     for _i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    assert not viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (1, 1)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # enter grid view
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 3)
-    assert viewer.grid.stride == 1
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 3)
+    assert viewer.canvas.grid.stride == 1
+    assert viewer.canvas.grid.spacing == 0
 
     # reenter grid view with new stride
-    viewer.grid.stride = -2
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 2)
-    assert viewer.grid.stride == -2
-    assert viewer.grid.spacing == 0
+    viewer.canvas.grid.stride = -2
+    viewer.canvas.grid.enabled = True
+    assert viewer.canvas.grid.enabled
+    assert viewer.canvas.grid.actual_shape(viewer.layers) == (2, 2)
+    assert viewer.canvas.grid.stride == -2
+    assert viewer.canvas.grid.spacing == 0
 
 
 def test_add_remove_layer_dims_change():
@@ -702,19 +703,19 @@ def test_camera():
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 0)
+    assert viewer.scene.camera.center == (0, 7, 9.5)
+    assert viewer.scene.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     # Synced mode: z from dims slider, x/y and zoom persist from 2D
-    assert viewer.camera.center == (4.0, 7.0, 9.5)
-    assert viewer.camera.angles == (0, 0, 0)
+    assert viewer.scene.camera.center == (4.0, 7.0, 9.5)
+    assert viewer.scene.camera.angles == (0, 0, 0)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.center == (0, 7, 9.5)
-    assert viewer.camera.angles == (0, 0, 0)
+    assert viewer.scene.camera.center == (0, 7, 9.5)
+    assert viewer.scene.camera.angles == (0, 0, 0)
 
 
 def test_update_scale():
@@ -805,7 +806,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
 
 
 @pytest.mark.parametrize(
-    'field', ['camera', 'cursor', 'dims', 'grid', 'layers']
+    'field', ['scene', 'cursor', 'dims', 'canvas', 'layers']
 )
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
@@ -835,7 +836,7 @@ def test_status_tooltip(Layer, data, ndim):
 def test_viewer_object_event_sources():
     viewer = ViewerModel()
     assert viewer.cursor.events.source is viewer.cursor
-    assert viewer.camera.events.source is viewer.camera
+    assert viewer.scene.camera.events.source is viewer.scene.camera
 
 
 def test_open_or_get_error_multiple_readers(tmp_plugin: DynamicPlugin):
@@ -1036,41 +1037,44 @@ def test_get_status_text():
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert viewer._calc_status_from_cursor() == (
-        {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        },
-        '',
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
+        sorted(
+            {
+                'coordinates': '[1, 2]: 0; a: 1',
+                'coords': '[1, 2]',
+                'layer_base': 'Labels',
+                'layer_name': 'Labels',
+                'plugin': '',
+                'source_type': '',
+                'value': '0; a: 1',
+            }.items()
+        )
     )
     viewer.tooltip.visible = True
-    assert viewer._calc_status_from_cursor() == (
+    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
         {
-            'coordinates': ' [1 2]: 0; a: 1',
-            'coords': ' [1 2]',
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
             'layer_base': 'Labels',
             'layer_name': 'Labels',
             'plugin': '',
             'source_type': '',
             'value': '0; a: 1',
-        },
-        '0\na: 1',
+        }.items()
     )
+    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
     viewer.update_status_from_cursor()
-    assert viewer.status == {
-        'coordinates': ' [1 2]: 0; a: 1',
-        'coords': ' [1 2]',
-        'layer_base': 'Labels',
-        'layer_name': 'Labels',
-        'plugin': '',
-        'source_type': '',
-        'value': '0; a: 1',
-    }
+    assert sorted(viewer.status.items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
+    )
     assert viewer.tooltip.text == '0\na: 1'
 
 
@@ -1078,13 +1082,13 @@ def test_reset_view():
     """Test camera angle behavior after a viewer reset."""
     viewer = ViewerModel(ndisplay=3)
     viewer.add_image(np.random.random((10, 10, 10)))
-    viewer.camera.angles = (45, 30, 60)
+    viewer.scene.camera.angles = (45, 30, 60)
     viewer.reset_view()
-    assert viewer.camera.angles == (0, 0, 0)
+    assert viewer.scene.camera.angles == (0, 0, 0)
 
-    viewer.camera.angles = (45, 30, 60)
+    viewer.scene.camera.angles = (45, 30, 60)
     viewer.reset_view(reset_camera_angle=False)
-    assert viewer.camera.angles == (45, 30, 60)
+    assert viewer.scene.camera.angles == (45, 30, 60)
 
 
 def test_fit_to_view_margin():
@@ -1094,16 +1098,16 @@ def test_fit_to_view_margin():
 
     # Reset view with default margin (0.05)
     viewer.fit_to_view()
-    default_zoom = viewer.camera.zoom
+    default_zoom = viewer.scene.camera.zoom
 
     # Check zoom decreases with increased margin
     viewer.fit_to_view(margin=0.2)
-    large_margin_zoom = viewer.camera.zoom
+    large_margin_zoom = viewer.scene.camera.zoom
     assert default_zoom > large_margin_zoom
 
     # Check zoom increases with decreased margin
     viewer.fit_to_view(margin=0)
-    no_margin_zoom = viewer.camera.zoom
+    no_margin_zoom = viewer.scene.camera.zoom
     assert no_margin_zoom > default_zoom
 
     # Check margins outside of the supported values
@@ -1124,23 +1128,23 @@ def test_fit_to_view_center_calculation(ndisplay, expected_center):
     viewer.add_image(data)
 
     # Pan to origin then reset
-    viewer.camera.center = (0, 0, 0)
+    viewer.scene.camera.center = (0, 0, 0)
     viewer.fit_to_view()
 
     # Center should be in the middle of the data, but first coordinate depends on ndisplay
-    np.testing.assert_allclose(viewer.camera.center, expected_center)
+    np.testing.assert_allclose(viewer.scene.camera.center, expected_center)
 
 
 def test_fit_to_view_2d_data_in_3d_view():
     """Test fit_to_view with 2D data and ndisplay=3."""
     viewer = ViewerModel(ndisplay=3)
     viewer.add_image(np.random.random((10, 20)))
-    viewer.camera.angles = (45, 30, 60)
-    viewer.camera.center = (0, 0, 0)
+    viewer.scene.camera.angles = (45, 30, 60)
+    viewer.scene.camera.center = (0, 0, 0)
     viewer.fit_to_view()
 
-    np.testing.assert_allclose(viewer.camera.center, (0, 4.5, 9.5))
-    assert viewer.camera.angles == (45, 30, 60)
+    np.testing.assert_allclose(viewer.scene.camera.center, (0, 4.5, 9.5))
+    assert viewer.scene.camera.angles == (45, 30, 60)
 
 
 def test_synced_camera():
@@ -1151,72 +1155,72 @@ def test_synced_camera():
     viewer.dims.current_step = (2, 0, 0)
 
     # synced=True by default
-    viewer.camera.center = (0, 3, 7)
-    viewer.camera.zoom = 2.5
+    viewer.scene.camera.center = (0, 3, 7)
+    viewer.scene.camera.zoom = 2.5
 
     # 2D→3D: z from dims slider, x/y and zoom persist
     viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (2.0, 3.0, 7.0))
-    assert viewer.camera.zoom == 2.5
+    np.testing.assert_allclose(viewer.scene.camera.center, (2.0, 3.0, 7.0))
+    assert viewer.scene.camera.zoom == 2.5
 
     # Pan in 3D
-    viewer.camera.center = (5, 8, 12)
-    viewer.camera.zoom = 3.0
+    viewer.scene.camera.center = (5, 8, 12)
+    viewer.scene.camera.zoom = 3.0
 
     # 3D→2D: dims slider follows camera z
     viewer.dims.ndisplay = 2
-    np.testing.assert_allclose(viewer.camera.center, (0, 8, 12))
-    assert viewer.camera.zoom == 3.0
+    np.testing.assert_allclose(viewer.scene.camera.center, (0, 8, 12))
+    assert viewer.scene.camera.zoom == 3.0
     assert viewer.dims.point[0] == 5.0
 
     # 2D→3D again: z from updated dims point
     viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
-    assert viewer.camera.zoom == 3.0
+    np.testing.assert_allclose(viewer.scene.camera.center, (5.0, 8.0, 12.0))
+    assert viewer.scene.camera.zoom == 3.0
 
     # Multiple round trips
     for _ in range(3):
         viewer.dims.ndisplay = 2
         viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 8.0, 12.0))
+    np.testing.assert_allclose(viewer.scene.camera.center, (5.0, 8.0, 12.0))
 
 
 def test_separate_camera_cache_round_trip():
     """Test that separate mode (synced=False) preserves independent state for 2D and 3D."""
     viewer = ViewerModel()
-    viewer.camera.synced = False
+    viewer.scene.camera.synced = False
     np.random.seed(0)
     viewer.add_image(np.random.random((11, 11, 11)))
 
     # Customize 2D view
-    viewer.camera.center = (0, 2, 3)
-    viewer.camera.zoom = 2.5
+    viewer.scene.camera.center = (0, 2, 3)
+    viewer.scene.camera.zoom = 2.5
 
     # First entry into 3D gets fit_to_view defaults
     viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5.0, 5.0, 5.0))
+    np.testing.assert_allclose(viewer.scene.camera.center, (5.0, 5.0, 5.0))
 
     # Customize 3D view
-    viewer.camera.center = (7, 8, 9)
-    viewer.camera.zoom = 1.5
-    viewer.camera.angles = (24, 12, -19)
+    viewer.scene.camera.center = (7, 8, 9)
+    viewer.scene.camera.zoom = 1.5
+    viewer.scene.camera.angles = (24, 12, -19)
 
     # Switch back to 2D — should restore the 2D state
     viewer.dims.ndisplay = 2
-    np.testing.assert_allclose(viewer.camera.center, (0, 2, 3))
-    assert viewer.camera.zoom == 2.5
+    np.testing.assert_allclose(viewer.scene.camera.center, (0, 2, 3))
+    assert viewer.scene.camera.zoom == 2.5
 
     # Switch back to 3D — should restore the 3D state
     viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
-    assert viewer.camera.zoom == 1.5
-    assert viewer.camera.angles == (24, 12, -19)
+    np.testing.assert_allclose(viewer.scene.camera.center, (7, 8, 9))
+    assert viewer.scene.camera.zoom == 1.5
+    assert viewer.scene.camera.angles == (24, 12, -19)
 
     # Multiple round trips: states survive
     for _ in range(3):
         viewer.dims.ndisplay = 2
         viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (7, 8, 9))
+    np.testing.assert_allclose(viewer.scene.camera.center, (7, 8, 9))
 
 
 def test_separate_camera_toggle_off_after_synced_navigation():
@@ -1231,28 +1235,28 @@ def test_separate_camera_toggle_off_after_synced_navigation():
     viewer.add_image(np.random.random((11, 11, 11)))
 
     # Navigate in synced mode — go to 3D
-    viewer.camera.center = (0, 3, 7)
-    viewer.camera.zoom = 2.5
+    viewer.scene.camera.center = (0, 3, 7)
+    viewer.scene.camera.zoom = 2.5
     viewer.dims.ndisplay = 3
 
     # Customize the 3D view
-    viewer.camera.center = (5, 8, 12)
-    viewer.camera.zoom = 3.0
+    viewer.scene.camera.center = (5, 8, 12)
+    viewer.scene.camera.zoom = 3.0
 
     # Now toggle sync OFF while in 3D
-    viewer.camera.synced = False
+    viewer.scene.camera.synced = False
 
     # Go back to 2D — should NOT use fit_to_view; should cache the 2D state
     viewer.dims.ndisplay = 2
     # The 2D state cached during synced navigation was saved under
     # _previous_ndisplay=2, so it should restore correctly
-    np.testing.assert_allclose(viewer.camera.center, (0, 3, 7))
-    assert viewer.camera.zoom == 2.5
+    np.testing.assert_allclose(viewer.scene.camera.center, (0, 3, 7))
+    assert viewer.scene.camera.zoom == 2.5
 
     # Go back to 3D — should restore the 3D state from after synced navigation
     viewer.dims.ndisplay = 3
-    np.testing.assert_allclose(viewer.camera.center, (5, 8, 12))
-    assert viewer.camera.zoom == 3.0
+    np.testing.assert_allclose(viewer.scene.camera.center, (5, 8, 12))
+    assert viewer.scene.camera.zoom == 3.0
 
 
 def test_fit_to_view_handles_no_layers():
@@ -1261,6 +1265,115 @@ def test_fit_to_view_handles_no_layers():
     # Reset view should not raise errors when no layers are present
     viewer.fit_to_view()
     # Default values should be set
-    np.testing.assert_allclose(viewer.camera.center, (0, 255.5, 255.5))
-    np.testing.assert_allclose(viewer.camera.angles, (0, 0, 0))
-    assert viewer.camera.zoom > 0
+    np.testing.assert_allclose(viewer.scene.camera.center, (0, 255.5, 255.5))
+    np.testing.assert_allclose(viewer.scene.camera.angles, (0, 0, 0))
+    assert viewer.scene.camera.zoom > 0
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_no_selection():
+    """New shapes/points layer created with no active layer gets default axis labels."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection.active = None
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+    new_points(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_multi_selection():
+    """New shapes/points layer created with  multiple layers selected gets default axis labels."""
+    viewer = ViewerModel()
+    layer1 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    layer2 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection = {layer1, layer2}
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_shapes_points_axis_labels_inheritance_on_single_selection():
+    """New shapes/points layer created from a single selected layer inherits its axis labels."""
+    viewer = ViewerModel()
+    # test from image layer selection
+    image_layer = viewer.add_image(
+        np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c')
+    )
+    viewer.layers.selection.active = image_layer
+    new_shapes(viewer)  # image→shapes
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    new_points(viewer)  # image→points
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    # test from shapes layer selection (shapes→shapes)
+    shapes_layer = viewer.add_shapes(ndim=3, axis_labels=('z', 'y', 'x'))
+    viewer.layers.selection.active = shapes_layer
+    new_shapes(viewer)
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels
+
+
+def test_new_labels_axis_labels_inheritance_on_no_selection():
+    """New labels layer created with no active layer gets default axis labels."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection.active = None
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('-2', '-1')
+
+
+def test_new_labels_axis_labels_inheritance_on_multi_selection():
+    """New labels layer created with with multiple layers selected gets default axis labels."""
+    viewer = ViewerModel()
+    layer1 = viewer.add_image(np.zeros((2, 2)), axis_labels=('a', 'b'))
+    layer2 = viewer.add_image(np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c'))
+    viewer.layers.selection = {layer1, layer2}
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('-3', '-2', '-1')
+
+
+def test_new_labels_axis_labels_inheritance_on_single_selection():
+    """New labels layer created from a single selected layer inherits its axis labels."""
+    viewer = ViewerModel()
+    # test from image layer selection (image→labels)
+    image_layer = viewer.add_image(
+        np.zeros((2, 2, 2)), axis_labels=('a', 'b', 'c')
+    )
+    viewer.layers.selection.active = image_layer
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('a', 'b', 'c')
+    assert viewer.layers[-1].axis_labels == image_layer.axis_labels
+    # test from shapes layer selection (shapes→labels)
+    shapes_layer = viewer.add_shapes(ndim=3, axis_labels=('z', 'y', 'x'))
+    viewer.layers.selection.active = shapes_layer
+    viewer._new_labels()
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.layers[-1].axis_labels == shapes_layer.axis_labels
+
+
+def test_dims_axis_labels_reset_to_default_when_layer_resets():
+    """Dims labels follow a layer back to default values (gh-9357)."""
+    viewer = ViewerModel()
+    layer = viewer.add_image(np.zeros((4, 4, 4, 4)))
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
+
+    layer.axis_labels = ['Z', 'c', 'Y', 'x']
+    assert viewer.dims.axis_labels == ('Z', 'c', 'Y', 'x')
+
+    # returning the layer to default must reset dims
+    layer.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')
+
+
+def test_dims_axis_labels_default_when_all_layers_default():
+    """Non-default layer labels win until every layer is back to the default."""
+    viewer = ViewerModel()
+    layer0 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
+    layer1 = viewer.add_image(np.zeros((4, 4, 4, 4)), axis_labels=list('tzyx'))
+    assert viewer.dims.axis_labels == tuple('tzyx')
+
+    layer1.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == tuple('tzyx')  # other layer still wins
+
+    layer0.axis_labels = ['-4', '-3', '-2', '-1']
+    assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default

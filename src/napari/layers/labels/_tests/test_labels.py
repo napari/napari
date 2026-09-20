@@ -3,7 +3,7 @@ import itertools
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 import dask.array as da
 import numpy as np
@@ -1518,7 +1518,13 @@ def test_large_label_values():
     assert len(np.unique(mapped.reshape((-1, 4)), axis=0)) == 4
 
 
-if parse_version(version('tensorstore')) > parse_version('0.1.42'):
+try:
+    tensorstore_version = version('tensorstore')
+except PackageNotFoundError:
+    tensorstore_version = '0.0.0'
+
+
+if parse_version(tensorstore_version) > parse_version('0.1.42'):
     driver = [(2, 'zarr'), (3, 'zarr3')]
     ZARR_V3 = True
 else:
@@ -2352,15 +2358,15 @@ def test_get_status_with_custom_index():
     )
     layer.properties = df
     assert (
-        layer.get_status((0, 0))['coordinates'] == ' [0 0]: 0; [No Properties]'
+        layer.get_status((0, 0))['coordinates'] == '[0, 0]: 0; [No Properties]'
     )
     assert (
         layer.get_status((3, 3))['coordinates']
-        == ' [3 3]: 1; text1: 1, text2: 7'
+        == '[3, 3]: 1; text1: 1, text2: 7'
     )
     assert (
         layer.get_status((6, 6))['coordinates']
-        == ' [6 6]: 2; text1: 3, text2: -2'
+        == '[6, 6]: 2; text1: 3, text2: -2'
     )
 
 
