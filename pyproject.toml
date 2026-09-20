@@ -651,7 +651,6 @@ project-excludes = [
     'src/napari/utils/key_bindings.py',
     'src/napari/utils/mouse_bindings.py',
     'src/napari/utils/stubgen.py',
-    'src/napari/utils/transforms/transforms.py',
     'src/napari/view_layers.py',
 ]
 
