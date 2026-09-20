@@ -565,7 +565,6 @@ project-excludes = [
     'src/napari/_qt/layer_controls/qt_image_controls_base.py',
     'src/napari/_qt/layer_controls/qt_labels_controls.py',
     'src/napari/_qt/layer_controls/qt_layer_controls_base.py',
-    'src/napari/_qt/layer_controls/qt_layer_controls_container.py',
     'src/napari/_qt/layer_controls/qt_points_controls.py',
     'src/napari/_qt/layer_controls/qt_shapes_controls.py',
     'src/napari/_qt/layer_controls/qt_surface_controls.py',

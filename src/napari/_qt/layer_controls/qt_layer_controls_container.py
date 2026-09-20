@@ -25,7 +25,15 @@ from napari.layers import (
 )
 from napari.settings import get_settings
 
-layer_to_controls = {
+if TYPE_CHECKING:
+    from napari._qt.layer_controls.qt_layer_controls_base import (
+        QtLayerControls,
+    )
+    from napari.components import ViewerModel
+    from napari.layers.base import Layer
+    from napari.utils.events import Event
+
+layer_to_controls: dict[type[Layer], type[QtLayerControls]] = {
     Labels: QtLabelsControls,
     Image: QtImageControls,
     Points: QtPointsControls,
@@ -34,14 +42,6 @@ layer_to_controls = {
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
 }
-
-if TYPE_CHECKING:
-    from napari._qt.layer_controls.qt_layer_controls_base import (
-        QtLayerControls,
-    )
-    from napari.components import ViewerModel
-    from napari.layers.base import Layer
-    from napari.utils.events import Event
 
 
 def create_qt_layer_controls(layer: Layer) -> QtLayerControls:
@@ -75,7 +75,7 @@ def create_qt_layer_controls(layer: Layer) -> QtLayerControls:
     # Sort the list of candidates by 'lineage'
     candidates.sort(key=lambda layer_type: layer_cls.mro().index(layer_type))
     controls = layer_to_controls[candidates[0]]
-    return controls(layer)  # type: ignore[arg-type]
+    return controls(layer)
 
 
 class QtLayerControlsContainer(QStackedWidget):
