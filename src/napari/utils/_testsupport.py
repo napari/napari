@@ -76,6 +76,11 @@ def fail_obj_graph(Klass: Any) -> None:  # pragma: no cover
         )
 
         gc.collect()
+        file_path_dot = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
+        ).absolute()
+        # report the dot file unless a pdf gets rendered below
+        file_path = file_path_dot
         if graphviz_available:
             file_path = Path(
                 f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
@@ -85,9 +90,6 @@ def fail_obj_graph(Klass: Any) -> None:  # pragma: no cover
                 max_depth=20,
                 filename=str(file_path),
             )
-        file_path_dot = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
-        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
@@ -330,7 +332,7 @@ def make_napari_viewer(
     )
 
     settings = get_settings()
-    settings.reset()  # type: ignore[no-untyped-call]
+    settings.reset()
 
     _initialize_plugins.cache_clear()
     init_qactions.cache_clear()
@@ -389,7 +391,7 @@ def make_napari_viewer(
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
     with suppress(AttributeError):
-        get_settings().reset()  # type: ignore[no-untyped-call]
+        get_settings().reset()
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
@@ -397,9 +399,9 @@ def make_napari_viewer(
             with patch.object(
                 viewer.window._qt_window, '_save_current_window_settings'
             ):
-                viewer.close()  # type: ignore[no-untyped-call]
+                viewer.close()
         else:
-            viewer.close()  # type: ignore[no-untyped-call]
+            viewer.close()
 
     if GCPASS % 50 == 0 or len(QtViewer._instances):
         gc.collect()
