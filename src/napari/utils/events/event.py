@@ -1017,7 +1017,7 @@ class SubDependantEmitter(ChildrenEmitterMixin, EventEmitter):
     pass
 
 
-class DependantEmitter(WarningEmitter):
+class DependentEmitter(WarningEmitter):
     """
     Warning emitter to be used when an attribute was renamed or moved to a composition object.
     It will connect to the new event once the callback is connected to the old one.

@@ -16,7 +16,7 @@ from pydantic._internal._model_construction import ModelMetaclass
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events._property_dependencies import property_dependencies
 from napari.utils.events.event import (
-    DependantEmitter,
+    DependentEmitter,
     EmitterGroup,
     Event,
     EventEmitter,
@@ -658,13 +658,13 @@ def _property_to_event_emitter(
     non_direct = [d for d in dependencies if '.' in d]
     if non_direct:
         if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
-            return DependantEmitter(
+            return DependentEmitter(
                 type_name=type_name,
                 property_name=type_name,
                 sources_list=non_direct,
                 **_get_deprecated_params(prop.fget),
             )
-        return DependantEmitter(
+        return DependentEmitter(
             type_name=type_name,
             property_name=type_name,
             sources_list=non_direct,

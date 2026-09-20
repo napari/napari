@@ -11,7 +11,7 @@ from napari.utils.events import (
     RenamedWarningEmitter,
     WarningEmitter,
 )
-from napari.utils.events.event import DependantEmitter
+from napari.utils.events.event import DependentEmitter
 
 
 def test_event_blocker_count_none():
@@ -727,7 +727,7 @@ def test_dependant_emitter():
                 source=self,
                 a=None,
                 b=None,
-                aa=DependantEmitter(
+                aa=DependentEmitter(
                     sources_list=['a.a', 'b.a'],
                     property_name='aa',
                     type_name='aa',
