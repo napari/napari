@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
     from vispy.scene import Node
     from vispy.scene.subscene import SubScene
+    from vispy.util.event import EmitterGroup
 
     from napari._qt.qt_main_window import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
