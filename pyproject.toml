@@ -643,7 +643,6 @@ project-excludes = [
     'src/napari/utils/_testsupport.py',
     'src/napari/utils/action_manager.py',
     'src/napari/utils/events/containers/_evented_list.py',
-    'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/debugging.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',

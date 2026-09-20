@@ -151,7 +151,7 @@ class NestableEventedList(EventedList[_T]):
     # def remove(self, value: T): ...
 
     @overload
-    def __getitem__(
+    def __getitem__(  # pyrefly: ignore [bad-override]
         self, key: int
     ) -> _T | NestableEventedList[_T]: ...  # pragma: no cover
 
@@ -170,17 +170,15 @@ class NestableEventedList(EventedList[_T]):
         self, key: NestedIndex
     ) -> _T | NestableEventedList[_T]: ...  # pragma: no cover
 
-    def __getitem__(
-        self, key: MaybeNestedIndex
-    ) -> _T | NestableEventedList[_T]:
+    def __getitem__(self, key: Any) -> _T | NestableEventedList[_T]:
         if isinstance(key, tuple):
             item: _T | NestableEventedList[_T] = self
             for idx in key:
                 if not isinstance(item, MutableSequence):
                     raise IndexError(f'index out of range: {key}')
-                item = item[idx]  # type: ignore[assignment]
+                item = item[idx]
             return item
-        return super().__getitem__(key)  # type: ignore[return-value]
+        return super().__getitem__(key)
 
     @overload
     def __setitem__(
@@ -192,9 +190,7 @@ class NestableEventedList(EventedList[_T]):
         self, key: slice, value: Iterable[_T]
     ) -> None: ...  # pragma: no cover
 
-    def __setitem__(
-        self, key: int | NestedIndex | slice, value: _T | Iterable[_T]
-    ) -> None:
+    def __setitem__(self, key: Any, value: Any) -> None:
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -203,10 +199,10 @@ class NestableEventedList(EventedList[_T]):
             value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            self[parent_i].__setitem__(index, value)  # type: ignore[index,assignment]
+            self[parent_i].__setitem__(index, value)
             return
-        self._connect_child_emitters(value)  # type: ignore[arg-type]
-        super().__setitem__(key, value)  # type: ignore[assignment]
+        self._connect_child_emitters(value)
+        super().__setitem__(key, value)
 
     def _delitem_indices(
         self, key: MaybeNestedIndex
@@ -228,7 +224,7 @@ class NestableEventedList(EventedList[_T]):
         # but there is a high risk here of clobbering attributes of a special
         # child class
         if isinstance(value, list):
-            value = self.__newlike__(value)  # type: ignore[assignment]
+            value = cast('_T', self.__newlike__(value))
         super().insert(index, value)
 
     def _reemit_child_event(self, event: Event) -> None:
@@ -252,7 +248,7 @@ class NestableEventedList(EventedList[_T]):
         # potentially different emitter
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)  # type: ignore[attr-defined]
+                event.index = self.index(event.source)  # pyrefly: ignore [missing-attribute]
 
         emitter(event)
 
@@ -266,8 +262,8 @@ class NestableEventedList(EventedList[_T]):
             dest_index += len(destination_group) + 1
         return dest_index
 
-    def _move_plan(  # type: ignore[override]
-        self, sources: Iterable[MaybeNestedIndex], dest_index: NestedIndex
+    def _move_plan(  # pyrefly: ignore [bad-override]
+        self, sources: Iterable[int | tuple[int, ...]], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
 
@@ -314,7 +310,7 @@ class NestableEventedList(EventedList[_T]):
         dumped: list[int] = []
 
         # we iterate indices from the end first, so pop() always works
-        for idx in sorted(sources, reverse=True):  # type: ignore[type-var]
+        for idx in sorted(sources, reverse=True):
             if isinstance(idx, int | slice):
                 idx = (idx,)
             if idx == ():
@@ -422,7 +418,7 @@ class NestableEventedList(EventedList[_T]):
 
     def _type_check(self, e: Any) -> _T:
         if isinstance(e, list):
-            return self.__newlike__(e)  # type: ignore[return-value]
+            return cast('_T', self.__newlike__(e))
         if self._basetypes:
             _types = self._basetypes + (NestableEventedList,)
             if not isinstance(e, _types):
@@ -431,7 +427,7 @@ class NestableEventedList(EventedList[_T]):
                 )
         return e
 
-    def _iter_indices(  # type: ignore[override]
+    def _iter_indices(  # pyrefly: ignore [bad-override]
         self,
         start: int = 0,
         stop: int | None = None,
