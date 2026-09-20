@@ -38,7 +38,7 @@ from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    from typing import Any, TypeGuard
+    from typing import Any
 
     import numpy.typing as npt
     from qtpy.QtCore import QEvent, Qt, pyqtBoundSignal
