@@ -10,7 +10,7 @@ from napari.layers import Points
 from napari.layers.points._points_constants import Symbol
 
 
-class QtSymbolComboBoxControl(QtWidgetControlsBase):  # type: ignore[metaclass]
+class QtSymbolComboBoxControl(QtWidgetControlsBase):
     """
     Class that wraps the connection of events/signals between the current symbol
     layer attribute and Qt widgets.
@@ -46,7 +46,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):  # type: ignore[metaclass]
             'Change the symbol of currently selected points and any added afterwards.'
         )
         sym_cb.setCurrentEnum(Symbol(self._layer.current_symbol))
-        sym_cb.currentEnumChanged.connect(self.change_current_symbol)
+        sym_cb.currentEnumChanged.connect(self.change_current_symbol)  # pyrefly: ignore [missing-attribute]
         self.symbol_combobox = sym_cb
 
         self.symbol_combobox_label = QtWrappedLabel('symbol:')
