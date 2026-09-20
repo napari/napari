@@ -552,7 +552,6 @@ project-excludes = [
     '**/experimental/**',
     '**/napari_builtins/**',
     '**/vendored/**',
-    'src/napari/_qt/containers/_layer_delegate.py',
     'src/napari/_qt/containers/qt_layer_model.py',
     'src/napari/_qt/containers/qt_list_view.py',
     'src/napari/_qt/containers/qt_tree_model.py',

@@ -36,7 +36,7 @@ General rendering flow:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
@@ -48,7 +48,11 @@ from qtpy.QtCore import (
     Signal,
 )
 from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate
+from qtpy.QtWidgets import (
+    QLineEdit,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+)
 
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
@@ -68,7 +72,7 @@ if TYPE_CHECKING:
     from qtpy import QtCore
     from qtpy.QtCore import QAbstractItemModel, QModelIndex
     from qtpy.QtGui import QPainter
-    from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
+    from qtpy.QtWidgets import QTreeView, QWidget
 
     from napari.components.layerlist import LayerList
     from napari.layers import Layer
@@ -97,7 +101,7 @@ class LayerDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
-        self._load_movie.frameChanged.connect(self.loading_frame_changed)
+        self._load_movie.frameChanged.connect(self.loading_frame_changed)  # pyrefly: ignore [bad-argument-type]
         self._layer_visibility_states: WeakKeyDictionary[Layer, bool] = (
             WeakKeyDictionary()
         )
@@ -117,7 +121,7 @@ class LayerDelegate(QStyledItemDelegate):
         if painter is None:
             return
         # update the icon based on layer type
-        option.textElideMode = Qt.TextElideMode.ElideMiddle
+        option.textElideMode = Qt.TextElideMode.ElideMiddle  # pyrefly: ignore [bad-assignment]
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
@@ -136,7 +140,7 @@ class LayerDelegate(QStyledItemDelegate):
         if layer is None:
             return
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
-            expanded = option.widget.isExpanded(index)  # type: ignore[attr-defined]
+            expanded = cast('QTreeView', option.widget).isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'
         else:
             icon_name = f'new_{layer._type_string}'
@@ -146,13 +150,12 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
-        option.decorationSize = QSize(18, 18)
-        option.decorationPosition = (
-            option.Position.Right
-        )  # put icon on the right
-        option.features |= option.ViewItemFeature.HasDecoration
+        bg = option.palette.color(option.palette.ColorRole.Window).red()  # pyrefly: ignore [missing-attribute]
+        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore [bad-assignment]
+        option.decorationSize = QSize(18, 18)  # pyrefly: ignore [bad-assignment]
+        option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore [bad-assignment]
+        # put icon on the right
+        option.features |= QStyleOptionViewItem.ViewItemFeature.HasDecoration  # pyrefly: ignore [bad-assignment, unsupported-operation]
 
     def _paint_loading(
         self,
@@ -164,7 +167,7 @@ class LayerDelegate(QStyledItemDelegate):
         loaded = index.data(LoadedRole)
         if not loaded:
             self._load_movie.start()
-            load_rect = option.rect.translated(4, 8)
+            load_rect = option.rect.translated(4, 8)  # pyrefly: ignore [missing-attribute]
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             load_rect.setWidth(h)
             load_rect.setHeight(h)
@@ -187,11 +190,11 @@ class LayerDelegate(QStyledItemDelegate):
             # movie. This is needed since there is only one instance of the
             # delegate and therefore only one instance of the load movie shared
             # between all the layer items.
-            all_loaded = index.model().sourceModel().all_loaded()  # type: ignore[union-attr]
+            all_loaded = index.model().sourceModel().all_loaded()  # pyrefly: ignore [missing-attribute]
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = option.rect.translated(-2, 2)
+            thumb_rect = option.rect.translated(-2, 2)  # pyrefly: ignore [missing-attribute]
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)
             thumb_rect.setHeight(h)
@@ -211,7 +214,7 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
-        bg = option.palette.color(option.palette.ColorRole.Window).red()
+        bg = option.palette.color(option.palette.ColorRole.Window).red()  # pyrefly: ignore [missing-attribute]
         colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
         lock_rect = self._lock_icon_rect(option, index)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
@@ -221,7 +224,7 @@ class LayerDelegate(QStyledItemDelegate):
     ) -> QRect:
         """Return the QRect for the lock icon."""
 
-        rect = option.rect
+        rect: QRect = option.rect  # pyrefly: ignore [bad-assignment]
         icon_size = 16
         type_icon_reserved = 28
         x = rect.right() - type_icon_reserved - icon_size - 2
@@ -239,8 +242,8 @@ class LayerDelegate(QStyledItemDelegate):
         self.get_layer_icon(option, index)
         editor = super().createEditor(parent, option, index)
         # make sure editor has same alignment as the display name
-        if editor is not None:
-            editor.setAlignment(  # type: ignore[attr-defined]
+        if isinstance(editor, QLineEdit):
+            editor.setAlignment(
                 Qt.AlignmentFlag(index.data(Qt.ItemDataRole.TextAlignmentRole))
             )
         return editor
@@ -258,6 +261,7 @@ class LayerDelegate(QStyledItemDelegate):
         """
         if event is None or model is None:
             return super().editorEvent(event, model, option, index)
+        widget: QWidget = option.widget  # pyrefly: ignore [bad-assignment]
         if (
             event.type() == QEvent.Type.MouseButtonRelease
             and isinstance(event, QMouseEvent)
@@ -266,10 +270,10 @@ class LayerDelegate(QStyledItemDelegate):
             pnt = (
                 event.globalPosition().toPoint()
                 if hasattr(event, 'globalPosition')
-                else event.globalPos()  # type: ignore[attr-defined]
+                else event.globalPos()  # pyrefly: ignore [missing-attribute]
             )
 
-            self.show_context_menu(index, model, pnt, option.widget)
+            self.show_context_menu(index, model, pnt, widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
@@ -278,13 +282,13 @@ class LayerDelegate(QStyledItemDelegate):
             event, QMouseEvent
         ):
             self.initStyleOption(option, index)
-            style = option.widget.style()
+            style = widget.style()
             if style is None:
                 return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
-                option.widget,
+                widget,
             )
             if check_rect.contains(event.pos()):
                 cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
@@ -309,13 +313,13 @@ class LayerDelegate(QStyledItemDelegate):
             and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             self.initStyleOption(option, index)
-            style = option.widget.style()
+            style = widget.style()
             if style is None:
                 return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
-                option.widget,
+                widget,
             )
             if check_rect.contains(event.pos()):
                 return self._show_on_alt_click_hide_others(model, index)
@@ -327,13 +331,13 @@ class LayerDelegate(QStyledItemDelegate):
             and event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
-            style = option.widget.style()
+            style = widget.style()
             if style is None:
                 return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
-                option.widget,
+                widget,
             )
             if check_rect.contains(event.pos()):
                 self._alt_click_layer = lambda: None
@@ -350,7 +354,7 @@ class LayerDelegate(QStyledItemDelegate):
         to be restored once a layer is alt/option-clicked a second time.
         """
         alt_clicked_layer: Layer = index.data(ItemRole)
-        layer_list: LayerList = model.sourceModel()._root  # type: ignore[attr-defined]
+        layer_list: LayerList = model.sourceModel()._root  # pyrefly: ignore [missing-attribute]
         # show the alt-clicked layer
         state = Qt.CheckState.Checked
         if self._alt_click_layer() is None:
@@ -395,7 +399,7 @@ class LayerDelegate(QStyledItemDelegate):
                 MenuId.LAYERLIST_CONTEXT, parent=parent
             )
 
-        layer_list: LayerList = model.sourceModel()._root  # type: ignore[attr-defined]
+        layer_list: LayerList = model.sourceModel()._root  # pyrefly: ignore [missing-attribute]
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
         self._context_menu.exec(pos)
