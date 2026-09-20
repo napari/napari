@@ -107,7 +107,7 @@ class EventedList(TypedMutableSequence[_T]):
             self.events = EmitterGroup(
                 source=self,
                 auto_connect=False,
-                **_events,  # type: ignore[arg-type]
+                **_events,
             )
         super().__init__(data, basetype=basetype, lookup=lookup)
 
