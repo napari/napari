@@ -636,7 +636,6 @@ project-excludes = [
     'src/napari/layers/utils/color_encoding.py',
     'src/napari/layers/utils/color_manager.py',
     'src/napari/layers/utils/stack_utils.py',
-    'src/napari/layers/utils/string_encoding.py',
     'src/napari/layers/utils/style_encoding.py',
     'src/napari/layers/utils/text_manager.py',
     'src/napari/utils/_magicgui.py',
