@@ -329,7 +329,7 @@ class Labels(ScalarFieldBase):
     }
 
     _move_modes: ClassVar[  # pyrefly: ignore [bad-override]
-        dict[StringEnum, Callable[[Labels, Event], None]]
+        dict[StringEnum, Callable[[Labels, Event], Generator | None]]
     ] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
