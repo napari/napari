@@ -33,7 +33,7 @@ class TestQtEdgeColorFeatureControl:
         assert control.color_mode_combobox.currentText() == 'direct'
 
         with pytest.warns(
-            RuntimeWarning, match='edge_color property was not set'
+            RuntimeWarning, match='edge_color feature was not set'
         ):
             vectors.edge_color_mode = 'cycle'
         assert control.color_mode_combobox.currentText() == 'cycle'
