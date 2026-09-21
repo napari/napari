@@ -299,13 +299,14 @@ def _extract_multiscale_level(
 
         layer_state.pop('locked_data_level', None)
 
-        new_layers.append(
-            Layer.create(
-                layer.data[extracting_data_level],
-                layer_state,
-                layer._type_string,
+        with layer_source(parent=layer):
+            new_layers.append(
+                Layer.create(
+                    layer.data[extracting_data_level],
+                    layer_state,
+                    layer._type_string,
+                )
             )
-        )
 
     return new_layers
 

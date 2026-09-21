@@ -541,6 +541,7 @@ def test_extract_multiscale_level(layer_type, level, expected_level):
         / 2
         * np.asarray(layer.scale),
     )
+    assert new_layer.source.parent() is layer  # type: ignore
 
 
 @pytest.mark.parametrize('layer_type', [Image, Labels])
