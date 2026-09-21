@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from app_model.types import CommandRule, MenuItem
 from qtpy import QtCore, QtGui, QtWidgets as QtW
@@ -233,7 +233,7 @@ class QCommandLabel(QtW.QLabel):
 
     def set_command(self, cmd: CommandRule) -> None:
         """Set command to this widget."""
-        command_text = _command_to_name(cmd)
+        command_text = _command_to_path(cmd)
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
@@ -298,7 +298,7 @@ class QCommandList(QtW.QListView):
         self._selected_index += dx
         self._selected_index = max(0, self._selected_index)
         self._selected_index = min(
-            self._current_max_index - 1, self._selected_index
+            self._current_max_index, self._selected_index
         )
         self.update_selection()
         return
@@ -361,28 +361,27 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
-        row = 0
+        row = -1
         for row, action in enumerate(self.iter_top_hits(input_text)):
-            self.setRowHidden(row, False)
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
-                self._current_max_index = row
+                # we hit the end of available row widgets
                 break
-            lw.set_command(action)
-            if _enabled(action, self._app_model_context):
-                lw.set_text_colors(input_text, color=self._match_color)
-            else:
-                lw.setDisabled(True)
 
+            self.setRowHidden(row, False)
+            lw.set_command(action)
+            lw.set_text_colors(input_text, color=self._match_color)
+            lw.setEnabled(_enabled(action, self._app_model_context))
+
+            # we don't want to show more than these lines
             if row >= max_matches:
-                self._current_max_index = max_matches
                 break
-            row = row + 1
-        else:
-            # if the loop completes without break
-            self._current_max_index = row
-            for r in range(row, max_matches):
-                self.setRowHidden(r, True)
+
+        self._current_max_index = row
+
+        # remove all remaining rows
+        for r in range(row + 1, max_matches):
+            self.setRowHidden(r, True)
         self.update_selection()
         return
 
@@ -397,26 +396,39 @@ class QCommandList(QtW.QListView):
 
         commands: dict[CommandRule, float] = {}
 
-        # we have to pass these as a list to rapidfuzz, cause it takes {result: string}
-        # as mapping, not allowing us to have multuple strings point to the same
-        # result without doing weird stuff
-        name_to_command = {_command_to_name(c): c for c in self.all_commands}
-        for n, c in list(name_to_command.items()):
-            for alias in _action_to_aliases(n):
-                name_to_command[alias] = c
+        # mapping of titles (or their aliasees) to commands
+        title_to_command = {c.title: c for c in self.all_commands}
+        for n, c in list(title_to_command.items()):
+            for alias in _apply_aliases(n):
+                title_to_command[alias] = c
+        # same thing but with full path (for further lower-priority matching)
+        path_to_command = {_command_to_path(c): c for c in self.all_commands}
+        for n, c in list(path_to_command.items()):
+            for alias in _apply_aliases(n):
+                path_to_command[alias] = c
 
         for score, command in _iter_matched_actions(
-            input_text, name_to_command
+            input_text, title_to_command, mode='strict'
         ):
-            if score == 0:
-                continue
-
-            if _enabled(command, self._app_model_context):
-                score += 101
-
-            commands.setdefault(command, 0)
+            # boost score for strict title matches so they float to the top
+            score += 100
             # get the max score between aliases
-            commands[command] = max(score, commands[command])
+            commands[command] = max(score, commands.get(command, 0))
+
+        loose_matches = {}
+        for score, command in _iter_matched_actions(
+            input_text, path_to_command, mode='tokens'
+        ):
+            loose_matches[command] = max(score, loose_matches.get(command, 0))
+
+        for command, score in loose_matches.items():
+            commands[command] = commands.get(command, 0) + score
+
+        # boost scores of all enabled commands
+        for command in commands:
+            if _enabled(command, self._app_model_context):
+                commands[command] += 100
+
         for command, _ in sorted(
             commands.items(), key=lambda x: x[1], reverse=True
         ):
@@ -441,13 +453,13 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
 
 def _match_score(action: CommandRule, input_text: str) -> float:
     """Return a match score (between 0 and 1) for the input text."""
-    name = _command_to_name(action).lower()
+    name = _command_to_path(action).lower()
     if all(word in name for word in input_text.lower().split(' ')):
         return 1.0
     return 0.0
 
 
-def _command_to_name(cmd: CommandRule) -> str:
+def _command_to_path(cmd: CommandRule) -> str:
     *contexts, _ = cmd.id.split('.')
     title = ' > '.join(contexts)
     desc = cmd.title
@@ -456,7 +468,7 @@ def _command_to_name(cmd: CommandRule) -> str:
     return desc
 
 
-def _action_to_aliases(action_name: str) -> list[str]:
+def _apply_aliases(action_name: str) -> list[str]:
     return [
         re.sub(word, alias, action_name, flags=re.IGNORECASE)
         for word, alias in _COMMON_ALIASES.items()
@@ -465,7 +477,9 @@ def _action_to_aliases(action_name: str) -> list[str]:
 
 
 def _iter_matched_actions(
-    input_text: str, name_to_command: dict[str, CommandRule]
+    input_text: str,
+    command_dict: dict[str, CommandRule],
+    mode: Literal['strict', 'tokens'] = 'strict',
 ) -> Iterator[tuple[float, CommandRule]]:
     exp = get_settings().experimental
     if (
@@ -474,26 +488,33 @@ def _iter_matched_actions(
     ):
         # basic word matching
         words = input_text.lower().split(' ')
-        for name, command in name_to_command.items():
-            name = name.lower()
-            if all(word in name for word in words):
+        for string, command in command_dict.items():
+            string = string.lower()
+            if all(word in string for word in words):
                 yield 100, command
-            else:
-                yield 0, command
         return
 
     # fuzzy finding
     from rapidfuzz import fuzz, process, utils
 
-    names = list(name_to_command)
-    commands = list(name_to_command.values())
+    # we have to pass these as a list to rapidfuzz, cause it otherwise
+    # would take dicts like {result: string} as mapping and treat them
+    # differently, not allowing us to have multuple strings (aliases)
+    # point to the same "result" without doing weird stuff
+    strings = list(command_dict)
+    commands = list(command_dict.values())
 
+    scorer = (
+        fuzz.partial_ratio
+        if mode == 'strict'
+        else fuzz.partial_token_set_ratio
+    )
     for _, score, command_idx in process.extract(
         input_text,
-        names,
+        strings,
         limit=100,
         score_cutoff=exp.command_palette_fuzzy_search_threshold,
-        scorer=fuzz.partial_token_sort_ratio,
+        scorer=scorer,
         processor=utils.default_process,
     ):
         yield score, commands[command_idx]
