@@ -95,7 +95,7 @@ def test_viewer_mouse_bindings(qtbot, make_napari_viewer):
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
-    mock_move.method.assert_not_called()
+    mock_move.method.assert_called_once()
 
 
 @skip_on_win_ci
@@ -181,7 +181,7 @@ def test_layer_mouse_bindings(qtbot, make_napari_viewer):
     mock_press.method.assert_called_once()
     mock_drag.method.assert_called_once()
     mock_release.method.assert_called_once()
-    mock_move.method.assert_not_called()
+    mock_move.method.assert_called_once()
 
 
 @skip_on_win_ci
