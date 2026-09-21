@@ -2207,11 +2207,35 @@ class Labels(ScalarFieldBase):
         if refresh is True:
             self._partial_labels_refresh()
 
-    def _calculate_value_from_ray(self, values):
-        non_bg = values != self.colormap.background_value
-        if not np.any(non_bg):
-            return None
-        return values[np.argmax(np.ravel(non_bg))]
+    def _calculate_values_and_positions_from_ray_samples(
+        self,
+        sample_values: np.ndarray,
+        sample_points: np.ndarray,
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Calculate values and positions from ray samples.
+
+        Parameters
+        ----------
+        sample_values : np.ndarray
+            Values sampled along the ray.
+        sample_points : np.ndarray
+            Points along the ray in displayed slice pixel coordinates,
+            clamped to the slice bounding box.
+
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and the position (in displayed
+            slice pixel coordinates) where it was found. The caller maps
+            these back to full nD data coordinates.
+        """
+        # yield every hit where the label changes
+        previous = np.empty_like(sample_values)
+        previous[0] = self.colormap.background_value
+        previous[1:] = sample_values[:-1]
+        changed_indices = np.where(sample_values != previous)[0]
+        for idx in changed_indices:
+            yield (sample_values[idx], sample_points[idx])
 
     def get_status(
         self,

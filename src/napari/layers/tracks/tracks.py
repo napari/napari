@@ -2,6 +2,7 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING, Any, Optional
 from warnings import warn
 
@@ -295,6 +296,45 @@ class Tracks(Layer):
         if val is None:
             return None
         return int(val)
+
+    def _iter_values_along_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: list[int],
+    ) -> Generator[tuple[int, np.ndarray], None, None]:
+        """Get all tracks along a ray in 3D.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            Start of ray in data coordinates.
+        end_point : np.ndarray
+            End of ray in data coordinates.
+        dims_displayed : list of int
+            Displayed dimensions.
+
+        Yields
+        ------
+        hits : tuple of (track_index, position)
+            Each tuple contains the index and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
+        """
+        # TODO: this is not really implemented. For now, just fall back to old
+        #       get_value (not really raycasting) and add the coordinate info.
+        val = self._manager.get_value(start_point)
+        if val is None:
+            return
+        val = int(val)
+
+        _d, idx = self._manager._kdtree.query(start_point, k=1)
+        if idx >= self._manager._points.shape[0]:
+            return
+
+        point_position = self._manager._points[idx]
+
+        yield val, point_position
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""

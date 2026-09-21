@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable, Collection, Iterable, Sized
+from collections.abc import Callable, Collection, Generator, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -3022,9 +3022,6 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._slice_input.ndisplay == 3:
-            return None, None
-
         if self._is_moving:
             return self._moving_value
 
@@ -3089,92 +3086,43 @@ class Shapes(Layer):
 
         return value
 
-    def _get_value_3d(
+    def _iter_values_along_ray(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, None]:
-        """Get the layer data value along a ray
+    ) -> Generator[tuple[int, np.ndarray], None, None]:
+        """Get shape indices and intersection points along a ray.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the Viewer.
+            End of ray in data coordinates.
+        dims_displayed : list of int
+            Displayed dimensions.
 
-        Returns
-        -------
-        value
-            The data value along the supplied ray.
-        vertex : None
-            Index of vertex if any that is at the coordinates. Always returns `None`.
+        Yields
+        ------
+        hits : tuple of (shape_idx, position)
+            Each tuple contains the index and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
         """
-        value, _ = self._get_index_and_intersection(
-            start_point=start_point,
-            end_point=end_point,
-            dims_displayed=dims_displayed,
-        )
-
-        return value, None
-
-    def _get_index_and_intersection(
-        self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
-        dims_displayed: list[int],
-    ) -> tuple[float | int | None, np.ndarray | None]:
-        """Get the shape index and intersection point of the first shape
-        (i.e., closest to start_point) along the specified 3D line segment.
-
-        Note: this method is meant to be used for 3D intersection and returns
-        (None, None) when used in 2D (i.e., len(dims_displayed) is 2).
-
-        Parameters
-        ----------
-        start_point : np.ndarray
-            The start position of the ray used to interrogate the data in
-            layer coordinates.
-        end_point : np.ndarray
-            The end position of the ray used to interrogate the data in
-            layer coordinates.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the Viewer.
-
-        Returns
-        -------
-        value Union[None, float, int]
-            The data value along the supplied ray.
-        intersection_point : Union[None, np.ndarray]
-            (n,) array containing the point where the ray intersects the first shape
-            (i.e., the shape most in the foreground). The coordinate is in layer
-            coordinates.
-        """
-        if len(dims_displayed) != 3:
-            # return None if in 2D mode
-            return None, None
-        if (start_point is None) or (end_point is None):
-            # return None if the ray doesn't intersect the data bounding box
-            return None, None
-
-        # Get the normal vector of the click plane
         start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        value, intersection = self._data_view._inside_3d(
+        for value, intersection in self._data_view._inside_3d(
             start_position, ray_direction
-        )
+        ):
+            # add the full nD coords to intersection
+            intersection_point = start_point.copy()
+            intersection_point[dims_displayed] = intersection
 
-        # add the full nD coords to intersection
-        intersection_point = start_point.copy()
-        intersection_point[dims_displayed] = intersection
-
-        return value, intersection_point
+            yield value, intersection_point
 
     def get_index_and_intersection(
         self,
@@ -3207,19 +3155,10 @@ class Shapes(Layer):
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
-        start_point, end_point = self.get_ray_intersections(
+        iterator = self._iter_values_along_ray(
             position, view_direction, dims_displayed
         )
-        if (start_point is not None) and (end_point is not None):
-            shape_index, intersection_point = self._get_index_and_intersection(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-        else:
-            shape_index = None
-            intersection_point = None
-        return shape_index, intersection_point
+        return next(iterator, (None, None))
 
     def move_to_front(self) -> None:
         """Moves selected objects to be displayed in front of all others."""

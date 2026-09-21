@@ -81,7 +81,7 @@ def _check_subpixel_values(layer, val_dict):
                 if ndisplay == 3:
                     position = [0, *position]
                     if isinstance(layer, Labels):
-                        # Labels implements _get_value_3d, Image does not
+                        # Labels implements 3D ray-casting, Image does not
                         view_direction = np.asarray([1.0, 0, 0])
                         dims_displayed = [0, 1, 2]
 

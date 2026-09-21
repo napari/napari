@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from typing import Any
 
 import numpy as np
@@ -96,6 +97,15 @@ class SampleLayer(Layer):
 
     def _get_value(self, position: tuple[int, ...]) -> np.ndarray:
         return self.data[position]
+
+    def _iter_values_along_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: list[int],
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Yield nothing; SampleLayer does not implement 3D ray-casting."""
+        return
 
     def _post_init(self) -> None:
         self.a = 1

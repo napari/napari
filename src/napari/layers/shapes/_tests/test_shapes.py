@@ -2402,7 +2402,7 @@ def test_value_3d(
     )
     layer = Shapes(data, scale=scale)
     layer._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
-    value, _ = layer.get_value(
+    value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,
