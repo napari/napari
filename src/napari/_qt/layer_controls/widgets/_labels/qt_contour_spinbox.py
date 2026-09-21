@@ -34,6 +34,8 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         Label for the layer contour thickness chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup widgets
@@ -44,7 +46,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
             'Set width of displayed label contours'
         )
         self.contour_spinbox.setValue(self._layer.contour)
-        self.contour_spinbox.valueChanged.connect(self.change_contour)
+        self.contour_spinbox.valueChanged.connect(self.change_contour)  # pyrefly: ignore [missing-attribute]
         self.contour_spinbox.setKeyboardTracking(False)
         self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._callbacks.append(
@@ -67,7 +69,9 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         """
         self._layer.contour = value
         self.contour_spinbox.clearFocus()
-        self.parent().setFocus()
+        parent = self.parent()
+        if isinstance(parent, QWidget):
+            parent.setFocus()
 
     def get_widget_controls(
         self,
