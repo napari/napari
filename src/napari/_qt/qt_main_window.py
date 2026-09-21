@@ -1087,8 +1087,8 @@ class Window:
         self,
         plugin_name: str,
         widget_name: str | None = None,
-        area: str | None = None,
         tabify: bool = False,
+        area: str | None = None,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -1114,15 +1114,12 @@ class Window:
         """
         from napari.plugins import _npe2
 
-        widget_class = None
-
-        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
-            widget_class, widget_name, default_area = result
-            settings = get_settings()
-            area = area or settings.application.plugin_widget_positions.get(
-                default_area,
-                'right',
-            )
+        widget_class, widget_name, default_area = (
+            _npe2.get_widget_contribution(plugin_name, widget_name)
+        )
+        area = self._resolve_dock_area(
+            name=widget_name, area=area, default_area=default_area
+        )
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
@@ -1138,9 +1135,27 @@ class Window:
             wdg,
             name=full_name,
             tabify=tabify,
-            area=area or default_area,
+            area=area,
         )
         return dock_widget, wdg
+
+    def _resolve_dock_area(
+        self,
+        name: str,
+        area: str | None = None,
+        default_area: str | None = None,
+    ) -> str:
+        """Return the area a dock widget called `name` should be added to.
+
+        An explicitly requested `area` wins, then the position the widget was
+        last moved to, then `default_area`, then 'right'.
+        """
+        if area is not None:
+            return area
+        settings = get_settings()
+        return settings.application.plugin_widget_positions.get(
+            name, default_area or 'right'
+        )
 
     def add_dock_widget(
         self,
@@ -1201,11 +1216,7 @@ class Window:
 
             self._unnamed_dockwidget_count += 1
 
-        if area is None:
-            settings = get_settings()
-            area = settings.application.plugin_widget_positions.get(
-                name, 'right'
-            )
+        area = self._resolve_dock_area(name=name, area=area)
 
         if shortcut is not _sentinel:
             warnings.warn(
@@ -1459,8 +1470,13 @@ class Window:
 
         widget = magicgui(function, **magic_kwargs or {})
 
-        if area is None:
-            area = 'right' if str(widget.layout) == 'vertical' else 'bottom'
+        area = self._resolve_dock_area(
+            name=name,
+            area=area,
+            default_area='right'
+            if str(widget.layout) == 'vertical'
+            else 'bottom',
+        )
         if allowed_areas is None:
             allowed_areas = [area]
         if shortcut is not _sentinel:
