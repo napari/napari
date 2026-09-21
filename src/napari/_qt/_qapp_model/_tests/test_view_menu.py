@@ -296,26 +296,27 @@ def test_toggle_activity_dock(make_napari_viewer):
     app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
+    qt_window = viewer.window._qt_window
     # Check initial activity dock state (hidden)
-    assert not viewer.window._qt_window._activity_dialog.isVisible()
+    assert not qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.UpArrow
     )
 
     # Check activity dock gets visible
     app.commands.execute_command(action_id)
-    assert viewer.window._qt_window._activity_dialog.isVisible()
+    assert qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.DownArrow
     )
 
     # Restore activity dock visibility (hidden)
     app.commands.execute_command(action_id)
-    assert not viewer.window._qt_window._activity_dialog.isVisible()
+    assert not qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.UpArrow
     )
 

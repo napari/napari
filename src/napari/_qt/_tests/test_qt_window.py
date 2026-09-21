@@ -167,20 +167,6 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
     assert np.array_equal(screenshot_array, screenshot_array_from_file)
 
 
-def test_set_status_and_tooltip(make_napari_viewer):
-    viewer = make_napari_viewer()
-    # create active layer
-    viewer.add_image(np.zeros((10, 10)))
-    assert viewer.status == 'Ready'
-    assert viewer.tooltip.text == ''
-    viewer.window._qt_window.set_status_and_tooltip(('Text1', 'Text2'))
-    assert viewer.status == 'Text1'
-    assert viewer.tooltip.text == 'Text2'
-    viewer.window._qt_window.set_status_and_tooltip(None)
-    assert viewer.status == 'Text1'
-    assert viewer.tooltip.text == 'Text2'
-
-
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
 def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     """Test that we can add a plugin dock widget to the viewer."""
