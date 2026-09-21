@@ -87,7 +87,9 @@ def write_layers(
     if writer is None:
         try:
             paths, writer = io_utils.write_get_writer(
-                path=path, layer_data=layer_data, plugin_name=plugin_name
+                path=path,
+                layer_data=layer_data,  # pyrefly: ignore [bad-argument-type]
+                plugin_name=plugin_name,
             )
         except ValueError:
             return [], ''
