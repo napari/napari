@@ -121,13 +121,19 @@ class SVGBufferIconEngine(QIconEngine):
     see: https://doc.qt.io/qt-5/qiconengine.html
     """
 
-    def __init__(self, xml: str | bytes) -> None:
+    def __init__(self, xml: str | bytes | QByteArray) -> None:
         if isinstance(xml, str):
             xml = xml.encode('utf-8')
         self.data = QByteArray(xml)
         super().__init__()
 
-    def paint(self, painter: QPainter, rect, mode, state):
+    def paint(
+        self,
+        painter: QPainter | None,
+        rect: QRect,
+        mode: QIcon.Mode,
+        state: QIcon.State,
+    ) -> None:
         """Paint the icon int ``rect`` using ``painter``."""
         renderer = QSvgRenderer(self.data)
         renderer.render(painter, QRectF(rect))
@@ -138,9 +144,11 @@ class SVGBufferIconEngine(QIconEngine):
 
     def pixmap(self, size, mode, state):
         """Return the icon as a pixmap with requested size, mode, and state."""
-        img = QImage(size, QImage.Format_ARGB32)
-        img.fill(Qt.transparent)
-        pixmap = QPixmap.fromImage(img, Qt.NoFormatConversion)
+        img = QImage(size, QImage.Format.Format_ARGB32)
+        img.fill(Qt.GlobalColor.transparent)
+        pixmap = QPixmap.fromImage(
+            img, Qt.ImageConversionFlag.NoFormatConversion
+        )
         painter = QPainter(pixmap)
         self.paint(painter, QRect(QPoint(0, 0), size), mode, state)
         return pixmap
