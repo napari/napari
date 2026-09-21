@@ -139,6 +139,12 @@ def _validate_paths_exist(paths: list[PathLike]) -> None:
             raise FileNotFoundError(f'Path {p_str!r} does not exist.')
 
 
+_TITLE_DEPRECATION_MSG = (
+    'ViewerModel.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
+    ' A pure ViewerModel no longer has access to window-related attributes.'
+)
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -179,8 +185,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
-    title: str
-        The title of the viewer model
     tooltip: napari.components.tooltip.Tooltip
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
@@ -204,7 +208,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     status: Union[str, Dict[str, str]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
-    title: str = 'napari'
     _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
@@ -216,6 +219,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # stub to be removed after deprecation cycle; only here to support
+    # tests and other edge cases that use pure ViewerModels and access
+    # window properties such as the title.
+    _title: str = PrivateAttr(default='napari')
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -228,7 +235,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
-            title=title,
             dims={
                 'ndim': max(2, len(axis_labels), ndisplay, len(order)),
                 'axis_labels': axis_labels,
@@ -237,6 +243,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             },
         )
         self.model_config['extra'] = 'ignore'
+
+        # see above, this will be removed
+        self._title = title
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -263,7 +272,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add extra reset_view event. Ideally this should be removed in the
         # future.
-        self.events.add(reset_view=Event)
+        self.events.add(
+            reset_view=Event,
+        )
 
         # Connect events
         self.dims.events.ndisplay.connect(self._update_layers)
@@ -302,6 +313,34 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
+
+    @property
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self._title
+
+    @title.setter
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self._title = title
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -455,7 +494,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def __str__(self):
         """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
+        return 'napari.ViewerModel'
 
     @property
     def _sliced_extent_world_augmented(self) -> np.ndarray:
