@@ -628,7 +628,6 @@ project-excludes = [
     'src/napari/_vispy/utils/cursor.py',
     'src/napari/components/layerlist.py',
     'src/napari/layers/_layer_actions.py',
-    'src/napari/layers/_multiscale_data.py',
     'src/napari/layers/intensity_mixin.py',
     'src/napari/layers/points/points.py',
     'src/napari/layers/shapes/_shapes_mouse_bindings.py',
