@@ -44,9 +44,9 @@ class QtColorFeaturesComboBoxControl(QtWidgetControlsBase):
         self.color_by_combobox = QComboBox()
         self.color_by_combobox.addItems(self._layer.features_to_color_by)
         connect_setattr(
-            self.color_by_combobox.currentTextChanged,
+            self.color_by_combobox.currentTextChanged,  # pyrefly: ignore [bad-argument-type]
             self._layer,
-            'color_by',  # pyrefly: ignore [bad-argument-type]
+            'color_by',
         )
 
         self.color_by_combobox_label = QtWrappedLabel('color by:')
