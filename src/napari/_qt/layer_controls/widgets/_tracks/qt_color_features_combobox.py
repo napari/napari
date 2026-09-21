@@ -30,6 +30,8 @@ class QtColorFeaturesComboBoxControl(QtWidgetControlsBase):
         Label for the color property chooser widget.
     """
 
+    _layer: Tracks
+
     def __init__(self, parent: QWidget, layer: Tracks) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -42,7 +44,9 @@ class QtColorFeaturesComboBoxControl(QtWidgetControlsBase):
         self.color_by_combobox = QComboBox()
         self.color_by_combobox.addItems(self._layer.features_to_color_by)
         connect_setattr(
-            self.color_by_combobox.currentTextChanged, self._layer, 'color_by'
+            self.color_by_combobox.currentTextChanged,
+            self._layer,
+            'color_by',  # pyrefly: ignore [bad-argument-type]
         )
 
         self.color_by_combobox_label = QtWrappedLabel('color by:')
