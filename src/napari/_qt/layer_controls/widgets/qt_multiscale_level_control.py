@@ -63,7 +63,7 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
 
         self.level_combobox = QComboBox(parent)
         self.level_combobox.setToolTip(
-             'Extract a locked data level using the layer list contextual menu.'
+            'Extract a locked data level using the layer list contextual menu.'
         )
         self.level_label = QtWrappedLabel('resolution:')
 
