@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from napari.utils.migrations import (
@@ -66,6 +68,11 @@ def test_deprecated_property(due_date) -> None:
         msg += f' Removal is scheduled for {due_date}.'
     msg += ' Please use new_property instead.'
     assert Dummy.old_property.message.endswith(msg)
+    msg2 = 'Dummy.events.old_property is deprecated since 0.0.0.'
+    if due_date is not None:
+        msg2 += f' Removal is scheduled for {due_date}.'
+    msg2 += ' Please use .*events.new_property instead.'
+    assert re.search(msg2, Dummy.old_property.event_message)
 
     with pytest.warns(FutureWarning, match=msg):
         assert instance.old_property == 1
@@ -366,6 +373,18 @@ def test_deprecated_property_descriptor():
 
     with pytest.warns(FutureWarning, match=msg):
         instance.old_property = 2
+
+    assert Sample.old_property.category is FutureWarning
+    assert Sample.old_property.new_name == 'new_property'
+    assert re.match(
+        '.*Sample.events.old_property is deprecated since 0.1.0. Please use .*Sample.events.new_property instead.',
+        Sample.old_property.event_message,
+    )
+    assert re.match(
+        '.*Sample.old_property is deprecated since 0.1.0. Please use new_property instead.',
+        Sample.old_property.message,
+    )
+    assert Sample.old_property.name == 'old_property'
 
     assert instance.new_property == 2
 
