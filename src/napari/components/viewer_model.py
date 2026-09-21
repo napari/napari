@@ -887,7 +887,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             tooltip_text = active._get_tooltip_text(
                 np.asarray(self.cursor.position),
-                view_direction=self.cursor.view_direction,
+                view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -901,7 +901,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ):
             status = active.get_status(
                 self.cursor.position,
-                view_direction=self.cursor.view_direction,
+                view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -919,7 +919,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 continue
             status = layer.get_status(
                 self.cursor.position,
-                view_direction=self.cursor.view_direction,
+                view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
