@@ -118,7 +118,7 @@ class StatusBarWidget(QWidget):
         plugin_label: QLabel,
         coordinates_label: QLabel,
         help_label: QLabel,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent=parent)
         self._status_label = status_label
@@ -135,12 +135,12 @@ class StatusBarWidget(QWidget):
         self._coordinates_label.setParent(self)
         self._help_label.setParent(self)
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
+    def resizeEvent(self, event: QResizeEvent | None) -> None:  # pyrefly: ignore[bad-override-param-name]
         super().resizeEvent(event)
         self.do_layout()
 
-    def event(self, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.LayoutRequest:
+    def event(self, event: QEvent | None) -> bool:  # pyrefly: ignore[bad-override-param-name]
+        if event is not None and event.type() == QEvent.Type.LayoutRequest:
             self.do_layout()
         return super().event(event)
 
