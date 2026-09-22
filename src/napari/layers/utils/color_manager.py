@@ -315,7 +315,7 @@ class ColorManager(EventedModel):
         if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
             if self.color_properties is None:
                 raise ValueError(
-                    'color_properties must be set in cycle or colormap mode'
+                    '"color_properties" must be set if color_mode is "cycle" or "colormap"'
                 )
             property_name = self.color_properties.name
             current_value = self.color_properties.current_value
@@ -363,7 +363,7 @@ class ColorManager(EventedModel):
         else:
             if self.color_properties is None:
                 raise ValueError(
-                    'color_properties must be set in cycle or colormap mode'
+                    '"color_properties" must be set if color_mode is "cycle" or "colormap"'
                 )
             # add the new value color_properties
             color_property_name = self.color_properties.name
@@ -397,7 +397,7 @@ class ColorManager(EventedModel):
             else:
                 if self.color_properties is None:
                     raise ValueError(
-                        'color_properties must be set in cycle or colormap mode'
+                        '"color_properties" must be set if color_mode is "cycle" or "colormap"'
                     )
                 # remove the color_properties
                 color_property_name = self.color_properties.name
@@ -434,7 +434,7 @@ class ColorManager(EventedModel):
         else:
             if self.color_properties is None:
                 raise ValueError(
-                    'color_properties must be set in cycle or colormap mode'
+                    '"color_properties" must be set if color_mode is "cycle" or "colormap"'
                 )
             color_property_name = self.color_properties.name
             current_value = self.color_properties.current_value
