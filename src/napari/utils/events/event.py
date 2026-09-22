@@ -1013,7 +1013,7 @@ class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
             self._disconnect_from(0)
 
 
-class SubDependantEmitter(ChildrenEmitterMixin, EventEmitter):
+class SubDependentEmitter(ChildrenEmitterMixin, EventEmitter):
     pass
 
 
@@ -1040,7 +1040,7 @@ class DependentEmitter(WarningEmitter):
         super().__init__(*args, message=message, category=category, **kwargs)
         self._property_name = property_name
         self._sub_emitters = [
-            SubDependantEmitter(
+            SubDependentEmitter(
                 source=self.source,
                 source_path=source_path,
                 type_name=source_path,
