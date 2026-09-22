@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -11,6 +11,8 @@ from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
@@ -29,6 +31,9 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
+    x_size: float = 0.0
+    y_size: float = 0.0
+    canvas_position_callback: Callable[[], None] | None = None
 
     def __init__(
         self,
@@ -66,6 +71,12 @@ class VispyBaseOverlay:
     def _on_blending_change(self) -> None:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
+
+    def _on_box_change(self) -> None:
+        """Base no-op; overridden by subclasses that support boxes (VispyCanvasOverlay)."""
+
+    def _on_unit_change(self) -> None:
+        """Base no-op; overridden by subclasses that support units (e.g. scale bar)."""
 
     def reset(self) -> None:
         self._on_visible_change()
@@ -158,7 +169,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         opposite = np.clip(opposite, 0, 1)
         # don't change alpha
         opposite[-1] = bgcolor[-1]
-        return opposite
+        # numpy keeps the ColorValue type here, but its stubs say ndarray
+        return cast('ColorValue', opposite)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -202,14 +214,14 @@ class LayerOverlayMixin:
         )
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
-        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.visible.connect(self._on_visible_change)  # pyrefly: ignore [missing-attribute]
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
         disconnect_events(self.layer.events, self)
-        super().close()
+        super().close()  # pyrefly: ignore [missing-attribute]
 
 
 class ViewerOverlayMixin:
