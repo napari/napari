@@ -54,13 +54,13 @@ class SimpleClassRenamed:
     @rename_argument(
         from_name='c',
         to_name='a',
-        version='0.6.0',
+        window='2027-Q1',
         since_version='0.4.18',
     )
     @rename_argument(
         from_name='d',
         to_name='b',
-        version='0.6.0',
+        window='2027-Q1',
         since_version='0.4.18',
     )
     def __init__(self, a=1, b=1):
