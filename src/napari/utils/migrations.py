@@ -7,16 +7,17 @@ import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, LiteralString, NamedTuple, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 _UNSET = object()
 
+#: The canonical sentence. ``removal`` and ``replacement`` are themselves
+#: filled in from the constants below so that the two states stay symmetrical.
 DEPRECATION = (
-    '{name} is deprecated{since_clause}.{removal} '
-    'Please use {replacement} instead.'
+    '{name} is deprecated{since_clause}.{removal}{replacement}{details}'
 )
 
 #: Filled into ``removal`` for a hard deprecation. ``window`` is ``YYYY-QN``
@@ -25,27 +26,63 @@ REMOVAL_SCHEDULED = ' It may be removed as early as {window}.'
 #: Filled into ``removal`` for a soft deprecation.
 REMOVAL_NOT_PLANNED = ' There are no current plans to remove it.'
 
+#: Filled into ``replacement`` when there API to migrate to.
+REPLACEMENT_INSTEAD = ' Please use {replacement} instead.'
+
+#: Filled into ``replacement`` for a deprecation with no successor.
+REPLACEMENT_NONE = ' There is no direct replacement.'
+
+
+# ``typing_extensions.deprecated`` requires its message to be a ``LiteralString``
+# When every argument is itself a literal the assembled sentence is a literal too
+@overload
+def deprecation_message(
+    name: LiteralString,
+    replacement: LiteralString = '',
+    since: LiteralString = '',
+    window: LiteralString | None = None,
+    details: LiteralString = '',
+) -> LiteralString: ...
+
+
+@overload
+def deprecation_message(
+    name: str,
+    replacement: str = '',
+    since: str = '',
+    window: str | None = None,
+    details: str = '',
+) -> str: ...
+
 
 def deprecation_message(
     name: str,
-    replacement: str,
+    replacement: str = '',
     since: str = '',
     window: str | None = None,
+    details: str = '',
 ) -> str:
     """Build a deprecation message in napari's canonical wording.
+
+    Building every deprecation message here ensures that the wording is
+    consistent and that ``is deprecated`` finds all of them.
 
     Parameters
     ----------
     name : str
         The deprecated name, for example ``'ViewerModel.camera'``.
     replacement : str
-        What to use instead.
+        What to use instead. Leave empty only when there is genuinely nothing
+        to migrate to, which produces "There is no direct replacement."
     since : str
         The napari version the deprecation was introduced in.
     window : str, optional
         The removal window, as a ``YYYY-QN`` token meaning the name may be
         removed as early as that quarter. Omit it for a soft deprecation,
         which states that there are no current plans to remove the name.
+    details : str
+        Any further guidance that does not fit the canonical sentence, for
+        example a migration recipe or a link to a guide.
 
     Returns
     -------
@@ -60,8 +97,55 @@ def deprecation_message(
             if window
             else REMOVAL_NOT_PLANNED
         ),
-        replacement=replacement,
+        replacement=(
+            REPLACEMENT_INSTEAD.format(replacement=replacement)
+            if replacement
+            else REPLACEMENT_NONE
+        ),
+        details=f' {details}' if details else '',
     )
+
+
+def deprecation_warning(
+    name: str,
+    replacement: str = '',
+    *,
+    since: str = '',
+    window: str | None = None,
+    details: str = '',
+    stacklevel: int = 2,
+) -> None:
+    """Emit a canonical deprecation warning.
+
+    The warning **category follows from ``window``**: a deprecation that names
+    a removal window is hard and emits ``FutureWarning``, which end users see;
+    one that does not is soft and emits ``DeprecationWarning``, which is more
+    quiet and shows in IDEs (static type checkers), pytest output, and other
+    development tools.
+
+    Parameters
+    ----------
+    name, replacement, since, window, details
+        Passed through to `deprecation_message`.
+    stacklevel : int
+        The stack level of the *caller*, defaulting to ``2``, meaning the
+        warning points at whoever called this function.
+    """
+    warnings.warn(
+        deprecation_message(
+            name,
+            replacement,
+            since=since,
+            window=window,
+            details=details,
+        ),
+        category=_warning_category_for(window),
+        stacklevel=stacklevel + 1,
+    )
+
+
+def _warning_category_for(window: str | None) -> type[Warning]:
+    return FutureWarning if window else DeprecationWarning
 
 
 class _RenamedAttribute(NamedTuple):
@@ -134,7 +218,7 @@ def rename_argument(
                         since=since_version,
                         window=window,
                     ),
-                    category=FutureWarning,
+                    category=_warning_category_for(window),
                     stacklevel=2,
                 )
                 kwargs = kwargs.copy()
@@ -185,11 +269,15 @@ def add_deprecated_property(
     )
 
     def _getter(instance) -> Any:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
+        warnings.warn(
+            msg, category=_warning_category_for(window), stacklevel=3
+        )
         return getattr(instance, new_name)
 
     def _setter(instance, value: Any) -> None:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
+        warnings.warn(
+            msg, category=_warning_category_for(window), stacklevel=3
+        )
         setattr(instance, new_name, value)
 
     setattr(obj, previous_name, property(_getter, _setter))
@@ -261,13 +349,13 @@ def deprecated_class_name(
 
     class _OldClass(new_class):
         def __new__(cls, *args, **kwargs):
-            warnings.warn(msg, FutureWarning, stacklevel=2)
+            warnings.warn(msg, _warning_category_for(window), stacklevel=2)
             if super().__new__ is object.__new__:
                 return super().__new__(cls)
             return super().__new__(cls, *args, **kwargs)
 
         def __init_subclass__(cls, **kwargs):
-            warnings.warn(msg, FutureWarning, stacklevel=2)
+            warnings.warn(msg, _warning_category_for(window), stacklevel=2)
 
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
@@ -322,7 +410,9 @@ class _DeprecatingDict(UserDict[str, Any]):
     def _maybe_rename_key(self, key: str) -> str:
         if key in self._renamed:
             renamed = self._renamed[key]
-            warnings.warn(renamed.message(), FutureWarning)
+            warnings.warn(
+                renamed.message(), _warning_category_for(renamed.window)
+            )
             key = renamed.to_name
         return key
 

@@ -1,5 +1,5 @@
 from napari.utils.events.event import WarningEmitter
-from napari.utils.migrations import deprecation_message
+from napari.utils.migrations import _warning_category_for, deprecation_message
 
 
 def deprecation_warning_event(
@@ -43,4 +43,5 @@ def deprecation_warning_event(
             window=window,
         ),
         type_name=previous_name,
+        category=_warning_category_for(window),
     )
