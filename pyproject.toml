@@ -631,7 +631,6 @@ project-excludes = [
     'src/napari/layers/_multiscale_data.py',
     'src/napari/layers/intensity_mixin.py',
     'src/napari/layers/points/points.py',
-    'src/napari/layers/shapes/_shapes_mouse_bindings.py',
     'src/napari/layers/shapes/shapes.py',
     'src/napari/layers/utils/color_encoding.py',
     'src/napari/layers/utils/color_manager.py',
