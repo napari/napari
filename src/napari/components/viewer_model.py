@@ -89,6 +89,10 @@ from napari.utils.events import (
     disconnect_events,
 )
 from napari.utils.key_bindings import KeymapProvider
+from napari.utils.migrations import (
+    deprecation_message,
+    deprecation_warning,
+)
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
 from napari.utils.progress import progress
@@ -308,9 +312,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     #       know that specific elements match specific types
     @property
     @deprecated(
-        (
-            'viewer.camera is a deprecated attribute since 0.9.0. Use viewer.scene.camera instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.camera',
+            replacement='viewer.scene.camera',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -324,9 +329,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'viewer.axes is a deprecated attribute since 0.9.0. Use viewer.scene.overlays.axes instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.axes',
+            replacement='viewer.scene.overlays.axes',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -340,9 +346,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'viewer.floating_axes is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.axes instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.floating_axes',
+            replacement='viewer.canvas.overlays.axes',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -356,9 +363,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'viewer.scale_bar is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.scale_bar instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.scale_bar',
+            replacement='viewer.canvas.overlays.scale_bar',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -372,9 +380,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'viewer.text_overlay is a deprecated attribute since 0.9.0. Use viewer.canvas.overlays.text instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.text_overlay',
+            replacement='viewer.canvas.overlays.text',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -388,9 +397,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     @deprecated(
-        (
-            'viewer.grid is a deprecated attribute since 0.9.0. Use viewer.canvas.grid instead.'
-            ' There is currently no planned date for removal of the legacy attribute.'
+        deprecation_message(
+            name='viewer.grid',
+            replacement='viewer.canvas.grid',
+            since='0.9.0',
         ),
         stacklevel=2,
     )
@@ -1503,8 +1513,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             A list of any layers that were added to the viewer.
         """
         if plugin == 'builtins':
-            warnings.warn(
-                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+            deprecation_warning(
+                name='The "builtins" plugin name',
+                replacement='"napari"',
+                since='0.4.17',
+                window='2027-Q1',
             )
             plugin = 'napari'
 

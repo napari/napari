@@ -407,10 +407,10 @@ class CyclicLabelColormap(LabelColormapBase):
 
 
 LabelColormap = deprecated_class_name(
-    CyclicLabelColormap,
-    'LabelColormap',
-    window='2027-Q1',
+    new_class=CyclicLabelColormap,
+    previous_name='LabelColormap',
     since_version='0.4.19',
+    window='2027-Q1',
 )
 
 

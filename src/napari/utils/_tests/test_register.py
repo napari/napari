@@ -26,8 +26,8 @@ class SimpleClass:
 class SimpleClassDeprecated:
     """Simple class to test create_func"""
 
-    @deprecated_constructor_arg_by_attr('b')
-    @deprecated_constructor_arg_by_attr('c')
+    @deprecated_constructor_arg_by_attr(name='b')
+    @deprecated_constructor_arg_by_attr(name='c')
     def __init__(self, a=1):
         self.a = a
 

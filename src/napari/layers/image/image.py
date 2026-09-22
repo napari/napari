@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import typing
-import warnings
 from typing import Any, Literal, cast
 
 import numpy as np
@@ -30,6 +29,7 @@ from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.color import rgb_to_luminance
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
+from napari.utils.migrations import deprecation_warning
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -483,10 +483,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             )
         if value == 'bicubic':
             value = 'cubic'
-            warnings.warn(
-                "'bicubic' is deprecated. Please use 'cubic' instead",
-                category=DeprecationWarning,
-                stacklevel=2,
+            deprecation_warning(
+                name="The 'bicubic' interpolation name",
+                replacement="'cubic'",
+                since='0.5.0',
             )
         self._interpolation2d = Interpolation(value)
         self.events.interpolation2d(value=self._interpolation2d)
@@ -504,10 +504,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             )
         if value == 'bicubic':
             value = 'cubic'
-            warnings.warn(
-                "'bicubic' is deprecated. Please use 'cubic' instead",
-                category=DeprecationWarning,
-                stacklevel=2,
+            deprecation_warning(
+                name="The 'bicubic' interpolation name",
+                replacement="'cubic'",
+                since='0.5.0',
             )
         self._interpolation3d = Interpolation(value)
         self.events.interpolation3d(value=self._interpolation3d)
