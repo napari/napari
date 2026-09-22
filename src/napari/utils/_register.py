@@ -93,10 +93,10 @@ def create_func(cls, name=None, doc=None):
         for (
             from_name,
             to_name,
-            version,
+            window,
             since_version,
         ) in cls.__init__._rename_argument:
-            func = rename_argument(from_name, to_name, version, since_version)(
+            func = rename_argument(from_name, to_name, window, since_version)(
                 func
             )
 

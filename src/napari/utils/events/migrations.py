@@ -1,12 +1,13 @@
 from napari.utils.events.event import WarningEmitter
+from napari.utils.migrations import deprecation_message
 
 
 def deprecation_warning_event(
     prefix: str,
     previous_name: str,
     new_name: str,
-    version: str,
-    since_version: str,
+    window: str | None = None,
+    since_version: str = '',
 ) -> WarningEmitter:
     """
     Helper function for event emitter deprecation warning.
@@ -21,8 +22,9 @@ def deprecation_warning_event(
         Name of deprecated event (e.g. edge_width)
     new_name : str
         Name of new event (e.g. border_width)
-    version : str
-        Version where deprecated event will be removed.
+    window : str, optional
+        Removal window as a ``YYYY-QN`` token, meaning the event may be removed
+        as early as that quarter. Omit it for a soft deprecation.
     since_version : str
         Version when new event name was added.
 
@@ -34,6 +36,11 @@ def deprecation_warning_event(
     previous_path = f'{prefix}.{previous_name}'
     new_path = f'{prefix}.{new_name}'
     return WarningEmitter(
-        f'{previous_path} is deprecated since {since_version} and will be removed in {version}. Please use {new_path}',
+        deprecation_message(
+            name=previous_path,
+            replacement=new_path,
+            since=since_version,
+            window=window,
+        ),
         type_name=previous_name,
     )
