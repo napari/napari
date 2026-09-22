@@ -1018,14 +1018,12 @@ class SubDependentEmitter(ChildrenEmitterMixin, EventEmitter):
 
 
 class DependentEmitter(WarningEmitter):
-    """
-    Warning emitter to be used when an attribute was renamed or moved to a composition object.
-    It will connect to the new event once the callback is connected to the old one.
-    It will also warn the user that the attribute was renamed.
+    """Event emitter to be used if a property depends on more than one attribute of the source object,
+    when at least one of the attributes is in a child object.
 
-    Intermediate attributes in the target path may be replaced, but must
-    always resolve to objects while listeners are connected. Assigning None
-    to an intermediate attribute is not supported.
+    For an attribute of a child object it connects to the child object's
+    event and emits a new event when any of the attributes change.
+    The connection is created only if there is a callback connected to the DependentEmitter.
     """
 
     def __init__(
