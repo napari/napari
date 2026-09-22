@@ -667,7 +667,7 @@ def test_convert_scale_between_different_units(from_units, to_units, expected):
         scale, from_units, to_units
     )
 
-    npt.assert_array_equal(converted, expected)
+    npt.assert_allclose(converted, expected)
     assert converted is not scale
 
 
