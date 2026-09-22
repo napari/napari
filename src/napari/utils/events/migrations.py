@@ -3,11 +3,12 @@ from napari.utils.migrations import _warning_category_for, deprecation_message
 
 
 def deprecation_warning_event(
+    *,
     prefix: str,
     previous_name: str,
     new_name: str,
+    since_version: str,
     window: str | None = None,
-    since_version: str = '',
 ) -> WarningEmitter:
     """
     Helper function for event emitter deprecation warning.

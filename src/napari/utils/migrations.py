@@ -37,9 +37,10 @@ REPLACEMENT_NONE = ' There is no direct replacement.'
 # When every argument is itself a literal the assembled sentence is a literal too
 @overload
 def deprecation_message(
+    *,
     name: LiteralString,
     replacement: LiteralString = '',
-    since: LiteralString = '',
+    since: LiteralString,
     window: LiteralString | None = None,
     details: LiteralString = '',
 ) -> LiteralString: ...
@@ -47,18 +48,20 @@ def deprecation_message(
 
 @overload
 def deprecation_message(
+    *,
     name: str,
     replacement: str = '',
-    since: str = '',
+    since: str,
     window: str | None = None,
     details: str = '',
 ) -> str: ...
 
 
 def deprecation_message(
+    *,
     name: str,
     replacement: str = '',
-    since: str = '',
+    since: str,
     window: str | None = None,
     details: str = '',
 ) -> str:
@@ -75,7 +78,9 @@ def deprecation_message(
         What to use instead. Leave empty only when there is genuinely nothing
         to migrate to, which produces "There is no direct replacement."
     since : str
-        The napari version the deprecation was introduced in.
+        The napari version the deprecation was introduced in. Required, and
+        keyword-only, so that no deprecation can ship without provenance.
+        Use the first final release in which the warning shipped.
     window : str, optional
         The removal window, as a ``YYYY-QN`` token meaning the name may be
         removed as early as that quarter. Omit it for a soft deprecation,
@@ -107,10 +112,10 @@ def deprecation_message(
 
 
 def deprecation_warning(
+    *,
     name: str,
     replacement: str = '',
-    *,
-    since: str = '',
+    since: str,
     window: str | None = None,
     details: str = '',
     stacklevel: int = 2,
@@ -133,8 +138,8 @@ def deprecation_warning(
     """
     warnings.warn(
         deprecation_message(
-            name,
-            replacement,
+            name=name,
+            replacement=replacement,
             since=since,
             window=window,
             details=details,
@@ -169,10 +174,11 @@ class _RenamedAttribute(NamedTuple):
 
 
 def rename_argument(
+    *,
     from_name: str,
     to_name: str,
+    since_version: str,
     window: str | None = None,
-    since_version: str = '',
 ) -> 'Callable':
     """
     This is decorator for simple rename function argument
@@ -231,11 +237,12 @@ def rename_argument(
 
 
 def add_deprecated_property(
+    *,
     obj: Any,
     previous_name: str,
     new_name: str,
+    since_version: str,
     window: str | None = None,
-    since_version: str = '',
 ) -> None:
     """
     Adds deprecated property and links to new property name setter and getter.
@@ -283,7 +290,7 @@ def add_deprecated_property(
     setattr(obj, previous_name, property(_getter, _setter))
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
+def deprecated_constructor_arg_by_attr(*, name: str) -> 'Callable':
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
@@ -323,10 +330,11 @@ def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
 
 
 def deprecated_class_name(
+    *,
     new_class: type,
     previous_name: str,
+    since_version: str,
     window: str | None = None,
-    since_version: str = '',
 ) -> type:
     """Function to deprecate a class.
 
@@ -336,7 +344,10 @@ def deprecated_class_name(
             pass
 
         OldName = deprecated_class_name(
-            NewName, 'OldName', window='2027-Q2', since_version='0.4.19'
+            new_class=NewName,
+            previous_name='OldName',
+            since_version='0.4.19',
+            window='2027-Q2',
         )
     """
     msg = deprecation_message(
@@ -425,8 +436,8 @@ class _DeprecatingDict(UserDict[str, Any]):
         *,
         from_name: str,
         to_name: str,
+        since_version: str,
         window: str | None = None,
-        since_version: str = '',
     ) -> None:
         """Sets a deprecated key with a value that comes from another key.
 

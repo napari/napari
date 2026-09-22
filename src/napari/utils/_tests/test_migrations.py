@@ -9,7 +9,9 @@ from napari.utils.migrations import (
 
 
 def test_simple():
-    @rename_argument('a', 'b', '2027-Q1', '0.5')
+    @rename_argument(
+        from_name='a', to_name='b', since_version='0.5', window='2027-Q1'
+    )
     def sample_fun(b):
         return b
 
@@ -23,7 +25,9 @@ def test_simple():
 
 def test_constructor():
     class Sample:
-        @rename_argument('a', 'b', '2027-Q1', '0.5')
+        @rename_argument(
+            from_name='a', to_name='b', since_version='0.5', window='2027-Q1'
+        )
         def __init__(self, b) -> None:
             self.b = b
 
@@ -49,7 +53,11 @@ def test_deprecated_property() -> None:
     instance = Dummy()
 
     add_deprecated_property(
-        Dummy, 'old_property', 'new_property', '2027-Q1', '0.0.0'
+        obj=Dummy,
+        previous_name='old_property',
+        new_name='new_property',
+        since_version='0.0.0',
+        window='2027-Q1',
     )
 
     assert instance.new_property == 0
@@ -77,7 +85,10 @@ def test_deprecated_class_name():
         pass
 
     MacOSX = deprecated_class_name(
-        macOS, 'MacOSX', window='2027-Q1', since_version='10.11'
+        new_class=macOS,
+        previous_name='MacOSX',
+        since_version='10.11',
+        window='2027-Q1',
     )
 
     with pytest.warns(FutureWarning, match='deprecated.*macOS'):
