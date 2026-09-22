@@ -42,7 +42,7 @@ def test_scale_bar_inconsistent_units_default_to_pixel(
     assert vispy_scale_bar._unit.units == 'micrometer'
     with pytest.warns(
         FutureWarning,
-        match='Setting unit on the ScaleBar model is deprecated.',
+        match='Setting `unit` on the ScaleBar model is deprecated.',
     ):
         model.unit = 's'
     vispy_scale_bar._on_unit_change()
