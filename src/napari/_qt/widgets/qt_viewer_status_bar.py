@@ -135,14 +135,14 @@ class StatusBarWidget(QWidget):
         self._coordinates_label.setParent(self)
         self._help_label.setParent(self)
 
-    def resizeEvent(self, event: QResizeEvent | None) -> None:  # pyrefly: ignore[bad-override-param-name]
-        super().resizeEvent(event)
+    def resizeEvent(self, a0: QResizeEvent | None) -> None:
+        super().resizeEvent(a0)
         self.do_layout()
 
-    def event(self, event: QEvent | None) -> bool:  # pyrefly: ignore[bad-override-param-name]
-        if event is not None and event.type() == QEvent.Type.LayoutRequest:
+    def event(self, a0: QEvent | None) -> bool:
+        if a0 is not None and a0.type() == QEvent.Type.LayoutRequest:
             self.do_layout()
-        return super().event(event)
+        return super().event(a0)
 
     @staticmethod
     def _calc_width(fm: QFontMetrics, label: QLabel) -> int:
