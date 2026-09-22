@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
@@ -48,12 +50,12 @@ class QtTracksControls(QtLayerControls):
         Widget that wraps a checkbox controlling if completed tracks of the layer should be hidden.
     """
 
-    layer: 'napari.layers.Tracks'
+    layer: napari.layers.Tracks
     MODE = Mode
     PAN_ZOOM_ACTION_NAME = 'activate_tracks_pan_zoom_mode'
     TRANSFORM_ACTION_NAME = 'activate_tracks_transform_mode'
 
-    def __init__(self, layer) -> None:
+    def __init__(self, layer: napari.layers.Tracks) -> None:
         super().__init__(layer)
         # Setup widgets controls
         self._color_properties_combobox_control = (
