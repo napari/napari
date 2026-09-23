@@ -3,7 +3,6 @@ from typing import (
     Literal,
     Protocol,
     Union,
-    cast,
     runtime_checkable,
 )
 
@@ -166,7 +165,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
         # this is a numpy array first.
         values = np.asarray(features[self.feature])
-        return cast('ColorArray', self.colormap.map(values))
+        return ColorArray(self.colormap.map(values))
 
 
 class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -203,7 +202,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         )
         if contrast_limits is not None:
             values = np.interp(values, contrast_limits, (0, 1))
-        return cast('ColorArray', self.colormap.map(values))
+        return ColorArray(self.colormap.map(values))
 
     @field_validator('colormap', mode='before')
     @classmethod
