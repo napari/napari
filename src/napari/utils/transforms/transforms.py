@@ -103,7 +103,7 @@ class Transform:
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     @property
-    def _is_diagonal(self):
+    def _is_diagonal(self) -> bool:
         """Indicate when a transform does not mix or permute dimensions.
 
         Can be overridden in subclasses to enable performance optimizations
@@ -120,12 +120,12 @@ _T = TypeVar('_T', bound=Transform)
 
 
 class TransformChain(EventedList[_T], Transform, Generic[_T]):
-    def __init__(self, transforms: Iterable[Transform] | None = None) -> None:
+    def __init__(self, transforms: Iterable[_T] | None = None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
             data=transforms,
-            basetype=Transform,
+            basetype=Transform,  # pyrefly: ignore [bad-argument-type]
             lookup={str: lambda x: x.name},
         )
         # The above super().__init__() will not call Transform.__init__().
@@ -306,7 +306,7 @@ class ScaleTranslate(Transform):
     def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, ScaleTranslate):
-            super().compose(transform)
+            return super().compose(transform)
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
