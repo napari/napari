@@ -598,7 +598,6 @@ project-excludes = [
     'src/napari/_qt/layer_controls/widgets/qt_gamma_slider.py',
     'src/napari/_qt/layer_controls/widgets/qt_opacity_blending_controls.py',
     'src/napari/_qt/layer_controls/widgets/qt_projection_mode_control.py',
-    'src/napari/_qt/layer_controls/widgets/qt_text_visibility.py',
     'src/napari/_qt/layer_controls/dynamic/**',
     'src/napari/_qt/perf/qt_event_tracing.py',
     'src/napari/_qt/perf/qt_performance.py',
