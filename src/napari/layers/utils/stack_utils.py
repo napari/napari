@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pint
@@ -13,6 +13,10 @@ from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    from napari.layers._multiscale_data import MultiScaleData
     from napari.types import FullLayerData
 
 logger = logging.getLogger(__name__)
@@ -54,7 +58,7 @@ def slice_from_axis(array, *, axis, element):
 
 
 def split_channels(
-    data: np.ndarray,
+    data: Any,
     channel_axis: int,
     **kwargs,
 ) -> list[FullLayerData]:
@@ -241,6 +245,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     for i, tup in enumerate(layerdata_list):
         idata, imeta, _ = tup
         layer_name = f'{name} layer {i}'
+        imeta = dict(imeta)
         imeta['name'] = layer_name
 
         imagelist.append(Image(idata, **imeta))
@@ -332,7 +337,9 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     if all(multiscale_flags):
         # Check that all multiscale images have the same number of levels
-        n_scales_list = [len(image.data) for image in images]
+        n_scales_list = [
+            len(cast('MultiScaleData', image.data)) for image in images
+        ]
         if len(set(n_scales_list)) != 1:
             raise ValueError(
                 f'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}'
@@ -356,10 +363,10 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
     else:
-        stacker = np.stack
+        stacker = cast('Callable[..., Any]', np.stack)
 
     if all(multiscale_flags):
-        n_scales = len(images[0].data)
+        n_scales = len(cast('MultiScaleData', images[0].data))
         new_data = [
             stacker([image.data[level] for image in images], axis=axis)
             for level in range(n_scales)

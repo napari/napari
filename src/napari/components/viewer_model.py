@@ -1336,7 +1336,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
             return layer
 
-        layerdata_list = split_channels(data, channel_axis, **kwargs)  # pyrefly: ignore [bad-argument-type]
+        layerdata_list = split_channels(data, channel_axis, **kwargs)
 
         layer_list = [
             Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
