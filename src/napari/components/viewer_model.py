@@ -495,7 +495,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         Parameters
         ----------
-        layers : optional list of layers
+        layers : sequence of Layer, optional
             If given, only consider the extent of the given layers when
             resetting the view. Otherwise, all layers in viewer.layers are
             used.
@@ -520,7 +520,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         Parameters
         ----------
-        layers : optional list of layers
+        layers : sequence of Layer, optional
             If given, only consider the extent of the given layers when
             fitting to the view. Otherwise, all layers in viewer.layers are
             used.
