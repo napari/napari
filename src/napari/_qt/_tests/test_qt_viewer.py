@@ -658,12 +658,19 @@ def test_insert_layer_ordering(
     assert pl2_vispy.order == 0
 
 
-def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
+@pytest.mark.parametrize('grid', [False, True])
+def test_create_non_empty_viewer_model(qtbot: QtBot, grid: bool) -> None:
     viewer_model = ViewerModel()
+    viewer_model.add_image(np.zeros((4, 4)))
     viewer_model.add_points([(1, 2), (2, 3)])
+    viewer_model.canvas.grid.enabled = grid
 
     viewer = QtViewer(viewer=viewer_model)
 
+    assert all(
+        visual.node.parent is not None
+        for visual in viewer.canvas.layer_to_visual.values()
+    )
     viewer.close()
     viewer.deleteLater()
     # try to del local reference for gc.
