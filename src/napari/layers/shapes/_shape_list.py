@@ -1859,7 +1859,7 @@ class ShapeList:
     @cached_property
     def _visible_shapes(self) -> list[tuple[int, Shape]]:
         slice_key = np.asarray(self.slice_key)
-        if not len(slice_key) or not self.shapes:  # pyrefly: ignore [bad-argument-type]
+        if not len(slice_key) or not self.shapes:
             return list(enumerate(self.shapes))
         # This key is a real-valued data coordinate while a shape's is whole
         # slices, so match `_update_displayed`'s half-slice tolerance where the
