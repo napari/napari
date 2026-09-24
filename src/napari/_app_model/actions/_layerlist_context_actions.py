@@ -311,13 +311,9 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
-                'when': LLSCK.all_selected_layers_multiscale,
+                'when': LLSCK.single_selected_multiscale_layer_locked_data_level,
             }
         ],
-        enablement=(
-            LLSCK.all_selected_layers_multiscale_and_same_locked_data_level
-            & (LLSCK.num_selected_layers == 1)
-        ),
     ),
 ]
 
