@@ -443,6 +443,10 @@ class ArrayRowWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.widget = widget
+        if isinstance(self.widget, FilepathSchemaWidget):
+            widget_layout = self.widget.layout()
+            if widget_layout is not None:
+                widget_layout.setContentsMargins(0,0,0,0)
         self.controls = controls
 
     def setDescription(self, description: str):
