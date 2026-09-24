@@ -203,7 +203,9 @@ class VispySurfaceLayer(VispyBaseLayer):
     def _on_view_direction_change(self, view=None, up=None):
         if view is not None and up is not None:
             # combine to get light behind the camera on the top right
-            self._light_direction = up - view - np.cross(up, view)
+            self._light_direction = (
+                np.array(up) - np.array(view) - np.cross(up, view)
+            )
         if (
             self.node.shading_filter is not None
             and self._meshdata._vertices is not None  # pyrefly: ignore [missing-attribute]

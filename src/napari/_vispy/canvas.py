@@ -25,6 +25,9 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils.camera_orientations import (
+    view_and_up_directions_from_angles,
+)
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
 from napari.utils.interactions import (
@@ -824,11 +827,14 @@ class VispyCanvas:
             view = np.array((0, 0, -1))
             up = np.array((0, -1, 0))
         else:
-            view = np.array(self.viewer.scene.camera.view_direction)[::-1]
-            up = np.array(self.viewer.scene.camera.up_direction)[::-1]
+            view, up = view_and_up_directions_from_angles(
+                self.viewer.scene.camera.angles,
+                self.viewer.scene.camera.orientation,
+            )
 
         for vispy_layer in self.layer_to_visual.values():
-            vispy_layer._on_view_direction_change(view, up)
+            vispy_layer._on_view_direction_change(view[::-1], up[::-1])
+            vispy_layer.node.update()
 
     def _deferred_world_units_update(self):
         """Defer the world units update until the next draw event."""
