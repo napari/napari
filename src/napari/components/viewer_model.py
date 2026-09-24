@@ -880,16 +880,37 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
+        """Calculate coordinates and status info from cursor position.
+
+        General logic:
+        - restrict info to only layers inside the hovered grid viewbox
+        - restrict info to only selected layers, if any
+        - if only one is shown, show more detailed info
+        """
         if not self.mouse_over_canvas:
             return None
 
         selection = self.layers.selection
-        active = selection.active
+        valid_layers: Sequence[Layer]
+        layers_in_viewbox = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
+            )
+        ]
+        valid_layers = [
+            layer
+            for layer in layers_in_viewbox
+            if (not selection or layer in selection)
+            and layer._slicing_state._loaded
+        ]
 
-        # If there is a single selected layer, calculate status using "the classic way".
-        if active is not None and active._slicing_state._loaded:
+        # if showing status for a single layer, we give more info (old version)
+        # and set the tooltip text
+        if len(valid_layers) == 1:
             if self.tooltip.visible:
-                tooltip_text = active._get_tooltip_text(
+                tooltip_text = valid_layers[0]._get_tooltip_text(
                     np.asarray(self.cursor.position),
                     view_direction=self.cursor._view_direction,
                     dims_displayed=list(self.dims.displayed),
@@ -898,46 +919,22 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             else:
                 tooltip_text = ''
 
-            status = active.get_status(
+            status = valid_layers[0].get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
             if status['value'] == '':
                 # 'coordinates' is the one used by the status bar itself
                 status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
 
-        layers: Sequence[Layer]
-        # Otherwise, return the layer status of multiple selected layers
-        # or gridded layers if no selection. If no selection and no grid, all layers are used.
-        if selection:
-            layers = [
-                layer for layer in self.layers[::-1] if layer in selection
-            ]
-        elif self.canvas.grid.enabled:
-            if self.cursor.viewbox is None:
-                # should never happen, but better safe than sorry
-                return None
-            layers = [
-                self.layers[idx]
-                for idx in sorted(
-                    self.canvas.grid.contents_at(
-                        self.cursor.viewbox, self.layers
-                    ),
-                    reverse=self.canvas.grid.stride > 0,
-                )
-            ]
-        else:
-            layers = self.layers[::-1]
-
+        # for multiple layers, combine the statuses
         statuses: list[str] = []
         coords = ''
-        for layer in layers:
-            if not layer.visible or not layer._slicing_state._loaded:
-                continue
-
+        for layer in valid_layers:
             status = layer.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
@@ -949,9 +946,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 coords = status['coords']
             if status['value']:
                 statuses.append(f'{layer.name}: {status["value"]}')
-
-        separator = '    '
-        values = '[empty]' if not statuses else separator.join(statuses)
 
         separator = '    '
         values = '[empty]' if not statuses else separator.join(statuses)
