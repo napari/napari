@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 import os
 
-from numpy import isin
 from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
