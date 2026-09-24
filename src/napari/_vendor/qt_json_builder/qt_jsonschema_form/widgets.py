@@ -351,12 +351,22 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         return "All Files (*)"
 
     def _on_clicked(self, flag):
-        if self.path_widget.text():
-            start_dir = os.path.dirname(self.path_widget.text())
+ 
+        if self.schema.get("format") == "directory":
+            start_dir = self.path_widget.text() or os.path.expanduser("~")
+            path = QtWidgets.QFileDialog.getExistingDirectory(
+                self, "Select Directory", start_dir
+            )
         else:
-            start_dir = os.path.expanduser("~")
+            if self.path_widget.text():
+                start_dir = os.path.dirname(self.path_widget.text())
+            else:
+                start_dir = os.path.expanduser("~")
 
-        path, filter = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", start_dir, self.file_filter())
+            path, filter = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Select File", start_dir, self.file_filter()
+            )
+
         if not path:
             return
         self.path_widget.setText(path)
