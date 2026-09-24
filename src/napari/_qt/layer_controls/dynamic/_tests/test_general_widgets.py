@@ -227,8 +227,8 @@ class TestQtContrastLimitsControl:
         control.disconnect_widget_controls()
 
     def test_teardown_during_async_compute(self, qt_wrap: QtWrap) -> None:
-        dask = pytest.importorskip('dask')
-        layer = Image(dask.array.random.random((100, 100), chunks=(10, 10)))
+        daskarray = pytest.importorskip('dask.array')
+        layer = Image(daskarray.random.random((100, 100), chunks=(10, 10)))
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
