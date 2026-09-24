@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 from qtpy.QtCore import QThreadPool
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QLabel
 
 from napari._qt.layer_controls.dynamic.widgets import (
     QtColormapControl,
@@ -131,9 +131,8 @@ class TestQtContrastLimitsControl:
                 np.array([0, 1, 2]),
             )
         )
-        widget = QWidget()
-        control = QtContrastLimitsControl([surface], parent=widget)
-        qt_wrap.add_widget(widget)
+        control = QtContrastLimitsControl([surface])
+        qt_wrap.add_control(control)
 
         control.show_clim_popup()
         control.clim_popup.hide()  # so it doesn't show when testing
