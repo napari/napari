@@ -305,7 +305,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.layer.extract_multiscale_level',
-        title='Extract locked multiscale level',
+        title='New layer from selected multiscale level',
         callback=_layer_actions._extract_multiscale_level_from_selection,
         menus=[
             {
