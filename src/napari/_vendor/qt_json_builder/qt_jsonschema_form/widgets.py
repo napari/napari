@@ -475,16 +475,19 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
-        array_widget = QtWidgets.QWidget(self)
-        array_widget.setLayout(self.array_layout)
+        self.array_widget = QtWidgets.QWidget(self)
+        self.array_widget.setLayout(self.array_layout)
 
         self.on_changed.connect(self._on_updated)
 
         layout.addWidget(self.add_button, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(array_widget)
+        layout.addWidget(self.array_widget)
         self.setLayout(layout)
 
     def _on_updated(self, state):
+
+        self.array_widget.setVisible(bool(self.rows))
+
         # Update add button
         disabled = self.next_item_schema is None
         self.add_button.setEnabled(not disabled)
