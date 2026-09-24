@@ -399,10 +399,6 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         )
         self.up_button.clicked.connect(lambda _: self.on_move_up.emit())
 
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
         self.delete_button = QtWidgets.QPushButton()
         self.delete_button.setIcon(
             QColoredSVGIcon.from_resources('delete').colored(
@@ -446,10 +442,6 @@ class ArrayRowWidget(QtWidgets.QWidget):
         layout.addWidget(controls)
         self.setLayout(layout)
 
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
         self.widget = widget
         self.controls = controls
 
@@ -484,10 +476,6 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
  
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
         self.add_button = QtWidgets.QPushButton('Add entry')
         self.add_button.setStyleSheet("QPushButton { padding: 2px 4px; }")
         self.add_button.clicked.connect(lambda _: self.add_item())
