@@ -124,7 +124,7 @@ class QtLayerControlsContainer(QStackedWidget):
             clim = getattr(widget, '_contrast_limits_control', None)
             if clim is None:
                 continue
-            content = getattr(clim, '_histogram_content', None)
+            content = getattr(clim, 'histogram_content', None)
             if content is not None:
                 hist_widget = getattr(content, 'histogram_widget', None)
                 if hist_widget is not None:
@@ -132,7 +132,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         if self.panel is not None:
             for control in getattr(self.panel, '_controls', []):
-                content = getattr(control, '_histogram_content', None)
+                content = getattr(control, 'histogram_content', None)
                 if content is not None:
                     hist_widget = getattr(content, 'histogram_widget', None)
                     if hist_widget is not None:
