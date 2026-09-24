@@ -383,10 +383,20 @@ class ArrayControlsWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        style = self.style()
+        icon_color = self.palette().color(
+            QtGui.QPalette.ColorRole.ButtonText
+        ).name()
+
+        self.setStyleSheet(
+            "QPushButton:disabled { border: 0px; }"
+        )
 
         self.up_button = QtWidgets.QPushButton()
-        self.up_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_ArrowUp))
+        self.up_button.setIcon(
+            QColoredSVGIcon.from_resources('chevron_up').colored(
+                color=icon_color
+            )
+        )
         self.up_button.clicked.connect(lambda _: self.on_move_up.emit())
 
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
@@ -395,13 +405,17 @@ class ArrayControlsWidget(QtWidgets.QWidget):
 
         self.delete_button = QtWidgets.QPushButton()
         self.delete_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+            QColoredSVGIcon.from_resources('delete').colored(
+                color=icon_color
+            )
         )
         self.delete_button.clicked.connect(lambda _: self.on_delete.emit())
 
         self.down_button = QtWidgets.QPushButton()
         self.down_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_ArrowDown)
+            QColoredSVGIcon.from_resources('chevron_down').colored(
+                color=icon_color
+            )
         )
         self.down_button.clicked.connect(lambda _: self.on_move_down.emit())
 
@@ -411,7 +425,7 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         group_layout.addWidget(self.up_button)
         group_layout.addWidget(self.down_button)
         group_layout.addWidget(self.delete_button)
-        group_layout.setSpacing(0)
+        group_layout.setSpacing(4)
         group_layout.addStretch(0)
 
     def setDescription(self, description: str):
@@ -425,6 +439,8 @@ class ArrayRowWidget(QtWidgets.QWidget):
         super().__init__()
 
         layout = QtWidgets.QHBoxLayout()
+        # Add a 15px indentation to entries
+        # for contrast with other widgets
         layout.setContentsMargins(15,0,0,0)
         layout.addWidget(widget)
         layout.addWidget(controls)
