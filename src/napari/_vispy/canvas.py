@@ -832,8 +832,12 @@ class VispyCanvas:
                 self.viewer.scene.camera.orientation,
             )
 
+            # flip to vispy xyz from napari zyx
+            view = np.array(view)[::-1]
+            up = np.array(up)[::-1]
+
         for vispy_layer in self.layer_to_visual.values():
-            vispy_layer._on_view_direction_change(view[::-1], up[::-1])
+            vispy_layer._on_view_direction_change(view, up)
             vispy_layer.node.update()
 
     def _deferred_world_units_update(self):
