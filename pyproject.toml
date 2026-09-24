@@ -643,7 +643,6 @@ project-excludes = [
     'src/napari/utils/events/evented_model.py',
     'src/napari/utils/interactions.py',
     'src/napari/utils/key_bindings.py',
-    'src/napari/utils/stubgen.py',
     'src/napari/utils/transforms/transforms.py',
 ]
 
