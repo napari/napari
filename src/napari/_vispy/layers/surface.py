@@ -25,6 +25,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     layer: Surface
+    node: SurfaceVisual
 
     def __init__(self, layer, font_info: FontInfo, **kwargs) -> None:
         node = SurfaceVisual(font_info=font_info)
@@ -160,7 +161,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self):
-        shading = None if self.layer.shading == 'none' else self.layer.shading
+        shading = (
+            None
+            if self.layer.shading == 'none'
+            or self.layer._slice_input.ndisplay == 2
+            else self.layer.shading
+        )
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
             self._on_view_direction_change()
