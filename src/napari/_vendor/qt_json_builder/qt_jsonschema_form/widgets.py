@@ -10,6 +10,8 @@ from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
+from napari._qt.qt_resources import QColoredSVGIcon
+
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
@@ -461,16 +463,24 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
     def configure(self):
         layout = QtWidgets.QVBoxLayout()
-        style = self.style()
 
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
         self.add_button = QtWidgets.QPushButton()
+
+        self.add_button.setStyleSheet("QPushButton { padding: 2px; }")
+        background = self.palette().color(
+            QtGui.QPalette.ColorRole.Window
+        ).red()
+        theme = 'dark' if background < 128 else 'light'
         self.add_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_FileIcon)
+            QColoredSVGIcon.from_resources('plus').colored(theme=theme)
         )
+        self.add_button.setFixedSize(QtCore.QSize(18,18))
+        self.add_button.setIconSize(QtCore.QSize(14, 14))
+        self.add_button.setToolTip('Add entry')
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
