@@ -61,7 +61,9 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         sld.setValue(int(value))
         self.size_slider = sld
         connect_setattr(
-            self.size_slider.valueChanged, self._layer, 'current_size'
+            self.size_slider.valueChanged,
+            self._layer,
+            'current_size',
         )
 
         self.size_slider_label = QtWrappedLabel('point size:')

@@ -83,13 +83,13 @@ class _TourTooltip(QFrame):
         self._nav.addWidget(self._counter)
         self._nav.addStretch()
         self._back = QPushButton()
-        self._back.clicked.connect(self.back_clicked)
+        self._back.clicked.connect(self.back_clicked)  # pyrefly: ignore [bad-argument-type]
         self._nav.addWidget(self._back)
         self._next = QPushButton()
-        self._next.clicked.connect(self.next_clicked)
+        self._next.clicked.connect(self.next_clicked)  # pyrefly: ignore [bad-argument-type]
         self._nav.addWidget(self._next)
         self._skip = QPushButton()
-        self._skip.clicked.connect(self.skip_clicked)
+        self._skip.clicked.connect(self.skip_clicked)  # pyrefly: ignore [bad-argument-type]
         self._nav.addWidget(self._skip)
         layout.addLayout(self._nav)
 
@@ -161,7 +161,7 @@ class _TourOverlay(QWidget):
         self._spotlight = rect
         self.update()
 
-    def paintEvent(self, _event: QPaintEvent | None) -> None:
+    def paintEvent(self, _event: QPaintEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         overlay = QColor(0, 0, 0, 150)
@@ -199,9 +199,9 @@ class GuidedTour(QObject):
         self._active = False
         self._overlay = _TourOverlay(parent_window)
         self._tooltip = _TourTooltip(parent_window)
-        self._tooltip.next_clicked.connect(self._on_next)
-        self._tooltip.back_clicked.connect(self._on_back)
-        self._tooltip.skip_clicked.connect(self.close_tour)
+        self._tooltip.next_clicked.connect(self._on_next)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.back_clicked.connect(self._on_back)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.skip_clicked.connect(self.close_tour)  # pyrefly: ignore [missing-attribute]
 
     def start(self) -> None:
         if self._active or self._window is None:
@@ -228,21 +228,21 @@ class GuidedTour(QObject):
         app = QApplication.instance()
         if app is not None:
             app.removeEventFilter(self)
-        self._tooltip.next_clicked.disconnect(self._on_next)
-        self._tooltip.back_clicked.disconnect(self._on_back)
-        self._tooltip.skip_clicked.disconnect(self.close_tour)
+        self._tooltip.next_clicked.disconnect(self._on_next)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.back_clicked.disconnect(self._on_back)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.skip_clicked.disconnect(self.close_tour)  # pyrefly: ignore [missing-attribute]
         self._overlay.hide()
         self._tooltip.hide()
         self._overlay.setParent(None)
         self._tooltip.setParent(None)
         self._overlay.deleteLater()
         self._tooltip.deleteLater()
-        self.finished.emit()
+        self.finished.emit()  # pyrefly: ignore [missing-attribute]
         self.setParent(None)
         self._window = None
         self.deleteLater()
 
-    def eventFilter(
+    def eventFilter(  # pyrefly: ignore [bad-override-param-name]
         self, watched: QObject | None, event: QEvent | None
     ) -> bool:
         if event is None:
@@ -498,5 +498,5 @@ def build_viewer_tour(
         for dock in shown_docks:
             dock.hide()
 
-    tour.finished.connect(_restore_docks)
+    tour.finished.connect(_restore_docks)  # pyrefly: ignore [missing-attribute]
     return tour
