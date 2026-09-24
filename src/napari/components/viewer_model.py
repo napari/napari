@@ -22,7 +22,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -185,8 +184,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
-    _ctx: Mapping
-        Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
     """
@@ -205,7 +202,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -220,11 +216,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        # max_depth=0 means don't look for parent contexts.
-
-        # FIXME: just like the LayerList, this object should ideally be created
-        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
@@ -336,7 +327,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
         """
-        return self.scene.overlays.axes  # type: ignore[return-value]
+        return self.scene.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -352,7 +343,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
         """
-        return self.canvas.overlays.axes  # type: ignore[return-value]
+        return self.canvas.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -368,7 +359,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
         """
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        return self.canvas.overlays.scale_bar  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -384,7 +375,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
         """
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        return self.canvas.overlays.text  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -950,10 +941,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 key = next(iter(coord2val))  # choose arbitrary coordinate
                 coord2val = {key: values}
             status_strs = [
-                key + separator.join(values)
+                key + separator.join(values)  # pyrefly: ignore [unbound-name]
                 for key, values in coord2val.items()
             ]
-            status_str = separator.join(status_strs)
+            status_str = separator.join(status_strs)  # pyrefly: ignore [unbound-name]
         elif coord_str and not self.canvas.grid.enabled:
             status_str = coord_str + '[empty]'
         elif self.canvas.grid.enabled:
@@ -1340,12 +1331,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     raise TypeError(
                         f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
-            layer = Image(data, **kwargs)
+            layer = Image(data, **kwargs)  # pyrefly: ignore [bad-argument-type]
             self.layers.append(layer)
 
             return layer
 
-        layerdata_list = split_channels(data, channel_axis, **kwargs)
+        layerdata_list = split_channels(data, channel_axis, **kwargs)  # pyrefly: ignore [bad-argument-type]
 
         layer_list = [
             Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
@@ -1425,7 +1416,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 added = []
                 needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(
-                    list(data(**kwargs))
+                    list(data(**kwargs))  # pyrefly: ignore [bad-argument-type]
                 ):
                     if datum[0] is not None:
                         needs_error = False
@@ -1869,7 +1860,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)
+    return tuple(_data)  # pyrefly: ignore [bad-return]
 
 
 def _unify_data_and_user_kwargs(
@@ -2004,4 +1995,4 @@ for _layer in (
     layers.Vectors,
 ):
     func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)
+    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]
