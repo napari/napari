@@ -267,7 +267,7 @@ class VispyCanvas:
             self._on_interactive
         )
         self.viewer.scene.camera.events.zoom.connect(self._on_cursor)
-        self.viewer.scene.camera.events.angles.connect(
+        self.viewer.scene.camera.events.view_direction.connect(
             self._on_view_direction_change
         )
         self.viewer.dims.events.ndisplay.connect(
