@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
 import os
 
+from numpy import isin
 from qtpy import QtCore, QtGui, QtWidgets
 
 from ...._qt.widgets.qt_extension2reader import Extension2ReaderTable
@@ -463,24 +464,14 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
     def configure(self):
         layout = QtWidgets.QVBoxLayout()
-
+        layout.setContentsMargins(0,0,0,0)
+ 
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
-        self.add_button = QtWidgets.QPushButton()
-
-        self.add_button.setStyleSheet("QPushButton { padding: 2px; }")
-        background = self.palette().color(
-            QtGui.QPalette.ColorRole.Window
-        ).red()
-        theme = 'dark' if background < 128 else 'light'
-        self.add_button.setIcon(
-            QColoredSVGIcon.from_resources('plus').colored(theme=theme)
-        )
-        self.add_button.setFixedSize(QtCore.QSize(18,18))
-        self.add_button.setIconSize(QtCore.QSize(14, 14))
-        self.add_button.setToolTip('Add entry')
+        self.add_button = QtWidgets.QPushButton('Add entry')
+        self.add_button.setStyleSheet("QPushButton { padding: 2px 4px; }")
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
@@ -489,7 +480,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
         self.on_changed.connect(self._on_updated)
 
-        layout.addWidget(self.add_button)
+        layout.addWidget(self.add_button, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(array_widget)
         self.setLayout(layout)
 
@@ -816,6 +807,8 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
                 layout.addRow(widget)
             else:
                 layout.addRow(label, widget)
+                if isinstance(widget, ArraySchemaWidget):
+                    layout.setAlignment(label, QtCore.Qt.AlignmentFlag.AlignTop)
             widgets[name] = widget
             layout.addRow(self._new_error_label(name))
 
