@@ -406,6 +406,7 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         self.down_button.clicked.connect(lambda _: self.on_move_down.emit())
 
         group_layout = QtWidgets.QHBoxLayout()
+        group_layout.setContentsMargins(0,0,0,0)
         self.setLayout(group_layout)
         group_layout.addWidget(self.up_button)
         group_layout.addWidget(self.down_button)
@@ -424,6 +425,7 @@ class ArrayRowWidget(QtWidgets.QWidget):
         super().__init__()
 
         layout = QtWidgets.QHBoxLayout()
+        layout.setContentsMargins(15,0,0,0)
         layout.addWidget(widget)
         layout.addWidget(controls)
         self.setLayout(layout)
@@ -475,6 +477,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
+        self.array_layout.setContentsMargins(0,0,0,0)
         self.array_widget = QtWidgets.QWidget(self)
         self.array_widget.setLayout(self.array_layout)
 
