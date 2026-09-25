@@ -572,7 +572,6 @@ project-excludes = [
     'src/napari/_qt/layer_controls/widgets/_image/qt_interpolation_combobox.py',
     'src/napari/_qt/layer_controls/widgets/_image/qt_render_control.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_contiguous_checkbox.py',
-    'src/napari/_qt/layer_controls/widgets/_labels/qt_contour_spinbox.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_display_selected_label_checkbox.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_label_color.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_ndim_spinbox.py',
