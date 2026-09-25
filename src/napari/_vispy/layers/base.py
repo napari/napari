@@ -311,7 +311,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_camera_move(self, event=None):
+    def _on_view_direction_change(self, view=None, up=None):
         return
 
     def reset(self):
@@ -320,7 +320,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_camera_move()
+        self._on_view_direction_change()
 
     def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.
