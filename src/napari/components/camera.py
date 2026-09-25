@@ -43,7 +43,7 @@ class _CameraState:
 
     center: tuple[float, float, float] | tuple[float, float]
     zoom: float
-    angles: tuple[float, float, float]
+    quaternion: tuple[float, float, float, float]
 
 
 class Camera(EventedModel):
@@ -79,12 +79,14 @@ class Camera(EventedModel):
         0.0,
     )
     zoom: float = 1.0
-    angles: tuple[float, float, float] = (0.0, 0.0, 0.0)
     perspective: float = 0
     mouse_pan: bool = True
     mouse_zoom: bool = True
     orientation: AxesOrientation3D = DEFAULT_ORIENTATION_TYPED
     synced: bool = Field(True, description=_SYNCED_CAMERA_DESCRIPTION)
+    quaternion: tuple[float, float, float, float] = Field(
+        (0, 0, 0, 1), repr=False
+    )
 
     # Per-mode camera state cache for the "separate" (synced=False) mode.
     _cached_2d_state: _CameraState | None = PrivateAttr(None)
@@ -95,7 +97,7 @@ class Camera(EventedModel):
         state = _CameraState(
             center=self.center,
             zoom=self.zoom,
-            angles=self.angles,
+            quaternion=self.quaternion,
         )
         if ndisplay_mode == 2:
             self._cached_2d_state = state
@@ -112,10 +114,26 @@ class Camera(EventedModel):
             self._cached_3d_state = None
         return state
 
-    @field_validator('center', 'angles', mode='before')
+    @field_validator('center', mode='before')
     @classmethod
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
+
+    @property
+    def angles(self) -> tuple[float, float, float]:
+        from scipy.spatial.transform import Rotation
+
+        return Rotation.from_quat(self.quaternion).as_euler(
+            'xyz', degrees=True
+        )
+
+    @angles.setter
+    def angles(self, angles: tuple[float, float, float]) -> None:
+        from scipy.spatial.transform import Rotation
+
+        self.quaternion = Rotation.from_euler(
+            'xyz', angles, degrees=True
+        ).as_quat()
 
     @property
     def view_direction(self) -> tuple[float, float, float]:
