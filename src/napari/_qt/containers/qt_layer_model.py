@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QModelIndex, QSize, Qt
+from qtpy.QtCore import QModelIndex, QPersistentModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
 from napari import current_viewer
@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 
 class QtLayerListModel(QtListModel[Layer]):
     def data(
-        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Return data stored under ``role`` for the item at ``index``."""
         if not index.isValid():
@@ -79,7 +81,7 @@ class QtLayerListModel(QtListModel[Layer]):
 
     def setData(
         self,
-        index: QModelIndex,
+        index: QModelIndex | QPersistentModelIndex,
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:

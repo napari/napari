@@ -4,7 +4,7 @@ import logging
 import pickle
 from typing import TYPE_CHECKING, TypeVar
 
-from qtpy.QtCore import QMimeData, QModelIndex, Qt
+from qtpy.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
@@ -34,7 +34,9 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: Iterable[QModelIndex]) -> QMimeData | None:  # pyrefly: ignore [bad-override-param-name]
+    def mimeData(  # pyrefly: ignore [bad-override]
+        self, indices: Iterable[QModelIndex]
+    ) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -47,13 +49,13 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         )
         return ItemMimeData(items, indices)
 
-    def dropMimeData(  # pyrefly: ignore [bad-override-param-name]
+    def dropMimeData(
         self,
         data: QMimeData | None,
         action: Qt.DropAction,
         destRow: int,
         col: int,
-        parent: QModelIndex,
+        parent: QModelIndex | QPersistentModelIndex,
     ) -> bool:
         """Handles `data` from a drag and drop operation ending with `action`.
 
