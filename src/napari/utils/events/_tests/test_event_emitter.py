@@ -4,7 +4,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import EventEmitter, RenamedEmitter, WarningEmitter
+from napari.utils.events import (
+    EventEmitter,
+    RenamedWarningEmitter,
+    WarningEmitter,
+)
 
 
 def test_event_blocker_count_none():
@@ -375,7 +379,7 @@ def test_renamed_emitter_simple():
     class DummyEventEmitter:
         def __init__(self, parent):
             self.new_event = EventEmitter(type_name='new_event')
-            self.old_event = RenamedEmitter(
+            self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
                 new_name='new_event',
                 source=parent,
@@ -414,7 +418,7 @@ def test_renamed_emitter_composite():
 
     class DummyEventEmitterBase:
         def __init__(self, parent):
-            self.old_event = RenamedEmitter(
+            self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
                 new_name='composite.new_event',
                 source=parent,
