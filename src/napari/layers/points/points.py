@@ -42,7 +42,10 @@ from napari.layers.utils._slice_input import (
     _SliceInput,
     _ThickNDSlice,
 )
-from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_manager import (
+    ColorManager,
+    ensure_categorical_colormap,
+)
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.interactivity_utils import (
     displayed_plane_from_nd_line_segment,
@@ -54,7 +57,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.text_manager import TextManager
 from napari.types import LayerDataType
-from napari.utils.colormaps import Colormap, ValidColormapArg
+from napari.utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
@@ -67,15 +70,21 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Generator,
         Iterable,
         Sequence,
         Set as AbstractSet,
     )
-    from itertools import cycle
 
     import pandas as pd
 
     from napari.components.dims import Dims
+    from napari.utils.misc import StringEnum
+
+    # Mouse callbacks receive the layer they are bound to. ``dict`` is
+    # invariant, so the layer parameter is left as ``Any`` to stay
+    # compatible with ``Layer._drag_modes`` while keeping the rest checked.
+    _ModeCallable = Callable[[Any, Event], Generator[None, None, None] | None]
 
 
 _OUT_SLICE_DISP_WARNING_MSG = (
@@ -85,6 +94,13 @@ _OUT_SLICE_DISP_WARNING_MSG = (
     'Setting projection_mode to rescale_spherical may be more physically accurate '
     'if your points correspond directly to objects with a physical size. '
 )
+
+
+def _optional_array_equal(a: np.ndarray | None, b: np.ndarray | None) -> bool:
+    """Compare two optional arrays, treating two ``None`` values as equal."""
+    if a is None or b is None:
+        return a is b
+    return bool(np.array_equal(a, b))
 
 
 class Points(Layer):
@@ -343,20 +359,20 @@ class Points(Layer):
     _modeclass = Mode
     _projectionclass = PointsProjectionMode
 
-    _drag_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
+    _drag_modes: ClassVar[dict[StringEnum, _ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: transform_with_box,
         Mode.ADD: add,
         Mode.SELECT: select,
     }
 
-    _move_modes: ClassVar[dict[Mode, Callable[[Points, Event], Any]]] = {
+    _move_modes: ClassVar[dict[StringEnum, _ModeCallable]] = {
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.ADD: no_op,
         Mode.SELECT: highlight,
     }
-    _cursor_modes: ClassVar[dict[Mode, str]] = {
+    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.ADD: 'crosshair',
@@ -426,13 +442,13 @@ class Points(Layer):
         data, ndim = fix_data_points(data, ndim)
 
         # Indices of selected points
-        self._selected_data_stored = set()
+        self._selected_data_stored: AbstractSet[int] = set()
         self._selected_data_history = set()
         self._selected_data: Selection[int] = Selection()
         # Index of hovered point
         self._value = None
         self._value_stored = None
-        self._highlight_index = []
+        self._highlight_index: list[int] | np.ndarray = []
         # indices of highlighted points in current view
         self._highlight_box = None
         self._mode = Mode.PAN_ZOOM
@@ -524,9 +540,13 @@ class Points(Layer):
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
         # value is used when adding new points
-        self._current_size = np.asarray(size) if np.isscalar(size) else 10
-        self._current_border_width = (
-            np.asarray(border_width) if np.isscalar(border_width) else 0.1
+        self._current_size: int | float = (
+            typing.cast('int | float', size) if np.isscalar(size) else 10
+        )
+        self._current_border_width: int | float = (
+            typing.cast('int | float', border_width)
+            if np.isscalar(border_width)
+            else 0.1
         )
 
         color_properties = (
@@ -556,7 +576,7 @@ class Points(Layer):
             self.size = size
             self.shown = shown
             self.current_symbol = (
-                np.asarray(symbol) if np.isscalar(symbol) else 'o'
+                symbol if isinstance(symbol, str | Symbol) else 'o'
             )
             self.symbol = symbol
             self.border_width = border_width
@@ -596,7 +616,8 @@ class Points(Layer):
             data is not None
             and (isinstance(data, np.ndarray) and data.size > 0)
         ) or (isinstance(data, list) and len(data) > 0)
-        kwargs = {
+        n_new_points = 0 if data is None else len(data)
+        kwargs: dict[str, Any] = {
             'value': self.data,
             'vertex_indices': ((),),
             'data_indices': tuple(i for i in range(len(self.data))),
@@ -605,7 +626,7 @@ class Points(Layer):
             kwargs['action'] = ActionType.CHANGING
         elif data_not_empty:
             kwargs['action'] = ActionType.ADDING
-            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+            kwargs['data_indices'] = tuple(i for i in range(n_new_points))
         else:
             kwargs['action'] = ActionType.REMOVING
 
@@ -617,7 +638,7 @@ class Points(Layer):
         if prior_data and data_not_empty:
             kwargs['action'] = ActionType.CHANGED
         elif data_not_empty:
-            kwargs['data_indices'] = tuple(i for i in range(len(data)))
+            kwargs['data_indices'] = tuple(i for i in range(n_new_points))
             kwargs['action'] = ActionType.ADDED
         else:
             kwargs['action'] = ActionType.REMOVED
@@ -1094,7 +1115,7 @@ class Points(Layer):
         return self._current_border_width
 
     @current_border_width.setter
-    def current_border_width(self, border_width: float | None) -> None:
+    def current_border_width(self, border_width: float) -> None:
         self._current_border_width = border_width
         if self._update_properties and len(self.selected_data) > 0:
             idx = np.fromiter(self.selected_data, dtype=int)
@@ -1129,7 +1150,9 @@ class Points(Layer):
     def border_color_cycle(
         self, border_color_cycle: list | np.ndarray
     ) -> None:
-        self._border.categorical_colormap = border_color_cycle
+        self._border.categorical_colormap = ensure_categorical_colormap(
+            border_color_cycle
+        )
 
     @property
     def border_colormap(self) -> Colormap:
@@ -1144,10 +1167,10 @@ class Points(Layer):
 
     @border_colormap.setter
     def border_colormap(self, colormap: ValidColormapArg) -> None:
-        self._border.continuous_colormap = colormap
+        self._border.continuous_colormap = ensure_colormap(colormap)
 
     @property
-    def border_contrast_limits(self) -> tuple[float, float]:
+    def border_contrast_limits(self) -> tuple[float, float] | None:
         """None, (float, float): contrast limits for mapping
         the border_color colormap property to 0 and 1
         """
@@ -1162,7 +1185,9 @@ class Points(Layer):
     @property
     def current_border_color(self) -> str:
         """str: border color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._border.current_color)[0]
+        current_color = self._border.current_color
+        assert current_color is not None
+        hex_ = str(rgb_to_hex(current_color)[0])
         return hex_to_name.get(hex_, hex_)
 
     @current_border_color.setter
@@ -1209,14 +1234,16 @@ class Points(Layer):
 
     @property
     def face_color_cycle(self) -> np.ndarray:
-        """Union[np.ndarray, cycle]:  Color cycle for face_color
+        """Union[list, np.ndarray]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
         return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle: np.ndarray | cycle) -> None:
-        self._face.categorical_colormap = face_color_cycle
+    def face_color_cycle(self, face_color_cycle: list | np.ndarray) -> None:
+        self._face.categorical_colormap = ensure_categorical_colormap(
+            face_color_cycle
+        )
 
     @property
     def face_colormap(self) -> Colormap:
@@ -1231,7 +1258,7 @@ class Points(Layer):
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg) -> None:
-        self._face.continuous_colormap = colormap
+        self._face.continuous_colormap = ensure_colormap(colormap)
 
     @property
     def face_contrast_limits(self) -> tuple[float, float] | None:
@@ -1249,7 +1276,9 @@ class Points(Layer):
     @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._face.current_color)[0]
+        current_color = self._face.current_color
+        assert current_color is not None
+        hex_ = str(rgb_to_hex(current_color)[0])
         return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
@@ -1318,13 +1347,13 @@ class Points(Layer):
                     warnings.warn(
                         f'_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
+                    color_property = new_color_property
                 else:
                     raise ValueError(
                         f'There must be a valid Points.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
-            color_property = color_manager.color_properties.name
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
                 self.features[color_property].dtype.type, np.number
             ):
@@ -1469,7 +1498,8 @@ class Points(Layer):
             return create_box(data)
         return None
 
-    @Layer.mode.getter
+    # Only overriding to change the docstring
+    @property
     def mode(self) -> str:
         """str: Interactive mode
 
@@ -1484,8 +1514,14 @@ class Points(Layer):
         """
         return str(self._mode)
 
-    def _mode_setter_helper(self, mode):
-        mode = super()._mode_setter_helper(mode)
+    @mode.setter
+    def mode(self, mode: Mode | str) -> None:
+        # ``property.fset`` is typed as optional, so delegate to the base
+        # class setter through the descriptor protocol instead.
+        Layer.mode.__set__(self, mode)
+
+    def _mode_setter_helper(self, mode_in: Mode | str) -> StringEnum:
+        mode = super()._mode_setter_helper(mode_in)
         if mode == self._mode:
             return mode
 
@@ -1721,8 +1757,8 @@ class Points(Layer):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: np.ndarray | None,
+        end_point: np.ndarray | None,
         dims_displayed: list[int],
     ) -> int | None:
         """Get the layer data value along a ray
@@ -1759,7 +1795,7 @@ class Points(Layer):
         rotated_points, rotation_matrix = rotate_points(
             points=projected_points,
             current_plane_normal=plane_normal,
-            new_plane_normal=[0, 0, 1],
+            new_plane_normal=np.array([0, 0, 1]),
         )
         rotated_click_point = np.dot(rotation_matrix, plane_point)
 
@@ -1788,11 +1824,11 @@ class Points(Layer):
 
     def get_ray_intersections(
         self,
-        position: list[float],
-        view_direction: np.ndarray,
+        position: npt.ArrayLike,
+        view_direction: npt.ArrayLike,
         dims_displayed: list[int],
         world: bool = True,
-    ) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         """Get the start and end point for the ray extending
         from a point through the displayed bounding box.
 
@@ -1829,6 +1865,8 @@ class Points(Layer):
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
         """
+        position = np.asarray(position)
+        view_direction = np.asarray(view_direction)
         if len(dims_displayed) != 3:
             return None, None
 
@@ -1861,7 +1899,7 @@ class Points(Layer):
         if (
             self.selected_data == self._selected_data_stored
             and self._value == self._value_stored
-            and np.array_equal(self._drag_box, self._drag_box_stored)
+            and _optional_array_equal(self._drag_box, self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = Selection(self.selected_data)
@@ -1871,26 +1909,29 @@ class Points(Layer):
         if self._highlight_visible and (
             self._value is not None or len(self._view_selected) > 0
         ):
+            hovered = self._value
             if len(self._view_selected) > 0:
                 index = copy(self._view_selected)
                 # highlight the hovered point if not in adding mode
                 if (
-                    self._value in self._view_indices
+                    hovered is not None
+                    and hovered in self._view_indices
                     and self._mode == Mode.SELECT
                     and not self._is_selecting
                 ):
-                    hover_point = list(self._view_indices).index(self._value)
+                    hover_point = list(self._view_indices).index(hovered)
                     if hover_point not in index:
                         np.append(index, hover_point)
                 index.sort()
             else:
                 # only highlight hovered points in select mode
                 if (
-                    self._value in self._view_indices
+                    hovered is not None
+                    and hovered in self._view_indices
                     and self._mode == Mode.SELECT
                     and not self._is_selecting
                 ):
-                    hover_point = list(self._view_indices).index(self._value)
+                    hover_point = list(self._view_indices).index(hovered)
                     index = [hover_point]
                 else:
                     index = []
@@ -1901,9 +1942,11 @@ class Points(Layer):
 
         # only display dragging selection box in 2D
         if self._highlight_visible and self._is_selecting:
+            assert self._drag_box is not None
             if self._drag_normal is None:
                 pos = create_box(self._drag_box)
             else:
+                assert self._drag_up is not None
                 pos = _create_box_from_corners_3d(
                     self._drag_box, self._drag_normal, self._drag_up
                 )
@@ -2128,19 +2171,21 @@ class Points(Layer):
             Position to move points to in data coordinates.
         """
         if len(selection_indices) > 0:
-            selection_indices = list(selection_indices)
+            indices = list(selection_indices)
             disp = list(self._slice_input.displayed)
             self._set_drag_start(selection_indices, position)
-            center = self.data[np.ix_(selection_indices, disp)].mean(axis=0)
-            shift = np.array(position)[disp] - center - self._drag_start
-            self.data[np.ix_(selection_indices, disp)] = (
-                self.data[np.ix_(selection_indices, disp)] + shift
+            drag_start = self._drag_start
+            assert drag_start is not None
+            center = self.data[np.ix_(indices, disp)].mean(axis=0)
+            shift = np.array(position)[disp] - center - drag_start
+            self.data[np.ix_(indices, disp)] = (
+                self.data[np.ix_(indices, disp)] + shift
             )
             self.refresh()
             self.events.data(
                 value=self.data,
                 action=ActionType.CHANGED,
-                data_indices=tuple(selection_indices),
+                data_indices=tuple(indices),
                 vertex_indices=((),),
             )
             self.events.features()
@@ -2164,14 +2209,14 @@ class Points(Layer):
             Center the drag start based on the selected data.
             Used for modifier drag_box selection.
         """
-        selection_indices = list(selection_indices)
+        indices = list(selection_indices)
         dims_displayed = list(self._slice_input.displayed)
         if self._drag_start is None:
             self._drag_start = np.array(position, dtype=float)[dims_displayed]
-            if len(selection_indices) > 0 and center_by_data:
-                center = self.data[
-                    np.ix_(selection_indices, dims_displayed)
-                ].mean(axis=0)
+            if len(indices) > 0 and center_by_data:
+                center = self.data[np.ix_(indices, dims_displayed)].mean(
+                    axis=0
+                )
                 self._drag_start -= center
 
     def _paste_data(self) -> None:
@@ -2330,12 +2375,13 @@ class Points(Layer):
 
     def get_status(
         self,
-        position: tuple | None = None,
+        position: npt.ArrayLike | None = None,
         *,
-        view_direction: np.ndarray | None = None,
+        view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> dict:
+        value: Any | None = None,
+    ) -> dict[str, str]:
         """Status message information of the data at a coordinate position.
 
         # Parameters
@@ -2362,6 +2408,7 @@ class Points(Layer):
             view_direction=view_direction,
             dims_displayed=dims_displayed,
             world=world,
+            value=value,
         )
 
         # if this points layer has properties
@@ -2381,7 +2428,7 @@ class Points(Layer):
         self,
         position,
         *,
-        view_direction: np.ndarray | None = None,
+        view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> str:
@@ -2420,14 +2467,14 @@ class Points(Layer):
         self,
         position,
         *,
-        view_direction: np.ndarray | None = None,
+        view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> list:
         if self.features.shape[1] == 0:
             return []
 
-        value = self.get_value(
+        value = self._get_value_(
             position,
             view_direction=view_direction,
             dims_displayed=dims_displayed,
@@ -2494,7 +2541,9 @@ class _PointsSlicingState(_LayerSlicingState):
             slice_input=slice_input,
             data=self.layer.data,
             data_slice=data_slice,
-            projection_mode=self.layer.projection_mode,
+            projection_mode=typing.cast(
+                PointsProjectionMode, self.layer.projection_mode
+            ),
             size=self.layer.size,
             shown=self.layer.shown,
         )
