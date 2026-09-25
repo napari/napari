@@ -144,6 +144,8 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)
+        if self.dims.current_step[self.axis] != val:  # refused by an axis lock
+            self._update_slider()
 
     def _create_axis_label_widget(self) -> QElidingLineEdit:
         """Create the axis label widget which accompanies its slider."""
@@ -168,6 +170,10 @@ class QtDimSliderWidget(QWidget):
         We split this out as a separate function for perfmon.
         """
         self.dims.set_current_step(self.axis, value)
+        if (
+            self.dims.current_step[self.axis] != value
+        ):  # refused by an axis lock
+            self._update_slider()
 
     def _create_range_slider_widget(self) -> _ModifiedScrollBar:
         """Creates a range slider widget for a given axis."""

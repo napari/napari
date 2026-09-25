@@ -361,6 +361,21 @@ def test_last_used_style_property_set_at_creation(qtbot):
     ] == [False, True, False, False]
 
 
+def test_refused_slider_and_slice_edits_snap_back(qtbot):
+    dims = Dims(ndim=3, range=((0, 10, 1),) * 3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    row = view.slider_widgets[0]
+    dims.lock_axis(0)
+
+    row.slider.setValue(5)
+    assert row.slider.value() == 0
+
+    row.curslice_label.setText('7')
+    row.curslice_label.editingFinished.emit()
+    assert row.curslice_label.text() == '0'
+
+
 def test_frame_request_that_moves_nothing_keeps_playback_armed(qtbot):
     dims = Dims(ndim=3, range=((0, 10, 1),) * 3)
     view = QtDims(dims)
