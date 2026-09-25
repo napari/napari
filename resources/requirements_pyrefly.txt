@@ -59,14 +59,8 @@ pyproject-hooks==1.2.0
     # via build
 pyrefly==1.2.0
     # via -r resources/requirements_pyrefly.in
-pyside6==6.11.2
-    # via -r resources/requirements_pyrefly.in
-pyside6-addons==6.11.2
-    # via pyside6
 pyside6-essentials==6.11.2
-    # via
-    #   pyside6
-    #   pyside6-addons
+    # via -r resources/requirements_pyrefly.in
 pyyaml==6.0.3
     # via npe2
 qtpy==2.4.3
@@ -83,10 +77,7 @@ rich==15.0.0
 shellingham==1.5.4
     # via typer
 shiboken6==6.11.2
-    # via
-    #   pyside6
-    #   pyside6-addons
-    #   pyside6-essentials
+    # via pyside6-essentials
 superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
