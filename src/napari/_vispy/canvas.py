@@ -24,6 +24,7 @@ from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
+from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
@@ -314,6 +315,9 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
+        get_settings().appearance.events.font_size.connect(
+            self._update_font_sizes
+        )
         self.destroyed.connect(self._disconnect_events)
 
     @property
@@ -1286,6 +1290,12 @@ class VispyCanvas:
             vispy_overlay.node.transform.translate = [x, y, 0, 0]
 
         self._needs_overlay_position_update = False
+
+    def _update_font_sizes(self, *, font_size: float | None = None):
+        if font_size is None:
+            font_size = get_settings().appearance.font_size
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
