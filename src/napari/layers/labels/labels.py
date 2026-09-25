@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from collections import deque
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
@@ -1420,17 +1420,85 @@ class Labels(ScalarFieldBase):
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
         )
-        for c in interp_coord:
-            if (
-                self._slice_input.ndisplay == 3
-                and self.data[tuple(np.round(c).astype(int))] == 0
-            ):
-                continue
-            if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False)
-            elif self._mode == Mode.FILL:
+        if self._slice_input.ndisplay == 3:
+            # In 3D, only paint/fill on existing (non-background) voxels.
+            interp_coord = [
+                c
+                for c in interp_coord
+                if self.data[tuple(np.round(c).astype(int))] != 0
+            ]
+        if self._mode in [Mode.PAINT, Mode.ERASE]:
+            # Batch all stamps in the segment into one region write
+            if self.n_edit_dimensions >= self._slice_input.ndisplay:
+                self._paint_coordinates(interp_coord, new_label)
+            # If the brush leaves a displayed dim unpainted (n_edit < ndisplay)
+            # the drag then moves through that dim, so stamps land on different
+            # planes and must be written per-stamp.
+            else:
+                for c in interp_coord:
+                    self.paint(c, new_label, refresh=False)
+        elif self._mode == Mode.FILL:
+            for c in interp_coord:
                 self.fill(c, new_label, refresh=False)
         self._partial_labels_refresh()
+
+    def _paint_coordinates(
+        self, coords: Iterable[Sequence[float]], new_label: int
+    ) -> None:
+        """Paint a brush stamp at each coordinate as one combined edit.
+
+        Stamps are ORed into a single mask over their union bounding box and
+        written back once, rather than one read-modify-write per stamp.
+
+        Parameters
+        ----------
+        coords : sequence of coordinates
+            Each coordinate is a mouse position in image coordinates.
+        new_label : int
+            Value of the new label to be painted.
+        """
+        self._validate_label_in_range(new_label)
+        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
+
+        stamps: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+        slice_coord: list[int] | None = None
+        for c in coords:
+            coord = [int(np.round(x)) for x in c]
+            self._validate_non_painted_coord(coord, dims_to_paint)
+            brush_info = self._get_brush_mask_and_bbox(
+                coord, dims_to_paint, shape
+            )
+            if brush_info is None:
+                continue
+            stamps.append(brush_info)
+            # get the coordinates of the last valid coordinate
+            slice_coord = coord
+
+        if slice_coord is None:
+            return
+
+        # Union bounding box of all stamps, then OR each stamp into it.
+        _, stamp_mins, stamp_maxs = zip(*stamps, strict=True)
+        min_vals = np.min(stamp_mins, axis=0)
+        max_vals = np.max(stamp_maxs, axis=0)
+        combined_mask: npt.NDArray[np.bool_] = np.zeros(
+            tuple(max_vals - min_vals), dtype=bool
+        )
+        for brush_mask, stamp_min, stamp_max in stamps:
+            region = tuple(
+                slice(stamp_min[i] - min_vals[i], stamp_max[i] - min_vals[i])
+                for i in range(len(dims_to_paint))
+            )
+            combined_mask[region] |= brush_mask
+
+        # The painted dims come from the union bbox; the non-painted dims come
+        # from slice_coord and must be shared by all stamps
+        slice_key = self._build_slice_key(
+            slice_coord, dims_to_paint, min_vals, max_vals
+        )
+        self._paint_region_with_mask(
+            slice_key, combined_mask, new_label, dims_to_paint, refresh=False
+        )
 
     def paint(
         self,
@@ -1453,27 +1521,9 @@ class Labels(ScalarFieldBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        self._validate_label_in_range(new_label)
-        shape, dims_to_paint = self._get_shape_and_dims_to_paint()
-
-        slice_coord = [int(np.round(c)) for c in coord]
-        self._validate_non_painted_coord(slice_coord, dims_to_paint)
-
-        brush_info = self._get_brush_mask_and_bbox(
-            slice_coord, dims_to_paint, shape
-        )
-
-        if brush_info is None:
-            return
-
-        mask, min_vals, max_vals = brush_info
-        slice_key = self._build_slice_key(
-            slice_coord, dims_to_paint, min_vals, max_vals
-        )
-
-        self._paint_region_with_mask(
-            slice_key, mask, new_label, dims_to_paint, refresh
-        )
+        self._paint_coordinates([coord], new_label)
+        if refresh:
+            self._partial_labels_refresh()
 
     def _get_brush_mask_and_bbox(
         self,
