@@ -11,7 +11,7 @@ STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 
 def get_stylesheet(
-    theme_id: str | None = None,
+    full_theme_id: str | None = None,
     extra: list[str] | None = None,
     extra_variables: dict[str, str] | None = None,
 ) -> str:
@@ -19,7 +19,7 @@ def get_stylesheet(
 
     Parameters
     ----------
-    theme_id : str, optional
+    full_theme_id : str, optional
         Theme to apply to the stylesheet. If no theme is provided, the returned
         stylesheet will still have ``{{ template_variables }}`` that need to be
         replaced using the :func:`napari.utils.theme.template` function prior
@@ -45,10 +45,10 @@ def get_stylesheet(
             with open(file) as f:
                 stylesheet += f.read()
 
-    if theme_id:
+    if full_theme_id:
         from napari.utils.theme import get_theme, template
 
-        theme_dict = get_theme(theme_id).to_rgb_dict()
+        theme_dict = get_theme(full_theme_id).to_rgb_dict()
         if extra_variables:
             theme_dict.update(extra_variables)
 
