@@ -25,7 +25,11 @@ import numpy as np
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
-from pydantic import Field, PrivateAttr, field_validator
+from pydantic import (
+    Field,
+    PrivateAttr,
+    field_validator,
+)
 from typing_extensions import deprecated
 
 from napari import layers
@@ -107,17 +111,6 @@ if TYPE_CHECKING:
 
 
 DEFAULT_THEME = 'dark'
-EXCLUDE_DICT = {
-    'keymap',
-    '_mouse_wheel_gen',
-    '_mouse_drag_gen',
-    '_persisted_mouse_event',
-    'mouse_move_callbacks',
-    'mouse_drag_callbacks',
-    'mouse_wheel_callbacks',
-}
-EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
-Dict = dict  # rename, because ViewerModel has method dict
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
@@ -198,7 +191,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
     help: str = ''
-    status: Union[str, Dict[str, str]] = 'Ready'
+    status: Union[str, dict[str, str]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
@@ -421,25 +414,39 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return v
 
-    def json(self, **kwargs):
-        """Serialize to json."""
-        # Manually exclude the layer list and active layer which cannot be serialized at this point
-        # and mouse and keybindings don't belong on model
-        # https://github.com/samuelcolvin/pydantic/pull/2231
-        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
-        exclude = kwargs.pop('exclude', set())
-        exclude = exclude.union(EXCLUDE_JSON)
-        return super().json(exclude=exclude, **kwargs)
+    def model_dump_json(self, *args, **kwargs):
+        exclude = set(kwargs.pop('exclude', set()))
+        # layers cannot be currently serialized properly. To be removed once they are
+        # evented models.
+        # also callbacks functions should not be serialized
+        exclude.update(
+            {
+                'layers',
+                'mouse_move_callbacks',
+                'mouse_drag_callbacks',
+                'mouse_wheel_callbacks',
+                'mouse_double_click_callbacks',
+            }
+        )
+        kwargs['exclude'] = exclude
+        return super().model_dump_json(*args, **kwargs)
 
-    def model_dump(self, **kwargs) -> dict[str, Any]:
-        """Convert to a dictionary."""
-        # Manually exclude the layer list and active layer which cannot be serialized at this point
-        # and mouse and keybindings don't belong on model
-        # https://github.com/samuelcolvin/pydantic/pull/2231
-        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
-        exclude = kwargs.pop('exclude', set())
-        exclude = exclude.union(EXCLUDE_DICT)
-        return super().model_dump(exclude=exclude, **kwargs)
+    def model_dump(self, *args, **kwargs):
+        exclude = set(kwargs.pop('exclude', set()))
+        # layers cannot be currently serialized properly. To be removed once they are
+        # evented models.
+        # also callbacks functions should not be serialized
+        exclude.update(
+            {
+                'layers',
+                'mouse_move_callbacks',
+                'mouse_drag_callbacks',
+                'mouse_wheel_callbacks',
+                'mouse_double_click_callbacks',
+            }
+        )
+        kwargs['exclude'] = exclude
+        return super().model_dump(*args, **kwargs)
 
     def __hash__(self):
         return id(self)
@@ -892,7 +899,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _calc_status_from_cursor(
         self,
-    ) -> tuple[str | Dict, str] | None:
+    ) -> tuple[str | dict, str] | None:
         if not self.mouse_over_canvas:
             return None
         coord2val: dict[str, list[str]] = {}
@@ -1573,7 +1580,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _open_or_raise_error(
         self,
         paths: list[Path | str],
-        kwargs: Dict[str, Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
         layer_type: LayerTypeName | None = None,
         stack: bool = False,
     ):
@@ -1681,7 +1688,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         paths: list[PathLike],
         *,
         stack: bool,
-        kwargs: Dict | None = None,
+        kwargs: dict | None = None,
         plugin: str | None = None,
         layer_type: LayerTypeName | None = None,
     ) -> list[Layer]:

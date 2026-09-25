@@ -1,16 +1,27 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from contextlib import contextmanager
+from functools import cache, partial
 from typing import Any, ClassVar, Union
 
 import numpy as np
+import pint
+import pydantic_core.core_schema
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
     ConfigDict,
     PrivateAttr,
+    TypeAdapter,
 )
 from pydantic._internal._model_construction import ModelMetaclass
+from pydantic_core import CoreSchema
 
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
@@ -22,6 +33,7 @@ from napari.utils.misc import pick_equality_operator
 _BASE_JSON_ENCODERS = {
     np.ndarray: lambda arr: arr.tolist(),
     KeyBinding: lambda v: str(v),
+    pint.Unit: lambda u: str(u),
 }
 
 
@@ -49,19 +61,6 @@ class EventedMetaclass(ModelMetaclass):
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
             cls.__eq_operators__[n] = pick_equality_operator(field_type)
-            # If a field type has a _json_encode method, add it to the json
-            # encoders for this model.
-            # NOTE: a _json_encode field must return an object that can be
-            # passed to json.dumps ... but it needn't return a string.
-            if hasattr(field_type, '_json_encode'):
-                encoder = field_type._json_encode
-                cls.model_config['json_encoders'][field_type] = encoder
-                # also add it to the base config
-                # required for pydantic>=1.8.0 due to:
-                # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.model_config['json_encoders'][field_type] = (
-                    encoder
-                )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         # Current implementation ignores properties defined in mixins
@@ -173,6 +172,50 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
     return deps
 
 
+@cache
+def _typeadapter(tp: type) -> TypeAdapter:
+    return TypeAdapter(tp)
+
+
+def _serialize_arbitrary(value: Any, json_encoders=None) -> Any:
+    """Serialize using pydantic machinery but unraveling nested objects first."""
+    # json_encoders machinery is deprecated since v2 without a replacement
+    # in pydantic, so we create our own here.
+    if (encoder := getattr(value, '_json_encode', None)) is not None:
+        return encoder()
+
+    if json_encoders is not None:
+        for tp, encoder in json_encoders.items():
+            if isinstance(value, tp):
+                return encoder(value)
+
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, BaseModel):
+        data = {name: getattr(value, name) for name in value.model_fields}
+        return _serialize_arbitrary(data, json_encoders=json_encoders)
+
+    if isinstance(value, Mapping):
+        return {
+            _serialize_arbitrary(
+                k, json_encoders=json_encoders
+            ): _serialize_arbitrary(v, json_encoders=json_encoders)
+            for k, v in value.items()
+        }
+
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [
+            _serialize_arbitrary(v, json_encoders=json_encoders) for v in value
+        ]
+
+    # fallbacks to pydantic machinery
+    return _typeadapter(type(value)).dump_python(
+        value,
+        mode='json',
+    )
+
+
 class EventedModel(BaseModel, metaclass=EventedMetaclass):
     """A Model subclass that emits an event whenever a field value is changed.
 
@@ -206,10 +249,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         arbitrary_types_allowed=True,
         validate_assignment=True,
         validate_default=True,
-        # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
-        # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
-        # field declares a _json_encode method.
-        json_encoders=_BASE_JSON_ENCODERS,
     )
 
     def __init__(self, **kwargs) -> None:
@@ -416,13 +455,73 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel) and recurse:
-                    field.update(value, recurse=recurse)
-                else:
-                    setattr(self, key, value)
+                if recurse:
+                    # directly update models
+                    if isinstance(field, EventedModel):
+                        field.update(value, recurse=True)
+                        continue
+                    # containers such as dicts and lists may contain models as values;
+                    # update those recusrively as welll
+                    if isinstance(field, MutableMapping) and isinstance(
+                        value, Mapping
+                    ):
+                        for dict_key, seq_value in tuple(field.items()):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[dict_key])
+                            else:
+                                field[dict_key] = value[dict_key]
+                        continue
+                    if isinstance(field, MutableSequence) and isinstance(
+                        value, Sequence
+                    ):
+                        for idx, seq_value in enumerate(tuple(field)):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[idx])
+                            else:
+                                field[idx] = value[idx]
+                        continue
+                setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler,
+    ) -> CoreSchema:
+        """Override of pydandic serialization machinery.
+
+        With this, we catch objects *before* pydantic, checking
+        if they define a schema themselves, and if they do we use that
+        regardless if the field they belong to was annotated with that
+        type. For example, this fails without this hack:
+
+        ```
+        class MyModel(EventedModel):
+            x: Any
+
+        MyModel(x=ColorValue('red')).model_dump_json()
+        ```
+
+        Instead, with this workaround it will use ColorValue's existing
+        validation machinery if defined, as if the annotation was `ColorValue`
+        """
+        schema = handler(source_type)
+
+        serialize = partial(
+            _serialize_arbitrary, json_encoders=_BASE_JSON_ENCODERS
+        )
+
+        return pydantic_core.core_schema.with_info_after_validator_function(
+            function=lambda value, info: value,
+            schema=schema,
+            serialization=pydantic_core.core_schema.plain_serializer_function_ser_schema(
+                serialize,
+                when_used='json',
+            ),
+        )
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
