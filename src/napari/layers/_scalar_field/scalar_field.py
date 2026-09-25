@@ -39,6 +39,7 @@ from napari.utils.events import Event
 from napari.utils.events.event import WarningEmitter
 from napari.utils.events.event_utils import connect_no_arg
 from napari.utils.geometry import clamp_point_to_bounding_box
+from napari.utils.migrations import deprecation_message
 from napari.utils.naming import magic_name
 from napari.utils.transforms import Affine
 
@@ -304,7 +305,12 @@ class ScalarFieldBase(Layer, ABC):
             depiction=Event,
             locked_data_level=Event,
             interpolation=WarningEmitter(
-                "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
+                deprecation_message(
+                    name="'layer.events.interpolation'",
+                    replacement='`interpolation2d` and `interpolation3d`',
+                    since='0.5.0',
+                    window='2027-Q1',
+                ),
                 type_name='select',
             ),
             interpolation2d=Event,

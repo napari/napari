@@ -60,7 +60,10 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.events.event import WarningEmitter
 from napari.utils.geometry import project_points_onto_plane, rotate_points
-from napari.utils.migrations import deprecated_constructor_arg_by_attr
+from napari.utils.migrations import (
+    deprecated_constructor_arg_by_attr,
+    deprecation_message,
+)
 from napari.utils.status_messages import format_feature_value
 from napari.utils.transforms import Affine
 
@@ -78,12 +81,19 @@ if TYPE_CHECKING:
     from napari.components.dims import Dims
 
 
-_OUT_SLICE_DISP_WARNING_MSG = (
-    'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
-    'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
-    '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
-    'Setting projection_mode to rescale_spherical may be more physically accurate '
-    'if your points correspond directly to objects with a physical size. '
+_OUT_SLICE_DISP_WARNING_MSG = deprecation_message(
+    name='out_of_slice_display (previously "n_dimensional")',
+    replacement='projection_mode',
+    since='0.9.0',
+    window='2027-Q1',
+    details=(
+        'To imitate the previous behaviour, use thick slices by '
+        'right-clicking on the dims scroll bar, see '
+        'https://napari.org/stable/guides/rendering.html'
+        '#margins-and-thick-slicing. Setting projection_mode to '
+        'rescale_spherical may be more physically accurate if your '
+        'points correspond directly to objects with a physical size.'
+    ),
 )
 
 
@@ -369,8 +379,8 @@ class Points(Layer):
     # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
-    @deprecated_constructor_arg_by_attr('n_dimensional')
-    @deprecated_constructor_arg_by_attr('out_of_slice_display')
+    @deprecated_constructor_arg_by_attr(name='n_dimensional')
+    @deprecated_constructor_arg_by_attr(name='out_of_slice_display')
     def __init__(
         self,
         data=None,
