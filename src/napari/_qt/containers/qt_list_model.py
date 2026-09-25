@@ -34,7 +34,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(  # pyrefly: ignore [bad-override]
+    def mimeData(  # pyrefly: ignore[bad-override]
         self, indices: Iterable[QModelIndex]
     ) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
