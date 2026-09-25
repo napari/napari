@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -6,7 +7,11 @@ import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
 from napari.layers.points._points_constants import PointsProjectionMode
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _THICK_WARNING,
+    _SliceInput,
+    _ThickNDSlice,
+)
 
 
 @dataclass(frozen=True)
@@ -108,6 +113,9 @@ class _PointSliceRequest:
         else:
             low = point - m_left
             high = point + m_right
+
+            if not self.data_slice.is_thick(not_disp):
+                warnings.warn(_THICK_WARNING.format(self.projection_mode))
 
         # assume slice thickness of 1 in data pixels
         # (same as before thick slices were implemented)
