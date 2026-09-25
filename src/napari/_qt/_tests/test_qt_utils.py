@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QColorDialog, QMainWindow
+from qtpy.QtGui import QColor, QFont
+from qtpy.QtWidgets import QColorDialog, QLabel, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
@@ -17,6 +17,7 @@ from napari._qt.utils import (
     qt_might_be_rich_text,
     qt_signals_blocked,
     str_to_qbytearray,
+    use_tabular_numerals,
 )
 from napari.utils._proxies import PublicOnlyProxy
 
@@ -208,3 +209,18 @@ def test_get_color_reject(
 
     color_ = get_color(color, mode)
     assert color_ is None, 'Expected color to be None when dialog is rejected'
+
+
+@pytest.mark.skipif(
+    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
+)
+def test_use_tabular_numerals(qtbot: QtBot) -> None:
+    """Label gets tabular numerals, but font family is not changed."""
+    label = QLabel('123')
+    qtbot.addWidget(label)
+    family = label.font().family()
+
+    assert use_tabular_numerals(label) is True
+
+    assert label.font().isFeatureSet(QFont.Tag('tnum'))
+    assert label.font().family() == family
