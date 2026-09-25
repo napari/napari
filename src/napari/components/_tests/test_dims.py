@@ -234,6 +234,33 @@ def test_axis_lock_shrinks_with_ndim():
     assert dims.point == (0, 3, 0)
 
 
+def test_axis_lock_refusal_reports_the_refused_axes():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.set_point(0, 1)
+    dims.update({'point': (0, 0, 0)})
+
+    assert [event.axes for event in events] == [(0,), (0,)]
+
+
+def test_axis_lock_reports_nothing_when_no_request_is_refused():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.set_point(0, 4)  # already where the lock holds it
+    dims.set_point(1, 5)  # a free axis
+    dims.range = ((0, 2, 1),) * 3  # clipping
+    dims.ndim = 4
+    dims.reset()
+
+    assert events == []
+
+
 def test_range_change_may_still_clip_a_locked_point():
     """Removing a layer rewrites ``range``; that must keep clipping the point."""
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))

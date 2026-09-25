@@ -11,7 +11,7 @@ import numpy as np
 import pint
 from pydantic import field_validator, model_validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
@@ -100,6 +100,11 @@ class Dims(EventedModel):
         locked axis back into the remaining extent.
 
         .. versionadded:: 0.10.0
+
+    Notes
+    -----
+    The private ``events._point_refused`` carries the refused ``axes``; the
+    slider row's padlock uses it to show refusals from keys and plugin code.
     """
 
     # fields
@@ -170,7 +175,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
-        self._hold_locked_axes()
+        refused = self._hold_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -239,9 +244,12 @@ class Dims(EventedModel):
         if len(not_displayed) > 0 and last_used not in not_displayed:
             self.last_used = not_displayed[0]
 
+        if refused:
+            self.events._point_refused(axes=refused)
+
         return self
 
-    def _hold_locked_axes(self) -> None:
+    def _hold_locked_axes(self) -> tuple[int, ...]:
         """Put locked components back to where they were before this write.
 
         A snapshot of a different length means ``ndim`` changed, which may move
@@ -250,7 +258,7 @@ class Dims(EventedModel):
         previous = self._point_before_check
         axis_locked = ensure_len(self.axis_locked, self.ndim, False)
         if not any(axis_locked) or len(previous) != self.ndim:
-            return
+            return ()
         requested = ensure_len(self.point, self.ndim, 0.0)
         held = tuple(
             prev if locked else new
@@ -258,9 +266,21 @@ class Dims(EventedModel):
                 requested, previous, axis_locked, strict=True
             )
         )
-        if held != requested:
+        refused = tuple(
+            axis
+            for axis, (new, kept) in enumerate(
+                zip(requested, held, strict=True)
+            )
+            if new != kept
+        )
+        if refused:
             with self._validating_ctx():
                 self.point = held
+        return refused
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(_point_refused=Event)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
