@@ -46,7 +46,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
             'Change the symbol of currently selected points and any added afterwards.'
         )
         sym_cb.setCurrentEnum(Symbol(self._layer.current_symbol))
-        sym_cb.currentEnumChanged.connect(self.change_current_symbol)
+        sym_cb.currentEnumChanged.connect(self.change_current_symbol)  # pyrefly: ignore [missing-attribute]
         self.symbol_combobox = sym_cb
 
         self.symbol_combobox_label = QtWrappedLabel('symbol:')

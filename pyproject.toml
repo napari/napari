@@ -578,7 +578,6 @@ project-excludes = [
     'src/napari/_qt/layer_controls/widgets/_labels/qt_ndim_spinbox.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_preserve_labels_checkbox.py',
     'src/napari/_qt/layer_controls/widgets/_labels/qt_render_control.py',
-    'src/napari/_qt/layer_controls/widgets/_points/qt_symbol_combobox.py',
     'src/napari/_qt/layer_controls/widgets/_shapes/qt_edge_width_slider.py',
     'src/napari/_qt/layer_controls/widgets/_surface/qt_shading_combobox.py',
     'src/napari/_qt/layer_controls/widgets/_tracks/qt_color_properties_combobox.py',
