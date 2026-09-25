@@ -2731,7 +2731,11 @@ class Shapes(Layer):
         self._value = (None, None)
         self._moving_value = (None, None)
         self._last_cursor_position = None
-        if self._is_creating is True:
+        # remove() deletes the shape under construction before calling here, so
+        # the index taken from _moving_value can no longer resolve.
+        if index is not None and index >= len(self._data_view.shapes):
+            index = None
+        if self._is_creating is True and index is not None:
             if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
