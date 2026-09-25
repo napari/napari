@@ -49,7 +49,9 @@ def check_view_menu_visibility(viewer, qtbot):
     ('action_id', 'action_title', 'attribute_path'),
     toggle_actions[MenuId.VIEW_SCALEBAR],
 )
-def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
+def test_toggle_axes_scale_bar_grid_lines_attr(
+    action_id, action_title, attribute_path
+):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -64,6 +66,9 @@ def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `grid_lienes` attributes:
+        * `visible`
+        * `labels`
     """
     app = get_app_model()
     viewer = ViewerModel()
