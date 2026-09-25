@@ -688,6 +688,8 @@ class Shapes(Layer):
         # not given a shape_type through data
         if shape_type is None:
             shape_type = self.shape_type
+        elif isinstance(shape_type, str):
+            shape_type = [shape_type] * n_new_shapes
 
         edge_widths = self._data_view.edge_widths
         edge_color = self._data_view.edge_color
