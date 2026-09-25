@@ -92,6 +92,14 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
+    axis_locked : tuple of bool
+        Tuple of per-axis lock state. If True, the point cannot be moved on
+        that axis by anything that asks for it: the sliders, the arrow keys,
+        Ctrl+scroll, or an assignment to ``point``. A ``range`` or ``ndim``
+        change still moves it, so a layer leaving the viewer can still clip a
+        locked axis back into the remaining extent.
+
+        .. versionadded:: 0.10.0
     """
 
     # fields
@@ -101,6 +109,7 @@ class Dims(EventedModel):
     order: tuple[int, ...] = ()
     axis_labels: tuple[str, ...] = ()
     rollable: tuple[bool, ...] = ()
+    axis_locked: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
@@ -114,6 +123,7 @@ class Dims(EventedModel):
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
     _validating: bool = False
+    _point_before_check: tuple[float, ...] = ()
 
     # validators
     # check fields is false to allow private fields to work
@@ -121,6 +131,7 @@ class Dims(EventedModel):
         'order',
         'axis_labels',
         'rollable',
+        'axis_locked',
         'point',
         'margin_left',
         'margin_right',
@@ -159,6 +170,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
+        self._hold_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -214,6 +226,7 @@ class Dims(EventedModel):
         with self._validating_ctx():
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
+            self.axis_locked = ensure_len(self.axis_locked, ndim, False)
 
         # If the last used slider is no longer visible, use the first.
         last_used = self.last_used
@@ -227,6 +240,27 @@ class Dims(EventedModel):
             self.last_used = not_displayed[0]
 
         return self
+
+    def _hold_locked_axes(self) -> None:
+        """Put locked components back to where they were before this write.
+
+        A snapshot of a different length means ``ndim`` changed, which may move
+        the point; only a write at the same ``ndim`` is held.
+        """
+        previous = self._point_before_check
+        axis_locked = ensure_len(self.axis_locked, self.ndim, False)
+        if not any(axis_locked) or len(previous) != self.ndim:
+            return
+        requested = ensure_len(self.point, self.ndim, 0.0)
+        held = tuple(
+            prev if locked else new
+            for new, prev, locked in zip(
+                requested, previous, axis_locked, strict=True
+            )
+        )
+        if held != requested:
+            with self._validating_ctx():
+                self.point = held
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -393,6 +427,31 @@ class Dims(EventedModel):
             value_world.append(rng.start + val * rng.step)
         self.set_point(axis, value_world)
 
+    def lock_axis(self, axis: int) -> None:
+        """Hold the point on ``axis`` where it is."""
+        self._set_axis_locked(axis, True)
+
+    def unlock_axis(self, axis: int) -> None:
+        """Let the point move on ``axis`` again."""
+        self._set_axis_locked(axis, False)
+
+    def is_axis_locked(self, axis: int) -> bool:
+        """Whether the point is held on ``axis``."""
+        return self.axis_locked[ensure_axis_in_bounds(axis, self.ndim)]
+
+    def lock_all_axes(self) -> None:
+        """Hold the point on every axis."""
+        self.axis_locked = (True,) * self.ndim
+
+    def unlock_all_axes(self) -> None:
+        """Let the point move on every axis again."""
+        self.axis_locked = (False,) * self.ndim
+
+    def _set_axis_locked(self, axis: int, locked: bool) -> None:
+        axis_locked = list(self.axis_locked)
+        axis_locked[ensure_axis_in_bounds(axis, self.ndim)] = locked
+        self.axis_locked = tuple(axis_locked)
+
     def set_axis_label(
         self,
         axis: int | Sequence[int],
@@ -417,10 +476,12 @@ class Dims(EventedModel):
 
     def reset(self):
         """Reset dims values to initial states."""
-        # Don't reset axis labels
+        # Don't reset axis labels or axis locks
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
         self.range = ((0, 2, 1),) * self.ndim  # pyrefly: ignore [bad-assignment]
+        # reset moves locked axes too; the locks themselves are kept
+        self._point_before_check = ()
         self.point = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
@@ -529,6 +590,9 @@ class Dims(EventedModel):
             yield
         finally:
             self._validating = prev
+            if not prev:
+                # the reference point for _hold_locked_axes
+                self._point_before_check = self.point
 
 
 def ensure_len(value: tuple, length: int, pad_width: Any):
