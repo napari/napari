@@ -1231,6 +1231,7 @@ class ShapeList:
                     self._mesh.triangles_colors[triangles_slice.stop :],
                 ]
             )
+            # Callers that only change geometry rely on this.
             self._update_z_order()
 
     def remove(self, index: int, renumber: bool = True) -> None:
@@ -1430,6 +1431,7 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)  # pyrefly: ignore [bad-assignment]
         self._update_displayed()
 
+    @_batch_dec
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
     ):
@@ -1605,6 +1607,26 @@ class ShapeList:
         self._z_index[index] = z_index
         self._update_z_order()
 
+    @_batch_dec
+    def update_z_indices(
+        self, indices: Iterable[int], z_indices: int | Iterable[int]
+    ) -> None:
+        """same as update_z_index() but for multiple indices/z_indices at once
+
+        A single int is broadcast to every index. The z order is rebuilt once
+        for the whole batch instead of once per shape, which is what makes
+        this cheaper than a loop over `update_z_index`.
+        """
+        pairs: Iterable[tuple[int, int]]
+        if isinstance(z_indices, (int, np.integer)):
+            pairs = zip(indices, repeat(int(z_indices)), strict=False)
+        else:
+            pairs = zip(indices, z_indices, strict=True)
+        for index, z_index in pairs:
+            self.shapes[index].z_index = z_index
+            self._z_index[index] = z_index
+        self._update_z_order()
+
     def shift(self, index, shift):
         """Performs a 2D shift on a single shape located at index
 
@@ -1632,7 +1654,6 @@ class ShapeList:
         """
         self.shapes[index].scale(scale, center=center)
         self.update(index)
-        self._update_z_order()
 
     def rotate(self, index, angle, center=None):
         """Performs a rotation on a single shape located at index
@@ -1677,7 +1698,6 @@ class ShapeList:
         """
         self.shapes[index].transform(transform)
         self.update(index)
-        self._update_z_order()
         self._clear_cache()
 
     def outline(

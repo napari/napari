@@ -460,3 +460,93 @@ def test_proper_shape_position(
         sl._mesh.displayed_triangles,
         triangles_slice + slice_ * simple_rectangle.vertices_count,
     )
+
+
+def _four_rectangles():
+    return ShapeList(
+        [
+            Rectangle(np.array([[0, 0], [10, 10]])),
+            Rectangle(np.array([[10, 0], [0, 10]])),
+            Rectangle(np.array([[20, 20], [30, 30]])),
+            Rectangle(np.array([[-10, -10], [0, 0]])),
+        ]
+    )
+
+
+def _z_state(shape_list):
+    return (
+        shape_list._z_index.copy(),
+        shape_list._z_order.copy(),
+        shape_list._mesh.triangles_z_order.copy(),
+        shape_list._mesh.displayed_triangles.copy(),
+        shape_list._mesh.displayed_triangles_colors.copy(),
+    )
+
+
+def test_update_z_indices_matches_per_shape_loop():
+    """Bulk update must be indistinguishable from updating one shape at a time."""
+    one_by_one = _four_rectangles()
+    bulk = _four_rectangles()
+    new_z = [3, 1, 2, 0]
+
+    for i, z in enumerate(new_z):
+        one_by_one.update_z_index(i, z)
+    bulk.update_z_indices(range(4), new_z)
+
+    for expected, actual in zip(
+        _z_state(one_by_one), _z_state(bulk), strict=True
+    ):
+        npt.assert_array_equal(expected, actual)
+
+
+@pytest.mark.parametrize('z_index', [2, np.int32(2), np.int64(2)])
+def test_update_z_indices_broadcasts_scalar(z_index):
+    """A scalar z index applies to every listed shape.
+
+    `move_to_front`/`move_to_back` pass a numpy integer, not a builtin int, so
+    the broadcast check must accept both.
+    """
+    shape_list = _four_rectangles()
+    shape_list.update_z_indices([0, 2], z_index)
+
+    npt.assert_array_equal(shape_list._z_index, [2, 0, 2, 0])
+    assert [s.z_index for s in shape_list.shapes] == [2, 0, 2, 0]
+
+
+def test_update_z_indices_length_mismatch():
+    """A short z index sequence is an error, not a silent partial update."""
+    shape_list = _four_rectangles()
+    with pytest.raises(ValueError, match='shorter'):
+        shape_list.update_z_indices(range(4), [1, 2])
+
+
+@pytest.mark.parametrize('seed', range(8))
+def test_z_order_consistent_after_transform(seed):
+    """`transform` leaves the z order valid without rebuilding it itself.
+
+    An affine transform changes corner sharpness, which changes how many
+    triangles the edge triangulation emits. When that grows past the allocated
+    range `_update_mesh_triangles` reallocates and is responsible for
+    rebuilding `triangles_z_order`; nothing else does.
+    """
+    rng = np.random.default_rng(seed)
+    shape_list = ShapeList()
+    shape_list.add(
+        [Polygon(rng.uniform(0, 20, (7, 2)) + 50 * i) for i in range(3)]
+    )
+    shape_list.update_z_indices(range(3), [2, 0, 1])
+
+    for _ in range(5):
+        matrix = rng.uniform(-3, 3, (2, 2))
+        if abs(np.linalg.det(matrix)) < 0.1:
+            continue
+        shape_list.transform(0, matrix)
+        shape_list.scale(1, 1.5, center=(0, 0))
+
+        z_order = shape_list._mesh.triangles_z_order
+        npt.assert_array_equal(
+            np.sort(z_order), np.arange(len(shape_list._mesh.triangles))
+        )
+        assert len(shape_list._mesh.displayed_triangles) == len(
+            shape_list._mesh.triangles
+        )
