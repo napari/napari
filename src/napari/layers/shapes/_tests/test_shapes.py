@@ -2329,6 +2329,25 @@ def test_value():
     assert value == (None, None)
 
 
+def test_value_with_fractional_slice_key():
+    """A non-integer translate puts the displayed slice between whole slices."""
+    layer = Shapes(ndim=3, translate=(5.1, 0, 0))
+    layer.add(
+        [np.array([[19, 10, 10], [19, 10, 20], [19, 20, 20], [19, 20, 10]])],
+        shape_type='rectangle',
+    )
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            ndisplay=2,
+            range=((0, 30, 1),) * 3,
+            point=(24, 0, 0),
+        )
+    )
+
+    assert layer.get_value((24, 15, 15), world=True) == (0, None)
+
+
 @pytest.mark.parametrize('scale', [(-1, -1), (1, -1), (-2, 3)])
 def test_value_vertex_with_negative_scale(scale):
     """Vertices must stay grabbable when the layer scale is negative.
