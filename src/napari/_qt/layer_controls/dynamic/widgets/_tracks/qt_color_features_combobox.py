@@ -16,9 +16,9 @@ if TYPE_CHECKING:
     from napari.layers import Tracks
 
 
-class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
+class QtColorFeaturesComboBoxControl(QtWidgetControlsBase):
     """
-    Class that wraps the connection of events/signals between the layer color properties
+    Class that wraps the connection of events/signals between the layer color features
     attribute and Qt widgets.
 
     Parameters
@@ -45,12 +45,12 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
         # Setup layer
         for layer in self._layers:
             layer.events.color_by.connect(self._on_color_by_change)
-            layer.events.properties.connect(self._on_properties_change)
+            layer.events.features.connect(self._on_features_change)
         # Setup widgets
-        # combo box for track coloring, we can get these from the properties
+        # combo box for track coloring, we can get these from the features
         # keys
         self.color_by_combobox = QComboBox()
-        self.color_by_combobox.addItems(self._layers[0].properties_to_color_by)
+        self.color_by_combobox.addItems(self._layers[0].features_to_color_by)
         for layer in self._layers:
             connect_setattr(
                 self.color_by_combobox.currentTextChanged, layer, 'color_by'
@@ -70,12 +70,12 @@ class QtColorPropertiesComboBoxControl(QtWidgetControlsBase):
             )
             self.color_by_combobox.setCurrentIndex(idx)
 
-    def _on_properties_change(self) -> None:
-        """Change the properties that can be used to color the tracks."""
+    def _on_features_change(self) -> None:
+        """Change the features that can be used to color the tracks."""
         with qt_signals_blocked(self.color_by_combobox):
             self.color_by_combobox.clear()
             self.color_by_combobox.addItems(
-                self._layers[0].properties_to_color_by
+                self._layers[0].features_to_color_by
             )
         self._on_color_by_change()
 

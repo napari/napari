@@ -51,8 +51,8 @@ from napari._qt.layer_controls.dynamic.widgets._surface import (
     QtShadingComboBoxControl,
 )
 from napari._qt.layer_controls.dynamic.widgets._tracks import (
+    QtColorFeaturesComboBoxControl,
     QtColormapComboBoxControl,
-    QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
     QtHideCompletedTracksCheckBoxControl,
@@ -149,7 +149,7 @@ controls_dict = {
         QtEdgeWidthSliderControl,
     ),
     Tracks: (
-        QtColorPropertiesComboBoxControl,
+        QtColorFeaturesComboBoxControl,
         QtColormapComboBoxControl,
         QtGraphCheckBoxControl,
         QtHeadLengthSliderControl,
