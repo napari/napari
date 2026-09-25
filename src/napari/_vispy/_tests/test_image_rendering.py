@@ -10,7 +10,7 @@ from napari.layers.image import Image
 
 def test_image_rendering(make_napari_viewer):
     """Test 3D image with different rendering."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
 
     viewer.dims.ndisplay = 3
 
