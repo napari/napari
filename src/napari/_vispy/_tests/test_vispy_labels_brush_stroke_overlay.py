@@ -8,7 +8,7 @@ from napari._vispy.overlays.labels_brush_stroke import (
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.layers.labels._labels_key_bindings import reset_polygon
-from napari.utils._proxies import ReadOnlyWrapper
+from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
@@ -33,29 +33,14 @@ def _make_overlay():
     return layer, overlay, vispy, data
 
 
-# the brush-size-on-mouse-move callback (active in PAINT mode) reads
-# event.modifiers, which the MouseEvent fixture does not define, so set it here.
-def _press(MouseEvent, layer, position):
-    event = MouseEvent(
-        type='mouse_press', button=2, position=position, dims_displayed=(0, 1)
-    )
-    event.modifiers = ()
-    mouse_press_callbacks(layer, event)
-
-
-def _move(MouseEvent, layer, position):
-    event = MouseEvent(
-        type='mouse_move', position=position, dims_displayed=(0, 1)
-    )
-    event.modifiers = ()
-    mouse_move_callbacks(layer, event)
-
-
 @pytest.mark.usefixtures('qapp')
-def test_brush_stroke_circle_appears_on_right_click(MouseEvent):
+def test_brush_stroke_circle_appears_on_right_click():
     layer, overlay, vispy, data = _make_overlay()
 
-    _press(MouseEvent, layer, (15, 15))
+    event = read_only_mouse_event(
+        type='mouse_press', button=2, position=(15, 15)
+    )
+    mouse_press_callbacks(layer, event)
 
     assert overlay.active is True
     assert vispy._circle.visible is True
@@ -65,13 +50,16 @@ def test_brush_stroke_circle_appears_on_right_click(MouseEvent):
 
 
 @pytest.mark.usefixtures('qapp')
-def test_live_paint_on_move_is_staged_not_committed(MouseEvent):
+def test_live_paint_on_move_is_staged_not_committed():
     layer, overlay, _vispy, data = _make_overlay()
 
-    _press(MouseEvent, layer, (15, 15))
+    event = read_only_mouse_event(
+        type='mouse_press', button=2, position=(15, 15)
+    )
+    mouse_press_callbacks(layer, event)
     # moves staying within the radius do not complete the stroke
     for position in [(15, 16), (16, 16), (16, 15)]:
-        _move(MouseEvent, layer, position)
+        event = read_only_mouse_event(type='mouse_move', position=position)
 
     assert overlay.active is True
     assert layer._block_history is True
@@ -81,12 +69,16 @@ def test_live_paint_on_move_is_staged_not_committed(MouseEvent):
 
 
 @pytest.mark.usefixtures('qapp')
-def test_escape_aborts_and_restores(MouseEvent):
+def test_escape_aborts_and_restores():
     layer, overlay, vispy, data = _make_overlay()
 
-    _press(MouseEvent, layer, (15, 15))
+    event = read_only_mouse_event(
+        type='mouse_press', button=2, position=(15, 15)
+    )
+    mouse_press_callbacks(layer, event)
     for position in [(15, 16), (16, 16)]:
-        _move(MouseEvent, layer, position)
+        event = read_only_mouse_event(type='mouse_move', position=position)
+        mouse_move_callbacks(layer, event)
 
     # Escape -> abort
     reset_polygon(layer)
@@ -100,10 +92,13 @@ def test_escape_aborts_and_restores(MouseEvent):
 
 
 @pytest.mark.usefixtures('qapp')
-def test_leave_and_return_completes_and_fills(MouseEvent):
+def test_leave_and_return_completes_and_fills():
     layer, overlay, vispy, data = _make_overlay()
 
-    _press(MouseEvent, layer, (15, 15))
+    event = read_only_mouse_event(
+        type='mouse_press', button=2, position=(15, 15)
+    )
+    mouse_press_callbacks(layer, event)
     # trace a square loop: leave the radius, then return to the start
     loop = [
         (8, 15),  # leaves the radius -> latches _has_left
@@ -115,7 +110,8 @@ def test_leave_and_return_completes_and_fills(MouseEvent):
         (13, 16),  # back inside the radius (but not the start) -> completes
     ]
     for position in loop:
-        _move(MouseEvent, layer, position)
+        event = read_only_mouse_event(type='mouse_move', position=position)
+        mouse_move_callbacks(layer, event)
 
     assert overlay.active is False
     assert vispy._circle.visible is False
@@ -129,46 +125,40 @@ def test_leave_and_return_completes_and_fills(MouseEvent):
 
 
 @pytest.mark.usefixtures('qapp')
-def test_click_during_stroke_pans_then_resumes(MouseEvent):
+def test_click_during_stroke_pans_then_resumes():
     layer, overlay, _vispy, _data = _make_overlay()
 
-    _press(MouseEvent, layer, (15, 15))
+    event = read_only_mouse_event(
+        type='mouse_press', button=2, position=(15, 15)
+    )
+    mouse_press_callbacks(layer, event)
     assert overlay.active is True
     assert layer.mouse_pan is False  # paint mode default
 
     # a (non-right) press during the stroke enables camera panning
-    press = ReadOnlyWrapper(
-        MouseEvent(
-            type='mouse_press',
-            button=1,
-            position=(15, 16),
-            dims_displayed=(0, 1),
-        )
+    event = read_only_mouse_event(
+        type='mouse_press',
+        button=1,
+        position=(15, 16),
     )
-    mouse_press_callbacks(layer, press)
+    mouse_press_callbacks(layer, event)
     assert layer.mouse_pan is True
     assert overlay.active is True  # stroke is not aborted
 
     # dragging pans (no painting while dragging)
-    move = ReadOnlyWrapper(
-        MouseEvent(
-            type='mouse_move',
-            is_dragging=True,
-            position=(25, 25),
-            dims_displayed=(0, 1),
-        )
+    move = read_only_mouse_event(
+        type='mouse_move',
+        is_dragging=True,
+        position=(25, 25),
     )
     mouse_move_callbacks(layer, move)
     assert layer.mouse_pan is True
 
     # releasing restores panning state and keeps the stroke alive
-    release = ReadOnlyWrapper(
-        MouseEvent(
-            type='mouse_release',
-            button=1,
-            position=(25, 25),
-            dims_displayed=(0, 1),
-        )
+    release = read_only_mouse_event(
+        type='mouse_release',
+        button=1,
+        position=(25, 25),
     )
     mouse_release_callbacks(layer, release)
     assert layer.mouse_pan is False
