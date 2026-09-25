@@ -83,13 +83,13 @@ class _TourTooltip(QFrame):
         self._nav.addWidget(self._counter)
         self._nav.addStretch()
         self._back = QPushButton()
-        self._back.clicked.connect(self.back_clicked)  # pyrefly: ignore [bad-argument-type]
+        self._back.clicked.connect(self.back_clicked)
         self._nav.addWidget(self._back)
         self._next = QPushButton()
-        self._next.clicked.connect(self.next_clicked)  # pyrefly: ignore [bad-argument-type]
+        self._next.clicked.connect(self.next_clicked)
         self._nav.addWidget(self._next)
         self._skip = QPushButton()
-        self._skip.clicked.connect(self.skip_clicked)  # pyrefly: ignore [bad-argument-type]
+        self._skip.clicked.connect(self.skip_clicked)
         self._nav.addWidget(self._skip)
         layout.addLayout(self._nav)
 
@@ -161,7 +161,7 @@ class _TourOverlay(QWidget):
         self._spotlight = rect
         self.update()
 
-    def paintEvent(self, _event: QPaintEvent | None) -> None:  # pyrefly: ignore [bad-override-param-name]
+    def paintEvent(self, _event: QPaintEvent | None) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         overlay = QColor(0, 0, 0, 150)
@@ -242,11 +242,7 @@ class GuidedTour(QObject):
         self._window = None
         self.deleteLater()
 
-    def eventFilter(  # pyrefly: ignore [bad-override-param-name]
-        self, watched: QObject | None, event: QEvent | None
-    ) -> bool:
-        if event is None:
-            return super().eventFilter(watched, event)
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched is self._window and event.type() == QEvent.Type.Resize:
             self._show_step(self._current)
         elif event.type() == QEvent.Type.KeyPress:
