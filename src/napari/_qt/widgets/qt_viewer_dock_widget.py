@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Sequence
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -53,7 +54,7 @@ class QtViewerDockWidget(QDockWidget):
     area : str
         Side of the main window to which the new dock widget will be added.
         Must be in {'left', 'right', 'top', 'bottom'}
-    allowed_areas : list[str], optional
+    allowed_areas : Sequence[str], optional
         Areas, relative to main window, that the widget is allowed dock.
         Each item in list must be in {'left', 'right', 'top', 'bottom'}
         By default, all areas are allowed.
@@ -77,7 +78,7 @@ class QtViewerDockWidget(QDockWidget):
         *,
         name: str = '',
         area: str = 'right',
-        allowed_areas: list[str] | None = None,
+        allowed_areas: Sequence[str] | None = None,
         shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,

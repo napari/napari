@@ -1088,6 +1088,7 @@ class Window:
         plugin_name: str,
         widget_name: str | None = None,
         tabify: bool = False,
+        area: str | None = None,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -1099,6 +1100,9 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
         tabify : bool
             Flag to tabify dock widget or not.
 
@@ -1110,11 +1114,12 @@ class Window:
         """
         from napari.plugins import _npe2
 
-        widget_class = None
-        dock_kwargs = {}
-
-        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
-            widget_class, widget_name = result
+        widget_class, widget_name, default_area = (
+            _npe2.get_widget_contribution(plugin_name, widget_name)
+        )
+        area = self._resolve_dock_area(
+            name=widget_name, area=area, default_area=default_area
+        )
 
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
@@ -1126,11 +1131,31 @@ class Window:
         )
 
         # Add dock widget
-        dock_kwargs.pop('name', None)
         dock_widget = self.add_dock_widget(
-            wdg, name=full_name, tabify=tabify, **dock_kwargs
+            wdg,
+            name=full_name,
+            tabify=tabify,
+            area=area,
         )
         return dock_widget, wdg
+
+    def _resolve_dock_area(
+        self,
+        name: str,
+        area: str | None = None,
+        default_area: str | None = None,
+    ) -> str:
+        """Return the area a dock widget called `name` should be added to.
+
+        An explicitly requested `area` wins, then the position the widget was
+        last moved to, then `default_area`, then 'right'.
+        """
+        if area is not None:
+            return area
+        settings = get_settings()
+        return settings.application.plugin_widget_positions.get(
+            name, default_area or 'right'
+        )
 
     def add_dock_widget(
         self,
@@ -1191,11 +1216,7 @@ class Window:
 
             self._unnamed_dockwidget_count += 1
 
-        if area is None:
-            settings = get_settings()
-            area = settings.application.plugin_widget_positions.get(
-                name, 'right'
-            )
+        area = self._resolve_dock_area(name=name, area=area)
 
         if shortcut is not _sentinel:
             warnings.warn(
@@ -1449,8 +1470,13 @@ class Window:
 
         widget = magicgui(function, **magic_kwargs or {})
 
-        if area is None:
-            area = 'right' if str(widget.layout) == 'vertical' else 'bottom'
+        area = self._resolve_dock_area(
+            name=name,
+            area=area,
+            default_area='right'
+            if str(widget.layout) == 'vertical'
+            else 'bottom',
+        )
         if allowed_areas is None:
             allowed_areas = [area]
         if shortcut is not _sentinel:

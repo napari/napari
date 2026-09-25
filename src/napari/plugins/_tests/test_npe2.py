@@ -117,7 +117,7 @@ def test_write_pathlib(mock_pm: 'TestPluginManager'):
 
 def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
     # calling with plugin alone
-    (_, display_name) = _npe2.get_widget_contribution(PLUGIN_NAME)
+    (_, display_name, _) = _npe2.get_widget_contribution(PLUGIN_NAME)
     mock_pm.commands.get.assert_called_once_with('my-plugin.some_widget')
     assert display_name == 'My Widget'
 
