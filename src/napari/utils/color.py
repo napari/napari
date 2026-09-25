@@ -9,7 +9,7 @@ from pydantic_core import CoreSchema, core_schema
 from napari.utils.colormaps.standardize_color import transform_color
 
 ColorValueParam = np.ndarray | list | tuple | str | None
-ColorArrayParam = np.ndarray | list | tuple | None
+ColorArrayParam = np.ndarray | list | tuple | str | None
 
 
 class ColorValue(np.ndarray):
