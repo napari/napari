@@ -417,22 +417,6 @@ class Shapes(Layer):
         Mode.ADD_POLYGON_LASSO: no_op,
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.SELECT: 'pointing',
-        Mode.DIRECT: 'pointing',
-        Mode.VERTEX_INSERT: 'cross',
-        Mode.VERTEX_REMOVE: 'cross',
-        Mode.ADD_RECTANGLE: 'cross',
-        Mode.ADD_ELLIPSE: 'cross',
-        Mode.ADD_LINE: 'cross',
-        Mode.ADD_POLYLINE: 'cross',
-        Mode.ADD_PATH: 'cross',
-        Mode.ADD_POLYGON: 'cross',
-        Mode.ADD_POLYGON_LASSO: 'cross',
-    }
-
     _interactive_modes: ClassVar[set[Mode]] = {
         Mode.PAN_ZOOM,
     }
