@@ -130,9 +130,7 @@ def test_adding_stretch(make_napari_viewer):
     widg.setLayout(QVBoxLayout())
     widg.layout().addWidget(QPushButton())
     assert widg.layout().count() == 1
-    dw = viewer.window.add_dock_widget(
-        widg, area='right', add_vertical_stretch=True
-    )
+    dw = viewer.window.add_dock_widget(widg, area='right')
     assert widg.layout().count() == 2
     dw.close()
 
@@ -141,9 +139,7 @@ def test_adding_stretch(make_napari_viewer):
     widg.setLayout(QVBoxLayout())
     widg.layout().addWidget(QTextEdit())
     assert widg.layout().count() == 1
-    dw = viewer.window.add_dock_widget(
-        widg, area='right', add_vertical_stretch=True
-    )
+    dw = viewer.window.add_dock_widget(widg, area='right')
     assert widg.layout().count() == 1
     dw.close()
 
@@ -152,9 +148,7 @@ def test_adding_stretch(make_napari_viewer):
     widg.setLayout(QHBoxLayout())
     widg.layout().addWidget(QPushButton())
     assert widg.layout().count() == 1
-    dw = viewer.window.add_dock_widget(
-        widg, area='bottom', add_vertical_stretch=True
-    )
+    dw = viewer.window.add_dock_widget(widg, area='bottom')
     assert widg.layout().count() == 1
     dw.close()
 

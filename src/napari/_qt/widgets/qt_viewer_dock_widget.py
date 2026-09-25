@@ -117,7 +117,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: list[str] | None = None,
         shortcut=_sentinel,
         object_name: str = '',
-        add_vertical_stretch=False,
+        add_vertical_stretch=True,
         close_btn=True,
     ) -> None:
         self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
