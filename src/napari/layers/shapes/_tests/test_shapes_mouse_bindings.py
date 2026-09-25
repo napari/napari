@@ -519,6 +519,41 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+def test_finish_polygon_with_data_rewriting_listener(
+    create_known_shapes_layer,
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+    layer.mode = 'add_polygon'
+
+    for coord in [[20, 30], [10, 50], [60, 40], [80, 20]]:
+        for kind, callbacks in (
+            ('mouse_move', mouse_move_callbacks),
+            ('mouse_press', mouse_press_callbacks),
+            ('mouse_release', mouse_release_callbacks),
+        ):
+            callbacks(
+                layer,
+                read_only_mouse_event(
+                    type=kind,
+                    position=coord,
+                    pos=np.array(coord, dtype=float),
+                ),
+            )
+
+    def rewrite_data(event):
+        if event.action == ActionType.ADDED:
+            layer.data = list(layer.data)
+
+    layer.events.data.connect(rewrite_data)
+
+    mouse_double_click_callbacks(
+        layer, read_only_mouse_event(type='mouse_double_click', position=coord)
+    )
+
+    assert len(layer.data) == n_shapes + 1
+    assert not layer._is_creating
+
+
 @pytest.mark.parametrize(
     'shape_type_vertices',
     [
