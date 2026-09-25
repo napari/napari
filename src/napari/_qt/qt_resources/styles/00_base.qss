@@ -25,6 +25,10 @@ alternate-background-color -> QPalette.AlternateBase
 
 */
 
+* {
+    font-family: "{{ font }}";
+}
+
 QWidget {
   background-color: {{ background }};
   border: 0px;
