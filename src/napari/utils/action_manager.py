@@ -16,17 +16,18 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     from app_model.types import KeyBinding
+    from qtpy.QtWidgets import QAbstractButton
 
     from napari.utils.events import Event
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None: ...
+        def connect(self, callback: Callable, /) -> object: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None: ...
+        def setToolTip(self, text: str, /) -> None: ...
 
     class ShortcutEvent(Event):
         name: str
@@ -185,7 +186,10 @@ class ActionManager:
                 km_provider.bind_key(shortcut, action.injected, overwrite=True)
 
     def bind_button(
-        self, name: str, button: Button, extra_tooltip_text=''
+        self,
+        name: str,
+        button: Button | QAbstractButton,
+        extra_tooltip_text='',
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
