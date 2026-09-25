@@ -265,12 +265,47 @@ def convert_vispy_colormap(colormap, name='vispy'):
     )
 
 
-def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
-    """Convert a napari colormap to its equivalent vispy colormap."""
+# Returned by napari's image shader for NaN; clamped data is never negative.
+NAN_SENTINEL = -1.0
+
+
+class _NanAwareVispyColormap(VispyColormap):
+    """A vispy colormap that maps NAN_SENTINEL to `nan_color`.
+
+    The check is injected after `super().__init__` so that it runs before
+    vispy's own NaN check, which is injected at the same place.
+    """
+
+    def __init__(self, *args, nan_color=None, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if nan_color is None:
+            return
+        r, g, b, a = (float(c) for c in np.asarray(nan_color).ravel()[:4])
+        prologue = f"""
+        // napari: NaN, marked by the shader before the contrast limits are applied
+        if (t < {NAN_SENTINEL / 2}) {{ return vec4({r:.6f}, {g:.6f}, {b:.6f}, {a:.6f}); }}"""
+        self.glsl_map = re.sub(
+            r'float t\) \{', f'float t) {{{prologue}', self.glsl_map
+        )
+
+
+def _napari_cmap_to_vispy(
+    colormap: Colormap, *, decode_nan_sentinel: bool = False
+) -> VispyColormap:
+    """Convert a napari colormap to its equivalent vispy colormap.
+
+    Set `decode_nan_sentinel` only for visuals whose shader emits
+    NAN_SENTINEL. Others, such as the surface visual, can pass negative
+    values that are not NaN.
+    """
     cmap_args = colormap.model_dump()
     cmap_args.pop('name')
     cmap_args['bad_color'] = cmap_args.pop('nan_color')
-    return VispyColormap(**cmap_args)
+    if not decode_nan_sentinel:
+        return VispyColormap(**cmap_args)
+    return _NanAwareVispyColormap(
+        **cmap_args, nan_color=cmap_args['bad_color']
+    )
 
 
 def _validate_rgb(colors, *, tolerance=0.0):
