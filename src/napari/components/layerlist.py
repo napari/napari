@@ -92,6 +92,9 @@ class LayerList(SelectableEventedList[Layer]):
     are instead forwarded by the layerlist: a callback connected to
     ``layerlist.events`` receives the layer's own event (here ``scale``)
     with an added ``index`` attribute giving the position of the layer.
+    If you are only interested in a specific layer, you can instead connect
+    directly to that layer's own events, e.g.
+    ``layer.events.scale.connect(callback)``.
 
     Examples
     --------
