@@ -15,15 +15,9 @@ if TYPE_CHECKING:
     from napari.components.camera import Camera
     from napari.components.dims import Dims
 
-# One (negative-end, positive-end) label pair per world axis; either end (or
-# the whole pair) may be ``None`` to leave that direction unlabeled.
-DirectionLabelPair = tuple[str | None, str | None]
-
-__all__ = ['DirectionLabelPair', 'direction_edge_labels']
-
 
 def direction_edge_labels(
-    direction_labels: Sequence[DirectionLabelPair | None] | None,
+    direction_labels: Sequence[tuple[str | None, str | None] | None],
     *,
     dims: Dims,
     camera: Camera,
@@ -34,131 +28,59 @@ def direction_edge_labels(
 
     Parameters
     ----------
-    direction_labels : sequence of (str or None, str or None) or None
-        One ``(negative, positive)`` label pair per world axis, indexed by
-        world-axis number (same length and indexing as ``dims`` has axes). The
-        pair labels the axis's decreasing and increasing *world* directions;
-        either end, or a whole axis's pair, may be ``None`` to leave it
-        unlabeled. ``direction_labels`` itself may be ``None`` to mean "no
-        labels".
+    direction_labels : sequence
+        One entry per world axis: a ``(negative, positive)`` pair labeling the
+        axis's decreasing and increasing world directions, or ``None`` if the
+        axis is unlabeled. Either label in a pair may also be ``None``.
     dims : napari.components.Dims
-        The viewer dims, read for ``ndisplay`` and ``displayed``.
+        The viewer dims.
     camera : napari.components.Camera
-        The viewer camera, read for ``orientation``.
+        The viewer camera.
 
     Returns
     -------
     dict of str to str, or None
-        ``None`` when the mapping is undefined: ``dims.ndisplay != 2``, or
-        fewer than two axes are displayed. Otherwise a dict whose keys are a
-        subset of ``{'top', 'bottom', 'left', 'right'}`` mapping each edge to
-        the label facing it; edges whose direction is unlabeled are omitted,
-        so the dict is empty when nothing is labeled.
+        The label facing each of ``'top'``, ``'bottom'``, ``'left'`` and
+        ``'right'``, omitting unlabeled edges. ``None`` when
+        ``dims.ndisplay != 2`` or fewer than two axes are displayed.
 
     Raises
     ------
     ValueError
-        If ``direction_labels`` is not ``None`` and its length differs from
-        ``dims.ndim``, if an entry is neither ``None`` nor a
-        ``(negative, positive)`` pair, or if a label is neither ``None`` nor a
-        string. These are checked for every axis regardless of ``ndisplay``,
-        so a malformed non-displayed axis is still rejected.
+        If ``direction_labels`` does not have one entry per dimension.
 
     Notes
     -----
-    The screen convention is taken from ``camera.orientation``, a
-    ``(depth, vertical, horizontal)`` tuple. The two displayed axes are
-    ``dims.displayed == (vertical_axis, horizontal_axis)``; the vertical axis
-    maps to screen-y and the horizontal axis to screen-x. A
-    ``VerticalAxisOrientation.DOWN`` sends the vertical axis's positive
-    direction to the bottom edge (``UP`` to the top); a
-    ``HorizontalAxisOrientation.RIGHT`` sends the horizontal axis's positive
-    direction to the right edge (``LEFT`` to the left). The depth component
-    does not affect the in-plane edges. Reducing an oblique frame to per-axis
-    labels is the caller's responsibility; this function only places the
-    labels it is given.
+    The displayed axes ``(vertical, horizontal)`` come from ``dims.displayed``
+    and their screen directions from ``camera.orientation``, so the result
+    follows axis flips and transposes.
     """
-    # Validate the whole sequence up front, before any early return, so the
-    # ValueError contract holds regardless of ndisplay or which axes show.
-    if direction_labels is not None:
-        _validate_direction_labels(direction_labels, dims.ndim)
-
-    displayed_axes = dims.displayed
-    if dims.ndisplay != 2 or len(displayed_axes) != 2:
-        return None
-
-    if direction_labels is None:
-        return {}
-
-    vertical_axis, horizontal_axis = displayed_axes
-    _, vertical, horizontal = camera.orientation
-
-    edges: dict[str, str] = {}
-
-    if vertical == VerticalAxisOrientation.DOWN:
-        positive_edge, negative_edge = 'bottom', 'top'
-    else:
-        positive_edge, negative_edge = 'top', 'bottom'
-    _place_axis(
-        edges,
-        direction_labels[vertical_axis],
-        positive_edge=positive_edge,
-        negative_edge=negative_edge,
-    )
-
-    if horizontal == HorizontalAxisOrientation.RIGHT:
-        positive_edge, negative_edge = 'right', 'left'
-    else:
-        positive_edge, negative_edge = 'left', 'right'
-    _place_axis(
-        edges,
-        direction_labels[horizontal_axis],
-        positive_edge=positive_edge,
-        negative_edge=negative_edge,
-    )
-
-    return edges
-
-
-def _validate_direction_labels(
-    direction_labels: Sequence[DirectionLabelPair | None],
-    ndim: int,
-) -> None:
-    """Check length and the shape/type of every entry; raise on any problem."""
-    if len(direction_labels) != ndim:
+    if len(direction_labels) != dims.ndim:
         raise ValueError(
             'direction_labels must have one entry per dimension: got '
-            f'{len(direction_labels)} for ndim={ndim}.'
+            f'{len(direction_labels)} for ndim={dims.ndim}.'
         )
-    for entry in direction_labels:
-        if entry is None:
-            continue
-        # A str is a 2-length iterable, so it would unpack silently; reject it
-        # explicitly along with any non-(list/tuple) or wrong-length entry.
-        if not isinstance(entry, (tuple, list)) or len(entry) != 2:
-            raise ValueError(
-                'each direction_labels entry must be None or a '
-                f'(negative, positive) pair; got {entry!r}.'
-            )
-        for label in entry:
-            if label is not None and not isinstance(label, str):
-                raise ValueError(
-                    f'each direction label must be a string or None; got {label!r}.'
-                )
+    if dims.ndisplay != 2 or len(dims.displayed) != 2:
+        return None
 
+    _, vertical, horizontal = camera.orientation
+    vertical_edges = (
+        ('top', 'bottom')
+        if vertical == VerticalAxisOrientation.DOWN
+        else ('bottom', 'top')
+    )
+    horizontal_edges = (
+        ('left', 'right')
+        if horizontal == HorizontalAxisOrientation.RIGHT
+        else ('right', 'left')
+    )
 
-def _place_axis(
-    edges: dict[str, str],
-    entry: DirectionLabelPair | None,
-    *,
-    positive_edge: str,
-    negative_edge: str,
-) -> None:
-    """Add one axis's two labels to ``edges``; ``entry`` is already validated."""
-    if entry is None:
-        return
-    negative, positive = entry
-    if negative is not None:
-        edges[negative_edge] = negative
-    if positive is not None:
-        edges[positive_edge] = positive
+    edges = {}
+    for axis, axis_edges in zip(
+        dims.displayed, (vertical_edges, horizontal_edges), strict=True
+    ):
+        pair = direction_labels[axis] or (None, None)
+        for edge, label in zip(axis_edges, pair, strict=True):
+            if label is not None:
+                edges[edge] = label
+    return edges
