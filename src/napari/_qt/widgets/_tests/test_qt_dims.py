@@ -340,6 +340,34 @@ def test_slider_press_updates_last_used(qtbot):
             assert view.dims.last_used == 0
 
 
+def test_slider_value_change_updates_last_used(qtbot):
+    """moving a slider should update the last_used property of dims.
+
+    The custom scrollbar jumps to the clicked position in its
+    ``mousePressEvent``, i.e. before ``sliderPressed`` is emitted, so
+    ``last_used`` has to be updated when the value changes.
+    See https://github.com/napari/napari/issues/7922
+    """
+    view = QtDims(Dims(ndim=4, range=((0, 20, 1),) * 4))
+    qtbot.addWidget(view)
+    view.dims.last_used = 0
+
+    last_used = []
+    view.dims.events.current_step.connect(
+        lambda event: last_used.append(event.source.last_used)
+    )
+
+    # click in the groove of the second slider, i.e. while the first one is
+    # still the last used one
+    view.slider_widgets[1].slider.setValue(8)
+
+    assert view.dims.current_step[1] == 8
+    # `last_used` must already be correct when `current_step` is emitted
+    assert last_used == [1]
+    assert view.dims.last_used == 1
+    assert view.slider_widgets[1].slider.property('last_used')
+
+
 def test_last_used_style_property_set_at_creation(qtbot):
     """The active slider is marked from the start, not only after a change.
 
