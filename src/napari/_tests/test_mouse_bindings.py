@@ -6,12 +6,54 @@ import pytest
 from vispy.app.canvas import MouseEvent
 
 from napari._tests.utils import skip_on_win_ci
+from napari.components import ViewerModel
 from napari.layers import Image
 from napari.layers.base._base_constants import InteractionBoxHandle
 from napari.layers.base._base_mouse_bindings import (
     highlight_box_handles,
     transform_with_box,
 )
+
+_MOUSE_CALLBACK_ATTRIBUTES = [
+    'mouse_move_callbacks',
+    'mouse_drag_callbacks',
+    'mouse_wheel_callbacks',
+    'mouse_double_click_callbacks',
+]
+
+
+@pytest.mark.parametrize('attribute', _MOUSE_CALLBACK_ATTRIBUTES)
+def test_layer_mouse_callbacks_append_as_decorator(attribute):
+    """A callback added as a decorator can be removed again by its name.
+
+    https://github.com/napari/napari/issues/8066
+    """
+    layer = Image(np.empty((10, 10)))
+    callbacks = getattr(layer, attribute)
+
+    @callbacks.append
+    def callback(_layer, event):
+        yield
+
+    # the decorated name must still refer to the callback itself
+    assert callback in callbacks
+    callbacks.remove(callback)
+    assert callback not in callbacks
+
+
+@pytest.mark.parametrize('attribute', _MOUSE_CALLBACK_ATTRIBUTES)
+def test_viewer_mouse_callbacks_append_as_decorator(attribute):
+    """A viewer callback added as a decorator can be removed by its name."""
+    viewer = ViewerModel()
+    callbacks = getattr(viewer, attribute)
+
+    @callbacks.append
+    def callback(_viewer, event):
+        yield
+
+    assert callback in callbacks
+    callbacks.remove(callback)
+    assert callback not in callbacks
 
 
 @skip_on_win_ci
