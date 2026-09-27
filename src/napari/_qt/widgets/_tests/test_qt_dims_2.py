@@ -36,6 +36,33 @@ def test_slice_labels(qtbot):
     assert dims.point[0] == 8
 
 
+def test_slice_label_updates_last_used(qtbot):
+    """The axis edited in the slice label becomes the last used one.
+
+    See https://github.com/napari/napari/issues/7922
+    """
+    dims = Dims(ndim=4)
+    dims.set_range(0, (0, 20, 1))
+    dims.set_range(1, (0, 20, 1))
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    last_used = []
+    dims.events.current_step.connect(
+        lambda event: last_used.append(event.source.last_used)
+    )
+
+    # change the slice of the second slider without touching the slider itself
+    label_edit = view.slider_widgets[1].curslice_label
+    label_edit.setText(str(8))
+    label_edit.editingFinished.emit()
+
+    assert dims.point[1] == 8
+    assert dims.last_used == 1
+    # `last_used` must already be correct when `current_step` is emitted
+    assert last_used == [1]
+
+
 def test_slice_label_validator_fits_large_dims(qtbot):
     """The frame box must accept indices for stacks with >6 digits, see #3795."""
     dims = Dims(ndim=2)

@@ -143,6 +143,9 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
+        # the user is interacting with this axis, and `current_step` is
+        # emitted by the next line, so `last_used` has to be set first
+        self.dims.last_used = self.axis
         self.dims.set_current_step(self.axis, val)
 
     def _create_axis_label_widget(self) -> QElidingLineEdit:
