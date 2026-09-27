@@ -330,12 +330,9 @@ def test_edit_shape_pentagon(shape_li):
 
 
 def test_edit_shape_fewer_vertices(shape_li):
-    """Test editing a shape to have fewer vertices in ShapeList.
-
-    A polygon lasso is simplified when the drawing finishes, so shapes can
-    shrink. The space they free must not be left in the vertices array, see
-    https://github.com/napari/napari/issues/9352
-    """
+    """Test editing a shape to have fewer vertices in ShapeList."""
+    # a polygon lasso is simplified when the drawing finishes, and the space
+    # the shape frees must not be left in the vertices array, see #9352
     shape_li.edit(1, np.array([[5, 5], [15, 5], [10, 15]]), new_type=Polygon)
 
     # every shape owns exactly the range of vertices it has data for

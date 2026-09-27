@@ -2355,13 +2355,9 @@ def test_value_vertex_with_negative_scale(scale):
 
 
 def test_value_after_shape_lost_vertices():
-    """Test that hit testing only reports vertices the shape still has.
-
-    Shapes can lose vertices while being drawn (a polygon lasso is simplified
-    when the drawing finishes) or while a vertex is deleted. The freed space
-    used to be left in the vertices array and reported as if it were part of
-    the shape, see https://github.com/napari/napari/issues/9352
-    """
+    """Test that hit testing only reports vertices the shape still has."""
+    # the space a shape frees when it loses vertices must not be reported as
+    # part of the shape, see https://github.com/napari/napari/issues/9352
     polygon = np.array(
         [
             [0, 0],
