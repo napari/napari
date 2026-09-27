@@ -329,6 +329,27 @@ def test_edit_shape_pentagon(shape_li):
     assert shape_li._mesh.triangles.shape[0] == 43
 
 
+def test_edit_shape_fewer_vertices(shape_li):
+    """Test editing a shape to have fewer vertices in ShapeList.
+
+    A polygon lasso is simplified when the drawing finishes, so shapes can
+    shrink. The space they free must not be left in the vertices array, see
+    https://github.com/napari/napari/issues/9352
+    """
+    shape_li.edit(1, np.array([[5, 5], [15, 5], [10, 15]]), new_type=Polygon)
+
+    # every shape owns exactly the range of vertices it has data for
+    npt.assert_array_equal(np.diff(shape_li._vertices_index), [4, 3, 4, 4])
+    npt.assert_array_equal(
+        shape_li.displayed_vertices,
+        np.concatenate([shape.data_displayed for shape in shape_li.shapes]),
+    )
+    npt.assert_array_equal(
+        shape_li.displayed_vertices_to_shape_num,
+        [0] * 4 + [1] * 3 + [2] * 4 + [3] * 4,
+    )
+
+
 @pytest.mark.parametrize(
     'new_color',
     [

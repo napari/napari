@@ -1123,18 +1123,27 @@ class ShapeList:
         shape = self.shapes[index]
         vertices_slice = self._vertices_slice_available(index)
         curr_vert_count = vertices_slice.stop - vertices_slice.start
-        if shape.data_displayed.shape[0] == curr_vert_count:
+        new_vert_count = shape.data_displayed.shape[0]
+        if new_vert_count == curr_vert_count:
             # If the number of vertices is the same, just update the data
             self._vertices[vertices_slice] = shape.data_displayed
-        elif shape.data_displayed.shape[0] < curr_vert_count:
-            # To avoid relocation, we add first point few times for padding.
+        elif new_vert_count < curr_vert_count:
+            # The shape shrank. Move the vertices of the following shapes
+            # towards its start to close the gap, so that every shape owns
+            # exactly the range given by `_vertices_index`. Leaving the freed
+            # space untouched would keep stale padding vertices in
+            # `displayed_vertices`, which are then hit tested as if they were
+            # real vertices of the shape.
             new_slice = slice(
-                vertices_slice.start,
-                vertices_slice.start + shape.data_displayed.shape[0],
+                vertices_slice.start, vertices_slice.start + new_vert_count
             )
-            padding_slice = slice(new_slice.stop, vertices_slice.stop)
             self._vertices[new_slice] = shape.data_displayed
-            self._vertices[padding_slice] = shape.data_displayed[0]
+            shift = curr_vert_count - new_vert_count
+            self._vertices[new_slice.stop : len(self._vertices) - shift] = (
+                self._vertices[vertices_slice.stop :]
+            )
+            self._vertices = self._vertices[:-shift]
+            self._vertices_index[index + 1 :] -= shift
         else:
             # there are more vertices in the shape than in the mesh
             before_array = self._vertices[: vertices_slice.start]
@@ -1143,7 +1152,7 @@ class ShapeList:
                 [before_array, shape.data_displayed, after_array]
             )
             self._vertices_index[index + 1 :] += (
-                shape.data_displayed.shape[0] - curr_vert_count
+                new_vert_count - curr_vert_count
             )
 
     def _update_mesh_triangles(self, index: int) -> None:
