@@ -188,8 +188,14 @@ class NapariQtNotification(QDialog):
             self._instances.remove(self)
         if self.parent() is not None:
             notifications = self._instances
-            if len(notifications) > 1 and notifications[-1] == self:
-                notifications[-2].timer_start()
+            if (
+                notifications
+                and not notifications[-1].timer.isActive()
+                and not notifications[-1].underMouse()
+            ):
+                # only the topmost notification dismisses itself, so let the
+                # one that is now on top do the same
+                notifications[-1].timer_start()
             self.parent().setFocus()
         super().close()
 
