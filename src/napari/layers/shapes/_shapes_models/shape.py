@@ -852,6 +852,10 @@ class Shape(ABC):
 
         return mask
 
+    def _slice_key_of(self, dims) -> np.ndarray:
+        """Return the integer slice key of the bounding box along dims."""
+        return np.rint(self._bounding_box[:, dims]).astype(int)
+
     def _mask_plane(self) -> tuple[list[int], npt.NDArray, npt.NDArray]:
         """Return the 2D plane that masks are drawn in.
 
