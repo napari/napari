@@ -1078,6 +1078,55 @@ def path_to_indices(
     return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
 
+def triangles_to_indices(
+    mask_shape: typing.Sequence[int],
+    vertices: npt.NDArray,
+    triangles: npt.NDArray,
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Row and column indices of the pixels inside any of the triangles.
+
+    Pixel centres on an edge count as inside, as with ``poly_to_indices``.
+    Each triangle is only tested over its own bounding box, so long thin
+    paths stay cheap. A pixel covered by several triangles is repeated.
+    """
+    corners = vertices[triangles]
+    edges = corners[:, [1, 2, 0]] - corners
+    area = edges[:, 0, 0] * edges[:, 2, 1] - edges[:, 0, 1] * edges[:, 2, 0]
+    lo = np.maximum(np.ceil(corners.min(axis=1)), 0).astype(int)
+    hi = np.minimum(
+        np.floor(corners.max(axis=1)), np.asarray(mask_shape) - 1
+    ).astype(int)
+    keep = (np.abs(area) > 1e-12) & np.all(hi >= lo, axis=1)
+    if not keep.all():
+        corners, edges, lo, hi = corners[keep], edges[keep], lo[keep], hi[keep]
+        if not len(corners):
+            return np.empty(0, np.intp), np.empty(0, np.intp)
+    # unit edge directions, so the tests below are distances
+    edges = edges / np.hypot(edges[..., 0], edges[..., 1])[..., None]
+    height, width = (hi - lo).max(axis=0) + 1
+    step = max(1, 1_000_000 // (3 * height * width))
+    hits = []
+    for start in range(0, len(corners), step):
+        chunk = slice(start, start + step)
+        rows = lo[chunk, 0, None] + np.arange(height)
+        cols = lo[chunk, 1, None] + np.arange(width)
+        c = corners[chunk, :, :, None, None]
+        e = edges[chunk, :, :, None, None]
+        # rows and columns past a triangle's own box are NaN, never inside
+        rows_in = np.where(rows <= hi[chunk, 0, None], rows, np.nan)
+        cols_in = np.where(cols <= hi[chunk, 1, None], cols, np.nan)
+        down = rows_in[:, None, :, None] - c[:, :, 0]
+        across = cols_in[:, None, None, :] - c[:, :, 1]
+        # signed distance of each pixel centre from each triangle edge
+        sides = e[:, :, 0] * across - e[:, :, 1] * down
+        # a tolerance keeps centres on an edge inside despite rounding
+        inside = (sides.min(1) >= -1e-9) | (sides.max(1) <= 1e-9)
+        t, i, j = np.nonzero(inside)
+        hits.append((rows[t, i], cols[t, j]))
+    rows, cols = zip(*hits, strict=True)
+    return np.concatenate(rows), np.concatenate(cols)
+
+
 def poly_to_indices(
     mask_shape: typing.Sequence[int], vertices: npt.NDArray
 ) -> tuple[npt.NDArray, npt.NDArray]:
