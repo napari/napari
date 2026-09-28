@@ -2501,6 +2501,8 @@ class _PointsSlicingState(_LayerSlicingState):
 
     def _update_slice_response(self, response: _PointSliceResponse) -> None:
         """Handle a slicing response."""
+        if response.request_id != self._last_slice_id:
+            return
         self._slice_input = response.slice_input
         self._view_indices = response.indices
         self._view_size = response.size

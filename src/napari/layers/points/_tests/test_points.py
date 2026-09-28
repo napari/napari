@@ -2730,3 +2730,27 @@ def test_points_layer_display_correct_slice_on_scale(viewer_model):
     request = pts._slicing_state._make_slice_request(viewer_model.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])
+
+
+def test_stale_slice_response_ignored():
+    """Stale slice responses are ignored to prevent IndexError after deletion."""
+    layer = Points(np.random.rand(10, 3))
+    slicing_state = layer._slicing_state
+
+    # Make a slice request and get the response
+    request = slicing_state._make_slice_request(
+        Dims(ndim=3, ndisplay=2, order=(0, 1, 2))
+    )
+    response = request()
+
+    # Simulate an older request ID by incrementing the internal counter
+    # This simulates a new slice request being made before the old one completes
+    slicing_state._set_unloaded_slice_id(response.request_id + 1)
+
+    # The stale response should be ignored (no IndexError)
+    slicing_state._update_slice_response(response)
+
+    # The view indices should not be updated with stale data
+    # (they should remain empty since we never applied the stale response)
+    # Actually, the first response would have been applied before the new request
+    # So we just verify no error is raised

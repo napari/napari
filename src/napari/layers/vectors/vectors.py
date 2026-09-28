@@ -842,6 +842,8 @@ class _VectorsSlicingState(_LayerSlicingState):
 
     def _update_slice_response(self, response: _VectorSliceResponse):
         """Handle a slicing response."""
+        if response.request_id != self._last_slice_id:
+            return
         self._slice_input = response.slice_input
         indices = response.indices
         alphas = response.alphas
