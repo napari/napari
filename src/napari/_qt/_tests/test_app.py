@@ -100,7 +100,6 @@ def test_no_wayland_warning(
 def test_status_bar_requests_tabular_numerals_with_preexisting_app(
     make_napari_viewer, qapp, qtbot
 ):
-    """The status bar gets tabular figures without changing an embedding host's font."""
     tag = QFont.Tag('tnum')
     app_font = QFont(qapp.font())
     host_label = QLabel('host')

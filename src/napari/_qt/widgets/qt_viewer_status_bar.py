@@ -58,15 +58,7 @@ class ViewerStatusBar(QStatusBar):
         )
         self.addWidget(main_widget, 1)
 
-        for label in (
-            self._status,
-            self._layer_base,
-            self._source_type,
-            self._plugin_reader,
-            self._coordinates,
-            self._help,
-        ):
-            use_tabular_numerals(label)
+        use_tabular_numerals(self)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
