@@ -4,8 +4,10 @@ from unittest import mock
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from hypothesis import assume, given, settings, strategies as st
 from skimage.draw import line, polygon2mask
+from skimage.measure import label
 
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_models import (
@@ -56,6 +58,12 @@ def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
         mask_p.transpose(argsort(plane)), tuple(others)
     )
     return mask
+
+
+def leaves_plane(shape):
+    """Lines and paths not confined to their 2D plane are drawn in nD."""
+    key = shape._slice_key_of(shape.dims_order[:-2])
+    return not shape._filled and bool(np.any(key[0] != key[1]))
 
 
 def plane_vertices(draw, shape_class):
@@ -184,6 +192,7 @@ def test_mask_index_matches_dense_rasterization(
     if embedded:
         # zoom and offset are 2D-only, as used by the thumbnail
         mask_shape, zoom_factor, offset = (size + 3,) * ndim, 1, (0, 0)
+        assume(not leaves_plane(shape))
     else:
         mask_shape = (size, size + 5)
     expected = reference_to_mask(shape, mask_shape, zoom_factor, offset)
@@ -199,6 +208,7 @@ def test_mask_index_matches_dense_rasterization(
 @settings(max_examples=100, deadline=None)
 @given(shape_list=shape_lists(), size=st.integers(5, 40))
 def test_labels_and_masks_match_dense_rasterization(shape_list, size):
+    assume(not any(map(leaves_plane, shape_list.shapes)))
     labels_shape = (size,) * shape_list.shapes[0].data.shape[1]
     masks = np.array(
         [reference_to_mask(s, labels_shape) for s in shape_list.shapes]
@@ -236,3 +246,43 @@ def test_to_colors_matches_dense_rasterization(
     npt.assert_array_equal(
         shape_list.to_colors((30, 40), zoom_factor, offset), expected
     )
+
+
+PATH_3D = np.array(
+    [
+        [0, 0, 0],
+        [0, 10, 10],
+        [0, 5, 15],
+        [20, 5, 15],
+        [56, 70, 21],
+        [127, 127, 127],
+    ]
+)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize(
+    ('shape_class', 'vertices'),
+    [(Path, PATH_3D), (Line, PATH_3D[[1, -1]])],
+)
+def test_path_leaving_its_plane_is_drawn_as_nd_line(
+    shape_class, vertices, ndisplay
+):
+    shape = shape_class(vertices)
+    shape.ndisplay = ndisplay
+    mask = shape.to_mask((128, 128, 128))
+
+    assert all(mask[tuple(v)] for v in vertices)
+    assert label(mask, connectivity=3).max() == 1
+    # one voxel per step along the longest axis of each segment, not a prism
+    steps = np.abs(np.diff(vertices, axis=0)).max(axis=1).sum()
+    assert mask.sum() <= steps + 1
+
+
+def test_polygon_leaving_its_plane_keeps_prism_rasterization():
+    vertices = np.array([[0, 0, 0], [0, 0, 10], [4, 10, 10], [4, 10, 0]])
+    mask = Polygon(vertices).to_mask((5, 11, 11))
+    npt.assert_array_equal(
+        mask, reference_to_mask(Polygon(vertices), (5, 11, 11))
+    )
+    assert mask.any(axis=(1, 2)).all()
