@@ -16,7 +16,7 @@ from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
 class AxisLockedError(RuntimeError):
-    """Raised when a write would move the point on a locked axis."""
+    """Raised when attempting to set ``point`` on a locked axis."""
 
 
 class RangeTuple(NamedTuple):
