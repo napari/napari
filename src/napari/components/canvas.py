@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from napari.components.grid import GridCanvas
 from napari.components.overlays import (
@@ -97,7 +97,7 @@ class Canvas(EventedModel):
         default_factory=OverlayTiling, frozen=True
     )
     size: tuple[int, int] = (800, 600)
-    _model_parent: 'ViewerModel | None'
+    _model_parent: 'ViewerModel | None' = PrivateAttr(default=None)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -124,9 +124,7 @@ class Canvas(EventedModel):
 
     @property
     def _layers(self) -> Sequence[Layer]:
-        if self._model_parent is None:
-            return []
-        return self._model_parent.layers
+        return getattr(self._model_parent, 'layers', [])
 
     def viewbox_size(self) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).
@@ -152,10 +150,7 @@ class Canvas(EventedModel):
         if self.background_color_override is not None:
             return self.background_color_override.copy()
 
-        if self._model_parent is None:
-            theme = 'dark'
-        else:
-            theme = self._model_parent.theme
+        theme = getattr(self._model_parent, 'theme', 'dark')
 
         return ColorValue(
             np.array(get_theme(theme).canvas.as_rgb_tuple()) / 255

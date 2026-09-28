@@ -4,7 +4,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pydantic import model_validator
+from pydantic import PrivateAttr, model_validator
 
 from napari.settings._application import (
     GridHeight,
@@ -55,13 +55,14 @@ class GridCanvas(EventedModel):
     shape: tuple[GridHeight, GridWidth] = (-1, -1)
     enabled: bool = False
     spacing: GridSpacing = 0.0
-    _model_parent: 'Canvas | None'
+    _model_parent: 'Canvas | None' = PrivateAttr(default=None)
+
+    def _on_parent_assigned(self) -> None:
+        self._model_parent.events.size.connect(self._ensure_safe_spacing)
 
     @property
     def _layers(self) -> Sequence[Layer]:
-        if self._model_parent is None:
-            return []
-        return self._model_parent._model_parent.layers
+        return getattr(self._model_parent, '_layers', [])
 
     @property
     def actual_shape(self) -> tuple[int, int]:
@@ -247,9 +248,7 @@ class GridCanvas(EventedModel):
 
     @property
     def _canvas_size(self) -> tuple[int, int]:
-        if self._model_parent is None:
-            return (800, 600)
-        return self._model_parent.size
+        return getattr(self._model_parent, 'size', (800, 600))
 
     def _max_safe_spacing(
         self,
@@ -309,7 +308,7 @@ class GridCanvas(EventedModel):
             return self._canvas_size
 
         grid_shape = np.array(self.actual_shape)
-        spacing_pixels = self._spacing_canvas_pixels
+        spacing_pixels = self._spacing_canvas_pixels()
         # Now calculate actual available space
         total_gap_space = spacing_pixels * (grid_shape - 1)
         available_space = self._canvas_size - total_gap_space
