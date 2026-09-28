@@ -401,6 +401,7 @@ def test_make_label_from_shape_param(scale, translate):
         (((1, 1), (0, 0)), ((1, 1), (30, 30))),
         (((2, 2), (10, 10)), ((2, 2), (10, 10))),
         (((1, 1), (-7, 4)), ((1, 1), (3, -2))),
+        (((1, 1), (0, 0)), ((-1, 1), (19, 0))),
     ],
 )
 def test_convert_shapes_to_labels_with_translate(
