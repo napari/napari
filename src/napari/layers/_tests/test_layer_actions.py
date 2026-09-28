@@ -423,6 +423,7 @@ def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
     assert np.count_nonzero(labels[:5]) == 0
     assert np.count_nonzero(labels[6:]) == 0
 
+
 def make_three_layer_layerlist():
     layer_list = LayerList()
     layer_list.append(Points([[0, 0]], name='test'))
