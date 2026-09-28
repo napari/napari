@@ -367,14 +367,14 @@ def test_convert_layer(layer, type_):
 
 
 @pytest.mark.parametrize(
-    ('scale', 'translate', 'xfail'),
+    ('scale', 'translate'),
     [
-        ((1.0, 1.0), (0.0, 0.0), False),  # default
-        ((1.0, 1.0), (30.0, 30.0), True),  # translated, currently fails
-        ((5.0, 5.0), (0.0, 0.0), False),  # scaled
+        ((1.0, 1.0), (0.0, 0.0)),  # default
+        ((1.0, 1.0), (30.0, 30.0)),  # translated
+        ((5.0, 5.0), (0.0, 0.0)),  # scaled
     ],
 )
-def test_make_label_from_shape_param(scale, translate, xfail):
+def test_make_label_from_shape_param(scale, translate):
     """Tests that label shape matches the maximum extent of added shape, with optional scale and translate."""
     ll = LayerList()
     # add an image
@@ -388,11 +388,52 @@ def test_make_label_from_shape_param(scale, translate, xfail):
     shape.translate = np.array(translate)
     ll.append(shape)
     # Create a label based on the shape.
-    if xfail:
-        pytest.xfail('Converting layers with translations does not work')
     _convert(ll, 'labels')
     # the label layer should match the layer list extent
     assert np.array_equal(ll[-1].extent.world, ll.extent.world)
+
+
+@pytest.mark.parametrize(
+    ('image_transform', 'shapes_transform'),
+    [
+        (((1, 1), (30, 30)), ((1, 1), (30, 30))),
+        (((1, 1), (30, 30)), ((1, 1), (0, 0))),
+        (((1, 1), (0, 0)), ((1, 1), (30, 30))),
+        (((2, 2), (10, 10)), ((2, 2), (10, 10))),
+        (((1, 1), (-7, 4)), ((1, 1), (3, -2))),
+    ],
+)
+def test_convert_shapes_to_labels_with_translate(
+    image_transform, shapes_transform
+):
+    (image_scale, image_translate) = image_transform
+    (shapes_scale, shapes_translate) = shapes_transform
+    square = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
+    ll = LayerList(
+        [
+            Image(
+                np.zeros((20, 20)),
+                scale=image_scale,
+                translate=image_translate,
+            ),
+            Shapes([square], scale=shapes_scale, translate=shapes_translate),
+        ]
+    )
+    ll.selection = {ll[1]}
+    _convert(ll, 'labels')
+    labels = ll[2]
+
+    np.testing.assert_array_equal(labels.extent.world, ll.extent.world)
+    np.testing.assert_array_equal(labels.scale, ll[1].scale)
+    labelled = np.argwhere(labels.data > 0)
+    np.testing.assert_allclose(
+        labels.data_to_world(labelled.min(0)),
+        ll[1].data_to_world(square.min(0)),
+    )
+    np.testing.assert_allclose(
+        labels.data_to_world(labelled.max(0)),
+        ll[1].data_to_world(square.max(0)),
+    )
 
 
 def test_convert_warns_with_projection_mode():
