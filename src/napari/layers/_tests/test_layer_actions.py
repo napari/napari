@@ -436,6 +436,16 @@ def test_convert_shapes_to_labels_with_translate(
     )
 
 
+def test_convert_rotated_shapes_to_labels_warns():
+    square = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
+    ll = LayerList([Image(np.zeros((20, 20))), Shapes([square], rotate=30)])
+    ll.selection = {ll[1]}
+    with pytest.warns(UserWarning, match='rotate, shear or affine'):
+        _convert(ll, 'labels')
+    assert isinstance(ll[2], Labels)
+    assert ll[2].data.any()
+
+
 def test_convert_warns_with_projection_mode():
     # inplace
     ll = LayerList(
