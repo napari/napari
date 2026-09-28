@@ -1074,10 +1074,13 @@ def path_to_indices(
 
 
 def poly_to_indices(
-    mask_shape: npt.ArrayLike, vertices: npt.NDArray
-) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    mask_shape: typing.Sequence[int], vertices: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Row and column indices of the pixels inside a polygon."""
-    return draw.polygon(vertices[:, 0], vertices[:, 1], mask_shape)
+    rows, cols = draw.polygon(
+        vertices[:, 0], vertices[:, 1], tuple(mask_shape)
+    )
+    return rows, cols
 
 
 def grid_points_in_poly(shape, vertices):
