@@ -424,6 +424,21 @@ def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
     assert np.count_nonzero(labels[6:]) == 0
 
 
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_with_rolled_dims(ndisplay):
+    shapes = Shapes(ndim=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=ndisplay, order=(2, 0, 1)))
+    shapes.add_polygons(
+        [np.array([[5, 10, 7], [5, 50, 7], [50, 50, 7], [50, 10, 7]])]
+    )
+    ll = LayerList([Image(np.zeros((60, 60, 20))), shapes])
+    ll.selection = {shapes}
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels[30, 30, 7] == 1
+    assert np.count_nonzero(labels) == np.count_nonzero(labels[:, :, 7])
+
+
 def make_three_layer_layerlist():
     layer_list = LayerList()
     layer_list.append(Points([[0, 0]], name='test'))
