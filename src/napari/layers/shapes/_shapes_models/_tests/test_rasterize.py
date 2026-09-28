@@ -300,3 +300,17 @@ def test_to_labels_origin_is_a_shifted_window(origin):
         shape_list.to_labels((20, 20, 20), origin=np.array(origin)),
         full[window],
     )
+
+
+def test_labels_and_masks_of_2d_shapes_ignore_rolled_dims():
+    rect = np.array([[2, 1], [2, 3], [12, 3], [12, 1]])
+    expected = ShapeList()
+    expected.add(Rectangle(rect))
+    rolled = ShapeList()
+    rolled.add(Rectangle(rect, dims_order=[1, 0]))
+    npt.assert_array_equal(
+        rolled.to_labels((15, 20)), expected.to_labels((15, 20))
+    )
+    npt.assert_array_equal(
+        rolled.to_masks((15, 20)), expected.to_masks((15, 20))
+    )
