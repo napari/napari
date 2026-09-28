@@ -815,19 +815,26 @@ class Shape(ABC):
         return mask
 
     def _mask_index(
-        self, mask_shape, zoom_factor=1, offset=(0, 0), origin=None
+        self,
+        mask_shape,
+        zoom_factor=1,
+        offset=(0, 0),
+        origin=None,
+        *,
+        data_order=False,
     ) -> tuple:
         """Index selecting the shape's pixels in an array of mask_shape.
 
         Same pixels as ``to_mask``, without allocating a mask, so callers can
-        write the shape straight into a labels or colors array. For an nD
-        mask, ``origin`` is the integer data coordinate of its first element,
-        zero in every dimension by default.
+        write the shape straight into a labels or colors array. A mask with
+        two entries is the 2D display plane, as used for thumbnails, unless
+        ``data_order`` is set; other masks follow the data dimensions.
+        ``origin`` is the integer data coordinate of the first element of a
+        data-order mask, zero in every dimension if None.
         """
         # Draw in the plane shown in 2D display, whatever ndisplay is.
-        plane = self.dims_order[-2:]
-        # an origin always means an nD mask in data order, even in 2D
-        embedded = len(mask_shape) != 2 or origin is not None
+        plane = list(self.dims_order[-2:])
+        embedded = data_order or len(mask_shape) != 2
         if not embedded:
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
@@ -842,14 +849,17 @@ class Shape(ABC):
         if not embedded:
             return to_indices(shape_plane, data)
 
-        origin = np.zeros(len(mask_shape), int) if origin is None else origin
-        data = data - origin[list(plane)]
         # Off-plane dims span the shape's bounding box, like its 2D slice.
-        others = self.dims_order[:-2]
-        others_key = self._slice_key_of(others) - origin[list(others)]
+        others = list(self.dims_order[:-2])
+        others_key = self._slice_key_of(others)
+        if origin is not None:
+            data = data - origin[plane]
+            others_key = others_key - origin[others]
         if not self._filled and (others_key[0] != others_key[1]).any():
             # A path that leaves its plane is a line through nD, not a prism.
-            vertices = self.data - origin
+            vertices = self.data.astype(float)
+            if origin is not None:
+                vertices -= origin
             vertices[:, plane] = data
             return path_to_indices(mask_shape, vertices)
 

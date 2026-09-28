@@ -2047,7 +2047,10 @@ class ShapeList:
             return np.array([])
         masks = np.zeros((len(self.shapes), *mask_shape), dtype=bool)
         for mask, shape in zip(masks, self.shapes, strict=True):
-            mask[shape._mask_index(mask_shape, zoom_factor, offset)] = True
+            index = shape._mask_index(
+                mask_shape, zoom_factor, offset, data_order=True
+            )
+            mask[index] = True
         return masks
 
     def to_labels(
@@ -2086,7 +2089,7 @@ class ShapeList:
 
         for ind in self._z_order[::-1]:
             index = self.shapes[ind]._mask_index(
-                labels_shape, zoom_factor, offset, origin
+                labels_shape, zoom_factor, offset, origin, data_order=True
             )
             labels[index] = ind + 1
 

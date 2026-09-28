@@ -38,10 +38,12 @@ def dense_path_mask(mask_shape, vertices):
     return mask
 
 
-def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
+def reference_to_mask(
+    shape, mask_shape, zoom_factor=1, offset=(0, 0), data_order=False
+):
     """Dense rasterization, kept as the oracle for the sparse one."""
     plane = shape.dims_order[-2:]
-    embedded = len(mask_shape) != 2
+    embedded = data_order or len(mask_shape) != 2
     shape_plane = [mask_shape[d] for d in plane] if embedded else mask_shape
     data = (shape._mask_vertices(plane) - offset) * zoom_factor
     to_mask = polygon2mask if shape._filled else dense_path_mask
@@ -211,7 +213,10 @@ def test_labels_and_masks_match_dense_rasterization(shape_list, size):
     assume(not any(map(leaves_plane, shape_list.shapes)))
     labels_shape = (size,) * shape_list.shapes[0].data.shape[1]
     masks = np.array(
-        [reference_to_mask(s, labels_shape) for s in shape_list.shapes]
+        [
+            reference_to_mask(s, labels_shape, data_order=True)
+            for s in shape_list.shapes
+        ]
     )
     expected = np.zeros(labels_shape, dtype=int)
     for ind in shape_list._z_order[::-1]:
