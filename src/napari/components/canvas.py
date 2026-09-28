@@ -120,7 +120,6 @@ class Canvas(EventedModel):
         )
 
         settings.appearance.events.theme.connect(self.events.background_color)
-        self.events.size.connect(self.grid._ensure_safe_spacing)
 
     @property
     def _layers(self) -> Sequence[Layer]:

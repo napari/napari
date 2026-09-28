@@ -1,6 +1,7 @@
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, ClassVar, Union
 
 import numpy as np
@@ -9,12 +10,19 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     PrivateAttr,
+    ValidationInfo,
+    model_validator,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
+
+_parent_var: ContextVar['EventedModel | None'] = ContextVar(
+    'napari_evented_model_parent', default=None
+)
+_PARENT_CONTEXT_KEY = '_napari_model_parent'
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
@@ -184,7 +192,11 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _events: EmitterGroup = PrivateAttr(
         default_factory=lambda: EmitterGroup(_connect_children=False)
     )
-    _model_parent: 'EventedModel | None' = PrivateAttr(None)
+    # the parent model, if this is a frozen child of another EventedModel.
+    # Subclasses may narrow the type for type checking, but they must keep
+    # the PrivateAttr with default, otherwise the attribute won't exist
+    # during validation.
+    _model_parent: 'EventedModel | None' = PrivateAttr(default=None)
 
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
@@ -213,16 +225,35 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         json_encoders=_BASE_JSON_ENCODERS,
     )
 
-    def __init__(self, **kwargs) -> None:
-        self._model_parent = None
-        super().__init__(**kwargs)
-        # assign self as parent to frozen children so they can navigate up the
-        # tree and get information about their parent
-        for name, field in self.__class__.model_fields.items():
-            if field.frozen and name != '_model_parent':
-                child = getattr(self, name)
-                if isinstance(child, EventedModel):
-                    child._model_parent = self
+    @model_validator(mode='after')
+    def _assign_parent_from_context(self, info: ValidationInfo):
+        """Assing the parent model based on the validation context."""
+        if self._model_parent is None and isinstance(info.context, dict):
+            parent = info.context.get(_PARENT_CONTEXT_KEY)
+            if parent is not None and parent is not self:
+                self._model_parent = parent
+        return self
+
+    def __init__(self, /, **data: Any) -> None:
+        # get the parent model from the kwargs; fallbacks are there to cover
+        # children built from mappings or default factories.
+        _model_parent = data.pop('_model_parent', None)
+        parent = (
+            _model_parent if _model_parent is not None else _parent_var.get()
+        )
+        token = _parent_var.set(self)
+        try:
+            self.__pydantic_validator__.validate_python(
+                data,
+                self_instance=self,
+                context={_PARENT_CONTEXT_KEY: parent},
+            )
+        finally:
+            _parent_var.reset(token)
+
+        if parent is not None:
+            # must do after validation cause pydantic resets private fields on init
+            self._model_parent = parent
 
         self._events.source = self
         # add event emitters for each field which is mutable
@@ -241,6 +272,34 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # we solve it by re-setting the source after initial validation, which allows
         # us to use `validate_all = True`
         self._reset_event_source()
+
+        # reassign parents, as a fallback if anything went wrong above (e.g:
+        # already-built models do not get the parent assigned above).
+        self._assign_parents()
+
+    def _assign_parents(self) -> None:
+        """Set self as parent of frozen child models, and refresh them.
+
+        Recurses through the whole subtree so that every descendant gets fixed,
+        no matter how each level was built (explicit instance, mapping,
+        default_factory), which may lead to inconsistent state.
+        """
+        for name, field in self.__class__.model_fields.items():
+            if field.frozen:
+                child = getattr(self, name, None)
+                if isinstance(child, EventedModel):
+                    if child._model_parent is not self:
+                        child._model_parent = self
+                    child._on_parent_assigned()
+                    child._assign_parents()
+
+    def _on_parent_assigned(self) -> None:
+        """Refresh parent-dependent state after the parent is updated.
+
+        Subclasses should overload if they need to run some code when and
+        only when the parent is fully constructed. Needed because validation
+        may happen during parent construction and result in partial data.
+        """
 
     def _super_setattr_(self, name: str, value: Any) -> None:
         # pydantic will raise a ValueError if extra fields are not allowed

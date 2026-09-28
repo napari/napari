@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from pydantic import PrivateAttr, model_validator
@@ -58,7 +58,9 @@ class GridCanvas(EventedModel):
     _model_parent: 'Canvas | None' = PrivateAttr(default=None)
 
     def _on_parent_assigned(self) -> None:
-        self._model_parent.events.size.connect(self._ensure_safe_spacing)
+        canvas = cast('Canvas', self._model_parent)
+        canvas.events.size.connect(self._ensure_safe_spacing)
+        self._ensure_safe_spacing()
 
     @property
     def _layers(self) -> Sequence[Layer]:

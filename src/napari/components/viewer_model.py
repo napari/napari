@@ -651,7 +651,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        return scale_factor * np.min(self.canvas.viewbox_size / scale)
+        return scale_factor * np.min(self.canvas.viewbox_size() / scale)
 
     def _get_3d_camera_zoom(
         self, extent: np.ndarray, scale_factor: float
@@ -662,7 +662,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             view_direction=self.scene.camera.view_direction,
             up_direction=self.scene.camera.up_direction,
         )
-        return scale_factor * np.min(self.canvas.viewbox_size / bounding_box)
+        return scale_factor * np.min(self.canvas.viewbox_size() / bounding_box)
 
     @staticmethod
     def _calculate_bounding_box(

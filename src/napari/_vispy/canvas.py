@@ -1337,7 +1337,7 @@ class VispyCanvas:
     def _init_or_update_grid(self) -> None:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
-        if self.grid.grid_size == self.viewer.canvas.grid.actual_shape():
+        if self.grid.grid_size == self.viewer.canvas.grid.actual_shape:
             return
 
         for camera in self.grid_cameras:
