@@ -864,7 +864,7 @@ class WarningEmitter(EventEmitter):
 
 
 class ChildrenEmitterMixin:
-    """Mixin to provide implementation for reemit of event based on children objects"""
+    """Mixin to provide the implementation for reemitting events based on child objects."""
 
     source: object
 
