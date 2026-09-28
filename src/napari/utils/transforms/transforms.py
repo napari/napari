@@ -119,13 +119,14 @@ class Transform:
 _T = TypeVar('_T', bound=Transform)
 
 
-class TransformChain(EventedList[_T], Transform, Generic[_T]):
+# ``_T`` narrows the element type for callers, e.g. ``TransformChain[Affine]``.
+class TransformChain(EventedList[Transform], Transform, Generic[_T]):
     def __init__(self, transforms: Iterable[_T] | None = None) -> None:
         if transforms is None:
             transforms = []
         super().__init__(
             data=transforms,
-            basetype=Transform,  # pyrefly: ignore [bad-argument-type]
+            basetype=Transform,
             lookup={str: lambda x: x.name},
         )
         # The above super().__init__() will not call Transform.__init__().
