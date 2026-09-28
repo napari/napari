@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, overload
 
 import numpy as np
 from skimage import draw, measure
-from skimage.draw import line
+from skimage.draw import line, line_nd
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
@@ -1071,6 +1071,22 @@ def path_to_indices(
         return np.empty(0, np.intp), np.empty(0, np.intp)
     iis, jjs = zip(*lines, strict=True)
     return np.concatenate(iis), np.concatenate(jjs)
+
+
+def path_to_indices_nd(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray, ...]:
+    """Indices of the pixels along each edge of an nD path.
+
+    Vertices outside the mask are clipped to its border.
+    """
+    mask_shape = np.asarray(mask_shape, dtype=int)
+    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
+    lines = [
+        line_nd(v1, v2, endpoint=True)
+        for v1, v2 in itertools.pairwise(vertices)
+    ]
+    return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
 
 def poly_to_indices(

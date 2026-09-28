@@ -16,6 +16,7 @@ from napari.layers.shapes._shapes_utils import (
     find_planar_axis,
     is_collinear,
     path_to_indices,
+    path_to_indices_nd,
     poly_to_indices,
     triangulate_edge,
     triangulate_face,
@@ -827,15 +828,22 @@ class Shape(ABC):
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
+        # Off-plane dims span the shape's bounding box, like its 2D slice.
+        others = self.dims_order[:-2]
+        others_key = self._slice_key_of(others)
+        leaves_plane = np.any(others_key[0] != others_key[1])
+        if embedded and not self._filled and leaves_plane:
+            # A path that leaves its plane is a line through nD, not a prism.
+            vertices = self.data.astype(float)
+            vertices[:, plane] = (vertices[:, plane] - offset) * zoom_factor
+            return path_to_indices_nd(mask_shape, vertices)
+
         data = (self._mask_vertices(plane) - offset) * zoom_factor
         to_indices = poly_to_indices if self._filled else path_to_indices
         rows, cols = to_indices(shape_plane, data)
         if not embedded:
             return rows, cols
 
-        # Off-plane dims span the shape's bounding box, like its 2D slice.
-        others = self.dims_order[:-2]
-        others_key = self._slice_key_of(others)
         index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
         for col, dim in enumerate(others):
             index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
