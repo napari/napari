@@ -17,6 +17,7 @@ from napari.layers.shapes._shapes_utils import (
     is_collinear,
     path_to_indices,
     poly_to_indices,
+    triangles_to_indices,
     triangulate_edge,
     triangulate_face,
     triangulate_face_and_edges,
@@ -786,8 +787,9 @@ class Shape(ABC):
         A mask with two entries is the plane shown in 2D display, as used for
         thumbnails. Any other mask follows the data dimensions: there the shape
         is drawn in the display plane and repeated over its extent in the other
-        dimensions, and a line or path whose vertices leave that plane is
-        drawn through all dimensions.
+        dimensions, a line or path whose vertices leave that plane is drawn
+        through all dimensions, and a line or path with an edge width above
+        one covers its whole stroke, as it is displayed.
 
         Parameters
         ----------
@@ -822,7 +824,7 @@ class Shape(ABC):
     def _display_index(self, plane_shape, zoom_factor=1, offset=(0, 0)):
         """Index of the shape's pixels in a 2D mask of the display plane.
 
-        Used for thumbnails.
+        Used for thumbnails, where lines and paths are one pixel wide.
         """
         plane = list(self.dims_order[-2:])
         data = (self._mask_vertices(plane) - offset) * zoom_factor
@@ -855,8 +857,19 @@ class Shape(ABC):
             return path_to_indices(mask_shape, vertices)
 
         shape_plane = [mask_shape[d] for d in plane]
-        to_indices = poly_to_indices if self._filled else path_to_indices
-        rows, cols = to_indices(shape_plane, data)
+        if self._filled:
+            rows, cols = poly_to_indices(shape_plane, data)
+        elif self.edge_width > 1:
+            # A thick line or path covers its whole stroke, as it is drawn.
+            # Up to width one the single pixel line is kept: it is always
+            # connected, and default shapes convert exactly as before.
+            centers, offsets, triangles = self._triangulate_edge(
+                data.astype(self.data.dtype), closed=self._closed
+            )
+            corners = centers + self.edge_width * offsets
+            rows, cols = triangles_to_indices(shape_plane, corners, triangles)
+        else:
+            rows, cols = path_to_indices(shape_plane, data)
         index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
         for col, dim in enumerate(others):
             index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
