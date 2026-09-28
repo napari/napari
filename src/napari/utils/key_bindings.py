@@ -125,7 +125,7 @@ KeyBinding.__hash__ = lambda self: hash(str(self))
 def _coerce_keymap(keymap: Keymap) -> Keymap:
     """Coerce every key of a keymap to a KeyBinding."""
     return {
-        k if k is Ellipsis else coerce_keybinding(k): v
+        k if isinstance(k, EllipsisType) else coerce_keybinding(k): v
         for k, v in keymap.items()
     }
 
@@ -245,14 +245,14 @@ def bind_key(
         return inner
 
     key: KeyBinding | EllipsisType = (
-        coerce_keybinding(key_bind) if key_bind is not Ellipsis else key_bind
+        key_bind
+        if isinstance(key_bind, EllipsisType)
+        else coerce_keybinding(key_bind)
     )
-    if key_bind is not Ellipsis:
-        key_bind = coerce_keybinding(key_bind)
 
     if func is not None and key in keymap and not overwrite:
         raise ValueError(
-            f"keybinding {key_bind!s} already used! specify 'overwrite=True' to bypass this check"
+            f"keybinding {key!s} already used! specify 'overwrite=True' to bypass this check"
         )
 
     unbound = keymap.pop(key, None)
@@ -260,7 +260,7 @@ def bind_key(
     if func is not None:
         if func is not Ellipsis and not callable(func):
             raise TypeError("'func' must be a callable")
-        keymap[key_bind] = func
+        keymap[key] = func
 
     return unbound
 
@@ -410,7 +410,9 @@ def _bind_keymap(keymap: Keymap, instance: Any) -> Keymap:
         Keymap with functions bound to the instance.
     """
     bound_keymap: Keymap = {
-        key: MethodType(func, instance) if func is not Ellipsis else func
+        key: func
+        if isinstance(func, EllipsisType)
+        else MethodType(func, instance)
         for key, func in keymap.items()
     }
     return bound_keymap
