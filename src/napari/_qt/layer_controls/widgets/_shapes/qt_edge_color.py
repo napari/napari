@@ -47,7 +47,7 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
             tooltip=tooltip,
         )
         connect_setattr(
-            self.edge_color_edit.color_changed,
+            self.edge_color_edit.color_changed,  # pyrefly: ignore [bad-argument-type]
             self._layer,
             'current_edge_color',
         )
@@ -61,5 +61,7 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
         )
         self.edge_color_label = QtWrappedLabel('edge color:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.edge_color_label, self.edge_color_edit)]
