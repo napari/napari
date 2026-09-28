@@ -184,6 +184,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     _events: EmitterGroup = PrivateAttr(
         default_factory=lambda: EmitterGroup(_connect_children=False)
     )
+    _model_parent: 'EventedModel | None' = PrivateAttr(None)
 
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
@@ -213,7 +214,15 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     )
 
     def __init__(self, **kwargs) -> None:
+        self._model_parent = None
         super().__init__(**kwargs)
+        # assign self as parent to frozen children so they can navigate up the
+        # tree and get information about their parent
+        for name, field in self.__class__.model_fields.items():
+            if field.frozen and name != '_model_parent':
+                child = getattr(self, name)
+                if isinstance(child, EventedModel):
+                    child._model_parent = self
 
         self._events.source = self
         # add event emitters for each field which is mutable
