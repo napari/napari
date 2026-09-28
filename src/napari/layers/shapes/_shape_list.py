@@ -2050,7 +2050,9 @@ class ShapeList:
             mask[shape._mask_index(mask_shape, zoom_factor, offset)] = True
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_labels(
+        self, labels_shape=None, zoom_factor=1, offset=(0, 0), origin=None
+    ):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -2067,6 +2069,9 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
+        origin : np.ndarray | None
+            Integer data coordinate of the first element of an nD labels
+            image, one value per dimension. Zero in every dimension if None.
 
         Returns
         -------
@@ -2081,7 +2086,7 @@ class ShapeList:
 
         for ind in self._z_order[::-1]:
             index = self.shapes[ind]._mask_index(
-                labels_shape, zoom_factor, offset
+                labels_shape, zoom_factor, offset, origin
             )
             labels[index] = ind + 1
 
