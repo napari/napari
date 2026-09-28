@@ -393,6 +393,9 @@ def test_make_label_from_shape_param(scale, translate):
     assert np.array_equal(ll[-1].extent.world, ll.extent.world)
 
 
+SQUARE = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
+
+
 @pytest.mark.parametrize(
     ('image_transform', 'shapes_transform'),
     [
@@ -409,7 +412,6 @@ def test_convert_shapes_to_labels_with_translate(
 ):
     (image_scale, image_translate) = image_transform
     (shapes_scale, shapes_translate) = shapes_transform
-    square = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
     ll = LayerList(
         [
             Image(
@@ -417,7 +419,7 @@ def test_convert_shapes_to_labels_with_translate(
                 scale=image_scale,
                 translate=image_translate,
             ),
-            Shapes([square], scale=shapes_scale, translate=shapes_translate),
+            Shapes([SQUARE], scale=shapes_scale, translate=shapes_translate),
         ]
     )
     ll.selection = {ll[1]}
@@ -429,17 +431,16 @@ def test_convert_shapes_to_labels_with_translate(
     labelled = np.argwhere(labels.data > 0)
     np.testing.assert_allclose(
         labels.data_to_world(labelled.min(0)),
-        ll[1].data_to_world(square.min(0)),
+        ll[1].data_to_world(SQUARE.min(0)),
     )
     np.testing.assert_allclose(
         labels.data_to_world(labelled.max(0)),
-        ll[1].data_to_world(square.max(0)),
+        ll[1].data_to_world(SQUARE.max(0)),
     )
 
 
 def test_convert_rotated_shapes_to_labels_warns():
-    square = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
-    ll = LayerList([Image(np.zeros((20, 20))), Shapes([square], rotate=30)])
+    ll = LayerList([Image(np.zeros((20, 20))), Shapes([SQUARE], rotate=30)])
     ll.selection = {ll[1]}
     with pytest.warns(UserWarning, match='rotate, shear or affine'):
         _convert(ll, 'labels')
