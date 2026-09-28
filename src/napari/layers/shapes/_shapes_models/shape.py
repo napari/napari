@@ -783,6 +783,11 @@ class Shape(ABC):
         shape is not filled. Negative points or points outside the mask_shape
         after the zoom and offset are clipped.
 
+        The shape is drawn in the plane shown in 2D display and repeated over
+        its extent in the other dimensions. The exception is a line or path
+        whose vertices leave that plane: it is drawn as a line through all
+        dimensions.
+
         Parameters
         ----------
         mask_shape : (D,) array
