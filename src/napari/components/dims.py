@@ -11,7 +11,7 @@ import numpy as np
 import pint
 from pydantic import field_validator, model_validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import Event, EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
@@ -105,6 +105,11 @@ class Dims(EventedModel):
         remaining extent.
 
         .. versionadded:: 0.10.0
+
+    Notes
+    -----
+    The private ``events._point_refused`` carries the refused ``axes``; the
+    slider row's padlock uses it to show refusals from keys and plugin code.
     """
 
     # fields
@@ -267,10 +272,15 @@ class Dims(EventedModel):
         if moved:
             with self._validating_ctx():
                 self.point = previous
+            self.events._point_refused(axes=tuple(moved))
             raise AxisLockedError(
                 f'Cannot move the point on locked axis {moved[0]}. '
                 'Unlock it with Dims.unlock_axis first.'
             )
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.events.add(_point_refused=Event)
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:

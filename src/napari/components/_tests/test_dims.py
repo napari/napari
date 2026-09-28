@@ -170,7 +170,7 @@ def test_axis_lock_refuses_moving_a_locked_axis():
     assert dims.point == (1, 5, 1)
 
 
-def test_refused_write_emits_no_events():
+def test_refused_write_emits_no_point_or_current_step_events():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     dims.events.point = Mock()
@@ -214,6 +214,35 @@ def test_axis_lock_follows_its_axis_across_ndim_changes(
 
     assert dims.axis_locked == expected_locked
     assert dims.point == expected_point
+
+
+def test_axis_lock_refusal_reports_the_refused_axes():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point(0, 1)
+    with pytest.raises(AxisLockedError):
+        dims.update({'point': (0, 0, 0)})
+
+    assert [event.axes for event in events] == [(0,), (0,)]
+
+
+def test_axis_lock_reports_nothing_when_no_request_is_refused():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.set_point(0, 4)  # already where the lock holds it
+    dims.set_point(1, 5)  # a free axis
+    dims.range = ((0, 2, 1),) * 3  # clipping
+    dims.ndim = 4
+    dims.reset()
+
+    assert events == []
 
 
 def test_range_change_may_still_clip_a_locked_point():
