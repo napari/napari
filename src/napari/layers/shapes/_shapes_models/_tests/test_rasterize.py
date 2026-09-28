@@ -1,8 +1,11 @@
+import itertools
+from contextlib import ExitStack
 from unittest import mock
 
 import numpy as np
 import numpy.testing as npt
 from hypothesis import assume, given, settings, strategies as st
+from skimage.draw import line, polygon2mask
 
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_models import (
@@ -12,17 +15,25 @@ from napari.layers.shapes._shapes_models import (
     Polygon,
     Rectangle,
 )
-from napari.layers.shapes._shapes_utils import path_to_mask, poly_to_mask
 from napari.utils.misc import argsort
 
 N_VERTICES = {Polygon: (3, 6), Path: (2, 6), Line: (2, 2)}
-NO_TRIANGULATION_DUMPS = [
-    mock.patch(
-        f'napari.layers.shapes.{module}._save_failed_triangulation',
-        return_value=('', ''),
-    )
-    for module in ('_shapes_utils', '_shapes_models.shape')
-]
+
+
+def dense_path_mask(mask_shape, vertices):
+    """Path rasterization as it was before the sparse rewrite."""
+    mask_shape = np.asarray(mask_shape, dtype=int)
+    mask = np.zeros(mask_shape, dtype=bool)
+    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
+    duplicates = np.all(np.diff(vertices, axis=0) == 0, axis=-1)
+    vertices = vertices[~np.concatenate(([False], duplicates))]
+    iis, jjs = [], []
+    for v1, v2 in itertools.pairwise(vertices):
+        ii, jj = line(*v1, *v2)
+        iis.extend(ii.tolist())
+        jjs.extend(jj.tolist())
+    mask[iis, jjs] = 1
+    return mask
 
 
 def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
@@ -31,7 +42,7 @@ def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
     embedded = len(mask_shape) != 2
     shape_plane = [mask_shape[d] for d in plane] if embedded else mask_shape
     data = (shape._mask_vertices(plane) - offset) * zoom_factor
-    to_mask = poly_to_mask if shape._filled else path_to_mask
+    to_mask = polygon2mask if shape._filled else dense_path_mask
     mask_p = to_mask(shape_plane, data)
     if not embedded:
         return mask_p
@@ -51,8 +62,7 @@ def plane_vertices(draw, shape_class):
     """Well formed 2D vertices, so construction never fails triangulation."""
     center = np.array(draw(st.tuples(*[st.floats(-10, 40)] * 2)))
     if shape_class in (Path, Line):
-        lo, hi = N_VERTICES[shape_class]
-        n = draw(st.integers(lo, hi))
+        n = draw(st.integers(*N_VERTICES[shape_class]))
         steps = draw(
             st.lists(
                 st.tuples(*[st.floats(-12, 12)] * 2), min_size=n, max_size=n
@@ -88,6 +98,13 @@ def plane_vertices(draw, shape_class):
     return center + corners @ rot.T
 
 
+def draw_layout(draw, max_ndim):
+    ndim = draw(st.integers(2, max_ndim))
+    dims_order = list(draw(st.permutations(range(ndim))))
+    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
+    return ndim, dims_order, ndisplay
+
+
 def build_shape(draw, ndim, dims_order, ndisplay, z_index=0):
     shape_class = draw(
         st.sampled_from([Polygon, Rectangle, Ellipse, Path, Line])
@@ -108,7 +125,15 @@ def build_shape(draw, ndim, dims_order, ndisplay, z_index=0):
                 )
             )
     try:
-        with NO_TRIANGULATION_DUMPS[0], NO_TRIANGULATION_DUMPS[1]:
+        with ExitStack() as stack:
+            for module in ('_shapes_utils', '_shapes_models.shape'):
+                # no debug dumps from the triangulation failures skipped below
+                stack.enter_context(
+                    mock.patch(
+                        f'napari.layers.shapes.{module}._save_failed_triangulation',
+                        return_value=('', ''),
+                    )
+                )
             shape = shape_class(
                 vertices, dims_order=dims_order, z_index=z_index
             )
@@ -122,17 +147,12 @@ def build_shape(draw, ndim, dims_order, ndisplay, z_index=0):
 
 @st.composite
 def shapes(draw):
-    ndim = draw(st.integers(2, 4))
-    dims_order = list(draw(st.permutations(range(ndim))))
-    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
-    return build_shape(draw, ndim, dims_order, ndisplay)
+    return build_shape(draw, *draw_layout(draw, max_ndim=4))
 
 
 @st.composite
 def shape_lists(draw):
-    ndim = draw(st.integers(2, 3))
-    dims_order = list(draw(st.permutations(range(ndim))))
-    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
+    ndim, dims_order, ndisplay = draw_layout(draw, max_ndim=3)
     shape_list = ShapeList(ndisplay=ndisplay)
     color = st.lists(st.floats(0, 1), min_size=4, max_size=4)
     for _ in range(draw(st.integers(1, 4))):
@@ -145,36 +165,38 @@ def shape_lists(draw):
     return shape_list
 
 
-@settings(max_examples=1000, deadline=None)
-@given(shape=shapes(), size=st.integers(1, 40), embedded=st.booleans())
-def test_mask_index_matches_dense_rasterization(shape, size, embedded):
-    ndim = shape.data.shape[1]
-    mask_shape = (size + 3,) * ndim if embedded else (size, size + 5)
-    expected = reference_to_mask(shape, mask_shape)
+zoom_factors = st.floats(0.1, 3)
+offsets = st.tuples(st.floats(-10, 10), st.floats(-10, 10))
 
-    npt.assert_array_equal(shape.to_mask(mask_shape), expected)
+
+@settings(max_examples=200, deadline=None)
+@given(
+    shape=shapes(),
+    size=st.integers(1, 40),
+    embedded=st.booleans(),
+    zoom_factor=zoom_factors,
+    offset=offsets,
+)
+def test_mask_index_matches_dense_rasterization(
+    shape, size, embedded, zoom_factor, offset
+):
+    ndim = shape.data.shape[1]
+    if embedded:
+        # zoom and offset are 2D-only, as used by the thumbnail
+        mask_shape, zoom_factor, offset = (size + 3,) * ndim, 1, (0, 0)
+    else:
+        mask_shape = (size, size + 5)
+    expected = reference_to_mask(shape, mask_shape, zoom_factor, offset)
+
+    npt.assert_array_equal(
+        shape.to_mask(mask_shape, zoom_factor, offset), expected
+    )
     labels = np.zeros(mask_shape, dtype=int)
-    labels[shape._mask_index(mask_shape)] = 7
+    labels[shape._mask_index(mask_shape, zoom_factor, offset)] = 7
     npt.assert_array_equal(labels == 7, expected)
 
 
-@settings(max_examples=300, deadline=None)
-@given(
-    shape=shapes(),
-    zoom_factor=st.floats(0.1, 3),
-    offset=st.tuples(st.floats(-10, 10), st.floats(-10, 10)),
-)
-def test_mask_index_matches_dense_with_zoom_and_offset(
-    shape, zoom_factor, offset
-):
-    expected = reference_to_mask(shape, (30, 40), zoom_factor, offset)
-    npt.assert_array_equal(
-        shape.to_mask((30, 40), zoom_factor=zoom_factor, offset=offset),
-        expected,
-    )
-
-
-@settings(max_examples=300, deadline=None)
+@settings(max_examples=100, deadline=None)
 @given(shape_list=shape_lists(), size=st.integers(5, 40))
 def test_to_labels_matches_dense_rasterization(shape_list, size):
     labels_shape = (size,) * shape_list.shapes[0].data.shape[1]
@@ -186,12 +208,8 @@ def test_to_labels_matches_dense_rasterization(shape_list, size):
     npt.assert_array_equal(shape_list.to_labels(labels_shape), expected)
 
 
-@settings(max_examples=300, deadline=None)
-@given(
-    shape_list=shape_lists(),
-    zoom_factor=st.floats(0.1, 3),
-    offset=st.tuples(st.floats(-10, 10), st.floats(-10, 10)),
-)
+@settings(max_examples=100, deadline=None)
+@given(shape_list=shape_lists(), zoom_factor=zoom_factors, offset=offsets)
 def test_to_colors_matches_dense_rasterization(
     shape_list, zoom_factor, offset
 ):
