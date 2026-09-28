@@ -781,12 +781,13 @@ class Shape(ABC):
         Set points to `True` if they are lying inside the shape if the shape is
         filled, or if they are lying along the boundary of the shape if the
         shape is not filled. Negative points or points outside the mask_shape
-        after the zoom and offset are clipped.
+        are clipped.
 
-        The shape is drawn in the plane shown in 2D display and repeated over
-        its extent in the other dimensions. The exception is a line or path
-        whose vertices leave that plane: it is drawn as a line through all
-        dimensions.
+        A mask with two entries is the plane shown in 2D display, as used for
+        thumbnails. Any other mask follows the data dimensions: there the shape
+        is drawn in the display plane and repeated over its extent in the other
+        dimensions, and a line or path whose vertices leave that plane is
+        drawn through all dimensions.
 
         Parameters
         ----------
@@ -794,11 +795,11 @@ class Shape(ABC):
             Shape of mask to be generated. If non specified, takes the max of
             the vertices in the 2D display plane.
         zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
+            Premultiplier applied to coordinates of a two-entry mask. Used for
+            generating a downsampled mask.
         offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
+            Offset in the display plane, subtracted from coordinates of a
+            two-entry mask before multiplying by the zoom_factor.
 
         Returns
         -------
@@ -810,59 +811,51 @@ class Shape(ABC):
             mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
+        if len(mask_shape) == 2:
+            index = self._display_index(mask_shape, zoom_factor, offset)
+        else:
+            index = self._data_index(mask_shape)
         mask = np.zeros(mask_shape, dtype=bool)
-        mask[self._mask_index(mask_shape, zoom_factor, offset)] = True
+        mask[index] = True
         return mask
 
-    def _mask_index(
-        self,
-        mask_shape,
-        zoom_factor=1,
-        offset=(0, 0),
-        origin=None,
-        *,
-        data_order=False,
-    ) -> tuple:
-        """Index selecting the shape's pixels in an array of mask_shape.
+    def _display_index(self, plane_shape, zoom_factor=1, offset=(0, 0)):
+        """Index of the shape's pixels in a 2D mask of the display plane.
 
-        Same pixels as ``to_mask``, without allocating a mask, so callers can
-        write the shape straight into a labels or colors array. A mask with
-        two entries is the 2D display plane, as used for thumbnails, unless
-        ``data_order`` is set; other masks follow the data dimensions.
-        ``origin`` is the integer data coordinate of the first element of a
-        data-order mask, zero in every dimension if None.
+        Used for thumbnails.
         """
-        # Draw in the plane shown in 2D display, whatever ndisplay is.
         plane = list(self.dims_order[-2:])
-        embedded = data_order or len(mask_shape) != 2
-        if not embedded:
-            shape_plane = mask_shape
-        elif len(mask_shape) == self.data.shape[1]:
-            shape_plane = [mask_shape[d] for d in plane]
-        else:
+        data = (self._mask_vertices(plane) - offset) * zoom_factor
+        to_indices = poly_to_indices if self._filled else path_to_indices
+        return to_indices(plane_shape, data)
+
+    def _data_index(self, mask_shape, *, origin=None) -> tuple:
+        """Index of the shape's pixels in an array with its data dimensions.
+
+        ``origin`` is the integer data coordinate of the array's first
+        element, zero in every dimension if None. See ``to_mask`` for how
+        each kind of shape is drawn.
+        """
+        if len(mask_shape) != self.data.shape[1]:
             raise ValueError(
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
-
-        data = (self._mask_vertices(plane) - offset) * zoom_factor
-        to_indices = poly_to_indices if self._filled else path_to_indices
-        if not embedded:
-            return to_indices(shape_plane, data)
-
+        # Draw in the plane shown in 2D display, whatever ndisplay is.
+        plane = list(self.dims_order[-2:])
         # Off-plane dims span the shape's bounding box, like its 2D slice.
         others = list(self.dims_order[:-2])
-        others_key = self._slice_key_of(others)
-        if origin is not None:
-            data = data - origin[plane]
-            others_key = others_key - origin[others]
+        if origin is None:
+            origin = np.zeros(len(mask_shape), dtype=int)
+        data = self._mask_vertices(plane) - origin[plane]
+        others_key = self._slice_key_of(others) - origin[others]
         if not self._filled and (others_key[0] != others_key[1]).any():
             # A path that leaves its plane is a line through nD, not a prism.
-            vertices = self.data.astype(float)
-            if origin is not None:
-                vertices -= origin
+            vertices = self.data - origin
             vertices[:, plane] = data
             return path_to_indices(mask_shape, vertices)
 
+        shape_plane = [mask_shape[d] for d in plane]
+        to_indices = poly_to_indices if self._filled else path_to_indices
         rows, cols = to_indices(shape_plane, data)
         index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
         for col, dim in enumerate(others):

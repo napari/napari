@@ -2017,45 +2017,33 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_masks(self, mask_shape=None):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
         Parameters
         ----------
         mask_shape : np.ndarray | tuple | None
-            2-tuple defining shape of mask to be generated. If non specified,
-            takes the max of all the vertices
-        zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
-        offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
+            Shape of each mask, one entry per data dimension. If non
+            specified, takes the max of all the vertices.
 
         Returns
         -------
-        masks : (N, M, P) np.ndarray
-            Array where there is one binary mask of shape MxP for each of
-            N shapes
+        masks : (N, *mask_shape) np.ndarray
+            Array where there is one binary mask of shape mask_shape for each
+            of N shapes
         """
-        if mask_shape is None:
-            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
-
         if not self.shapes:
             # an empty list has always returned an empty 1D array
             return np.array([])
+        if mask_shape is None:
+            mask_shape = self._data_max()
         masks = np.zeros((len(self.shapes), *mask_shape), dtype=bool)
         for mask, shape in zip(masks, self.shapes, strict=True):
-            index = shape._mask_index(
-                mask_shape, zoom_factor, offset, data_order=True
-            )
-            mask[index] = True
+            mask[shape._data_index(mask_shape)] = True
         return masks
 
-    def to_labels(
-        self, labels_shape=None, zoom_factor=1, offset=(0, 0), origin=None
-    ):
+    def to_labels(self, labels_shape=None, *, origin=None):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -2064,36 +2052,35 @@ class ShapeList:
         Parameters
         ----------
         labels_shape : np.ndarray | tuple | None
-            2-tuple defining shape of labels image to be generated. If non
-            specified, takes the max of all the vertices
-        zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
-        offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
+            Shape of labels image to be generated, one entry per data
+            dimension. If non specified, takes the max of all the vertices.
         origin : np.ndarray | None
-            Integer data coordinate of the first element of an nD labels
-            image, one value per dimension. Zero in every dimension if None.
+            Integer data coordinate of the first element of the labels image,
+            one value per dimension. Zero in every dimension if None.
 
         Returns
         -------
         labels : np.ndarray
-            MxP integer array where each value is either 0 for background or an
-            integer up to N for points inside the corresponding shape.
+            Integer array of shape labels_shape where each value is either 0
+            for background or an integer up to N for points inside the
+            corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.displayed_vertices.max(axis=0).astype(int)
+            labels_shape = self._data_max()
 
         labels = np.zeros(labels_shape, dtype=int)
 
         for ind in self._z_order[::-1]:
-            index = self.shapes[ind]._mask_index(
-                labels_shape, zoom_factor, offset, origin, data_order=True
-            )
+            index = self.shapes[ind]._data_index(labels_shape, origin=origin)
             labels[index] = ind + 1
 
         return labels
+
+    def _data_max(self) -> np.ndarray:
+        """Largest vertex coordinate of all shapes in each data dimension."""
+        return np.max(
+            [s.data.max(axis=0) for s in self.shapes], axis=0
+        ).astype(int)
 
     def to_colors(
         self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
@@ -2107,8 +2094,9 @@ class ShapeList:
         Parameters
         ----------
         colors_shape : np.ndarray | tuple | None
-            2-tuple defining shape of colors image to be generated. If non
-            specified, takes the max of all the vertiecs
+            2-tuple defining shape of colors image to be generated, in the
+            2D display plane. If non specified, takes the max of all the
+            displayed vertices.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -2123,7 +2111,7 @@ class ShapeList:
 
         Returns
         -------
-        colors : (N, M, 4) array
+        colors : (M, P, 4) array
             rgba array where each value is either 0 for background or the rgba
             value of the shape for points inside the corresponding shape.
         """
@@ -2144,7 +2132,7 @@ class ShapeList:
             z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
-            index = self.shapes[ind]._mask_index(
+            index = self.shapes[ind]._display_index(
                 colors_shape, zoom_factor, offset
             )
             if type(self.shapes[ind]) in [Path, Line]:

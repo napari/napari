@@ -187,24 +187,28 @@ offsets = st.tuples(st.floats(-10, 10), st.floats(-10, 10))
     zoom_factor=zoom_factors,
     offset=offsets,
 )
-def test_mask_index_matches_dense_rasterization(
+def test_indices_match_dense_rasterization(
     shape, size, embedded, zoom_factor, offset
 ):
     ndim = shape.data.shape[1]
     if embedded:
-        # zoom and offset are 2D-only, as used by the thumbnail
-        mask_shape, zoom_factor, offset = (size + 3,) * ndim, 1, (0, 0)
+        # a mask with every data dimension; zoom and offset are for thumbnails
+        mask_shape = (size + 3,) * ndim
         assume(not leaves_plane(shape))
+        index = shape._data_index(mask_shape)
+        expected = reference_to_mask(shape, mask_shape, data_order=True)
     else:
         mask_shape = (size, size + 5)
-    expected = reference_to_mask(shape, mask_shape, zoom_factor, offset)
-
-    npt.assert_array_equal(
-        shape.to_mask(mask_shape, zoom_factor, offset), expected
-    )
+        index = shape._display_index(mask_shape, zoom_factor, offset)
+        expected = reference_to_mask(shape, mask_shape, zoom_factor, offset)
+        npt.assert_array_equal(
+            shape.to_mask(mask_shape, zoom_factor, offset), expected
+        )
     labels = np.zeros(mask_shape, dtype=int)
-    labels[shape._mask_index(mask_shape, zoom_factor, offset)] = 7
+    labels[index] = 7
     npt.assert_array_equal(labels == 7, expected)
+    if embedded and ndim > 2:
+        npt.assert_array_equal(shape.to_mask(mask_shape), expected)
 
 
 @settings(max_examples=100, deadline=None)
@@ -285,20 +289,23 @@ def test_path_leaving_its_plane_is_drawn_as_nd_line(
 
 
 def test_polygon_leaving_its_plane_keeps_prism_rasterization():
-    vertices = np.array([[0, 0, 0], [0, 0, 10], [4, 10, 10], [4, 10, 0]])
-    mask = Polygon(vertices).to_mask((5, 11, 11))
-    npt.assert_array_equal(
-        mask, reference_to_mask(Polygon(vertices), (5, 11, 11))
+    polygon = Polygon(
+        np.array([[0, 0, 0], [0, 0, 10], [4, 10, 10], [4, 10, 0]])
     )
+    mask = polygon.to_mask((5, 11, 11))
+    npt.assert_array_equal(mask, reference_to_mask(polygon, (5, 11, 11)))
     assert mask.any(axis=(1, 2)).all()
 
 
 @pytest.mark.parametrize('origin', [(0, 0, 0), (2, -3, 4), (-5, 6, -1)])
 def test_to_labels_origin_is_a_shifted_window(origin):
     # shapes stay inside every window: paths are clamped at the border
-    shape_list = ShapeList()
-    shape_list.add(Polygon(np.array([[8, 6, 6], [8, 6, 13], [8, 13, 10]])))
-    shape_list.add(Path(np.array([[6, 7, 13], [12, 12, 6], [12, 13, 13]])))
+    shape_list = ShapeList(
+        [
+            Polygon(np.array([[8, 6, 6], [8, 6, 13], [8, 13, 10]])),
+            Path(np.array([[6, 7, 13], [12, 12, 6], [12, 13, 13]])),
+        ]
+    )
     full = shape_list.to_labels((40, 40, 40), origin=np.array([-10] * 3))
     window = tuple(slice(o + 10, o + 30) for o in origin)
     npt.assert_array_equal(
