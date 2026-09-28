@@ -290,10 +290,11 @@ def test_polygon_leaving_its_plane_keeps_prism_rasterization():
 
 @pytest.mark.parametrize('origin', [(0, 0, 0), (2, -3, 4), (-5, 6, -1)])
 def test_to_labels_origin_is_a_shifted_window(origin):
+    # shapes stay inside every window: paths are clamped at the border
     shape_list = ShapeList()
-    shape_list.add(Polygon(np.array([[3, 5, 5], [3, 5, 15], [3, 15, 10]])))
-    shape_list.add(Path(np.array([[1, 2, 18], [7, 12, 3], [7, 18, 18]])))
-    full = shape_list.to_labels((30, 40, 40), origin=np.array([-10] * 3))
+    shape_list.add(Polygon(np.array([[8, 6, 6], [8, 6, 13], [8, 13, 10]])))
+    shape_list.add(Path(np.array([[6, 7, 13], [12, 12, 6], [12, 13, 13]])))
+    full = shape_list.to_labels((40, 40, 40), origin=np.array([-10] * 3))
     window = tuple(slice(o + 10, o + 30) for o in origin)
     npt.assert_array_equal(
         shape_list.to_labels((20, 20, 20), origin=np.array(origin)),
