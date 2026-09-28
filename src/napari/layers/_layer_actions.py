@@ -16,6 +16,7 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.layers.utils.layer_utils import get_extent_world
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
@@ -61,30 +62,32 @@ def _split_rgb(ll: LayerList) -> None:
 
 def _shapes_to_labels(
     ll: LayerList, shapes: Shapes
-) -> tuple[npt.NDArray, npt.NDArray | None]:
+) -> tuple[npt.NDArray, npt.NDArray]:
     """Rasterize shapes over the world extent of all layers.
 
-    The labels share the shapes' data grid, so they keep its scale; the
-    returned translate moves the grid origin to the start of the extent.
+    Returns the labels and their translate. The labels share the shapes'
+    data grid, so they keep its scale, starting at the extent's first corner.
     Rotated, sheared or affine shapes keep the older approximation.
     """
     if not shapes._data_to_world._is_diagonal:
         warnings.warn(
             'Shapes with rotate, shear or affine transforms are converted '
-            'without them, so the labels may not line up with the shapes.',
+            'without them or their translate, so the labels may not line up '
+            'with the shapes.',
             category=UserWarning,
             stacklevel=3,
         )
-        world_shape = (
-            ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
-        )
-        return shapes.to_labels(shapes.world_to_data(world_shape)), None
+        extent = ll._extent_world_augmented
+        labels = shapes.to_labels(shapes.world_to_data(extent[1] - extent[0]))
+        return labels, shapes.translate
 
-    world_min, world_max = ll.extent.world
-    origin = np.round(shapes.world_to_data(world_min)).astype(int)
-    labels_shape = np.round(shapes.world_to_data(world_max)).astype(int)
+    # corners, not just the min and max points, so flipped axes work too
+    start, end = get_extent_world(
+        ll.extent.world[:, -shapes.ndim :], shapes._data_to_world.inverse
+    )
+    origin = np.round(start).astype(int)
     labels = shapes._data_view.to_labels(
-        labels_shape - origin + 1, origin=origin
+        np.round(end).astype(int) - origin + 1, origin=origin
     )
     return labels, shapes.translate + shapes.scale * origin
 
@@ -94,9 +97,9 @@ def _convert(ll: LayerList, type_: str) -> None:
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
-        translate = None
+        state = lay._get_base_state()
         if isinstance(lay, Shapes) and type_ == 'labels':
-            data, translate = _shapes_to_labels(ll, lay)
+            data, state['translate'] = _shapes_to_labels(ll, lay)
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
@@ -110,9 +113,6 @@ def _convert(ll: LayerList, type_: str) -> None:
         # projection mode may not be compatible with new type,
         # we're ok with dropping it in that case
         layer_type = getattr(layers, type_.title())
-        state = lay._get_base_state()
-        if translate is not None:
-            state['translate'] = translate
         try:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:
