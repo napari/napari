@@ -858,7 +858,7 @@ class WarningEmitter(EventEmitter):
         self._warned = True
 
 
-class RenamedEmitter(WarningEmitter):
+class RenamedWarningEmitter(WarningEmitter):
     """
     Warning emitter to be used when an attribute was renamed or moved to a composition object.
     It will connect to the new event once the callback is connected to the old one.
