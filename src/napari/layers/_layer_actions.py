@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Collection
 
     from napari.components import LayerList
+    from napari.layers import Shapes
     from napari.types import ArrayLike
 
 
@@ -58,16 +59,44 @@ def _split_rgb(ll: LayerList) -> None:
     return _split_stack(ll)
 
 
+def _shapes_to_labels(
+    ll: LayerList, shapes: Shapes
+) -> tuple[npt.NDArray, npt.NDArray | None]:
+    """Rasterize shapes over the world extent of all layers.
+
+    The labels share the shapes' data grid, so they keep its scale; the
+    returned translate moves the grid origin to the start of the extent.
+    Rotated, sheared or affine shapes keep the older approximation.
+    """
+    if not shapes._data_to_world._is_diagonal:
+        warnings.warn(
+            'Shapes with rotate, shear or affine transforms are converted '
+            'without them, so the labels may not line up with the shapes.',
+            category=UserWarning,
+            stacklevel=3,
+        )
+        world_shape = (
+            ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
+        )
+        return shapes.to_labels(shapes.world_to_data(world_shape)), None
+
+    world_min, world_max = ll.extent.world
+    origin = np.round(shapes.world_to_data(world_min)).astype(int)
+    labels_shape = np.round(shapes.world_to_data(world_max)).astype(int)
+    labels = shapes._data_view.to_labels(
+        labels_shape - origin + 1, origin=origin
+    )
+    return labels, shapes.translate + shapes.scale * origin
+
+
 def _convert(ll: LayerList, type_: str) -> None:
     from napari.layers import Shapes
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
+        translate = None
         if isinstance(lay, Shapes) and type_ == 'labels':
-            ll_shape = (
-                ll._extent_world_augmented[1] - ll._extent_world_augmented[0]
-            )
-            data = lay.to_labels(labels_shape=lay.world_to_data(ll_shape))
+            data, translate = _shapes_to_labels(ll, lay)
             idx += 1
         elif (
             not np.issubdtype(lay.data.dtype, np.integer) and type_ == 'labels'
@@ -82,6 +111,8 @@ def _convert(ll: LayerList, type_: str) -> None:
         # we're ok with dropping it in that case
         layer_type = getattr(layers, type_.title())
         state = lay._get_base_state()
+        if translate is not None:
+            state['translate'] = translate
         try:
             layer_type._projectionclass(state['projection_mode'].value)
         except ValueError:

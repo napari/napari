@@ -826,7 +826,8 @@ class Shape(ABC):
         """
         # Draw in the plane shown in 2D display, whatever ndisplay is.
         plane = self.dims_order[-2:]
-        embedded = len(mask_shape) != 2
+        # an origin always means an nD mask in data order, even in 2D
+        embedded = len(mask_shape) != 2 or origin is not None
         if not embedded:
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
