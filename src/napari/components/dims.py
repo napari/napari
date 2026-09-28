@@ -97,12 +97,8 @@ class Dims(EventedModel):
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
     axis_locked : tuple of bool
-        Tuple of per-axis lock state. If True, a write that would move the
-        point on that axis, such as ``set_point`` or an assignment to
-        ``point`` or ``current_step``, raises ``AxisLockedError`` and leaves
-        the point unchanged. A ``range`` or ``ndim`` change still moves it, so
-        a layer leaving the viewer can still clip a locked axis back into the
-        remaining extent.
+        Tuple of per-axis lock state. Where True, attempting to move the ``point``
+        for that axis  raises ``AxisLockedError``.
 
         .. versionadded:: 0.10.0
     """
