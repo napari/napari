@@ -18,7 +18,6 @@ from napari.layers.shapes._shapes_utils import (
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
-    triangulate_ellipse,
     triangulate_face,
     triangulate_face_and_edges,
     triangulate_face_triangle,
@@ -118,8 +117,6 @@ class Shape(ABC):
         Tx3 array of vertex indices that form the triangles for the shape edge
     _filled : bool
         Flag if array is filled or not.
-    _use_face_vertices : bool
-        Flag to use face vertices for mask generation.
     """
 
     slice_key: np.ndarray[tuple[Literal[2], int], np.dtype[np.int64]]
@@ -152,7 +149,6 @@ class Shape(ABC):
 
         self._closed = False
         self._filled = True
-        self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
@@ -805,7 +801,8 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
-        plane, data, plane_slice_key = self._mask_plane()
+        # Draw in the plane shown in 2D display, whatever ndisplay is.
+        plane = self.dims_order[-2:]
         if mask_shape is None:
             mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
@@ -822,8 +819,7 @@ class Shape(ABC):
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        data = data[:, -len(shape_plane) :]
-
+        data = self._mask_vertices(plane)
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
@@ -833,20 +829,17 @@ class Shape(ABC):
         # and embed as a slice.
         if embedded:
             mask = np.zeros(mask_shape, dtype=bool)
-            slice_key: list[int | slice] = [0] * len(mask_shape)
-            for i in range(len(mask_shape)):
-                if i in plane:
-                    slice_key[i] = slice(None)
-                elif plane_slice_key is not None:
-                    slice_key[i] = slice(
-                        plane_slice_key[0, i], plane_slice_key[1, i] + 1
-                    )
-                else:
-                    raise RuntimeError(
-                        'Internal error: self.slice_key is None'
-                    )
+            others = self.dims_order[:-2]
+            others_key = self._slice_key_of(others)
+            slice_key: list[int | slice] = [slice(None)] * len(mask_shape)
+            for col, dim in enumerate(others):
+                slice_key[dim] = slice(
+                    others_key[0, col], others_key[1, col] + 1
+                )
             displayed_order = argsort(plane)
-            mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
+            mask[tuple(slice_key)] = np.expand_dims(
+                mask_p.transpose(displayed_order), tuple(others)
+            )
         else:
             mask = mask_p
 
@@ -856,25 +849,9 @@ class Shape(ABC):
         """Return the integer slice key of the bounding box along dims."""
         return np.rint(self._bounding_box[:, dims]).astype(int)
 
-    def _mask_plane(self) -> tuple[list[int], npt.NDArray, npt.NDArray]:
-        """Return the 2D plane that masks are drawn in.
-
-        This is always the plane shown in 2D display, so masks do not
-        depend on ``ndisplay``. Returns the plane dims, the vertices in
-        that plane and the slice key of the remaining dims.
-        """
-        if self.ndisplay == 2:
-            if self._use_face_vertices:
-                return self.dims_displayed, self._face_vertices, self.slice_key
-            return self.dims_displayed, self.data_displayed, self.slice_key
-        plane = self.dims_order[-2:]
-        data = self.data[:, plane]
-        if self._use_face_vertices:
-            data = triangulate_ellipse(data)[0]
-        slice_key = np.rint(
-            self._bounding_box[:, self.dims_order[:-2]]
-        ).astype(int)
-        return plane, data, slice_key
+    def _mask_vertices(self, plane) -> np.ndarray:
+        """Return the vertices used to draw the mask in plane."""
+        return self.data[:, plane]
 
     def _clean_cache(self) -> None:
         if 'dims_displayed' in self.__dict__:

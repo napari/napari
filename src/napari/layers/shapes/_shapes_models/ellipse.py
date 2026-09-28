@@ -47,7 +47,6 @@ class Ellipse(Shape):
         )
 
         self._closed = True
-        self._use_face_vertices = True
         self.data = data
         self.name = 'ellipse'
 
@@ -79,6 +78,11 @@ class Ellipse(Shape):
             ]
         )
         self._update_displayed_data()
+
+    def _mask_vertices(self, plane) -> np.ndarray:
+        if self.ndisplay == 2:
+            return self._face_vertices
+        return triangulate_ellipse(self.data[:, plane])[0]
 
     def _slice_key_of(self, dims) -> np.ndarray:
         return self._bounding_box[:, dims].astype(int)
