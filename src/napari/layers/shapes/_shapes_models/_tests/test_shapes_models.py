@@ -324,3 +324,22 @@ def test_ellipse_rotate():
     npt.assert_array_almost_equal(
         shape.bounding_box, np.array([[-2.5, -1.5], [2.5, 1.5]])
     )
+
+
+@pytest.mark.parametrize(
+    ('shape_class', 'data'),
+    [
+        (Polygon, [[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]]),
+        (Rectangle, [[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]]),
+        (Ellipse, [[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]]),
+        (Path, [[5, 10, 10], [5, 30, 50], [5, 50, 20]]),
+        (Line, [[5, 10, 10], [5, 50, 50]]),
+    ],
+)
+def test_to_mask_independent_of_ndisplay(shape_class, data):
+    shape = shape_class(np.array(data, dtype=float))
+    mask_2d = shape.to_mask((10, 60, 60))
+    assert mask_2d[5].any()
+
+    shape.ndisplay = 3
+    npt.assert_array_equal(shape.to_mask((10, 60, 60)), mask_2d)
