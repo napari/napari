@@ -817,7 +817,8 @@ class Shape(ABC):
         """
         # Draw in the plane shown in 2D display, whatever ndisplay is.
         plane = self.dims_order[-2:]
-        if len(mask_shape) == 2:
+        embedded = len(mask_shape) != 2
+        if not embedded:
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
             shape_plane = [mask_shape[d] for d in plane]
@@ -829,7 +830,7 @@ class Shape(ABC):
         data = (self._mask_vertices(plane) - offset) * zoom_factor
         to_indices = poly_to_indices if self._filled else path_to_indices
         rows, cols = to_indices(shape_plane, data)
-        if len(mask_shape) == 2:
+        if not embedded:
             return rows, cols
 
         # Off-plane dims span the shape's bounding box, like its 2D slice.

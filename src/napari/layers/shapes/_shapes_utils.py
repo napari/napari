@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, overload
 
 import numpy as np
 from skimage import draw, measure
-from skimage.draw import line, polygon2mask
+from skimage.draw import line
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
@@ -1051,30 +1051,6 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(
-    mask_shape: npt.NDArray, vertices: npt.NDArray
-) -> npt.NDArray[np.bool_]:
-    """Converts a path to a boolean mask with `True` for points lying along
-    each edge.
-
-    Parameters
-    ----------
-    mask_shape : array (2,)
-        Shape of mask to be generated.
-    vertices : array (N, 2)
-        Vertices of the path.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
-    """
-    mask = np.zeros(np.asarray(mask_shape, dtype=int), dtype=bool)
-    mask[path_to_indices(mask_shape, vertices)] = True
-    return mask
-
-
 def path_to_indices(
     mask_shape: npt.ArrayLike, vertices: npt.NDArray
 ) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
@@ -1095,28 +1071,6 @@ def path_to_indices(
         return np.empty(0, np.intp), np.empty(0, np.intp)
     iis, jjs = zip(*lines, strict=True)
     return np.concatenate(iis), np.concatenate(jjs)
-
-
-def poly_to_mask(
-    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
-) -> npt.NDArray[np.bool_]:
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
-
-    Parameters
-    ----------
-    mask_shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    return polygon2mask(mask_shape, vertices)
 
 
 def poly_to_indices(
