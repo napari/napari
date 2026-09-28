@@ -2731,10 +2731,6 @@ class Shapes(Layer):
         self._value = (None, None)
         self._moving_value = (None, None)
         self._last_cursor_position = None
-        # remove() deletes the shape under construction before calling here, so
-        # the index taken from _moving_value can no longer resolve.
-        if index is not None and index >= len(self._data_view.shapes):
-            index = None
         if self._is_creating is True and index is not None:
             if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
@@ -2855,6 +2851,16 @@ class Shapes(Layer):
             self._data_view.remove_multiple(to_remove)
 
             self._value = (None, None)
+
+            moving_index = self._moving_value[0]
+            if moving_index is not None:
+                if moving_index in indices:
+                    moving_index = None
+                else:
+                    moving_index -= int(
+                        np.searchsorted(to_remove[::-1], moving_index)
+                    )
+                self._moving_value = (moving_index, self._moving_value[1])
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()
