@@ -63,9 +63,9 @@ class EventedMetaclass(ModelMetaclass):
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                base_encoders = EventedModel.model_config['json_encoders']
-                assert base_encoders is not None
-                base_encoders[field_type] = encoder
+                base_json_encoders = EventedModel.model_config['json_encoders']
+                assert base_json_encoders is not None
+                base_json_encoders[field_type] = encoder
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         # Current implementation ignores properties defined in mixins
@@ -426,7 +426,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                     setattr(self, key, value)
 
         if block.count:
-            self.events(Event(self))  # pyrefly: ignore[bad-argument-type]
+            self.events(Event(type_name='update'))
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
@@ -458,12 +458,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Whether enums should be shown as values (or as enum objects),
             by default `True`
         """
-        before = self.model_config.get('use_enum_values')
+        null = object()
+        before: Any = self.model_config.get('use_enum_values', null)
         self.model_config['use_enum_values'] = as_values
         try:
             yield
         finally:
-            if before is not None:
+            if before is not null:
                 self.model_config['use_enum_values'] = before
             else:
                 del self.model_config['use_enum_values']
