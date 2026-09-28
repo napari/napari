@@ -6,7 +6,7 @@ import typing
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-from skimage import measure
+from skimage import draw, measure
 from skimage.draw import line, polygon2mask
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
@@ -1070,9 +1070,19 @@ def path_to_mask(
         Boolean array with `True` for points along the path
 
     """
-    mask_shape = np.asarray(mask_shape, dtype=int)
-    mask = np.zeros(mask_shape, dtype=bool)
+    mask = np.zeros(np.asarray(mask_shape, dtype=int), dtype=bool)
+    mask[path_to_indices(mask_shape, vertices)] = True
+    return mask
 
+
+def path_to_indices(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    """Row and column indices of the pixels along each edge of a path.
+
+    Vertices outside the mask are clipped to its border.
+    """
+    mask_shape = np.asarray(mask_shape, dtype=int)
     vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
 
     # remove identical, consecutive vertices
@@ -1080,15 +1090,11 @@ def path_to_mask(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    iis, jjs = [], []
-    for v1, v2 in itertools.pairwise(vertices):
-        ii, jj = line(*v1, *v2)
-        iis.extend(ii.tolist())
-        jjs.extend(jj.tolist())
-
-    mask[iis, jjs] = 1
-
-    return mask
+    lines = [line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    if not lines:
+        return np.empty(0, np.intp), np.empty(0, np.intp)
+    iis, jjs = zip(*lines, strict=True)
+    return np.concatenate(iis), np.concatenate(jjs)
 
 
 def poly_to_mask(
@@ -1111,6 +1117,13 @@ def poly_to_mask(
         Boolean array with `True` for points inside the polygon
     """
     return polygon2mask(mask_shape, vertices)
+
+
+def poly_to_indices(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    """Row and column indices of the pixels inside a polygon."""
+    return draw.polygon(vertices[:, 0], vertices[:, 1], mask_shape)
 
 
 def grid_points_in_poly(shape, vertices):
