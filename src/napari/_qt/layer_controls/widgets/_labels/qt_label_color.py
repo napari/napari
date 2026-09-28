@@ -17,7 +17,6 @@ from napari.layers import Labels
 from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
-from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
 
 
@@ -154,7 +153,6 @@ class QtLabelControl(QtWidgetControlsBase):
         self.new_label_button = QPushButton()
         self.new_label_button.setText('new')
         self.new_label_button.setObjectName('newLabelButton')
-        action_manager.bind_button('napari:new_label', self.new_label_button)
         self.new_label_button.clicked.connect(self._on_button_click)
 
         self.label_color_label = QtWrappedLabel('label:')
@@ -195,5 +193,7 @@ class QtLabelControl(QtWidgetControlsBase):
         """Select a new label for the labels layer when the button is clicked."""
         new_label(self._layer)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.label_color_label, self.label_color)]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSortFilterProxyModel, Qt  # type: ignore[attr-defined]
+from qtpy.QtCore import QSortFilterProxyModel, Qt
 
 from napari._qt._qapp_model.qactions._layerlist_context import (
     is_valid_spatial_in_clipboard,
@@ -16,8 +16,8 @@ from napari._qt.containers.qt_list_view import QtListView
 from napari.layers import Layer
 
 if TYPE_CHECKING:
-    from qtpy.QtGui import QKeyEvent  # type: ignore[attr-defined]
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtGui import QKeyEvent
+    from qtpy.QtWidgets import QWidget
 
     from napari.components.layerlist import LayerList
 
@@ -31,10 +31,10 @@ class ReverseProxyModel(QSortFilterProxyModel):
         self.setSortRole(SortRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)
 
-    def dropMimeData(self, data, action, destRow, col, parent):
+    def dropMimeData(self, data, action, destRow, col, parent):  # pyrefly: ignore [bad-override-param-name]
         """Handle destination row for dropping with reversed indices."""
-        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow
-        return self.sourceModel().dropMimeData(data, action, row, col, parent)
+        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow  # pyrefly: ignore [missing-attribute]
+        return self.sourceModel().dropMimeData(data, action, row, col, parent)  # pyrefly: ignore [missing-attribute]
 
 
 class QtLayerList(QtListView[Layer]):
@@ -57,7 +57,7 @@ class QtLayerList(QtListView[Layer]):
         viewport = self.viewport()
         assert viewport is not None
 
-        layer_delegate.loading_frame_changed.connect(viewport.update)
+        layer_delegate.loading_frame_changed.connect(viewport.update)  # pyrefly: ignore [missing-attribute]
 
         self.setToolTip('Layer list')
 
