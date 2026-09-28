@@ -4,6 +4,7 @@ import numpy as np
 import numpy.testing as npt
 from hypothesis import assume, given, settings, strategies as st
 
+from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_models import (
     Ellipse,
     Line,
@@ -87,13 +88,10 @@ def plane_vertices(draw, shape_class):
     return center + corners @ rot.T
 
 
-@st.composite
-def shapes(draw):
+def build_shape(draw, ndim, dims_order, ndisplay, z_index=0):
     shape_class = draw(
         st.sampled_from([Polygon, Rectangle, Ellipse, Path, Line])
     )
-    ndim = draw(st.integers(2, 4))
-    dims_order = list(draw(st.permutations(range(ndim))))
     in_plane = plane_vertices(draw, shape_class)
     vertices = np.empty((len(in_plane), ndim))
     vertices[:, dims_order[-2:]] = in_plane
@@ -109,16 +107,42 @@ def shapes(draw):
                     max_size=len(in_plane),
                 )
             )
-    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
     try:
         with NO_TRIANGULATION_DUMPS[0], NO_TRIANGULATION_DUMPS[1]:
-            shape = shape_class(vertices, dims_order=dims_order)
+            shape = shape_class(
+                vertices, dims_order=dims_order, z_index=z_index
+            )
             shape.ndisplay = ndisplay
     except RuntimeError:
         # vispy occasionally fails to triangulate a valid polygon (about 1 in
         # 1000 here); rasterization is what is under test, so skip those
         assume(False)
     return shape
+
+
+@st.composite
+def shapes(draw):
+    ndim = draw(st.integers(2, 4))
+    dims_order = list(draw(st.permutations(range(ndim))))
+    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
+    return build_shape(draw, ndim, dims_order, ndisplay)
+
+
+@st.composite
+def shape_lists(draw):
+    ndim = draw(st.integers(2, 3))
+    dims_order = list(draw(st.permutations(range(ndim))))
+    ndisplay = 3 if ndim > 2 and draw(st.booleans()) else 2
+    shape_list = ShapeList(ndisplay=ndisplay)
+    color = st.lists(st.floats(0, 1), min_size=4, max_size=4)
+    for _ in range(draw(st.integers(1, 4))):
+        z_index = draw(st.integers(-2, 2))
+        shape_list.add(
+            build_shape(draw, ndim, dims_order, ndisplay, z_index),
+            face_color=np.array(draw(color)),
+            edge_color=np.array(draw(color)),
+        )
+    return shape_list
 
 
 @settings(max_examples=1000, deadline=None)
@@ -147,4 +171,39 @@ def test_mask_index_matches_dense_with_zoom_and_offset(
     npt.assert_array_equal(
         shape.to_mask((30, 40), zoom_factor=zoom_factor, offset=offset),
         expected,
+    )
+
+
+@settings(max_examples=300, deadline=None)
+@given(shape_list=shape_lists(), size=st.integers(5, 40))
+def test_to_labels_matches_dense_rasterization(shape_list, size):
+    labels_shape = (size,) * shape_list.shapes[0].data.shape[1]
+    expected = np.zeros(labels_shape, dtype=int)
+    for ind in shape_list._z_order[::-1]:
+        expected[reference_to_mask(shape_list.shapes[ind], labels_shape)] = (
+            ind + 1
+        )
+    npt.assert_array_equal(shape_list.to_labels(labels_shape), expected)
+
+
+@settings(max_examples=300, deadline=None)
+@given(
+    shape_list=shape_lists(),
+    zoom_factor=st.floats(0.1, 3),
+    offset=st.tuples(st.floats(-10, 10), st.floats(-10, 10)),
+)
+def test_to_colors_matches_dense_rasterization(
+    shape_list, zoom_factor, offset
+):
+    expected = np.zeros((30, 40, 4))
+    expected[..., 3] = 1
+    in_view = np.isin(shape_list._z_order, np.argwhere(shape_list._displayed))
+    for ind in shape_list._z_order[in_view]:
+        shape = shape_list.shapes[ind]
+        mask = reference_to_mask(shape, (30, 40), zoom_factor, offset)
+        is_path = isinstance(shape, (Path, Line))
+        colors = shape_list._edge_color if is_path else shape_list._face_color
+        expected[mask, :] = colors[ind]
+    npt.assert_array_equal(
+        shape_list.to_colors((30, 40), zoom_factor, offset), expected
     )
