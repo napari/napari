@@ -1053,8 +1053,8 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
 
 def path_to_indices(
     mask_shape: npt.ArrayLike, vertices: npt.NDArray
-) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
-    """Row and column indices of the pixels along each edge of a path.
+) -> tuple[npt.NDArray, ...]:
+    """Indices of the pixels along each edge of a 2D or nD path.
 
     Vertices outside the mask are clipped to its border.
     """
@@ -1066,26 +1066,15 @@ def path_to_indices(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    lines = [line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    if len(mask_shape) == 2:
+        lines = [line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    else:
+        lines = [
+            line_nd(v1, v2, endpoint=True)
+            for v1, v2 in itertools.pairwise(vertices)
+        ]
     if not lines:
-        return np.empty(0, np.intp), np.empty(0, np.intp)
-    iis, jjs = zip(*lines, strict=True)
-    return np.concatenate(iis), np.concatenate(jjs)
-
-
-def path_to_indices_nd(
-    mask_shape: npt.ArrayLike, vertices: npt.NDArray
-) -> tuple[npt.NDArray, ...]:
-    """Indices of the pixels along each edge of an nD path.
-
-    Vertices outside the mask are clipped to its border.
-    """
-    mask_shape = np.asarray(mask_shape, dtype=int)
-    vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
-    lines = [
-        line_nd(v1, v2, endpoint=True)
-        for v1, v2 in itertools.pairwise(vertices)
-    ]
+        return tuple(np.empty(0, np.intp) for _ in mask_shape)
     return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
 

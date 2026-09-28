@@ -62,8 +62,7 @@ def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
 
 def leaves_plane(shape):
     """Lines and paths not confined to their 2D plane are drawn in nD."""
-    key = shape._slice_key_of(shape.dims_order[:-2])
-    return not shape._filled and bool(np.any(key[0] != key[1]))
+    return not shape._filled and shape._leaves_plane()
 
 
 def plane_vertices(draw, shape_class):
