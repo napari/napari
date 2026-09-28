@@ -304,7 +304,12 @@ class EventEmitter:
         self.print_callback_errors = 'reminders'  # 'reminders'
 
     def _on_source_change(self):
-        pass
+        """For the event emitters that require connecting
+        to other event emitters
+
+        For a event emitter accessing the source object to connect other possible event emitters,
+        there is a need to provide a function to override to reconnect to the new source object.
+        """
 
     @property
     def ignore_callback_errors(self) -> bool:
@@ -864,7 +869,14 @@ class WarningEmitter(EventEmitter):
 
 
 class ChildrenEmitterMixin:
-    """Mixin to provide the implementation for reemitting events based on child objects."""
+    """Mixin to provide the implementation for reemitting events based on child objects.
+
+    This adds machinery to connect/dicsonnect to events on child objects, based on the presence of own callbacks.
+    IT means that the proper event will be emitted, even if the child object attribute is set.
+    It uses `source_path` to find the proper event in relation to EventEmitter `source` attribute.
+
+    This Mixin is meant to be used with EventEmitter subclasses.
+    """
 
     source: object
 
