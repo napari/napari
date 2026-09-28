@@ -7,7 +7,7 @@ from vispy.util.quaternion import Quaternion
 
 from napari._vispy.camera import (
     MouseToggledArcballCamera,
-    get_vispy_flipped_axes,
+    _get_vispy_flipped_axes,
     napari_angles_to_vispy_quat,
 )
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -110,8 +110,8 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         # ensure camera flip is the same as napari camera
         ndisplay = self.viewer.dims.ndisplay
-        flipped_axes = get_vispy_flipped_axes(
-            self.viewer.scene.camera, ndisplay=ndisplay
+        flipped_axes = _get_vispy_flipped_axes(
+            self.viewer.scene.camera.orientation, ndisplay=ndisplay
         )
         self.node.camera.flip = list(flipped_axes)
 
@@ -126,7 +126,8 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             )
         else:
             quat = napari_angles_to_vispy_quat(
-                self.viewer.scene.camera.angles, flipped_axes
+                self.viewer.scene.camera.angles,
+                self.viewer.scene.camera.orientation,
             )
             self.node.camera.set_state(
                 _quaternion=quat,

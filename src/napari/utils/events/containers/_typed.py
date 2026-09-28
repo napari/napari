@@ -50,7 +50,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._basetypes: tuple[type[_T], ...] = (
             tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
-        self._lookup = lookup.copy()
+        self._lookup = lookup.copy()  # pyrefly: ignore [invalid-type-var]
         self.extend(data)
 
     def __len__(self) -> int:
@@ -230,7 +230,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def _ipython_key_completions_(self):
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
-        return None  # type: ignore
+        return None
 
 
 def _noop(x: _T) -> _T:

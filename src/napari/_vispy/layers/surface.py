@@ -125,13 +125,13 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         if has_tex and self._texture_filter is None:
             self._texture_filter = TextureFilter(
-                np.flipud(self.layer.texture),
+                np.flipud(self.layer.texture),  # pyrefly: ignore [no-matching-overload]
                 self.layer._view_texcoords,
             )
             self.node.attach(self._texture_filter)
         elif has_tex:
-            self._texture_filter.texture = np.flipud(self.layer.texture)
-            self._texture_filter.texcoords = self.layer._view_texcoords
+            self._texture_filter.texture = np.flipud(self.layer.texture)  # pyrefly: ignore [missing-attribute, no-matching-overload]
+            self._texture_filter.texcoords = self.layer._view_texcoords  # pyrefly: ignore [missing-attribute]
 
         if self._texture_filter is not None:
             self._texture_filter.enabled = has_tex
@@ -214,7 +214,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._light_direction = up - view - np.cross(up, view)
         if (
             self.node.shading_filter is not None
-            and self._meshdata._vertices is not None
+            and self._meshdata._vertices is not None  # pyrefly: ignore [missing-attribute]
         ):
             self.node.shading_filter.light_dir = self._light_direction
 
