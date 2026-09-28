@@ -449,6 +449,24 @@ def test_grid():
     assert viewer.canvas.grid.spacing == 0
 
 
+def test_viewer_navigation_leaves_locked_axes_alone():
+    from napari.components._viewer_key_bindings import increment_dims_right
+
+    viewer = ViewerModel()
+    viewer.dims.lock_all_axes()
+    # the first layer centers only the axes that are free
+    viewer.add_image(np.zeros((5, 5, 5)))
+    viewer.dims.lock_axis(0)
+    point = viewer.dims.point
+
+    increment_dims_right(viewer)
+    viewer.dims.ndisplay = 3
+    viewer.camera.center = (4, 2, 2)
+    viewer.dims.ndisplay = 2
+
+    assert viewer.dims.point == point
+
+
 def test_add_remove_layer_dims_change():
     """Test dims change appropriately when adding and removing layers."""
     np.random.seed(0)

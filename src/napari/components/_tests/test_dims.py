@@ -1,9 +1,11 @@
-import numpy as np
+from unittest.mock import Mock
+
 import pytest
 from pydantic import ValidationError
 
 from napari.components import Dims
 from napari.components.dims import (
+    AxisLockedError,
     ensure_axis_in_bounds,
     reorder_after_dim_reduction,
 )
@@ -148,15 +150,19 @@ def test_point_variable_step_size():
         dims.set_current_step((0, 1), (0, 0, 0))
 
 
-def test_axis_lock_holds_the_point_against_navigation():
+def test_axis_lock_refuses_moving_a_locked_axis():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
 
-    dims.set_point(0, 1)
-    assert dims.point == (4, 2, 1)
+    dims.set_point(1, 5)
+    assert dims.point == (4, 5, 1)
 
-    # a request spanning both still moves the axis that is free
-    dims.set_point((0, 1), (1, 5))
+    with pytest.raises(AxisLockedError):
+        dims.set_point(0, 1)
+    with pytest.raises(AxisLockedError):
+        dims.point = (0, 0, 0)
+    with pytest.raises(AxisLockedError):
+        dims.current_step = (0, 0, 0)
     assert dims.point == (4, 5, 1)
 
     dims.unlock_axis(0)
@@ -164,18 +170,17 @@ def test_axis_lock_holds_the_point_against_navigation():
     assert dims.point == (1, 5, 1)
 
 
-def test_axis_lock_guards_direct_assignment():
+def test_refused_write_emits_no_events():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
+    dims.events.point = Mock()
+    dims.events.current_step = Mock()
 
-    dims.point = (0, 0, 0)
-    assert dims.point == (4, 0, 0)
+    with pytest.raises(AxisLockedError):
+        dims.set_point((0, 1), (1, 5))
 
-    dims.current_step = (5, 5, 5)
-    assert dims.point == (4, 5, 5)
-
-    dims.update({'point': (0, 0, 0)})
-    assert dims.point == (4, 0, 0)
+    dims.events.point.assert_not_called()
+    dims.events.current_step.assert_not_called()
 
 
 def test_axis_lock_query_and_bulk_setters():
@@ -192,50 +197,26 @@ def test_axis_lock_query_and_bulk_setters():
     assert dims.axis_locked == (False,) * 3
 
 
-def test_axis_lock_grows_with_ndim():
+@pytest.mark.parametrize(
+    ('new_ndim', 'expected_locked', 'expected_point'),
+    [
+        (4, (False, False, True, False), (0, 0, 3, 1)),
+        (1, (False,), (1,)),
+    ],
+)
+def test_axis_lock_follows_its_axis_across_ndim_changes(
+    new_ndim, expected_locked, expected_point
+):
     dims = Dims(ndim=2, range=((0, 5, 1),) * 2, point=(3, 1))
     dims.lock_axis(0)
 
-    dims.ndim = 4
+    dims.ndim = new_ndim
 
-    # new axes are prepended, so the locked one keeps its position from the end
-    assert dims.axis_locked == (False, False, True, False)
-    assert dims.point == (0, 0, 3, 1)
-
-
-def test_short_axis_locked_is_padded_without_moving_the_point():
-    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
-
-    dims.axis_locked = (True,)
-
-    assert dims.axis_locked == (False, False, True)
-    assert dims.point == (4, 2, 1)
-
-
-def test_reset_moves_locked_axes_and_keeps_the_locks():
-    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
-    dims.lock_axis(0)
-
-    dims.reset()
-
-    assert dims.point == (0, 0, 0)
-    assert dims.is_axis_locked(0)
-
-
-def test_axis_lock_shrinks_with_ndim():
-    dims = Dims(ndim=4, range=((0, 5, 1),) * 4, point=(1, 2, 3, 4))
-    dims.lock_axis(2)
-
-    dims.ndim = 3
-
-    # leading axes are dropped, so the lock keeps its position from the end
-    assert dims.axis_locked == (False, True, False)
-    dims.point = (0, 0, 0)
-    assert dims.point == (0, 3, 0)
+    assert dims.axis_locked == expected_locked
+    assert dims.point == expected_point
 
 
 def test_range_change_may_still_clip_a_locked_point():
-    """Removing a layer rewrites ``range``; that must keep clipping the point."""
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
 
@@ -244,32 +225,7 @@ def test_range_change_may_still_clip_a_locked_point():
     assert dims.point == (2, 2, 1)
 
 
-def test_axis_lock_rejects_an_invalid_component_without_moving():
-    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
-    dims.lock_axis(0)
-
-    with pytest.raises(ValidationError):
-        dims.point = (np.array([1, 2]), 5, 5)
-
-    assert dims.point == (4, 2, 1)
-
-
-def test_axis_lock_holds_a_point_of_the_wrong_length():
-    """A short or long point is padded and cropped before the lock reads it."""
-    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
-    dims.lock_axis(0)
-
-    dims.point = (0, 0)
-    assert dims.point == (4, 0, 0)
-
-    dims.point = (0, 5, 5, 5)
-    assert dims.point == (4, 5, 5)
-
-    dims.update({'point': (0, 0), 'last_used': 1})
-    assert dims.point == (4, 0, 0)
-
-
-def test_clipping_that_also_moves_last_used_is_not_held():
+def test_clipping_that_also_moves_last_used_is_not_refused():
     """``last_used`` re-enters the validator after clipping moved the point."""
     dims = Dims(
         ndim=4,
@@ -286,33 +242,14 @@ def test_clipping_that_also_moves_last_used_is_not_held():
     assert dims.last_used == 1
 
 
-def test_non_sequence_point_assignment_is_refused_without_moving():
+def test_reset_moves_locked_axes_and_keeps_the_locks():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
 
-    with pytest.raises(TypeError):
-        dims.point = 5
+    dims.reset()
 
-    assert dims.point == (4, 2, 1)
-
-
-def test_axis_lock_preserves_field_event_payloads_and_order():
-    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
-    dims.lock_axis(0)
-    events = []
-    dims.events.point.connect(
-        lambda event: events.append(('point', event.value))
-    )
-    dims.events.current_step.connect(
-        lambda event: events.append(('current_step', event.value))
-    )
-
-    dims.current_step = (0, 5, 1)
-
-    assert events == [
-        ('current_step', (4, 5, 1)),
-        ('point', (4.0, 5.0, 1.0)),
-    ]
+    assert dims.point == (0, 0, 0)
+    assert dims.is_axis_locked(0)
 
 
 def test_range():

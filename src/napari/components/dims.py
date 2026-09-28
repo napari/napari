@@ -15,6 +15,10 @@ from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
+class AxisLockedError(RuntimeError):
+    """Raised when a write would move the point on a locked axis."""
+
+
 class RangeTuple(NamedTuple):
     start: float
     stop: float
@@ -93,11 +97,12 @@ class Dims(EventedModel):
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
     axis_locked : tuple of bool
-        Tuple of per-axis lock state. If True, the point cannot be moved on
-        that axis by anything that asks for it: the sliders, the arrow keys,
-        Ctrl+scroll, or an assignment to ``point``. A ``range`` or ``ndim``
-        change still moves it, so a layer leaving the viewer can still clip a
-        locked axis back into the remaining extent.
+        Tuple of per-axis lock state. If True, a write that would move the
+        point on that axis, such as ``set_point`` or an assignment to
+        ``point`` or ``current_step``, raises ``AxisLockedError`` and leaves
+        the point unchanged. A ``range`` or ``ndim`` change still moves it, so
+        a layer leaving the viewer can still clip a locked axis back into the
+        remaining extent.
 
         .. versionadded:: 0.10.0
     """
@@ -170,7 +175,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
-        self._hold_locked_axes()
+        self._refuse_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -241,26 +246,31 @@ class Dims(EventedModel):
 
         return self
 
-    def _hold_locked_axes(self) -> None:
-        """Put locked components back to where they were before this write.
+    def _refuse_locked_axes(self) -> None:
+        """Raise if this write moves the point on a locked axis.
 
         A snapshot of a different length means ``ndim`` changed, which may move
-        the point; only a write at the same ``ndim`` is held.
+        the point; only a write at the same ``ndim`` is checked.
         """
         previous = self._point_before_check
         axis_locked = ensure_len(self.axis_locked, self.ndim, False)
         if not any(axis_locked) or len(previous) != self.ndim:
             return
         requested = ensure_len(self.point, self.ndim, 0.0)
-        held = tuple(
-            prev if locked else new
-            for new, prev, locked in zip(
-                requested, previous, axis_locked, strict=True
+        moved = [
+            axis
+            for axis, (new, prev, locked) in enumerate(
+                zip(requested, previous, axis_locked, strict=True)
             )
-        )
-        if held != requested:
+            if locked and new != prev
+        ]
+        if moved:
             with self._validating_ctx():
-                self.point = held
+                self.point = previous
+            raise AxisLockedError(
+                f'Cannot move the point on locked axis {moved[0]}. '
+                'Unlock it with Dims.unlock_axis first.'
+            )
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -553,7 +563,13 @@ class Dims(EventedModel):
         self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _go_to_center_step(self):
-        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+        free = [
+            axis for axis in range(self.ndim) if not self.axis_locked[axis]
+        ]
+        if free:
+            self.set_current_step(
+                free, [int((self.nsteps[axis] - 1) / 2) for axis in free]
+            )
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False

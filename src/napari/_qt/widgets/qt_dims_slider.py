@@ -27,6 +27,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_mirrored_sliders_popup import QMirroredSlidersPopup
 from napari._qt.widgets.qt_scrollbar import ModifiedScrollBar
 from napari.components import Dims
+from napari.components.dims import AxisLockedError
 from napari.settings import get_settings
 from napari.settings._constants import LoopMode
 from napari.utils.events.event_utils import connect_setattr_value
@@ -143,8 +144,9 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
-        self.dims.set_current_step(self.axis, val)
-        if self.dims.current_step[self.axis] != val:  # refused by an axis lock
+        try:
+            self.dims.set_current_step(self.axis, val)
+        except AxisLockedError:
             self._update_slider()
 
     def _create_axis_label_widget(self) -> QElidingLineEdit:
@@ -169,10 +171,9 @@ class QtDimSliderWidget(QWidget):
 
         We split this out as a separate function for perfmon.
         """
-        self.dims.set_current_step(self.axis, value)
-        if (
-            self.dims.current_step[self.axis] != value
-        ):  # refused by an axis lock
+        try:
+            self.dims.set_current_step(self.axis, value)
+        except AxisLockedError:
             self._update_slider()
 
     def _create_range_slider_widget(self) -> _ModifiedScrollBar:
