@@ -1005,11 +1005,11 @@ class VispyCanvas:
             )
 
             # delete redundant vispy overlays (always keep 1)
+            _, occupied_viewboxes = self.viewer.canvas.grid._viewbox_groups(
+                self.viewer.layers
+            )
             n_views_to_populate = (
-                len(self.viewer.layers) // abs(self.viewer.canvas.grid.stride)
-                or 1
-                if gridded
-                else 1
+                len(occupied_viewboxes) or 1 if gridded else 1
             )
             while len(vispy_overlays) > n_views_to_populate:
                 vispy_overlays.pop().close()
@@ -1376,7 +1376,9 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
     def _update_scenegraph(self, event=None):
-        if self._pause_scene_graph:
+        if self._pause_scene_graph or any(
+            layer not in self.layer_to_visual for layer in self.viewer.layers
+        ):
             return
         with self._scene_canvas.events.draw.blocker():
             if self.viewer.canvas.grid.enabled:
