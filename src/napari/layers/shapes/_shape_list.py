@@ -2042,13 +2042,12 @@ class ShapeList:
         if mask_shape is None:
             mask_shape = self.displayed_vertices.max(axis=0).astype('int')
 
-        masks = np.array(
-            [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
-                for s in self.shapes
-            ]
-        )
-
+        if not self.shapes:
+            # an empty list has always returned an empty 1D array
+            return np.array([])
+        masks = np.zeros((len(self.shapes), *mask_shape), dtype=bool)
+        for mask, shape in zip(masks, self.shapes, strict=True):
+            mask[shape._mask_index(mask_shape, zoom_factor, offset)] = True
         return masks
 
     def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
