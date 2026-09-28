@@ -18,6 +18,7 @@ from napari.layers.shapes._shapes_utils import (
     path_to_mask,
     poly_to_mask,
     triangulate_edge,
+    triangulate_ellipse,
     triangulate_face,
     triangulate_face_and_edges,
     triangulate_face_triangle,
@@ -804,8 +805,9 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
+        plane, data, plane_slice_key = self._mask_plane()
         if mask_shape is None:
-            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+            mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
 
@@ -814,16 +816,11 @@ class Shape(ABC):
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
             embedded = True
-            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+            shape_plane = [mask_shape[d] for d in plane]
         else:
             raise ValueError(
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
-
-        if self._use_face_vertices:
-            data = self._face_vertices
-        else:
-            data = self.data_displayed
 
         data = data[:, -len(shape_plane) :]
 
@@ -838,22 +835,42 @@ class Shape(ABC):
             mask = np.zeros(mask_shape, dtype=bool)
             slice_key: list[int | slice] = [0] * len(mask_shape)
             for i in range(len(mask_shape)):
-                if i in self.dims_displayed:
+                if i in plane:
                     slice_key[i] = slice(None)
-                elif self.slice_key is not None:
+                elif plane_slice_key is not None:
                     slice_key[i] = slice(
-                        self.slice_key[0, i], self.slice_key[1, i] + 1
+                        plane_slice_key[0, i], plane_slice_key[1, i] + 1
                     )
                 else:
                     raise RuntimeError(
                         'Internal error: self.slice_key is None'
                     )
-            displayed_order = argsort(self.dims_displayed)
+            displayed_order = argsort(plane)
             mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:
             mask = mask_p
 
         return mask
+
+    def _mask_plane(self) -> tuple[list[int], npt.NDArray, npt.NDArray]:
+        """Return the 2D plane that masks are drawn in.
+
+        This is always the plane shown in 2D display, so masks do not
+        depend on ``ndisplay``. Returns the plane dims, the vertices in
+        that plane and the slice key of the remaining dims.
+        """
+        if self.ndisplay == 2:
+            if self._use_face_vertices:
+                return self.dims_displayed, self._face_vertices, self.slice_key
+            return self.dims_displayed, self.data_displayed, self.slice_key
+        plane = self.dims_order[-2:]
+        data = self.data[:, plane]
+        if self._use_face_vertices:
+            data = triangulate_ellipse(data)[0]
+        slice_key = np.rint(
+            self._bounding_box[:, self.dims_order[:-2]]
+        ).astype(int)
+        return plane, data, slice_key
 
     def _clean_cache(self) -> None:
         if 'dims_displayed' in self.__dict__:
