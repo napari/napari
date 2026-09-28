@@ -198,14 +198,25 @@ def test_mask_index_matches_dense_rasterization(
 
 @settings(max_examples=100, deadline=None)
 @given(shape_list=shape_lists(), size=st.integers(5, 40))
-def test_to_labels_matches_dense_rasterization(shape_list, size):
+def test_labels_and_masks_match_dense_rasterization(shape_list, size):
     labels_shape = (size,) * shape_list.shapes[0].data.shape[1]
+    masks = np.array(
+        [reference_to_mask(s, labels_shape) for s in shape_list.shapes]
+    )
     expected = np.zeros(labels_shape, dtype=int)
     for ind in shape_list._z_order[::-1]:
-        expected[reference_to_mask(shape_list.shapes[ind], labels_shape)] = (
-            ind + 1
-        )
+        expected[masks[ind]] = ind + 1
+
     npt.assert_array_equal(shape_list.to_labels(labels_shape), expected)
+    result = shape_list.to_masks(labels_shape)
+    assert result.dtype == masks.dtype
+    npt.assert_array_equal(result, masks)
+
+
+def test_to_masks_of_empty_list_is_unchanged():
+    masks = ShapeList().to_masks((4, 5))
+    assert masks.shape == (0,)
+    assert masks.dtype == np.float64
 
 
 @settings(max_examples=100, deadline=None)
