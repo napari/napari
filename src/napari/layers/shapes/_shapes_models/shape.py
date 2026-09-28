@@ -792,7 +792,7 @@ class Shape(ABC):
         ----------
         mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
-            the displayed vertices.
+            the vertices in the 2D display plane.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
