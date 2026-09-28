@@ -5,7 +5,8 @@ from unittest import mock
 import numpy as np
 import numpy.testing as npt
 import pytest
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import assume, example, given, settings, strategies as st
+from skimage import draw
 from skimage.draw import line, polygon2mask
 from skimage.measure import label
 
@@ -326,3 +327,78 @@ def test_labels_and_masks_of_2d_shapes_ignore_rolled_dims():
     npt.assert_array_equal(
         rolled.to_masks((15, 20)), expected.to_masks((15, 20))
     )
+
+
+def stroke_reference(mask_shape, shape):
+    """Union of the stroke triangles, each filled with skimage.
+
+    Also returns which pixel centres lie on a triangle edge, where skimage
+    counts some edges as outside; those are left out of the comparison.
+    """
+    plane = shape.dims_order[-2:]
+    # the shape's own triangulation backend, which is also used to draw it
+    centers, offsets, triangles = shape._triangulate_edge(
+        shape._mask_vertices(plane), closed=shape._closed
+    )
+    corners = centers + shape.edge_width * offsets
+    mask = np.zeros(mask_shape, dtype=bool)
+    for triangle in triangles:
+        mask[draw.polygon(*corners[triangle].T, mask_shape)] = True
+    pixels = np.indices(mask_shape).reshape(2, -1).T.astype(float)
+    on_edge = np.zeros(len(pixels), dtype=bool)
+    for triangle in triangles:
+        for p, q in itertools.pairwise(corners[triangle][[0, 1, 2, 0]]):
+            t = np.clip(
+                (pixels - p) @ (q - p) / max((q - p) @ (q - p), 1e-12), 0, 1
+            )
+            nearest = p + t[:, None] * (q - p)
+            on_edge |= np.linalg.norm(pixels - nearest, axis=1) < 1e-6
+    return mask, on_edge.reshape(mask_shape)
+
+
+def test_thick_line_labels_cover_its_stroke():
+    shape = Line(np.array([[10, 5], [10, 30]]), edge_width=5)
+    labels = ShapeList([shape]).to_labels((20, 40))
+    assert np.flatnonzero(labels.any(axis=1)).tolist() == [8, 9, 10, 11, 12]
+    assert np.flatnonzero(labels.any(axis=0)).tolist() == list(range(5, 31))
+
+
+@settings(max_examples=100, deadline=None)
+@example(vertices=[(0.0, 0.0), (1.0, 1.0)], edge_width=2.0, shape_class=Path)
+@example(
+    vertices=[(0.0, 2.0), (0.0, 0.0), (0.0, 2.0)],
+    edge_width=2.0,
+    shape_class=Path,
+)
+@given(
+    vertices=st.lists(
+        st.tuples(st.floats(-5, 45), st.floats(-5, 45)), min_size=2, max_size=6
+    ),
+    edge_width=st.floats(1.5, 12),
+    shape_class=st.sampled_from([Path, Line]),
+)
+def test_thick_path_labels_match_stroke_triangles(
+    vertices, edge_width, shape_class
+):
+    vertices = np.array(vertices[: 2 if shape_class is Line else None])
+    assume(np.all(np.linalg.norm(np.diff(vertices, axis=0), axis=1) > 1))
+    shape = shape_class(vertices, edge_width=edge_width)
+    labelled = ShapeList([shape]).to_labels((40, 40)) > 0
+    expected, on_edge = stroke_reference((40, 40), shape)
+    npt.assert_array_equal(labelled[~on_edge], expected[~on_edge])
+    # the stroke always covers a pixel whose centre is one of its vertices
+    on_pixel = np.all(
+        (vertices == np.round(vertices)) & (vertices >= 0) & (vertices < 40),
+        axis=1,
+    )
+    rows, cols = vertices[on_pixel].astype(int).T
+    assert labelled[rows, cols].all()
+
+
+def test_thick_path_labels_do_not_depend_on_ndisplay():
+    path = Path(np.array([[4, 3, 5], [4, 20, 30], [4, 8, 35]]), edge_width=4)
+    shape_list = ShapeList([path])
+    labels_2d = shape_list.to_labels((10, 40, 40))
+    path.ndisplay = 3
+    npt.assert_array_equal(shape_list.to_labels((10, 40, 40)), labels_2d)
+    assert np.flatnonzero(labels_2d.any(axis=(1, 2))).tolist() == [4]
