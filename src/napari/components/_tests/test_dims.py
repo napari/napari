@@ -170,7 +170,7 @@ def test_axis_lock_refuses_moving_a_locked_axis():
     assert dims.point == (1, 5, 1)
 
 
-def test_refused_write_emits_no_events():
+def test_refused_set_emits_no_events():
     dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
     dims.lock_axis(0)
     dims.events.point = Mock()
@@ -214,6 +214,16 @@ def test_axis_lock_follows_its_axis_across_ndim_changes(
 
     assert dims.axis_locked == expected_locked
     assert dims.point == expected_point
+
+
+def test_axis_lock_still_refuses_after_ndim_grows():
+    dims = Dims(ndim=2, range=((0, 5, 1),) * 2, point=(3, 1))
+    dims.lock_axis(0)
+    dims.ndim = 4
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point(2, 0)
+    assert dims.point == (0, 0, 3, 1)
 
 
 def test_range_change_may_still_clip_a_locked_point():

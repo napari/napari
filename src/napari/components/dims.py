@@ -97,8 +97,8 @@ class Dims(EventedModel):
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
     axis_locked : tuple of bool
-        Tuple of per-axis lock state. Where True, attempting to move the ``point``
-        for that axis  raises ``AxisLockedError``.
+        Tuple of per-axis lock state. Where True, attempting to move the
+        ``point`` for that axis raises ``AxisLockedError``.
 
         .. versionadded:: 0.10.0
     """
@@ -243,15 +243,16 @@ class Dims(EventedModel):
         return self
 
     def _refuse_locked_axes(self) -> None:
-        """Raise if this write moves the point on a locked axis.
+        """Raise if setting ``point`` would move it on a locked axis.
 
-        A snapshot of a different length means ``ndim`` changed, which may move
-        the point; only a write at the same ``ndim`` is checked.
+        Axes are added and removed at the front, so aligning both points on
+        their trailing axes compares each surviving axis with itself.
         """
         previous = self._point_before_check
         axis_locked = ensure_len(self.axis_locked, self.ndim, False)
-        if not any(axis_locked) or len(previous) != self.ndim:
+        if not previous or not any(axis_locked):
             return
+        previous = ensure_len(previous, self.ndim, 0.0)
         requested = ensure_len(self.point, self.ndim, 0.0)
         moved = [
             axis
@@ -603,7 +604,7 @@ class Dims(EventedModel):
         finally:
             self._validating = prev
             if not prev:
-                # the reference point for _hold_locked_axes
+                # the reference point for _refuse_locked_axes
                 self._point_before_check = self.point
 
 
