@@ -2081,10 +2081,10 @@ class ShapeList:
         labels = np.zeros(labels_shape, dtype=int)
 
         for ind in self._z_order[::-1]:
-            mask = self.shapes[ind].to_mask(
-                labels_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                labels_shape, zoom_factor, offset
             )
-            labels[mask] = ind + 1
+            labels[index] = ind + 1
 
         return labels
 
@@ -2137,14 +2137,14 @@ class ShapeList:
             z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
-            mask = self.shapes[ind].to_mask(
-                colors_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                colors_shape, zoom_factor, offset
             )
             if type(self.shapes[ind]) in [Path, Line]:
                 col = self._edge_color[ind]
             else:
                 col = self._face_color[ind]
-            colors[mask, :] = col
+            colors[index] = col
 
         return colors
 
