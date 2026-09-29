@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 NodeType = TypeVar('NodeType', bound=Node)
 
 
-class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # pyrefly: ignore [inconsistent-inheritance]
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
@@ -32,7 +32,7 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     See docstring of :class:`_BaseEventedItemView` for additional background.
     """
 
-    _root: Group[Node]  # type: ignore[assignment]
+    _root: Group[Node]
 
     def __init__(
         self, root: Group[Node], parent: QWidget | None = None
@@ -44,8 +44,8 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
         self.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         self.setRoot(root)
 
-    def setRoot(self, root: Group[Node]) -> None:  # type: ignore[override]
-        super().setRoot(root)  # type: ignore[arg-type]
+    def setRoot(self, root: Group[Node]) -> None:  # pyrefly: ignore [bad-override]
+        super().setRoot(root)  # pyrefly: ignore [bad-argument-type]
 
         # make tree look like a list if it contains no lists.
         self.model().rowsRemoved.connect(self._redecorate_root)
@@ -65,4 +65,4 @@ class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
             self.setRootIsDecorated(hasgroup)
 
     def model(self) -> QtNodeTreeModel[NodeType]:
-        return super().model()  # type: ignore[return-value]
+        return super().model()  # pyrefly: ignore [bad-return]
