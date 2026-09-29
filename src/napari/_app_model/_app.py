@@ -61,7 +61,7 @@ class NapariApplication(Application):
             injection_store_class=NapariStore,
         )
 
-        self.injection_store.namespace = _napari_names  # type: ignore [assignment]
+        self.injection_store.namespace = _napari_names
 
         self.register_actions(LAYERLIST_CONTEXT_ACTIONS)
         self.register_actions(VIEW_ACTIONS)
