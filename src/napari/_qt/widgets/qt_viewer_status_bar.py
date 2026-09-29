@@ -66,15 +66,21 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
+        self._warn_icon = QLabel()
+        self._warn_icon.setObjectName('error_label')
+        self.addPermanentWidget(self._warn_icon)
+        get_settings().experimental.events.connect(self.update_warning_icon)
+        self.update_warning_icon()
+
+    def update_warning_icon(self) -> None:
         exp_settings = get_settings().experimental
         exp_warnings = []
         if exp_settings.async_:
             exp_warnings.append('- Render Layers Asyncronously')
         if exp_settings.dynamic_layer_controls:
             exp_warnings.append('- Generate GUI layer controls dynamically')
+
         if exp_warnings:
-            self._warn_icon = QLabel()
-            self._warn_icon.setObjectName('error_label')
             header = 'Some experimental features which may lead to unexpected behaviour are enabled:\n'
             footer = (
                 '\nIf you are having issues and you think they might be related to\n'
@@ -85,7 +91,9 @@ class ViewerStatusBar(QStatusBar):
             self._warn_icon.setToolTip(
                 header + '\n'.join(exp_warnings) + footer
             )
-            self.addPermanentWidget(self._warn_icon)
+            self._warn_icon.setVisible(True)
+        else:
+            self._warn_icon.setVisible(False)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
