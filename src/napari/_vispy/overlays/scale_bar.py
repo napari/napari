@@ -32,7 +32,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._scale = 1.0
         self._unit = pint.Quantity('1 pixel')
 
-        # minimum dimesnions, to avoid degenerate cases
+        # minimum dimensions, to avoid degenerate cases
         self._min_canvas_length = 75
         self._min_canvas_tick_length = 11.0
         self._min_canvas_thickness = 3
