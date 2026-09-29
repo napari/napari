@@ -41,7 +41,7 @@ def iter_inner_types(type_: Any) -> Any:
 
 def get_inner_type(type_: Any) -> Any:
     """Roughly replacing pydantic.v1 Field.type_"""
-    return Union[tuple(iter_inner_types(type_))]
+    return Union[tuple(iter_inner_types(type_))]  # pyrefly: ignore [not-a-type]
 
 
 def get_outer_type(type_: Any) -> Any:
