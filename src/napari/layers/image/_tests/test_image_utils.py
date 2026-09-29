@@ -120,6 +120,16 @@ def test_guess_multiscale_strip_single_scale():
     assert guess is False
 
 
+def test_guess_multiscale_strip_single_scale_object_array():
+    """A length-1 sequence should be unwrapped even when it isn't a
+    list/tuple, e.g. a 1D numpy array of dtype=object."""
+    data = np.empty(1, dtype=object)
+    data[0] = np.empty((10, 10))
+    guess, data_out = guess_multiscale(data)
+    assert data_out is data[0]
+    assert guess is False
+
+
 def test_guess_multiscale_non_array_list():
     """Check that non-decreasing list input raises ValueError"""
     data = [np.empty((10, 15, 6))] * 2
