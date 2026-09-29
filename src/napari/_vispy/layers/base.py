@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import pint
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
 
 _L = TypeVar('_L', bound=Layer)
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class VispyBaseLayer(ABC, Generic[_L]):
@@ -313,9 +314,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def _on_view_direction_change(
         self,
-        view: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
-        | None = None,
-        up: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]] | None = None,
+        view: Vector3 | None = None,
+        up: Vector3 | None = None,
     ):
         return
 
