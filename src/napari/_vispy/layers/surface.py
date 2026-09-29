@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -14,6 +14,8 @@ from napari.utils.colormaps.colormap_utils import _napari_cmap_to_vispy
 
 if TYPE_CHECKING:
     from napari.layers import Surface
+
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -206,7 +208,9 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='vertex',
             )
 
-    def _on_view_direction_change(self, view=None, up=None):
+    def _on_view_direction_change(
+        self, view: Vector3 | None = None, up: Vector3 | None = None
+    ):
         if view is not None and up is not None:
             # TODO: this is not working well with axis flip, something is afoot
             # combine to get light behind the camera on the top right
