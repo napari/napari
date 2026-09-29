@@ -7,6 +7,7 @@ from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers.multiscale_data import MultiScaleData
 from napari.utils import Colormap
 
 
@@ -458,6 +459,29 @@ def test_multiscale_data_protocol():
     assert layer.data.dtype == float
     assert layer.data.shape == shapes[0]
     assert isinstance(layer.data[0], np.ndarray)
+
+
+def test_multiscale_data_get_level():
+    """Test MultiScaleData.get_level returns the correct level's data."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    for i, level_data in enumerate(data):
+        np.testing.assert_array_equal(multiscale_data.get_level(i), level_data)
+        assert multiscale_data.get_level(i) is multiscale_data[i]
+
+
+def test_multiscale_data_get_level_out_of_bounds():
+    """Test MultiScaleData.get_level raises for an out-of-bounds level."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    with pytest.raises(ValueError, match='out of bounds'):
+        multiscale_data.get_level(len(shapes))
 
 
 @pytest.mark.parametrize(
