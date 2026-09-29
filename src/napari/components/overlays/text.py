@@ -75,8 +75,11 @@ class LayerNameOverlay(_BaseTextOverlay):
 
     Attributes
     ----------
-    color : np.ndarray
-        A (4,) color array of the text overlay.
+    color : np.ndarray or None
+        A (4,) color array of the text overlay. If unset, it uses the high end
+        of the layer colormap (e.g. green for a green channel), falling back to
+        a color contrasting the background for gray colormaps and for layers
+        without a colormap.
     font_size : float
         The font size (in points) of the text.
     position : CanvasPosition

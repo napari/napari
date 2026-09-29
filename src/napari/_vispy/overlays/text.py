@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
 from napari._vispy.overlays.base import (
     LayerOverlayMixin,
     ViewerOverlayMixin,
@@ -9,6 +11,7 @@ from napari._vispy.overlays.base import (
 )
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
@@ -139,6 +142,20 @@ class VispyTextOverlay(_VispyViewerTextOverlay):
 class VispyLayerNameOverlay(_VispyLayerTextOverlay):
     def _connect_events(self):
         self.layer.events.name.connect(self._on_text_change)
+        if isinstance(self.layer, IntensityVisualizationMixin):
+            self.layer.events.colormap.connect(self._on_color_change)
+
+    def _on_color_change(self):
+        # use the colormap's high end (e.g. green for a green channel),
+        # unless it is gray, where the contrasting color reads better
+        if self.overlay.color is None and isinstance(
+            self.layer, IntensityVisualizationMixin
+        ):
+            color = self.layer.colormap.map([1.0])[0]
+            if np.ptp(color[:3]) > 0.01:
+                self.node.color = color
+                return
+        super()._on_color_change()
 
     def _on_text_change(self):
         self.node.text = self.layer.name
