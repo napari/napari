@@ -120,7 +120,7 @@ _T = TypeVar('_T', bound=Transform)
 
 
 # ``_T`` narrows the element type for callers, e.g. ``TransformChain[Affine]``.
-class TransformChain(EventedList[Transform], Transform, Generic[_T]):
+class TransformChain(Transform, EventedList[Transform], Generic[_T]):
     def __init__(self, transforms: Iterable[_T] | None = None) -> None:
         if transforms is None:
             transforms = []
