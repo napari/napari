@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar, cast
 
 import numpy as np
 import pint
@@ -311,7 +311,12 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_view_direction_change(self, view=None, up=None):
+    def _on_view_direction_change(
+        self,
+        view: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
+        | None = None,
+        up: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]] | None = None,
+    ):
         return
 
     def reset(self):

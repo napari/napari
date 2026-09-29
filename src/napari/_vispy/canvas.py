@@ -25,9 +25,6 @@ from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
 from napari.utils._proxies import ReadOnlyWrapper
-from napari.utils.camera_orientations import (
-    view_and_up_directions_from_angles,
-)
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
 from napari.utils.interactions import (
@@ -820,21 +817,16 @@ class VispyCanvas:
         self._on_view_direction_change()
         self._update_scenegraph()
 
-    def _on_view_direction_change(self):
+    def _on_view_direction_change(self) -> None:
         """Update view direction for anything in vispy that requires this information."""
         # take displayed up and view directions and flip zyx for vispy
         if self.viewer.dims.ndisplay == 2:
             view = np.array((0, 0, -1))
             up = np.array((0, -1, 0))
         else:
-            view, up = view_and_up_directions_from_angles(
-                self.viewer.scene.camera.angles,
-                self.viewer.scene.camera.orientation,
-            )
-
             # flip to vispy xyz from napari zyx
-            view = np.array(view)[::-1]
-            up = np.array(up)[::-1]
+            view = np.array(self.viewer.scene.camera.view_direction[::-1])
+            up = np.array(self.viewer.scene.camera.up_direction[::-1])
 
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer._on_view_direction_change(view, up)
