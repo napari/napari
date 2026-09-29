@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from typing import overload
 
@@ -106,9 +107,9 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
 
     def __array__(self) -> npt.NDArray:
         """Get numpy array of the lowest resolution level."""
-        # TODO:
-        # deprecate this, and replace with a more verbose API
-        # like get_level_array(self, level: int) -> npt.ndarray
+        warnings.warn(
+            'Casting MultiScaleData to numpy array gives you the lowest resolution, while MultiScaleData.shape gives you the high resolution shape. Use MultiScaleData.get_level() to get a specific resolution level'
+        )
         return np.asarray(self._data[-1])
 
     def __len__(self) -> int:
