@@ -207,7 +207,7 @@ VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.scene.toggle_synced_camera',
-        title='Toggle Synced Camera',
+        title='Toggle Synced 2D/3D Camera',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
