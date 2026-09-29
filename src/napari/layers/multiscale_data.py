@@ -108,7 +108,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     def __array__(self) -> npt.NDArray:
         """Get numpy array of the lowest resolution level."""
         warnings.warn(
-            'Casting MultiScaleData to numpy array gives you the lowest resolution, while MultiScaleData.shape gives you the high resolution shape. Use MultiScaleData.get_level() to get a specific resolution level'
+            'MultiScaleData.__array__ gives you the lowest resolution, while MultiScaleData.shape gives you the high resolution shape. Use MultiScaleData.get_level() to get a specific resolution level'
         )
         return np.asarray(self._data[-1])
 
