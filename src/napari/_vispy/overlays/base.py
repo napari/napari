@@ -9,7 +9,6 @@ from vispy.visuals.transforms import MatrixTransform, STTransform
 from napari._vispy.utils.gl import BLENDING_MODES
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
-from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
@@ -208,9 +207,7 @@ class LayerOverlayMixin:
         return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
-        # TODO: this cannot be changed to _disconnect_all_events because
-        #       Layer is not an evented model...
-        disconnect_events(self.layer, self)
+        _disconnect_all_events(self.layer, self)
         super().close()
 
 

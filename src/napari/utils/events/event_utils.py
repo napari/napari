@@ -3,14 +3,14 @@ from __future__ import annotations
 import inspect
 import logging
 import weakref
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from psygnal import SignalGroup
 
 from napari.utils.events.event import EmitterGroup
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Iterator
 
     class Emitter(Protocol):
         def connect(self, callback: Callable, /) -> object: ...
@@ -63,41 +63,33 @@ def disconnect_events(
 
 
 @runtime_checkable
-class _EventedModelProtocol(Protocol):
+class _EventedObjectProtocol(Protocol):
     @property
     def events(self) -> EmitterGroup | SignalGroup: ...
 
+
+@runtime_checkable
+class _EventedModelProtocol(_EventedObjectProtocol, Protocol):
     @property
     def model_fields(self) -> Iterable: ...
 
 
 @runtime_checkable
-class _EventedMappingProtocol(Protocol):
-    @property
-    def events(self) -> EmitterGroup | SignalGroup: ...
-
+class _EventedMappingProtocol(_EventedObjectProtocol, Protocol):
     def values(self) -> Iterable: ...
 
 
 @runtime_checkable
-class _EventedContainerProtocol(Protocol):
-    @property
-    def events(self) -> EmitterGroup | SignalGroup: ...
-
-    def __iter__(self): ...
-
-
-_EventedObject: TypeAlias = (
-    _EventedModelProtocol | _EventedMappingProtocol | _EventedContainerProtocol
-)
+class _EventedContainerProtocol(_EventedObjectProtocol, Protocol):
+    def __iter__(self) -> Iterator: ...
 
 
 def _disconnect_all_events(
-    evented_object: _EventedObject, listener: object
+    evented_object: _EventedObjectProtocol, listener: object
 ) -> None:
     disconnect_events(evented_object.events, listener)
 
-    values: Iterable
+    values: Iterable = []
     if isinstance(evented_object, _EventedModelProtocol):
         values = [
             getattr(evented_object, name)
@@ -108,9 +100,24 @@ def _disconnect_all_events(
     elif isinstance(evented_object, _EventedContainerProtocol):
         values = evented_object
     else:
-        values = []
+        # fallback (e.g: for non-evented model object like Layer) which
+        # just looks for things called like the emitter name
+        if isinstance(evented_object.events, EmitterGroup):
+            values = [
+                attr
+                for emitter_name in evented_object.events.emitters
+                if (attr := getattr(evented_object, emitter_name, None))
+                is not None
+            ]
+        elif isinstance(evented_object.events, SignalGroup):
+            values = [
+                attr
+                for signal_name in evented_object.events.signals
+                if (attr := getattr(evented_object, signal_name, None))
+                is not None
+            ]
     for value in values:
-        if isinstance(value, _EventedObject):
+        if isinstance(value, _EventedObjectProtocol):
             _disconnect_all_events(value, listener)
 
 
