@@ -415,7 +415,7 @@ class QCommandList(QtW.QListView):
             # get the max score between aliases
             commands[command] = max(score, commands.get(command, 0))
 
-        loose_matches = {}
+        loose_matches: dict[CommandRule, float] = {}
         for score, command in _iter_matched_actions(
             input_text, path_to_command, mode='tokens'
         ):
