@@ -10,7 +10,6 @@ from napari._vispy.utils.gl import BLENDING_MODES
 from napari._vispy.utils.text import update_text
 from napari._vispy.visuals.shapes import ShapesVisual
 from napari.settings import get_settings
-from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
@@ -176,8 +175,3 @@ class VispyShapesLayer(VispyBaseLayer):
         super().reset()
         self._on_highlight_change()
         self._on_blending_change()
-
-    def close(self):
-        """Vispy visual is closing."""
-        disconnect_events(self.layer.text.events, self)
-        super().close()

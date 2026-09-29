@@ -9,7 +9,7 @@ from vispy.visuals.transforms import MatrixTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES, get_max_texture_sizes
 from napari.layers import Layer
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
     from vispy.scene import VisualNode
@@ -332,6 +332,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
     def close(self):
         """Vispy visual is closing."""
-        disconnect_events(self.layer.events, self)
+        _disconnect_all_events(self.layer, self)
         self.node.transform = MatrixTransform()
         self.node.parent = None
