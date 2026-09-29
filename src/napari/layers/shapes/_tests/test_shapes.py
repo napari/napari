@@ -911,21 +911,15 @@ def test_lines_roundtrip():
 
 @pytest.mark.parametrize(
     'shape',
-    [
-        # single path, six points
-        (6, 2),
-    ]
-    + [
-        # multiple 2D paths with different numbers of points
-        (np.random.randint(2, 12), 2)
-        for _ in range(10)
-    ],
+    # one 2D path per vertex count, from the minimum of two upwards
+    [(n, 2) for n in range(2, 12)],
 )
 def test_paths(shape):
     """Test instantiating Shapes layer with random 2D paths."""
+    rng = np.random.default_rng(0)
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape).astype(np.float32)]
+    data = [20 * rng.random(shape).astype(np.float32)]
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all(
@@ -1023,21 +1017,15 @@ def test_paths_roundtrip():
 
 @pytest.mark.parametrize(
     'shape',
-    [
-        # single 2D polygon, six points
-        (6, 2),
-    ]
-    + [
-        # multiple 2D polygons with different numbers of points
-        (np.random.randint(3, 12), 2)
-        for _ in range(10)
-    ],
+    # one 2D polygon per vertex count, from the minimum of three upwards
+    [(n, 2) for n in range(3, 12)],
 )
 def test_polygons(shape):
     """Test instantiating Shapes layer with a random 2D polygons."""
+    rng = np.random.default_rng(0)
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape).astype(np.float32)]
+    data = [20 * rng.random(shape).astype(np.float32)]
     layer = Shapes(data, shape_type='polygon')
     assert layer.nshapes == len(data)
     assert np.all(
