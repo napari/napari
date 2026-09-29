@@ -338,7 +338,7 @@ def stroke_reference(mask_shape, shape):
     plane = shape.dims_order[-2:]
     # the shape's own triangulation backend, which is also used to draw it
     centers, offsets, triangles = shape._triangulate_edge(
-        shape._mask_vertices(plane), closed=shape._closed
+        shape._vertices_for_mask(plane), closed=shape._closed
     )
     corners = centers + shape.edge_width * offsets
     mask = np.zeros(mask_shape, dtype=bool)
