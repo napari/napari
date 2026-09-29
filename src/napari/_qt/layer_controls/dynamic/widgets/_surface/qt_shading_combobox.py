@@ -74,5 +74,7 @@ class QtShadingComboBoxControl(QtWidgetControlsBase):
                 Shading(self._layers[0].shading)
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.shading_combobox_label, self.shading_combobox)]

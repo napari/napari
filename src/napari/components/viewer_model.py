@@ -22,7 +22,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -159,6 +158,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     Attributes
     ----------
+    canvas : napari.components.canvas.Canvas
+        The canvas model, controlling grid mode and canvas overlays.
+
+        .. versionadded:: 0.9.0
     cursor: napari.components.cursor.Cursor
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
@@ -169,6 +172,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         List of contained layers.
     mouse_over_canvas: bool
         Indicating whether the mouse cursor is on the viewer canvas.
+    scene : napari.components.scene.Scene
+        The scene model, controlling the camera and scene overlays.
+
+        .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
     title: str
@@ -177,8 +184,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
-    _ctx: Mapping
-        Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
     """
@@ -197,7 +202,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -212,11 +216,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        # max_depth=0 means don't look for parent contexts.
-
-        # FIXME: just like the LayerList, this object should ideally be created
-        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
@@ -307,6 +306,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def camera(self) -> Camera:
+        """The camera model controlling the view of the scene.
+
+        .. deprecated:: 0.9.0
+            The camera property is deprecated. Use `viewer.scene.camera` instead.
+        """
         return self.scene.camera
 
     @property
@@ -318,7 +322,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def axes(self) -> SceneAxesOverlay:
-        return self.scene.overlays.axes  # type: ignore[return-value]
+        """The overlay controlling the display of the scene axes.
+
+        .. deprecated:: 0.9.0
+            The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
+        """
+        return self.scene.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -329,7 +338,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def floating_axes(self) -> CanvasAxesOverlay:
-        return self.canvas.overlays.axes  # type: ignore[return-value]
+        """The overlay controlling the display of the canvas axes.
+
+        .. deprecated:: 0.9.0
+            The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
+        """
+        return self.canvas.overlays.axes  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -340,7 +354,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def scale_bar(self) -> ScaleBarOverlay:
-        return self.canvas.overlays.scale_bar  # type: ignore[return-value]
+        """The overlay controlling the display of the scale bar.
+
+        .. deprecated:: 0.9.0
+            The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
+        """
+        return self.canvas.overlays.scale_bar  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -351,7 +370,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def text_overlay(self) -> TextOverlay:
-        return self.canvas.overlays.text  # type: ignore[return-value]
+        """The overlay controlling the display of text on the canvas.
+
+        .. deprecated:: 0.9.0
+            The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
+        """
+        return self.canvas.overlays.text  # pyrefly: ignore [bad-return]
 
     @property
     @deprecated(
@@ -362,6 +386,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         stacklevel=2,
     )
     def grid(self) -> GridCanvas:
+        """The model controlling the display of the grid mode.
+
+        .. deprecated:: 0.9.0
+            The grid property is deprecated. Use `viewer.canvas.grid` instead.
+        """
         return self.canvas.grid
 
     def _tooltip_visible_update(self, event):
@@ -419,8 +448,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
 
-    @property
-    def _sliced_extent_world_augmented(self) -> np.ndarray:
+    def _sliced_extent_world_augmented(self, layers=None) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
@@ -429,24 +457,39 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        # if not layers are present, assume image-like with dimensions of size 512
-        if len(self.layers) == 0:
+        layers = LayerList(layers) if layers is not None else self.layers
+        for layer in layers:
+            if layer not in self.layers:
+                raise ValueError(
+                    f'layer "{layer.name}" is not part of this viewer.'
+                )
+        if len(layers) == 0:
+            # if no layers are present, assume image-like
+            # with dimensions of size 512
             return np.vstack(
                 [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
             )
-        return self.layers._extent_world_augmented[:, self.dims.displayed]
+        return layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(
-        self, *, margin: float = 0.05, reset_camera_angle: bool = True
+        self,
+        *,
+        layers: Sequence[Layer] | None = None,
+        margin: float = 0.05,
+        reset_camera_angle: bool = True,
     ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
         Resets the angles of the camera, adjust the camera zoom,
-        and centers the view so that all layers are visible,
+        and centers the view so that all layers (or the given ones) are visible,
         accounting for the current grid mode and margin.
 
         Parameters
         ----------
+        layers : sequence of Layer, optional
+            If given, only consider the extent of the given layers when
+            resetting the view. Otherwise, all layers in viewer.layers are
+            used.
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
@@ -456,22 +499,28 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
             self.scene.camera.angles = (0, 0, 0)
-        self.fit_to_view(margin=margin)
+        self.fit_to_view(layers=layers, margin=margin)
 
-    def fit_to_view(self, *, margin: float = 0.05) -> None:
-        """Fit the current data view to the canvas.
+    def fit_to_view(
+        self, *, layers: Sequence[Layer] | None = None, margin: float = 0.05
+    ) -> None:
+        """Fit the layers content to the whole canvas.
 
         Adjusts the camera zoom and centers the view so that all visible layers
-        are within the canvas.
+        (or the given ones) are within the canvas.
 
         Parameters
         ----------
+        layers : sequence of Layer, optional
+            If given, only consider the extent of the given layers when
+            fitting to the view. Otherwise, all layers in viewer.layers are
+            used.
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
         # Get the scene parameters
-        extent, scene_size, corner = self._get_scene_parameters()
+        extent, scene_size, corner = self._get_scene_parameters(layers=layers)
 
         self.scene.camera.center = self._calculate_view_center(
             corner, scene_size
@@ -554,6 +603,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _get_scene_parameters(
         self,
+        *,
+        layers: Sequence[Layer] | None = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Get the scene parameters for the current grid mode.
 
@@ -567,7 +618,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         corner : array, shape (D,)
             Minimum coordinate values of the bounding box (i.e. extent[0]).
         """
-        extent = self._sliced_extent_world_augmented
+        extent = self._sliced_extent_world_augmented(layers=layers)
         scene_size = extent[1] - extent[0]
         corner = extent[0]
 
@@ -912,10 +963,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 key = next(iter(coord2val))  # choose arbitrary coordinate
                 coord2val = {key: values}
             status_strs = [
-                key + separator.join(values)
+                key + separator.join(values)  # pyrefly: ignore [unbound-name]
                 for key, values in coord2val.items()
             ]
-            status_str = separator.join(status_strs)
+            status_str = separator.join(status_strs)  # pyrefly: ignore [unbound-name]
         elif coord_str and not self.canvas.grid.enabled:
             status_str = coord_str + '[empty]'
         elif self.canvas.grid.enabled:
@@ -1302,12 +1353,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     raise TypeError(
                         f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
-            layer = Image(data, **kwargs)
+            layer = Image(data, **kwargs)  # pyrefly: ignore [bad-argument-type]
             self.layers.append(layer)
 
             return layer
 
-        layerdata_list = split_channels(data, channel_axis, **kwargs)
+        layerdata_list = split_channels(data, channel_axis, **kwargs)  # pyrefly: ignore [bad-argument-type]
 
         layer_list = [
             Image(image, **i_kwargs) for image, i_kwargs, _ in layerdata_list
@@ -1387,7 +1438,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 added = []
                 needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(
-                    list(data(**kwargs))
+                    list(data(**kwargs))  # pyrefly: ignore [bad-argument-type]
                 ):
                     if datum[0] is not None:
                         needs_error = False
@@ -1831,7 +1882,7 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
             )
     else:
         _data.append(guess_labels(_data[0]))
-    return tuple(_data)
+    return tuple(_data)  # pyrefly: ignore [bad-return]
 
 
 def _unify_data_and_user_kwargs(
@@ -1966,4 +2017,4 @@ for _layer in (
     layers.Vectors,
 ):
     func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)
+    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]

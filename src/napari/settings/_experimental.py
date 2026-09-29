@@ -1,5 +1,4 @@
 from enum import StrEnum
-from typing import Any
 
 from pydantic import AliasChoices, Field
 
@@ -28,9 +27,8 @@ class PaletteFuzzySearch(StrEnum):
 # this class inherits from EventedSettings instead of EventedModel because
 # it uses Field(validation_alias=...) for some of its attributes
 class ExperimentalSettings(EventedSettings):
-    def __init__(self, **data: dict[str, Any]):
-        super().__init__(**data)
-
+    def _connect_events(self) -> None:
+        """Connects the events for the triangulation and colormap backends to their respective update functions."""
         self.events.triangulation_backend.connect(
             _update_triangulation_backend
         )

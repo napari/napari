@@ -2,9 +2,9 @@
 #    uv pip compile --python-version 3.12 --output-file resources/constraints/constraints_py3.12_docs.txt pyproject.toml resources/constraints/version_denylist.txt resources/constraints/version_denylist_examples.txt --group docs --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude resources/constraints/napari_exclude.txt
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
-affine==3.0.0
+affine==3.0.1
     # via rasterio
-aiobotocore==3.9.0
+aiobotocore==3.9.1
     # via s3fs
 aiohappyeyeballs==2.7.1
     # via aiohttp
@@ -26,14 +26,12 @@ annotated-types==0.8.0
     # via
     #   geff-spec
     #   pydantic
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   starlette
     #   watchfiles
 app-model==0.5.1
     # via napari (pyproject.toml)
-appdirs==1.4.4
-    # via ndev-settings
 asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
@@ -71,13 +69,13 @@ bioio-imageio==1.3.0
     # via ndevio
 bioio-ome-tiff==1.4.0
     # via ndevio
-bioio-ome-zarr==3.7.0
+bioio-ome-zarr==3.8.1
     # via ndevio
 bioio-tifffile==1.3.0
     # via ndevio
-botocore==1.43.56
+botocore==1.43.75
     # via aiobotocore
-build==1.5.0
+build==1.6.1
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
@@ -92,7 +90,7 @@ chardet==7.6.0
     # via trackastra
 charset-normalizer==3.5.1
     # via requests
-click==8.4.2
+click==8.5.0
     # via
     #   dask
     #   distributed
@@ -105,6 +103,7 @@ cloudpickle==3.1.2
     # via
     #   dask
     #   distributed
+    #   joblib
 colorama==0.4.6
     # via sphinx-autobuild
 colorspacious==1.1.2
@@ -113,19 +112,19 @@ comm==0.2.3
     # via ipykernel
 contextily==1.7.1
     # via napari (pyproject.toml:docs)
-contourpy==1.3.3
+contourpy==1.4.0
     # via matplotlib
-coverage==7.15.4
+coverage==7.16.1
     # via napari (pyproject.toml)
-cuda-bindings==13.3.1
+cuda-bindings==13.4.1
     # via torch
-cuda-pathfinder==1.6.1
+cuda-pathfinder==1.8.1
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
 cycler==0.12.1
     # via matplotlib
-dask==2026.7.1
+dask==2026.8.0
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -141,7 +140,7 @@ debugpy==1.8.21
     # via ipykernel
 distlib==0.4.3
     # via virtualenv
-distributed==2026.7.1
+distributed==2026.8.0
     # via dask
 docstring-parser==0.18.0
     # via
@@ -164,7 +163,9 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.22.2
     # via nbformat
-filelock==3.32.3
+fastremap==1.20.0
+    # via trackastra
+filelock==3.32.6
     # via
     #   gdown
     #   python-discovery
@@ -174,7 +175,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.63.0
+fonttools==4.65.0
     # via matplotlib
 freetype-py==2.5.1
     # via vispy
@@ -195,7 +196,7 @@ fsspec==2026.7.0
     #   s3fs
     #   tifffile
     #   torch
-gdown==6.1.0
+gdown==6.2.0
     # via napari (pyproject.toml:docs)
 geff==1.1.5.1.1
     # via trackastra
@@ -213,7 +214,7 @@ google-crc32c==1.8.0
     # via zarr
 greenlet==3.5.5
     # via sqlalchemy
-gurobipy==13.0.2
+gurobipy==13.0.3
     # via ilpy
 h11==0.16.0
     # via uvicorn
@@ -225,7 +226,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.165.10
+hypothesis==6.168.0
     # via napari (pyproject.toml)
 idna==3.19
     # via
@@ -253,11 +254,11 @@ imageio-ffmpeg==0.6.0
     # via
     #   napari (pyproject.toml:docs)
     #   imageio
-imagesize==2.0.0
+imagesize==2.0.1
     # via
     #   sphinx
     #   sphinx-favicon
-importlib-metadata==9.0.0
+importlib-metadata==9.0.1
     # via
     #   jupyter-cache
     #   myst-nb
@@ -271,7 +272,7 @@ ipykernel==6.31.0
     #   myst-nb
     #   napari-console
     #   qtconsole
-ipython==9.16.1
+ipython==9.17.1
     # via
     #   napari (pyproject.toml)
     #   ipykernel
@@ -296,7 +297,7 @@ jmespath==1.1.0
     # via
     #   aiobotocore
     #   botocore
-joblib==1.5.3
+joblib==1.6.0
     # via
     #   contextily
     #   nilearn
@@ -310,7 +311,7 @@ jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyter-cache==1.0.1
     # via myst-nb
-jupyter-client==8.9.1
+jupyter-client==8.10.0
     # via
     #   ipykernel
     #   nbclient
@@ -324,7 +325,7 @@ jupyter-core==5.9.1
     #   qtconsole
 kerchunk==0.2.10
     # via tifffile
-kiwisolver==1.5.0
+kiwisolver==1.5.1
     # via
     #   matplotlib
     #   vispy
@@ -332,7 +333,7 @@ lazy-loader==0.5
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-linkify-it-py==2.1.0
+linkify-it-py==2.2.0
     # via napari (pyproject.toml:docs)
 llvmlite==0.49.0
     # via numba
@@ -340,7 +341,7 @@ locket==1.0.0
     # via
     #   distributed
     #   partd
-lxml==6.1.1
+lxml==6.1.3
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -353,15 +354,12 @@ lz4==4.4.5
 macro-kit==0.4.10
     # via magic-class
 magic-class==0.7.23
-    # via
-    #   ndev-settings
-    #   ndevio
+    # via ndevio
 magicgui==0.10.2
     # via
     #   napari (pyproject.toml)
     #   magic-class
     #   napari-skimage
-    #   ndev-settings
     #   ndevio
 markdown-it-py==4.2.0
     # via
@@ -370,7 +368,7 @@ markdown-it-py==4.2.0
     #   rich
 markupsafe==3.0.3
     # via jinja2
-matplotlib==3.11.1
+matplotlib==3.11.2
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -397,9 +395,9 @@ motile==1.0.1
     # via trackastra
 mpmath==1.3.0
     # via sympy
-msgpack==1.2.1
+msgpack==1.2.2
     # via distributed
-multidict==6.7.1
+multidict==6.8.0
     # via
     #   aiobotocore
     #   aiohttp
@@ -412,7 +410,7 @@ napari-console==0.1.4
     # via napari (pyproject.toml)
 napari-meshio==0.0.2
     # via napari (pyproject.toml:docs)
-napari-metadata==0.4.0
+napari-metadata==0.4.1
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
@@ -420,12 +418,14 @@ napari-plugin-manager==0.1.11
     # via
     #   napari (pyproject.toml)
     #   ndevio
-napari-skimage==0.7.0
+napari-skimage==0.7.1
     # via napari (pyproject.toml:docs)
 napari-sphinx-theme==1.1.3
     # via napari (pyproject.toml:docs)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
+narwhals==2.26.0
+    # via scikit-learn
 natsort==8.4.0
     # via
     #   nbatch
@@ -442,9 +442,7 @@ nbformat==5.11.1
     #   jupyter-cache
     #   myst-nb
     #   nbclient
-ndev-settings==0.4.2
-    # via ndevio
-ndevio==0.9.2
+ndevio==0.10.0
     # via napari (pyproject.toml:docs)
 nest-asyncio==1.6.0
     # via ipykernel
@@ -456,7 +454,7 @@ networkx==3.6.1
     #   torch
 nibabel==5.4.2
     # via nilearn
-nilearn==0.14.0
+nilearn==0.14.1
     # via napari (pyproject.toml:docs)
 npe2==0.9.0
     # via
@@ -473,7 +471,7 @@ numcodecs==0.16.5
     #   geff
     #   kerchunk
     #   zarr
-numpy==2.5.2
+numpy==2.5.3
     # via
     #   napari (pyproject.toml)
     #   bermuda
@@ -486,6 +484,7 @@ numpy==2.5.2
     #   contourpy
     #   dask
     #   edt
+    #   fastremap
     #   geff
     #   geff-spec
     #   geopandas
@@ -540,7 +539,7 @@ nvidia-cuda-nvrtc==13.0.88
     #   nvidia-cublas
 nvidia-cuda-runtime==13.0.96
     # via cuda-toolkit
-nvidia-cudnn-cu13==9.20.0.48
+nvidia-cudnn-cu13==9.24.0.43
     # via torch
 nvidia-cufft==12.0.0.61
     # via cuda-toolkit
@@ -556,9 +555,9 @@ nvidia-cusparse==12.6.3.3
     #   nvidia-cusolver
 nvidia-cusparselt-cu13==0.8.1
     # via torch
-nvidia-nccl-cu13==2.29.7
+nvidia-nccl-cu13==2.30.7
     # via torch
-nvidia-nvjitlink==13.3.33
+nvidia-nvjitlink==13.4.52
     # via
     #   cuda-toolkit
     #   nvidia-cufft
@@ -622,7 +621,7 @@ pillow==12.3.0
     #   scikit-image
     #   sphinx-gallery
     #   torchvision
-pint==0.25.3
+pint==0.26.1
     # via
     #   napari (pyproject.toml)
     #   bioio-base
@@ -630,7 +629,7 @@ pint==0.25.3
     #   ome-types
 pip==26.2.1
     # via napari-plugin-manager
-platformdirs==4.11.3
+platformdirs==4.11.8
     # via
     #   napari (pyproject.toml)
     #   jupyter-core
@@ -666,7 +665,7 @@ psutil==7.2.2
     #   ipykernel
     #   ipython
     #   trackastra
-psygnal==0.15.1
+psygnal==0.16.1
     # via
     #   napari (pyproject.toml)
     #   app-model
@@ -675,11 +674,11 @@ psygnal==0.15.1
     #   npe2
 ptyprocess==0.7.0
     # via pexpect
-pure-eval==0.2.3
+pure-eval==0.2.4
     # via stack-data
 pyconify==0.2.1
     # via superqt
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -691,7 +690,7 @@ pydantic==2.13.4
     #   ome-types
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
@@ -700,9 +699,9 @@ pydantic-extra-types==2.11.1
     #   ome-types
 pydantic-settings==2.15.0
     # via napari (pyproject.toml)
-pydata-sphinx-theme==0.20.0
+pydata-sphinx-theme==0.21.0
     # via napari-sphinx-theme
-pydeps==3.0.7
+pydeps==3.0.8
     # via napari (pyproject.toml:docs)
 pygments==2.21.0
     # via
@@ -727,13 +726,13 @@ pyparsing==3.3.2
     # via
     #   matplotlib
     #   rasterio
-pyproj==3.7.2
+pyproj==3.8.0
     # via geopandas
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.10.2
+pyqt6==6.11.0
     # via napari (pyproject.toml)
-pyqt6-qt6==6.10.2
+pyqt6-qt6==6.11.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
@@ -768,7 +767,7 @@ pytest-pretty==1.3.0
     # via napari (pyproject.toml)
 pytest-qt==4.5.0
     # via napari (pyproject.toml)
-pytest-rerunfailures==16.6
+pytest-rerunfailures==16.6.1
     # via napari (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -777,7 +776,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-discovery==1.5.2
+python-discovery==1.6.0
     # via virtualenv
 python-dotenv==1.2.3
     # via pydantic-settings
@@ -791,12 +790,11 @@ pyyaml==6.0.3
     #   jupyter-cache
     #   myst-nb
     #   myst-parser
-    #   ndev-settings
     #   npe2
     #   sphinx-external-toc
     #   sphinxcontrib-mermaid
     #   trackastra
-pyzmq==27.1.0
+pyzmq==27.2.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -815,7 +813,7 @@ qtpy==2.4.3
     #   napari-skimage
     #   qtconsole
     #   superqt
-rapidfuzz==3.14.5
+rapidfuzz==3.14.6
     # via napari (pyproject.toml)
 rasterio==1.5.1
     # via contextily
@@ -856,11 +854,11 @@ scikit-image==0.26.0
     #   bioio-ome-zarr
     #   napari-skimage
     #   trackastra
-scikit-learn==1.8.0
+scikit-learn==1.9.1
     # via
     #   glasbey
     #   nilearn
-scipy==1.18.0
+scipy==1.18.1
     # via
     #   napari (pyproject.toml)
     #   nilearn
@@ -869,7 +867,7 @@ scipy==1.18.0
     #   trackastra
 seedir==0.5.1
     # via napari (pyproject.toml:docs)
-semver==3.0.4
+semver==3.1.0
     # via bioio
 setuptools==84.0.0
     # via torch
@@ -937,7 +935,7 @@ sphinxcontrib-htmlhelp==2.1.0
     # via sphinx
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
-sphinxcontrib-mermaid==2.1.0
+sphinxcontrib-mermaid==2.1.1
     # via napari (pyproject.toml:docs)
 sphinxcontrib-qthelp==2.0.0
     # via sphinx
@@ -976,7 +974,7 @@ tensorstore==0.1.85
     #   napari (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
-tifffile==2026.8.16
+tifffile==2026.9.9
     # via
     #   napari (pyproject.toml)
     #   napari (pyproject.toml:docs)
@@ -991,24 +989,24 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-torch==2.13.0
+torch==2.14.0
     # via
     #   napari (pyproject.toml:testing-extra)
     #   torchvision
     #   trackastra
-torchvision==0.28.0
+torchvision==0.29.0
     # via trackastra
 tornado==6.5.8
     # via
     #   distributed
     #   ipykernel
     #   jupyter-client
-tqdm==4.70.0
+tqdm==4.70.1
     # via
     #   napari (pyproject.toml)
     #   gdown
     #   trackastra
-trackastra==0.5.5
+trackastra==0.5.6
     # via napari (pyproject.toml:docs)
 traitlets==5.16.1
     # via
@@ -1022,9 +1020,9 @@ traitlets==5.16.1
     #   qtconsole
 triangle==20250106
     # via napari (pyproject.toml:docs)
-triton==3.7.1
+triton==3.8.0
     # via torch
-typer==0.27.1
+typer==0.27.2
     # via
     #   geff
     #   npe2
@@ -1063,29 +1061,27 @@ typing-inspection==0.4.4
     # via
     #   pydantic
     #   pydantic-settings
-uc-micro-py==2.0.0
-    # via linkify-it-py
-ujson==5.13.0
+ujson==6.0.0
     # via kerchunk
 urllib3==2.7.0
     # via
     #   botocore
     #   requests
-uvicorn==0.52.3
+uvicorn==0.53.0
     # via sphinx-autobuild
-virtualenv==21.7.4
+virtualenv==21.7.9
     # via napari (pyproject.toml)
-vispy==0.16.2
+vispy==0.17.0
     # via
     #   napari (pyproject.toml)
     #   napari-svg
 watchfiles==1.2.0
     # via sphinx-autobuild
-wcwidth==0.8.2
+wcwidth==0.8.3
     # via prompt-toolkit
-websockets==17.0.1
+websockets==17.1
     # via sphinx-autobuild
-wrapt==2.3.0
+wrapt==2.4.1
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
@@ -1104,7 +1100,7 @@ xmlschema==4.3.2
     # via bioio-ome-tiff
 xsdata==26.2
     # via ome-types
-xyzservices==2026.3.0
+xyzservices==2026.9.1
     # via contextily
 yarl==1.24.5
     # via aiohttp

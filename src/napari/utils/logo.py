@@ -1,18 +1,14 @@
 from datetime import date
 from functools import lru_cache
-from importlib import resources
 from pathlib import Path
+from typing import Literal
 
-_LOGO_DIR = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
-_LOGO_SILHOUETTE = _LOGO_DIR / 'silhouette-dark.svg'
+from napari_resources import logo_path, logo_variants
 
 
 @lru_cache
 def available_logos() -> list[str]:
-    variants = ['auto']
-    for logo in Path(_LOGO_DIR).glob('*-plain-light.svg'):
-        variants.append(logo.stem.rsplit('-', 2)[0])
-    return sorted(variants)
+    return ['auto'] + sorted(logo_variants())
 
 
 def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
@@ -50,20 +46,15 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
 
 
 def get_logo_path(
-    logo: str, template: str, theme_type: str, today: date | None = None
+    logo: str,
+    template: str,
+    theme_type: Literal['dark', 'light'],
+    today: date | None = None,
 ) -> Path:
-    if logo not in available_logos():
-        raise ValueError(
-            f'logo must be one one {set(available_logos())}; got {logo}'
-        )
-
     if template not in {'plain', 'padded'}:
         raise ValueError('template must be either "plain" or "padded"')
-
-    if theme_type not in {'dark', 'light'}:
-        theme_type = 'dark'
 
     if logo == 'auto':
         logo = _get_seasonal_logo(today=today, theme=theme_type)
 
-    return _LOGO_DIR / f'{logo}-{template}-{theme_type}.svg'
+    return logo_path(logo, template, theme_type)

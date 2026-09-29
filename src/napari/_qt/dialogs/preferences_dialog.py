@@ -148,7 +148,7 @@ class PreferencesDialog(QDialog):
         ----------
         plugin_name : str
             the name of the plugin
-        plugin : PluginPreferences
+        plugin : PluginSettings
             the schemas containing multiple widgets for each plugin.
         """
 
@@ -188,7 +188,7 @@ class PreferencesDialog(QDialog):
         Parameters
         ----------
         field_name : str
-            the name of the plugin
+            the name of the setting (page) to add
         field_info : FieldInfo
             the schema to create the widget.
         """

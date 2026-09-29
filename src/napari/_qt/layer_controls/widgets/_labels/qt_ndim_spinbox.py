@@ -77,5 +77,7 @@ class QtNdimSpinBoxControl(QtWidgetControlsBase):
     def _on_data_change(self) -> None:
         self.ndim_spinbox.setMaximum(self._layer.ndim)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.ndim_spinbox_label, self.ndim_spinbox)]
