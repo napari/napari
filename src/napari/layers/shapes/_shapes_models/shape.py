@@ -819,7 +819,7 @@ class Shape(ABC):
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        data = self._mask_vertices(plane)
+        data = self._vertices_for_mask(plane)
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
@@ -849,7 +849,7 @@ class Shape(ABC):
         """Return the integer slice key of the bounding box along dims."""
         return np.rint(self._bounding_box[:, dims]).astype(int)
 
-    def _mask_vertices(self, plane) -> np.ndarray:
+    def _vertices_for_mask(self, plane) -> np.ndarray:
         """Return the vertices used to draw the mask in plane."""
         return self.data[:, plane]
 
