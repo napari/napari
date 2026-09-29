@@ -3091,8 +3091,8 @@ class Shapes(Layer):
 
     def _get_value_3d(
         self,
-        start_point: np.ndarray,
-        end_point: np.ndarray,
+        start_point: np.ndarray | None,
+        end_point: np.ndarray | None,
         dims_displayed: list[int],
     ) -> tuple[float | int | None, None]:
         """Get the layer data value along a ray
@@ -3113,20 +3113,24 @@ class Shapes(Layer):
         vertex : None
             Index of vertex if any that is at the coordinates. Always returns `None`.
         """
-        value, _ = self._get_index_and_intersection(
+        if start_point is None or end_point is None:
+            return None, None
+        intersection = self._get_index_and_intersection(
             start_point=start_point,
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
+        if intersection is not None:
+            return intersection[0], None
 
-        return value, None
+        return None, None
 
     def _get_index_and_intersection(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, np.ndarray | None]:
+    ) -> tuple[float, np.ndarray] | None:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -3155,10 +3159,7 @@ class Shapes(Layer):
         """
         if len(dims_displayed) != 3:
             # return None if in 2D mode
-            return None, None
-        if (start_point is None) or (end_point is None):
-            # return None if the ray doesn't intersect the data bounding box
-            return None, None
+            return None
 
         # Get the normal vector of the click plane
         start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
@@ -3166,9 +3167,12 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        value, intersection = self._data_view._inside_3d(
-            start_position, ray_direction
-        )
+        try:
+            value, intersection = next(
+                iter(self._data_view._inside_3d(start_position, ray_direction))
+            )
+        except StopIteration:
+            return None
 
         # add the full nD coords to intersection
         intersection_point = start_point.copy()
@@ -3211,15 +3215,14 @@ class Shapes(Layer):
             position, view_direction, dims_displayed
         )
         if (start_point is not None) and (end_point is not None):
-            shape_index, intersection_point = self._get_index_and_intersection(
+            intersection = self._get_index_and_intersection(
                 start_point=start_point,
                 end_point=end_point,
                 dims_displayed=dims_displayed,
             )
-        else:
-            shape_index = None
-            intersection_point = None
-        return shape_index, intersection_point
+            if intersection is not None:
+                return intersection
+        return None, None
 
     def move_to_front(self) -> None:
         """Moves selected objects to be displayed in front of all others."""
