@@ -819,8 +819,15 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     @state.setter
     def state(self, value):
-        value = str(value)
+        # The JSON schema represents StrEnums with strings but the
+        # settings model passes StrEnums. That creates a missmatch and
+        # the fallback is to search for str(value). But bool values do not
+        # match their string form, so the first lookup has to be the normal
+        # value.
         index = self.findData(value)
+        if index == -1:
+            value = str(value)
+            index = self.findData(value)
         if index == -1:
             raise ValueError(value)
         self.setCurrentIndex(index)

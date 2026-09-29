@@ -20,6 +20,7 @@ from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
+from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from napari.settings import NapariSettings, get_plugin_settings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
 from napari.settings._plugin_config_generator import (
@@ -212,6 +213,24 @@ def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
     for enum_value in enum_setting_class:
         setattr(settings.application, enum_setting_name, enum_value)
         assert enum_widget.state == enum_value
+
+
+def test_bool_enum_widget(qtbot):
+    # napari has no built-in boolean enum widgets, so construct one directly
+    enum_widget = WidgetBuilder().create_widget(
+        {
+            'type': 'boolean',
+            'enum': [True, False],
+        },
+        {},
+    )
+    qtbot.addWidget(enum_widget)
+
+    assert isinstance(enum_widget, EnumSchemaWidget)
+    assert enum_widget.state is True
+
+    enum_widget.state = False
+    assert enum_widget.state is False
 
 
 def test_highlight_widget(qtbot, pref):
