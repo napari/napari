@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -64,6 +65,27 @@ class ViewerStatusBar(QStatusBar):
         # FIXME: feels weird to set this here.
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
+
+        exp_settings = get_settings().experimental
+        exp_warnings = []
+        if exp_settings.async_:
+            exp_warnings.append('- Render Layers Asyncronously')
+        if exp_settings.dynamic_layer_controls:
+            exp_warnings.append('- Generate GUI layer controls dynamically')
+        if exp_warnings:
+            self._warn_icon = QLabel()
+            self._warn_icon.setObjectName('error_label')
+            header = 'Some experimental features which may lead to unexpected behaviour are enabled:\n'
+            footer = (
+                '\nIf you are having issues and you think they might be related to\n'
+                'these settings, try disabling them.\n'
+                'If you find a problem related with these settings, please\n'
+                'open an issue on the napari repository!'
+            )
+            self._warn_icon.setToolTip(
+                header + '\n'.join(exp_warnings) + footer
+            )
+            self.addPermanentWidget(self._warn_icon)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
