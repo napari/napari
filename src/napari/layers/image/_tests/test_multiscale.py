@@ -7,7 +7,10 @@ from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.multiscale_data import MultiScaleData
+from napari.layers.multiscale_data import (
+    MultiScaleData,
+    validate_multiscale_data,
+)
 from napari.utils import Colormap
 
 
@@ -482,6 +485,37 @@ def test_multiscale_data_get_level_out_of_bounds():
 
     with pytest.raises(ValueError, match='out of bounds'):
         multiscale_data.get_level(len(shapes))
+
+
+def test_validate_multiscale_data_list_of_arrays_decreasing():
+    """A list of arrays with strictly decreasing size should validate."""
+    data = [np.zeros((10, 10)), np.zeros((5, 5)), np.zeros((2, 2))]
+    validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_object_array_decreasing():
+    """A 1D object ndarray of array-likes with decreasing size should validate."""
+    data = np.empty(3, dtype=object)
+    data[0] = np.zeros((10, 10))
+    data[1] = np.zeros((5, 5))
+    data[2] = np.zeros((2, 2))
+    validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_non_decreasing():
+    """A sequence with non-decreasing size should raise ValueError."""
+    data = [np.zeros((5, 5)), np.zeros((10, 10)), np.zeros((2, 2))]
+    with pytest.raises(ValueError, match='decreasing size'):
+        validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_different_ndim():
+    """A sequence with differing ndim across levels should raise ValueError,
+    even if sizes are strictly decreasing.
+    """
+    data = [np.zeros((10, 10)), np.zeros((5, 5, 3)), np.zeros((2, 2))]
+    with pytest.raises(ValueError, match='ndim'):
+        validate_multiscale_data(data)
 
 
 @pytest.mark.parametrize(

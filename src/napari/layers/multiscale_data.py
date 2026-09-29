@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import warnings
 from collections.abc import Sequence
 from typing import overload
@@ -8,6 +9,61 @@ import numpy as np
 import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
+
+
+def validate_multiscale_data(
+    data: Sequence[LayerDataProtocol],
+) -> list[LayerDataProtocol]:
+    """Validate that `data` is a well-formed sequence of multiscale levels.
+
+    Checks that `data` is non-empty, that every level implements
+    :class:`LayerDataProtocol`, that all levels have the same number of
+    dimensions, and that level sizes are strictly decreasing.
+
+    Parameters
+    ----------
+    data : Sequence[LayerDataProtocol]
+        Levels of multiscale data, from larger to smaller.
+
+    Returns
+    -------
+    list[LayerDataProtocol]
+        `data` coerced to a list.
+
+    Raises
+    ------
+    ValueError
+        If `data` is empty.
+    TypeError
+        If any item in `data` does not implement `LayerDataProtocol`
+        (raised by :func:`assert_protocol`).
+    ValueError
+        If the items in `data` do not all have the same `ndim`.
+    ValueError
+        If the `size` of the items in `data` is not strictly decreasing.
+    """
+    data = list(data)
+    if not data:
+        raise ValueError('Multiscale data must be a (non-empty) sequence')
+    sizes = []
+    ndims = []
+    for d in data:
+        assert_protocol(d, protocol=LayerDataProtocol)
+        sizes.append(d.size)
+        ndims.append(d.ndim)
+
+    if any(n != ndims[0] for n in ndims):
+        raise ValueError(
+            f'Input data should be a sequence of array-like objects with '
+            f'the same number of dimensions. Got ndims: {ndims}'
+        )
+
+    decreasing = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
+    if not decreasing:
+        raise ValueError(
+            f'Input data should be a sequence of array-like objects of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
+        )
+    return data
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -35,11 +91,8 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self,
         data: Sequence[LayerDataProtocol],
     ) -> None:
-        self._data: list[LayerDataProtocol] = list(data)
-        if not self._data:
-            raise ValueError('Multiscale data must be a (non-empty) sequence')
-        for d in self._data:
-            assert_protocol(d, protocol=LayerDataProtocol)
+
+        self._data: list[LayerDataProtocol] = validate_multiscale_data(data)
 
     @property
     def size(self) -> int:
