@@ -508,6 +508,19 @@ def test_switching_edge_color_mode_fires_edge_color_event():
     assert len(np.unique(layer.edge_color, axis=0)) == 6
 
 
+def test_setting_a_feature_as_edge_color_emits_the_mode_change():
+    data = np.zeros((6, 2, 2))
+    data[:, 1] = [1, 1]
+    layer = Vectors(data, features={'phase': np.linspace(-1, 1, 6)})
+    heard = []
+    layer.events.edge_color_mode.connect(lambda event: heard.append(event))
+
+    layer.edge_color = 'phase'
+
+    assert layer.edge_color_mode == 'colormap'
+    assert len(heard) == 1
+
+
 def test_setting_the_current_edge_color_mode_does_not_emit():
     data = np.zeros((6, 2, 2))
     data[:, 1] = [1, 1]
