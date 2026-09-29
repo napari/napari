@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import inspect
 import logging
+import warnings
 import weakref
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
@@ -59,7 +61,12 @@ def disconnect_events(
             # TODO: this currently is not supported in psygnal; one needs to
             # manually disconnect from each method
             for method in _get_methods(listener):
-                emitter.disconnect(method)
+                with contextlib.suppress(TypeError):
+                    # suppressing type error because it may happen when the method
+                    # requires extra arguments due to how psygnal deals with
+                    # weak references (we don't care, it can't be connected so
+                    # there's nothing to disconnect)
+                    emitter.disconnect(method)
 
 
 @runtime_checkable
@@ -102,20 +109,26 @@ def _disconnect_all_events(
     else:
         # fallback (e.g: for non-evented model object like Layer) which
         # just looks for things called like the emitter name
-        if isinstance(evented_object.events, EmitterGroup):
-            values = [
-                attr
-                for emitter_name in evented_object.events.emitters
-                if (attr := getattr(evented_object, emitter_name, None))
-                is not None
-            ]
-        elif isinstance(evented_object.events, SignalGroup):
-            values = [
-                attr
-                for signal_name in evented_object.events.signals
-                if (attr := getattr(evented_object, signal_name, None))
-                is not None
-            ]
+        with warnings.catch_warnings():
+            warnings.simplefilter(
+                'ignore', (DeprecationWarning, FutureWarning)
+            )
+            # because we just grab attributes, they might be deprecated stuff, no need
+            # to show these warnings
+            if isinstance(evented_object.events, EmitterGroup):
+                values = [
+                    attr
+                    for emitter_name in evented_object.events.emitters
+                    if (attr := getattr(evented_object, emitter_name, None))
+                    is not None
+                ]
+            elif isinstance(evented_object.events, SignalGroup):
+                values = [
+                    attr
+                    for signal_name in evented_object.events.signals
+                    if (attr := getattr(evented_object, signal_name, None))
+                    is not None
+                ]
     for value in values:
         if isinstance(value, _EventedObjectProtocol):
             _disconnect_all_events(value, listener)

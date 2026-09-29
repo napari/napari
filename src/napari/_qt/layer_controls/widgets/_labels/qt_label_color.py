@@ -17,7 +17,6 @@ from napari.layers import Labels
 from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
-from napari.utils.events import disconnect_events
 
 
 class QtColorBox(QWidget):
@@ -88,18 +87,6 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
             self.color = tuple(color)
-
-    def disconnect_widget_controls(self) -> None:
-        disconnect_events(self._layer.events, self)
-
-    def deleteLater(self) -> None:
-        self.disconnect_widget_controls()
-        super().deleteLater()
-
-    def closeEvent(self, event) -> None:
-        """Disconnect events when widget is closing."""
-        self.disconnect_widget_controls()
-        super().closeEvent(event)
 
 
 class QtLabelControl(QtWidgetControlsBase):
