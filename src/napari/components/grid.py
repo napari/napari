@@ -64,7 +64,9 @@ class GridCanvas(EventedModel):
 
     @property
     def _layers(self) -> Sequence[Layer]:
-        return getattr(self._model_parent, '_layers', [])
+        if self._model_parent is None:
+            return []
+        return self._model_parent._layers
 
     @property
     def actual_shape(self) -> tuple[int, int]:

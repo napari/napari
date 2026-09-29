@@ -123,7 +123,9 @@ class Canvas(EventedModel):
 
     @property
     def _layers(self) -> Sequence[Layer]:
-        return getattr(self._model_parent, 'layers', [])
+        if self._model_parent is None:
+            return []
+        return self._model_parent.layers
 
     def viewbox_size(self) -> tuple[int, int]:
         """Get the size of a single viewbox (whether grid is enabled or not).
