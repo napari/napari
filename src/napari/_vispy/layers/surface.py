@@ -32,7 +32,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     def __init__(self, layer, font_info: FontInfo, **kwargs) -> None:
         node = SurfaceVisual(font_info=font_info)
         self._texture_filter = None
-        self._light_direction = (1, 1, 1)
+        self._light_direction = np.array((1.0, 1.0, 1.0))
         self._meshdata = None
         super().__init__(layer, node, font_info=font_info, **kwargs)
 
