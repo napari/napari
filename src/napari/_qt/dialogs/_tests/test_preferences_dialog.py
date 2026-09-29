@@ -14,13 +14,13 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
+from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     EnumSchemaWidget,
     FontSizeSchemaWidget,
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
-from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from napari.settings import NapariSettings, get_plugin_settings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
 from napari.settings._plugin_config_generator import (
