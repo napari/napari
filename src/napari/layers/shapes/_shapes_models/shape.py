@@ -815,7 +815,8 @@ class Shape(ABC):
         Same pixels as ``to_mask``, without allocating a mask, so callers can
         write the shape straight into a labels or colors array.
         """
-        # Draw in the plane shown in 2D display, whatever ndisplay is.
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
         plane = self.dims_order[-2:]
         embedded = len(mask_shape) != 2
         if not embedded:
@@ -827,26 +828,32 @@ class Shape(ABC):
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        data = (self._mask_vertices(plane) - offset) * zoom_factor
+        data = (self._vertices_for_mask(plane) - offset) * zoom_factor
         to_indices = poly_to_indices if self._filled else path_to_indices
         rows, cols = to_indices(shape_plane, data)
         if not embedded:
             return rows, cols
 
-        # Off-plane dims span the shape's bounding box, like its 2D slice.
+        # `others` are the remaining dims. The shape covers the range its
+        # bounding box spans in each of them, which is a single slice for a
+        # shape drawn in a 2D view.
         others = self.dims_order[:-2]
         others_key = self._slice_key_of(others)
         index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
         for col, dim in enumerate(others):
             index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
+        # the pixels drawn in `plane` go on its two dims
         index[plane[0]], index[plane[1]] = rows, cols
         return tuple(index)
 
     def _slice_key_of(self, dims) -> np.ndarray:
-        """Return the integer slice key of the bounding box along dims."""
+        """First and last integer index of the bounding box along dims.
+
+        Returns a (2, len(dims)) array with one column per dim.
+        """
         return np.rint(self._bounding_box[:, dims]).astype(int)
 
-    def _mask_vertices(self, plane) -> np.ndarray:
+    def _vertices_for_mask(self, plane) -> np.ndarray:
         """Return the vertices used to draw the mask in plane."""
         return self.data[:, plane]
 

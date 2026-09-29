@@ -41,7 +41,7 @@ def reference_to_mask(shape, mask_shape, zoom_factor=1, offset=(0, 0)):
     plane = shape.dims_order[-2:]
     embedded = len(mask_shape) != 2
     shape_plane = [mask_shape[d] for d in plane] if embedded else mask_shape
-    data = (shape._mask_vertices(plane) - offset) * zoom_factor
+    data = (shape._vertices_for_mask(plane) - offset) * zoom_factor
     to_mask = polygon2mask if shape._filled else dense_path_mask
     mask_p = to_mask(shape_plane, data)
     if not embedded:
