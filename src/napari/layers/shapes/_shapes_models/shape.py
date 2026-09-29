@@ -801,7 +801,8 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
-        # Draw in the plane shown in 2D display, whatever ndisplay is.
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
         plane = self.dims_order[-2:]
         if mask_shape is None:
             mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
@@ -829,6 +830,9 @@ class Shape(ABC):
         # and embed as a slice.
         if embedded:
             mask = np.zeros(mask_shape, dtype=bool)
+            # `others` are the remaining dims. The 2D mask is repeated over
+            # the range the shape's bounding box covers in each of them,
+            # which is a single slice for a shape drawn in a 2D view.
             others = self.dims_order[:-2]
             others_key = self._slice_key_of(others)
             slice_key: list[int | slice] = [slice(None)] * len(mask_shape)
@@ -836,6 +840,9 @@ class Shape(ABC):
                 slice_key[dim] = slice(
                     others_key[0, col], others_key[1, col] + 1
                 )
+            # mask_p has its axes in `plane` order: put them in data order
+            # and add a length one axis for each dim in `others`, so it
+            # broadcasts over the slices chosen above.
             displayed_order = argsort(plane)
             mask[tuple(slice_key)] = np.expand_dims(
                 mask_p.transpose(displayed_order), tuple(others)
@@ -846,7 +853,10 @@ class Shape(ABC):
         return mask
 
     def _slice_key_of(self, dims) -> np.ndarray:
-        """Return the integer slice key of the bounding box along dims."""
+        """First and last integer index of the bounding box along dims.
+
+        Returns a (2, len(dims)) array with one column per dim.
+        """
         return np.rint(self._bounding_box[:, dims]).astype(int)
 
     def _vertices_for_mask(self, plane) -> np.ndarray:
