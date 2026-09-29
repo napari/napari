@@ -90,7 +90,6 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
                 layer.selected_data = {shape_under_cursor}
         else:
             layer.selected_data = set()
-    layer._set_highlight()
 
     # we don't update the thumbnail unless a shape has been moved
     update_thumbnail = False
@@ -143,7 +142,6 @@ def select(layer: Shapes, event: MouseEvent) -> Generator[None, None, None]:
     elif layer._is_selecting:
         layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
-        layer._set_highlight()
 
     layer._is_moving = False
     layer._drag_start = None
@@ -322,10 +320,9 @@ def initiate_polygon_draw(
     layer._is_creating = True
     data = np.array([coordinates, coordinates])
     layer.add(data, shape_type='path', gui=True)
-    layer.selected_data = Selection({layer.nshapes - 1})
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
-    layer._set_highlight()
+    layer.selected_data = Selection({layer.nshapes - 1})
 
 
 def add_path_polygon_lasso(
@@ -866,9 +863,25 @@ def _add_rectangle_ellipse_line(
                 + box_center
             )
         else:
-            new = (box[vertex] - box_center) / np.linalg.norm(
-                box[vertex] - box_center
-            ) * np.linalg.norm(new - box_center) + box_center
+            # get the direction to grow the shape from the mouse coord
+            direction = np.sign(coord - fixed)
+            nonzero_direction = direction[direction != 0]
+            if len(nonzero_direction) == 1:
+                direction[direction == 0] = nonzero_direction[0]
+            elif len(nonzero_direction) == 0:
+                direction = box[vertex] - box_center
+
+            # Scale by the aspect ratio
+            direction = np.array(
+                [direction[0], direction[1] * layer._aspect_ratio]
+            )
+
+            new = (
+                direction
+                / np.linalg.norm(direction)
+                * np.linalg.norm(new - box_center)
+                + box_center
+            )
 
     drag_scale = (inv_rot @ (new - fixed)) / (inv_rot @ (box[vertex] - fixed))
 

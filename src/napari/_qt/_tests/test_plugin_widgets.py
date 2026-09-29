@@ -164,5 +164,6 @@ def test_widget_types_supported(
     viewer.window.add_dock_widget = Mock(
         side_effect=viewer.window.add_dock_widget
     )
-    app.commands.execute_command('tmp_plugin:Widget')
+    (widget_contrib,) = tmp_plugin.manifest.contributions.widgets
+    app.commands.execute_command(widget_contrib.command)
     viewer.window.add_dock_widget.assert_called_once()

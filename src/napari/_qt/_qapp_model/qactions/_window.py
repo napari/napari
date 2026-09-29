@@ -6,28 +6,27 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt._qapp_model.qactions._toggle_action import (
     DockWidgetToggleAction,
 )
-from napari.utils.translations import trans
 
 Q_WINDOW_ACTIONS: list[Action] = []
 
 toggle_action_details = [
     (
-        'napari:window:window:toggle_window_console',
-        trans._('Console'),
+        'napari.window.toggle_window_console',
+        'Console',
         'dockConsole',
-        trans._('Toggle console panel'),
+        'Toggle console panel',
     ),
     (
-        'napari:window:window:toggle_layer_controls',
-        trans._('Layer Controls'),
+        'napari.window.toggle_layer_controls',
+        'Layer Controls',
         'dockLayerControls',
-        trans._('Toggle layer controls panel'),
+        'Toggle layer controls panel',
     ),
     (
-        'napari:window:window:toggle_layer_list',
-        trans._('Layer List'),
+        'napari.window.toggle_layer_list',
+        'Layer List',
         'dockLayerList',
-        trans._('Toggle layer list panel'),
+        'Toggle layer list panel',
     ),
 ]
 for cmd_id, cmd_title, dock_widget, status_tip in toggle_action_details:

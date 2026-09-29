@@ -30,7 +30,12 @@ from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
+
+# Colors handed to a layer that asks for cycle mode without supplying a cycle. A single
+# color here would map every category to the same value, making the mode a no-op; two
+# contrasting colors make the grouping visible immediately and can then be replaced with a
+# purpose-chosen cycle.
+DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
 
 @dataclass
@@ -86,20 +91,14 @@ class ColorProperties:
                     color_properties = cls(**val)
                 except ValueError as e:
                     raise ValueError(
-                        trans._(
-                            'color_properties dictionary should have keys: name, values, and optionally current_value',
-                            deferred=True,
-                        )
+                        'color_properties dictionary should have keys: name, values, and optionally current_value'
                     ) from e
 
         elif isinstance(val, cls):
             color_properties = val
         else:
             raise TypeError(
-                trans._(
-                    'color_properties should be None, a dict, or ColorProperties object',
-                    deferred=True,
-                )
+                'color_properties should be None, a dict, or ColorProperties object'
             )
 
         return color_properties
@@ -512,7 +511,7 @@ class ColorManager(EventedModel):
 
         """
         if default_color_cycle is None:
-            default_color_cycle = np.array([1, 1, 1, 1])
+            default_color_cycle = DEFAULT_COLOR_CYCLE
 
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
@@ -540,10 +539,7 @@ class ColorManager(EventedModel):
                     )
                 except KeyError as e:
                     raise KeyError(
-                        trans._(
-                            'if color_properties is a string, it should be a property name',
-                            deferred=True,
-                        )
+                        'if color_properties is a string, it should be a property name'
                     ) from e
         else:
             color_values = colors

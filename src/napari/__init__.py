@@ -3,6 +3,7 @@ import os
 from lazy_loader import attach as _attach
 
 from napari._check_numpy_version import limit_numpy1x_threads_on_macos_arm
+from napari._wayland_fix import _fix_wayland_opengl
 
 try:
     from napari._version import version as __version__
@@ -12,6 +13,9 @@ except ImportError:
 # Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 limit_numpy1x_threads_on_macos_arm()
+# Must run before any napari module that imports vispy/PyOpenGL — PyOpenGL
+# caches its platform at first import and ignores later env-var changes.
+_fix_wayland_opengl()
 
 
 def _check_installation_path():  # pragma: no cover
@@ -67,6 +71,7 @@ def _check_installation_path():  # pragma: no cover
 _check_installation_path()
 
 del limit_numpy1x_threads_on_macos_arm
+del _fix_wayland_opengl
 del os
 
 # Add everything that needs to be accessible from the napari namespace here.

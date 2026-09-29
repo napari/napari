@@ -1,6 +1,5 @@
-import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from functools import partial, wraps
+from functools import partial
 from pathlib import Path
 from types import TracebackType
 from typing import (
@@ -17,7 +16,7 @@ import numpy.typing as npt
 
 # TODO decide where types should be defined to have single place for them
 from npe2.types import LayerName as LayerTypeName
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 if TYPE_CHECKING:
     # dask zarr should be imported as `import dask.array as da` But here it is used only in type annotation to
@@ -52,7 +51,6 @@ __all__ = [
     'VectorsData',
     'WidgetCallable',
     'WriterFunction',
-    'image_reader_to_layerdata_reader',
 ]
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
@@ -102,7 +100,7 @@ class SampleDict(TypedDict):
 # while their names should not change (without deprecation), their typing
 # implementations may... or may be rolled over to napari/image-types
 
-ArrayBase: type[np.ndarray] = np.ndarray
+ArrayBase = TypeAliasType('ArrayBase', np.ndarray)
 
 
 ImageData = NewType('ImageData', np.ndarray)
@@ -125,41 +123,6 @@ _LayerData = Union[
 LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
-def image_reader_to_layerdata_reader(
-    func: Callable[[PathOrPaths], ArrayLike],
-) -> ReaderFunction:
-    """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
-
-    .. deprecated:: 0.7.1
-        This helper is deprecated and will be removed in 0.8.0.
-
-    Parameters
-    ----------
-    func : Callable[[PathLike], ArrayLike]
-        A function that accepts a string or list of strings, and returns an
-        ArrayLike.
-
-    Returns
-    -------
-    reader_function : Callable[[PathLike], List[LayerData]]
-        A function that accepts a string or list of strings, and returns data
-        as a list of LayerData: List[Tuple[ArrayLike]]
-
-    """
-    warnings.warn(
-        'image_reader_to_layerdata_reader is deprecated in 0.7.1 and will be removed in 0.8.0 release.',
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    @wraps(func)
-    def reader_function(*args, **kwargs) -> list[LayerData]:
-        result = func(*args, **kwargs)
-        return [(result,)]
-
-    return reader_function
-
-
 def _register_types_with_magicgui():
     """Register ``napari.types`` objects with magicgui."""
     from concurrent.futures import Future
@@ -169,11 +132,11 @@ def _register_types_with_magicgui():
     from napari.utils import _magicgui as _mgui
 
     for type_ in (LayerDataTuple, list[LayerDataTuple]):
-        register_type(
+        register_type(  # pyrefly: ignore [no-matching-overload]
             type_,
             return_callback=_mgui.add_layer_data_tuples_to_viewer,
         )
-        future_type = Future[type_]  # type: ignore [valid-type]
+        future_type = Future[type_]
         register_type(future_type, return_callback=_mgui.add_future_data)
 
     for data_type in get_args(_LayerData):
@@ -183,17 +146,17 @@ def _register_types_with_magicgui():
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         register_type(
-            Future[data_type],  # type: ignore [valid-type]
+            Future[data_type],
             choices=_mgui.get_layers_data,
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )
         register_type(
-            Optional[data_type],  # type: ignore [call-overload]
+            Optional[data_type],
             choices=_mgui.get_layers_data,
             return_callback=_mgui.add_layer_data_to_viewer,
         )
         register_type(
-            Future[Optional[data_type]],  # type: ignore [valid-type]
+            Future[Optional[data_type]],
             choices=_mgui.get_layers_data,
             return_callback=partial(_mgui.add_future_data, _from_tuple=False),
         )

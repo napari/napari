@@ -1,4 +1,5 @@
-from qtpy.QtWidgets import QDialog
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QDialog, QLabel
 
 from napari._qt.dialogs.confirm_close_dialog import ConfirmCloseDialog
 from napari.settings import get_settings
@@ -42,3 +43,14 @@ def test_create_window_close(qtbot):
     dialog.close_btn.click()
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert get_settings().application.confirm_close_window
+
+
+def test_text_is_selectable(qtbot):
+    dialog = ConfirmCloseDialog(
+        None, close_app=False, extra_info='napari-worker'
+    )
+    qtbot.addWidget(dialog)
+    label = dialog.findChild(QLabel)
+    flags = label.textInteractionFlags()
+    assert flags & Qt.TextInteractionFlag.TextSelectableByMouse
+    assert flags & Qt.TextInteractionFlag.TextSelectableByKeyboard

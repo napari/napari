@@ -35,7 +35,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # type: ignore
+    _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
@@ -66,7 +66,7 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(
+        self._window = Window(  # pyrefly: ignore [bad-assignment]
             self, show=show, show_welcome_screen=show_welcome_screen
         )
         self._instances.add(self)
@@ -270,8 +270,7 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
-        self.welcome_screen.visible = False
-        # Remove all the layers and overlays from the viewer
+        # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window
         self.window.close()
@@ -309,4 +308,4 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()
+        return _QtMainWindow.current_viewer()  # pyrefly: ignore [bad-return]

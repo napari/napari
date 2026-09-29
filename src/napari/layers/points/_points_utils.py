@@ -11,7 +11,6 @@ from napari.layers.points._points_constants import (
     Symbol,
 )
 from napari.utils.geometry import project_points_onto_plane
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -251,12 +250,7 @@ def fix_data_points(
         points = np.atleast_2d(points)
         data_ndim = points.shape[1]
         if ndim is not None and ndim != data_ndim:
-            raise ValueError(
-                trans._(
-                    'Points dimensions must be equal to ndim',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Points dimensions must be equal to ndim')
         ndim = data_ndim
     return points, ndim
 
