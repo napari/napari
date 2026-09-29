@@ -61,7 +61,7 @@ class QtCurrentSizeSliderControl(QtWidgetControlsBase):
         sld.setValue(int(value))
         self.size_slider = sld
         connect_setattr(
-            self.size_slider.valueChanged,  # pyrefly: ignore [bad-argument-type]
+            self.size_slider.valueChanged,
             self._layer,
             'current_size',
         )
