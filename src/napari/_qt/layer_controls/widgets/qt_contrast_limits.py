@@ -155,16 +155,9 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.setSpacing(5)
 
         def reset():
+            # the contrast_limits setter already widens contrast_limits_range
+            # to fit the new limits, so the range is never narrowed here
             layer.reset_contrast_limits()
-            cmin, cmax = layer.contrast_limits
-            rmin, rmax = layer.contrast_limits_range
-            if cmin < rmin or cmax > rmax:
-                # keep the slider wide enough for the new limits, but never
-                # narrow it to the range of the current slice
-                layer.contrast_limits_range = (
-                    min(rmin, cmin),
-                    max(rmax, cmax),
-                )
             decimals_ = range_to_decimals(
                 layer.contrast_limits_range, layer.dtype
             )
