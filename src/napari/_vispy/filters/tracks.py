@@ -106,7 +106,7 @@ class TracksFilter(Filter):
     def current_time(self, n: float):
         self._current_time = n
         if isinstance(n, slice):
-            n = np.max(self._vertex_time)
+            n = np.max(self._vertex_time)  # pyrefly: ignore [bad-assignment]
         self.vshader['current_time'] = float(n)
 
     @property

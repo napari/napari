@@ -25,7 +25,7 @@ class QtFontSizeWidget(QWidget):
         layout.addWidget(self._reset_button)
         self.setLayout(layout)
 
-        self._spinbox.valueChanged.connect(self.valueChanged)
+        self._spinbox.valueChanged.connect(self.valueChanged)  # pyrefly: ignore [bad-argument-type]
         self._reset_button.clicked.connect(self._reset)
 
     def _reset(self) -> None:

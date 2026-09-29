@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
     class Emitter(Protocol):
-        def connect(self, callback: Callable): ...
+        def connect(self, callback: Callable, /) -> object: ...
 
-        def disconnect(self, callback: Callable): ...
+        def disconnect(self, callback: Callable, /) -> object: ...
 
 
 _logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ def connect_setattr(
                 emitter.disconnect(_cb)
                 return
 
-            value = tuple(convert_fun(x) for x in value)
+            value = tuple(convert_fun(x) for x in value)  # pyrefly: ignore [not-callable]
             setattr(ob, attr, value[0] if len(value) == 1 else value)
     else:
 
