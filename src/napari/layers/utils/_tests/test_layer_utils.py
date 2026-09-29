@@ -15,6 +15,7 @@ from napari.layers.utils.layer_utils import (
     dataframe_to_properties,
     dims_displayed_world_to_layer,
     expand_corners_to_chunk_boundaries,
+    get_current_properties,
     register_layer_attr_action,
     segment_normal,
 )
@@ -249,6 +250,43 @@ def test_dataframe_to_properties():
     properties_df = pd.DataFrame(properties)
     converted_properties = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)
+
+
+def test_get_current_properties_with_properties_then_last_values():
+    properties = {
+        'face_color': np.array(['cyan', 'red', 'red']),
+        'angle': np.array([0.5, 1.5, 1.5]),
+    }
+
+    with pytest.warns(FutureWarning, match='get_current_properties'):
+        current_properties = get_current_properties(properties, {}, 3)
+
+    assert current_properties == {
+        'face_color': 'red',
+        'angle': 1.5,
+    }
+
+
+def test_get_current_properties_with_property_choices_then_first_values():
+    properties = {
+        'face_color': np.empty(0, dtype=str),
+        'angle': np.empty(0, dtype=float),
+    }
+    property_choices = {
+        'face_color': np.array(['cyan', 'red']),
+        'angle': np.array([0.5, 1.5]),
+    }
+
+    with pytest.warns(FutureWarning, match='get_current_properties'):
+        current_properties = get_current_properties(
+            properties,
+            property_choices,
+        )
+
+    assert current_properties == {
+        'face_color': 'cyan',
+        'angle': 0.5,
+    }
 
 
 def test_coerce_current_properties_valid_values():

@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from types import NoneType, UnionType
 from typing import (  # noqa
     Annotated,
@@ -8,6 +9,18 @@ from typing import (  # noqa
     get_args,
     get_origin,
 )
+
+from pydantic import ConfigDict
+
+
+class NapariConfigDict(ConfigDict):
+    """Custom ConfigDict for napari models.
+
+    add dependencies attribute to track field dependencies
+    """
+
+    # FIXME: make it part of public api?
+    dependencies: dict[str, Collection[str]] | None
 
 
 def iter_inner_types(type_: Any) -> Any:

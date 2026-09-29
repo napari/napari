@@ -417,6 +417,51 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
     raise NotImplementedError
 
 
+def get_current_properties(
+    properties: dict[str, np.ndarray],
+    choices: dict[str, np.ndarray],
+    num_data: int = 0,
+) -> dict[str, Any]:
+    """Get the current property values from the properties or choices.
+
+    .. deprecated:: 0.10.0
+        ``get_current_properties`` is no longer used by napari and will be
+        removed in 0.11.0.
+
+    Parameters
+    ----------
+    properties : dict[str, np.ndarray]
+        The property values.
+    choices : dict[str, np.ndarray]
+        The property value choices.
+    num_data : int
+        The length of data that the properties represent (e.g. number of points).
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary where the key is the property name and the value is the current
+        value of that property.
+    """
+    warnings.warn(
+        'napari.layers.utils.layer_utils.get_current_properties is deprecated '
+        'since 0.10.0 and will be removed in 0.11.0. It is no longer used by '
+        'napari and has no replacement.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    current_properties = {}
+    if num_data > 0:
+        current_properties = {
+            k: np.asarray([v[-1]]) for k, v in properties.items()
+        }
+    elif num_data == 0 and len(choices) > 0:
+        current_properties = {
+            k: np.asarray([v[0]]) for k, v in choices.items()
+        }
+    return current_properties
+
+
 def dataframe_to_properties(
     dataframe: pd.DataFrame,
 ) -> dict[str, np.ndarray]:

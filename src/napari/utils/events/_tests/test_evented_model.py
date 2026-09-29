@@ -9,9 +9,10 @@ import numpy as np
 import pytest
 from dask import delayed
 from dask.delayed import Delayed
-from pydantic import ConfigDict, Field, GetCoreSchemaHandler, ValidationError
+from pydantic import Field, GetCoreSchemaHandler, ValidationError
 from pydantic_core import core_schema
 
+from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
@@ -583,7 +584,7 @@ def test_evented_model_with_provided_dependencies():
         def b(self):
             return self.a * 2
 
-        model_config = ConfigDict(dependencies={'b': ['a']})
+        model_config = NapariConfigDict(dependencies={'b': ['a']})
 
     t = T()
     t.events.a = Mock(t.events.a)
@@ -605,7 +606,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            model_config = ConfigDict(dependencies={'x': ['a']})
+            model_config = NapariConfigDict(dependencies={'x': ['a']})
 
     # should warn if field does not exist
     with pytest.warns(match='Unrecognized field dependency'):
@@ -617,7 +618,7 @@ def test_evented_model_with_provided_dependencies():
             def b(self):  # pragma: no cover
                 return self.a * 2
 
-            model_config = ConfigDict(dependencies={'b': ['x']})
+            model_config = NapariConfigDict(dependencies={'b': ['x']})
 
 
 def test_property_get_eq_operator():
