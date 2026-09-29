@@ -2,9 +2,15 @@ import gc
 from dataclasses import dataclass
 from unittest.mock import Mock
 
+from psygnal import Signal, SignalGroup
 from pydantic import Field
 
-from napari.utils.events import EventedList, EventedModel, disconnect_events
+from napari.utils.events import (
+    EmitterGroup,
+    EventedList,
+    EventedModel,
+    disconnect_events,
+)
 from napari.utils.events.event import Event, EventEmitter
 from napari.utils.events.event_utils import (
     _disconnect_all_events,
@@ -61,10 +67,29 @@ class SubModel(EventedModel):
     y: int = 0
 
 
+class MyEventedObject:
+    def __init__(self):
+        self.events = EmitterGroup(z=Event)
+        self.z = SubModel()
+
+
+class MySignals(SignalGroup):
+    w = Signal()
+
+
+class MySignaledObject:
+    def __init__(self):
+        self.events = MySignals()
+        self.w = SubModel()
+        self.w.events.connect(self.events.all)
+
+
 class MyModel(EventedModel):
     x: int = 0
     sub: SubModel = Field(default_factory=SubModel)
     ls: EventedList = Field(default_factory=lambda: EventedList([SubModel()]))
+    ev: MyEventedObject = Field(default_factory=MyEventedObject)
+    sig: MySignaledObject = Field(default_factory=MySignaledObject)
 
     @property
     def p(self):
@@ -83,6 +108,10 @@ class MyMock:
     y_calls = 0
     ls_all_calls = 0
     ls_sub_calls = 0
+    ev_calls = 0
+    ev_sub_calls = 0
+    sig_calls = 0
+    sig_sub_calls = 0
 
     def all(self):
         self.all_calls += 1
@@ -108,6 +137,12 @@ class MyMock:
     def ls_sub(self):
         self.ls_sub_calls += 1
 
+    def ev_sub(self):
+        self.ev_sub_calls += 1
+
+    def sig_sub(self):
+        self.sig_sub_calls += 1
+
 
 def test_disconnect_events_works():
     mock = MyMock()
@@ -120,6 +155,8 @@ def test_disconnect_events_works():
     model.sub.events.y.connect(mock.y)
     model.ls.events.connect(mock.ls_all)
     model.ls[0].events.connect(mock.ls_sub)
+    model.ev.events.connect(mock.ev_sub)
+    model.sig.events.connect(mock.sig_sub)
 
     # check top-level events
 
@@ -159,6 +196,24 @@ def test_disconnect_events_works():
     assert mock.ls_all_calls == 1
     assert mock.ls_sub_calls == 1
 
+    # events from a custom evented object
+    model.ev.events.z()
+    assert mock.ev_sub_calls == 1
+
+    disconnect_events(model.ev.events, mock)
+
+    model.ev.events.z()
+    assert mock.ev_sub_calls == 1
+
+    # events from a custom evented object, with psygnal
+    model.sig.events.w()
+    assert mock.sig_sub_calls == 1
+
+    disconnect_events(model.sig.events, mock)
+
+    model.sig.events.w()
+    assert mock.sig_sub_calls == 1
+
     # check everything is the same, no spilling across events
     assert mock.all_calls == 1
     assert mock.x_calls == 1
@@ -168,6 +223,8 @@ def test_disconnect_events_works():
     assert mock.y_calls == 1
     assert mock.ls_all_calls == 1
     assert mock.ls_sub_calls == 1
+    assert mock.ev_sub_calls == 1
+    assert mock.sig_sub_calls == 1
 
 
 def test_disconnect_all_events_works():
@@ -181,10 +238,14 @@ def test_disconnect_all_events_works():
     model.sub.events.y.connect(mock.y)
     model.ls.events.connect(mock.ls_all)
     model.ls[0].events.connect(mock.ls_sub)
+    model.ev.events.connect(mock.ev_sub)
+    model.sig.events.connect(mock.sig_sub)
 
     model.x = 1
     model.sub.y = 1
     model.ls[0].y = 1
+    model.ev.events.z()
+    model.sig.events.w()
     assert mock.all_calls == 1
     assert mock.x_calls == 1
     assert mock.p_calls == 1
@@ -193,6 +254,8 @@ def test_disconnect_all_events_works():
     assert mock.y_calls == 1
     assert mock.ls_all_calls == 1
     assert mock.ls_sub_calls == 1
+    assert mock.ev_sub_calls == 1
+    assert mock.sig_sub_calls == 1
 
     _disconnect_all_events(model, mock)
 
@@ -200,6 +263,8 @@ def test_disconnect_all_events_works():
     model.x = 2
     model.sub.y = 2
     model.ls[0].y = 2
+    model.ev.events.z()
+    model.sig.events.w()
     assert mock.all_calls == 1
     assert mock.x_calls == 1
     assert mock.p_calls == 1
@@ -208,3 +273,5 @@ def test_disconnect_all_events_works():
     assert mock.y_calls == 1
     assert mock.ls_all_calls == 1
     assert mock.ls_sub_calls == 1
+    assert mock.ev_sub_calls == 1
+    assert mock.sig_sub_calls == 1
