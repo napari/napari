@@ -1438,7 +1438,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 added = []
                 needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(
-                    list(data(**kwargs))  # pyrefly: ignore [bad-argument-type]
+                    list(data(**kwargs))
                 ):
                     if datum[0] is not None:
                         needs_error = False
