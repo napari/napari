@@ -112,6 +112,15 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         return len(self._data)
 
     @property
+    def levels(self) -> list[LayerDataProtocol]:
+        """List of all resolution levels, from largest to smallest.
+
+        A new list is returned each time; mutating it does not affect
+        this `MultiScaleData` instance.
+        """
+        return list(self._data)
+
+    @property
     def dtype(self) -> npt.DTypeLike:
         """dtype of the first scale.."""
         return self._data[0].dtype

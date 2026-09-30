@@ -476,6 +476,22 @@ def test_multiscale_data_get_level():
         assert multiscale_data.get_level(i) is multiscale_data[i]
 
 
+def test_multiscale_data_levels():
+    """Test MultiScaleData.levels returns all levels as a new list."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    levels = multiscale_data.levels
+    assert levels == data
+    assert levels is not multiscale_data._data
+
+    # mutating the returned list must not affect the MultiScaleData instance
+    levels.append(np.zeros((1, 1)))
+    assert multiscale_data.nlevels == len(shapes)
+
+
 def test_multiscale_data_get_level_out_of_bounds():
     """Test MultiScaleData.get_level raises for an out-of-bounds level."""
     shapes = [(20, 20), (10, 10), (5, 5)]
