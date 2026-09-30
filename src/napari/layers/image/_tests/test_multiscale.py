@@ -554,6 +554,20 @@ def test_multiscale_data_with_multiscale_false_raises():
         Image(data, multiscale=False)
 
 
+def test_single_array_with_multiscale_true_is_single_level():
+    """Passing a single (non-sequence) array with multiscale=True should
+    wrap it as a single-level pyramid, not split it along its first axis.
+    """
+    data = np.ones((10, 10, 10), dtype=int)
+    layer = Image(data, multiscale=True)
+
+    assert layer.multiscale is True
+    assert layer.ndim == 3
+    assert layer.data.nlevels == 1
+    assert layer.data.shape == (10, 10, 10)
+    np.testing.assert_array_equal(layer.data[0], data)
+
+
 @pytest.mark.parametrize(
     ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
     [

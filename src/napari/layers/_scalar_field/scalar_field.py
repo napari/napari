@@ -252,6 +252,10 @@ class ScalarFieldBase(Layer, ABC):
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
+            if isinstance(data, LayerDataProtocol):
+                # a single array-like is not itself a sequence of levels;
+                # treat it as the (only) level of a single-level pyramid.
+                data = [data]
             data = MultiScaleData(data)
 
         # Determine dimensionality of the data
