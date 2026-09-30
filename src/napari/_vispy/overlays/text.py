@@ -18,6 +18,12 @@ if TYPE_CHECKING:
     from napari.components.overlays import TextOverlay
 
 
+def _relative_luminance(rgb) -> float:
+    rgb = np.asarray(rgb, dtype=float)
+    rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    return float(rgb @ [0.2126, 0.7152, 0.0722])
+
+
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
     """Base class for vispy text overlays."""
 
@@ -153,9 +159,24 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
         ):
             color = self.layer.colormap.map([1.0])[0]
             if np.ptp(color[:3]) > 0.01:
-                self.node.color = color
+                self.node.color = self._readable(color)
                 return
         super()._on_color_change()
+
+    def _readable(self, color):
+        # keep the hue, but blend toward the contrasting color until the
+        # text reaches a 3:1 contrast ratio (WCAG minimum for large text)
+        color = np.array([*color[:3], 1.0])
+        bg = _relative_luminance(self._get_bgcolor()[:3])
+        fg = self._get_fgcolor()
+        for t in np.linspace(0, 1, 11):
+            mixed = (1 - t) * color + t * fg
+            lighter, darker = sorted(
+                (_relative_luminance(mixed[:3]), bg), reverse=True
+            )
+            if (lighter + 0.05) / (darker + 0.05) >= 3:
+                break
+        return mixed
 
     def _on_text_change(self):
         self.node.text = self.layer.name
