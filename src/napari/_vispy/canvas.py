@@ -434,6 +434,9 @@ class VispyCanvas:
 
         if cursor != 'circle':
             brush_circle.visible = False
+            if cursor == 'crosshair':
+                # special case cause it needs to be generated on the fly
+                return QtCursorVisual.crosshair()
             return QtCursorVisual[cursor].value
 
         if layer.brush_size_is_canvas:

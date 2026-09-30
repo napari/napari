@@ -92,12 +92,8 @@ def create_crosshair_cursor():
     return QCursor(crosshair_pixmap())
 
 
-def create_blank_cursor():
-    return QCursor(Qt.CursorShape.BlankCursor)
-
-
 class QtCursorVisual(Enum):
-    blank = staticmethod(create_blank_cursor)
+    blank = Qt.CursorShape.BlankCursor
     pointing = Qt.CursorShape.PointingHandCursor
     standard = Qt.CursorShape.ArrowCursor
     crosshair = staticmethod(create_crosshair_cursor)
