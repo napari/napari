@@ -394,43 +394,49 @@ class QCommandList(QtW.QListView):
                 if _enabled(c, self._app_model_context)
             ]
 
-        commands: dict[CommandRule, float] = {}
+        # mapping of titles (or their aliasees) to commands. Must be a list of tuples
+        # cause dict requires unique keys and there might be multiple commands with the same
+        # title and multiple aliases referring to the same command
+        command_to_title = [
+            (c, alias)
+            for c in self.all_commands
+            for alias in _get_all_aliases(c.title)
+        ]
 
-        # mapping of titles (or their aliasees) to commands
-        title_to_command = {c.title: c for c in self.all_commands}
-        for n, c in list(title_to_command.items()):
-            for alias in _apply_aliases(n):
-                title_to_command[alias] = c
-        # same thing but with full path (for further lower-priority matching)
-        path_to_command = {_command_to_path(c): c for c in self.all_commands}
-        for n, c in list(path_to_command.items()):
-            for alias in _apply_aliases(n):
-                path_to_command[alias] = c
-
-        for score, command in _iter_matched_actions(
-            input_text, title_to_command, mode='strict'
+        strict_matches: dict[CommandRule, float] = {}
+        for command, score in _iter_matched_actions(
+            input_text, command_to_title, mode='strict'
         ):
             # boost score for strict title matches so they float to the top
             score += 100
             # get the max score between aliases
-            commands[command] = max(score, commands.get(command, 0))
+            strict_matches[command] = max(
+                score, strict_matches.get(command, 0)
+            )
 
+        # same thing but with loose matching on full command path
+        command_to_path = [
+            (c, alias)
+            for c in self.all_commands
+            for alias in _get_all_aliases(_command_to_path(c))
+        ]
         loose_matches: dict[CommandRule, float] = {}
-        for score, command in _iter_matched_actions(
-            input_text, path_to_command, mode='tokens'
+        for command, score in _iter_matched_actions(
+            input_text, command_to_path, mode='tokens'
         ):
             loose_matches[command] = max(score, loose_matches.get(command, 0))
 
+        # add up strict and loose scores
         for command, score in loose_matches.items():
-            commands[command] = commands.get(command, 0) + score
+            strict_matches[command] = strict_matches.get(command, 0) + score
 
         # boost scores of all enabled commands
-        for command in commands:
+        for command in strict_matches:
             if _enabled(command, self._app_model_context):
-                commands[command] += 100
+                strict_matches[command] += 100
 
         for command, _ in sorted(
-            commands.items(), key=lambda x: x[1], reverse=True
+            strict_matches.items(), key=lambda x: x[1], reverse=True
         ):
             yield command
 
@@ -451,14 +457,6 @@ def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
         return False
 
 
-def _match_score(action: CommandRule, input_text: str) -> float:
-    """Return a match score (between 0 and 1) for the input text."""
-    name = _command_to_path(action).lower()
-    if all(word in name for word in input_text.lower().split(' ')):
-        return 1.0
-    return 0.0
-
-
 def _command_to_path(cmd: CommandRule) -> str:
     *contexts, _ = cmd.id.split('.')
     title = ' > '.join(contexts)
@@ -468,56 +466,51 @@ def _command_to_path(cmd: CommandRule) -> str:
     return desc
 
 
-def _apply_aliases(action_name: str) -> list[str]:
-    return [
-        re.sub(word, alias, action_name, flags=re.IGNORECASE)
+def _get_all_aliases(input_str: str) -> list[str]:
+    aliases = (
+        re.sub(word, alias, input_str, flags=re.IGNORECASE)
         for word, alias in _COMMON_ALIASES.items()
-        if re.search(word, action_name, flags=re.IGNORECASE)
-    ]
+        if re.search(word, input_str, flags=re.IGNORECASE)
+    )
+    return [input_str, *aliases]
 
 
 def _iter_matched_actions(
     input_text: str,
-    command_dict: dict[str, CommandRule],
+    command_to_title: list[tuple[CommandRule, str]],
     mode: Literal['strict', 'tokens'] = 'strict',
-) -> Iterator[tuple[float, CommandRule]]:
+) -> Iterator[tuple[CommandRule, float]]:
     exp = get_settings().experimental
+    commands, choices = list(zip(*command_to_title, strict=True))
     if (
         exp.command_palette_fuzzy_search == PaletteFuzzySearch.disabled
         or find_spec('rapidfuzz') is None
     ):
         # basic word matching
         words = input_text.lower().split(' ')
-        for string, command in command_dict.items():
+        for idx, string in enumerate(choices):
             string = string.lower()
             if all(word in string for word in words):
-                yield 100, command
+                yield commands[idx], 100
         return
 
     # fuzzy finding
     from rapidfuzz import fuzz, process, utils
-
-    # we have to pass these as a list to rapidfuzz, cause it otherwise
-    # would take dicts like {result: string} as mapping and treat them
-    # differently, not allowing us to have multuple strings (aliases)
-    # point to the same "result" without doing weird stuff
-    strings = list(command_dict)
-    commands = list(command_dict.values())
 
     scorer = (
         fuzz.partial_ratio
         if mode == 'strict'
         else fuzz.partial_token_set_ratio
     )
-    for _, score, command_idx in process.extract(
+    for _, score, idx in process.extract(
         input_text,
-        strings,
+        choices,
         limit=100,
         score_cutoff=exp.command_palette_fuzzy_search_threshold,
         scorer=scorer,
         processor=utils.default_process,
     ):
-        yield score, commands[command_idx]
+        yield commands[idx], score
 
 
 def _iter_highlight_slices(
