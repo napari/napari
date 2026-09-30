@@ -199,9 +199,9 @@ class GuidedTour(QObject):
         self._active = False
         self._overlay = _TourOverlay(parent_window)
         self._tooltip = _TourTooltip(parent_window)
-        self._tooltip.next_clicked.connect(self._on_next)  # pyrefly: ignore [missing-attribute]
-        self._tooltip.back_clicked.connect(self._on_back)  # pyrefly: ignore [missing-attribute]
-        self._tooltip.skip_clicked.connect(self.close_tour)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.next_clicked.connect(self._on_next)
+        self._tooltip.back_clicked.connect(self._on_back)
+        self._tooltip.skip_clicked.connect(self.close_tour)
 
     def start(self) -> None:
         if self._active or self._window is None:
@@ -228,16 +228,16 @@ class GuidedTour(QObject):
         app = QApplication.instance()
         if app is not None:
             app.removeEventFilter(self)
-        self._tooltip.next_clicked.disconnect(self._on_next)  # pyrefly: ignore [missing-attribute]
-        self._tooltip.back_clicked.disconnect(self._on_back)  # pyrefly: ignore [missing-attribute]
-        self._tooltip.skip_clicked.disconnect(self.close_tour)  # pyrefly: ignore [missing-attribute]
+        self._tooltip.next_clicked.disconnect(self._on_next)
+        self._tooltip.back_clicked.disconnect(self._on_back)
+        self._tooltip.skip_clicked.disconnect(self.close_tour)
         self._overlay.hide()
         self._tooltip.hide()
         self._overlay.setParent(None)
         self._tooltip.setParent(None)
         self._overlay.deleteLater()
         self._tooltip.deleteLater()
-        self.finished.emit()  # pyrefly: ignore [missing-attribute]
+        self.finished.emit()
         self.setParent(None)
         self._window = None
         self.deleteLater()
@@ -494,5 +494,5 @@ def build_viewer_tour(
         for dock in shown_docks:
             dock.hide()
 
-    tour.finished.connect(_restore_docks)  # pyrefly: ignore [missing-attribute]
+    tour.finished.connect(_restore_docks)
     return tour
