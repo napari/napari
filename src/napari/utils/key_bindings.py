@@ -390,7 +390,7 @@ class KeymapProvider:
     bind_key = KeybindingDescriptor(bind_key)
 
 
-def _bind_keymap(keymap: Keymap, instance: Any) -> Keymap:
+def _bind_keymap(keymap: Keymap, instance: object) -> Keymap:
     """Bind all functions in a keymap to an instance.
 
     Parameters
