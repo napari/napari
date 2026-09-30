@@ -734,11 +734,11 @@ class Labels(ScalarFieldBase):
         for data_level in data:
             # normalize_dtype turns e.g. tensorstore or torch dtypes into
             # numpy dtypes
-            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):  # pyrefly: ignore [missing-attribute]
+            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
-                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'  # pyrefly: ignore [missing-attribute]
+                    f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'
                 )
-            if data_level.dtype == bool:  # pyrefly: ignore [missing-attribute]
+            if data_level.dtype == bool:
                 int_data.append(data_level.view(np.uint8))  # pyrefly: ignore [missing-attribute]
             else:
                 int_data.append(data_level)
@@ -1226,7 +1226,7 @@ class Labels(ScalarFieldBase):
             # The whole bounding box changed: assign directly.
             self.data[atom.slice_key] = values  # pyrefly: ignore [unsupported-operation]
             return
-        region = np.asarray(self.data[atom.slice_key])
+        region = np.asarray(self.data[atom.slice_key])  # pyrefly: ignore [bad-index]
         region[atom.mask] = values
         self.data[atom.slice_key] = region  # pyrefly: ignore [unsupported-operation]
 
@@ -1332,7 +1332,7 @@ class Labels(ScalarFieldBase):
             return None
 
         # If requested new label doesn't change old label then return
-        old_label = np.asarray(self.data[int_coord]).item()
+        old_label = np.asarray(self.data[int_coord]).item()  # pyrefly: ignore [bad-index]
         if old_label == new_label:
             return None
 
@@ -1347,7 +1347,7 @@ class Labels(ScalarFieldBase):
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
 
-        labels = np.asarray(self.data[data_slice])
+        labels = np.asarray(self.data[data_slice])  # pyrefly: ignore [bad-index]
 
         # Coordinate of the seed point relative to the extracted labels
         slice_coord = tuple(int_coord[d] for d in dims_to_paint)
@@ -1423,7 +1423,8 @@ class Labels(ScalarFieldBase):
         for c in interp_coord:
             if (
                 self._slice_input.ndisplay == 3
-                and self.data[tuple(np.round(c).astype(int))] == 0
+                and self.data[tuple(np.round(c).astype(int))]  # pyrefly: ignore [bad-index]
+                == 0
             ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
@@ -1854,7 +1855,7 @@ class Labels(ScalarFieldBase):
                 region_data = np.expand_dims(region_data, extra_axes)
 
         if region_data is None:
-            region_data = np.asarray(self.data[slice_key])
+            region_data = np.asarray(self.data[slice_key])  # pyrefly: ignore [bad-index]
 
         effective_mask = self._apply_mask_to_data(
             region_data, mask, new_label, slice_key
@@ -2158,7 +2159,7 @@ class Labels(ScalarFieldBase):
         self._save_history(
             (
                 indices,
-                np.array(self.data[indices], copy=True),
+                np.array(self.data[indices], copy=True),  # pyrefly: ignore [bad-index]
                 value,
             )
         )
