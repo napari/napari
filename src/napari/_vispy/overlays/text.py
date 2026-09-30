@@ -165,7 +165,7 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
 
     def _readable(self, color):
         # keep the hue, but blend toward the contrasting color until the
-        # text reaches a 3:1 contrast ratio (WCAG minimum for large text)
+        # text reaches a 4.5:1 contrast ratio (WCAG AA for normal text)
         color = np.array([*color[:3], 1.0])
         bg = _relative_luminance(self._get_bgcolor()[:3])
         fg = self._get_fgcolor()
@@ -174,7 +174,7 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
             lighter, darker = sorted(
                 (_relative_luminance(mixed[:3]), bg), reverse=True
             )
-            if (lighter + 0.05) / (darker + 0.05) >= 3:
+            if (lighter + 0.05) / (darker + 0.05) >= 4.5:
                 break
         return mixed
 

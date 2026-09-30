@@ -65,7 +65,7 @@ def _contrast(a, b):
 
 @pytest.mark.parametrize(
     ('cmap', 'background', 'channel'),
-    [('green', 'white', 1), ('cyan', 'white', 2), ('blue', 'black', 2)],
+    [('green', 'white', 1), ('magenta', 'white', 0), ('blue', 'black', 2)],
 )
 def test_name_overlay_keeps_hue_but_stays_readable(cmap, background, channel):
     vispy_overlay = _make_overlay(
@@ -73,7 +73,7 @@ def test_name_overlay_keeps_hue_but_stays_readable(cmap, background, channel):
     )
     color = vispy_overlay.node.color.rgba[0]
     bg = vispy_overlay._get_bgcolor()
-    assert _contrast(color, bg) >= 3
+    assert _contrast(color, bg) >= 4.5
     assert color[channel] == color[:3].max()
     assert np.ptp(color[:3]) > 0.3
 
