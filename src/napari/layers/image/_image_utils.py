@@ -47,8 +47,8 @@ def guess_multiscale(
     element, that element is unwrapped and treated as non-multiscale data.
     Otherwise, `data` is assumed to be a sequence of multiscale levels and
     is validated as such (see :func:`validate_multiscale_data`): levels
-    must all have the same number of dimensions and strictly decreasing
-    size, or a ValueError is raised.
+    must all have the same number of dimensions and non-increasing size,
+    or a ValueError is raised.
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def guess_multiscale(
     ------
     ValueError
         If `data` is a sequence of more than one array-like whose levels
-        are not strictly decreasing in size, or do not all have the same
+        are not non-increasing in size, or do not all have the same
         number of dimensions.
     TypeError
         If any item in `data` does not implement `LayerDataProtocol`.

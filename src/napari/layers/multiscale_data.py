@@ -18,7 +18,9 @@ def validate_multiscale_data(
 
     Checks that `data` is non-empty, that every level implements
     :class:`LayerDataProtocol`, that all levels have the same number of
-    dimensions, and that level sizes are strictly decreasing.
+    dimensions, and that level sizes are non-increasing (equal-size levels
+    are allowed, e.g. as produced by projecting a multiscale image along
+    an axis where different levels aren't downsampled).
 
     Parameters
     ----------
@@ -40,7 +42,7 @@ def validate_multiscale_data(
     ValueError
         If the items in `data` do not all have the same `ndim`.
     ValueError
-        If the `size` of the items in `data` is not strictly decreasing.
+        If the `size` of the items in `data` is not non-increasing.
     """
     data = list(data)
     if not data:
@@ -58,10 +60,10 @@ def validate_multiscale_data(
             f'the same number of dimensions. Got ndims: {ndims}'
         )
 
-    decreasing = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
-    if not decreasing:
+    non_increasing = all(s1 >= s2 for s1, s2 in itertools.pairwise(sizes))
+    if not non_increasing:
         raise ValueError(
-            f'Input data should be a sequence of array-like objects of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
+            f'Input data should be a sequence of array-like objects of non-increasing size. Got arrays in incorrect order, sizes: {sizes}'
         )
     return data
 

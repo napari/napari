@@ -502,11 +502,22 @@ def test_validate_multiscale_data_object_array_decreasing():
     validate_multiscale_data(data)
 
 
-def test_validate_multiscale_data_non_decreasing():
-    """A sequence with non-decreasing size should raise ValueError."""
+def test_validate_multiscale_data_increasing():
+    """A sequence with an increasing size should raise ValueError."""
     data = [np.zeros((5, 5)), np.zeros((10, 10)), np.zeros((2, 2))]
-    with pytest.raises(ValueError, match='decreasing size'):
+    with pytest.raises(ValueError, match='non-increasing size'):
         validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_equal_sizes():
+    """A sequence with equal (non-increasing) sizes should validate.
+
+    Equal-size levels can arise e.g. when projecting a multiscale image
+    along an axis where different levels aren't downsampled (see
+    napari.layers._layer_actions._project).
+    """
+    data = [np.zeros((10, 10)), np.zeros((10, 10))]
+    validate_multiscale_data(data)
 
 
 def test_validate_multiscale_data_different_ndim():
