@@ -343,7 +343,7 @@ def _ipython_has_eventloop() -> bool:
     if not ipy_module:
         return False
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return False
 
@@ -368,7 +368,7 @@ def _try_enable_ipython_gui(gui='qt'):
     if not ipy_module:
         return
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return
     if shell.active_eventloop != gui:

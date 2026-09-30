@@ -137,8 +137,8 @@ class QtLayerControls(QFrame):
         """
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     def changeProjectionMode(self, text):
         with self.layer.events.blocker(self._on_projection_mode_change):
@@ -292,13 +292,13 @@ class QtLayerControls(QFrame):
                 return True
         return super().eventFilter(qobject, event)
 
-    def deleteLater(self):
+    def deleteLater(self) -> None:
         disconnect_events(self.layer.events, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
-    def close(self):
+    def close(self) -> bool:
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
         for child in self.children():
