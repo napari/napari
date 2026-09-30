@@ -85,7 +85,8 @@ class Canvas(EventedModel):
                 'current_slice': CurrentSliceOverlay(),
                 'axes': CanvasAxesOverlay(),
             }
-        )
+        ),
+        frozen=True,
     )
     overlay_tiling: OverlayTiling = Field(
         default_factory=OverlayTiling, frozen=True
