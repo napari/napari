@@ -836,7 +836,7 @@ class WarningEmitter(EventEmitter):
     ) -> None:
         super().__init__(*args, **kwargs)
         self._message = message
-        self._warned = category is None
+        self._should_warn = category is not None
         self._category = category
         self._stacklevel = stacklevel
 
@@ -853,7 +853,7 @@ class WarningEmitter(EventEmitter):
         return EventEmitter._invoke_callback(self, cb, event)
 
     def _warn(self, cb):
-        if self._warned:
+        if not self._should_warn:
             return
 
         # don't warn about unimplemented connections
@@ -865,7 +865,7 @@ class WarningEmitter(EventEmitter):
         warnings.warn(
             self._message, category=self._category, stacklevel=self._stacklevel
         )
-        self._warned = True
+        self._should_warn = False
 
 
 class ChildrenEmitterMixin:
