@@ -9,6 +9,7 @@ from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.layers import Image, Points, Surface
 from napari.utils.colormaps import Colormap
+from napari.utils.colormaps.colormap_utils import _representative_color
 
 pytestmark = pytest.mark.usefixtures('qapp')
 
@@ -27,10 +28,12 @@ def _make_overlay(layer, background='black'):
 def test_name_overlay_uses_colormap_color():
     layer = Image(np.zeros((2, 2)), colormap='green')
     vispy_overlay = _make_overlay(layer)
-    np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], [0, 1, 0, 1])
+    expected = _representative_color(layer.colormap)
+    np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], expected)
 
-    layer.colormap = 'magenta'
-    np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], [1, 0, 1, 1])
+    layer.colormap = 'cyan'
+    expected = _representative_color(layer.colormap)
+    np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], expected)
 
 
 def test_name_overlay_explicit_color_wins():
@@ -82,9 +85,8 @@ def test_name_overlay_surface_and_transparent_colormap():
     surface = Surface(
         (np.eye(3), np.array([[0, 1, 2]]), np.ones(3)), colormap='red'
     )
-    np.testing.assert_allclose(
-        _make_overlay(surface).node.color.rgba[0], [1, 0, 0, 1]
-    )
+    color = _make_overlay(surface).node.color.rgba[0]
+    assert color[0] == color[:3].max()
 
     fading = Colormap([[0, 0, 0, 0], [1, 0, 0, 0]])
     image = Image(np.zeros((2, 2)), colormap=fading)

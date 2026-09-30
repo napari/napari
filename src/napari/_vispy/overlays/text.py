@@ -12,6 +12,7 @@ from napari._vispy.overlays.base import (
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.utils.colormaps.colormap_utils import _representative_color
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
@@ -152,12 +153,12 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
             self.layer.events.colormap.connect(self._on_color_change)
 
     def _on_color_change(self):
-        # use the colormap's high end (e.g. green for a green channel),
-        # unless it is gray, where the contrasting color reads better
+        # use the colormap's color, as in the histogram (e.g. green for a
+        # green channel), unless it is gray: the contrasting color reads better
         if self.overlay.color is None and isinstance(
             self.layer, IntensityVisualizationMixin
         ):
-            color = self.layer.colormap.map([1.0])[0]
+            color = _representative_color(self.layer.colormap)
             if np.ptp(color[:3]) > 0.01:
                 self.node.color = self._readable(color)
                 return
