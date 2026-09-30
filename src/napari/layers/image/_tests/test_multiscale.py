@@ -7,7 +7,7 @@ from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
-from napari.layers.multiscale_data import (
+from napari.layers._multiscale_data import (
     MultiScaleData,
     validate_multiscale_data,
 )

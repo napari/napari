@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
-from napari.layers.multiscale_data import MultiScaleData
+from napari.layers._multiscale_data import MultiScaleData
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

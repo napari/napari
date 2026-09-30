@@ -100,7 +100,7 @@ def test_thumbnail_level_data_refreshed_on_data_replacement():
 def test_thumbnail_level_data_uses_new_data_ndim_2d_to_3d():
     """Replacing 2D data with 3D should set materializer to None — 3D volumes
     are left as lazy data-array references."""
-    from napari.layers.multiscale_data import MultiScaleData
+    from napari.layers._multiscale_data import MultiScaleData
 
     data2d = [np.zeros((64, 64)), np.zeros((32, 32))]
     data3d = [np.ones((16, 64, 64)), np.ones((8, 32, 32))]
@@ -117,7 +117,7 @@ def test_thumbnail_level_data_uses_new_data_ndim_2d_to_3d():
 def test_thumbnail_level_data_uses_new_data_ndim_3d_to_2d():
     """Replacing 3D data with 2D should produce a fresh materializer for
     the new 2D data."""
-    from napari.layers.multiscale_data import MultiScaleData
+    from napari.layers._multiscale_data import MultiScaleData
 
     data3d = [np.zeros((16, 64, 64)), np.zeros((8, 32, 32))]
     data2d = [np.ones((64, 64)), np.ones((32, 32))]
