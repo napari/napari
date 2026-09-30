@@ -11,7 +11,7 @@ from napari.utils.events import (
     RenamedWarningEmitter,
     WarningEmitter,
 )
-from napari.utils.events.event import DependentEmitter
+from napari.utils.events.event import DependentWarningEmitter
 
 
 def test_event_blocker_count_none():
@@ -384,7 +384,7 @@ def test_renamed_emitter_simple():
             self.new_event = EventEmitter(type_name='new_event')
             self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                source_path='new_event',
+                new_path='new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -423,7 +423,7 @@ def test_renamed_emitter_composite():
         def __init__(self, parent):
             self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                source_path='composite.new_event',
+                new_path='composite.new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -500,7 +500,7 @@ def test_renamed_emitter_reconnects_nested_objects():
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='branch.leaf.value',
+        new_path='branch.leaf.value',
         message='renamed',
     )
     callback = Mock()
@@ -570,7 +570,7 @@ def test_renamed_emitter_missing_replacement_event(writable):
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='child.value',
+        new_path='child.value',
         message='renamed',
     )
     callback = Mock()
@@ -614,7 +614,7 @@ def test_renamed_emitter_reconnects_property():
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='child.value',
+        new_path='child.value',
         message='renamed',
     )
     callback = Mock()
@@ -676,7 +676,7 @@ def test_renamed_emitter_reconnects_across_event_interfaces(
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='branch.leaf.value',
+        new_path='branch.leaf.value',
         message='renamed',
     )
     callback = Mock()
@@ -727,7 +727,7 @@ def test_dependant_emitter():
                 source=self,
                 a=None,
                 b=None,
-                aa=DependentEmitter(
+                aa=DependentWarningEmitter(
                     sources_list=['a.a', 'b.a'],
                     property_name='aa',
                     type_name='aa',

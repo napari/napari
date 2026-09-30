@@ -883,12 +883,14 @@ class ChildrenEmitterMixin:
     def __init__(
         self,
         *args,
-        source_path: str,
-        current_name: str | None = None,
+        new_path: str,
+        old_name: str | None = None,
         **kwargs,
     ) -> None:
+        if 'type_name' not in kwargs:
+            kwargs['type_name'] = old_name
         super().__init__(*args, **kwargs)
-        *self._source_path, self._source_attr = source_path.split('.')
+        *self._source_path, self._source_attr = new_path.split('.')
         self._target_emitter: Callable[[], EventEmitter | None] | None = None
         # Entries correspond to path components; None means no replacement event.
         self._replacement_emitters: list[
@@ -1029,7 +1031,7 @@ class SubDependentEmitter(ChildrenEmitterMixin, EventEmitter):
     pass
 
 
-class DependentEmitter(WarningEmitter):
+class DependentEmitterMixin:
     """Event emitter to be used if a property depends on more than one attribute of the source object,
     when at least one of the attributes is in a child object.
 
@@ -1037,6 +1039,8 @@ class DependentEmitter(WarningEmitter):
     event and emits a new event when any of the attributes change.
     The connection is created only if there is a callback connected to the DependentEmitter.
     """
+
+    source: Any
 
     def __init__(
         self,
@@ -1052,7 +1056,7 @@ class DependentEmitter(WarningEmitter):
         self._sub_emitters = [
             SubDependentEmitter(
                 source=self.source,
-                source_path=source_path,
+                new_path=source_path,
                 type_name=source_path,
             )
             for source_path in sources_list
@@ -1086,6 +1090,20 @@ class DependentEmitter(WarningEmitter):
             for sub_emitter in self._sub_emitters:
                 sub_emitter._disconnect_from(0)
             self._connected = False
+
+
+class DependentEmitter(DependentEmitterMixin, EventEmitter):
+    pass
+
+
+class DependentWarningEmitter(DependentEmitterMixin, WarningEmitter):
+    """Event emitter to be used if a property depends on more than one attribute of the source object,
+    when at least one of the attributes is in a child object.
+
+    For an attribute of a child object it connects to the child object's
+    event and emits a new event when any of the attributes change.
+    The connection is created only if there is a callback connected to the DependentEmitter.
+    """
 
 
 class EmitterGroup(EventEmitter):
