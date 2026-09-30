@@ -56,6 +56,7 @@ import weakref
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -879,6 +880,10 @@ class ChildrenEmitterMixin:
     """
 
     source: object
+
+    if TYPE_CHECKING:
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Event: ...
 
     def __init__(
         self,
