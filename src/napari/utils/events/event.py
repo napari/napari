@@ -939,7 +939,8 @@ class ChildrenEmitterMixin:
         for index, (attr, emitter_reference) in enumerate(
             zip(self._source_path, self._replacement_emitters, strict=False)
         ):
-            # check if any object on path has been replaced or removed, and disconnect the suffix if so.
+            # Bases od checking identity of the event emitters
+            # discover from which place the path has changed, and disconnect the suffix from that point.
             emitter: EventEmitter | None = getattr(
                 getattr(target, 'events', None), attr, None
             )
@@ -959,14 +960,24 @@ class ChildrenEmitterMixin:
         index = len(self._replacement_emitters)
 
         for attr in self._source_path[index:]:
-            # Try to rebuild the path to the renamed event, connecting to any replacement events along the way.
+            # Follow the path and connect to event emitters on the path if they exist.
             emitter = getattr(getattr(target, 'events', None), attr, None)
-            if emitter is None:
+            if emitter is not None:
+                emitter.connect(self._on_parent_replaced)
+                self._replacement_emitters.append(weakref.ref(emitter))
+            else:
+                # it might happen that some attribute/property on path is forzen/non-settable
+                # then it will not have adjacent event, but also, as cannot be changed
+                # this is not a problem.
+                # but if there is no event emitter but the attribute is settable,
+                # then we should warn the user that the event emitter is not available.
                 descriptor = inspect.getattr_static(type(target), attr, None)
                 if not (
                     isinstance(descriptor, property)
                     and descriptor.fset is None
                 ):
+                    # this is when we found a settable attribute but no event emitter,
+                    # the if might not catch all cases.
                     warnings.warn(
                         f'Cannot automatically reconnect renamed emitter '
                         f'{self._source_attr}: {type(target).__name__}.{attr} '
@@ -975,11 +986,8 @@ class ChildrenEmitterMixin:
                         UserWarning,
                         stacklevel=3,
                     )
-            if emitter is not None:
-                emitter.connect(self._on_parent_replaced)
-                self._replacement_emitters.append(weakref.ref(emitter))
-            else:
                 self._replacement_emitters.append(None)
+
             target = getattr(target, attr)
 
         new_emitter: EventEmitter | None = getattr(
@@ -1005,7 +1013,7 @@ class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
     It will connect to the new event once the callback is connected to the old one.
     It will also warn the user that the attribute was renamed.
 
-    Intermediate attributes in the target path may be replaced, but must
+    Intermediate attributes in the target path may be replaced but must
     always resolve to objects while listeners are connected. Assigning None
     to an intermediate attribute is not supported.
     """
@@ -1021,6 +1029,7 @@ class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
 
     def connect(self, cb, *args, **kwargs) -> None:
         if self._target_emitter is None:
+            # self._target_emitter is None means that callbacks are empty, so we need to reconnect to the new event.
             self._reconnect_emitter()
         super().connect(cb, *args, **kwargs)
 
@@ -1033,30 +1042,46 @@ class RenamedWarningEmitter(ChildrenEmitterMixin, WarningEmitter):
 
 
 class SubDependentEmitter(ChildrenEmitterMixin, EventEmitter):
-    pass
+    """USed by DependentEmitterMixin to connect to the child objects"""
 
 
 class DependentEmitterMixin:
-    """Event emitter to be used if a property depends on more than one attribute of the source object,
-    when at least one of the attributes is in a child object.
+    """Mixin implement a logic for event emitter that might
+    depend on multiple external attributes.
 
-    For an attribute of a child object it connects to the child object's
-    event and emits a new event when any of the attributes change.
-    The connection is created only if there is a callback connected to the DependentEmitter.
+    The attributes need to be accessible from the source object.
+
+    By default, thee emitted evnt will have value get from `property_name` attribute of the source object.
+
+    Parameters
+    ----------
+    sources_list : list[str]
+        List of attributes of the source object that the property depends on.
+    property_name : str
+        Name of the property of the source object that will be emitted when any of the attributes in sources_list change.
+    category : type[Warning] | None
+        The type of warning to emit.
+    message : str
+        The message to display in the warning.
+
+
+
     """
 
     source: Any
+
+    if TYPE_CHECKING:
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Event: ...
 
     def __init__(
         self,
         *args,
         sources_list: list[str],
         property_name: str,
-        category: type[Warning] | None = None,
-        message: str = '',
         **kwargs,
     ):
-        super().__init__(*args, message=message, category=category, **kwargs)
+        super().__init__(*args, **kwargs)
         self._property_name = property_name
         self._sub_emitters = [
             SubDependentEmitter(
@@ -1098,16 +1123,25 @@ class DependentEmitterMixin:
 
 
 class DependentEmitter(DependentEmitterMixin, EventEmitter):
-    pass
+    """Event emitter that is able to connect to other event emitters and
+    emit a new event when any of the connected event emitters emit an event.
+
+    It is designed for a property that depends on one or more attributes of
+    the child object of the source object.
+
+    It connects to emitters of all attributes defined in `sources_list` and emits
+    a new event when any of the attributes change.
+    For each event emission the property is accessed for a new value and emitted in the new event.
+
+    There is no mechanism to deduplicate events, so if multiple attributes change at the same time.
+    """
 
 
 class DependentWarningEmitter(DependentEmitterMixin, WarningEmitter):
-    """Event emitter to be used if a property depends on more than one attribute of the source object,
-    when at least one of the attributes is in a child object.
+    """Same as DependentEmitter, but similarly to `WarningEmitter`,
+    it emits a warning on the first connection of a callback.
 
-    For an attribute of a child object it connects to the child object's
-    event and emits a new event when any of the attributes change.
-    The connection is created only if there is a callback connected to the DependentEmitter.
+    Designed to be used with deprecated properties.
     """
 
 

@@ -11,7 +11,7 @@ from napari.utils.events import (
     RenamedWarningEmitter,
     WarningEmitter,
 )
-from napari.utils.events.event import DependentWarningEmitter
+from napari.utils.events.event import DependentEmitter, DependentWarningEmitter
 
 
 def test_event_blocker_count_none():
@@ -727,7 +727,7 @@ def test_dependant_emitter():
                 source=self,
                 a=None,
                 b=None,
-                aa=DependentWarningEmitter(
+                aa=DependentEmitter(
                     sources_list=['a.a', 'b.a'],
                     property_name='aa',
                     type_name='aa',
@@ -793,3 +793,86 @@ def test_dependant_emitter():
         mock.call_count == 6
     )  # double emission because of two events being set
     assert mock.call_args.args[0].value == 10
+
+
+def test_dependent_warning_emitter():
+    class A:
+        def __init__(self):
+            self.events = EmitterGroup(source=self, a=None)
+            self._a = 1
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+    class B:
+        def __init__(self):
+            self.events = EmitterGroup(
+                source=self,
+                a=None,
+                b=None,
+                aa=DependentWarningEmitter(
+                    sources_list=['a.a', 'b.a'],
+                    property_name='aa',
+                    type_name='aa',
+                    message='aa is deprecated',
+                    category=FutureWarning,
+                ),
+            )
+            self._a = A()
+            self._b = A()
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+        @property
+        def b(self):
+            return self._b
+
+        @b.setter
+        def b(self, value):  # pragma: no cover
+            self._b = value
+            self.events.b(value=value)
+
+        @property
+        def aa(self):
+            return self.a.a + self.b.a
+
+        @aa.setter
+        def aa(self, value):
+            self.a.a = value / 2
+            self.b.a = value / 2
+
+    b = B()
+
+    assert b.aa == 2
+    b.a.a = 2
+    assert b.aa == 3
+
+    mock = Mock()
+    with pytest.warns(FutureWarning, match='aa is deprecated'):
+        b.events.aa.connect(mock)
+    b.a.a = 3
+    assert mock.call_args.args[0].value == 4
+    mock.assert_called_once()
+    b.b.a = 2
+    assert mock.call_count == 2
+    assert mock.call_args.args[0].value == 5
+
+    b.a = A()
+    assert mock.call_count == 3
+    assert mock.call_args.args[0].value == 3
+
+    b.a.a = 3
+    assert mock.call_count == 4
