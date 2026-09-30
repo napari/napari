@@ -431,7 +431,9 @@ class KeymapHandler:
         self.keymap_providers: list[KeymapProvider] = []
 
     @property
-    def keymap_chain(self) -> ChainMap[KeyBinding | EllipsisType, Any]:
+    def keymap_chain(
+        self,
+    ) -> ChainMap[KeyBinding | EllipsisType, KeymapFunction | EllipsisType]:
         """collections.ChainMap: Chain of keymaps from keymap providers."""
         maps = [_get_user_keymap()]
 
