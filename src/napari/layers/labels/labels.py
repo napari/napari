@@ -164,6 +164,11 @@ class Labels(ScalarFieldBase):
         'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
         isotropic Sobel gradient, which is smoother but more computationally expensive.
         The default value is 'fast'.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -342,7 +347,9 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # pyrefly: ignore [bad-override]
+    _cursor_modes: ClassVar[
+        dict[Mode, str]
+    ] = {  # pyrefly: ignore [bad-override]
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
         Mode.PICK: 'cross',
@@ -367,6 +374,7 @@ class Labels(ScalarFieldBase):
         experimental_clipping_planes=None,
         features=None,
         iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
+        locked_data_level: int | None = None,
         metadata=None,
         multiscale=None,
         name=None,
@@ -484,6 +492,9 @@ class Labels(ScalarFieldBase):
         self._redo_history: deque[list[HistoryAtom]]
         self._staged_history: list[HistoryAtom]
         self._block_history: bool
+
+        if locked_data_level is not None:
+            self.locked_data_level = locked_data_level
 
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
@@ -651,7 +662,9 @@ class Labels(ScalarFieldBase):
 
     @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        data = self._ensure_int_labels(data)  # pyrefly: ignore [bad-assignment]
+        data = self._ensure_int_labels(
+            data
+        )  # pyrefly: ignore [bad-assignment]
         ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         self.events.features()
 
@@ -734,12 +747,16 @@ class Labels(ScalarFieldBase):
         for data_level in data:
             # normalize_dtype turns e.g. tensorstore or torch dtypes into
             # numpy dtypes
-            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):  # pyrefly: ignore [missing-attribute]
+            if np.issubdtype(
+                normalize_dtype(data_level.dtype), np.floating
+            ):  # pyrefly: ignore [missing-attribute]
                 raise TypeError(
                     f'Only integer types are supported for Labels layers, but data contains {data_level.dtype}.'  # pyrefly: ignore [missing-attribute]
                 )
             if data_level.dtype == bool:  # pyrefly: ignore [missing-attribute]
-                int_data.append(data_level.view(np.uint8))  # pyrefly: ignore [missing-attribute]
+                int_data.append(
+                    data_level.view(np.uint8)
+                )  # pyrefly: ignore [missing-attribute]
             else:
                 int_data.append(data_level)
         data = int_data
@@ -759,6 +776,7 @@ class Labels(ScalarFieldBase):
         state.update(
             {
                 'multiscale': self.multiscale,
+                'locked_data_level': self.locked_data_level,
                 'properties': self.properties,
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,
@@ -881,7 +899,9 @@ class Labels(ScalarFieldBase):
         # See https://github.com/python/mypy/issues/16426 for type ignore reason
         Layer.mode.fset(self, mode)  # pyrefly: ignore [not-callable]
 
-    def _mode_setter_helper(self, mode):  # pyrefly: ignore [bad-override-param-name]
+    def _mode_setter_helper(
+        self, mode
+    ):  # pyrefly: ignore [bad-override-param-name]
         mode = super()._mode_setter_helper(mode)
         if mode == self._mode:
             return mode
@@ -1134,7 +1154,9 @@ class Labels(ScalarFieldBase):
                 self._replay_masked_atom(atom, undoing=True)
                 continue
             indices, prev_values, _ = atom
-            self.data[indices] = prev_values  # pyrefly: ignore [unsupported-operation]
+            self.data[indices] = (
+                prev_values  # pyrefly: ignore [unsupported-operation]
+            )
         self._staged_history = []
         self._block_history = False
         self.refresh()
@@ -1208,7 +1230,9 @@ class Labels(ScalarFieldBase):
                 self._replay_masked_atom(atom, undoing)
                 continue
             prev_indices, prev_values, next_values = atom
-            self.data[prev_indices] = prev_values if undoing else next_values  # pyrefly: ignore [unsupported-operation]
+            self.data[prev_indices] = (
+                prev_values if undoing else next_values
+            )  # pyrefly: ignore [unsupported-operation]
 
         self.refresh()
 
@@ -1224,11 +1248,15 @@ class Labels(ScalarFieldBase):
         values = atom.old_values if undoing else atom.new_value
         if atom.mask is None:
             # The whole bounding box changed: assign directly.
-            self.data[atom.slice_key] = values  # pyrefly: ignore [unsupported-operation]
+            self.data[atom.slice_key] = (
+                values  # pyrefly: ignore [unsupported-operation]
+            )
             return
         region = np.asarray(self.data[atom.slice_key])
         region[atom.mask] = values
-        self.data[atom.slice_key] = region  # pyrefly: ignore [unsupported-operation]
+        self.data[atom.slice_key] = (
+            region  # pyrefly: ignore [unsupported-operation]
+        )
 
     def undo(self) -> None:
         self._load_history(
@@ -1867,7 +1895,9 @@ class Labels(ScalarFieldBase):
         # _apply_mask_to_data already wrote through and this assignment is a
         # no-op; for copy-returning backends (zarr, tensorstore, dask, ...)
         # this is the actual write-back.
-        self.data[slice_key] = region_data  # pyrefly: ignore [unsupported-operation]
+        self.data[slice_key] = (
+            region_data  # pyrefly: ignore [unsupported-operation]
+        )
 
         # Update caches (raw and view) for non-shared memory backends
         # This handles mapping the N-D painted region to the currently displayed slice
