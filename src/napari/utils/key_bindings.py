@@ -42,6 +42,7 @@ from types import EllipsisType, MethodType
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, overload
 
 from app_model.types import KeyBinding, KeyCode, KeyMod
+from typing_extensions import Sentinel
 from vispy.util import keys
 
 if TYPE_CHECKING:
@@ -68,14 +69,7 @@ KEY_SUBS: dict[str, str] = {
 }
 
 
-# this class is meant as an equivalent for the Sentinel class type,
-# which is introduced via PEP 661; mypy has yet to support it,
-# so for now we use this workaround
-class _Undefined:
-    """Sentinel for undefined values."""
-
-
-_UNDEFINED = _Undefined()
+UNDEFINED = Sentinel('UNDEFINED')
 
 _VISPY_SPECIAL_KEYS: list[keys.Key] = [
     keys.SHIFT,
@@ -154,7 +148,7 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: _Undefined = ...,
+    func: UNDEFINED = ...,
     *,
     overwrite: bool = ...,
 ) -> Callable[[_F], _F]: ...
@@ -173,7 +167,7 @@ def bind_key(
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: Callable | EllipsisType | _Undefined | None = _UNDEFINED,
+    func: Callable | EllipsisType | UNDEFINED | None = UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
@@ -236,7 +230,7 @@ def bind_key(
 
     To create a keymap that will block others, ``bind_key(..., ...)```.
     """
-    if func is _UNDEFINED:
+    if func is UNDEFINED:
 
         def inner(func: _F) -> _F:
             bind_key(keymap, key_bind, func, overwrite=overwrite)
@@ -279,7 +273,7 @@ def _get_user_keymap() -> Keymap:
 @overload
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: _Undefined = ...,
+    func: UNDEFINED = ...,
     *,
     overwrite: bool = ...,
 ) -> Callable[[_F], _F]: ...
@@ -296,7 +290,7 @@ def _bind_user_key(
 
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: KeymapFunction | EllipsisType | _Undefined | None = _UNDEFINED,
+    func: KeymapFunction | EllipsisType | UNDEFINED | None = UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
@@ -304,7 +298,7 @@ def _bind_user_key(
 
     See ``bind_key`` docs for details.
     """
-    if func is _UNDEFINED:
+    if func is UNDEFINED:
         return bind_key(_get_user_keymap(), key_bind, overwrite=overwrite)
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
