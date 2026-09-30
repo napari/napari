@@ -202,6 +202,9 @@ class QtViewer(QSplitter):
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
             autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            config={
+                'samples': 4 if get_settings().advanced.multisampling else 0
+            },
         )
 
         self._welcome_widget = QtWelcomeWidget(
@@ -217,7 +220,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # type: ignore[arg-type]
+        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # pyrefly: ignore [bad-argument-type]
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -259,11 +262,11 @@ class QtViewer(QSplitter):
         # set up welcome screen
         self._set_welcome_visible(False)
 
-    def showEvent(self, event: QShowEvent | None) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self._update_welcome_screen()
 
-    def hideEvent(self, event: QHideEvent | None) -> None:
+    def hideEvent(self, event: QHideEvent) -> None:
         super().hideEvent(event)
 
     @property
@@ -597,7 +600,7 @@ class QtViewer(QSplitter):
     def console(self, console: QtConsole | None) -> None:
         self._console = console
         if console is not None:
-            self.dockConsole.setWidget(console)  # type: ignore[no-untyped-call]
+            self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
     @ensure_main_thread
@@ -615,7 +618,7 @@ class QtViewer(QSplitter):
             if layer := weak_layer():
                 # Update the layer slice state to temporarily support behavior
                 # that depends on it.
-                layer._slicing_state._update_slice_response(response)  # type: ignore[attr-defined]
+                layer._slicing_state._update_slice_response(response)  # pyrefly: ignore [missing-attribute]
                 # Update the layer's loaded state before everything else,
                 # because they may rely on its updated value.
                 layer._slicing_state._update_loaded_slice_id(
@@ -821,7 +824,7 @@ class QtViewer(QSplitter):
             str(
                 Path(hist[0]) / selected_layer_name
             ),  # directory in PyQt, dir in PySide
-            filter=ext_str,
+            filter=ext_str or '',
             options=(
                 QFileDialog.Option.DontUseNativeDialog
                 if in_ipython()
@@ -1356,7 +1359,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()
+        self.dims.stop()  # pyrefly: ignore [missing-argument]
         self.canvas.delete()
         if self._console is not None:
             self._console.close()
