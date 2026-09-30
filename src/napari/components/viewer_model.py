@@ -170,8 +170,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
-    mouse_over_canvas: bool
-        Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
 
@@ -202,9 +200,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # To check if mouse is over canvas to avoid race conditions between
-    # different events systems
-    mouse_over_canvas: bool = False
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -893,7 +888,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
-        if not self.mouse_over_canvas:
+        if self.cursor.canvas_position is None:
             return None
         coord2val: dict[str, list[str]] = {}
         coord_str = ''
