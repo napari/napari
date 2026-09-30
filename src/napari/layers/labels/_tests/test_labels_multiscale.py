@@ -1,6 +1,4 @@
-from operator import mul
 import numpy as np
-from scipy.ndimage import label
 
 from napari.components.dims import Dims
 from napari.layers import Labels
