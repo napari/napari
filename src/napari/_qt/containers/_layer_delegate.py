@@ -108,11 +108,7 @@ class LayerDelegate(QStyledItemDelegate):
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
         # paint loading indicator if needed
-        self._paint_loading(painter, option, index)
-        # paint errored indicator
-        self._paint_errored(painter, option, index)
-        # paint the thumbnail
-        self._paint_thumbnail(painter, option, index)
+        self._paint_thumbnail_area(painter, option, index)
         # paint the lock icon
         self._paint_lock_icon(painter, option, index)
 
@@ -153,48 +149,38 @@ class LayerDelegate(QStyledItemDelegate):
             theme='dark' if red_color_component < 128 else 'light'
         )
 
-    def _paint_loading(
+    def _paint_on_thumbnail_area(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
+        pixmap: QPixmap,
+        margin: int = 0,
     ):
-        """Paint loading layer indicator."""
-        loaded = index.data(LoadedRole)
-        if not loaded:
-            self._load_movie.start()
-            load_rect = option.rect.translated(4, 8)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-            load_rect.setWidth(h)
-            load_rect.setHeight(h)
-            painter.drawPixmap(load_rect, self._load_movie.currentPixmap())
+        """Paint on the thumbnail area."""
+        rect = option.rect.translated(-2 + margin, 2 + margin)
+        h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4 - margin * 2
+        rect.setWidth(h)
+        rect.setHeight(h)
+        painter.drawPixmap(rect, pixmap)
 
-    def _paint_errored(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        index: QtCore.QModelIndex,
-    ):
-        """Paint the layer error indicator."""
-        errored = index.data(ErroredRole)
-        loaded = index.data(LoadedRole)
-        if errored and loaded:
-            error_rect = option.rect.translated(4, 8)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
-            error_rect.setWidth(h)
-            error_rect.setHeight(h)
-            icon = self._get_icon('warning', option.palette)
-            if icon:
-                painter.drawPixmap(error_rect, icon.pixmap(QSize(18, 18)))
-
-    def _paint_thumbnail(self, painter, option, index):
+    def _paint_thumbnail_area(self, painter, option, index):
         """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
         errored = index.data(ErroredRole)
         loaded = index.data(LoadedRole)
-        if loaded:
+        if not loaded:
+            self._load_movie.start()
+            self._paint_on_thumbnail_area(
+                painter,
+                option,
+                index,
+                self._load_movie.currentPixmap(),
+                margin=6,
+            )
+        else:
             # only pause the loading movie if all the layers are loaded. The
             # last layer that enters the loaded state will pause the load
             # movie. This is needed since there is only one instance of the
@@ -203,13 +189,22 @@ class LayerDelegate(QStyledItemDelegate):
             all_loaded = index.model().sourceModel().all_loaded()
             if all_loaded:
                 self._load_movie.setPaused(True)
-        if not errored and loaded:
-            thumb_rect = option.rect.translated(-2, 2)
-            h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
-            thumb_rect.setWidth(h)
-            thumb_rect.setHeight(h)
-            image = index.data(ThumbnailRole)
-            painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
+
+            if errored:
+                icon = self._get_icon('warning', option.palette)
+                if icon:
+                    self._paint_on_thumbnail_area(
+                        painter,
+                        option,
+                        index,
+                        icon.pixmap(QSize(32, 32)),
+                        margin=6,
+                    )
+            else:
+                image = index.data(ThumbnailRole)
+                self._paint_on_thumbnail_area(
+                    painter, option, index, QPixmap.fromImage(image)
+                )
 
     def _paint_lock_icon(self, painter, option, index):
         """Paint a lock icon when the layer is locked. No icon when unlocked."""
