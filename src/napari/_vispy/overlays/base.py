@@ -144,12 +144,13 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_fgcolor(self) -> ColorValue:
+    def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.viewer.canvas.background_color
-        else:
-            bgcolor = self.overlay.box_color
-        return self._contrasting_color(bgcolor)
+            return self.viewer.canvas.background_color
+        return self.overlay.box_color
+
+    def _get_fgcolor(self) -> ColorValue:
+        return self._contrasting_color(self._get_bgcolor())
 
     def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
         opposite = 1 - bgcolor
