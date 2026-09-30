@@ -12,10 +12,6 @@ certifi==2026.7.22
     # via requests
 charset-normalizer==3.5.1
     # via requests
-colorama==0.4.6
-    # via
-    #   build
-    #   typer
 docstring-parser==0.18.0
     # via magicgui
 idna==3.19
@@ -61,13 +57,9 @@ pygments==2.21.0
     #   superqt
 pyproject-hooks==1.2.0
     # via build
-pyqt6==6.11.0
-    # via -r resources/requirements_pyrefly.in
-pyqt6-qt6==6.11.2
-    # via pyqt6
-pyqt6-sip==13.12.0
-    # via pyqt6
 pyrefly==1.2.0
+    # via -r resources/requirements_pyrefly.in
+pyside6-essentials==6.11.2
     # via -r resources/requirements_pyrefly.in
 pyyaml==6.0.3
     # via npe2
@@ -84,6 +76,8 @@ rich==15.0.0
     #   typer
 shellingham==1.5.4
     # via typer
+shiboken6==6.11.2
+    # via pyside6-essentials
 superqt==0.8.2
     # via magicgui
 tomli-w==1.2.0
