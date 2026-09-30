@@ -66,7 +66,7 @@ class QtHistogramSettingsWidget(QWidget):
             'Use logarithmic scale for histogram counts'
         )
         connect_setattr(
-            self.log_scale_checkbox.toggled,  # pyrefly: ignore [bad-argument-type]
+            self.log_scale_checkbox.toggled,
             histogram_model,
             'log_scale',
         )
