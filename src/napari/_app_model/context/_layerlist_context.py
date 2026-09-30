@@ -45,6 +45,14 @@ def _all_linked(s: LayerSel) -> bool:
     return bool(s and all(layer_is_linked(x) for x in s))
 
 
+def _single_selected_data_level_locked_multiscale_layer(s: LayerSel) -> bool:
+    return bool(
+        len(s) == 1
+        and getattr(s.active, 'multiscale', False)
+        and getattr(s.active, 'locked_data_level', None) is not None
+    )
+
+
 def _n_unselected_links(s: LayerSel) -> int:
     from napari.layers.utils._link_layers import get_linked_layers
 
@@ -55,15 +63,11 @@ def _is_rgb(s: LayerSel) -> bool:
     return getattr(s.active, 'rgb', False)
 
 
-def _only_img(s: LayerSel) -> bool:
-    return bool(s and all(x._type_string == 'image' for x in s))
-
-
 def _n_selected_imgs(s: LayerSel) -> int:
     return sum(x._type_string == 'image' for x in s)
 
 
-def _only_image(s: LayerSel) -> bool:
+def _only_images(s: LayerSel) -> bool:
     return bool(s and all(x._type_string == 'image' for x in s))
 
 
@@ -93,10 +97,6 @@ def _only_surfaces(s: LayerSel) -> bool:
 
 def _n_selected_shapes(s: LayerSel) -> int:
     return sum(x._type_string == 'shapes' for x in s)
-
-
-def _only_surface(s: LayerSel) -> bool:
-    return bool(s and all(x._type_string == 'surface' for x in s))
 
 
 def _n_selected_surfaces(s: LayerSel) -> int:
@@ -259,7 +259,7 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'True when the active layer is RGB.',
         _is_rgb,
     )
-    active_layer_type = ContextKey['LayerSel', Optional[str]](
+    active_layer_type = ContextKey['LayerSel', Optional[str]](  # pyrefly: ignore [not-a-type]
         None,
         'Lowercase name of active layer type, or None of none active.',
         _active_type,
@@ -302,12 +302,12 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
         'Number of selected tracks layers.',
         _n_selected_tracks,
     )
-    active_layer_ndim = ContextKey['LayerSel', Optional[int]](
+    active_layer_ndim = ContextKey['LayerSel', Optional[int]](  # pyrefly: ignore [not-a-type]
         None,
         'Number of dimensions in the active layer, or `None` if nothing is active.',
         _active_ndim,
     )
-    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](
+    active_layer_shape = ContextKey['LayerSel', Optional[tuple[int, ...]]](  # pyrefly: ignore [not-a-type]
         (),
         'Shape of the active layer, or `None` if nothing is active.',
         _active_shape,
@@ -335,12 +335,17 @@ class LayerListSelectionContextKeys(ContextNamespace['LayerSel']):
     all_selected_layers_image = ContextKey(
         False,
         'True when all selected layers are images.',
-        _only_image,
+        _only_images,
     )
     all_selected_layers_labels = ContextKey(
         False,
         'True when all selected layers are labels.',
         _only_labels,
+    )
+    single_selected_multiscale_layer_locked_data_level = ContextKey(
+        False,
+        'True when a single multiscale layer is selected with a locked data level.',
+        _single_selected_data_level_locked_multiscale_layer,
     )
     all_selected_layers_shapes = ContextKey(
         False,

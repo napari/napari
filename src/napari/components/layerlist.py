@@ -186,6 +186,10 @@ class LayerList(SelectableEventedList[Layer]):
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
         item.events.locked.disconnect(self._refresh_selection_ctx_keys)
+        if hasattr(item.events, 'locked_data_level'):
+            item.events.locked_data_level.disconnect(
+                self._refresh_selection_ctx_keys
+            )
         self.unlink_layers([item])
         self._clean_cache()
 
@@ -269,6 +273,10 @@ class LayerList(SelectableEventedList[Layer]):
             self._trigger_check_ndim_and_maybe_clean_units
         )
         new_layer.events.locked.connect(self._refresh_selection_ctx_keys)
+        if hasattr(new_layer.events, 'locked_data_level'):
+            new_layer.events.locked_data_level.connect(
+                self._refresh_selection_ctx_keys
+            )
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
@@ -455,6 +463,15 @@ class LayerList(SelectableEventedList[Layer]):
             Converted scale.
         """
         clipped_target_units = to_units[-len(from_units) :]
+        try:
+            matching_units = from_units == clipped_target_units
+        except ValueError:
+            # Units from separate registries can still be converted.
+            matching_units = False
+        if matching_units:
+            # Copy, don't `return scale`: callers own the result, and `scale`
+            # may be a view of a layer's cached extent arrays.
+            return np.array(scale)
         return np.array(
             [
                 (s * u).to(cu).magnitude
@@ -682,7 +699,7 @@ class LayerList(SelectableEventedList[Layer]):
         from napari.layers.utils import _link_layers
 
         if layers is not None:
-            layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
+            layers = [self[x] if isinstance(x, str) else x for x in layers]
         else:
             layers = self
         getattr(_link_layers, method)(layers, attributes)
