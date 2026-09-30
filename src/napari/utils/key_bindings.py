@@ -192,8 +192,10 @@ def bind_key(
 
     Returns
     -------
-    Callable | None
-        Callable unbound by this operation, if any.
+    unbound : callable, None, or ...
+        If ``func`` is given, what was previously bound to ``key_bind``,
+        if anything. If ``func`` is omitted, a decorator that binds the
+        function it wraps and returns it.
 
     Notes
     -----
