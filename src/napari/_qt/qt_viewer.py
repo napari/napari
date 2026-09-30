@@ -210,8 +210,8 @@ class QtViewer(QSplitter):
         self._welcome_widget = QtWelcomeWidget(
             self.canvas.native, viewer=self.viewer, tips=tips
         )
-        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)  # pyrefly: ignore [missing-attribute]
-        self._welcome_widget.urls_dropped.connect(self.dropEvent)  # pyrefly: ignore [missing-attribute]
+        self._welcome_widget.urls_drag_entered.connect(self._set_drag_status)
+        self._welcome_widget.urls_dropped.connect(self.dropEvent)
 
         main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.addWidget(self.dims)

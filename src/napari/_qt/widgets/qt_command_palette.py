@@ -45,7 +45,7 @@ class QCommandPalette(QtW.QWidget):
 
         self._line.setPlaceholderText('Type to search commands...')
         self._line.textChanged.connect(self._on_text_changed)
-        self._list.commandClicked.connect(self._on_command_clicked)  # pyrefly: ignore [missing-attribute]
+        self._list.commandClicked.connect(self._on_command_clicked)
         self._line.editingFinished.connect(self.hide)
         self.hide()
 
@@ -140,7 +140,7 @@ class QCommandPalette(QtW.QWidget):
 
     def hide(self) -> None:
         """Hide this widget."""
-        self.hidden.emit()  # pyrefly: ignore [missing-attribute]
+        self.hidden.emit()
         return super().hide()
 
     def text(self) -> str:
@@ -301,7 +301,7 @@ class QCommandList(QtW.QListView):
 
     def _on_clicked(self, index: QtCore.QModelIndex) -> None:
         if index.isValid():
-            self.commandClicked.emit(index.row())  # pyrefly: ignore [missing-attribute]
+            self.commandClicked.emit(index.row())
             return
 
     def move_selection(self, dx: int) -> None:

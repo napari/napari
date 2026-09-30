@@ -129,7 +129,7 @@ class SVGBufferIconEngine(QIconEngine):
 
     def paint(
         self,
-        painter: QPainter | None,
+        painter: QPainter,
         rect: QRect,
         mode: QIcon.Mode,
         state: QIcon.State,

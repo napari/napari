@@ -57,7 +57,7 @@ class QtLayerList(QtListView[Layer]):
         viewport = self.viewport()
         assert viewport is not None
 
-        layer_delegate.loading_frame_changed.connect(viewport.update)  # pyrefly: ignore [missing-attribute]
+        layer_delegate.loading_frame_changed.connect(viewport.update)
 
         self.setToolTip('Layer list')
 
