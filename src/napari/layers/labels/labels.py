@@ -650,8 +650,11 @@ class Labels(ScalarFieldBase):
         self.refresh(extent=False)
 
     @ScalarFieldBase.data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
-        data = self._ensure_int_labels(data)  # pyrefly: ignore [bad-assignment]
+    def data(
+        self,
+        data: LayerDataProtocol | Sequence[LayerDataProtocol] | MultiScaleData,
+    ) -> None:
+        data = self._ensure_int_labels(data)
         ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         self.events.features()
 
@@ -725,13 +728,19 @@ class Labels(ScalarFieldBase):
             )
         )
 
-    def _ensure_int_labels(self, data):
+    def _ensure_int_labels(
+        self,
+        data: LayerDataProtocol | Sequence[LayerDataProtocol] | MultiScaleData,
+    ) -> LayerDataProtocol | MultiScaleData:
         """Ensure data is integer by converting from bool if required, raising an error otherwise."""
-        looks_multiscale, data = guess_multiscale(data)
-        if not looks_multiscale:
-            data = [data]
+        looks_multiscale, guessed_data = guess_multiscale(data)
+        levels = (
+            guessed_data.levels  # pyrefly: ignore [missing-attribute]
+            if looks_multiscale
+            else (guessed_data,)
+        )
         int_data = []
-        for data_level in data:
+        for data_level in levels:
             # normalize_dtype turns e.g. tensorstore or torch dtypes into
             # numpy dtypes
             if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
@@ -742,10 +751,9 @@ class Labels(ScalarFieldBase):
                 int_data.append(data_level.view(np.uint8))  # pyrefly: ignore [missing-attribute]
             else:
                 int_data.append(data_level)
-        data = int_data
-        if not looks_multiscale:
-            data = data[0]
-        return data
+        if looks_multiscale:
+            return MultiScaleData(int_data)
+        return int_data[0]
 
     def _get_state(self) -> dict[str, Any]:
         """Get dictionary of layer state.
