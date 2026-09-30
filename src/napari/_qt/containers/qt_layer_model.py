@@ -52,14 +52,8 @@ class QtLayerListModel(QtListModel[Layer]):
             if not layer_loaded:
                 layer_source_info = f'{layer_source_info} (loading)'
             elif layer.errored:
-                failure_message = 'Layer failed loading'
-                options_message = 'Try refreshing or reloading layer'
                 layer_source_info = (
-                    "<p style='white-space:pre; text-align: center;'>"
-                    f'<b>{failure_message}</b>'
-                    '<br>'
-                    f'{options_message}'
-                    '</p>'
+                    'Layer failed loading.\nTry refreshing or reloading layer.'
                 )
             return layer_source_info
         if (

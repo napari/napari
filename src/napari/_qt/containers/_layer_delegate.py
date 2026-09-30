@@ -135,7 +135,7 @@ class LayerDelegate(QStyledItemDelegate):
         )  # put icon on the right
         option.features |= option.ViewItemFeature.HasDecoration
 
-    def _get_icon(self, icon_name: str, palette: QPalette) -> QIcon:
+    def _get_icon(self, icon_name: str, palette: QPalette) -> QIcon | None:
         """
         Get icon colored following current selected theme.
         """
