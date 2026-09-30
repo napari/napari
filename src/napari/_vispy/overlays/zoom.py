@@ -32,9 +32,9 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node._highlight_width = (
             settings.appearance.highlight.highlight_thickness
         )
-        self.node._edge_color = tuple(
+        self.node._edge_color = tuple(  # pyrefly: ignore [bad-assignment]
             settings.appearance.highlight.highlight_color
-        )  # type: ignore[assignment]
+        )
 
         top_left, bot_right = self.overlay.position
         self.node.set_data(
