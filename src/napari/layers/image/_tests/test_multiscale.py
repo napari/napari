@@ -529,6 +529,15 @@ def test_validate_multiscale_data_different_ndim():
         validate_multiscale_data(data)
 
 
+def test_multiscale_data_with_multiscale_false_raises():
+    """Passing a MultiScaleData instance with multiscale=False should raise,
+    rather than silently misinterpreting the wrapper as single-scale data.
+    """
+    data = MultiScaleData([np.zeros((10, 10)), np.zeros((5, 5))])
+    with pytest.raises(ValueError, match='multiscale=False'):
+        Image(data, multiscale=False)
+
+
 @pytest.mark.parametrize(
     ('corner_pixels_world', 'exp_level', 'exp_corner_pixels_data'),
     [

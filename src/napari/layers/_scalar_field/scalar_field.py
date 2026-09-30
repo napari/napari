@@ -245,6 +245,10 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine if data is a multiscale
         self._data_raw = data
+        if multiscale is False and isinstance(data, MultiScaleData):
+            raise ValueError(
+                'Cannot pass multiscale=False with a MultiScaleData instance.'
+            )
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
