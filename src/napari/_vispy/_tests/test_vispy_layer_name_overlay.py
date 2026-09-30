@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
 
-from napari._vispy.overlays.text import (
-    VispyLayerNameOverlay,
-    _relative_luminance,
-)
+from napari._vispy.overlays.text import VispyLayerNameOverlay
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.layers import Image, Points, Surface
+from napari.utils.color import _contrast_ratio
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import _representative_color
 
@@ -28,11 +26,11 @@ def _make_overlay(layer, background='black'):
 def test_name_overlay_uses_colormap_color():
     layer = Image(np.zeros((2, 2)), colormap='green')
     vispy_overlay = _make_overlay(layer)
-    expected = _representative_color(layer.colormap)
+    expected = _representative_color(layer.colormap, 1.0)
     np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], expected)
 
     layer.colormap = 'cyan'
-    expected = _representative_color(layer.colormap)
+    expected = _representative_color(layer.colormap, 1.0)
     np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], expected)
 
 
@@ -59,13 +57,6 @@ def test_name_overlay_falls_back_to_contrasting_color(make_layer):
     )
 
 
-def _contrast(a, b):
-    lighter, darker = sorted(
-        (_relative_luminance(a[:3]), _relative_luminance(b[:3])), reverse=True
-    )
-    return (lighter + 0.05) / (darker + 0.05)
-
-
 @pytest.mark.parametrize(
     ('cmap', 'background', 'channel'),
     [('green', 'white', 1), ('magenta', 'white', 0), ('blue', 'black', 2)],
@@ -76,7 +67,7 @@ def test_name_overlay_keeps_hue_but_stays_readable(cmap, background, channel):
     )
     color = vispy_overlay.node.color.rgba[0]
     bg = vispy_overlay._get_bgcolor()
-    assert _contrast(color, bg) >= 4.5
+    assert _contrast_ratio(color, bg) >= 4.5
     assert color[channel] == color[:3].max()
     assert np.ptp(color[:3]) > 0.3
 

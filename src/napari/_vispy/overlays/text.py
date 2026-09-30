@@ -12,17 +12,12 @@ from napari._vispy.overlays.base import (
 from napari._vispy.visuals.text import Text
 from napari.components._viewer_constants import CanvasPosition
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.utils.color import _readable_color
 from napari.utils.colormaps.colormap_utils import _representative_color
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import TextOverlay
-
-
-def _relative_luminance(rgb) -> float:
-    rgb = np.asarray(rgb, dtype=float)
-    rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    return float(rgb @ [0.2126, 0.7152, 0.0722])
 
 
 class _VispyBaseTextOverlay(VispyCanvasOverlay):
@@ -153,31 +148,16 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
             self.layer.events.colormap.connect(self._on_color_change)
 
     def _on_color_change(self):
-        # use the colormap's color, as in the histogram (e.g. green for a
-        # green channel), unless it is gray: the contrasting color reads better
+        # use the colormap's brightest color (e.g. green for a green channel),
+        # unless it is gray: the contrasting color reads better
         if self.overlay.color is None and isinstance(
             self.layer, IntensityVisualizationMixin
         ):
-            color = _representative_color(self.layer.colormap)
+            color = _representative_color(self.layer.colormap, 1.0)
             if np.ptp(color[:3]) > 0.01:
-                self.node.color = self._readable(color)
+                self.node.color = _readable_color(color, self._get_bgcolor())
                 return
         super()._on_color_change()
-
-    def _readable(self, color):
-        # keep the hue, but blend toward the contrasting color until the
-        # text reaches a 4.5:1 contrast ratio (WCAG AA for normal text)
-        color = np.array([*color[:3], 1.0])
-        bg = _relative_luminance(self._get_bgcolor()[:3])
-        fg = self._get_fgcolor()
-        for t in np.linspace(0, 1, 11):
-            mixed = (1 - t) * color + t * fg
-            lighter, darker = sorted(
-                (_relative_luminance(mixed[:3]), bg), reverse=True
-            )
-            if (lighter + 0.05) / (darker + 0.05) >= 4.5:
-                break
-        return mixed
 
     def _on_text_change(self):
         self.node.text = self.layer.name

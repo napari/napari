@@ -224,3 +224,61 @@ def rgb_to_luminance(
         # scale by alpha
         return luminance * rgb[..., 3]
     raise ValueError('can only convert rgb or rgba')
+
+
+def _relative_luminance(rgb: ColorValue | np.ndarray) -> float:
+    """Relative luminance of an sRGB color, as defined by WCAG 2.
+
+    The sRGB channels are linearized (the 0.04045, 12.92 and 2.4 constants)
+    and weighted with the ITU-R BT.709 coefficients. See
+    https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+    """
+    rgb = np.asarray(rgb, dtype=float)[:3]
+    rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    return float(rgb @ [0.2126, 0.7152, 0.0722])
+
+
+def _contrast_ratio(
+    color1: ColorValue | np.ndarray, color2: ColorValue | np.ndarray
+) -> float:
+    """WCAG 2 contrast ratio between two colors, from 1 to 21.
+
+    See https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
+    """
+    lighter, darker = sorted(
+        (_relative_luminance(color1), _relative_luminance(color2)),
+        reverse=True,
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _contrasting_color(bgcolor: ColorValue) -> ColorValue:
+    """Return a color that stands out against ``bgcolor``, keeping its alpha."""
+    opposite = 1 - bgcolor
+    # shift away from mid tones for better contrast
+    opposite = 0.5 + (opposite - 0.5) * 1.2
+    opposite = np.clip(opposite, 0, 1)
+    # don't change alpha
+    opposite[-1] = bgcolor[-1]
+    return opposite.view(ColorValue)
+
+
+def _readable_color(
+    foreground_color: ColorValue | np.ndarray,
+    background_color: ColorValue,
+    min_contrast: float = 4.5,
+) -> np.ndarray:
+    """Adjust ``foreground_color`` so it is readable on ``background_color``.
+
+    The hue is kept: the color is blended toward the contrasting color of
+    the background until it reaches ``min_contrast``. The default 4.5 is the
+    WCAG AA level for normal-size text, see
+    https://www.w3.org/TR/WCAG21/#contrast-minimum
+    """
+    color = np.array([*foreground_color[:3], 1.0])
+    target = _contrasting_color(background_color)
+    for t in np.linspace(0, 1, 11):
+        mixed = (1 - t) * color + t * target
+        if _contrast_ratio(mixed, background_color) >= min_contrast:
+            break
+    return mixed

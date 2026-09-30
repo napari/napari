@@ -265,13 +265,15 @@ def convert_vispy_colormap(colormap, name='vispy'):
     )
 
 
-def _representative_color(colormap: Colormap) -> np.ndarray:
+def _representative_color(
+    colormap: Colormap, value: float = 0.8
+) -> np.ndarray:
     """Return a single (4,) RGBA color that stands for the whole colormap.
 
-    Picking the almost highest end (``map([0.8])``) avoids invisibility on
-    dark canvas with reversed colormaps like ``gray_r``.
+    The default picks the almost highest end (``map([0.8])``), which avoids
+    invisibility on dark canvas with reversed colormaps like ``gray_r``.
     """
-    return np.atleast_2d(colormap.map([0.8]))[0].astype(float)
+    return np.atleast_2d(colormap.map([value]))[0].astype(float)
 
 
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
