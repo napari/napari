@@ -3157,9 +3157,7 @@ class Shapes(Layer):
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
-        if len(dims_displayed) != 3:
-            # return None if in 2D mode
-            return None
+        assert len(dims_displayed) == 3
 
         # Get the normal vector of the click plane
         start_position, ray_direction = nd_line_segment_to_displayed_data_ray(
