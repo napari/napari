@@ -155,10 +155,10 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     @overload
     def __getitem__(self, i: slice) -> Sequence[LayerDataProtocol]: ...
     def __getitem__(
-        self, key: int | slice
+        self, i: int | slice
     ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
         """Get individual multiscale levels."""
-        return self._data[key]
+        return self._data[i]
 
     def __array__(self) -> npt.NDArray:
         """Get numpy array of the lowest resolution level."""

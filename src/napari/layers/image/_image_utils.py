@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
-from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
+from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers.multiscale_data import MultiScaleData
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
@@ -38,7 +41,7 @@ def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
 
 
 def guess_multiscale(
-    data: MultiScaleData | list | tuple | LayerDataProtocol,
+    data: MultiScaleData | Sequence[LayerDataProtocol] | LayerDataProtocol,
 ) -> tuple[bool, LayerDataProtocol | MultiScaleData]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
@@ -74,21 +77,14 @@ def guess_multiscale(
     if isinstance(data, MultiScaleData):
         return True, data
 
-    try:
-        assert_protocol(data)
+    if isinstance(data, LayerDataProtocol):
         # 1D array-likes cannot be scalar layer data, must be treated as
         # a candidate sequence of multiscale levels
-        is_multiscale = data.ndim == 1
-        multiscale_len = data.shape[0]
-    except TypeError:
-        # not itself layer data, has to be a sequence of levels
-        is_multiscale = True
-        multiscale_len = len(data)
+        if data.ndim > 1:
+            return False, data
+        data = list(data)  # pyrefly: ignore [bad-argument-type]
 
-    if not is_multiscale:
-        return False, data
-
-    if multiscale_len == 1:
+    if len(data) == 1:
         # pyramid with only one level, unwrap
         return False, data[0]
 
