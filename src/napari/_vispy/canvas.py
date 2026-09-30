@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from weakref import WeakSet
 
 import numpy as np
@@ -23,7 +23,7 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import BrushCircleOverlay, CanvasOverlay
 from napari.layers import Labels
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
@@ -54,7 +54,7 @@ if TYPE_CHECKING:
         VispyCanvasOverlay,
     )
     from napari.components import ViewerModel
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import BrushCircleOverlay, Overlay
     from napari.layers import Layer
     from napari.utils.key_bindings import KeymapHandler
 
@@ -431,6 +431,7 @@ class VispyCanvas:
         # on layer init this might not exist yet
         if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
             return self.cursor
+        brush_circle = cast('BrushCircleOverlay', brush_circle)
 
         if cursor != 'circle':
             brush_circle.visible = False
@@ -454,7 +455,7 @@ class VispyCanvas:
             qt_cursor = QtCursorVisual['standard'].value
         else:
             brush_circle.visible = True
-            qt_cursor = QtCursorVisual.blank()
+            qt_cursor = QtCursorVisual.blank
 
         return qt_cursor
 
