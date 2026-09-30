@@ -66,34 +66,39 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
-        self._warn_icon = QLabel()
-        self._warn_icon.setObjectName('error_label')
-        self.addPermanentWidget(self._warn_icon)
-        get_settings().experimental.events.connect(self.update_warning_icon)
-        self.update_warning_icon()
+        self._async_icon = QLabel('A')
+        self._async_icon.setToolTip(
+            'The experimental feature "Render Layers Asyncronously" is enabled.\n'
+            'If you experience unexpected behaviors or issues related to layer slicing\n'
+            'and rendering, try disabling this feature from the experimental settings.\n'
+            'If problems persist, please open an issue on the napari repository!'
+        )
+        self.addPermanentWidget(self._async_icon)
 
-    def update_warning_icon(self) -> None:
+        self._dynamic_controls_icon = QLabel('D')
+        self._dynamic_controls_icon.setToolTip(
+            'The experimental feature "Generate GUI layer controls dynamically" is enabled.\n'
+            'If you experience unexpected behaviors or issues related to the layer controls\n'
+            'and their effects on layer attributes, try disabling this feature from the\n'
+            'experimental settings.\n'
+            'If problems persist, please open an issue on the napari repository!'
+        )
+        self.addPermanentWidget(self._dynamic_controls_icon)
+
+        self.update_warning_icons()
+        get_settings().experimental.events.connect(self.update_warning_icons)
+
+    def update_warning_icons(self) -> None:
         exp_settings = get_settings().experimental
-        exp_warnings = []
         if exp_settings.async_:
-            exp_warnings.append('- Render Layers Asyncronously')
-        if exp_settings.dynamic_layer_controls:
-            exp_warnings.append('- Generate GUI layer controls dynamically')
-
-        if exp_warnings:
-            header = 'Some experimental features which may lead to unexpected behaviour are enabled:\n'
-            footer = (
-                '\nIf you are having issues and you think they might be related to\n'
-                'these settings, try disabling them.\n'
-                'If you find a problem related with these settings, please\n'
-                'open an issue on the napari repository!'
-            )
-            self._warn_icon.setToolTip(
-                header + '\n'.join(exp_warnings) + footer
-            )
-            self._warn_icon.setVisible(True)
+            self._async_icon.setVisible(True)
         else:
-            self._warn_icon.setVisible(False)
+            self._async_icon.setVisible(False)
+
+        if exp_settings.dynamic_layer_controls:
+            self._dynamic_controls_icon.setVisible(True)
+        else:
+            self._dynamic_controls_icon.setVisible(False)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
