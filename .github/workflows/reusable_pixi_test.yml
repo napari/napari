@@ -35,6 +35,10 @@ jobs:
       FORCE_COLOR: 1
       PYVISTA_OFF_SCREEN: True
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+    defaults:
+      run:
+        # use bash also on Windows, where the default is PowerShell
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
