@@ -123,8 +123,8 @@ class Camera(EventedModel):
     def angles(self) -> tuple[float, float, float]:
         from scipy.spatial.transform import Rotation
 
-        return Rotation.from_quat(self.quaternion).as_euler(
-            'xyz', degrees=True
+        return tuple(
+            Rotation.from_quat(self.quaternion).as_euler('xyz', degrees=True)
         )
 
     @angles.setter
