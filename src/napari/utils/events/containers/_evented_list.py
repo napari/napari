@@ -25,6 +25,7 @@ cover this in test_evented_list.py)
 import contextlib
 import logging
 from collections.abc import Callable, Generator, Iterable, Sequence
+from typing import cast
 
 from napari.utils.events.containers._typed import (
     _L,
@@ -123,14 +124,12 @@ class EventedList(TypedMutableSequence[_T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
-            new_values = list(
-                value
-            )  # make sure we don't empty generators and reuse them
+            # make sure we don't empty generators and reuse them
+            new_values = list(value)
             if new_values == old:
                 return
-            [
-                self._type_check(v) for v in new_values
-            ]  # before we mutate the list
+            # before we mutate the list
+            [self._type_check(v) for v in new_values]
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
                 if not len(new_values) == len(indices):
@@ -147,7 +146,8 @@ class EventedList(TypedMutableSequence[_T]):
         else:
             if value is old:
                 return
-            super().__setitem__(key, value)  # type: ignore[assignment]
+            # int key: value is a single item
+            super().__setitem__(key, cast('_T', value))
             self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
@@ -187,7 +187,7 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             with contextlib.suppress(ValueError):
-                event.index = self.index(event.source)  # type: ignore[attr-defined]
+                event.index = self.index(event.source)  # pyrefly: ignore[missing-attribute]
 
         # reemit with this object's EventEmitter
         self.events(event)
