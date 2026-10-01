@@ -9,8 +9,6 @@ from napari.utils.color import _contrast_ratio
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import _representative_color
 
-pytestmark = pytest.mark.usefixtures('qapp')
-
 
 def _make_overlay(layer, background='black'):
     viewer = ViewerModel()
@@ -23,6 +21,7 @@ def _make_overlay(layer, background='black'):
     )
 
 
+@pytest.mark.usefixtures('qapp')
 def test_name_overlay_uses_colormap_color():
     layer = Image(np.zeros((2, 2)), colormap='green')
     vispy_overlay = _make_overlay(layer)
@@ -34,6 +33,7 @@ def test_name_overlay_uses_colormap_color():
     np.testing.assert_allclose(vispy_overlay.node.color.rgba[0], expected)
 
 
+@pytest.mark.usefixtures('qapp')
 def test_name_overlay_explicit_color_wins():
     layer = Image(np.zeros((2, 2)), colormap='green')
     vispy_overlay = _make_overlay(layer)
@@ -50,6 +50,7 @@ def test_name_overlay_explicit_color_wins():
     ],
     ids=['gray', 'gray_r', 'points'],
 )
+@pytest.mark.usefixtures('qapp')
 def test_name_overlay_falls_back_to_contrasting_color(make_layer):
     vispy_overlay = _make_overlay(make_layer())
     np.testing.assert_allclose(
@@ -61,6 +62,7 @@ def test_name_overlay_falls_back_to_contrasting_color(make_layer):
     ('cmap', 'background', 'channel'),
     [('green', 'white', 1), ('magenta', 'white', 0), ('blue', 'black', 2)],
 )
+@pytest.mark.usefixtures('qapp')
 def test_name_overlay_keeps_hue_but_stays_readable(cmap, background, channel):
     vispy_overlay = _make_overlay(
         Image(np.zeros((2, 2)), colormap=cmap), background
@@ -72,6 +74,7 @@ def test_name_overlay_keeps_hue_but_stays_readable(cmap, background, channel):
     assert np.ptp(color[:3]) > 0.3
 
 
+@pytest.mark.usefixtures('qapp')
 def test_name_overlay_surface_and_transparent_colormap():
     surface = Surface(
         (np.eye(3), np.array([[0, 1, 2]]), np.ones(3)), colormap='red'
