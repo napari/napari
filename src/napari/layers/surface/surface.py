@@ -253,7 +253,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         name=None,
         normals=None,
         opacity=1.0,
-        projection_mode='all',
+        projection_mode='none',
         rotate=None,
         scale=None,
         shading='flat',

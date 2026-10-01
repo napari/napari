@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -7,7 +8,11 @@ import numpy as np
 import numpy.typing as npt
 
 from napari.layers.base._slice import _next_request_id
-from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
+from napari.layers.utils._slice_input import (
+    _THICK_WARNING,
+    _SliceInput,
+    _ThickNDSlice,
+)
 from napari.types import ArrayLike
 from napari.utils._dask_utils import DaskIndexer
 from napari.utils._dtype import normalize_dtype
@@ -338,6 +343,9 @@ class _ScalarFieldSliceRequest:
         slices = self._data_slice_to_slices(
             data_slice, self.slice_input.displayed
         )
+
+        if not self.data_slice.is_thick(self.slice_input.not_displayed):
+            warnings.warn(_THICK_WARNING.format(self.projection_mode))
 
         return self._project_slice(
             data=np.asarray(data[slices]),

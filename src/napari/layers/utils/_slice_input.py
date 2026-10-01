@@ -20,6 +20,15 @@ if TYPE_CHECKING:
 
 _T = TypeVar('_T')
 
+_THICK_WARNING = (
+    'Projection mode is set to "{}", but the slice '
+    'thickness is zero. For projection_mode to have an effect, you must '
+    'increase the dims margins by either:\n'
+    '- right clicking on the dims slider\n'
+    '- `viewer.dims.margin_left/right`\n'
+    '- `viewer.dims.thickness`'
+)
+
 
 @dataclass(frozen=True)
 class _ThickNDSlice(Generic[_T]):
@@ -32,6 +41,11 @@ class _ThickNDSlice(Generic[_T]):
     @property
     def ndim(self):
         return len(self.point)
+
+    def is_thick(self, axes: list[int] | None = None):
+        if axes is None:
+            axes = list(range(len(self.point)))
+        return np.any(self.as_array()[1:, axes])
 
     @classmethod
     def make_full(
