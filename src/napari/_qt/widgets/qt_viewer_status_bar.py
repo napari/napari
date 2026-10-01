@@ -135,14 +135,14 @@ class StatusBarWidget(QWidget):
         self._coordinates_label.setParent(self)
         self._help_label.setParent(self)
 
-    def resizeEvent(self, a0: QResizeEvent | None) -> None:
-        super().resizeEvent(a0)
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
         self.do_layout()
 
-    def event(self, a0: QEvent | None) -> bool:
-        if a0 is not None and a0.type() == QEvent.Type.LayoutRequest:
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.LayoutRequest:
             self.do_layout()
-        return super().event(a0)
+        return super().event(event)
 
     @staticmethod
     def _calc_width(fm: QFontMetrics, label: QLabel) -> int:
