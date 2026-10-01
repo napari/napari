@@ -796,26 +796,26 @@ def test_paint():
     data[:10, :10] = 1
     layer = Labels(data)
 
-    assert np.unique(layer.data[:5, :5]) == 1
-    assert np.unique(layer.data[5:10, 5:10]) == 1
+    assert np.all(layer.data[:5, :5] == 1)
+    assert np.all(layer.data[5:10, 5:10] == 1)
 
     layer.brush_size = 9
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[:4, :4]) == 2
-    assert np.unique(layer.data[5:10, 5:10]) == 1
+    assert np.all(layer.data[:4, :4] == 2)
+    assert np.all(layer.data[5:10, 5:10] == 1)
 
     layer.brush_size = 10
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[0:6, 0:3]) == 2
-    assert np.unique(layer.data[0:3, 0:6]) == 2
-    assert np.unique(layer.data[6:10, 6:10]) == 1
+    assert np.all(layer.data[0:6, 0:3] == 2)
+    assert np.all(layer.data[0:3, 0:6] == 2)
+    assert np.all(layer.data[6:10, 6:10] == 1)
 
     layer.brush_size = 19
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[0:4, 0:10]) == 2
-    assert np.unique(layer.data[0:10, 0:4]) == 2
-    assert np.unique(layer.data[3:7, 3:7]) == 2
-    assert np.unique(layer.data[7:10, 7:10]) == 1
+    assert np.all(layer.data[0:4, 0:10] == 2)
+    assert np.all(layer.data[0:10, 0:4] == 2)
+    assert np.all(layer.data[3:7, 3:7] == 2)
+    assert np.all(layer.data[7:10, 7:10] == 1)
 
 
 def test_paint_with_preserve_labels():
@@ -825,14 +825,14 @@ def test_paint_with_preserve_labels():
     layer = Labels(data)
 
     layer.preserve_labels = True
-    assert np.unique(layer.data[:3, :3]) == 1
+    assert np.all(layer.data[:3, :3] == 1)
 
     layer.brush_size = 9
     layer.paint([0, 0], 2)
 
-    assert np.unique(layer.data[3:5, 0:3]) == 2
-    assert np.unique(layer.data[0:3, 3:5]) == 2
-    assert np.unique(layer.data[:3, :3]) == 1
+    assert np.all(layer.data[3:5, 0:3] == 2)
+    assert np.all(layer.data[0:3, 3:5] == 2)
+    assert np.all(layer.data[:3, :3] == 1)
 
 
 def test_setting_prev_selected_label():
@@ -1504,10 +1504,13 @@ def test_ndim_paint():
     )
 
 
-def test_cursor_size_with_negative_scale():
+def test_brush_world_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
-    assert layer.cursor_size > 0
+    layer.brush_size_is_canvas = False
+    assert layer._get_brush_size_data(1) > 0
+    layer.brush_size_is_canvas = True
+    assert layer._get_brush_size_data(1) > 0
 
 
 def test_large_label_values():

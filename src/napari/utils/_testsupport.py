@@ -495,6 +495,7 @@ def MouseEvent():
         pos: list[int] = (0, 0)
         button: int = None
         handled: bool = False
+        camera_zoom: float = 1
 
     return Event
 

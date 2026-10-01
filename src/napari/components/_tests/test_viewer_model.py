@@ -617,24 +617,6 @@ def test_active_layer_status_update():
     )
 
 
-def test_active_layer_cursor_size():
-    """Test cursor size update on active layer."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    viewer.add_image(np.random.random((10, 10)))
-    # Base layer has a default cursor size of 1
-    assert viewer.cursor.size == 1
-
-    viewer.add_labels(np.random.randint(0, 10, size=(10, 10)))
-    assert len(viewer.layers) == 2
-    assert viewer.layers.selection.active == viewer.layers[1]
-
-    viewer.layers[1].mode = 'paint'
-    # Labels layer has a default cursor size of 10
-    # due to paintbrush
-    assert viewer.cursor.size == 10
-
-
 def test_cursor_ndim_matches_layer():
     """Test cursor position ndim matches viewer ndim after update."""
     viewer = ViewerModel()

@@ -1205,9 +1205,7 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer):
     assert len(layer.selected_data) == 0
 
 
-@pytest.mark.parametrize(
-    'attr', ['_move_modes', '_drag_modes', '_cursor_modes']
-)
+@pytest.mark.parametrize('attr', ['_move_modes', '_drag_modes'])
 def test_all_modes_covered(attr):
     """
     Test that all dictionaries modes have all the keys, this simplify the handling logic
