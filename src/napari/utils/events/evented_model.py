@@ -193,7 +193,9 @@ def _serialize_arbitrary(value: Any, json_encoders=None) -> Any:
         return value
 
     if isinstance(value, BaseModel):
-        data = {name: getattr(value, name) for name in value.model_fields}
+        data = {
+            name: getattr(value, name) for name in value.__class__.model_fields
+        }
         return _serialize_arbitrary(data, json_encoders=json_encoders)
 
     if isinstance(value, Mapping):
