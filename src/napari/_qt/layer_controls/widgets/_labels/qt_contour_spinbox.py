@@ -46,7 +46,7 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
             'Set width of displayed label contours'
         )
         self.contour_spinbox.setValue(self._layer.contour)
-        self.contour_spinbox.valueChanged.connect(self.change_contour)  # pyrefly: ignore [missing-attribute]
+        self.contour_spinbox.valueChanged.connect(self.change_contour)
         self.contour_spinbox.setKeyboardTracking(False)
         self.contour_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._callbacks.append(
