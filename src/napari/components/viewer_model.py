@@ -388,6 +388,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         return self.canvas.grid
 
+    @property
+    @deprecated(
+        (
+            'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0.'
+            ' Instead, check if viewer.cursor.canvas_position is None.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def mouse_over_canvas(self) -> bool:
+        """Whether the mouse is over the canvas.
+
+        .. deprecated:: 0.9.0
+            Deprecated. Use `viewer.cursor.canvas_position is None` instead.
+        """
+        return self.cursor.canvas_position is None
+
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
 
