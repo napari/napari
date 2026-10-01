@@ -7,7 +7,11 @@ from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.utils.color import ColorValue, _contrasting_color
+from napari.utils.color import (
+    ColorValue,
+    _contrasting_color,
+    _readable_color,
+)
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -150,7 +154,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         return self.overlay.box_color
 
     def _get_fgcolor(self) -> ColorValue:
-        return _contrasting_color(self._get_bgcolor())
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])

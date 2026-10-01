@@ -2,7 +2,9 @@ import numpy as np
 import pytest
 
 from napari.utils.color import (
+    ColorValue,
     _contrast_ratio,
+    _contrasting_color,
     _readable_color,
     rgb_to_luminance,
 )
@@ -45,3 +47,10 @@ def test_readable_color_keeps_hue():
     np.testing.assert_allclose(
         _readable_color([0, 1, 0, 1], black), [0, 1, 0, 1]
     )
+
+
+@pytest.mark.parametrize('gray', [0.45, 0.5, 0.55])
+def test_readable_color_on_mid_gray(gray):
+    background = ColorValue([gray, gray, gray, 1])
+    readable = _readable_color(_contrasting_color(background), background)
+    assert _contrast_ratio(readable, background) >= 4.5

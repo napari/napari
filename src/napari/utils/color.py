@@ -267,18 +267,21 @@ def _readable_color(
     foreground_color: ColorValue | np.ndarray,
     background_color: ColorValue,
     min_contrast: float = 4.5,
-) -> np.ndarray:
+) -> ColorValue:
     """Adjust ``foreground_color`` so it is readable on ``background_color``.
 
-    The hue is kept: the color is blended toward the contrasting color of
-    the background until it reaches ``min_contrast``. The default 4.5 is the
-    WCAG AA level for normal-size text, see
+    The hue is kept: the color is blended toward black or white (whichever
+    contrasts more with the background) until it reaches ``min_contrast``.
+    The default 4.5 is the WCAG AA level for normal-size text, see
     https://www.w3.org/TR/WCAG21/#contrast-minimum
     """
     color = np.array([*foreground_color[:3], 1.0])
-    target = _contrasting_color(background_color)
+    target = max(
+        (np.array([0.0, 0.0, 0.0, 1.0]), np.array([1.0, 1.0, 1.0, 1.0])),
+        key=lambda c: _contrast_ratio(c, background_color),
+    )
     for t in np.linspace(0, 1, 11):
         mixed = (1 - t) * color + t * target
         if _contrast_ratio(mixed, background_color) >= min_contrast:
             break
-    return mixed
+    return mixed.view(ColorValue)
