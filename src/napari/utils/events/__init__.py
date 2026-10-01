@@ -3,7 +3,7 @@ from napari.utils.events.event import (  # isort:skip
     Event,
     EventEmitter,
     WarningEmitter,
-    RenamedEmitter,
+    RenamedWarningEmitter,
     set_event_tracing_enabled,
 )
 from napari.utils.events.containers._evented_dict import (
@@ -32,7 +32,7 @@ __all__ = [
     'EventedModel',
     'EventedSet',
     'NestableEventedList',
-    'RenamedEmitter',
+    'RenamedWarningEmitter',
     'SelectableEventedList',
     'Selection',
     'SupportsEvents',
