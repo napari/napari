@@ -450,11 +450,7 @@ class VispyCanvas:
         box_size_canvas = np.abs(
             np.diff(self.viewer.canvas.overlays._zoom_box.position, axis=0)
         )
-        start, end = zoom_area
-        box_center_world = (
-            (start[0] + end[0]) / 2,
-            (start[1] + end[1]) / 2,
-        )
+        box_center_world = tuple(np.mean(zoom_area, axis=0))
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.scene.camera.zoom = self.viewer.scene.camera.zoom * np.min(
             ratio
