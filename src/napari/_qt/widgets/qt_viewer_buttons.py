@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from enum import StrEnum
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -37,6 +36,7 @@ from napari.utils.camera_orientations import (
     VerticalAxisOrientation,
     VerticalAxisOrientationStr,
 )
+from napari.utils.migrations import deprecation_warning
 from napari.utils.misc import in_ipython, in_jupyter, in_python_repl
 
 if TYPE_CHECKING:
@@ -833,17 +833,13 @@ def _omit_viewer_args(constructor):
     @wraps(constructor)
     def _func(*args, **kwargs):
         if len(args) > 1 and not isinstance(args[1], str):
-            warnings.warn(
-                'viewer argument is deprecated since 0.4.14 and should not be used',
-                category=FutureWarning,
-                stacklevel=2,
+            deprecation_warning(
+                name='The viewer argument', since='0.4.14', window='2027-Q1'
             )
             args = args[:1] + args[2:]
         if 'viewer' in kwargs:
-            warnings.warn(
-                'viewer argument is deprecated since 0.4.14 and should not be used',
-                category=FutureWarning,
-                stacklevel=2,
+            deprecation_warning(
+                name='The viewer argument', since='0.4.14', window='2027-Q1'
             )
             del kwargs['viewer']
         return constructor(*args, **kwargs)

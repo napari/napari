@@ -8,6 +8,7 @@ from typing import Any, Generic, TypeVar, Union
 import wrapt
 
 from napari.utils import misc
+from napari.utils.migrations import deprecation_warning
 
 _T = TypeVar('_T')
 _K = TypeVar('_K', bound=Hashable)
@@ -54,12 +55,14 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
     @staticmethod
     def _private_attr_warning(name: str, typ: str) -> None:
-        warnings.warn(
-            f"Private attribute access ('{typ}.{name}') in this context "
-            '(e.g. inside a plugin widget or dock widget) is deprecated '
-            'and will be unavailable no earlier than 0.10.0',
-            category=FutureWarning,
-            stacklevel=3,
+        deprecation_warning(
+            name=f"Private attribute access ('{typ}.{name}') in this context",
+            since='0.4.13',
+            window='2027-Q1',
+            details=(
+                'This applies inside a plugin widget or dock widget. It will '
+                'become an AttributeError once removed.'
+            ),
         )
 
         # This is code prepared for a moment where we want to block access to private attributes

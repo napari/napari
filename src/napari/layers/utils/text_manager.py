@@ -22,6 +22,7 @@ from napari.layers.utils.string_encoding import (
 from napari.layers.utils.style_encoding import _get_style_values
 from napari.utils.events import Event, EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import deprecation_warning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -156,10 +157,10 @@ class TextManager(EventedModel):
         properties : Dict[str, np.ndarray]
             The new properties from the layer
         """
-        warnings.warn(
-            'TextManager.refresh_text is deprecated since 0.4.16. Use TextManager.refresh instead.',
-            DeprecationWarning,
-            stacklevel=2,
+        deprecation_warning(
+            name='`TextManager.refresh_text`',
+            replacement='`TextManager.refresh`',
+            since='0.4.16',
         )
         features = _validate_features(properties)
         self.refresh(features)
@@ -174,10 +175,10 @@ class TextManager(EventedModel):
         n_text : int
             The number of text elements to add
         """
-        warnings.warn(
-            'TextManager.add is deprecated since 0.4.16. Use TextManager.apply instead.',
-            DeprecationWarning,
-            stacklevel=2,
+        deprecation_warning(
+            name='`TextManager.add`',
+            replacement='`TextManager.apply`',
+            since='0.4.16',
         )
         features = _validate_features(
             {
@@ -389,32 +390,26 @@ class TextManager(EventedModel):
 
 
 def _warn_about_deprecated_text_parameter():
-    warnings.warn(
-        'text is a deprecated parameter since 0.4.16. Use string instead.',
-        DeprecationWarning,
-        stacklevel=2,
+    deprecation_warning(
+        name='The `text` parameter', replacement='`string`', since='0.4.16'
     )
 
 
 def _warn_about_deprecated_properties_parameter():
-    warnings.warn(
-        'properties is a deprecated parameter since 0.4.16. Use features instead.',
-        DeprecationWarning,
-        stacklevel=2,
+    deprecation_warning(
+        name='The `properties` parameter',
+        replacement='`features`',
+        since='0.4.16',
     )
 
 
 def _warn_about_deprecated_n_text_parameter():
-    warnings.warn(
-        'n_text is a deprecated parameter since 0.4.16. Use features instead.',
-        DeprecationWarning,
-        stacklevel=2,
+    deprecation_warning(
+        name='The `n_text` parameter', replacement='`features`', since='0.4.16'
     )
 
 
 def _warn_about_deprecated_values_parameter():
-    warnings.warn(
-        'values is a deprecated parameter since 0.4.16. Use string instead.',
-        DeprecationWarning,
-        stacklevel=2,
+    deprecation_warning(
+        name='The `values` parameter', replacement='`string`', since='0.4.16'
     )

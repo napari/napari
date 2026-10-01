@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from napari.layers import Layer
 from napari.plugins import _npe2
 from napari.types import LayerData, PathLike
+from napari.utils.migrations import deprecation_warning
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -50,8 +51,11 @@ def read_data_with_plugins(
         The name of the reader plugin that was used, or None if no reader was found.
     """
     if plugin == 'builtins':
-        warnings.warn(
-            'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
+        deprecation_warning(
+            name='The "builtins" plugin name',
+            replacement='"napari"',
+            since='0.4.17',
+            window='2027-Q1',
         )
         plugin = 'napari'
 

@@ -1,11 +1,10 @@
 """Scale bar model."""
 
-import warnings
-
 from pydantic import Field
 
 from napari.components.overlays.base import CanvasOverlay
 from napari.utils.color import ColorValue
+from napari.utils.migrations import deprecation_warning
 
 
 class ScaleBarOverlay(CanvasOverlay):
@@ -55,23 +54,29 @@ class ScaleBarOverlay(CanvasOverlay):
 
     @property
     def unit(self) -> None:
-        warnings.warn(
-            'ScaleBar.unit is deprecated and now always returns None. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
+        deprecation_warning(
+            name='ScaleBar.unit',
+            replacement='`Layer.units`',
+            since='0.8.0',
+            window='2026-Q4',
+            details=(
+                'It now always returns None, because units are computed from '
+                'the layers in the layerlist.'
+            ),
             stacklevel=4,
         )
         return None
 
     @unit.setter
     def unit(self, value: str | None) -> None:
-        warnings.warn(
-            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
+        deprecation_warning(
+            name='Setting `unit` on the ScaleBar model',
+            replacement='`Layer.units`',
+            since='0.8.0',
+            window='2026-Q4',
+            details=(
+                'It no longer has any effect, because units are computed from '
+                'the layers in the layerlist.'
+            ),
             stacklevel=4,
         )

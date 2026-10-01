@@ -1,9 +1,10 @@
-import warnings
-
 from napari.settings import *  # noqa: F403
+from napari.utils.migrations import deprecation_warning
 
-warnings.warn(
-    "'napari.utils.settings' has moved to 'napari.settings' in 0.4.11. This will raise an ImportError in a future version",
-    FutureWarning,
-    stacklevel=2,
+deprecation_warning(
+    name='The `napari.utils.settings` module',
+    replacement='`napari.settings`',
+    since='0.4.11',
+    window='2027-Q1',
+    details='Once removed, importing it will raise ImportError.',
 )

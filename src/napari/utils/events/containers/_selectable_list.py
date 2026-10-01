@@ -1,9 +1,9 @@
-import warnings
 from typing import Any, TypeVar
 
 from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
+from napari.utils.migrations import deprecation_warning
 
 _T = TypeVar('_T')
 
@@ -104,10 +104,11 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             Index that item(s) will be inserted at
         """
         # this is just here for now to support the old layerlist API
-        warnings.warn(
-            'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
-            FutureWarning,
-            stacklevel=2,
+        deprecation_warning(
+            name='`SelectableEventedList.move_selected`',
+            replacement='`layers.move_multiple` with `layers.selection`',
+            since='0.4.16',
+            window='2027-Q1',
         )
         if self[index] not in self.selection:
             self.selection.select_only(self[index])

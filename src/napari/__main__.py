@@ -6,7 +6,6 @@ import argparse
 import contextlib
 import logging
 import sys
-import warnings
 from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
@@ -15,6 +14,7 @@ from typing import Any
 from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
+from napari.utils.migrations import deprecation_warning
 from napari.utils.misc import maybe_patch_conda_exe
 
 
@@ -284,9 +284,14 @@ def _build_viewer() -> Viewer:
     # If the --stack option is provided without additional arguments
     # just set stack to True similar to the previous store_true action
     if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
-        warnings.warn(
-            "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-            DeprecationWarning,
+        deprecation_warning(
+            name='Using the --stack option as a boolean',
+            replacement="'--stack file1 file2 ... fileN'",
+            since='0.4.17',
+            details=(
+                'Multiple stacks can be given as '
+                "'--stack file1 file2 --stack file3 file4 --stack ...'."
+            ),
             stacklevel=3,
         )
         args.stack = True

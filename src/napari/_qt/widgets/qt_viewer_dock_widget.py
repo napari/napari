@@ -1,4 +1,3 @@
-import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -20,6 +19,7 @@ from qtpy.QtWidgets import (
 
 from napari._qt.utils import combine_widgets, qt_signals_blocked
 from napari.settings import get_settings
+from napari.utils.migrations import deprecation_warning
 
 if TYPE_CHECKING:
     from magicgui.widgets import Widget
@@ -29,7 +29,32 @@ if TYPE_CHECKING:
 counter = count()
 _sentinel = object()
 
-_SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
+
+def warn_deprecated_shortcut(
+    shortcut: object = _sentinel, *, stacklevel: int = 3
+) -> None:
+    """Emit the canonical warning for the deprecated ``shortcut`` parameter.
+
+    ``stacklevel`` defaults to blaming the caller of whoever calls this, which
+    is the code that passed ``shortcut`` in. ``shortcut`` is named in the
+    message only when one was actually passed, so the getter form does not
+    leak a placeholder.
+    """
+    details = (
+        'The action manager and shortcut APIs allow user configuration and '
+        'localisation.'
+    )
+    if shortcut is not _sentinel:
+        details += f' (got {shortcut!r})'
+    deprecation_warning(
+        name='The shortcut parameter',
+        replacement='the action and shortcut manager APIs',
+        since='0.4.8',
+        window='2027-Q1',
+        details=details,
+        stacklevel=stacklevel,
+    )
+
 
 dock_area_to_str = {
     Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
@@ -100,11 +125,7 @@ class QtViewerDockWidget(QDockWidget):
         self.area = area
         self.qt_area = areas[area]
         if shortcut is not _sentinel:
-            warnings.warn(
-                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
-                FutureWarning,
-                stacklevel=2,
-            )
+            warn_deprecated_shortcut(shortcut)
         else:
             shortcut = None
         self._shortcut = shortcut
@@ -229,11 +250,7 @@ class QtViewerDockWidget(QDockWidget):
 
     @property
     def shortcut(self):
-        warnings.warn(
-            _SHORTCUT_DEPRECATION_STRING,
-            FutureWarning,
-            stacklevel=2,
-        )
+        warn_deprecated_shortcut()
         return self._shortcut
 
     def setFeatures(self, features):

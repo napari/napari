@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import inspect
 import operator
-import warnings
 from collections.abc import Callable, Sequence
 from importlib import import_module
 from typing import (
@@ -18,6 +17,7 @@ import numpy as np
 
 from napari.utils.action_manager import action_manager
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import deprecation_warning
 from napari.utils.transforms import Affine
 
 if TYPE_CHECKING:
@@ -892,10 +892,14 @@ def get_extent_world(
     extent_world : array, shape (2, D)
     """
     if centered is not None:
-        warnings.warn(
-            'The `centered` argument is deprecated. '
-            'Extents are now always centered on data points.',
-            stacklevel=2,
+        deprecation_warning(
+            name='The `centered` argument',
+            since='0.5.0',
+            window='2027-Q1',
+            details=(
+                'Extents are now always centered on data points, so the '
+                'argument has no effect.'
+            ),
         )
 
     D = data_extent.shape[1]

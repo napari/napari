@@ -1,13 +1,156 @@
+"""Helpers for deprecating public API without breaking it.
+
+See: https://napari.org/dev/developers/coredev/deprecation_policy.html
+"""
+
 import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, LiteralString, NamedTuple, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 _UNSET = object()
+
+#: The canonical sentence. ``removal`` and ``replacement`` are themselves
+#: filled in from the constants below so that the two states stay symmetrical.
+DEPRECATION = (
+    '{name} is deprecated{since_clause}.{removal}{replacement}{details}'
+)
+
+#: Filled into ``removal`` for a hard deprecation. ``window`` is ``YYYY-QN``
+REMOVAL_SCHEDULED = ' It may be removed as early as {window}.'
+
+#: Filled into ``removal`` for a soft deprecation.
+REMOVAL_NOT_PLANNED = ' There are no current plans to remove it.'
+
+#: Filled into ``replacement`` when there API to migrate to.
+REPLACEMENT_INSTEAD = ' Please use {replacement} instead.'
+
+#: Filled into ``replacement`` for a deprecation with no successor.
+REPLACEMENT_NONE = ' There is no direct replacement.'
+
+
+# ``typing_extensions.deprecated`` requires its message to be a ``LiteralString``
+# When every argument is itself a literal the assembled sentence is a literal too
+@overload
+def deprecation_message(
+    *,
+    name: LiteralString,
+    replacement: LiteralString = '',
+    since: LiteralString,
+    window: LiteralString | None = None,
+    details: LiteralString = '',
+) -> LiteralString: ...
+
+
+@overload
+def deprecation_message(
+    *,
+    name: str,
+    replacement: str = '',
+    since: str,
+    window: str | None = None,
+    details: str = '',
+) -> str: ...
+
+
+def deprecation_message(
+    *,
+    name: str,
+    replacement: str = '',
+    since: str,
+    window: str | None = None,
+    details: str = '',
+) -> str:
+    """Build a deprecation message in napari's canonical wording.
+
+    Building every deprecation message here ensures that the wording is
+    consistent and that ``is deprecated`` finds all of them.
+
+    Parameters
+    ----------
+    name : str
+        The deprecated name, for example ``'ViewerModel.camera'``.
+    replacement : str
+        What to use instead. Leave empty only when there is genuinely nothing
+        to migrate to, which produces "There is no direct replacement."
+    since : str
+        The napari version the deprecation was introduced in. Required, and
+        keyword-only, so that no deprecation can ship without provenance.
+        Use the first final release in which the warning shipped.
+    window : str, optional
+        The removal window, as a ``YYYY-QN`` token meaning the name may be
+        removed as early as that quarter. Omit it for a soft deprecation,
+        which states that there are no current plans to remove the name.
+    details : str
+        Any further guidance that does not fit the canonical sentence, for
+        example a migration recipe or a link to a guide.
+
+    Returns
+    -------
+    str
+        The full hard or soft deprecation message
+    """
+    return DEPRECATION.format(
+        name=name,
+        since_clause=f' since {since}' if since else '',
+        removal=(
+            REMOVAL_SCHEDULED.format(window=window)
+            if window
+            else REMOVAL_NOT_PLANNED
+        ),
+        replacement=(
+            REPLACEMENT_INSTEAD.format(replacement=replacement)
+            if replacement
+            else REPLACEMENT_NONE
+        ),
+        details=f' {details}' if details else '',
+    )
+
+
+def deprecation_warning(
+    *,
+    name: str,
+    replacement: str = '',
+    since: str,
+    window: str | None = None,
+    details: str = '',
+    stacklevel: int = 2,
+) -> None:
+    """Emit a canonical deprecation warning.
+
+    The warning **category follows from ``window``**: a deprecation that names
+    a removal window is hard and emits ``FutureWarning``, which end users see;
+    one that does not is soft and emits ``DeprecationWarning``, which is more
+    quiet and shows in IDEs (static type checkers), pytest output, and other
+    development tools.
+
+    Parameters
+    ----------
+    name, replacement, since, window, details
+        Passed through to `deprecation_message`.
+    stacklevel : int
+        The stack level of the *caller*, defaulting to ``2``, meaning the
+        warning points at whoever called this function.
+    """
+    warnings.warn(
+        deprecation_message(
+            name=name,
+            replacement=replacement,
+            since=since,
+            window=window,
+            details=details,
+        ),
+        category=_warning_category_for(window),
+        stacklevel=stacklevel + 1,
+    )
+
+
+def _warning_category_for(window: str | None) -> type[Warning]:
+    return FutureWarning if window else DeprecationWarning
 
 
 class _RenamedAttribute(NamedTuple):
@@ -18,15 +161,24 @@ class _RenamedAttribute(NamedTuple):
 
     from_name: str
     to_name: str
-    version: str
+    window: str | None
     since_version: str
 
     def message(self) -> str:
-        return f'{self.from_name} is deprecated since {self.since_version} and will be removed in {self.version}. Please use {self.to_name}'
+        return deprecation_message(
+            name=self.from_name,
+            replacement=self.to_name,
+            since=self.since_version,
+            window=self.window,
+        )
 
 
 def rename_argument(
-    from_name: str, to_name: str, version: str, since_version: str = ''
+    *,
+    from_name: str,
+    to_name: str,
+    since_version: str,
+    window: str | None = None,
 ) -> 'Callable':
     """
     This is decorator for simple rename function argument
@@ -38,8 +190,9 @@ def rename_argument(
         old name of argument
     to_name : str
         new name of argument
-    version : str
-        version when old argument will be removed
+    window : str, optional
+        Removal window as a ``YYYY-QN`` token, meaning the argument may be
+        removed as early as that quarter. Omit it for a soft deprecation.
     since_version : str
         version when new argument was added
     """
@@ -52,7 +205,7 @@ def rename_argument(
             _RenamedAttribute(
                 from_name=from_name,
                 to_name=to_name,
-                version=version,
+                window=window,
                 since_version=since_version,
             )
         )
@@ -65,8 +218,13 @@ def rename_argument(
                         f'Argument {to_name} already defined, please do not mix {from_name} and {to_name} in one call.'
                     )
                 warnings.warn(
-                    f'Argument {from_name!r} is deprecated, please use {to_name!r} instead. The argument {from_name!r} was deprecated in {since_version} and it will be removed in {version}.',
-                    category=FutureWarning,
+                    deprecation_message(
+                        name=f'Argument {from_name!r}',
+                        replacement=f'{to_name!r}',
+                        since=since_version,
+                        window=window,
+                    ),
+                    category=_warning_category_for(window),
                     stacklevel=2,
                 )
                 kwargs = kwargs.copy()
@@ -79,11 +237,12 @@ def rename_argument(
 
 
 def add_deprecated_property(
+    *,
     obj: Any,
     previous_name: str,
     new_name: str,
-    version: str,
     since_version: str,
+    window: str | None = None,
 ) -> None:
     """
     Adds deprecated property and links to new property name setter and getter.
@@ -96,8 +255,9 @@ def add_deprecated_property(
         Name of previous property, its methods must be removed.
     new_name : str
         Name of new property, must have its getter (and setter if applicable) implemented.
-    version : str
-        Version where deprecated property will be removed.
+    window : str, optional
+        Removal window as a ``YYYY-QN`` token, meaning the property may be
+        removed as early as that quarter. Omit it for a soft deprecation.
     since_version : str
         version when new property was added
     """
@@ -108,21 +268,29 @@ def add_deprecated_property(
     if not hasattr(obj, new_name):
         raise RuntimeError(f'{new_name} property must exist.')
 
-    name = f'{obj.__name__}.{previous_name}'
-    msg = f'{name} is deprecated since {since_version} and will be removed in {version}. Please use {new_name}'
+    msg = deprecation_message(
+        name=f'{obj.__name__}.{previous_name}',
+        replacement=new_name,
+        since=since_version,
+        window=window,
+    )
 
     def _getter(instance) -> Any:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
+        warnings.warn(
+            msg, category=_warning_category_for(window), stacklevel=3
+        )
         return getattr(instance, new_name)
 
     def _setter(instance, value: Any) -> None:
-        warnings.warn(msg, category=FutureWarning, stacklevel=3)
+        warnings.warn(
+            msg, category=_warning_category_for(window), stacklevel=3
+        )
         setattr(instance, new_name, value)
 
     setattr(obj, previous_name, property(_getter, _setter))
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
+def deprecated_constructor_arg_by_attr(*, name: str) -> 'Callable':
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
@@ -162,10 +330,11 @@ def deprecated_constructor_arg_by_attr(name: str) -> 'Callable':
 
 
 def deprecated_class_name(
+    *,
     new_class: type,
     previous_name: str,
-    version: str,
     since_version: str,
+    window: str | None = None,
 ) -> type:
     """Function to deprecate a class.
 
@@ -175,24 +344,29 @@ def deprecated_class_name(
             pass
 
         OldName = deprecated_class_name(
-            NewName, 'OldName', version='0.5.0', since_version='0.4.19'
+            new_class=NewName,
+            previous_name='OldName',
+            since_version='0.4.19',
+            window='2027-Q2',
         )
     """
-    msg = (
-        f'{previous_name} is deprecated since {since_version} and will be '
-        f'removed in {version}. Please use {new_class.__name__}.'
+    msg = deprecation_message(
+        name=previous_name,
+        replacement=new_class.__name__,
+        since=since_version,
+        window=window,
     )
     prealloc_signature = inspect.signature(new_class.__new__)
 
     class _OldClass(new_class):
         def __new__(cls, *args, **kwargs):
-            warnings.warn(msg, FutureWarning, stacklevel=2)
+            warnings.warn(msg, _warning_category_for(window), stacklevel=2)
             if super().__new__ is object.__new__:
                 return super().__new__(cls)
             return super().__new__(cls, *args, **kwargs)
 
         def __init_subclass__(cls, **kwargs):
-            warnings.warn(msg, FutureWarning, stacklevel=2)
+            warnings.warn(msg, _warning_category_for(window), stacklevel=2)
 
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
@@ -247,7 +421,9 @@ class _DeprecatingDict(UserDict[str, Any]):
     def _maybe_rename_key(self, key: str) -> str:
         if key in self._renamed:
             renamed = self._renamed[key]
-            warnings.warn(renamed.message(), FutureWarning)
+            warnings.warn(
+                renamed.message(), _warning_category_for(renamed.window)
+            )
             key = renamed.to_name
         return key
 
@@ -256,15 +432,20 @@ class _DeprecatingDict(UserDict[str, Any]):
         return tuple(self._renamed.keys())
 
     def set_deprecated_from_rename(
-        self, *, from_name: str, to_name: str, version: str, since_version: str
+        self,
+        *,
+        from_name: str,
+        to_name: str,
+        since_version: str,
+        window: str | None = None,
     ) -> None:
         """Sets a deprecated key with a value that comes from another key.
 
-        A warning message is automatically generated using the given version information.
+        A warning message is automatically generated from the given window.
         """
         self._renamed[from_name] = _RenamedAttribute(
             from_name=from_name,
             to_name=to_name,
-            version=version,
+            window=window,
             since_version=since_version,
         )
