@@ -268,6 +268,12 @@ class VispyCanvas:
             self._on_interactive
         )
         self.viewer.scene.camera.events.zoom.connect(self._on_cursor)
+        self.viewer.scene.camera.events.view_direction.connect(
+            self._on_view_direction_change
+        )
+        self.viewer.dims.events.ndisplay.connect(
+            self._on_view_direction_change
+        )
 
         self.viewer.canvas.overlays._zoom_box.events.zoom_area.connect(
             self._on_boxzoom
@@ -805,15 +811,30 @@ class VispyCanvas:
         napari_layer._overlays.events.changed.connect(overlay_callback)
         napari_layer.events.units.connect(self._deferred_world_units_update)
         self._overlay_callbacks[napari_layer] = overlay_callback
-        self.viewer.scene.camera.events.angles.connect(
-            vispy_layer._on_camera_move
-        )
         self._deferred_world_units_update()
 
         # we need to trigger _on_matrix_change once after adding the overlays so that
         # all children nodes are assigned the correct transforms
         vispy_layer._on_matrix_change()
+        # also make sure we communicate update the view direction of the new layer
+        # (needed e.g for lighting by mesh)
+        self._on_view_direction_change()
         self._update_scenegraph()
+
+    def _on_view_direction_change(self) -> None:
+        """Update view direction for anything in vispy that requires this information."""
+        # take displayed up and view directions and flip zyx for vispy
+        if self.viewer.dims.ndisplay == 2:
+            view = np.array((0, 0, -1))
+            up = np.array((0, -1, 0))
+        else:
+            # flip to vispy xyz from napari zyx
+            view = np.array(self.viewer.scene.camera.view_direction[::-1])
+            up = np.array(self.viewer.scene.camera.up_direction[::-1])
+
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer._on_view_direction_change(view, up)
+            vispy_layer.node.update()
 
     def _deferred_world_units_update(self):
         """Defer the world units update until the next draw event."""
@@ -1009,11 +1030,11 @@ class VispyCanvas:
             )
 
             # delete redundant vispy overlays (always keep 1)
+            _, occupied_viewboxes = self.viewer.canvas.grid._viewbox_groups(
+                self.viewer.layers
+            )
             n_views_to_populate = (
-                len(self.viewer.layers) // abs(self.viewer.canvas.grid.stride)
-                or 1
-                if gridded
-                else 1
+                len(occupied_viewboxes) or 1 if gridded else 1
             )
             while len(vispy_overlays) > n_views_to_populate:
                 vispy_overlays.pop().close()
@@ -1390,7 +1411,9 @@ class VispyCanvas:
             self.grid_cameras.append(camera)
 
     def _update_scenegraph(self, event=None):
-        if self._pause_scene_graph:
+        if self._pause_scene_graph or any(
+            layer not in self.layer_to_visual for layer in self.viewer.layers
+        ):
             return
         with self._scene_canvas.events.draw.blocker():
             if self.viewer.canvas.grid.enabled:
