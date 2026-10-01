@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from pytest import FixtureRequest  # noqa: PT013
+    from pytestqt.qtbot import QtBot
 
     from napari import Viewer
     from napari._app_model._app import NapariApplication
@@ -255,7 +256,7 @@ def _disable_qt_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot: Any,
+    qtbot: QtBot,
     request: FixtureRequest,
     mock_app_model: NapariApplication,
     monkeypatch: pytest.MonkeyPatch,
@@ -371,7 +372,9 @@ def make_napari_viewer(
         **model_kwargs: Any,
     ) -> Viewer:
         if strict_qt is None:
-            strict_qt = is_internal_test or bool(os.getenv('NAPARI_STRICT_QT'))
+            strict_qt = is_internal_test or os.getenv(
+                'NAPARI_STRICT_QT', False
+            )
         nonlocal _strict
         _strict = strict_qt
 
