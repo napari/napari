@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from enum import auto
+from functools import lru_cache
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
@@ -85,6 +86,7 @@ def _camera_rotation_matrix(
     return R.from_euler('XYZ', -np.asarray(angles), degrees=True).as_matrix()
 
 
+@lru_cache
 def view_and_up_directions_from_angles(
     angles: Vector3D,
     orientation: AxesOrientation3D,
