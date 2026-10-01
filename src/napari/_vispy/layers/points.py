@@ -57,8 +57,8 @@ class VispyPointsLayer(VispyBaseLayer):
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
-            border_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+            border_color = np.zeros((1, 4), dtype=np.float32)
+            face_color = np.zeros((1, 4), dtype=np.float32)
             border_width = np.zeros(1)
             symbol = ['o']
         else:
@@ -97,7 +97,6 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=face_color,
             **border_kw,
         )
-
         self.reset()
 
     def _on_highlight_change(self):
