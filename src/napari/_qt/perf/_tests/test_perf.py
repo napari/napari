@@ -33,8 +33,10 @@ napari.run()
 CONFIG = {
     'trace_qt_events': True,
     'trace_file_on_start': '',
-    'trace_callables': [],
-    'callable_lists': {},
+    'trace_callables': ['viewer'],
+    'callable_lists': {
+        'viewer': ['napari.components.viewer_model.ViewerModel.add_points'],
+    },
 }
 
 
@@ -81,6 +83,7 @@ def test_trace_on_start(tmp_path: Path, perf_config, perfmon_script):
         for event in data:
             for field in ['pid', 'tid', 'name', 'ph', 'ts', 'args']:
                 assert field in event
+        assert any(event['name'] == 'ViewerModel.add_points' for event in data)
 
 
 def test_qt_performance(qtbot, monkeypatch):
