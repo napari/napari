@@ -580,6 +580,7 @@ class VispyCanvas:
         self.viewer.cursor.position = self._map_canvas2world(
             event.pos, viewbox
         )
+        self.viewer.cursor.events.canvas_position()
 
         napari_event = NapariMouseEvent(
             event=event,

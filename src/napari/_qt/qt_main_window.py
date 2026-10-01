@@ -212,6 +212,9 @@ class _QtMainWindow(QMainWindow):
         viewer.cursor.events.position.connect(
             self.status_thread.trigger_status_update
         )
+        viewer.cursor.events.canvas_position.connect(
+            self.status_thread.trigger_status_update
+        )
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
         )
@@ -346,6 +349,19 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        # catch enter/leave events for the canvas and update status accordingly
+        if (
+            hasattr(self, '_qt_viewer')
+            and source is self._qt_viewer.canvas._scene_canvas.native
+        ):
+            if event.type() == QEvent.Type.Enter:
+                # canvas position is set by the vispy mouse event, no need to do it here
+                pass
+            elif event.type() == QEvent.Type.Leave:
+                # we have to tell the canvas we're outside, otherwise it simply stops
+                # receiving events and it's indistinguishable from a stationary mouse
+                self._qt_viewer.viewer.cursor._canvas_position = None
+                self._qt_viewer.viewer.cursor.events.canvas_position()
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
