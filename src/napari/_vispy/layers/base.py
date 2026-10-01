@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import pint
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
 
 _L = TypeVar('_L', bound=Layer)
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class VispyBaseLayer(ABC, Generic[_L]):
@@ -312,7 +313,11 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_camera_move(self, event=None):
+    def _on_view_direction_change(
+        self,
+        view: Vector3 | None = None,
+        up: Vector3 | None = None,
+    ):
         return
 
     def _on_font_size_change(self):
@@ -329,7 +334,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_camera_move()
+        self._on_view_direction_change()
 
     def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.
