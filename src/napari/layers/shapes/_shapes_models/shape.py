@@ -843,9 +843,9 @@ class Shape(ABC):
             # mask_p has its axes in `plane` order: put them in data order
             # and add a length one axis for each dim in `others`, so it
             # broadcasts over the slices chosen above.
-            displayed_order = argsort(plane)
+            plane_in_data_order = argsort(plane)
             mask[tuple(slice_key)] = np.expand_dims(
-                mask_p.transpose(displayed_order), tuple(others)
+                mask_p.transpose(plane_in_data_order), tuple(others)
             )
         else:
             mask = mask_p
