@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 from weakref import WeakSet
 
 import numpy as np
@@ -51,10 +51,7 @@ if TYPE_CHECKING:
 
     from napari._qt.qt_main_window import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
-    from napari._vispy.overlays.base import (
-        VispyBaseOverlay,
-        VispyCanvasOverlay,
-    )
+    from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
@@ -418,13 +415,13 @@ class VispyCanvas:
                     self.cursor = QtCursorVisual['standard'].value
                     brush_overlay.position_is_frozen = True
                 else:
-                    self.cursor = QtCursorVisual.blank()  # type: ignore[operator]
+                    self.cursor = QtCursorVisual.blank()
                     brush_overlay.position_is_frozen = False
                 brush_overlay.visible = True
             else:
-                self.cursor = QtCursorVisual.square(size)  # type: ignore[operator]
+                self.cursor = QtCursorVisual.square(size)
         elif cursor == 'crosshair':
-            self.cursor = QtCursorVisual.crosshair()  # type: ignore[operator]
+            self.cursor = QtCursorVisual.crosshair()
         else:
             self.cursor = QtCursorVisual[cursor].value
 
@@ -453,7 +450,11 @@ class VispyCanvas:
         box_size_canvas = np.abs(
             np.diff(self.viewer.canvas.overlays._zoom_box.position, axis=0)
         )
-        box_center_world = np.mean(zoom_area, axis=0)
+        start, end = zoom_area
+        box_center_world = (
+            (start[0] + end[0]) / 2,
+            (start[1] + end[1]) / 2,
+        )
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.scene.camera.zoom = self.viewer.scene.camera.zoom * np.min(
             ratio
@@ -502,7 +503,7 @@ class VispyCanvas:
 
     def _get_viewbox_at(
         self, position: tuple[float, float]
-    ) -> tuple[ViewBox | None, tuple[int, int] | None]:
+    ) -> tuple[ViewBox, tuple[int, int]] | tuple[None, None]:
         """Get the viewbox and its grid coordinates from the mouse position.
 
         Returns (None, None) when the view is empty (no layers).
@@ -565,16 +566,19 @@ class VispyCanvas:
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
-            viewbox, grid_coords = self._get_viewbox_at(event.press_event.pos)
+            viewbox_at = self._get_viewbox_at(event.press_event.pos)
         else:
-            viewbox, grid_coords = self._get_viewbox_at(event.pos)
+            viewbox_at = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor.viewbox = viewbox_at[1]
 
-        if viewbox is None or grid_coords is None:
+        if viewbox_at[0] is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
+        # unpack only after the check, so the type checker knows that the
+        # viewbox and its grid coordinates are either both set or both None
+        viewbox, grid_coords = viewbox_at
 
         napari_event = NapariMouseEvent(
             event=event,
@@ -1005,8 +1009,8 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
             vispy_overlays = self._viewer_overlay_to_visual.pop(overlay)
-            for vispy_overlay in vispy_overlays:
-                vispy_overlay.close()
+            for old_vispy_overlay in vispy_overlays:
+                old_vispy_overlay.close()
 
         # go through all overlays and ensure there are the exact amount of
         # corresponding visuals depending on number of views to display
@@ -1045,9 +1049,6 @@ class VispyCanvas:
                 vispy_overlays.pop().close()
 
             # create, or update parent if existing
-            # TODO: rename to avoid shadowing the `vispy_overlay` used in the
-            # "delete outdated overlays" loop above; suppressing for now
-            vispy_overlay: VispyBaseOverlay | None = None  # type: ignore[no-redef]
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
                     self.viewer.canvas.grid.iter_viewboxes(self.viewer.layers),
@@ -1110,7 +1111,7 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
-        callback = self._overlay_callbacks.get(layer)
+        callback = self._overlay_callbacks[layer]
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
@@ -1155,7 +1156,7 @@ class VispyCanvas:
 
     def _get_ordered_visible_canvas_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, Node | None]]:
+    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, int | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1167,7 +1168,7 @@ class VispyCanvas:
         free-floating (such as the cursor overlay), so those are skipped
         """
 
-        def is_visible_tileable(overlay: Overlay) -> bool:
+        def is_visible_tileable(overlay: Overlay) -> TypeGuard[CanvasOverlay]:
             return bool(
                 isinstance(overlay, CanvasOverlay)
                 and overlay.visible
@@ -1359,10 +1360,10 @@ class VispyCanvas:
         d = d[0:nd]
         d = d / np.linalg.norm(d)
         # xyz to zyx
-        d_list: list[float] = list(d[::-1])
+        d_reversed: list[float] = list(d[::-1])
         # convert to nd view direction
         view_direction_nd = np.zeros(self.viewer.dims.ndim, dtype=np.float64)
-        view_direction_nd[list(self.viewer.dims.displayed)] = d_list
+        view_direction_nd[list(self.viewer.dims.displayed)] = d_reversed
         return view_direction_nd
 
     def screenshot(self) -> QImage:

@@ -11,8 +11,6 @@ from napari.utils.color import ColorValue
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
@@ -33,7 +31,6 @@ class VispyBaseOverlay:
     overlay: Overlay
     x_size: float = 0.0
     y_size: float = 0.0
-    canvas_position_callback: Callable[[], None] | None = None
 
     def __init__(
         self,
