@@ -216,12 +216,12 @@ def _preallocate_arrays(
 
     return {
         'z_index': z_index,
-        'vertices': vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices': mesh_vertices,  # type: ignore[typeddict-item]
-        'mesh_vertices_centers': mesh_vertices_centers,  # type: ignore[typeddict-item]
-        'mesh_vertices_offsets': mesh_vertices_offsets,  # type: ignore[typeddict-item]
-        'mesh_triangles': mesh_triangles,  # type: ignore[typeddict-item]
-        'mesh_triangles_colors': mesh_triangles_colors,  # type: ignore[typeddict-item]
+        'vertices': vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices': mesh_vertices,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_centers': mesh_vertices_centers,  # pyrefly: ignore [bad-assignment]
+        'mesh_vertices_offsets': mesh_vertices_offsets,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles': mesh_triangles,  # pyrefly: ignore [bad-assignment]
+        'mesh_triangles_colors': mesh_triangles_colors,  # pyrefly: ignore [bad-assignment]
         'vertices_index': vertices_index,
         'mesh_triangles_index': mesh_triangles_index,
         'mesh_vertices_index': mesh_vertices_index,
@@ -440,8 +440,8 @@ class ShapeList:
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
-        self._edge_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
-        self._face_color: ShapeColorArray = np.empty((0, 4))  # type: ignore[assignment]
+        self._edge_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
+        self._face_color: ShapeColorArray = np.empty((0, 4))  # pyrefly: ignore [bad-assignment]
 
         # counter for the depth of re entrance of the context manager.
         self.__batched_level = 0
@@ -700,7 +700,7 @@ class ShapeList:
     def slice_key(self, slice_key):
         slice_key = list(slice_key)
         if not np.array_equal(self._slice_key, slice_key):
-            self._slice_key = slice_key
+            self._slice_key = slice_key  # pyrefly: ignore [bad-assignment]
             self._clear_cache()
             self._update_displayed()
 
@@ -779,8 +779,8 @@ class ShapeList:
         vertices_range: IndexArray | slice
 
         if disp_indices.size == 0:
-            triangle_ranges = np.array([], dtype=np.int64)
-            vertices_range = np.array([], dtype=np.int64)
+            triangle_ranges = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
+            vertices_range = np.array([], dtype=np.int64)  # pyrefly: ignore [bad-assignment]
         else:
             triangle_ranges = self._mesh_triangles_range_seq(disp_indices)
             vertices_range = self._vertices_range_seq(disp_indices)
@@ -1102,7 +1102,7 @@ class ShapeList:
     def remove_all(self):
         """Removes all shapes"""
         self.shapes = []
-        self._vertices = np.empty((0, self.ndisplay))  # type: ignore[assignment]
+        self._vertices = np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-assignment]
         self._vertices_index = np.zeros(1, dtype=IndexDtype)
         self._z_index = np.empty(0, dtype=IndexDtype)
         self._z_order = np.empty(0, dtype=ZOrderDtype)
@@ -1416,7 +1416,7 @@ class ShapeList:
     @_batch_dec
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list"""
-        self._z_order = np.argsort(self._z_index, kind='stable')  # type: ignore[assignment]
+        self._z_order = np.argsort(self._z_index, kind='stable')  # pyrefly: ignore [bad-assignment]
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty(0, dtype=ZOrderDtype)
         else:
@@ -1859,7 +1859,7 @@ class ShapeList:
     @cached_property
     def _visible_shapes(self) -> list[tuple[int, Shape]]:
         slice_key = self.slice_key
-        if len(slice_key):
+        if len(slice_key):  # pyrefly: ignore [bad-argument-type]
             return [
                 (i, s)
                 for i, s in enumerate(self.shapes)
@@ -1879,7 +1879,7 @@ class ShapeList:
     ]:
         data = np.array([s[1].bounding_box for s in self._visible_shapes])
         if data.size == 0:
-            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))
+            return np.empty((0, self.ndisplay)), np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-return]
         return data[:, 0], data[:, 1]
 
     @cached_property

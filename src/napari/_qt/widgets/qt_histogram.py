@@ -80,7 +80,7 @@ class QtHistogramWidget(QWidget):
         self.histogram_visual.parent = self.view.scene
 
         self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)
+        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # pyrefly: ignore [missing-attribute]
         # Disable viewbox interaction to prevent accidental pan/zoom
         self.view.interactive = False
 
@@ -154,7 +154,7 @@ class QtHistogramWidget(QWidget):
         worker = cast(
             GeneratorWorker,
             create_worker(
-                self._histogram.compute,  # type: ignore[arg-type]
+                self._histogram.compute,  # pyrefly: ignore [bad-argument-type]
                 _progress={'desc': 'Computing histogram'},
             ),
         )
@@ -212,7 +212,7 @@ class QtHistogramWidget(QWidget):
     ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
         # color is returned as a 4-tuple even when alpha=False,
-        # so to satisfy mypy we need to explicity build a 3-tuple
+        # so to satisfy pyrefly we need to explicity build a 3-tuple
         rgb = color.as_rgb_tuple(alpha=False)
         red, green, blue = rgb[0], rgb[1], rgb[2]
         return (red / 255, green / 255, blue / 255, alpha)
@@ -279,8 +279,8 @@ class QtHistogramWidget(QWidget):
                 bin_edges=bin_edges,
                 counts=counts,
                 gamma=gamma,
-                clims=clims,
-                data_range=clims_range,
+                clims=clims,  # pyrefly: ignore [bad-argument-type]
+                data_range=clims_range,  # pyrefly: ignore [bad-argument-type]
             )
             self.canvas.update()
         finally:

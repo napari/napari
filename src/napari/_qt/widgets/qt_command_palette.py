@@ -26,6 +26,7 @@ _COMMON_ALIASES = {
     'visualize': 'visualise',
     'preferences': 'settings',
 }
+_NULL_INDEX = QtCore.QModelIndex()
 
 
 class QCommandPalette(QtW.QWidget):
@@ -94,10 +95,10 @@ class QCommandPalette(QtW.QWidget):
                 self._list.all_commands.append(elem)
         return
 
-    def focusOutEvent(self, a0: QtGui.QFocusEvent | None) -> None:
+    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
         """Hide the palette when focus is lost."""
         self.hide()
-        return super().focusOutEvent(a0)
+        return super().focusOutEvent(event)
 
     def update_context(self, parent: _QtMainWindow) -> None:
         """Update the context of the palette."""
@@ -154,8 +155,8 @@ class QCommandLineEdit(QtW.QLineEdit):
         """The parent command palette widget."""
         return cast(QCommandPalette, self.parent())
 
-    def event(self, e: QtCore.QEvent | None) -> bool:
-        if e is None or e.type() != QtCore.QEvent.Type.KeyPress:
+    def event(self, e: QtCore.QEvent) -> bool:
+        if e.type() != QtCore.QEvent.Type.KeyPress:
             return super().event(e)
         e = cast(QtGui.QKeyEvent, e)
         if e.modifiers() in (
@@ -206,14 +207,24 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
         self._commands: list[CommandRule] = []
         self._max_matches = 80
 
-    def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = _NULL_INDEX,
+    ) -> int:
         return self._max_matches
 
-    def data(self, index: QtCore.QModelIndex, role: int = 0) -> Any:
+    def data(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = 0,
+    ) -> Any:
         """Don't show any data. Texts are rendered by the item widget."""
         return None
 
-    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlag:
+    def flags(
+        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+    ) -> Qt.ItemFlag:
         return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
@@ -237,7 +248,7 @@ class QCommandLabel(QtW.QLabel):
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
-        self.setToolTip(cmd.tooltip)
+        self.setToolTip(cmd.tooltip or '')
 
     def command_text(self) -> str:
         """The original command text."""
@@ -298,7 +309,7 @@ class QCommandList(QtW.QListView):
         self._selected_index += dx
         self._selected_index = max(0, self._selected_index)
         self._selected_index = min(
-            self._current_max_index - 1, self._selected_index
+            self._current_max_index, self._selected_index
         )
         self.update_selection()
         return
@@ -361,28 +372,27 @@ class QCommandList(QtW.QListView):
         """Update the list to match the input text."""
         self._selected_index = 0
         max_matches = self.model()._max_matches
-        row = 0
+        row = -1
         for row, action in enumerate(self.iter_top_hits(input_text)):
-            self.setRowHidden(row, False)
+            # we don't want to show more than these lines
+            if row >= max_matches:
+                break
+
             lw = self.indexWidget(self.model().index(row))
             if lw is None:
-                self._current_max_index = row
+                # we hit the end of available row widgets
                 break
-            lw.set_command(action)
-            if _enabled(action, self._app_model_context):
-                lw.set_text_colors(input_text, color=self._match_color)
-            else:
-                lw.setDisabled(True)
 
-            if row >= max_matches:
-                self._current_max_index = max_matches
-                break
-            row = row + 1
-        else:
-            # if the loop completes without break
-            self._current_max_index = row
-            for r in range(row, max_matches):
-                self.setRowHidden(r, True)
+            self.setRowHidden(row, False)
+            lw.set_command(action)
+            lw.set_text_colors(input_text, color=self._match_color)
+            lw.setEnabled(_enabled(action, self._app_model_context))
+
+        self._current_max_index = row
+
+        # remove all remaining rows
+        for r in range(row + 1, max_matches):
+            self.setRowHidden(r, True)
         self.update_selection()
         return
 
@@ -426,8 +436,9 @@ class QCommandList(QtW.QListView):
 
         def model(self) -> QCommandMatchModel: ...
         def indexWidget(
-            self, index: QtCore.QModelIndex
-        ) -> QCommandLabel | None: ...
+            self,
+            index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        ) -> QCommandLabel: ...
 
 
 def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
