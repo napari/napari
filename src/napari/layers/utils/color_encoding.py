@@ -8,7 +8,7 @@ from typing import (
 
 import numpy as np
 from pydantic import Field, GetCoreSchemaHandler, TypeAdapter, field_validator
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
@@ -21,7 +21,6 @@ from napari.utils import Colormap
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import ValidColormapArg, ensure_colormap
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
-from napari.utils.translations import trans
 
 """The default color to use, which may also be used a safe fallback color."""
 DEFAULT_COLOR = ColorValue.validate('cyan')
@@ -33,8 +32,8 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source, handler: GetCoreSchemaHandler
-    ):
+        cls, source: Any, handler: GetCoreSchemaHandler, /
+    ) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate, core_schema.any_schema()
         )
@@ -84,10 +83,7 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
             color_array = ColorArray.validate(value)
         except (ValueError, AttributeError, KeyError) as e:
             raise TypeError(
-                trans._(
-                    'value should be a ColorEncoding, a dict, a color, or a sequence of colors',
-                    deferred=True,
-                )
+                'value should be a ColorEncoding, a dict, a color, or a sequence of colors'
             ) from e
         if color_array.shape[0] == 1:
             return ConstantColorEncoding(constant=value)
@@ -169,7 +165,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
         # this is a numpy array first.
         values = np.asarray(features[self.feature])
-        return self.colormap.map(values)
+        return ColorArray(self.colormap.map(values))
 
 
 class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -206,7 +202,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         )
         if contrast_limits is not None:
             values = np.interp(values, contrast_limits, (0, 1))
-        return self.colormap.map(values)
+        return ColorArray(self.colormap.map(values))
 
     @field_validator('colormap', mode='before')
     @classmethod
@@ -222,10 +218,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
             contrast_limits[0] >= contrast_limits[1]
         ):
             raise ValueError(
-                trans._(
-                    'contrast_limits must be a strictly increasing pair of values',
-                    deferred=True,
-                )
+                'contrast_limits must be a strictly increasing pair of values'
             )
         return contrast_limits
 

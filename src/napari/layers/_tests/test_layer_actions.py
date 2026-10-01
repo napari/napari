@@ -9,6 +9,8 @@ from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
     _duplicate_layer,
+    _extract_multiscale_level,
+    _extract_multiscale_level_from_selection,
     _hide_selected,
     _hide_unselected,
     _link_selected_layers,
@@ -414,3 +416,199 @@ def make_three_layer_layerlist():
     layer_list.append(Image(np.random.rand(8, 8, 8)))
 
     return layer_list
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_multiscale_projection(mode):
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+    assert np.array_equal(
+        projected_layer.data[0], getattr(np, mode)(data[0], axis=0)
+    )
+    assert np.array_equal(
+        projected_layer.data[1], getattr(np, mode)(data[1], axis=0)
+    )
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_nondecreasing_pyramid_multiscale_projection(mode, monkeypatch):
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 8 * 8).reshape(2, 8, 8),
+    )
+    ll = LayerList([Image(data=data, multiscale=True)])
+    _project(ll, mode=mode)
+    projected_layer = ll[-1]
+
+    assert projected_layer.multiscale
+    assert len(projected_layer.data) == 2
+
+    for projected, original in zip(projected_layer.data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected,
+            getattr(np, mode)(original, axis=0),
+        )
+
+    assert len(warnings) == 1
+    assert 'Projection warning' in warnings[0]
+
+
+@pytest.mark.parametrize(
+    'mode', ['max', 'min', 'std', 'sum', 'mean', 'median']
+)
+def test_zarr_projection_is_lazy(mode):
+    import dask.array as da
+
+    projecting_axis = 0
+
+    data = (
+        np.arange(4 * 8 * 8).reshape(4, 8, 8),
+        np.arange(2 * 4 * 4).reshape(2, 4, 4),
+    )
+
+    zarr_data = tuple(zarr.array(array, chunks=(1, 2, 2)) for array in data)
+    ll = LayerList([Image(data=zarr_data, multiscale=True)])
+
+    _project(ll, mode=mode, axis=projecting_axis)
+
+    projected_data = ll[-1].data
+    assert all(isinstance(level, da.Array) for level in projected_data)
+
+    if mode != 'median':
+        for projected_level, zarr_level in zip(
+            projected_data, zarr_data, strict=True
+        ):
+            expected_chunk = tuple(
+                chunk
+                for index, chunk in enumerate(zarr_level.chunks)
+                if projecting_axis != index
+            )
+            assert projected_level.chunksize == expected_chunk
+
+    for projected, original in zip(projected_data, data, strict=True):
+        np.testing.assert_array_equal(
+            projected.compute(),
+            getattr(np, mode)(original, axis=projecting_axis),
+        )
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+@pytest.mark.parametrize(('level', 'expected_level'), [(0, 0), (None, 1)])
+def test_extract_multiscale_level(layer_type, level, expected_level):
+    layer_name = 'test_layer'
+    data = (
+        np.zeros((16, 16, 16), dtype=int),
+        np.zeros((8, 8, 8), dtype=int),
+    )
+    layer = layer_type(
+        data,
+        name=layer_name,
+        scale=[2, 3, 4],
+        translate=[10, 20, 30],
+    )
+    layer.data_level = 1
+
+    new_layer = _extract_multiscale_level((layer,), level=level)[0]
+
+    np.testing.assert_array_equal(new_layer.data, data[expected_level])
+    assert not new_layer.multiscale
+    assert new_layer.locked_data_level is None  # type: ignore
+    assert new_layer.name == f'{layer_name}-level({expected_level})'
+    np.testing.assert_array_equal(
+        new_layer.scale,
+        np.asarray(layer.scale) * layer.downsample_factors[expected_level],
+    )
+    np.testing.assert_array_equal(
+        new_layer.translate,
+        np.asarray(layer.translate)
+        + (layer.downsample_factors[expected_level] - 1)
+        / 2
+        * np.asarray(layer.scale),
+    )
+    assert new_layer.source.parent() is layer  # type: ignore
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+def test_extract_multiscale_level_uses_locked_data_level(layer_type):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    layer = layer_type(data)
+    layer.locked_data_level = 1
+    assert layer.data_level == 1
+    extracted_layer = _extract_multiscale_level((layer,))[0]
+    np.testing.assert_array_equal(extracted_layer.data, layer.data[1])
+
+
+@pytest.mark.parametrize('layer_type', [Image, Labels])
+def test_extract_multiscale_level_from_selection(layer_type):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    multiscale_layers_indexes = [0, 2]
+    layers = [
+        layer_type(data, name='test_layer1'),
+        Points(),
+        layer_type(data, name='test_layer2'),
+        Shapes(),
+    ]
+
+    ll = LayerList(layers)
+    ll.selection = {layers[index] for index in multiscale_layers_indexes}
+
+    _extract_multiscale_level_from_selection(ll, level=1)
+
+    assert len(ll) == len(layers) + len(multiscale_layers_indexes)
+    for offset, layer_index in enumerate(multiscale_layers_indexes):
+        original_index = layer_index + offset
+        extracted_index = original_index + 1
+
+        assert ll[original_index] is layers[layer_index]
+        assert ll[extracted_index].name == (
+            f'{layers[layer_index].name}-level(1)'
+        )
+
+
+def test_extract_multiscale_level_from_selection_invalid_selection(
+    monkeypatch,
+):
+    data = (
+        np.zeros((16, 16), dtype=int),
+        np.zeros((8, 8), dtype=int),
+    )
+    layers = [Points(), Image(data=data)]
+
+    warnings = []
+    monkeypatch.setattr(
+        'napari.layers._layer_actions.show_warning',
+        warnings.append,
+    )
+
+    ll = LayerList(layers)
+    ll.selection = set(layers)
+
+    _extract_multiscale_level_from_selection(ll, level=1)
+
+    assert len(ll) == len(layers)
+    assert list(ll) == layers
+    assert warnings == [
+        'Only multiscale Image and Labels layers can extract data levels'
+    ]

@@ -172,25 +172,6 @@ def test_tensorstore_clim_popup(qtbot):
         (Surface(_SURF), False),
     ],
 )
-def test_histogram_ui_support_boundary(qtbot, layer, supports_histogram):
-    """Image layers (including RGB via luminance) should expose histogram UI."""
-    qtctrl = QtBaseImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    assert (qtctrl._histogram_control is not None) is supports_histogram
-    assert (
-        qtctrl._contrast_limits_control.histogram_button is not None
-    ) is supports_histogram
-
-
-@pytest.mark.parametrize(
-    ('layer', 'supports_histogram'),
-    [
-        (Image(_IMAGE), True),
-        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
-        (Surface(_SURF), False),
-    ],
-)
 def test_contrast_limits_popup_histogram_boundary(
     qtbot, layer, supports_histogram
 ):

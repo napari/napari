@@ -16,7 +16,6 @@ from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
-from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -39,7 +38,7 @@ class PluginInfoAction(argparse.Action):
         cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
-            format='table',
+            format='table',  # pyrefly: ignore [bad-argument-type]
         )
         sys.exit()
 
@@ -286,9 +285,7 @@ def _build_viewer() -> Viewer:
     # just set stack to True similar to the previous store_true action
     if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
         warnings.warn(
-            trans._(
-                "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-            ),
+            "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -315,7 +312,7 @@ def _build_viewer() -> Viewer:
                 for name, (
                     _pname,
                     wnames_collection,
-                ) in _npe2.widget_iterator():
+                ) in _npe2.widget_iterator():  # pyrefly: ignore [unbound-name]
                     if name == 'dock' and pname == _pname:
                         wnames = wnames_collection
                         break

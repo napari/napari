@@ -257,17 +257,17 @@ def test_changing_display_surface(make_napari_viewer):
     assert view.dims.nsliders == viewer.dims.ndim
 
     # Check display is currently 2D with one slider
-    assert viewer.layers[0]._data_view.shape[1] == 2
+    assert viewer.layers[0]._slicing_state._view_vertices.shape[1] == 2
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # Make display 3D
     viewer.dims.ndisplay = 3
-    assert viewer.layers[0]._data_view.shape[1] == 3
+    assert viewer.layers[0]._slicing_state._view_vertices.shape[1] == 3
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Make display 2D again
     viewer.dims.ndisplay = 2
-    assert viewer.layers[0]._data_view.shape[1] == 2
+    assert viewer.layers[0]._slicing_state._view_vertices.shape[1] == 2
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # Iterate over all values in first dimension

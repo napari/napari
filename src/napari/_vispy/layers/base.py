@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import pint
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
 
 _L = TypeVar('_L', bound=Layer)
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class VispyBaseLayer(ABC, Generic[_L]):
@@ -210,7 +211,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._world_units = self.layer.units
             self._world_to_layer_units_scale = (1,) * self.layer.ndim
 
-        # mypy: self.layer._transforms.simplified cannot be None
+        # pyrefly: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -311,7 +312,11 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_camera_move(self, event=None):
+    def _on_view_direction_change(
+        self,
+        view: Vector3 | None = None,
+        up: Vector3 | None = None,
+    ):
         return
 
     def reset(self):
@@ -320,7 +325,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_camera_move()
+        self._on_view_direction_change()
 
     def _on_poll(self, event=None):
         """Called when camera moves, before we are drawn.
@@ -333,5 +338,5 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def close(self):
         """Vispy visual is closing."""
         disconnect_events(self.layer.events, self)
-        self.node.transforms = MatrixTransform()
+        self.node.transform = MatrixTransform()
         self.node.parent = None

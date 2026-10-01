@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, cast
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
@@ -15,7 +17,11 @@ from napari._qt.utils import qt_signals_blocked
 from napari.layers import Image
 from napari.layers.image._image_constants import VolumeDepiction
 from napari.utils.action_manager import action_manager
-from napari.utils.translations import trans
+
+if TYPE_CHECKING:
+    from napari._qt.layer_controls.qt_layer_controls_base import (
+        QtLayerControls,
+    )
 
 
 class PlaneNormalButtons(QWidget):
@@ -35,14 +41,15 @@ class PlaneNormalButtons(QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
-        self.setLayout(QHBoxLayout())
-        self.layout().setSpacing(2)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        layout.setSpacing(2)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.x_button = QPushButton('x')
         self.y_button = QPushButton('y')
         self.z_button = QPushButton('z')
-        self.oblique_button = QPushButton(trans._('oblique'))
+        self.oblique_button = QPushButton('oblique')
         action_manager.bind_button(
             'napari:orient_plane_normal_along_z',
             self.z_button,
@@ -60,10 +67,10 @@ class PlaneNormalButtons(QWidget):
             self.oblique_button,
         )
 
-        self.layout().addWidget(self.x_button)
-        self.layout().addWidget(self.y_button)
-        self.layout().addWidget(self.z_button)
-        self.layout().addWidget(self.oblique_button)
+        layout.addWidget(self.x_button)
+        layout.addWidget(self.y_button)
+        layout.addWidget(self.z_button)
+        layout.addWidget(self.oblique_button)
 
 
 class QtDepictionControl(QtWidgetControlsBase):
@@ -94,6 +101,8 @@ class QtDepictionControl(QtWidgetControlsBase):
         Label for the plane normal thickness value chooser widget.
     """
 
+    _layer: Image
+
     def __init__(self, parent: QWidget, layer: Image) -> None:
         super().__init__(parent, layer)
         # Setup layer
@@ -113,25 +122,23 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.depiction_combobox.currentTextChanged.connect(
             self.change_depiction
         )
-        self.depiction_label = QtWrappedLabel(trans._('depiction:'))
+        self.depiction_label = QtWrappedLabel('depiction:')
 
         # plane controls
         self.plane_normal_buttons = PlaneNormalButtons(parent)
-        self.plane_normal_label = QtWrappedLabel(trans._('plane normal:'))
+        self.plane_normal_label = QtWrappedLabel('plane normal:')
 
         self.plane_thickness_slider = QLabeledDoubleSlider(
             Qt.Orientation.Horizontal, parent
         )
-        self.plane_thickness_slider.setFocusPolicy(Qt.NoFocus)
+        self.plane_thickness_slider.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plane_thickness_slider.setMinimum(1)
         self.plane_thickness_slider.setMaximum(50)
         self.plane_thickness_slider.setValue(self._layer.plane.thickness)
         self.plane_thickness_slider.valueChanged.connect(
             self.change_plane_thickness
         )
-        self.plane_thickness_label = QtWrappedLabel(
-            trans._('plane thickness:')
-        )
+        self.plane_thickness_label = QtWrappedLabel('plane thickness:')
 
     def change_depiction(self, text: str) -> None:
         self._layer.depiction = text
@@ -165,9 +172,10 @@ class QtDepictionControl(QtWidgetControlsBase):
         """Hide plane rendering controls if they aren't needed."""
         depiction = VolumeDepiction(self._layer.depiction)
         # TODO: Better way to handle the ndisplay value?
+        parent = cast('QtLayerControls', self.parent())
         visible = (
             depiction == VolumeDepiction.PLANE
-            and self.parent().ndisplay == 3
+            and parent.ndisplay == 3
             and self._layer.ndim >= 3
         )
         self.plane_normal_buttons.setVisible(visible)
@@ -175,7 +183,9 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider.setVisible(visible)
         self.plane_thickness_label.setVisible(visible)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.depiction_label, self.depiction_combobox),
             (self.plane_normal_label, self.plane_normal_buttons),

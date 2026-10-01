@@ -6,18 +6,17 @@ import logging
 import math
 import warnings
 from collections.abc import Generator, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import PrivateAttr
 
+from napari.layers.image.image import Image
+from napari.layers.surface.surface import Surface
 from napari.utils._dask_utils import _is_dask_data
 from napari.utils.events import Event, EventedModel
 
 logger = logging.getLogger('napari.components.histogram')
-
-if TYPE_CHECKING:
-    from napari.layers.image.image import Image  # noqa: TC004
 
 __all__ = ('HistogramModel',)
 
@@ -82,7 +81,7 @@ class HistogramModel(EventedModel):
     # Private attributes — pydantic's PrivateAttr is not validated at
     # runtime, so the annotation here is only for documentation and
     # readability; the true type is ``Image`` (enforced by __init__).
-    _layer: Image = PrivateAttr()
+    _layer: Image | Surface = PrivateAttr()
     _bin_edges: np.ndarray = PrivateAttr(
         default_factory=lambda: np.array([0.0, 1.0])
     )
@@ -100,7 +99,7 @@ class HistogramModel(EventedModel):
 
     def __init__(
         self,
-        layer: Image,
+        layer: Image | Surface,
         bins: int = DEFAULT_BINS,
         max_samples: int = DEFAULT_MAX_SAMPLES,
         mode: Literal['canvas', 'full'] = 'canvas',
@@ -111,7 +110,7 @@ class HistogramModel(EventedModel):
 
         Parameters
         ----------
-        layer : Image
+        layer : Image | Surface
             The layer to compute histogram for.
         bins : int, default: 256
             Number of histogram bins (matches ``np.histogram(data, bins=...)``).
@@ -224,7 +223,7 @@ class HistogramModel(EventedModel):
             # represents perceived brightness.
             # Sample pixel positions BEFORE conversion to avoid
             # materializing the full float32 intermediate for large arrays.
-            if self._layer.rgb:
+            if isinstance(self._layer, Image) and self._layer.rgb:
                 data = self._sample_rgb_and_luminance(data)
                 if data.size == 0:
                     self._set_empty_data()
@@ -298,7 +297,7 @@ class HistogramModel(EventedModel):
                 return
             try:
                 block = self._load_chunk(data, ci)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Chunk load failure (e.g. remote zarr read error) is
                 # non-fatal. Stop the generator instead of letting the
                 # exception propagate through the GeneratorWorker's Qt
@@ -449,6 +448,10 @@ class HistogramModel(EventedModel):
 
     def _get_slice_raw_data(self) -> np.ndarray | None:
         """Get the currently sliced raw image data if available."""
+        if isinstance(self._layer, Surface):
+            data = self._layer._slicing_state._view_vertex_values
+            return np.asarray(data) if data is not None else None
+
         layer_slice = self._layer._slice
         if layer_slice is None:
             return None
@@ -457,6 +460,14 @@ class HistogramModel(EventedModel):
 
     def _get_full_data(self) -> np.ndarray | None:
         """Get full volume data, using coarsest level for multiscale."""
+        if isinstance(self._layer, Surface):
+            # Surface layers contain vertex values in the third element of the tuple.
+            # Check if the surface has vortex values, if yes return them, otherwise return None.
+            if len(self._layer.data) == 2:
+                return None
+            data = self._layer.data[2]
+            return np.asarray(data)
+
         data = self._layer.data
 
         # Unpack multiscale to the coarsest level.
@@ -466,21 +477,23 @@ class HistogramModel(EventedModel):
             data = data[-1]
 
         if isinstance(data, np.ndarray):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Chunked arrays (dask, zarr, h5py with chunks) are returned
         # as-is for the progressive sampler in _compute_chunked_progressive.
         if self._has_chunks(data):
-            return data
+            return data  # pyrefly: ignore [bad-return]
 
         # Last resort: cast to numpy.  Guard against accidentally
         # materializing a very large object (contiguous h5py) by
         # checking the estimated memory footprint first.
         data_size = data.size if hasattr(data, 'size') else 0
         if data_size > _MAX_MATERIALIZE_ELEMENTS:
-            dtype_size = (
-                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-            )
+            if hasattr(data, 'dtype'):
+                dtype = np.dtype(data.dtype)
+                dtype_size = dtype.itemsize
+            else:
+                dtype_size = 8
             est_mb = (data_size * dtype_size) / (1024 * 1024)
             warnings.warn(
                 f'Skipping full-data histogram: materializing '

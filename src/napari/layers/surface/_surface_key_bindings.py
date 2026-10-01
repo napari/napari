@@ -8,7 +8,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,12 +25,12 @@ def register_surface_mode_action(
     return register_layer_attr_action(Surface, description, 'mode')
 
 
-@register_surface_mode_action(trans._('Transform'))
+@register_surface_mode_action('Transform')
 def activate_surface_transform_mode(layer: Surface) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_surface_mode_action(trans._('Move camera'))
+@register_surface_mode_action('Move camera')
 def activate_surface_pan_zoom_mode(layer: Surface) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

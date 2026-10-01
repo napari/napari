@@ -10,7 +10,6 @@ from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
 from napari.layers import Points, Shapes
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtFaceColorControl(QtWidgetControlsBase):
@@ -35,6 +34,8 @@ class QtFaceColorControl(QtWidgetControlsBase):
         Label for the current face color chooser widget.
     """
 
+    _layer: Shapes | Points
+
     def __init__(
         self,
         parent: QWidget,
@@ -47,7 +48,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
             initial_color=self._layer.current_face_color,
             tooltip=tooltip,
         )
-        self.face_color_label = QtWrappedLabel(trans._('face color:'))
+        self.face_color_label = QtWrappedLabel('face color:')
         connect_setattr(
             self.face_color_edit.color_changed,
             self._layer,
@@ -72,5 +73,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
                 )
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.face_color_label, self.face_color_edit)]

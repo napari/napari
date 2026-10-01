@@ -7,7 +7,6 @@ import numpy as np
 
 from napari.utils.colormaps import Colormap
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari.layers.utils.color_manager import ColorManager
@@ -55,17 +54,14 @@ def is_color_mapped(color, properties):
         return False
 
     raise ValueError(
-        trans._(
-            'face_color should be the name of a color, an array of colors, or the name of an property',
-            deferred=True,
-        )
+        'face_color should be the name of a color, an array of colors, or the name of an property'
     )
 
 
 def map_property(
     prop: np.ndarray,
     colormap: Colormap,
-    contrast_limits: None | tuple[float, float] = None,
+    contrast_limits: tuple[float, float] | None = None,
 ) -> tuple[Array, tuple[float, float]]:
     """Apply a colormap to a property
 
@@ -87,7 +83,7 @@ def map_property(
     normalized_properties = np.interp(prop, contrast_limits, (0, 1))
     mapped_properties = colormap.map(normalized_properties)
 
-    return mapped_properties, contrast_limits
+    return mapped_properties, contrast_limits  # pyrefly: ignore [bad-return]
 
 
 def _validate_colormap_mode(color_manager: ColorManager) -> None:
@@ -124,13 +120,13 @@ def _validate_colormap_mode(color_manager: ColorManager) -> None:
                 contrast_limits=color_manager.contrast_limits,
             )
     else:
-        color_manager.colors = np.empty((0, 4))  # type: ignore
+        color_manager.colors = np.empty((0, 4))
         current_prop_value = color_properties.current_value
         if current_prop_value is not None:
             color_manager.current_color = cmap.map(current_prop_value)[0]
 
     if len(color_manager.colors) == 0:
-        color_manager.colors = np.empty((0, 4))  # type: ignore
+        color_manager.colors = np.empty((0, 4))
 
 
 def _validate_cycle_mode(
@@ -157,9 +153,9 @@ def _validate_cycle_mode(
         )
     cmap = color_manager.categorical_colormap
     if len(color_properties.values) == 0:
-        color_manager.colors = np.empty((0, 4))  # type: ignore
+        color_manager.colors = np.empty((0, 4))
         current_prop_value = color_properties.current_value
         if current_prop_value is not None:
             color_manager.current_color = cmap.map(current_prop_value)[0]
     else:
-        color_manager.colors = cmap.map(color_properties.values)  # type: ignore
+        color_manager.colors = cmap.map(color_properties.values)

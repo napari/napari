@@ -23,7 +23,7 @@ Behaviour:
   It will apply additional restrictions from REPO_ROOT/resources/constraints/.
   It will write the version-specific constraints under REPO_ROOT/resources/constraints/.
   It will write the docs/examples constraints under REPO_ROOT/resources/constraints/.
-  It will write mypy requirements under REPO_ROOT/resources/.
+  It will write the pyrefly requirements under REPO_ROOT/resources/.
 
 Expected failures:
   When PACKAGE arguments are given, the script will fail if any requested package is not found in the REPO_ROOT/resources/constraints/*.txt files.
@@ -124,4 +124,4 @@ done
 
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_examples.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group gallery "${flags[@]}"
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_docs.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
-uv pip compile --python-version 3.14 --output-file resources/requirements_mypy.txt "${upgrade_flag[@]}" resources/requirements_mypy.in
+uv pip compile --python-version 3.12 --output-file resources/requirements_pyrefly.txt "${upgrade_flag[@]}" resources/requirements_pyrefly.in
