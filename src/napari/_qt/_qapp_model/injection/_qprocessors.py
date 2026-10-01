@@ -31,15 +31,17 @@ if TYPE_CHECKING:
 
 
 def _add_plugin_dock_widget(
-    widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str],
+    widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str, str],
     viewer: viewer.Viewer | None = None,
 ) -> None:
     if viewer is None:
         viewer = _provide_viewer_or_raise(
             msg='Widgets cannot be opened in headless mode.',
         )
-    widget, full_name = widget_name_tuple
-    viewer.window.add_dock_widget(widget, name=full_name)
+    widget, full_name, default_dock_area = widget_name_tuple
+    viewer.window.add_dock_widget(
+        widget, name=full_name, area=default_dock_area
+    )
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -202,7 +204,7 @@ def _add_future_data(
 
 QPROCESSORS: dict[object, Callable] = {
     Optional[
-        tuple[FunctionGui | QWidget | Widget, str]
+        tuple[FunctionGui | QWidget | Widget, str, str]
     ]: _add_plugin_dock_widget,
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     list[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
