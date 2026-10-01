@@ -39,7 +39,11 @@ class ExperimentalSettings(EventedSettings):
     async_: bool = Field(
         False,
         title='Render Layers Asynchronously',
-        description='Asynchronous loading of layers. \nThis setting partially loads data while viewing.',
+        description=(
+            'When enabled, layers are loaded in a background thread, improving responsiveness, especially for remote and large data.\n'
+            'If you experience issues with layer slicing and loading, synchronization between rendering and model state, or other unexpected '
+            'behaviors, consider temporarily disabling this setting and opening an issue on the napari repository.'
+        ),
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
@@ -130,10 +134,12 @@ class ExperimentalSettings(EventedSettings):
 
     dynamic_layer_controls: bool = Field(
         default=False,
-        title='Generate GUI layer controls dynamically instead of using premade panels.',
+        title='Generate GUI layer controls dynamically.',
         description=(
-            'Based on the attributes of the currenty selected layer, generate layer controls\n'
-            'dynamically, even when a single layer is selected. Happens by default with multiple layers.'
+            'Based on the attributes of the currenty selected layers, generate layer controls\n'
+            'dynamically (even when a single layer is selected). Happens by default with multiple layers.'
+            'If you experience issues related to the layer controls panel or its connection with layer '
+            'state, consider temporarily disabling this option and opening an issue on the napari repository.'
         ),
     )
 

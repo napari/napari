@@ -1,5 +1,6 @@
 """Status bar widget on the viewer MainWindow"""
 
+from textwrap import wrap
 from typing import TYPE_CHECKING, cast
 
 from qtpy.QtCore import QEvent, Qt
@@ -66,39 +67,29 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
-        self._async_icon = QLabel('A')
-        self._async_icon.setToolTip(
-            'The experimental feature "Render Layers Asyncronously" is enabled.\n'
-            'If you experience unexpected behaviors or issues related to layer slicing\n'
-            'and rendering, try disabling this feature from the experimental settings.\n'
-            'If problems persist, please open an issue on the napari repository!'
-        )
-        self.addPermanentWidget(self._async_icon)
-
-        self._dynamic_controls_icon = QLabel('D')
-        self._dynamic_controls_icon.setToolTip(
-            'The experimental feature "Generate GUI layer controls dynamically" is enabled.\n'
-            'If you experience unexpected behaviors or issues related to the layer controls\n'
-            'and their effects on layer attributes, try disabling this feature from the\n'
-            'experimental settings.\n'
-            'If problems persist, please open an issue on the napari repository!'
-        )
-        self.addPermanentWidget(self._dynamic_controls_icon)
-
+        self._warn_labels = {}
         self.update_warning_icons()
         get_settings().experimental.events.connect(self.update_warning_icons)
 
     def update_warning_icons(self) -> None:
-        exp_settings = get_settings().experimental
-        if exp_settings.async_:
-            self._async_icon.setVisible(True)
-        else:
-            self._async_icon.setVisible(False)
+        to_warn = {'async_': 'A', 'dynamic_layer_controls': 'D'}
+        for setting_id, letter in to_warn.items():
+            exp_settings = get_settings().experimental
 
-        if exp_settings.dynamic_layer_controls:
-            self._dynamic_controls_icon.setVisible(True)
-        else:
-            self._dynamic_controls_icon.setVisible(False)
+            if setting_id not in self._warn_labels:
+                label = QLabel(letter)
+                self._warn_labels[setting_id] = label
+                self.addPermanentWidget(label)
+                field = exp_settings.__class__.model_fields[setting_id]
+                label.setToolTip(
+                    f'The experimental feature `{field.title}` is enabled.\n'
+                    + '\n'.join(wrap(field.description))
+                )
+                # TODO: add click to open settings
+            else:
+                label = self._warn_labels[setting_id]
+
+            label.setVisible(getattr(exp_settings, setting_id))
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
