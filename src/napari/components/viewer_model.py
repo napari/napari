@@ -170,8 +170,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
-    mouse_over_canvas: bool
-        Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
 
@@ -202,9 +200,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # To check if mouse is over canvas to avoid race conditions between
-    # different events systems
-    mouse_over_canvas: bool = False
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -392,6 +387,23 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             The grid property is deprecated. Use `viewer.canvas.grid` instead.
         """
         return self.canvas.grid
+
+    @property
+    @deprecated(
+        (
+            'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0.'
+            ' Instead, check if viewer.cursor.canvas_position is None.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def mouse_over_canvas(self) -> bool:
+        """Whether the mouse is over the canvas.
+
+        .. deprecated:: 0.9.0
+            Deprecated. Use `viewer.cursor.canvas_position is None` instead.
+        """
+        return self.cursor.canvas_position is None
 
     def _tooltip_visible_update(self, event):
         self.tooltip.visible = event.value
@@ -893,7 +905,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
-        if not self.mouse_over_canvas:
+        if self.cursor.canvas_position is None:
             return None
         coord2val: dict[str, list[str]] = {}
         coord_str = ''
