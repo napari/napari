@@ -69,7 +69,7 @@ KEY_SUBS: dict[str, str] = {
 }
 
 
-UNDEFINED = Sentinel('UNDEFINED')
+_UNDEFINED = Sentinel('_UNDEFINED')
 
 _VISPY_SPECIAL_KEYS: list[keys.Key] = [
     keys.SHIFT,
@@ -148,7 +148,7 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: UNDEFINED = ...,
+    func: _UNDEFINED = ...,
     *,
     overwrite: bool = ...,
 ) -> Callable[[_F], _F]: ...
@@ -167,7 +167,7 @@ def bind_key(
 def bind_key(
     keymap: Keymap,
     key_bind: KeyBindingLike | EllipsisType,
-    func: Callable | EllipsisType | UNDEFINED | None = UNDEFINED,
+    func: Callable | EllipsisType | _UNDEFINED | None = _UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
@@ -232,7 +232,7 @@ def bind_key(
 
     To create a keymap that will block others, ``bind_key(..., ...)```.
     """
-    if func is UNDEFINED:
+    if func is _UNDEFINED:
 
         def inner(func: _F) -> _F:
             bind_key(keymap, key_bind, func, overwrite=overwrite)
@@ -275,7 +275,7 @@ def _get_user_keymap() -> Keymap:
 @overload
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: UNDEFINED = ...,
+    func: _UNDEFINED = ...,
     *,
     overwrite: bool = ...,
 ) -> Callable[[_F], _F]: ...
@@ -292,7 +292,7 @@ def _bind_user_key(
 
 def _bind_user_key(
     key_bind: KeyBindingLike,
-    func: KeymapFunction | EllipsisType | UNDEFINED | None = UNDEFINED,
+    func: KeymapFunction | EllipsisType | _UNDEFINED | None = _UNDEFINED,
     *,
     overwrite: bool = False,
 ) -> Callable[[_F], _F] | KeymapFunction | EllipsisType | None:
@@ -300,7 +300,7 @@ def _bind_user_key(
 
     See ``bind_key`` docs for details.
     """
-    if func is UNDEFINED:
+    if func is _UNDEFINED:
         return bind_key(_get_user_keymap(), key_bind, overwrite=overwrite)
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
