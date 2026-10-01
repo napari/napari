@@ -110,20 +110,18 @@ def get_widget_contribution(
     plugin_name: str, widget_name: str | None = None
 ) -> tuple[WidgetCreator, str, str]:
     widgets_seen = set()
-    plugin_exists = False
+    if plugin_name not in pm.instance():
+        msg = f'Plugin {plugin_name!r} not found.'
+        raise KeyError(msg)
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
                 return (
                     contrib.get_callable(),
                     contrib.display_name,
-                    getattr(contrib, 'default_dock_area', 'right'),
+                    getattr(contrib, 'default_area', 'right'),
                 )
-            plugin_exists = True
             widgets_seen.add(contrib.display_name)
-    if not plugin_exists:
-        msg = f'Plugin {plugin_name!r} not found.'
-        raise KeyError(msg)
     if widget_name and widgets_seen:
         msg = f'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {widgets_seen}'
         raise KeyError(msg)

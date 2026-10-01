@@ -129,10 +129,10 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
         in str(e.value)
     )
 
-    # calling with a non-existent plugin just returns None
-    mock_pm.commands.get.reset_mock()
-    assert not _npe2.get_widget_contribution('not-a-thing')
-    mock_pm.commands.get.assert_not_called()
+    # calling with a non-existent plugin raises
+    with pytest.raises(KeyError) as e:
+        _npe2.get_widget_contribution('not-a-thing')
+    assert "Plugin 'not-a-thing' not found" in str(e.value)
 
 
 def test_get_widget_contribution_no_widgets(tmp_plugin: DynamicPlugin):
