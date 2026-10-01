@@ -1317,6 +1317,12 @@ class VispyCanvas:
             font_size = get_settings().appearance.font_size
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.set_default_font_size(font_size)
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay.set_default_font_size(font_size)
+        for overlay_to_visual in self._layer_overlay_to_visual.values():
+            for vispy_overlay in overlay_to_visual.values():
+                vispy_overlay.set_default_font_size(font_size)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
