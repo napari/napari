@@ -300,8 +300,6 @@ def _bind_user_key(
 
     See ``bind_key`` docs for details.
     """
-    if func is _UNDEFINED:
-        return bind_key(_get_user_keymap(), key_bind, overwrite=overwrite)
     return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
 
 
