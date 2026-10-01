@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING, cast
 from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
+    QAbstractProxyModel,
     QEvent,
     QPoint,
     QRect,
@@ -47,7 +48,7 @@ from qtpy.QtCore import (
     Qt,
     Signal,
 )
-from qtpy.QtGui import QMouseEvent, QMovie, QPixmap
+from qtpy.QtGui import QMouseEvent, QMovie, QPalette, QPixmap
 from qtpy.QtWidgets import (
     QLineEdit,
     QStyledItemDelegate,
@@ -57,10 +58,11 @@ from qtpy.QtWidgets import (
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt.containers._base_item_model import ItemRole
+from napari._qt.containers._base_item_model import ItemRole, ModelIndex
 from napari._qt.containers.qt_layer_model import (
     LoadedRole,
     LockedRole,
+    QtLayerListModel,
     ThumbnailRole,
 )
 from napari._qt.qt_resources import QColoredSVGIcon
@@ -69,13 +71,28 @@ from napari.resources import LOADING_GIF_PATH
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qtpy import QtCore
-    from qtpy.QtCore import QAbstractItemModel, QModelIndex
+    from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QTreeView, QWidget
 
-    from napari.components.layerlist import LayerList
     from napari.layers import Layer
+
+
+def _layer_list_model(model: QAbstractItemModel | None) -> QtLayerListModel:
+    """Return the ``QtLayerListModel`` that ``model`` wraps.
+
+    The layer list view puts a proxy model (``ReverseProxyModel``) in front
+    of the real ``QtLayerListModel`` to show layers in reverse order. Qt
+    gives the delegate that proxy, so we unwrap it here to reach the real
+    model.
+    """
+    while isinstance(model, QAbstractProxyModel):
+        model = model.sourceModel()
+    if not isinstance(model, QtLayerListModel):
+        raise TypeError(
+            f'LayerDelegate expects a QtLayerListModel, got {type(model)!r}'
+        )
+    return model
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -101,7 +118,7 @@ class LayerDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
-        self._load_movie.frameChanged.connect(self.loading_frame_changed)  # pyrefly: ignore [bad-argument-type]
+        self._load_movie.frameChanged.connect(self.loading_frame_changed)
         self._layer_visibility_states: WeakKeyDictionary[Layer, bool] = (
             WeakKeyDictionary()
         )
@@ -111,7 +128,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         painter: QPainter | None,
         option: QStyleOptionViewItem,
-        index: QtCore.QModelIndex,
+        index: ModelIndex,
     ) -> None:
         """Paint the item in the model at `index`."""
         # Guard against stale indices (e.g. layer was removed while
@@ -121,7 +138,7 @@ class LayerDelegate(QStyledItemDelegate):
         if painter is None:
             return
         # update the icon based on layer type
-        option.textElideMode = Qt.TextElideMode.ElideMiddle  # pyrefly: ignore [bad-assignment]
+        option.textElideMode = Qt.TextElideMode.ElideMiddle  # pyrefly: ignore[bad-assignment]
         self.get_layer_icon(option, index)
         # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
@@ -133,7 +150,7 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_lock_icon(painter, option, index)
 
     def get_layer_icon(
-        self, option: QStyleOptionViewItem, index: QModelIndex
+        self, option: QStyleOptionViewItem, index: ModelIndex
     ) -> None:
         """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(ItemRole)
@@ -150,24 +167,24 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(option.palette.ColorRole.Window).red()  # pyrefly: ignore [missing-attribute]
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore [bad-assignment]
-        option.decorationSize = QSize(18, 18)  # pyrefly: ignore [bad-assignment]
-        option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore [bad-assignment]
+        bg = option.palette.color(QPalette.ColorRole.Window).red()  # pyrefly: ignore[missing-attribute]
+        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore[bad-assignment]
+        option.decorationSize = QSize(18, 18)  # pyrefly: ignore[bad-assignment]
+        option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore[bad-assignment]
         # put icon on the right
-        option.features |= QStyleOptionViewItem.ViewItemFeature.HasDecoration  # pyrefly: ignore [bad-assignment, unsupported-operation]
+        option.features |= QStyleOptionViewItem.ViewItemFeature.HasDecoration  # pyrefly: ignore[bad-assignment, unsupported-operation]
 
     def _paint_loading(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: ModelIndex,
     ) -> None:
         """Paint loading layer indicator."""
         loaded = index.data(LoadedRole)
         if not loaded:
             self._load_movie.start()
-            load_rect = option.rect.translated(4, 8)  # pyrefly: ignore [missing-attribute]
+            load_rect = option.rect.translated(4, 8)  # pyrefly: ignore[missing-attribute]
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             load_rect.setWidth(h)
             load_rect.setHeight(h)
@@ -177,7 +194,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: ModelIndex,
     ) -> None:
         """paint the layer thumbnail."""
         # paint the thumbnail
@@ -190,11 +207,11 @@ class LayerDelegate(QStyledItemDelegate):
             # movie. This is needed since there is only one instance of the
             # delegate and therefore only one instance of the load movie shared
             # between all the layer items.
-            all_loaded = index.model().sourceModel().all_loaded()  # pyrefly: ignore [missing-attribute]
+            all_loaded = _layer_list_model(index.model()).all_loaded()
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = option.rect.translated(-2, 2)  # pyrefly: ignore [missing-attribute]
+            thumb_rect = option.rect.translated(-2, 2)  # pyrefly: ignore[missing-attribute]
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)
             thumb_rect.setHeight(h)
@@ -205,7 +222,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: ModelIndex,
     ) -> None:
         """Paint a lock icon when the layer is locked. No icon when unlocked."""
         if not index.data(LockedRole):
@@ -214,17 +231,17 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
-        bg = option.palette.color(option.palette.ColorRole.Window).red()  # pyrefly: ignore [missing-attribute]
+        bg = option.palette.color(QPalette.ColorRole.Window).red()  # pyrefly: ignore[missing-attribute]
         colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
         lock_rect = self._lock_icon_rect(option, index)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
 
     def _lock_icon_rect(
-        self, option: QStyleOptionViewItem, index: QModelIndex
+        self, option: QStyleOptionViewItem, index: ModelIndex
     ) -> QRect:
         """Return the QRect for the lock icon."""
 
-        rect: QRect = option.rect  # pyrefly: ignore [bad-assignment]
+        rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
         icon_size = 16
         type_icon_reserved = 28
         x = rect.right() - type_icon_reserved - icon_size - 2
@@ -233,10 +250,10 @@ class LayerDelegate(QStyledItemDelegate):
 
     def createEditor(
         self,
-        parent: QWidget | None,
+        parent: QWidget,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ) -> QWidget | None:
+        index: ModelIndex,
+    ) -> QWidget:
         """User has double clicked on layer name."""
         # necessary for geometry, otherwise editor takes up full width.
         self.get_layer_icon(option, index)
@@ -250,18 +267,16 @@ class LayerDelegate(QStyledItemDelegate):
 
     def editorEvent(
         self,
-        event: QEvent | None,
-        model: QAbstractItemModel | None,
+        event: QEvent,
+        model: QAbstractItemModel,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: ModelIndex,
     ) -> bool:
         """Called when an event has occured in the editor.
 
         This can be used to customize how the delegate handles mouse/key events
         """
-        if event is None or model is None:
-            return super().editorEvent(event, model, option, index)
-        widget: QWidget = option.widget  # pyrefly: ignore [bad-assignment]
+        widget: QWidget = option.widget  # pyrefly: ignore[bad-assignment]
         if (
             event.type() == QEvent.Type.MouseButtonRelease
             and isinstance(event, QMouseEvent)
@@ -270,7 +285,7 @@ class LayerDelegate(QStyledItemDelegate):
             pnt = (
                 event.globalPosition().toPoint()
                 if hasattr(event, 'globalPosition')
-                else event.globalPos()  # pyrefly: ignore [missing-attribute]
+                else event.globalPos()
             )
 
             self.show_context_menu(index, model, pnt, widget)
@@ -347,14 +362,14 @@ class LayerDelegate(QStyledItemDelegate):
 
     def _show_on_alt_click_hide_others(
         self,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex,
+        model: QAbstractItemModel,
+        index: ModelIndex,
     ) -> bool:
         """On alt/option click of a layer show the layer, hide other layers,
         to be restored once a layer is alt/option-clicked a second time.
         """
         alt_clicked_layer: Layer = index.data(ItemRole)
-        layer_list: LayerList = model.sourceModel()._root  # pyrefly: ignore [missing-attribute]
+        layer_list = _layer_list_model(model)._root
         # show the alt-clicked layer
         state = Qt.CheckState.Checked
         if self._alt_click_layer() is None:
@@ -386,7 +401,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def show_context_menu(
         self,
-        index: QModelIndex,
+        index: ModelIndex,
         model: QAbstractItemModel,
         pos: QPoint,
         parent: QWidget | None,
@@ -399,7 +414,7 @@ class LayerDelegate(QStyledItemDelegate):
                 MenuId.LAYERLIST_CONTEXT, parent=parent
             )
 
-        layer_list: LayerList = model.sourceModel()._root  # pyrefly: ignore [missing-attribute]
+        layer_list = _layer_list_model(model)._root
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
         self._context_menu.exec(pos)
