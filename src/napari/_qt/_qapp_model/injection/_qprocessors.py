@@ -39,9 +39,10 @@ def _add_plugin_dock_widget(
             msg='Widgets cannot be opened in headless mode.',
         )
     widget, full_name, default_dock_area = widget_name_tuple
-    viewer.window.add_dock_widget(
-        widget, name=full_name, area=default_dock_area
+    area = viewer.window._resolve_dock_area(
+        name=full_name, default_area=default_dock_area
     )
+    viewer.window.add_dock_widget(widget, name=full_name, area=area)
 
 
 def _add_layer_data_tuples_to_viewer(
