@@ -27,6 +27,7 @@ _COMMON_ALIASES = {
     'visualize': 'visualise',
     'preferences': 'settings',
 }
+_NULL_INDEX = QtCore.QModelIndex()
 
 
 _HISTORY: deque[CommandRule] = deque(maxlen=1000)
@@ -52,7 +53,7 @@ class QCommandPalette(QtW.QWidget):
 
         self._line.setPlaceholderText('Type to search commands...')
         self._line.textChanged.connect(self._on_text_changed)
-        self._list.commandClicked.connect(self._on_command_clicked)  # pyrefly: ignore [missing-attribute]
+        self._list.commandClicked.connect(self._on_command_clicked)
         self._line.editingFinished.connect(self.hide)
         self.hide()
 
@@ -102,10 +103,10 @@ class QCommandPalette(QtW.QWidget):
                 self._list.all_commands.append(elem)
         return
 
-    def focusOutEvent(self, a0: QtGui.QFocusEvent | None) -> None:
+    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
         """Hide the palette when focus is lost."""
         self.hide()
-        return super().focusOutEvent(a0)
+        return super().focusOutEvent(event)
 
     def update_context(self, parent: _QtMainWindow) -> None:
         """Update the context of the palette."""
@@ -147,7 +148,7 @@ class QCommandPalette(QtW.QWidget):
 
     def hide(self) -> None:
         """Hide this widget."""
-        self.hidden.emit()  # pyrefly: ignore [missing-attribute]
+        self.hidden.emit()
         return super().hide()
 
     def text(self) -> str:
@@ -162,8 +163,8 @@ class QCommandLineEdit(QtW.QLineEdit):
         """The parent command palette widget."""
         return cast(QCommandPalette, self.parent())
 
-    def event(self, e: QtCore.QEvent | None) -> bool:  # pyrefly: ignore [bad-override-param-name]
-        if e is None or e.type() != QtCore.QEvent.Type.KeyPress:
+    def event(self, e: QtCore.QEvent) -> bool:
+        if e.type() != QtCore.QEvent.Type.KeyPress:
             return super().event(e)
         e = cast(QtGui.QKeyEvent, e)
         if e.modifiers() in (
@@ -214,14 +215,24 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
         self._commands: list[CommandRule] = []
         self._max_matches = 80
 
-    def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = _NULL_INDEX,
+    ) -> int:
         return self._max_matches
 
-    def data(self, index: QtCore.QModelIndex, role: int = 0) -> Any:
+    def data(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = 0,
+    ) -> Any:
         """Don't show any data. Texts are rendered by the item widget."""
         return None
 
-    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlag:
+    def flags(
+        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+    ) -> Qt.ItemFlag:
         return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
@@ -245,7 +256,7 @@ class QCommandLabel(QtW.QLabel):
         self._command_text = command_text
         self._command = cmd
         self.setText(command_text)
-        self.setToolTip(cmd.tooltip)
+        self.setToolTip(cmd.tooltip or '')
 
     def command_text(self) -> str:
         """The original command text."""
@@ -298,7 +309,7 @@ class QCommandList(QtW.QListView):
 
     def _on_clicked(self, index: QtCore.QModelIndex) -> None:
         if index.isValid():
-            self.commandClicked.emit(index.row())  # pyrefly: ignore [missing-attribute]
+            self.commandClicked.emit(index.row())
             return
 
     def move_selection(self, dx: int) -> None:
@@ -446,8 +457,9 @@ class QCommandList(QtW.QListView):
 
         def model(self) -> QCommandMatchModel: ...
         def indexWidget(
-            self, index: QtCore.QModelIndex
-        ) -> QCommandLabel | None: ...
+            self,
+            index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        ) -> QCommandLabel: ...
 
 
 def _enabled(action: CommandRule, context: Mapping[str, Any]) -> bool:
