@@ -991,6 +991,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     ) -> np.ndarray:
         """Convert canvas pixel position to world coordinates.
 
+        The position is calculated on a plane parallel to the screen and passing
+        through the camera center, so it is unaffected by perspective.
+
         Parameters
         ----------
         canvas_position : tuple of int
@@ -1027,7 +1030,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             rot = R.from_euler('xyz', camera.angles, degrees=True)
             rot_matrix = rot.as_matrix()
             # the depth is set to zero because we want the position at the
-            # *screen*. Any modifications should be done by callers afterwards.
+            # plane of the camera center.
+            # Any modifications should be done by callers afterwards.
             canvas_position_3d = np.array([0, *canvas_position])
             viewbox_center_3d = np.array([0, *viewbox_center])
             world_displayed = (
