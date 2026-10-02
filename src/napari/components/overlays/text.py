@@ -14,6 +14,8 @@ class _BaseTextOverlay(CanvasOverlay):
         A (4,) color array of the text overlay.
     font_size : float
         The font size (in points) of the text.
+    bold : bool
+        Whether the text is bold.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -35,6 +37,7 @@ class _BaseTextOverlay(CanvasOverlay):
 
     color: ColorValue | None = None
     font_size: float = 10
+    bold: bool = False
 
 
 class TextOverlay(_BaseTextOverlay):
@@ -48,6 +51,8 @@ class TextOverlay(_BaseTextOverlay):
         A (4,) color array of the text overlay.
     font_size : float
         The font size (in points) of the text.
+    bold : bool
+        Whether the text is bold.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -79,6 +84,8 @@ class LayerNameOverlay(_BaseTextOverlay):
         A (4,) color array of the text overlay.
     font_size : float
         The font size (in points) of the text.
+    bold : bool
+        Whether the text is bold.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -99,6 +106,8 @@ class LayerNameOverlay(_BaseTextOverlay):
     """
 
     position: CanvasPosition = CanvasPosition.TOP_LEFT
+    # bold, like the layer names in the layer list
+    bold: bool = True
 
 
 class CurrentSliceOverlay(_BaseTextOverlay):
@@ -110,6 +119,8 @@ class CurrentSliceOverlay(_BaseTextOverlay):
         A (4,) color array of the text overlay.
     font_size : float
         The font size (in points) of the text.
+    bold : bool
+        Whether the text is bold.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
