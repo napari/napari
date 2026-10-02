@@ -79,16 +79,22 @@ class LayerList(SelectableEventedList[Layer]):
     Notes
     -----
 
-    Note that ``changed`` events are only emitted when an element of the
-    list changes, *not* when the list itself changes (for example when items
-    are added or removed). For example, ``layerlist.append(layer)`` will emit
-    an ``inserted`` event. ``layerlist[idx] = layer`` *will* emit a ``changed``
-    event.
+    Note that ``changed`` events are only emitted when an element at a
+    specific index of the list is replaced, *not* when the list itself
+    changes (for example when items are added or removed). For example,
+    ``layerlist.append(layer)`` will emit an ``inserted`` event, whereas
+    ``layerlist[idx] = layer`` will emit a ``changed`` event.
 
-    However, the layerlist does not have a way of detecting when an object in
+    The layerlist also does not have a way of detecting when an object in
     the list is modified in-place. Therefore, although
     ``layerlist[idx].scale = [2, 1, 1]`` changes the *value* of the layer at
-    position ``idx``, a ``changed`` event will not be emitted.
+    position ``idx``, a ``changed`` event will not be emitted. Such changes
+    are instead forwarded by the layerlist: a callback connected to
+    ``layerlist.events`` receives the layer's own event (here ``scale``)
+    with an added ``index`` attribute giving the position of the layer.
+    If you are only interested in a specific layer, you can instead connect
+    directly to that layer's own events, e.g.
+    ``layer.events.scale.connect(callback)``.
 
     Examples
     --------
@@ -186,6 +192,10 @@ class LayerList(SelectableEventedList[Layer]):
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
         item.events.locked.disconnect(self._refresh_selection_ctx_keys)
+        if hasattr(item.events, 'locked_data_level'):
+            item.events.locked_data_level.disconnect(
+                self._refresh_selection_ctx_keys
+            )
         self.unlink_layers([item])
         self._clean_cache()
 
@@ -269,6 +279,10 @@ class LayerList(SelectableEventedList[Layer]):
             self._trigger_check_ndim_and_maybe_clean_units
         )
         new_layer.events.locked.connect(self._refresh_selection_ctx_keys)
+        if hasattr(new_layer.events, 'locked_data_level'):
+            new_layer.events.locked_data_level.connect(
+                self._refresh_selection_ctx_keys
+            )
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
@@ -455,6 +469,15 @@ class LayerList(SelectableEventedList[Layer]):
             Converted scale.
         """
         clipped_target_units = to_units[-len(from_units) :]
+        try:
+            matching_units = from_units == clipped_target_units
+        except ValueError:
+            # Units from separate registries can still be converted.
+            matching_units = False
+        if matching_units:
+            # Copy, don't `return scale`: callers own the result, and `scale`
+            # may be a view of a layer's cached extent arrays.
+            return np.array(scale)
         return np.array(
             [
                 (s * u).to(cu).magnitude
