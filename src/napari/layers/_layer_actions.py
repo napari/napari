@@ -16,9 +16,13 @@ from napari.layers import Image, Labels, Layer
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
+from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from napari.components import LayerList
+    from napari.types import ArrayLike
 
 
 def _duplicate_layer(ll: LayerList, *, name: str = '') -> None:
@@ -47,7 +51,7 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
     ll.extend(images)
-    ll.selection = set(images)  # type: ignore
+    ll.selection = set(images)
 
 
 def _split_rgb(ll: LayerList) -> None:
@@ -194,6 +198,17 @@ def _convert_dtype(ll: LayerList, mode: npt.DTypeLike = 'int64') -> None:
     layer.data = layer.data.astype(np.dtype(mode))
 
 
+def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:
+    # zarr doesn't support the mode computations
+    # dask does  via __array_function__ , so wrap with dask to keep this lazy
+    if hasattr(data, '__module__') and data.__module__.startswith('zarr'):
+        import dask.array as da
+
+        data = da.from_zarr(data)
+
+    return getattr(np, mode)(data, axis=axis, keepdims=False)
+
+
 def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     layer = ll.selection.active
     if not layer:
@@ -206,7 +221,20 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     # this is not the desired behavior for coordinate-based layers
     # but the action is currently only enabled for 'image_active and ndim > 2'
     # before opening up to other layer types, this line should be updated.
-    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=False),)
+
+    if layer.multiscale:
+        data = tuple(
+            _project_data(level_data, axis=axis, mode=mode)
+            for level_data in layer.data
+        )
+        resulting_shapes = np.delete(layer.level_shapes, obj=axis, axis=1)
+        resulting_sizes = np.prod(resulting_shapes, axis=1)
+        if not np.all(resulting_sizes[:-1] > resulting_sizes[1:]):
+            show_warning(
+                'Projection warning: A pyramid with non-decreasing level shapes was created.\nSome multiscale image writers and formats might not be compatible with this type of layer. Try extracting independent data-levels for export if errors occur.'
+            )
+    else:
+        data = (_project_data(layer.data, axis=axis, mode=mode),)
 
     # Get the meta-data of the layer, but without transforms,
     # the transforms are updated bellow as projection of transforms
@@ -234,6 +262,9 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
             'rendering': layer.rendering,
         }
     )
+    if isinstance(layer, Image) and layer.multiscale:
+        meta['multiscale'] = True
+
     new = Layer.create(data, meta, layer._type_string)
     # add transforms from original layer, but drop the axis of the projection
     new._transforms = layer._transforms.set_slice(
@@ -241,6 +272,66 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _extract_multiscale_level(
+    layers: Collection[Image | Labels], level: int | None = None
+) -> list[Layer]:
+    new_layers: list[Layer] = []
+    for layer in layers:
+        extracting_data_level = layer.data_level if level is None else level
+
+        layer_state = layer._get_state()
+        layer_state.pop('data', None)
+        layer_state['name'] = f'{layer.name}-level({extracting_data_level})'
+        layer_state['multiscale'] = False
+
+        downsample_factor = np.asarray(
+            layer.downsample_factors[extracting_data_level]
+        )
+        layer_scale = np.asarray(layer_state['scale'])
+
+        layer_state['scale'] = (layer_scale * downsample_factor).tolist()
+        layer_state['translate'] = (
+            np.asarray(layer_state['translate'])
+            + (downsample_factor - 1) / 2 * layer_scale
+        ).tolist()
+
+        layer_state.pop('locked_data_level', None)
+
+        with layer_source(parent=layer):
+            new_layers.append(
+                Layer.create(
+                    layer.data[extracting_data_level],
+                    layer_state,
+                    layer._type_string,
+                )
+            )
+
+    return new_layers
+
+
+def _extract_multiscale_level_from_selection(
+    ll: LayerList, level: int | None = None
+) -> None:
+    if not ll.selection or not all(
+        isinstance(layer, (Image, Labels)) and layer.multiscale
+        for layer in ll.selection
+    ):
+        show_warning(
+            'Only multiscale Image and Labels layers can extract data levels'
+        )
+        return
+
+    layers = tuple(
+        layer for layer in ll.selection if isinstance(layer, (Image, Labels))
+    )
+
+    adding_layers = _extract_multiscale_level(layers, level)
+    for layer, new_layer in zip(layers, adding_layers, strict=True):
+        ll.insert(ll.index(layer) + 1, new_layer)
+
+    return
 
 
 def _toggle_bounding_box(ll: LayerList) -> None:

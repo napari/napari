@@ -1,6 +1,7 @@
 import gc
 import logging
 import os
+import shutil
 import sys
 import warnings
 from contextlib import suppress
@@ -60,14 +61,28 @@ def fail_obj_graph(Klass):  # pragma: no cover
 
         leaked_objects_count = len(Klass._instances)
 
+        graphviz_available = (
+            shutil.which('dot') is not None
+            or shutil.which('dot.exe') is not None
+        )
+
         gc.collect()
-        file_path = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        if graphviz_available:
+            file_path = Path(
+                f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+            ).absolute()
+            objgraph.show_backrefs(
+                list(Klass._instances),
+                max_depth=20,
+                filename=str(file_path),
+            )
+        file_path_dot = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
         ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=str(file_path),
+            filename=str(file_path_dot),
         )
 
         Klass._instances.clear()
@@ -159,6 +174,61 @@ def mock_app_model():
             Application.destroy('test_app')
             _initialize_plugins.cache_clear()
             init_qactions.cache_clear()
+
+
+@pytest.fixture
+def plugin_settings(npe2pm, tmp_path, monkeypatch):
+    """Make `napari.settings.get_plugin_settings` fresh for each test.
+
+    Clears the `_PLUGIN_SETTINGS` cache and redirects the default plugin
+    settings directory to this test's `tmp_path` (by patching `_CFG_PATH`,
+    the same variable `get_plugin_settings` uses to locate napari's own
+    settings file), so plugin settings are never read from or written to
+    the real config directory.
+
+    This depends on npe2's `npe2pm` fixture, so plugin discovery is
+    blocked and any plugins you register only exist for this test.
+
+    It also connects `_clear_plugin_settings_cache` to `npe2pm`'s
+    `plugins_registered` and `enablement_changed` signals for the duration
+    of the test to allow dynamic registration/enablement during testing.
+
+    Examples
+    --------
+    >>> def test_my_settings(plugin_settings, npe2pm):
+    ...     if 'example-plugin' not in npe2pm:
+    ...         npe2pm.register(
+    ...             PluginManifest.from_distribution('example-plugin')
+    ...         )
+    ...     from napari.settings import get_plugin_settings
+    ...     s = get_plugin_settings('example-plugin')
+    ...     assert s.reader.max_size_mb == 512 # default value
+    ...     s.reader.max_size_mb = 1024  # auto-saves under tmp_path
+    ...     assert 'max_size_mb: 1024' in s.config_path.read_text()
+    """
+    from napari import settings as napari_settings
+
+    npe2pm.events.plugins_registered.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.connect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
+    # redirect the default plugin-settings directory to this test's tmp_path
+    monkeypatch.setattr(
+        napari_settings, '_CFG_PATH', str(tmp_path / 'settings.yaml')
+    )
+
+    yield
+
+    npe2pm.events.plugins_registered.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    npe2pm.events.enablement_changed.disconnect(
+        napari_settings._clear_plugin_settings_cache
+    )
+    napari_settings._clear_plugin_settings_cache()
 
 
 @pytest.fixture(autouse=True)

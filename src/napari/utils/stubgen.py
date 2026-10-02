@@ -182,10 +182,12 @@ def generate_module_stub(module: str | ModuleType, save=True) -> str:
     pyi = pyi.replace('NoneType', 'None')
 
     if save:
-        print(  # noqa: T201
-            'Writing stub:', module.__file__.replace('.py', '.pyi')
-        )
+        if module.__file__ is None:
+            raise ValueError(
+                f'Module {module.__name__} has no file to write a stub next to'
+            )
         file_path = module.__file__.replace('.py', '.pyi')
+        print('Writing stub:', file_path)  # noqa: T201
         with open(file_path, 'w') as f:
             f.write(pyi)
         subprocess.run(['ruff', 'format', file_path])
