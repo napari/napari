@@ -150,6 +150,13 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self._on_data_change()
 
+    def _should_be_visible(self) -> bool:
+        # nothing to draw without contrast limits (e.g. direct or cycle colors)
+        return (
+            super()._should_be_visible()
+            and self.source_wrapper.contrast_limits is not None
+        )
+
     def _on_visible_change(self) -> None:
         super()._on_visible_change()
         # necessary to update outdated values since we skip updating when
@@ -161,13 +168,11 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # TODO: this branching is unfortunately necessary for now until we
         #       support some kind of colorbar for categorical data
         # currently unsupported path of categorical colormap
-        # we just make invisible and bail out, and everywhere else
+        # we just stay invisible and bail out, and everywhere else
         # we make sure to not update things when invisible
+        self._on_visible_change()
         clim = self.source_wrapper.contrast_limits
-        if clim is None:
-            self.node.visible = False
-        else:
-            self._on_visible_change()
+        if clim is not None:
             self.node.set_data_and_clim(
                 clim=_coerce_contrast_limits(clim).contrast_limits,
                 dtype=self.source_wrapper.dtype,

@@ -11,7 +11,6 @@ import numpy.typing as npt
 from psygnal.containers import Selection
 from vispy.color import get_color_names
 
-from napari.components.overlays import ColorBarOverlay
 from napari.layers.base import Layer, _LayerSlicingState, no_op
 from napari.layers.base._base_constants import ActionType
 from napari.layers.base._base_mouse_bindings import (
@@ -628,6 +627,9 @@ class Shapes(Layer):
         )
 
         self.refresh()
+
+        from napari.components.overlays import ColorBarOverlay
+
         self._overlays.update(
             {
                 'face_colorbar': ColorBarOverlay(layer_attribute='face'),

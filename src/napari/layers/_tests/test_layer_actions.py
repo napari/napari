@@ -429,9 +429,8 @@ def _shapes_with_colormap(attribute):
         np.array([[20, 20], [20, 30], [30, 30], [30, 20]]),
     ]
     layer = Shapes(data, properties={'val': np.array([0.2, 0.8])})
+    # a continuous property switches the color mode to colormap
     setattr(layer, f'{attribute}_color', 'val')
-    setattr(layer, f'{attribute}_color_mode', 'colormap')
-    layer.refresh_colors(update_color_mapping=True)
     return layer
 
 
