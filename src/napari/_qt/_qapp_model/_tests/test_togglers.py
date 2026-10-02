@@ -15,8 +15,7 @@ def test_viewer_toggler():
     action = ViewerModelToggleAction(
         id='some.command.id',
         title='Toggle Axis Visibility',
-        viewer_attribute='axes',
-        sub_attribute='visible',
+        attribute_path='axes.visible',
     )
     app = get_app_model()
     app.register_action(action)
@@ -28,11 +27,11 @@ def test_viewer_toggler():
             (lambda: viewer, ViewerModel, 100),
         ]
     ):
-        assert viewer.axes.visible is False
+        assert viewer.scene.overlays.axes.visible is False
         app.commands.execute_command('some.command.id')
-        assert viewer.axes.visible is True
+        assert viewer.scene.overlays.axes.visible is True
         app.commands.execute_command('some.command.id')
-        assert viewer.axes.visible is False
+        assert viewer.scene.overlays.axes.visible is False
 
 
 def test_dock_widget_toggler(make_napari_viewer):

@@ -1,7 +1,9 @@
 import numpy as np
+import pytest
 
 from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
-from napari.components.overlays import LabelsPolygonOverlay
+from napari._vispy.utils.qt_font import FontInfo
+from napari.components import ViewerModel
 from napari.layers.labels._labels_key_bindings import complete_polygon
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -9,16 +11,28 @@ from napari.utils.interactions import (
 )
 
 
-def test_vispy_labels_polygon_overlay(make_napari_viewer):
-    viewer = make_napari_viewer()
+@pytest.fixture
+def patch_gloo_set_state(monkeypatch):
+    monkeypatch.setattr(
+        'vispy.visuals.polygon.set_state', lambda *args, **kwargs: None
+    )
 
-    labels_polygon = LabelsPolygonOverlay()
+
+# see https://github.com/napari/napari/pull/9262
+@pytest.mark.usefixtures('patch_gloo_set_state')
+@pytest.mark.usefixtures('qapp')
+def test_vispy_labels_polygon_overlay():
+    viewer = ViewerModel()
 
     data = np.zeros((50, 50), dtype=int)
     layer = viewer.add_labels(data, opacity=0.5)
+    labels_polygon = layer._overlays['polygon']
 
     vispy_labels_polygon = VispyLabelsPolygonOverlay(
-        layer=layer, viewer=viewer, overlay=labels_polygon
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=labels_polygon,
     )
 
     assert vispy_labels_polygon._polygon.color.alpha == 0.5
@@ -42,13 +56,24 @@ def test_vispy_labels_polygon_overlay(make_napari_viewer):
     assert vispy_labels_polygon._polygon.color.is_blank
 
 
-def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
+@pytest.mark.usefixtures('patch_gloo_set_state')
+def test_labels_drawing_with_polygons(MouseEvent):
     """Test polygon painting."""
     np.random.seed(0)
 
+    # viewer = make_napari_viewer()
+
     data = np.zeros((3, 15, 15), dtype=np.int32)
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
     layer = viewer.add_labels(data)
+
+    vispy_labels_polygon = VispyLabelsPolygonOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=layer._overlays['polygon'],
+    )
+    vispy_labels_polygon.overlay.enabled = True
 
     layer.mode = 'polygon'
     layer.selected_label = 1
@@ -137,9 +162,8 @@ def test_labels_drawing_with_polygons(MouseEvent, make_napari_viewer):
     assert np.array_equiv(data[0, :], 0)
 
 
-def test_labels_polygon_with_downsampling(
-    MouseEvent, make_napari_viewer, monkeypatch
-):
+@pytest.mark.usefixtures('patch_gloo_set_state')
+def test_labels_polygon_with_downsampling(monkeypatch):
     """Test that polygon overlay visual positions are correct with downsampling.
 
     This test verifies that when a Labels layer is downsampled (exceeding
@@ -152,14 +176,22 @@ def test_labels_polygon_with_downsampling(
         lambda: (256, 256),
     )
 
-    viewer = make_napari_viewer()
+    viewer = ViewerModel()
 
     # Create a labels layer that will be downsampled
     shape = (600, 500)
     data = np.zeros(shape, dtype=np.int32)
     layer = viewer.add_labels(data, multiscale=False)
 
+    vispy_polygon_overlay = VispyLabelsPolygonOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=layer._overlays['polygon'],
+    )
+
     expected_downsample = np.array([3, 2])
+    layer._transforms['tile2data'].scale = expected_downsample
     np.testing.assert_array_equal(
         layer._transforms['tile2data'].scale, expected_downsample
     )
@@ -168,17 +200,6 @@ def test_labels_polygon_with_downsampling(
     layer.selected_label = 1
 
     polygon_overlay = layer._overlays['polygon']
-    from napari._vispy.overlays.labels_polygon import VispyLabelsPolygonOverlay
-
-    vispy_polygon_overlay = None
-    for (
-        overlay_visual
-    ) in viewer.window._qt_viewer.canvas._layer_overlay_to_visual.get(
-        layer, {}
-    ).values():
-        if isinstance(overlay_visual, VispyLabelsPolygonOverlay):
-            vispy_polygon_overlay = overlay_visual
-            break
 
     assert vispy_polygon_overlay is not None, (
         'Could not find polygon overlay visual'

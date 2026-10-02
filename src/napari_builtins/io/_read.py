@@ -1,29 +1,32 @@
 from __future__ import annotations
 
 import csv
-import itertools
 import os
 import re
-from contextlib import contextmanager, suppress
+import tokenize
+from contextlib import suppress
 from glob import glob
+from itertools import chain, pairwise
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, Union
 
 import imageio.v3 as iio
 import numpy as np
-import requests
+import numpy.typing as npt
 from dask import delayed
 
+from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.notifications import notification_manager
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
-    from napari import Viewer
-    from napari.types import FullLayerData, LayerData, ReaderFunction
+    from napari.types import (
+        FullLayerData,
+        LayerData,
+        PathOrPaths,
+        ReaderFunction,
+    )
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -32,13 +35,6 @@ def _alphanumeric_key(s: str) -> list[str | int]:
 
 
 URL_REGEX = re.compile(r'https?://|ftps?://|file://|file:\\')
-
-_DROPPED_SCRIPTS_NAMESPACE = {}
-# This is a global dictionary to store the namespace for scripts that are
-# executed using drag and drop or the Python file reader.
-# The content is a mapping from the script path to the namespace.
-# The dict should not be overwritten but only modified, as
-# it may be broken the execution of scripts that are already running.
 
 
 def _is_url(filename):
@@ -62,6 +58,8 @@ def _git_provider_url_to_raw_url(filename: str) -> str:
     str
         The raw file URL.
     """
+    from urllib.parse import urlparse
+
     parsed_url = urlparse(filename)
     # For a GitLab file URL that contains `blob/` replace with `raw`
     if 'gitlab' in parsed_url.netloc:
@@ -155,12 +153,7 @@ def read_zarr_dataset(path: str):
         store = zarr.open(path, mode='r')
     except Exception as e:
         raise ValueError(
-            trans._(
-                'Failed to open zarr store at {path}. Error: {error_message}',
-                deferred=True,
-                path=path,
-                error_message=str(e),
-            )
+            f'Failed to open zarr store at {path}. Error: {e!s}'
         ) from e
 
     # Arrays can be opened directly, local and remote
@@ -170,21 +163,12 @@ def read_zarr_dataset(path: str):
 
     # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
     if not isinstance(store, zarr.Group):
-        raise TypeError(
-            trans._(
-                'Unexpected zarr type: {type_}',
-                deferred=True,
-                type_=type(store).__name__,
-            )
-        )
+        raise TypeError(f'Unexpected zarr type: {type(store).__name__}')
 
     # Remote zarr Groups cannot be traversed over HTTP
     if _is_url(path):
         raise ValueError(
-            trans._(
-                'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.',
-                deferred=True,
-            )
+            'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.'
         )
 
     group_keys = sorted(store.group_keys())
@@ -197,13 +181,7 @@ def read_zarr_dataset(path: str):
             # if there are multiple groups, inform the user
             other_groups = group_keys[1:]
             show_info(
-                trans._(
-                    'Multiple zarr Groups found in {path}. Opening group "{group}". Other groups: {other_groups}',
-                    deferred=True,
-                    path=path,
-                    group=group_keys[0],
-                    other_groups=', '.join(other_groups),
-                )
+                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {", ".join(other_groups)}'
             )
     else:
         # the store consists of a single group, so open it
@@ -211,13 +189,7 @@ def read_zarr_dataset(path: str):
 
     array_keys = sorted(group.array_keys())
     if not array_keys:
-        raise ValueError(
-            trans._(
-                'No arrays found in zarr group: {path}',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'No arrays found in zarr group: {path}')
 
     # Build list of arrays from arrays in the group
     image = [da.from_zarr(group[k]) for k in array_keys]
@@ -286,11 +258,7 @@ def magic_imread(
 
     if not filenames_expanded:
         raise ValueError(
-            trans._(
-                'No files found in {filenames} after removing subdirectories',
-                deferred=True,
-                filenames=filenames,
-            )
+            f'No files found in {filenames} after removing subdirectories'
         )
 
     # then, read in images
@@ -334,10 +302,7 @@ def magic_imread(
                 image = np.stack(images)
             except ValueError as e:
                 if 'input arrays must have the same shape' in str(e):
-                    msg = trans._(
-                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
-                        deferred=True,
-                    )
+                    msg = 'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.'
                     raise ValueError(msg) from e
                 raise  # pragma: no cover
     else:
@@ -412,13 +377,11 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError(
-            trans._('Expected number of shapes not found', deferred=True)
-        )
+        raise ValueError('Expected number of shapes not found')
 
     data = []
     shape_type = []
-    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
+    for ind_a, ind_b in pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
@@ -493,20 +456,11 @@ def read_csv(
         if require_type:
             if not layer_type:
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as valid Layer data',
-                        deferred=True,
-                        filename=filename,
-                    )
+                    f'File "{filename}" not recognized as valid Layer data'
                 )
             if layer_type != require_type and require_type.lower() != 'any':
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as {require_type} data',
-                        deferred=True,
-                        filename=filename,
-                        require_type=require_type,
-                    )
+                    f'File "{filename}" not recognized as {require_type} data'
                 )
 
         data = np.array(list(reader))
@@ -577,6 +531,84 @@ def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
 
 
+def _read_wavefront_obj_lines(
+    lines: Iterable[str],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
+    vertices = []
+    faces = []
+
+    for line in lines:
+        parts = line.strip().split()
+        # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
+        if len(parts) > 1:
+            element_type, *values = parts
+            match element_type:
+                # we are currently only interested in vertices and faces, no other features
+                case 'v':
+                    vertices.append([float(value) for value in values])
+                case 'f':
+                    # we only take the first part of the split, which is the vertex index
+                    # (because we ignore normals and texture coordinates)
+                    indices = [value.split('/')[0] for value in values]
+                    # we only support triangles (for now)
+                    if len(indices) != 3:
+                        raise ValueError('Only triangular faces are supported')
+                    # subtract one for each index, since OBJ uses 1-based indexing
+                    faces.append([int(index) - 1 for index in indices])
+
+    return (
+        np.array(vertices, dtype=np.float64),
+        np.array(faces, dtype=np.int32),
+    )
+
+
+def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
+    # if it is a sequence of paths, we process each file separately and return all results
+    if not isinstance(path_or_paths, (str, Path)):
+        return list(
+            chain.from_iterable(
+                _read_wavefront_obj(path) for path in path_or_paths
+            )
+        )
+
+    with open(path_or_paths, encoding='utf-8') as obj_file:
+        vertices, faces = _read_wavefront_obj_lines(obj_file)
+        surface = (vertices, faces)
+
+        add_kwargs = {
+            'blending': 'opaque',
+            # we default to smooth shading for now (in the future we could process the 's' type if necessary)
+            'shading': 'smooth',
+        }
+
+        return [(surface, add_kwargs, 'surface')]
+
+
+def napari_get_obj_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Wavefront OBJ files.
+
+    It is used to read the mesh data contained in the OBJ file and
+    convert it to a Surface for internal use.
+
+    Parameters
+    ----------
+    path : str
+        Path to the OBJ file to be read.
+
+    Returns
+    -------
+    callable
+        A function parses the OBJ file and converts it to a Surface.
+    """
+    if not os.path.exists(path):
+        return None
+
+    if os.path.splitext(path)[1] != '.obj':
+        return None
+
+    return _read_wavefront_obj
+
+
 def napari_get_reader(
     path: str | list[str],
 ) -> ReaderFunction:
@@ -601,99 +633,10 @@ def napari_get_reader(
     return _magic_imreader
 
 
-@contextmanager
-def _patch_viewer_new():
-    """Context manager to patch the viewer's new method."""
-    from napari.viewer import Viewer, current_viewer
-
-    original_new = Viewer.__new__
-    original_init = Viewer.__init__
-
-    def patched_init(self, *args, **kwargs):
-        Viewer.__init__ = original_init
-
-    def patched_new(cls, *args, **kwargs):
-        ndisplay = None
-        if len(kwargs) == 1 and 'ndisplay' in kwargs:
-            ndisplay = kwargs.pop('ndisplay')
-
-        if not kwargs and not args:
-            viewer = current_viewer()
-            if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay
-            if viewer is not None:
-                Viewer.__new__ = original_new
-                return viewer
-        Viewer.__init__ = original_init
-        return original_new(cls)
-
-    Viewer.__new__ = patched_new
-    Viewer.__init__ = patched_init
-    try:
-        yield
-    finally:
-        Viewer.__new__ = original_new
-        Viewer.__init__ = original_init
-
-
-@contextmanager
-def _patch_napari_run():
-    """Context manager to patch napari.run to always be a no-op.
-
-    napari.run() executes the Qt event loop, *except* when napari
-    is running in IPython and therefore IPython's Qt integration
-    already has the event loop.
-
-    When running a script by dragging-and-dropping onto a
-    running napari Viewer, we already have an event loop, so we
-    should not start a new nested loop, even though we are not
-    in IPython.
-
-    This context manager temporarily patches the IPython check
-    to always return True, causing a fast exit from napari.run()
-    without a new event loop.
-    """
-    from napari._qt import qt_event_loop
-
-    original_ipython_check = qt_event_loop._ipython_has_eventloop
-
-    def patched_ipython_check() -> bool:
-        """A patched ipython_check that always returns True.
-
-        napari's script running from drag-and-dropping a script
-        into a viewer uses this patch to prevent nested event loops.
-        """
-        return True
-
-    qt_event_loop._ipython_has_eventloop = patched_ipython_check
-    try:
-        yield
-    finally:
-        qt_event_loop._ipython_has_eventloop = original_ipython_check
-
-
-def filter_variables(variables: dict[str, Any]) -> dict[str, Any]:
-    res = variables.copy()
-    res.pop('viewer', None)
-    res.pop(
-        '__name__', None
-    )  # Remove the __name__ variable to not affect the console
-    return res
-
-
-def _add_dropped_scripts_to_console(
-    variables: dict[str, Any], viewer: Viewer | None
-) -> None:
-    if viewer is None:
-        return
-
-    variables = filter_variables(variables)
-
-    if viewer.window._qt_viewer._console is None:
-        viewer.window._qt_viewer.add_to_console_backlog(variables)
-    else:
-        console = viewer.window._qt_viewer._console
-        console.push(variables)
+def _read_python_source(script_path: str | Path) -> str:
+    """Read Python source from script."""
+    with tokenize.open(script_path) as file:
+        return file.read()
 
 
 def load_and_execute_python_code(script_path: str) -> list[LayerData]:
@@ -707,50 +650,16 @@ def load_and_execute_python_code(script_path: str) -> list[LayerData]:
     if _is_url(script_path):
         # download the script from the URL
 
-        response = requests.get(_git_provider_url_to_raw_url(script_path))
-        response.raise_for_status()
-        code = response.text
+        from urllib.request import urlopen
+
+        raw_url = _git_provider_url_to_raw_url(script_path)
+        with urlopen(raw_url) as response:
+            encoding = response.headers.get_content_charset() or 'utf-8'
+            code = response.read().decode(encoding)
     else:
-        code = Path(script_path).read_text()
+        code = _read_python_source(script_path)
     execute_python_code(code, script_path)
     return [(None,)]
-
-
-def execute_python_code(code: str, script_path: str | Path) -> None:
-    """Execute Python code in the current viewer's context.
-
-    Store the executed cod variables in _DROPPED_SCRIPTS_NAMESPACE dict
-
-    Parameters
-    ----------
-    code: str
-        python code to be executed
-    script_path: str | Path
-        Path to the script file from which the code is executed.
-        Used to store the namespace in the _DROPPED_SCRIPTS_NAMESPACE.
-    """
-    from napari.viewer import current_viewer
-
-    with _patch_viewer_new(), _patch_napari_run():
-        try:
-            viewer = current_viewer()
-            script_namespace = _DROPPED_SCRIPTS_NAMESPACE.setdefault(
-                script_path, {}
-            )
-            # The `__name__` variable is storing the name of the module.
-            # If a module is imported, it is set to the module name.
-            # If a module is executed with `python -m ...` or
-            # `python script.py` it is set to '__main__'.
-            # If code is executed with `exec(code, namespace)` it is set to `builtins` if
-            # `__name__` is not set in the namespace.
-            # So ww set it to `__main__` to execute `if __name__ == '__main__':` blocks
-            script_namespace['__name__'] = '__main__'
-            exec(code, script_namespace)
-            _add_dropped_scripts_to_console(
-                _DROPPED_SCRIPTS_NAMESPACE[script_path], viewer
-            )
-        except BaseException as e:  # noqa: BLE001
-            notification_manager.receive_error(type(e), e, e.__traceback__)
 
 
 def napari_get_py_reader(path: str) -> ReaderFunction | None:

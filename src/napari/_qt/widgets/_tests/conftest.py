@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from pytestqt.qtbot import QtBot
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from pytestqt.qtbot import QtBot
 
 
 @pytest.fixture

@@ -1,7 +1,6 @@
 from functools import lru_cache
 
 import numpy as np
-from scipy import ndimage as ndi
 
 
 def interpolate_coordinates(old_coord, new_coord, brush_size):
@@ -221,6 +220,8 @@ def get_contours(labels: np.ndarray, thickness: int, background_label: int):
     -------
     A new label image in which only the boundaries of the input image are kept.
     """
+    from scipy import ndimage as ndi
+
     struct_elem = ndi.generate_binary_structure(labels.ndim, 1)
 
     thick_struct_elem = ndi.iterate_structure(struct_elem, thickness).astype(

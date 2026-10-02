@@ -1,8 +1,5 @@
 import numpy as np
 import numpy.typing as npt
-import scipy.linalg
-
-from napari.utils.translations import trans
 
 
 def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
@@ -249,21 +246,14 @@ def _make_shear_mat(shear):
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
         raise ValueError(
-            trans._(
-                'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.',
-                deferred=True,
-            )
+            'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.'
         )
     if np.array(shear).ndim == 1:
         return expand_upper_triangular(shear)
 
     if not is_matrix_triangular(shear):
         raise ValueError(
-            trans._(
-                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
-                deferred=True,
-                shear=shear,
-            )
+            f'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.'
         )
     return np.array(shear)
 
@@ -288,13 +278,7 @@ def expand_upper_triangular(vector):
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
     if np.floor(N) != N:
-        raise ValueError(
-            trans._(
-                '{number} is a strange number of shear elements',
-                deferred=True,
-                number=n,
-            )
-        )
+        raise ValueError(f'{n} is a strange number of shear elements')
 
     N = int(N)
     inds = np.triu(np.ones((N, N)), 1).astype(bool)
@@ -319,13 +303,7 @@ def embed_in_identity_matrix(matrix, ndim):
         Larger matrix.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(
-            trans._(
-                'Improper transform matrix {matrix}',
-                deferred=True,
-                matrix=matrix,
-            )
-        )
+        raise ValueError(f'Improper transform matrix {matrix}')
 
     if matrix.shape[0] == ndim:
         return matrix
@@ -369,6 +347,8 @@ def decompose_linear_matrix(
         1-D array of upper triangular values or an n-D matrix if lower
         triangular.
     """
+    import scipy.linalg
+
     n = matrix.shape[0]
 
     if upper_triangular:
@@ -485,13 +465,7 @@ def is_diagonal(matrix, tol=1e-8):
         True if matrix is diagonal, False otherwise.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(
-            trans._(
-                'matrix must be square, but shape={shape}',
-                deferred=True,
-                shape=matrix.shape,
-            )
-        )
+        raise ValueError(f'matrix must be square, but shape={matrix.shape}')
     non_diag = matrix[~np.eye(matrix.shape[0], dtype=bool)]
     if tol == 0:
         return np.count_nonzero(non_diag) == 0

@@ -195,12 +195,16 @@ def _select_colormap_texture(
 class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     layer: 'Labels'
 
-    def __init__(self, layer, node=None, texture_format='r8') -> None:
+    def __init__(
+        self, layer, node=None, texture_format='r8', **kwargs
+    ) -> None:
+        self._colormap_dtypes: tuple[np.dtype, np.dtype] | None = None
         super().__init__(
             layer,
             node=node,
             texture_format=texture_format,
             layer_node_class=LabelLayerNode,
+            **kwargs,
         )
 
         self.layer.events.labels_update.connect(self._on_partial_labels_update)
@@ -212,6 +216,18 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         self.layer.events.data.connect(self._on_colormap_change)
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
+
+    def _on_data_change(self) -> None:
+        super()._on_data_change()
+        dtypes = (
+            self.layer._slice.image.raw.dtype,
+            self.layer._slice.image.view.dtype,
+        )
+        # The empty slice created by _ScalarFieldSliceResponse.make_empty uses
+        # the view dtype for both raw and view. An async slice response replaces
+        # it with the source raw dtype, so rebuild to avoid stale label colors.
+        if dtypes != self._colormap_dtypes:
+            self._on_colormap_change()
 
     def _on_rendering_change(self):
         # overriding the Image method, so we can maintain the same old rendering name
@@ -252,10 +268,14 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
             color_texture = _select_colormap_texture(
-                colormap, view_dtype, raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype,
+                raw_dtype,
             )
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype=view_dtype,
+                raw_dtype=raw_dtype,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 color_texture,
@@ -265,7 +285,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.texture_data = color_texture
 
         elif not auto_mode:  # only for raw_dtype.itemsize > 2
-            color_dict = colormap._values_mapping_to_minimum_values_set()[1]
+            color_dict = colormap._values_mapping_to_minimum_values_set()[1]  # pyrefly: ignore [missing-attribute]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
@@ -293,6 +313,8 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.node.shared_program['LUT_shape'] = val_texture.shape[:2]
         else:
             self.node.cmap = VispyColormap(*colormap)
+
+        self._colormap_dtypes = (raw_dtype, view_dtype)
 
     def _on_iso_gradient_mode_change(self):
         if isinstance(self.node, VolumeNode):

@@ -155,6 +155,16 @@ def test_value():
     assert value == data[0, 0, 0]
 
 
+def test_value_rgb():
+    """Test getting the value of the rgb data at the current coordinates."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20, 3))
+    layer = Image(data, rgb=True)
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    value = layer.get_value((0,) * 3)
+    np.testing.assert_array_equal(value, data[0, 0, 0])
+
+
 def test_message():
     """Test converting value and coords to message."""
     np.random.seed(0)

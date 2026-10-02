@@ -179,19 +179,23 @@ class _ScalarFieldSliceResponse:
 class _ScalarFieldSliceRequest:
     """A callable that stores all the input data needed to slice an image layer.
 
-    This should be treated a deeply immutable structure, even though some
+    This should be treated as a deeply immutable structure, even though some
     fields can be modified in place. It is like a function that has captured
     all its inputs already.
 
-    In general, the calling an instance of this may take a long time, so you may
+    In general, calling an instance of this may take a long time, so you may
     want to run it off the main thread.
 
     Attributes
     ----------
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    data : Any
-        The layer's data field, which is the main input to slicing.
+    data_at_data_level : Any
+        The pre-selected data source accounting for the current data level.
+    data_at_thumbnail_level : Any
+        The pre-selected data source for the thumbnail.
+    dtype : DTypeLike
+        The dtype of the layer's data.
     data_slice : _ThickNDSlice
         The slicing coordinates and margins in data space.
     others
@@ -201,7 +205,9 @@ class _ScalarFieldSliceRequest:
     """
 
     slice_input: _SliceInput
-    data: Any = field(repr=False)
+    data_at_data_level: Any = field(repr=False)
+    data_at_thumbnail_level: Any = field(repr=False)
+    dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
     projection_mode: Any
@@ -220,7 +226,7 @@ class _ScalarFieldSliceRequest:
                 slice_input=self.slice_input,
                 rgb=self.rgb,
                 request_id=self.id,
-                dtype=self.data.dtype,
+                dtype=self.dtype,
             )
         with self.dask_indexer():
             return (
@@ -231,7 +237,9 @@ class _ScalarFieldSliceRequest:
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(self.data, self.data_slice)
+        data = self._project_thick_slice(
+            self.data_at_data_level, self.data_slice
+        )
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -249,17 +257,12 @@ class _ScalarFieldSliceRequest:
         )
 
     def _call_multi_scale(self) -> _ScalarFieldSliceResponse:
-        if self.slice_input.ndisplay == 3:
-            level = len(self.data) - 1
-        else:
-            level = self.data_level
-
         # Calculate the tile-to-data transform.
         scale = np.ones(self.slice_input.ndim)
         for d in self.slice_input.displayed:
-            scale[d] = self.downsample_factors[level][d]
+            scale[d] = self.downsample_factors[self.data_level][d]
 
-        data = self.data[level]
+        data = self.data_at_data_level
 
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
@@ -285,7 +288,7 @@ class _ScalarFieldSliceRequest:
         data = data[tuple(disp_slice)]
 
         # project the thick slice
-        data_slice = self._thick_slice_at_level(level)
+        data_slice = self._thick_slice_at_level(self.data_level)
         data = self._project_thick_slice(data, data_slice)
 
         order = self._get_order()
@@ -294,7 +297,7 @@ class _ScalarFieldSliceRequest:
 
         thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
         thumbnail_data = self._project_thick_slice(
-            self.data[self.thumbnail_level], thumbnail_data_slice
+            self.data_at_thumbnail_level, thumbnail_data_slice
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
         thumbnail = _ScalarFieldView.from_view(thumbnail_data)
@@ -360,10 +363,9 @@ class _ScalarFieldSliceRequest:
 
     def _slice_out_of_bounds(self) -> bool:
         """Check if the data slice is out of bounds for any dimension."""
-        data = self.data[0] if self.multiscale else self.data
         for d in self.slice_input.not_displayed:
             pt = self.data_slice.point[d]
-            max_idx = data.shape[d] - 1
+            max_idx = self.level_shapes[0][d] - 1
             if self.projection_mode == 'none':
                 if np.round(pt) < 0 or np.round(pt) > max_idx:
                     return True

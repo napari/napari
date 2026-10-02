@@ -1,14 +1,16 @@
 from collections import deque
 from collections.abc import Iterable, MutableSet
 from types import GeneratorType
-from typing import Any, Generic, TypeVar, Union, get_args
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, get_args
 
 from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
-from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 from napari.utils.events.containers._set import EventedSet
 from napari.utils.events.event import EmitterGroup
+
+if TYPE_CHECKING:
+    from pydantic_core.core_schema import DictSchema, TypedDictSchema
 
 _T = TypeVar('_T')
 _S = TypeVar('_S')
@@ -164,7 +166,7 @@ class Selection(EventedSet[_T]):
         dict_schema: DictSchema | TypedDictSchema
         if args:
             item_schema = handler.generate_schema(args[0])
-            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])  # type: ignore
+            mutableset_t_schema = handler.generate_schema(MutableSet[args[0]])
             current_schema = core_schema.union_schema(
                 [item_schema, core_schema.none_schema()]
             )
@@ -227,7 +229,7 @@ class Selection(EventedSet[_T]):
         obj._current_ = current
         return obj
 
-    def _json_encode(self) -> dict:  # type: ignore[override]
+    def _json_encode(self) -> dict:  # pyrefly: ignore [bad-override]
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
         return {'selection': super()._json_encode(), '_current': self._current}

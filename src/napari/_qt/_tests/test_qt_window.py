@@ -7,7 +7,11 @@ from magicgui.widgets import Container
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import QWidget
 
-from napari._qt.qt_main_window import Window, _QtMainWindow
+from napari._qt.qt_main_window import (
+    Window,
+    _QtMainWindow,
+    _shutdown_open_windows,
+)
 from napari._qt.utils import QImg2array
 from napari._tests.utils import skip_on_win_ci
 from napari.utils.theme import (
@@ -52,6 +56,21 @@ def test_current_viewer(make_napari_viewer):
     v1.close()
     assert _QtMainWindow._instances == []
     assert _QtMainWindow.current() is None
+
+
+def test_shutdown_stops_worker_threads(make_napari_viewer):
+    viewer = make_napari_viewer()
+    window = viewer.window._qt_window
+    assert window in _QtMainWindow._instances
+
+    with (
+        patch.object(window.status_thread, 'close_terminate') as stop_status,
+        patch.object(window._qt_viewer.dims, 'stop') as stop_animation,
+    ):
+        _shutdown_open_windows()
+
+    stop_status.assert_called_once_with()
+    stop_animation.assert_called_once_with()
 
 
 def test_set_geometry(make_napari_viewer):
@@ -121,7 +140,7 @@ def test_screenshot_to_file(make_napari_viewer, tmp_path):
 
     np.random.seed(0)
     # Add image
-    data = np.random.random((10, 15))
+    data = np.ones((10, 15), dtype=np.uint8)
     viewer.add_image(data)
 
     # Add labels

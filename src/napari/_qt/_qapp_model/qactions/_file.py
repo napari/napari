@@ -18,7 +18,6 @@ from napari._app_model.context import (
 )
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari.utils.translations import trans
 
 
 # File actions
@@ -59,28 +58,28 @@ def _close_app(window: Window):
 Q_FILE_ACTIONS: list[Action] = [
     Action(
         id='napari.window.file._image_from_clipboard',
-        title=trans._('New Image from Clipboard'),
+        title='New Image from Clipboard',
         callback=QtViewer._image_from_clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.NAVIGATION}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyN}],
     ),
     Action(
         id='napari.window.file.open_files_dialog',
-        title=trans._('Open File(s)...'),
+        title='Open File(s)...',
         callback=QtViewer._open_files_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[StandardKeyBinding.Open],
     ),
     Action(
         id='napari.window.file.open_files_as_stack_dialog',
-        title=trans._('Open Files as Stack...'),
+        title='Open Files as Stack...',
         callback=QtViewer._open_files_dialog_as_stack_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyO}],
     ),
     Action(
         id='napari.window.file.open_folder_dialog',
-        title=trans._('Open Folder...'),
+        title='Open Folder...',
         callback=QtViewer._open_folder_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
         keybindings=[
@@ -89,25 +88,25 @@ Q_FILE_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.file._open_files_with_plugin',
-        title=trans._('Open File(s)...'),
+        title='Open File(s)...',
         callback=_open_files_with_plugin,
         menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_files_as_stack_with_plugin',
-        title=trans._('Open Files as Stack...'),
+        title='Open Files as Stack...',
         callback=_open_files_as_stack_with_plugin,
         menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file._open_folder_with_plugin',
-        title=trans._('Open Folder...'),
+        title='Open Folder...',
         callback=_open_folder_with_plugin,
         menus=[{'id': MenuId.FILE_OPEN_WITH_PLUGIN, 'group': MenuGroup.OPEN}],
     ),
     Action(
         id='napari.window.file.show_preferences_dialog',
-        title=trans._('Preferences'),
+        title='Preferences',
         callback=Window._open_preferences_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.PREFERENCES}],
         # TODO: revert to `StandardKeyBinding.Preferences` after app-model>0.2.0
@@ -120,7 +119,7 @@ Q_FILE_ACTIONS: list[Action] = [
     # we can re-use `DLG_SAVE_LAYERS` below.
     Action(
         id='napari.window.file.save_layers_dialog.selected',
-        title=trans._('Save Selected Layers...'),
+        title='Save Selected Layers...',
         callback=_save_selected_layers,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[StandardKeyBinding.Save],
@@ -128,7 +127,7 @@ Q_FILE_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.file.save_layers_dialog',
-        title=trans._('Save All Layers...'),
+        title='Save All Layers...',
         callback=QtViewer._save_layers_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyS}],
@@ -136,54 +135,46 @@ Q_FILE_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.file.save_canvas_screenshot_dialog',
-        title=trans._('Save Screenshot...'),
+        title='Save Screenshot...',
         callback=QtViewer._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyS}],
-        status_tip=trans._(
-            'Save screenshot of current display, default: .png'
-        ),
+        status_tip='Save screenshot of current display, default: .png',
     ),
     Action(
         id='napari.window.file.save_viewer_screenshot_dialog',
-        title=trans._('Save Screenshot with Viewer...'),
+        title='Save Screenshot with Viewer...',
         callback=Window._screenshot_dialog,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyS}],
-        status_tip=trans._(
-            'Save screenshot of current display, default: .png'
-        ),
+        status_tip='Save screenshot of current display, default: .png',
     ),
     Action(
         id='napari.window.file.copy_canvas_screenshot',
-        title=trans._('Copy Screenshot to Clipboard'),
+        title='Copy Screenshot to Clipboard',
         callback=QtViewer.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyCode.KeyC}],
-        status_tip=trans._(
-            'Copy screenshot of current display to the clipboard'
-        ),
+        status_tip='Copy screenshot of current display to the clipboard',
     ),
     Action(
         id='napari.window.file.copy_viewer_screenshot',
-        title=trans._('Copy Screenshot with Viewer to Clipboard'),
+        title='Copy Screenshot with Viewer to Clipboard',
         callback=Window.clipboard,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.SAVE}],
         keybindings=[{'primary': KeyMod.Alt | KeyMod.Shift | KeyCode.KeyC}],
-        status_tip=trans._(
-            'Copy screenshot of current display with the viewer to the clipboard'
-        ),
+        status_tip='Copy screenshot of current display with the viewer to the clipboard',
     ),
     Action(
         id='napari.window.file.close_dialog',
-        title=trans._('Close Window'),
+        title='Close Window',
         callback=_close_window,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Close],
     ),
     Action(
         id='napari.window.file.restart',
-        title=trans._('Restart'),
+        title='Restart',
         callback=_restart,
         menus=[
             {
@@ -197,7 +188,7 @@ Q_FILE_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.file.quit_dialog',
-        title=trans._('Exit'),
+        title='Exit',
         callback=_close_app,
         menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.CLOSE}],
         keybindings=[StandardKeyBinding.Quit],
