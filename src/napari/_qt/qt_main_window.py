@@ -1609,6 +1609,7 @@ class Window:
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
+            self._qt_viewer.dims._on_font_changed()
 
     def _update_logo(self):
         get_qapp().setWindowIcon(
