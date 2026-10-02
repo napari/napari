@@ -184,6 +184,10 @@ class ColorArray(np.ndarray):
         return transform_color(value).view(cls)
 
 
+# ITU-R BT.709 luma coefficients, shared by the luminance helpers below
+_BT709_COEFFICIENTS = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+
+
 @overload
 def rgb_to_luminance(rgb: ColorValue) -> float: ...
 
@@ -216,11 +220,9 @@ def rgb_to_luminance(
     .. versionadded: 0.10.0
     """
     if rgb.shape[-1] == 3:
-        return rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+        return rgb @ _BT709_COEFFICIENTS
     if rgb.shape[-1] == 4:
-        luminance = rgb[..., :3] @ np.array(
-            [0.2126, 0.7152, 0.0722], dtype=np.float32
-        )
+        luminance = rgb[..., :3] @ _BT709_COEFFICIENTS
         # scale by alpha
         return luminance * rgb[..., 3]
     raise ValueError('can only convert rgb or rgba')
@@ -235,7 +237,7 @@ def _relative_luminance(rgb: ColorValue | np.ndarray) -> float:
     """
     rgb = np.asarray(rgb, dtype=float)[:3]
     rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    return float(rgb @ [0.2126, 0.7152, 0.0722])
+    return float(rgb @ _BT709_COEFFICIENTS)
 
 
 def _contrast_ratio(
