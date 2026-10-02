@@ -27,7 +27,10 @@ class VectorsProjectionMode(StringEnum):
 
         * NONE: ignore slice thickness, only using the dims point
         * ALL: project all vectors in the slice onto displayed dimensions
+        * FADE: fade away vectors based on how far the vector position is from the mid point
+            of the thick slice.
     """
 
     NONE = auto()
     ALL = auto()
+    FADE = auto()

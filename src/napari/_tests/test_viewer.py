@@ -262,19 +262,19 @@ def test_toggling_axes(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # Check axes are not visible
-    assert not viewer.axes.visible
+    assert not viewer.scene.overlays.axes.visible
 
     # Make axes visible
-    viewer.axes.visible = True
-    assert viewer.axes.visible
+    viewer.scene.overlays.axes.visible = True
+    assert viewer.scene.overlays.axes.visible
 
     # Enter 3D rendering and check axes still visible
     viewer.dims.ndisplay = 3
-    assert viewer.axes.visible
+    assert viewer.scene.overlays.axes.visible
 
     # Make axes not visible
-    viewer.axes.visible = False
-    assert not viewer.axes.visible
+    viewer.scene.overlays.axes.visible = False
+    assert not viewer.scene.overlays.axes.visible
 
 
 def test_toggling_scale_bar(make_napari_viewer):

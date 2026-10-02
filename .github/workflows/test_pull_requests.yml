@@ -49,17 +49,15 @@ jobs:
           cache-dependency-path: pyproject.toml
           cache: 'pip'
       - name: Install Dependencies
-        run: pip install --upgrade pip
-      - name: Install Napari dev
-        run: pip install -e .  --group build
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
+        run: pip install --upgrade pip tox
       - name: Make Typestubs
         run: |
-          make typestubs
+          tox -e typestubs
+        env:
+          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Check Manifest
         run: |
-          make check-manifest
+          tox -e check-manifest
 
   build_wheel:
     name: Build wheel
@@ -181,7 +179,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py312-pyqt6-examples
         timeout: 60
         python_version: 3.12
         constraints_suffix: _examples

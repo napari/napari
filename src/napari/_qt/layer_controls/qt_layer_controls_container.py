@@ -1,5 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
+from napari._qt.layer_controls.dynamic.qt_dynamic_layer_controls import (
+    QtDynamicLayerControls,
+)
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.qt_points_controls import QtPointsControls
@@ -16,8 +23,17 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+from napari.settings import get_settings
 
-layer_to_controls = {
+if TYPE_CHECKING:
+    from napari._qt.layer_controls.qt_layer_controls_base import (
+        QtLayerControls,
+    )
+    from napari.components import ViewerModel
+    from napari.layers.base import Layer
+    from napari.utils.events import Event
+
+layer_to_controls: dict[type[Layer], type[QtLayerControls]] = {
     Labels: QtLabelsControls,
     Image: QtImageControls,
     Points: QtPointsControls,
@@ -28,7 +44,7 @@ layer_to_controls = {
 }
 
 
-def create_qt_layer_controls(layer):
+def create_qt_layer_controls(layer: Layer) -> QtLayerControls:
     """
     Create a qt controls widget for a layer based on its layer type.
 
@@ -45,10 +61,11 @@ def create_qt_layer_controls(layer):
     controls : napari.layers.base.QtLayerControls
         Qt controls widget
     """
-    candidates = []
-    for layer_type in layer_to_controls:
-        if isinstance(layer, layer_type):
-            candidates.append(layer_type)
+    candidates: list[type[Layer]] = [
+        layer_type
+        for layer_type in layer_to_controls
+        if isinstance(layer, layer_type)
+    ]
 
     if not candidates:
         raise TypeError(
@@ -81,24 +98,25 @@ class QtLayerControlsContainer(QStackedWidget):
         widgets[layer] = controls
     """
 
-    def __init__(self, viewer) -> None:
+    def __init__(self, viewer: ViewerModel) -> None:
         super().__init__()
         self.viewer = viewer
 
         self.setMouseTracking(True)
         self.empty_widget = QFrame()
         self.empty_widget.setObjectName('empty_controls_widget')
-        self.widgets = {}
+        self.widgets: dict[Layer, QtLayerControls] = {}
+        self.panel = None  # dynamic controls
         self.addWidget(self.empty_widget)
         self.setCurrentWidget(self.empty_widget)
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        viewer.layers.selection.events.active.connect(self._display)
+        viewer.layers.selection.events.changed.connect(self._populate)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
         viewer.events.theme.connect(self._on_viewer_theme_changed)
 
-    def _on_ndisplay_changed(self, event):
+    def _on_ndisplay_changed(self, event: Event) -> None:
         """Responds to a change in the dimensionality displayed in the canvas.
 
         Parameters
@@ -106,11 +124,14 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the new dimensionality value at `event.value`.
         """
-        for widget in self.widgets.values():
-            if widget is not self.empty_widget:
-                widget.ndisplay = event.value
+        for panel in self.widgets.values():
+            if panel is not self.empty_widget:
+                panel.ndisplay = event.value
 
-    def _on_viewer_theme_changed(self, event=None):
+        if self.panel is not None:
+            self.panel.ndisplay = event.value
+
+    def _on_viewer_theme_changed(self, event: Event | None = None) -> None:
         """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).
 
         The ``toggle_theme`` keybinding sets ``viewer.theme`` directly
@@ -127,7 +148,18 @@ class QtLayerControlsContainer(QStackedWidget):
             if hist_widget is not None:
                 hist_widget._on_theme_change(event)
 
-    def _display(self, event):
+        if self.panel is not None:
+            for widget in self.panel._controls:
+                histogram_control = getattr(widget, '_histogram_control', None)
+                if histogram_control is None:
+                    continue
+                hist_widget = getattr(
+                    histogram_control, 'histogram_widget', None
+                )
+                if hist_widget is not None:
+                    hist_widget._on_theme_change(event)
+
+    def _populate(self):
         """Change the displayed controls to be those of the target layer.
 
         Parameters
@@ -135,14 +167,30 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
-        layer = event.value
-        if layer is None:
-            self.setCurrentWidget(self.empty_widget)
-        else:
-            controls = self.widgets[layer]
-            self.setCurrentWidget(controls)
+        if self.panel is not None:
+            self.removeWidget(self.panel)
+            self.panel.hide()
+            self.panel.deleteLater()
+            self.panel = None
 
-    def _add(self, event):
+        selection = self.viewer.layers.selection
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        if not selection:
+            self.setCurrentWidget(self.empty_widget)
+        elif selection.active is not None and not always_dynamic:
+            controls = self.widgets[selection.active]
+            self.setCurrentWidget(controls)
+        else:
+            # ordered list of layers in selection
+            layers = [
+                layer for layer in self.viewer.layers if layer in selection
+            ]
+            self.panel = QtDynamicLayerControls(layers)
+            self.panel.ndisplay = self.viewer.dims.ndisplay
+            self.addWidget(self.panel)
+            self.setCurrentWidget(self.panel)
+
+    def _add(self, event: Event) -> None:
         """Add the controls target layer to the list of control widgets.
 
         Parameters
@@ -150,13 +198,16 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        if always_dynamic:
+            return
         layer = event.value
         controls = create_qt_layer_controls(layer)
         controls.ndisplay = self.viewer.dims.ndisplay
         self.addWidget(controls)
         self.widgets[layer] = controls
 
-    def _remove(self, event):
+    def _remove(self, event: Event) -> None:
         """Remove the controls target layer from the list of control widgets.
 
         Parameters
@@ -164,10 +215,12 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.value`.
         """
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        if always_dynamic:
+            return
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.hide()
         controls.deleteLater()
-        controls = None
         del self.widgets[layer]

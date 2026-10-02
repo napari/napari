@@ -25,8 +25,8 @@ class MenuId(StrEnum):
     FILE_ACQUIRE = 'napari/file/acquire'
 
     MENUBAR_VIEW = 'napari/view'
-    VIEW_AXES = 'napari/view/axes'
-    VIEW_FLOATING_AXES = 'napari/view/floating_axes'
+    VIEW_SCENE_AXES = 'napari/view/scene_axes'
+    VIEW_CANVAS_AXES = 'napari/view/canvas_axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
 
     MENUBAR_LAYERS = 'napari/layers'

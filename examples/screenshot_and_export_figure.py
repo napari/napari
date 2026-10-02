@@ -65,7 +65,7 @@ figure = viewer.export_figure()
 
 # Zoom in and take another screenshot and export figure to show the different
 # extents of the exported figure and screenshot.
-viewer.camera.zoom = 3
+viewer.scene.camera.zoom = 3
 screenshot_zoomed = viewer.screenshot()
 figure_zoomed = viewer.export_figure()
 

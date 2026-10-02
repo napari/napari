@@ -1,10 +1,10 @@
 import numpy as np
 
 from napari.components.overlays import (
-    AxesOverlay,
     BoundingBoxOverlay,
     CanvasOverlay,
     ScaleBarOverlay,
+    SceneAxesOverlay,
 )
 
 
@@ -12,7 +12,7 @@ def test_scene_overlays(qt_viewer):
     viewer = qt_viewer.viewer
     vispy_canvas = qt_viewer.canvas
 
-    for overlay in viewer._scene_overlays.values():
+    for overlay in viewer.scene.overlays.values():
         # vispy overlays only exist if they are visible at least once
         overlay.visible = True
         assert (
@@ -24,8 +24,8 @@ def test_scene_overlays(qt_viewer):
         vispy_canvas._viewer_overlay_to_visual.items()
     )
 
-    new_overlay = AxesOverlay(visible=True)
-    viewer._scene_overlays.test = new_overlay
+    new_overlay = SceneAxesOverlay(visible=True)
+    viewer.scene.overlays.test = new_overlay
 
     assert new_overlay in vispy_canvas._viewer_overlay_to_visual
     new_overlay_node = vispy_canvas._viewer_overlay_to_visual[new_overlay][
@@ -39,7 +39,7 @@ def test_scene_overlays(qt_viewer):
         for vispy_overlay in vispy_overlays:
             assert vispy_overlay.node in vispy_canvas.view.scene.children
 
-    viewer._scene_overlays.pop('test')
+    viewer.scene.overlays.pop('test')
     assert new_overlay not in vispy_canvas._viewer_overlay_to_visual
     assert new_overlay_node not in vispy_canvas.view.children
 
@@ -144,8 +144,8 @@ def test_grid_mode(qt_viewer):
 
     angles = 10, 20, 30  # just some nonzero stuff
     zoom = 1
-    viewer.camera.angles = angles
-    viewer.camera.zoom = zoom
+    viewer.scene.camera.angles = angles
+    viewer.scene.camera.zoom = zoom
 
     canvas.on_draw(None)
 
@@ -169,6 +169,30 @@ def test_grid_mode(qt_viewer):
     for camera in (canvas.camera, *canvas.grid_cameras):
         np.testing.assert_allclose(camera.angles, angles)
         assert camera.zoom == zoom
+
+    # ensure adding/deleting/hiding layer does not cause any crashes
+    # due to the overlay visual reuse shenanigans that happen
+    # on grid shape changes. Also check grid shapes respond correctly.
+    viewer.canvas.grid.enabled = True
+    viewer.canvas.grid.stride = 2
+    l1 = viewer.add_image(np.ones((10, 10, 10)))
+    l2 = viewer.add_image(np.ones((10, 10, 10)))
+    l3 = viewer.add_image(np.ones((10, 10, 10)))
+    l1.colorbar.visible = True
+    l2.colorbar.visible = True
+    l3.colorbar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.gridded = True
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 2
+
+    l2.visible = False
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 2
+
+    viewer.layers.pop()
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 1
 
 
 def test_tiling_canvas_overlays(qt_viewer):
