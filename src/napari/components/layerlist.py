@@ -673,7 +673,7 @@ class LayerList(SelectableEventedList[Layer]):
         Each axis takes its label from the layer that annotates it, with
         higher-dimensional layers winning over lower-dimensional ones and the
         topmost layer winning between layers of the same dimensionality.
-        Axis that no layer annotates fall back to default indices.
+        Axes that no layer annotates fall back to default indices.
         """
         ndim = self.ndim
         default_labels = [str(i) for i in range(-ndim, 0)]
