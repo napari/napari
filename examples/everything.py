@@ -394,14 +394,15 @@ for axis, value in enumerate(OPENING_SLICE):
     viewer.dims.set_point(axis=axis, value=value)
 
 viewer.canvas.overlays.axes.visible = True
-viewer.canvas.overlays.floating_axes.visible = True
+viewer.canvas.overlays.axes.box = False
 viewer.canvas.overlays.scale_bar.visible = True
-viewer.camera.angles = (-25, -10, 145)
+viewer.scene.overlays.axes.visible = True
 
 for layer in viewer.layers:
     if hasattr(layer, 'colorbar'):
         layer.colorbar.visible = True
 
+viewer.scene.camera.angles = (-25, -10, 145)
 viewer.fit_to_view()
 
 if __name__ == '__main__':
