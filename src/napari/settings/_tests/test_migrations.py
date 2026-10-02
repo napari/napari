@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import Counter
 from importlib.metadata import PackageNotFoundError, distribution
 from unittest.mock import patch
 
@@ -187,27 +188,9 @@ def test_060_to_070_migration():
     assert settings_060_compiled == settings_070_compiled_expected
 
 
-def test_no_transitive_migrators():
-    """Ensure no direct A->C migrator exists when A->B and B->C already exist."""
-
-    edges: dict[str, set[str]] = {}
-    for m in _migrations._MIGRATORS:
-        a = str(m.from_)
-        c = str(m.to_)
-        edges.setdefault(a, set()).add(c)
-
-    violations: list[str] = []
-    for a, bs in edges.items():
-        for b in bs:
-            if b not in edges:
-                continue
-            for c in edges[b]:
-                if c in bs:
-                    violations.append(
-                        f'{a} -> {b} -> {c} and direct {a} -> {c}'
-                    )
-
-    assert not violations, (
-        'Found transitive migrators that create DAGs:\n'
-        + '\n'.join(violations)
-    )
+def test_one_migrator_per_version():
+    # each version should have only one migrator, e.g. no 0.2 -> 0.4
+    # next to 0.2 -> 0.3 -> 0.4
+    starts = Counter(str(m.from_) for m in _migrations._MIGRATORS)
+    repeated = [version for version, count in starts.items() if count > 1]
+    assert not repeated, f'Several migrators start from {repeated}'
