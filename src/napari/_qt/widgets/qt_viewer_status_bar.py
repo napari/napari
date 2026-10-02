@@ -73,8 +73,8 @@ class ViewerStatusBar(QStatusBar):
 
     def update_warning_icons(self) -> None:
         to_warn = {'async_': 'A', 'dynamic_layer_controls': 'D'}
+		exp_settings = get_settings().experimental
         for setting_id, letter in to_warn.items():
-            exp_settings = get_settings().experimental
 
             if setting_id not in self._warn_labels:
                 label = QLabel(letter)
@@ -82,8 +82,8 @@ class ViewerStatusBar(QStatusBar):
                 self.addPermanentWidget(label)
                 field = exp_settings.__class__.model_fields[setting_id]
                 label.setToolTip(
-                    f'The experimental feature `{field.title}` is enabled.\n'
-                    + '\n'.join(wrap(field.description))
+                    f'The experimental feature "{field.title}" is enabled.\n'
+                    f'{field.description}'
                 )
                 # TODO: add click to open settings
             else:
