@@ -591,7 +591,11 @@ QMenuBar {
     font-size: {{ increase(font_size, 1) }};
 }
 
+/* A decoration property like background is required for Qt to override native
+styling on Windows and actually use the font-size for the items (i.e. File, Plugins) */
 QMenuBar::item {
+    background: transparent;
+    font-size: {{ increase(font_size, 1) }};
 }
 
 QMenuBar::item:selected {
