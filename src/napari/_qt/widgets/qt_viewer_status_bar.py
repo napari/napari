@@ -118,7 +118,7 @@ class StatusBarWidget(QWidget):
         plugin_label: QLabel,
         coordinates_label: QLabel,
         help_label: QLabel,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent=parent)
         self._status_label = status_label
