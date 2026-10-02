@@ -20,7 +20,16 @@ from qtpy.QtCore import (
     Qt,
     QThread,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtGui import (
+    QColor,
+    QCursor,
+    QDrag,
+    QFont,
+    QFontDatabase,
+    QImage,
+    QPainter,
+    QPixmap,
+)
 from qtpy.QtWidgets import (
     QColorDialog,
     QGraphicsColorizeEffect,
@@ -42,6 +51,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
     from magicgui.widgets import Widget
+    from qtpy.QtGui import QGuiApplication
 
 
 class ColorMode(StringEnum):
@@ -411,6 +421,50 @@ def in_qt_main_thread() -> bool:
         True if we are in the main thread, False otherwise.
     """
     return QCoreApplication.instance().thread() == QThread.currentThread()
+
+
+def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
+    """Render digits in `obj` using tabular numerals, if the font supports it.
+
+    This enables the OpenType `tnum` ("tabular numerals") feature, which uses
+    fixed-width digit glyphs while leaving every other glyph proportional.
+
+    `obj` may be any object with ``font()``/``setFont()``, so this can be
+    applied to a single widget or to the ``QApplication``. When applied to the
+    application, the feature is inherited by every widget and survives theme
+    and font size changes. However, an application-level stylesheet would
+    discard it.
+
+    Important: if the actual font does not support tabular numerals, this
+    will have no effect, because Qt will silently ignore it.
+
+    Returns
+    -------
+    bool
+        True if the feature was requested. False on Qt < 6.7, where
+        ``QFont.setFeature`` does not exist.
+    """
+    # QFont.setFeature and QFont.Tag are Qt 6.7+; napari still supports PyQt5.
+    tag = getattr(QFont, 'Tag', None)
+    if tag is None or not hasattr(QFont, 'setFeature'):
+        return False
+
+    font = QFont(obj.font())
+    font.setFeature(tag('tnum'), 1)
+    obj.setFont(font)
+    return True
+
+
+def use_fixed_pitch_font(obj: QWidget | QGuiApplication) -> None:
+    """Render `obj` in the platform's default fixed-pitch font.
+
+    Only the family is set, so the size still follows the application font.
+    """
+    font = QFont(obj.font())
+    font.setFamilies(
+        [QFontDatabase.systemFont(QFontDatabase.FixedFont).family()]
+    )
+    obj.setFont(font)
 
 
 def get_color(
