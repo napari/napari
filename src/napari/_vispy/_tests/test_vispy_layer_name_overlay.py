@@ -85,3 +85,12 @@ def test_name_overlay_surface_and_transparent_colormap():
     fading = Colormap([[0, 0, 0, 0], [1, 0, 0, 0]])
     image = Image(np.zeros((2, 2)), colormap=fading)
     assert _make_overlay(image).node.color.rgba[0][3] == 1
+
+
+@pytest.mark.usefixtures('qapp')
+def test_name_overlay_readable_on_mid_gray_box():
+    layer = Points()
+    layer.name_overlay.box_color = (0.5, 0.5, 0.5, 1)
+    vispy_overlay = _make_overlay(layer)
+    color = vispy_overlay.node.color.rgba[0]
+    assert _contrast_ratio(color, layer.name_overlay.box_color) >= 4.5
