@@ -73,6 +73,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
 from napari.plugins import (
+    _npe2,
     menu_item_template as plugin_menu_item_template,
 )
 from napari.plugins._npe2 import index_npe1_adapters
@@ -1112,7 +1113,6 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from napari.plugins import _npe2
 
         widget_class, widget_name, default_area = (
             _npe2.get_widget_contribution(plugin_name, widget_name)
