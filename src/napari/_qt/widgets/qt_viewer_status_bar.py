@@ -1,6 +1,5 @@
 """Status bar widget on the viewer MainWindow"""
 
-from textwrap import wrap
 from typing import TYPE_CHECKING, cast
 
 from qtpy.QtCore import QEvent, Qt
@@ -13,6 +12,11 @@ from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
+
+_EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
+    'async_': 'A',
+    'dynamic_layer_controls': 'D',
+}
 
 
 class ViewerStatusBar(QStatusBar):
@@ -72,10 +76,8 @@ class ViewerStatusBar(QStatusBar):
         get_settings().experimental.events.connect(self.update_warning_icons)
 
     def update_warning_icons(self) -> None:
-        to_warn = {'async_': 'A', 'dynamic_layer_controls': 'D'}
-		exp_settings = get_settings().experimental
-        for setting_id, letter in to_warn.items():
-
+        exp_settings = get_settings().experimental
+        for setting_id, letter in _EXPERIMENTAL_FEATURES_TO_WARN.items():
             if setting_id not in self._warn_labels:
                 label = QLabel(letter)
                 self._warn_labels[setting_id] = label

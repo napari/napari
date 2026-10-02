@@ -40,9 +40,8 @@ class ExperimentalSettings(EventedSettings):
         False,
         title='Render Layers Asynchronously',
         description=(
-            'When enabled, layers are loaded in a background thread, improving responsiveness, especially for remote and multiscale data.\n'
-            'If you experience issues with layer slicing and loading, synchronization between rendering and model state, or other unexpected '
-            'behaviors, consider temporarily disabling this setting and opening an issue on the napari repository.'
+            'When enabled, layers are loaded in a background thread, improving responsiveness,\n'
+            'especially for remote and multiscale data.'
         ),
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
@@ -138,8 +137,6 @@ class ExperimentalSettings(EventedSettings):
         description=(
             'Based on the attributes of the currently selected layers, generate layer controls\n'
             'dynamically (even when a single layer is selected). Happens by default with multiple layers.'
-            'If you experience issues related to the layer controls panel or its connection with layer '
-            'state, consider temporarily disabling this option and opening an issue on the napari repository.'
         ),
     )
 
