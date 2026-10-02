@@ -154,6 +154,8 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
             self.layer, IntensityVisualizationMixin
         ):
             color = _representative_color(self.layer.colormap, 1.0)
+            # channels within 0.01 (about 2/255) of each other means a gray
+            # colormap, which has no hue worth showing
             if np.ptp(color[:3]) > 0.01:
                 self.node.color = _readable_color(color, self._get_bgcolor())
                 return
