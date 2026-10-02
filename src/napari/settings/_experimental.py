@@ -136,7 +136,8 @@ class ExperimentalSettings(EventedSettings):
         title='Generate GUI layer controls dynamically.',
         description=(
             'Based on the attributes of the currently selected layers, generate layer controls\n'
-            'dynamically (even when a single layer is selected). Happens by default with multiple layers.'
+            'dynamically (even when a single layer is selected).\n'
+            'Happens by default with multiple layers.'
         ),
     )
 
