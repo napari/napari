@@ -321,7 +321,7 @@ def add_worker_data(
         else add_layer_data_to_viewer
     )
     _return_type = get_args(return_type)[0]
-    worker.signals.returned.connect(
+    worker.signals.returned.connect(  # pyrefly: ignore [missing-attribute]
         partial(cb, widget, return_type=_return_type)
     )
 
@@ -387,14 +387,14 @@ def find_viewer_ancestor(widget) -> Viewer | None:
         parent = widget.native.parent()
     else:
         parent = widget.parent()
-    from napari.viewer import current_viewer
+    from napari.viewer import Viewer, current_viewer
 
     while parent:
         if hasattr(parent, '_qt_viewer'):  # QMainWindow
             return parent._qt_viewer.viewer
         if isinstance(parent, QtViewerDockWidget):  # DockWidget
             qt_viewer = parent._ref_qt_viewer()
-            if qt_viewer is not None:
+            if qt_viewer is not None and isinstance(qt_viewer.viewer, Viewer):
                 return qt_viewer.viewer
             return current_viewer()
         parent = parent.parent()
@@ -467,7 +467,7 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
     from napari import layers
 
     if not (viewer := find_viewer_ancestor(gui.native)):
-        return ()
+        return []
 
     layer_type_name = gui.annotation.__name__.replace('Data', '').title()
     layer_type = getattr(layers, layer_type_name)
@@ -526,7 +526,7 @@ def add_layer_to_viewer(gui, result: Any, return_type: type[Layer]) -> None:
 
 
 def add_layers_to_viewer(
-    gui: FunctionGui[Any], result: Any, return_type: type[list[Layer]]
+    gui: FunctionGui, result: Any, return_type: type[list[Layer]]
 ) -> None:
     """Show a magicgui result in the viewer.
 
