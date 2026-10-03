@@ -1,3 +1,6 @@
+.pixi
+pixi.lock
+pixi.toml
 uv.lock
 *leak-backref-graph*
 docs
