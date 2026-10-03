@@ -72,6 +72,9 @@ class Rectangle(Shape):
         )
         self._update_displayed_data()
 
+    def _slice_key_of(self, dims) -> np.ndarray:
+        return self._bounding_box[:, dims].astype(int)
+
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
@@ -82,6 +85,4 @@ class Rectangle(Shape):
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(data_displayed)  # pyrefly: ignore [bad-argument-type]
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)
