@@ -91,16 +91,12 @@ def delete_selected_layers(viewer: ViewerModel) -> None:
     viewer.layers.remove_selected()
 
 
-@register_viewer_action(
-    'Increment dimensions slider to the left', repeatable=True
-)
+@register_viewer_action('Increment dimensions slider to the left')
 def increment_dims_left(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_left()
 
 
-@register_viewer_action(
-    'Increment dimensions slider to the right', repeatable=True
-)
+@register_viewer_action('Increment dimensions slider to the right')
 def increment_dims_right(viewer: ViewerModel) -> None:
     viewer.dims._increment_dims_right()
 
