@@ -18,10 +18,6 @@ class ZoomOverlay(CanvasOverlay):
         Corners at the top left and bottom right in canvas coordinates.
     zoom_area : 2-tuple of 2-tuples
         Coordinates in world space of the area to zoom in.
-    box : bool
-        Whether the background box is visible or not.
-    box_color : ColorValue or None
-        Background box color. If unset, it defaults to the canvas color.
     gridded : bool
         The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
@@ -43,6 +39,7 @@ class ZoomOverlay(CanvasOverlay):
         (0, 0),
         (0, 0),
     )
+    gridded: bool = True
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
