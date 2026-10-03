@@ -67,6 +67,21 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
+    def _get_bgcolor(self) -> ColorValue:
+        return self.viewer.canvas.background_color
+
+    def _get_fgcolor(self) -> ColorValue:
+        return self._contrasting_color(self._get_bgcolor())
+
+    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
+        opposite = 1 - bgcolor
+        # shift away from mid tones for better contrast
+        opposite = 0.5 + (opposite - 0.5) * 1.2
+        opposite = np.clip(opposite, 0, 1)
+        # don't change alpha
+        opposite[-1] = bgcolor[-1]
+        return opposite
+
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
@@ -144,21 +159,10 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_fgcolor(self) -> ColorValue:
+    def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.viewer.canvas.background_color
-        else:
-            bgcolor = self.overlay.box_color
-        return self._contrasting_color(bgcolor)
-
-    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
-        opposite = 1 - bgcolor
-        # shift away from mid tones for better contrast
-        opposite = 0.5 + (opposite - 0.5) * 1.2
-        opposite = np.clip(opposite, 0, 1)
-        # don't change alpha
-        opposite[-1] = bgcolor[-1]
-        return opposite
+            return super()._get_bgcolor()
+        return self.overlay.box_color
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])

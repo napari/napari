@@ -109,6 +109,23 @@ toggle_actions = {
             'canvas.overlays.scale_bar.ticks',
         ),
     ],
+    MenuId.VIEW_GRIDLINES: [
+        (
+            'napari.canvas.toggle_grid_lines',
+            'Toggle Grid Lines',
+            'scene.overlays.grid_lines.visible',
+        ),
+        (
+            'napari.canvas.toggle_grid_lines_axis_labels',
+            'Toggle Grid Lines Axis Labels',
+            'scene.overlays.grid_lines.axis_labels',
+        ),
+        (
+            'napari.canvas.toggle_grid_lines_tick_labels',
+            'Toggle Grid Lines Tick Labels',
+            'scene.overlays.grid_lines.tick_labels',
+        ),
+    ],
 }
 
 
