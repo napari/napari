@@ -53,7 +53,7 @@ def test_format_tips(raw, formatted_linux, formatted_win, formatted_mac):
     ],
 )
 def test_urls_to_html_converts_urls(text, expected_body):
-    theme = 'dark'
+    theme = 'napari-dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
     assert urls_to_html(text, theme) == f'{style}{expected_body}'
 
@@ -80,7 +80,7 @@ def test_urls_to_html_no_urls_escaping(text, expected):
 
 
 def test_urls_to_html_multiple_urls():
-    theme = 'dark'
+    theme = 'napari-dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
     result = urls_to_html(
         'Site1: https://napari.org Site2: https://forum.image.sc', theme
@@ -91,7 +91,7 @@ def test_urls_to_html_multiple_urls():
 
 
 def test_urls_to_html_escapes_around_urls():
-    theme = 'dark'
+    theme = 'napari-dark'
     style = f'<style>a{{color:{_link_color(theme)}}}</style>'
     result = urls_to_html(
         'Use Ctrl+> then visit https://napari.org and see & more', theme

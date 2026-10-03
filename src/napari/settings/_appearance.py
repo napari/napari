@@ -26,7 +26,7 @@ class HighlightSettings(EventedModel):
 
 class AppearanceSettings(EventedModel):
     theme: Theme = Field(
-        Theme('dark'),
+        Theme('napari-dark'),
         title='Theme',
         description='Select the user interface theme.',
         validation_alias=AliasChoices('theme', 'napari_theme'),
@@ -37,7 +37,7 @@ class AppearanceSettings(EventedModel):
         description='Select which logo variant to use.',
     )
     font_size: int = Field(
-        int(get_theme('dark').font_size[:-2]),
+        int(get_theme('napari-dark').font_size[:-2]),
         title='Font size',
         description='Select the user interface font size.',
         ge=5,

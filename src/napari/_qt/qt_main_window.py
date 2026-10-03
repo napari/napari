@@ -1595,7 +1595,7 @@ class Window:
             actual_theme_name = value
             if value == 'system':
                 # system isn't a theme, so get the name
-                actual_theme_name = get_system_theme()
+                actual_theme_name = f'napari-{get_system_theme()}'
             # check `font_size` value is always passed when updating style
             if 'font_size' not in extra_variables:
                 extra_variables.update(
