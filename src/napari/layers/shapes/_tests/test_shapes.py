@@ -1289,6 +1289,17 @@ def test_changing_shapes(ten_four_corner, twenty_four_corner):
     assert np.allclose(layer._data_view.z_indices[:5], current_z)
 
 
+@pytest.mark.parametrize(('n_old', 'n_new'), [(3, 2), (3, 4), (0, 2)])
+def test_setting_data_with_a_single_shape_type(n_old, n_new):
+    square = np.array([[0, 0], [0, 10], [10, 10], [10, 0]], dtype=float)
+    layer = Shapes(
+        [square + 20 * i for i in range(n_old)], shape_type='rectangle'
+    )
+    layer.data = ([square + 20 * i for i in range(n_new)], 'polygon')
+
+    assert list(layer.shape_type) == ['polygon'] * n_new
+
+
 def test_changing_shape_type():
     """Test changing shape type"""
     np.random.seed(0)
