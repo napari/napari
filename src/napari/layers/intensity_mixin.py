@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
+from napari.components.histogram import HistogramModel
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
@@ -56,6 +57,15 @@ class IntensityVisualizationMixin:
         from napari.components.overlays import ColorBarOverlay
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
+
+        from napari.components.histogram import HistogramModel
+
+        self._histogram = HistogramModel()
+
+    @property
+    def histogram(self) -> HistogramModel:
+        """Histogram model for this layer (settings only)."""
+        return self._histogram
 
     def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
         """Scale contrast limits to data range"""

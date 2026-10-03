@@ -175,11 +175,8 @@ def test_tensorstore_clim_popup(qtbot):
 def test_contrast_limits_popup_histogram_boundary(
     qtbot, layer, supports_histogram
 ):
-    """The contrast popup embeds histogram UI only when the layer type supports it
-    AND histogram was enabled before popup creation.  Content is lazy-created
-    in _ensure_histogram_content()."""
-    if supports_histogram:
-        layer.histogram.enabled = True
+    """The contrast popup embeds histogram UI only when the layer type supports it.
+    Content is lazy-created in _ensure_histogram_content()."""
     popup = QContrastLimitsPopup(layer)
     qtbot.addWidget(popup)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import weakref
 from typing import Optional
 
 import numpy as np
@@ -26,12 +27,22 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
+from napari._qt.qthreading import GeneratorWorker, create_worker
 from napari._qt.utils import qt_signals_blocked
+from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
-from napari.layers import Image, Surface
+from napari.layers.intensity_mixin import IntensityVisualizationMixin
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
+
+
+def _safe_call_method(control_ref, method_name, *args):
+    """Call a method on a weak reference safely."""
+    control = control_ref()
+    if control is None:
+        return
+    getattr(control, method_name)(*args)
 
 
 def range_to_decimals(range_, dtype):
@@ -90,14 +101,17 @@ class QContrastLimitsPopup(QtPopup):
 
     def __init__(
         self,
-        layer: Image | Surface,
+        layer: IntensityVisualizationMixin,
         parent: Optional[QWidget] = None,
+        contrast_control: Optional[QtContrastLimitsControl] = None,
     ) -> None:
         super().__init__(parent)
 
         self._layer = layer
+        self._contrast_control = contrast_control
         self._cleaned_up = False
-        self._histogram_enabled_checkbox = None
+        self.histogram_content = None
+        self._frame_base_height = 0
 
         self._layout = QVBoxLayout()
         self._layout.setContentsMargins(10, 10, 10, 10)
@@ -181,30 +195,20 @@ class QContrastLimitsPopup(QtPopup):
             range_btn.clicked.connect(layer.reset_contrast_limits_range)
             button_layout.addWidget(range_btn)
 
-        # Histogram toggle checkbox (Image layers only).  The checkbox
-        # itself is always created (simple Qt widget, safe), but the
+        # Histogram toggle (label + checkbox), single layer only.  The checkbox
+        # itself is always created (simple Qt widget, safe); the
         # QtHistogramContentWidget (vispy canvas) is deferred to
-        # _ensure_histogram_content() to avoid a PySide6 segfault when
-        # creating native GL widgets during __init__.
-        self._histogram_enabled_checkbox = None
-        self.histogram_content = None
-        self._frame_base_height: int = 0
-
-        self._histogram_enabled_checkbox = QCheckBox('histogram')
-        self._histogram_enabled_checkbox.setChecked(layer.histogram.enabled)
-        self._histogram_enabled_checkbox.setToolTip(
-            'Show histogram in this popup'
-        )
-        self._histogram_enabled_checkbox.toggled.connect(
+        # _ensure_histogram_content() to avoid a PySide6 segfault when creating
+        # native GL widgets during __init__.
+        self._histogram_label = QLabel('histogram')
+        self._histogram_checkbox = QCheckBox()
+        self._histogram_checkbox.setToolTip('Show histogram in this popup')
+        self._histogram_checkbox.toggled.connect(
             self._on_popup_histogram_toggled
         )
-        button_layout.addWidget(self._histogram_enabled_checkbox)
-        # If histogram was already enabled, create content lazily
-        # when the popup is shown (showEvent), not during __init__.
-        if layer.histogram.enabled:
-            self._needs_content_on_show = True
-        else:
-            self._needs_content_on_show = False
+        button_layout.addWidget(self._histogram_label)
+        button_layout.addWidget(self._histogram_checkbox)
+        self._needs_content_on_show = False
 
         button_layout.addStretch()
 
@@ -240,9 +244,6 @@ class QContrastLimitsPopup(QtPopup):
             return
         self._cleaned_up = True
 
-        self._layer.histogram.events.enabled.disconnect(
-            self._on_external_histogram_enabled
-        )
         if self.histogram_content is not None:
             self.histogram_content.cleanup()
             self.histogram_content = None
@@ -271,43 +272,30 @@ class QContrastLimitsPopup(QtPopup):
             parent=self,
         )
         self._layout.insertWidget(1, self.histogram_content)
-        if not self._layer.histogram.enabled:
+        if not self._histogram_checkbox.isChecked():
             self.histogram_content.hide()
-        self._layer.histogram.events.enabled.connect(
-            self._on_external_histogram_enabled
-        )
 
     def _set_histogram_visible(self, visible: bool) -> None:
-        """Show or hide the histogram content and resize the popup."""
+        """Show or hide the popup's histogram content and resize the popup."""
+        self._ensure_histogram_content()
+        if self.histogram_content is None:
+            return
         if visible:
-            self._ensure_histogram_content()
-            if self.histogram_content is None:
-                return
             h = self.histogram_content.sizeHint().height()
             self.histogram_content.show()
-            self._layer.histogram.enabled = True
+            # this can be None in testing, so just skip
+            if self._contrast_control is not None:
+                self._contrast_control._schedule_histogram_compute()
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
         else:
-            if self.histogram_content is not None:
-                self.histogram_content.hide()
-            self._layer.histogram.enabled = False
+            self.histogram_content.hide()
             self.setFixedHeight(self._base_height())
 
     def _on_popup_histogram_toggled(self, visible: bool) -> None:
         """Handle the popup's histogram checkbox toggle."""
         self._set_histogram_visible(visible)
-
-    def _on_external_histogram_enabled(self) -> None:
-        """Sync checkbox when ``layer.histogram.enabled`` changes from outside."""
-        if self._histogram_enabled_checkbox is not None:
-            with qt_signals_blocked(self._histogram_enabled_checkbox):
-                self._histogram_enabled_checkbox.setChecked(
-                    self._layer.histogram.enabled
-                )
-            if self.histogram_content is not None:
-                self._set_histogram_visible(self._layer.histogram.enabled)
 
     def _create_widget_from_layout(self, layout: QHBoxLayout) -> QWidget:
         """Helper to wrap a layout in a widget."""
@@ -318,7 +306,9 @@ class QContrastLimitsPopup(QtPopup):
 
 class AutoScaleButtons(QWidget):
     def __init__(
-        self, layer: Image | Surface, parent: Optional[QWidget] = None
+        self,
+        layer: IntensityVisualizationMixin,
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent=parent)
 
@@ -366,7 +356,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    def __init__(self, parent: QWidget, layer: Image | Surface) -> None:
+    def __init__(
+        self, parent: QWidget, layer: IntensityVisualizationMixin
+    ) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contrast_limits.connect(
@@ -413,11 +405,8 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
 
         self.contrast_limits_slider_label = QtWrappedLabel('contrast limits:')
 
-        # Wrap the slider (and optional histogram button) in a QFrame so
-        # they sit on the same row in the form layout.  The QFrame is
-        # created once here and reused in get_widget_controls() — creating
-        # a new QFrame every time would reparent the slider, destroying the
-        # C++ object when the temporary QFrame is collected.
+        # the _clim_row is a wrapper around the contrast limits slider and the
+        # histogram toggle button, so the sit on the same row
         self._clim_row = QFrame()
         self._clim_row.setFrameShape(QFrame.Shape.NoFrame)
         self._clim_row.setStyleSheet('QFrame { background: transparent; }')
@@ -426,10 +415,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self._clim_layout.setSpacing(2)
         self._clim_layout.addWidget(self.contrast_limits_slider)
         self._clim_row.setLayout(self._clim_layout)
-
-        # Histogram toggle button — added alongside the slider via a
-        # wrapper widget in get_widget_controls().
-        self.histogram_button = None
 
         self.histogram_button = QtModePushButton(
             self._layer,
@@ -447,18 +432,45 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.histogram_button.installEventFilter(self)
         self._clim_layout.addWidget(self.histogram_button)
 
-        # Sync button checked state when ``enabled`` changes via the API
-        layer.histogram.events.enabled.connect(
-            self._on_histogram_model_enabled
+        # empty wrapper, will be populated on first toggle (otherwise
+        # it may segfault in some cases)
+        self.histogram_content_widget = QWidget()
+        self.histogram_content_widget.setProperty('foreground', 'true')
+        self.histogram_content_widget.hide()
+        self.histogram_content_widget.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
         )
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(4, 4, 4, 4)
+        content_layout.setSpacing(4)
+        self.histogram_content_widget.setLayout(content_layout)
+        self.histogram_content = None
+
+        self._histogram_worker: GeneratorWorker | None = None
+        self._compute_epoch = 0
+        self._pending_compute = False
+
+        for ev in (
+            self._layer.histogram.events.bins,
+            self._layer.histogram.events.max_samples,
+            self._layer.histogram.events.mode,
+            self._layer.histogram.events.log_scale,
+            self._layer.events.data,
+            self._layer.events.contrast_limits_range,
+            self._layer.events.set_data,
+        ):
+            ev.connect(self._schedule_histogram_compute)
+
+        self.destroyed.connect(self._abort_histogram_worker)
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
-            self._layer,
-            self.parent(),
+            layer=self._layer,
+            parent=self.parent(),
+            contrast_control=self,
         )
-        self.clim_popup.setParent(self.parent())
-        self.clim_popup.move_to('top', min_length=650)
+        if self.parent():
+            self.clim_popup.move_to('top', min_length=650)
         self.clim_popup.show()
 
     def _on_contrast_limits_change(self):
@@ -503,62 +515,103 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             and event.button() == Qt.MouseButton.RightButton
         ):
             self.histogram_button.setDown(False)
-            self.show_histogram_popup()
+            self.show_clim_popup()
             return True
         return super().eventFilter(obj, event)
 
     def _on_histogram_button_toggled(self, visible: bool) -> None:
         """Handle left-click on histogram button to toggle histogram widget."""
-
-        parent = self.parent()
-        histogram_control = getattr(parent, '_histogram_control', None)
-        if histogram_control is None:
-            return
-
-        histogram_control.ensure_content()
-
-        # Show or hide the persistent content_widget; it is always present
-        # in the form layout (inserted once by QtBaseImageControls) so we
-        # never need to search layout rows.
         if visible:
-            # Restore size policy so the form layout allocates space
-            histogram_control.content_widget.show()
-            histogram_control.content_widget.setSizePolicy(
-                QSizePolicy.Policy.Preferred,
-                QSizePolicy.Policy.Preferred,
+            self._ensure_histogram_content()
+            self.histogram_content_widget.show()
+            self.histogram_content_widget.setSizePolicy(
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
             )
-            # Enable histogram computation; _on_enabled_change triggers
-            # an immediate compute if there is pending dirty data.
-            self._layer.histogram.enabled = True
+            self._schedule_histogram_compute()
         else:
-            # Set size policy to Ignored so the form layout collapses the
-            # column and doesn't reserve space for the hidden widget
-            histogram_control.content_widget.setSizePolicy(
-                QSizePolicy.Policy.Ignored,
-                QSizePolicy.Policy.Ignored,
+            self.histogram_content_widget.setSizePolicy(
+                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
             )
-            histogram_control.content_widget.hide()
-            # Disable histogram computation
-            self._layer.histogram.enabled = False
+            self.histogram_content_widget.hide()
 
-    def show_histogram_popup(self):
-        """Show the histogram popup widget."""
-        self.show_clim_popup()
-
-    def _on_histogram_model_enabled(self) -> None:
-        """Sync button checked state when ``layer.histogram.enabled`` changes via the API.
-
-        Uses ``qt_signals_blocked`` so the ``toggled`` signal does NOT fire,
-        preventing recursion into ``_on_histogram_button_toggled`` (which would
-        re-set ``layer.histogram.enabled`` and re-dispatch the event).
-        """
-        if self.histogram_button is None:
+    def _ensure_histogram_content(self) -> None:
+        """Lazily create the histogram content widget (vispy canvas)."""
+        if self.histogram_content is not None:
             return
-        with qt_signals_blocked(self.histogram_button):
-            self.histogram_button.setChecked(self._layer.histogram.enabled)
+        self.histogram_content = QtHistogramContentWidget(
+            self._layer,
+            parent=self.histogram_content_widget,
+        )
+        self.histogram_content_widget.layout().addWidget(
+            self.histogram_content
+        )
+
+    def _schedule_histogram_compute(self, event=None) -> None:
+        """Run the async histogram compute."""
+        if getattr(self, '_cleaned_up', False):
+            return
+        if self._histogram_worker is not None:
+            self._pending_compute = True
+            return
+        self._abort_histogram_worker()
+        self._compute_epoch += 1
+        epoch = self._compute_epoch
+        # we use the no_event variant and fire events from here because
+        # we want them to always be on the main thread
+        worker = create_worker(
+            self._layer.histogram._compute_async_no_events, self._layer
+        )
+
+        self_ref = weakref.ref(self)
+        worker.yielded.connect(
+            lambda *_: _safe_call_method(
+                self_ref, '_on_histogram_yield', epoch
+            )
+        )
+        worker.finished.connect(
+            lambda *_: _safe_call_method(self_ref, '_on_histogram_done', epoch)
+        )
+        self._histogram_worker = worker
+        worker.start()
+
+    def _on_histogram_yield(self, epoch: int) -> None:
+        """Write the latest result and emit ``updated`` on the main thread."""
+        if getattr(self, '_cleaned_up', False) or epoch != self._compute_epoch:
+            return
+        self._layer.histogram.events.updated()
+
+    def _on_histogram_done(self, epoch: int) -> None:
+        """Emit ``completed`` on the main thread once the worker finishes."""
+        if epoch != self._compute_epoch:
+            return
+        self._histogram_worker = None
+        self._layer.histogram.events.completed()
+        if self._pending_compute:
+            # there was another compute lined up after us, run that!
+            self._pending_compute = False
+            self._schedule_histogram_compute()
+
+    def _abort_histogram_worker(self) -> None:
+        """Stop any in-flight compute worker."""
+        worker = self._histogram_worker
+        self._histogram_worker = None
+        self._pending_compute = False
+        if worker is None:
+            return
+        worker.yielded.disconnect()
+        worker.finished.disconnect()
+        pbar = getattr(worker, 'pbar', None)
+        if pbar is not None:
+            pbar.close()
+        worker.quit()
 
     def disconnect_widget_controls(self) -> None:
         """Disconnect histogram model events and base controls."""
+        self._cleaned_up = True
+        self._abort_histogram_worker()
+        if self.histogram_content is not None:
+            self.histogram_content.cleanup()
+            self.histogram_content = None
         disconnect_events(self._layer.histogram.events, self)
         super().disconnect_widget_controls()
 
@@ -568,4 +621,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         return [
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),
+            (self.histogram_content_widget,),
         ]
