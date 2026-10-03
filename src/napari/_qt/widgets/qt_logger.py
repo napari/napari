@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.dialogs.qt_about import QtCopyToClipboardButton
-from napari.utils._logging import LOG_STREAM, get_log_level_value
+from napari.utils import logging as napari_logging
 
 
 class LogWidget(QWidget):
@@ -87,7 +87,7 @@ class LogWidget(QWidget):
         self.text_filter.textChanged.connect(self._on_change)
 
         # TODO: super laggy when open :/
-        LOG_STREAM.changed.connect(self._on_new_message)
+        napari_logging._LOG_STREAM.changed.connect(self._on_new_message)
         self._prev_pos = None
         self.log_text_box.verticalScrollBar().rangeChanged.connect(
             self._jump_to_pos
@@ -98,23 +98,24 @@ class LogWidget(QWidget):
         self._jump_to_pos()
 
     def _on_loglevel_change(self, event=None):
-        level = get_log_level_value(event)
+        level = napari_logging._get_log_level_value(event)
         logging.getLogger().setLevel(level)
 
     def _on_new_message(self, event=None):
         self._prev_pos = self._scroll_pos()
 
-        log = LOG_STREAM.get_filtered_logs_html(
+        logs = napari_logging._LOG_STREAM.get_filtered_logs_html(
             self.level_filter.currentText(),
             self.text_filter.text(),
             last_only=True,
-        )[0]
-        self.log_text_box.append(log)
+        )
+        if logs:
+            self.log_text_box.append(logs[0])
 
     def _on_change(self, event=None):
         self._prev_pos = self._scroll_pos()
 
-        logs = LOG_STREAM.get_filtered_logs_html(
+        logs = napari_logging._LOG_STREAM.get_filtered_logs_html(
             self.level_filter.currentText(), self.text_filter.text()
         )
         self.log_text_box.clear()

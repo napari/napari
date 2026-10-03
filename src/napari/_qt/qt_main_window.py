@@ -81,6 +81,7 @@ from napari.utils import perf
 from napari.utils._proxies import MappingProxy, PublicOnlyProxy
 from napari.utils.events import Event
 from napari.utils.io import imsave
+from napari.utils.logging import register_logger_to_napari_handler
 from napari.utils.misc import (
     in_ipython,
     in_jupyter,
@@ -138,6 +139,8 @@ class _QtMainWindow(QMainWindow):
         show_welcome_screen=True,
     ) -> None:
         super().__init__(parent)
+        register_logger_to_napari_handler('')
+
         self._ev = None
         self._window = window
         self._plugin_manager_dialog = None
