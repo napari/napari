@@ -51,9 +51,7 @@ def _load_glyph_qt(
 
     # Add padding to ensure we capture the full glyph
     padding = 4
-    # at least as wide as the advance: glyphs with large side bearings (e.g.
-    # '1') otherwise get a narrow image and render with their stem missing
-    width = int(np.ceil(max(bounding_rect.width(), advance))) + 2 * padding
+    width = int(np.ceil(bounding_rect.width())) + 2 * padding
     height = int(np.ceil(bounding_rect.height())) + 2 * padding
 
     # Handle empty glyphs (e.g., space)
