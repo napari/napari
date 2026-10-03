@@ -10,7 +10,6 @@ from napari._vispy.utils.text import update_text
 from napari._vispy.visuals.points import PointsVisual
 from napari.settings import get_settings
 from napari.utils.colormaps.standardize_color import transform_color
-from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
@@ -230,8 +229,3 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_antialiasing_change()
         self._on_shading_change()
         self._on_canvas_size_limits_change()
-
-    def close(self):
-        """Vispy visual is closing."""
-        disconnect_events(self.layer.text.events, self)
-        super().close()

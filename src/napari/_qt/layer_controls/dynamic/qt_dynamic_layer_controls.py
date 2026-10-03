@@ -104,7 +104,7 @@ from napari.layers import (
 )
 from napari.layers.base._base_constants import Mode
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 controls_dict = {
     Layer: (
@@ -332,18 +332,18 @@ class QtDynamicLayerControls(QFrame):
             disconnect_method()
 
     def deleteLater(self):
-        disconnect_events(self._layers[0].events, self.buttons)
+        _disconnect_all_events(self._layers[0], self.buttons)
         for layer in self._layers:
-            disconnect_events(layer.events, self)
+            _disconnect_all_events(layer, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
     def close(self):
         """Disconnect events when widget is closing."""
-        disconnect_events(self._layers[0].events, self.buttons)
+        _disconnect_all_events(self._layers[0], self.buttons)
         for layer in self._layers:
-            disconnect_events(layer.events, self)
+            _disconnect_all_events(layer, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
             getattr(child, 'close', lambda: None)()

@@ -7,8 +7,9 @@ from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
+from napari.settings import get_settings
 from napari.utils.color import ColorValue
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
@@ -73,11 +74,9 @@ class VispyBaseOverlay:
         self._on_blending_change()
 
     def close(self) -> None:
-        self.overlay.events.visible.disconnect(self._on_visible_change)
-        self.overlay.events.opacity.disconnect(self._on_opacity_change)
-        self.overlay.events.blending.disconnect(self._on_blending_change)
-        disconnect_events(self.viewer.events, self)
-        disconnect_events(self.viewer.canvas.events, self)
+        _disconnect_all_events(self.overlay, self)
+        _disconnect_all_events(self.viewer, self)
+        _disconnect_all_events(get_settings(), self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
@@ -208,7 +207,7 @@ class LayerOverlayMixin:
         return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
-        disconnect_events(self.layer.events, self)
+        _disconnect_all_events(self.layer, self)
         super().close()
 
 
