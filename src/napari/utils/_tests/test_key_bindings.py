@@ -1,7 +1,6 @@
 import inspect
 import time
 import types
-from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
@@ -12,8 +11,6 @@ from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,
-    _bind_user_key,
-    _get_user_keymap,
     bind_key,
 )
 
@@ -146,7 +143,6 @@ def test_handle_single_keymap_provider():
     handler.keymap_providers = [foo]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(foo.keymap, foo),
         _bind_keymap(foo.class_keymap, foo),
     ]
@@ -192,39 +188,6 @@ def test_handle_single_keymap_provider():
 
 
 @pytest.mark.key_bindings
-@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
-def test_bind_user_key(keymap_mock):
-    foo = Foo()
-    bar = Bar()
-    handler = KeymapHandler()
-    handler.keymap_providers = [bar, foo]
-
-    x = 0
-
-    @_bind_user_key('D')
-    def abc():
-        nonlocal x
-        x = 42
-
-    assert handler.active_keymap == {
-        KeyBinding.from_str('A'): types.MethodType(
-            foo.class_keymap[KeyBinding.from_str('A')], foo
-        ),
-        KeyBinding.from_str('B'): types.MethodType(
-            foo.keymap[KeyBinding.from_str('B')], foo
-        ),
-        KeyBinding.from_str('D'): abc,
-        KeyBinding.from_str('E'): types.MethodType(
-            bar.class_keymap[KeyBinding.from_str('E')], bar
-        ),
-    }
-
-    handler.press_key('D')
-
-    assert x == 42
-
-
-@pytest.mark.key_bindings
 def test_handle_multiple_keymap_providers():
     foo = Foo()
     bar = Bar()
@@ -232,7 +195,6 @@ def test_handle_multiple_keymap_providers():
     handler.keymap_providers = [bar, foo]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(bar.keymap, bar),
         _bind_keymap(bar.class_keymap, bar),
         _bind_keymap(foo.keymap, foo),
@@ -296,7 +258,6 @@ def test_inherited_keymap():
     handler.keymap_providers = [baz]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(baz.keymap, baz),
         _bind_keymap(baz.class_keymap, baz),
         _bind_keymap(Bar.class_keymap, baz),
