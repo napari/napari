@@ -155,7 +155,7 @@ contributions:
   readers:
     - command: napari.get_obj_reader
       accepts_directories: false
-      filename_patterns: ['*.obj']
+      filename_patterns: ['*.obj', '*.obj.gz']
     - command: napari.get_reader
       accepts_directories: true
       filename_patterns:
