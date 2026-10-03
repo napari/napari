@@ -47,7 +47,6 @@ class Ellipse(Shape):
         )
 
         self._closed = True
-        self._use_face_vertices = True
         self.data = data
         self.name = 'ellipse'
 
@@ -80,6 +79,9 @@ class Ellipse(Shape):
         )
         self._update_displayed_data()
 
+    def _vertices_for_mask(self, plane) -> np.ndarray:
+        return triangulate_ellipse(self.data[:, plane])[0]
+
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Build boundary vertices with num_segments
@@ -91,9 +93,7 @@ class Ellipse(Shape):
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)
 
     def transform(self, transform):
         """Performs a linear transform on the shape
