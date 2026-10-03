@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.dynamic.widgets._tracks import (
+    QtColorFeaturesComboBoxControl,
     QtColormapComboBoxControl,
-    QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
     QtHideCompletedTracksCheckBoxControl,
@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 class TestQtColorPropertiesComboBoxControl:
     def test_init(self, qt_wrap: QtWrap, tracks_data) -> None:
         tracks = Tracks(**tracks_data)
-        control = QtColorPropertiesComboBoxControl([tracks])
+        control = QtColorFeaturesComboBoxControl([tracks])
         qt_wrap.add_control(control)
 
     def test_color_by(self, qt_wrap: QtWrap, tracks_data) -> None:
         tracks = Tracks(**tracks_data)
-        control = QtColorPropertiesComboBoxControl([tracks])
+        control = QtColorFeaturesComboBoxControl([tracks])
         qt_wrap.add_control(control)
 
         assert tracks.color_by == 'track_id'
@@ -41,7 +41,7 @@ class TestQtColorPropertiesComboBoxControl:
 
     def test_properties(self, qt_wrap: QtWrap, tracks_data) -> None:
         tracks = Tracks(**tracks_data)
-        control = QtColorPropertiesComboBoxControl([tracks])
+        control = QtColorFeaturesComboBoxControl([tracks])
         qt_wrap.add_control(control)
 
         assert control.color_by_combobox.count() == 3

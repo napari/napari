@@ -300,7 +300,7 @@ class Vectors(Layer):
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
             properties=(
-                self.properties
+                self._feature_table.properties()
                 if self._data.size > 0
                 else self._feature_table.currents()
             ),
@@ -460,8 +460,8 @@ class Vectors(Layer):
                 'edge_colormap': self.edge_colormap.model_dump(),
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
-                'properties': self.properties,
-                'property_choices': self.property_choices,
+                'properties': self._feature_table.properties(),
+                'property_choices': self._feature_table.choices(),
                 'ndim': self.ndim,
                 'features': self.features,
                 'feature_defaults': self.feature_defaults,
@@ -575,7 +575,7 @@ class Vectors(Layer):
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
-            properties=self.properties,
+            properties=self._feature_table.properties(),
             current_properties=self._feature_table.currents(),
         )
         self.events.edge_color()
@@ -594,7 +594,9 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge._refresh_colors(self.properties, update_color_mapping)
+        self._edge._refresh_colors(
+            self._feature_table.properties(), update_color_mapping
+        )
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -616,31 +618,31 @@ class Vectors(Layer):
             self._edge.color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge.color_properties is not None:
-                color_property = self._edge.color_properties.name
+                color_feature = self._edge.color_properties.name
             else:
-                color_property = ''
-            if color_property == '':
-                if self.properties:
-                    color_property = next(iter(self.properties))
+                color_feature = ''
+            if color_feature == '':
+                if len(self.features.columns) > 0:
+                    color_feature = self.features.columns[0]
                     self._edge.color_properties = {  # pyrefly: ignore [bad-assignment]
-                        'name': color_property,
-                        'values': self.features[color_property].to_numpy(),
-                        'current_value': self.feature_defaults[color_property][
+                        'name': color_feature,
+                        'values': self.features[color_feature].to_numpy(),
+                        'current_value': self.feature_defaults[color_feature][
                             0
                         ],
                     }
                     warnings.warn(
-                        f'edge_color property was not set, setting to: {color_property}',
+                        f'edge_color feature was not set, setting to: {color_feature}',
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        f'There must be a valid Vectors.properties to use {edge_color_mode}'
+                        f'There must be a valid Vectors.features to use {edge_color_mode}'
                     )
 
-            # ColorMode.COLORMAP can only be applied to numeric properties
+            # ColorMode.COLORMAP can only be applied to numeric features
             if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type,
+                self.features[color_feature].dtype.type,
                 np.number,
             ):
                 raise TypeError(

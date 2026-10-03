@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import npe2
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari_builtins.io import napari_get_reader
@@ -43,7 +44,11 @@ def test_layer_save(tmp_path: Path, some_layer: 'layers.Layer', use_ext: bool):
         meta, type_string = rest
         assert type_string == some_layer._type_string
         for key, value in meta.items():  # type: ignore
-            np.testing.assert_equal(value, getattr(some_layer, key))
+            expected = getattr(some_layer, key)
+            if isinstance(expected, pd.DataFrame):
+                pd.testing.assert_frame_equal(pd.DataFrame(value), expected)
+            else:
+                np.testing.assert_equal(value, expected)
 
 
 # the layer_writer_and_data fixture is defined in napari/conftest.py

@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
 from napari._qt.layer_controls.widgets._tracks import (
+    QtColorFeaturesComboBoxControl,
     QtColormapComboBoxControl,
-    QtColorPropertiesComboBoxControl,
     QtGraphCheckBoxControl,
     QtHeadLengthSliderControl,
     QtHideCompletedTracksCheckBoxControl,
@@ -30,8 +30,8 @@ class QtTracksControls(QtLayerControls):
 
     Attributes
     ----------
-    _color_properties_combobox_control : napari._qt.layer_controls.widgets._tracks.QtColorPropertiesComboBoxControl
-        Widget that wraps a comboBox controlling the layer color properties.
+    _color_features_combobox_control : napari._qt.layer_controls.widgets._tracks.QtColorFeaturesComboBoxControl
+        Widget that wraps a comboBox controlling the layer color features.
     _colormap_combobox_control : napari._qt.layer_controls.widgets._tracks.QtColormapComboBoxControl
         Widget that wraps a comboBox controlling current colormap of the layer.
     _graph_checkbox_control : napari._qt.layer_controls.widgets._tracks.QtGraphCheckBoxControl
@@ -58,10 +58,10 @@ class QtTracksControls(QtLayerControls):
     def __init__(self, layer: Tracks) -> None:
         super().__init__(layer)
         # Setup widgets controls
-        self._color_properties_combobox_control = (
-            QtColorPropertiesComboBoxControl(self, layer)
+        self._color_features_combobox_control = QtColorFeaturesComboBoxControl(
+            self, layer
         )
-        self._add_widget_controls(self._color_properties_combobox_control)
+        self._add_widget_controls(self._color_features_combobox_control)
         self._colormap_combobox_control = QtColormapComboBoxControl(
             self, layer
         )

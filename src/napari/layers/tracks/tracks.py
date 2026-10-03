@@ -179,6 +179,7 @@ class Tracks(Layer):
             color_by=Event,
             colormap=Event,
             properties=Event,
+            features=Event,
             rebuild_tracks=Event,
             rebuild_graph=Event,
             hide_completed_tracks=Event,
@@ -212,9 +213,8 @@ class Tracks(Layer):
         self.data = data
         self._color_by = color_by
         if properties is not None:
-            self.properties = properties
-        else:
-            self.features = features
+            features = properties
+        self.features = features
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -259,7 +259,7 @@ class Tracks(Layer):
         state.update(
             {
                 'data': self.data,
-                'properties': self.properties,
+                'properties': self._manager.properties,
                 'graph': self.graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
@@ -384,7 +384,7 @@ class Tracks(Layer):
         self._manager.data = data
         self._manager.build_tracks()
 
-        # reset the properties and recolor the tracks
+        # reset the features and recolor the tracks
         self.features = {}
         self._recolor_tracks()
 
@@ -424,6 +424,7 @@ class Tracks(Layer):
     ) -> None:
         self._manager.features = features
         self._check_color_by_in_features()
+        self.events.features()
         self.events.properties()
 
     @property
@@ -439,7 +440,12 @@ class Tracks(Layer):
     @property
     def properties_to_color_by(self) -> list[str]:
         """track properties that can be used for coloring etc..."""
-        return list(self.properties.keys())
+        return self.features_to_color_by
+
+    @property
+    def features_to_color_by(self) -> list[str]:
+        """track features that can be used for coloring etc..."""
+        return list(self.features.columns)
 
     @property
     def graph(self) -> dict[int, list[int]] | None:
@@ -538,10 +544,10 @@ class Tracks(Layer):
         return self._color_by
 
     @color_by.setter
-    def color_by(self, color_by: str) -> None:
-        """set the property to color vertices by"""
-        if color_by not in self.properties_to_color_by:
-            raise ValueError(f'{color_by} is not a valid property key')
+    def color_by(self, color_by: str):
+        """set the feature to color vertices by"""
+        if color_by not in self.features_to_color_by:
+            raise ValueError(f'{color_by} is not a valid feature key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -572,14 +578,14 @@ class Tracks(Layer):
         """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
-        # updated before the properties are. properties should always contain
+        # updated before the features are. features should always contain
         # a track_id key
-        if self.color_by not in self.properties_to_color_by:
+        if self.color_by not in self.features_to_color_by:
             self._color_by = 'track_id'
             self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
-        vertex_properties = self._manager.vertex_properties(self.color_by)
+        vertex_features = self._manager.vertex_features(self.color_by)
 
         def _norm(p):
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
@@ -589,10 +595,10 @@ class Tracks(Layer):
         else:
             # if we don't have a colormap, get one and scale the properties
             colormap = AVAILABLE_COLORMAPS[self.colormap]
-            vertex_properties = _norm(vertex_properties)
+            vertex_features = _norm(vertex_features)
 
         # actually set the vertex colors
-        self._track_colors = colormap.map(vertex_properties)
+        self._track_colors = colormap.map(vertex_features)
 
     @property
     def track_connex(self) -> np.ndarray | None:
