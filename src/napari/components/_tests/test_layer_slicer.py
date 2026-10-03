@@ -1,8 +1,9 @@
 import time
+import weakref
 from concurrent.futures import Future, wait
 from dataclasses import dataclass
 from threading import RLock, current_thread, main_thread
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import pytest
@@ -12,9 +13,6 @@ from napari.components import Dims
 from napari.components._layer_slicer import _LayerSlicer
 from napari.layers import Image, Labels, Points
 from napari.utils.notifications import notification_manager
-
-if TYPE_CHECKING:
-    import weakref
 
 # The following fakes are used to control execution of slicing across
 # multiple threads, while also allowing us to mimic real classes
@@ -413,6 +411,61 @@ def test_submit_after_shutdown_raises():
     layer_slicer.shutdown()
     with pytest.raises(RuntimeError):
         layer_slicer.submit(layers=[FakeAsyncLayer()], dims=Dims())
+
+
+def test_submit_drops_stale_response(layer_slicer):
+    """A response for a request that has been superseded is not emitted.
+
+    See https://github.com/napari/napari/issues/9046
+    """
+    dims = Dims()
+    layer = FakeAsyncLayer()
+
+    with layer.lock:
+        stale = layer_slicer.submit(layers=[layer], dims=dims)
+        _wait_until_running(stale)
+        # the layer is sliced again before the first request finished, so the
+        # first response is no longer up to date
+        fresh = layer_slicer.submit(layers=[layer], dims=dims)
+
+    assert _wait_for_response(stale) == {}
+    assert _wait_for_response(fresh)[layer].id == 2
+
+
+def test_slice_layers_drops_response_for_outdated_data(layer_slicer):
+    """A response computed for outdated data is not emitted.
+
+    See https://github.com/napari/napari/issues/9046
+    """
+    layer = Points(data=np.zeros((10, 2)))
+    dims = Dims()
+    stale_request = layer._slicing_state._make_slice_request(dims)
+
+    # the user deletes a point, which makes the layer request a new slice
+    layer.data = layer.data[:-1]
+    fresh_request = layer._slicing_state._make_slice_request(dims)
+    # the slicer marks the layer as unloaded with the id of the newest request
+    layer._slicing_state._set_unloaded_slice_id(fresh_request.id)
+    # the indices of the stale response point at points that no longer exist
+    assert stale_request().indices.max() >= len(layer.data)
+
+    ready_values: list[dict] = []
+    layer_slicer.events.ready.connect(
+        lambda event: ready_values.append(event.value)
+    )
+
+    stale_result = layer_slicer._slice_layers(
+        {weakref.ref(layer): stale_request}
+    )
+    fresh_result = layer_slicer._slice_layers(
+        {weakref.ref(layer): fresh_request}
+    )
+
+    # the stale response is dropped instead of being returned and emitted
+    assert stale_result == {}
+    assert len(fresh_result) == 1
+    assert ready_values == [stale_result, fresh_result]
+    assert next(iter(fresh_result.values())).request_id == fresh_request.id
 
 
 def _wait_until_running(future: Future):

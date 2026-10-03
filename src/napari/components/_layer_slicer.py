@@ -283,7 +283,23 @@ class _LayerSlicer:
         dict[Layer, SliceResponse]: which contains the results of the slice
         """
         logger.debug('_LayerSlicer._slice_layers: %s', requests)
-        result = {layer: request() for layer, request in requests.items()}
+        result = {}
+        for weak_layer, request in requests.items():
+            response = request()
+            layer = weak_layer()
+            if (
+                layer is not None
+                and layer._slicing_state._last_slice_id > request.id
+            ):
+                # a newer request has been submitted for this layer, so this
+                # response may no longer match its data or slice state
+                logger.debug(
+                    '_LayerSlicer._slice_layers: discarding stale response %s',
+                    request.id,
+                )
+                continue
+            result[weak_layer] = response
+
         self.events.ready(value=result)
         return result
 
