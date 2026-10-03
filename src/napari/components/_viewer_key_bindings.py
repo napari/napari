@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
+from napari.components.dims import AxisLockedError
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
 from napari.utils.notifications import show_info, show_warning
@@ -95,14 +97,16 @@ def delete_selected_layers(viewer: ViewerModel) -> None:
     'Increment dimensions slider to the left', repeatable=True
 )
 def increment_dims_left(viewer: ViewerModel) -> None:
-    viewer.dims._increment_dims_left()
+    with contextlib.suppress(AxisLockedError):
+        viewer.dims._increment_dims_left()
 
 
 @register_viewer_action(
     'Increment dimensions slider to the right', repeatable=True
 )
 def increment_dims_right(viewer: ViewerModel) -> None:
-    viewer.dims._increment_dims_right()
+    with contextlib.suppress(AxisLockedError):
+        viewer.dims._increment_dims_right()
 
 
 @register_viewer_action('Move focus of dimensions slider up')

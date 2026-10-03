@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 
 import numpy as np
@@ -8,7 +9,7 @@ from napari._qt.widgets.qt_dims_slider import (
     AnimationThread,
     QtDimSliderWidget,
 )
-from napari.components.dims import Dims
+from napari.components.dims import AxisLockedError, Dims
 from napari.settings._constants import LoopMode
 
 
@@ -379,7 +380,8 @@ class QtDims(QWidget):
             # disable additional point advance requests until this one draws
             self.dims._play_ready = False
             before = self.dims.point
-            self.dims.set_current_step(axis, frame)
+            with contextlib.suppress(AxisLockedError):
+                self.dims.set_current_step(axis, frame)
             if self.dims.point == before:
                 # nothing moved, so no draw is coming to re-enable playback
                 self.dims._play_ready = True

@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from napari.components.dims import AxisLockedError
+
 if TYPE_CHECKING:
     from napari.viewer import Viewer
 
@@ -27,12 +29,15 @@ def dims_scroll(viewer, event):
     forward = 1 if event.native.inverted() else -1
     viewer.dims._scroll_progress += delta * forward
     while abs(viewer.dims._scroll_progress) >= 1:
-        if viewer.dims._scroll_progress < 0:
-            viewer.dims._increment_dims_left()
-            viewer.dims._scroll_progress += 1
-        else:
-            viewer.dims._increment_dims_right()
-            viewer.dims._scroll_progress -= 1
+        try:
+            if viewer.dims._scroll_progress < 0:
+                viewer.dims._increment_dims_left()
+                viewer.dims._scroll_progress += 1
+            else:
+                viewer.dims._increment_dims_right()
+                viewer.dims._scroll_progress -= 1
+        except AxisLockedError:
+            viewer.dims._scroll_progress = 0
 
 
 def layers_scroll(viewer, event):
