@@ -143,6 +143,9 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
+        # the user is interacting with this axis, and `current_step` is
+        # emitted by the next line, so `last_used` has to be set first
+        self.dims.last_used = self.axis
         self.dims.set_current_step(self.axis, val)
 
     def _create_axis_label_widget(self) -> QElidingLineEdit:
@@ -167,6 +170,10 @@ class QtDimSliderWidget(QWidget):
 
         We split this out as a separate function for perfmon.
         """
+        # the custom scrollbar moves the handle in its mousePressEvent, before
+        # `sliderPressed` fires, so `last_used` has to be set here to already be
+        # correct when `current_step` is emitted by the next line
+        self.dims.last_used = self.axis
         self.dims.set_current_step(self.axis, value)
 
     def _create_range_slider_widget(self) -> _ModifiedScrollBar:
