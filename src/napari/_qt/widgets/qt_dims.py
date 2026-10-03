@@ -117,10 +117,10 @@ class QtDims(QWidget):
                     animation_thread.max_point - 1,
                 )
 
-        self._settings_minimum_height()
+        self._set_minimum_height()
         self._resize_slice_labels()
 
-    def _settings_minimum_height(self) -> None:
+    def _set_minimum_height(self) -> None:
         """Set the minimum height of the widget to fit the displayed sliders."""
         self._update_slider_height()
         nsliders = np.sum(self._displayed_sliders)
@@ -137,7 +137,7 @@ class QtDims(QWidget):
 
     def _on_font_changed(self) -> None:
         """Recompute all font-dependent sizes."""
-        self._settings_minimum_height()
+        self._set_minimum_height()
         self._resize_axis_labels()
         self._resize_slice_labels()
 
@@ -161,7 +161,7 @@ class QtDims(QWidget):
                 self._displayed_sliders[axis] = True
                 self.dims.last_used = axis
                 widget.show()
-        self._settings_minimum_height()
+        self._set_minimum_height()
         self._resize_slice_labels()
         self._resize_axis_labels()
         self.stop()
@@ -261,7 +261,7 @@ class QtDims(QWidget):
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
             self._displayed_sliders.insert(0, True)
-            self._settings_minimum_height()
+            self._set_minimum_height()
         self._resize_axis_labels()
 
     def _trim_sliders(self, number_of_sliders):
@@ -294,7 +294,7 @@ class QtDims(QWidget):
         # with other update state like dims.
         self.dims.events.axis_labels.disconnect(slider_widget._pull_label)
         slider_widget.deleteLater()
-        self._settings_minimum_height()
+        self._set_minimum_height()
         self.dims.last_used = 0
 
     def play(
