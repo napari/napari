@@ -7,8 +7,8 @@ from napari._qt.layer_controls.widgets._labels import (
     QtColorModeComboBoxControl,
     QtContiguousCheckBoxControl,
     QtContourSpinBoxControl,
+    QtCurrentLabelControl,
     QtDisplaySelectedLabelCheckBoxControl,
-    QtLabelControl,
     QtLabelRenderControl,
     QtNdimSpinBoxControl,
     QtPreserveLabelsCheckBoxControl,
@@ -46,7 +46,7 @@ class QtLabelsControls(QtLayerControls):
         Widget that wraps the checkbox to control if only the current selected label is shown.
     _ndim_spinbox_control : napari._qt.layer_controls.widgets._labels.QtNdimSpinBoxControl
         Widget that wraps the spinbox to control the number of editable layer dimensions.
-    _label_control : napari._qt.layer_controls.widgets._labels.QtLabelControl
+    _label_control : napari._qt.layer_controls.widgets._labels.QtCurrentLabelControl
         Wrapper widget to handle current label selection.
     _preserve_labels_checkbox_control :napari._qt.layer_controls.widgets._labels.QtPreserveLabelsCheckBoxControl
         Widget that wraps the checkbox to control if existing labels are preserved.
@@ -135,7 +135,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_grid.addWidget(self.pick_button, 0, 5)
 
         # Setup widgets controls
-        self._label_control = QtLabelControl(self, layer)
+        self._label_control = QtCurrentLabelControl(self, layer)
         self._add_widget_controls(self._label_control)
         self._brush_size_slider_control = QtBrushSizeSliderControl(self, layer)
         self._add_widget_controls(self._brush_size_slider_control)

@@ -14,7 +14,7 @@ from napari._qt.layer_controls.widgets._labels.qt_display_selected_label_checkbo
     QtDisplaySelectedLabelCheckBoxControl,
 )
 from napari._qt.layer_controls.widgets._labels.qt_label_color import (
-    QtLabelControl,
+    QtCurrentLabelControl,
 )
 from napari._qt.layer_controls.widgets._labels.qt_ndim_spinbox import (
     QtNdimSpinBoxControl,
@@ -31,6 +31,7 @@ __all__ = [
     'QtColorModeComboBoxControl',
     'QtContiguousCheckBoxControl',
     'QtContourSpinBoxControl',
+    'QtCurrentLabelControl',
     'QtDisplaySelectedLabelCheckBoxControl',
     'QtLabelControl',
     'QtLabelRenderControl',
