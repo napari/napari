@@ -1,8 +1,11 @@
+from unittest.mock import Mock
+
 import pytest
 from pydantic import ValidationError
 
 from napari.components import Dims
 from napari.components.dims import (
+    AxisLockedError,
     ensure_axis_in_bounds,
     reorder_after_dim_reduction,
 )
@@ -145,6 +148,147 @@ def test_point_variable_step_size():
 
     with pytest.raises(ValueError, match='must have equal length'):
         dims.set_current_step((0, 1), (0, 0, 0))
+
+
+def test_axis_lock_refuses_moving_a_locked_axis():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+
+    dims.set_point(1, 5)
+    assert dims.point == (4, 5, 1)
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point(0, 1)
+    with pytest.raises(AxisLockedError):
+        dims.point = (0, 0, 0)
+    with pytest.raises(AxisLockedError):
+        dims.current_step = (0, 0, 0)
+    assert dims.point == (4, 5, 1)
+
+    dims.unlock_axis(0)
+    dims.set_point(0, 1)
+    assert dims.point == (1, 5, 1)
+
+
+def test_refused_set_emits_no_point_or_current_step_events():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    dims.events.point = Mock()
+    dims.events.current_step = Mock()
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point((0, 1), (1, 5))
+
+    dims.events.point.assert_not_called()
+    dims.events.current_step.assert_not_called()
+
+
+def test_axis_lock_query_and_bulk_setters():
+    dims = Dims(ndim=3)
+
+    assert dims.axis_locked == (False,) * 3
+    assert not dims.is_axis_locked(0)
+
+    dims.lock_all_axes()
+    assert dims.axis_locked == (True,) * 3
+    assert dims.is_axis_locked(-1)
+
+    dims.unlock_all_axes()
+    assert dims.axis_locked == (False,) * 3
+
+
+@pytest.mark.parametrize(
+    ('new_ndim', 'expected_locked', 'expected_point'),
+    [
+        (4, (False, False, True, False), (0, 0, 3, 1)),
+        (1, (False,), (1,)),
+    ],
+)
+def test_axis_lock_follows_its_axis_across_ndim_changes(
+    new_ndim, expected_locked, expected_point
+):
+    dims = Dims(ndim=2, range=((0, 5, 1),) * 2, point=(3, 1))
+    dims.lock_axis(0)
+
+    dims.ndim = new_ndim
+
+    assert dims.axis_locked == expected_locked
+    assert dims.point == expected_point
+
+
+def test_axis_lock_refusal_reports_the_refused_axes():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point(0, 1)
+    with pytest.raises(AxisLockedError):
+        dims.update({'point': (0, 0, 0)})
+
+    assert [event.axes for event in events] == [(0,), (0,)]
+
+
+def test_axis_lock_reports_nothing_when_no_request_is_refused():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+    events = []
+    dims.events._point_refused.connect(events.append)
+
+    dims.set_point(0, 4)  # already where the lock holds it
+    dims.set_point(1, 5)  # a free axis
+    dims.range = ((0, 2, 1),) * 3  # clipping
+    dims.ndim = 4
+    dims.reset()
+
+    assert events == []
+
+
+def test_axis_lock_still_refuses_after_ndim_grows():
+    dims = Dims(ndim=2, range=((0, 5, 1),) * 2, point=(3, 1))
+    dims.lock_axis(0)
+    dims.ndim = 4
+
+    with pytest.raises(AxisLockedError):
+        dims.set_point(2, 0)
+    assert dims.point == (0, 0, 3, 1)
+
+
+def test_range_change_may_still_clip_a_locked_point():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+
+    dims.range = ((0, 2, 1),) * 3
+
+    assert dims.point == (2, 2, 1)
+
+
+def test_clipping_that_also_moves_last_used_is_not_refused():
+    """``last_used`` re-enters the validator after clipping moved the point."""
+    dims = Dims(
+        ndim=4,
+        ndisplay=2,
+        range=((0, 5, 1),) * 4,
+        point=(4, 2, 1, 1),
+        last_used=0,
+    )
+    dims.lock_axis(0)
+
+    dims.range = ((0, 0, 1), (0, 5, 1), (0, 5, 1), (0, 5, 1))
+
+    assert dims.point == (0, 2, 1, 1)
+    assert dims.last_used == 1
+
+
+def test_reset_moves_locked_axes_and_keeps_the_locks():
+    dims = Dims(ndim=3, range=((0, 5, 1),) * 3, point=(4, 2, 1))
+    dims.lock_axis(0)
+
+    dims.reset()
+
+    assert dims.point == (0, 0, 0)
+    assert dims.is_axis_locked(0)
 
 
 def test_range():
