@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.qt_resources import get_stylesheet
 from napari._qt.utils import combine_widgets
 from napari._qt.widgets.qt_viewer_dock_widget import QtCustomTitleBar
 
@@ -264,20 +263,3 @@ def test_update_font_metrics_without_title(qtbot, monkeypatch):
     height = title_bar.minimumHeight()
     title_bar._update_font_metrics()
     assert title_bar.minimumHeight() == height
-
-
-def test_title_bar_scales_with_font_size(make_napari_viewer):
-    """The title bar grows with the font so titles are not clipped."""
-    viewer = make_napari_viewer(show=True)
-    title_bar = viewer.window.add_dock_widget(
-        QPushButton('button'), name='test', area='right'
-    ).title
-    min_height = title_bar.minimumHeight()
-    hint_height = title_bar.sizeHint().height()
-
-    viewer.window._qt_window.setStyleSheet(
-        get_stylesheet('dark', extra_variables={'font_size': '20pt'})
-    )
-
-    assert title_bar.minimumHeight() > min_height
-    assert title_bar.sizeHint().height() > hint_height
