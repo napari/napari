@@ -10,7 +10,6 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import ConfigDict
 
 from napari.utils.events import EventedModel
 
@@ -106,8 +105,7 @@ class StyleEncoding(Protocol[StyleValue, StyleArray]):
         """
 
 
-class _StyleEncodingModel(EventedModel):
-    model_config = ConfigDict(extra='forbid')
+class _StyleEncodingModel(EventedModel): ...
 
 
 # The following classes provide generic implementations of common ways
