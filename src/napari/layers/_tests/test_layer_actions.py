@@ -3,6 +3,7 @@ import pint
 import pytest
 import zarr
 
+from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
@@ -366,14 +367,14 @@ def test_convert_layer(layer, type_):
 
 
 @pytest.mark.parametrize(
-    ('scale', 'translate', 'xfail'),
+    ('scale', 'translate'),
     [
-        ((1.0, 1.0), (0.0, 0.0), False),  # default
-        ((1.0, 1.0), (30.0, 30.0), True),  # translated, currently fails
-        ((5.0, 5.0), (0.0, 0.0), False),  # scaled
+        ((1.0, 1.0), (0.0, 0.0)),  # default
+        ((1.0, 1.0), (30.0, 30.0)),  # translated
+        ((5.0, 5.0), (0.0, 0.0)),  # scaled
     ],
 )
-def test_make_label_from_shape_param(scale, translate, xfail):
+def test_make_label_from_shape_param(scale, translate):
     """Tests that label shape matches the maximum extent of added shape, with optional scale and translate."""
     ll = LayerList()
     # add an image
@@ -387,11 +388,64 @@ def test_make_label_from_shape_param(scale, translate, xfail):
     shape.translate = np.array(translate)
     ll.append(shape)
     # Create a label based on the shape.
-    if xfail:
-        pytest.xfail('Converting layers with translations does not work')
     _convert(ll, 'labels')
     # the label layer should match the layer list extent
     assert np.array_equal(ll[-1].extent.world, ll.extent.world)
+
+
+SQUARE = np.array([[5, 5], [5, 15], [15, 15], [15, 5]])
+
+
+@pytest.mark.parametrize(
+    ('image_transform', 'shapes_transform'),
+    [
+        (((1, 1), (30, 30)), ((1, 1), (30, 30))),
+        (((1, 1), (30, 30)), ((1, 1), (0, 0))),
+        (((1, 1), (0, 0)), ((1, 1), (30, 30))),
+        (((2, 2), (10, 10)), ((2, 2), (10, 10))),
+        (((1, 1), (-7, 4)), ((1, 1), (3, -2))),
+        (((1, 1), (0, 0)), ((-1, 1), (19, 0))),
+    ],
+)
+def test_convert_shapes_to_labels_with_translate(
+    image_transform, shapes_transform
+):
+    (image_scale, image_translate) = image_transform
+    (shapes_scale, shapes_translate) = shapes_transform
+    ll = LayerList(
+        [
+            Image(
+                np.zeros((20, 20)),
+                scale=image_scale,
+                translate=image_translate,
+            ),
+            Shapes([SQUARE], scale=shapes_scale, translate=shapes_translate),
+        ]
+    )
+    ll.selection = {ll[1]}
+    _convert(ll, 'labels')
+    labels = ll[2]
+
+    np.testing.assert_array_equal(labels.extent.world, ll.extent.world)
+    np.testing.assert_array_equal(labels.scale, ll[1].scale)
+    labelled = np.argwhere(labels.data > 0)
+    np.testing.assert_allclose(
+        labels.data_to_world(labelled.min(0)),
+        ll[1].data_to_world(SQUARE.min(0)),
+    )
+    np.testing.assert_allclose(
+        labels.data_to_world(labelled.max(0)),
+        ll[1].data_to_world(SQUARE.max(0)),
+    )
+
+
+def test_convert_rotated_shapes_to_labels_warns():
+    ll = LayerList([Image(np.zeros((20, 20))), Shapes([SQUARE], rotate=30)])
+    ll.selection = {ll[1]}
+    with pytest.warns(UserWarning, match='rotate, shear or affine'):
+        _convert(ll, 'labels')
+    assert isinstance(ll[2], Labels)
+    assert ll[2].data.any()
 
 
 def test_convert_warns_with_projection_mode():
@@ -407,6 +461,35 @@ def test_convert_warns_with_projection_mode():
     with pytest.warns(UserWarning, match='projection mode'):
         _convert(ll, 'labels')
     assert isinstance(ll['Image [1]'], Labels)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
+    polygon = np.array([[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]])
+    ll = LayerList([Image(np.zeros((20, 100, 100))), Shapes([polygon])])
+    ll.selection = {ll[1]}
+    ll[1]._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels.shape == (20, 100, 100)
+    assert labels[5, 30, 30] == 1
+    assert np.count_nonzero(labels[:5]) == 0
+    assert np.count_nonzero(labels[6:]) == 0
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_with_rolled_dims(ndisplay):
+    shapes = Shapes(ndim=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=ndisplay, order=(2, 0, 1)))
+    shapes.add_polygons(
+        [np.array([[5, 10, 7], [5, 50, 7], [50, 50, 7], [50, 10, 7]])]
+    )
+    ll = LayerList([Image(np.zeros((60, 60, 20))), shapes])
+    ll.selection = {shapes}
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels[30, 30, 7] == 1
+    assert np.count_nonzero(labels) == np.count_nonzero(labels[:, :, 7])
 
 
 def make_three_layer_layerlist():

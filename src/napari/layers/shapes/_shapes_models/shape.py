@@ -15,8 +15,9 @@ from napari.layers.shapes._shapes_utils import (
     _save_failed_triangulation,
     find_planar_axis,
     is_collinear,
-    path_to_mask,
-    poly_to_mask,
+    path_to_indices,
+    poly_to_indices,
+    triangles_to_indices,
     triangulate_edge,
     triangulate_face,
     triangulate_face_and_edges,
@@ -28,7 +29,6 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray,
     TriangleArray,
 )
-from napari.utils.misc import argsort
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
@@ -117,8 +117,6 @@ class Shape(ABC):
         Tx3 array of vertex indices that form the triangles for the shape edge
     _filled : bool
         Flag if array is filled or not.
-    _use_face_vertices : bool
-        Flag to use face vertices for mask generation.
     """
 
     slice_key: np.ndarray[tuple[Literal[2], int], np.dtype[np.int64]]
@@ -151,7 +149,6 @@ class Shape(ABC):
 
         self._closed = False
         self._filled = True
-        self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
@@ -785,19 +782,26 @@ class Shape(ABC):
         Set points to `True` if they are lying inside the shape if the shape is
         filled, or if they are lying along the boundary of the shape if the
         shape is not filled. Negative points or points outside the mask_shape
-        after the zoom and offset are clipped.
+        are clipped.
+
+        A mask with two entries is the plane shown in 2D display, as used for
+        thumbnails. Any other mask follows the data dimensions: there the shape
+        is drawn in the display plane and repeated over its extent in the other
+        dimensions, a line or path whose vertices leave that plane is drawn
+        through all dimensions, and a line or path with an edge width above
+        one covers its whole stroke, as it is displayed.
 
         Parameters
         ----------
         mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
-            the displayed vertices.
+            the vertices in the 2D display plane.
         zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
+            Premultiplier applied to coordinates of a two-entry mask. Used for
+            generating a downsampled mask.
         offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
+            Offset in the display plane, subtracted from coordinates of a
+            two-entry mask before multiplying by the zoom_factor.
 
         Returns
         -------
@@ -805,55 +809,87 @@ class Shape(ABC):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+            plane = self.dims_order[-2:]
+            mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
-
         if len(mask_shape) == 2:
-            embedded = False
-            shape_plane = mask_shape
-        elif len(mask_shape) == self.data.shape[1]:
-            embedded = True
-            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+            index = self._display_index(mask_shape, zoom_factor, offset)
         else:
+            index = self._data_index(mask_shape)
+        mask = np.zeros(mask_shape, dtype=bool)
+        mask[index] = True
+        return mask
+
+    def _display_index(self, plane_shape, zoom_factor=1, offset=(0, 0)):
+        """Index of the shape's pixels in a 2D mask of the display plane.
+
+        Used for thumbnails, where lines and paths are one pixel wide.
+        """
+        plane = list(self.dims_order[-2:])
+        data = (self._vertices_for_mask(plane) - offset) * zoom_factor
+        to_indices = poly_to_indices if self._filled else path_to_indices
+        return to_indices(plane_shape, data)
+
+    def _data_index(self, mask_shape, *, origin=None) -> tuple:
+        """Index of the shape's pixels in an array with its data dimensions.
+
+        ``origin`` is the integer data coordinate of the array's first
+        element, zero in every dimension if None. See ``to_mask`` for how
+        each kind of shape is drawn.
+        """
+        if len(mask_shape) != self.data.shape[1]:
             raise ValueError(
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
+        plane = list(self.dims_order[-2:])
+        # `others` are the remaining dims. The shape covers the range its
+        # bounding box spans in each of them, which is a single slice for a
+        # shape drawn in a 2D view.
+        others = list(self.dims_order[:-2])
+        if origin is None:
+            origin = np.zeros(len(mask_shape), dtype=int)
+        data = self._vertices_for_mask(plane) - origin[plane]
+        others_key = self._slice_key_of(others) - origin[others]
+        if not self._filled and (others_key[0] != others_key[1]).any():
+            # A path that leaves its plane is a line through nD, not a prism.
+            vertices = self.data - origin
+            vertices[:, plane] = data
+            return path_to_indices(mask_shape, vertices)
 
-        if self._use_face_vertices:
-            data = self._face_vertices
-        else:
-            data = self.data_displayed
-
-        data = data[:, -len(shape_plane) :]
-
+        shape_plane = [mask_shape[d] for d in plane]
         if self._filled:
-            mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
+            rows, cols = poly_to_indices(shape_plane, data)
+        elif self.edge_width > 1:
+            # A thick line or path covers its whole stroke, as it is drawn.
+            # Up to width one the single pixel line is kept: it is always
+            # connected, and default shapes convert exactly as before.
+            centers, offsets, triangles = self._triangulate_edge(
+                data.astype(self.data.dtype), closed=self._closed
+            )
+            corners = centers + self.edge_width * offsets
+            rows, cols = triangles_to_indices(shape_plane, corners, triangles)
         else:
-            mask_p = path_to_mask(shape_plane, (data - offset) * zoom_factor)  # pyrefly: ignore [bad-argument-type]
+            rows, cols = path_to_indices(shape_plane, data)
+        index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
+        for col, dim in enumerate(others):
+            index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
+        # the pixels drawn in `plane` go on its two dims
+        index[plane[0]], index[plane[1]] = rows, cols
+        return tuple(index)
 
-        # If the mask is to be embedded in a larger array, compute array
-        # and embed as a slice.
-        if embedded:
-            mask = np.zeros(mask_shape, dtype=bool)
-            slice_key: list[int | slice] = [0] * len(mask_shape)
-            for i in range(len(mask_shape)):
-                if i in self.dims_displayed:
-                    slice_key[i] = slice(None)
-                elif self.slice_key is not None:
-                    slice_key[i] = slice(
-                        self.slice_key[0, i], self.slice_key[1, i] + 1
-                    )
-                else:
-                    raise RuntimeError(
-                        'Internal error: self.slice_key is None'
-                    )
-            displayed_order = argsort(self.dims_displayed)
-            mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
-        else:
-            mask = mask_p
+    def _slice_key_of(self, dims) -> np.ndarray:
+        """First and last integer index of the bounding box along dims.
 
-        return mask
+        Returns a (2, len(dims)) array with one column per dim.
+        """
+        return np.rint(self._bounding_box[:, dims]).astype(int)
+
+    def _vertices_for_mask(self, plane) -> np.ndarray:
+        """Return the vertices used to draw the mask in plane."""
+        return self.data[:, plane]
 
     def _clean_cache(self) -> None:
         if 'dims_displayed' in self.__dict__:
