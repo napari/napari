@@ -2124,7 +2124,7 @@ class Shapes(Layer):
                 self.events.data(
                     value=self.data,
                     action=ActionType.ADDED,
-                    data_indices=(-1,),
+                    data_indices=tuple(range(-n_new_shapes, 0)),
                     vertex_indices=((),),
                 )
                 self.events.features()
@@ -2723,6 +2723,7 @@ class Shapes(Layer):
     def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
+        added = self._is_creating
         self._is_moving = False
         self._drag_start = None
         self._drag_box = None
@@ -2736,6 +2737,7 @@ class Shapes(Layer):
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
                     self._data_view.remove(index)
+                    added = False
                     # Clear selected data to prevent issues.
                     # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
                     self.selected_data.clear()
@@ -2762,6 +2764,7 @@ class Shapes(Layer):
                         )
                 if len(vertices) <= 3:
                     self._data_view.remove(index)
+                    added = False
                     # Clear selected data to prevent issues.
                     # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
                     self.selected_data.clear()
@@ -2771,16 +2774,16 @@ class Shapes(Layer):
                         vertices[:-1],
                         new_type=shape_classes[ShapeType.POLYGON],
                     )
+        self._is_creating = False
         # handles the case that
         if index is not None:
             self.events.data(
                 value=self.data,
                 action=ActionType.ADDED,
-                data_indices=(-1,),
+                data_indices=(-1,) if added else (),
                 vertex_indices=((),),
             )
             self.events.features()
-        self._is_creating = False
         self._update_dims()
 
     @contextmanager
