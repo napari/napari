@@ -22,6 +22,21 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+def make_qfont(
+    face: str, size: int, bold: bool = False, italic: bool = False
+) -> QFont:
+    """Make a QFont resolved against the application font.
+
+    QPainter inherits unset attributes (e.g. the app's tabular numerals) from
+    the application font, but QFontMetricsF does not. Resolving them here
+    makes text be measured with the same font it is drawn with.
+    """
+    qfont = QFont(face, size)
+    qfont.setBold(bold)
+    qfont.setItalic(italic)
+    return qfont.resolve(QGuiApplication.font())
+
+
 def _load_glyph_qt(
     qfont: QFont,
     metrics: QFontMetricsF,
@@ -169,13 +184,12 @@ class QtTextureFont:
         self._glyphs: dict[str, dict[str, Any]] = {}
 
         # Create and cache Qt font and metrics objects
-        self._qfont = QFont(self._font['face'], self._font['size'])
-        self._qfont.setBold(self._font.get('bold', False))
-        self._qfont.setItalic(self._font.get('italic', False))
-        # QPainter inherits unset attributes (e.g. the app's tabular numerals)
-        # from the application font, but QFontMetricsF does not. Resolve them
-        # here so glyphs are measured with the same font they are drawn with.
-        self._qfont = self._qfont.resolve(QGuiApplication.font())
+        self._qfont = make_qfont(
+            self._font['face'],
+            self._font['size'],
+            bold=self._font.get('bold', False),
+            italic=self._font.get('italic', False),
+        )
         self._metrics = QFontMetricsF(self._qfont)
 
     @property
