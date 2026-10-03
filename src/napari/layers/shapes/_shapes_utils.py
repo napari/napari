@@ -6,8 +6,8 @@ import typing
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-from skimage import measure
-from skimage.draw import line, polygon2mask
+from skimage import draw, measure
+from skimage.draw import line, line_nd
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
@@ -1051,28 +1051,14 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(
-    mask_shape: npt.NDArray, vertices: npt.NDArray
-) -> npt.NDArray[np.bool_]:
-    """Converts a path to a boolean mask with `True` for points lying along
-    each edge.
+def path_to_indices(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray, ...]:
+    """Indices of the pixels along each edge of a 2D or nD path.
 
-    Parameters
-    ----------
-    mask_shape : array (2,)
-        Shape of mask to be generated.
-    vertices : array (N, 2)
-        Vertices of the path.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
+    Vertices outside the mask are clipped to its border.
     """
     mask_shape = np.asarray(mask_shape, dtype=int)
-    mask = np.zeros(mask_shape, dtype=bool)
-
     vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
 
     # remove identical, consecutive vertices
@@ -1080,37 +1066,26 @@ def path_to_mask(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    iis, jjs = [], []
-    for v1, v2 in itertools.pairwise(vertices):
-        ii, jj = line(*v1, *v2)
-        iis.extend(ii.tolist())
-        jjs.extend(jj.tolist())
+    if len(mask_shape) == 2:
+        lines = [line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    else:
+        lines = [
+            line_nd(v1, v2, endpoint=True)
+            for v1, v2 in itertools.pairwise(vertices)
+        ]
+    if not lines:
+        return tuple(np.empty(0, np.intp) for _ in mask_shape)
+    return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
-    mask[iis, jjs] = 1
 
-    return mask
-
-
-def poly_to_mask(
-    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
-) -> npt.NDArray[np.bool_]:
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
-
-    Parameters
-    ----------
-    mask_shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    return polygon2mask(mask_shape, vertices)
+def poly_to_indices(
+    mask_shape: typing.Sequence[int], vertices: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Row and column indices of the pixels inside a polygon."""
+    rows, cols = draw.polygon(
+        vertices[:, 0], vertices[:, 1], tuple(mask_shape)
+    )
+    return rows, cols
 
 
 def grid_points_in_poly(shape, vertices):
