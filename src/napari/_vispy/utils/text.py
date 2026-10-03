@@ -4,9 +4,9 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtCore import QRectF, Qt
 from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication
 
+from napari._vispy.utils.qt_font import SDF_FONT_SIZE
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
 
@@ -82,9 +82,6 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
     return len(layer._view_indices) != 0
 
 
-_MEASURE_SIZE = 256
-
-
 @lru_cache(maxsize=128)
 def _get_qt_font_metrics(
     face: str, size: int, bold: bool = False, italic: bool = False
@@ -127,8 +124,8 @@ def _get_scaled_metrics(text: Text) -> tuple[QFontMetricsF, float]:
     bold = text.bold if hasattr(text, 'bold') else False
     italic = text.italic if hasattr(text, 'italic') else False
 
-    metrics = _get_qt_font_metrics(face, _MEASURE_SIZE, bold, italic)
-    return metrics, text.font_size / _MEASURE_SIZE
+    metrics = _get_qt_font_metrics(face, SDF_FONT_SIZE, bold, italic)
+    return metrics, text.font_size / SDF_FONT_SIZE
 
 
 def get_text_line_height(text: Text) -> float:
@@ -151,8 +148,6 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
         raise TypeError('Text should either be a string or a list of strings')
 
     metrics, scale = _get_scaled_metrics(text)
-    size = metrics.boundingRect(
-        QRectF(0, 0, 1e6, 1e6), Qt.AlignmentFlag.AlignLeft, string
-    ).size()
+    size = metrics.size(0, string)
 
     return size.width() * scale, size.height() * scale
