@@ -268,7 +268,7 @@ def test_update_font_metrics_without_title(qtbot, monkeypatch):
 
 def test_title_bar_scales_with_font_size(make_napari_viewer):
     """The title bar grows with the font so titles are not clipped."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     title_bar = viewer.window.add_dock_widget(
         QPushButton('button'), name='test', area='right'
     ).title
