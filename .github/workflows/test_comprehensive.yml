@@ -87,6 +87,24 @@ jobs:
       coverage: cov
       tox_extras: ${{ matrix.tox_extras }}
 
+  test_pixi:
+    # test against packages from conda-forge
+    name: pixi
+    uses: ./.github/workflows/reusable_pixi_test.yml
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest, macos-15]
+        python: ["313"]
+        backend: [pyqt6, pyside6]
+    with:
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      timeout: 60
+
   test_pip_install:
     name: pip install
     uses: ./.github/workflows/reusable_pip_test.yml
