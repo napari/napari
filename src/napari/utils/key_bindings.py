@@ -226,16 +226,6 @@ def _get_user_keymap() -> Keymap:
     return USER_KEYMAP
 
 
-def _bind_user_key(
-    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
-):
-    """Bind a key combination to the user keymap.
-
-    See ``bind_key`` docs for details.
-    """
-    return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
-
-
 def _vispy2appmodel(event) -> KeyBinding:
     key, modifiers = event.key.name, event.modifiers
     if len(key) == 1 and key.isalpha():  # it's a letter
