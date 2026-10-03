@@ -36,6 +36,11 @@ class AppearanceSettings(EventedModel):
         title='Logo variant',
         description='Select which logo variant to use.',
     )
+    font: str = Field(
+        '',
+        title='Font',
+        description='Select the user interface font face.',
+    )
     font_size: int = Field(
         int(get_theme('dark').font_size[:-2]),
         title='Font size',

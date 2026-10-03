@@ -43,6 +43,7 @@ class WidgetBuilder:
             "path": widgets.FilepathSchemaWidget,
             "colour": widgets.ColorSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
+            "font": widgets.FontSchemaWidget,
         },
         "integer": {
             "spin": widgets.SpinSchemaWidget,
