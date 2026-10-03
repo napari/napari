@@ -7,6 +7,10 @@ from skimage.transform import pyramid_gaussian
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.layers._multiscale_data import (
+    MultiScaleData,
+    validate_multiscale_data,
+)
 from napari.utils import Colormap
 
 
@@ -458,6 +462,110 @@ def test_multiscale_data_protocol():
     assert layer.data.dtype == float
     assert layer.data.shape == shapes[0]
     assert isinstance(layer.data[0], np.ndarray)
+
+
+def test_multiscale_data_get_level():
+    """Test MultiScaleData.get_level returns the correct level's data."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    for i, level_data in enumerate(data):
+        np.testing.assert_array_equal(multiscale_data.get_level(i), level_data)
+        assert multiscale_data.get_level(i) is multiscale_data[i]
+
+
+def test_multiscale_data_levels():
+    """Test MultiScaleData.levels returns all levels as a new list."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    levels = multiscale_data.levels
+    assert levels == data
+    assert levels is not multiscale_data._data
+
+    # mutating the returned list must not affect the MultiScaleData instance
+    levels.append(np.zeros((1, 1)))
+    assert multiscale_data.nlevels == len(shapes)
+
+
+def test_multiscale_data_get_level_out_of_bounds():
+    """Test MultiScaleData.get_level raises for an out-of-bounds level."""
+    shapes = [(20, 20), (10, 10), (5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    multiscale_data = MultiScaleData(data)
+
+    with pytest.raises(ValueError, match='out of bounds'):
+        multiscale_data.get_level(len(shapes))
+
+
+def test_validate_multiscale_data_list_of_arrays_decreasing():
+    """A list of arrays with strictly decreasing size should validate."""
+    data = [np.zeros((10, 10)), np.zeros((5, 5)), np.zeros((2, 2))]
+    validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_object_array_decreasing():
+    """A 1D object ndarray of array-likes with decreasing size should validate."""
+    data = np.empty(3, dtype=object)
+    data[0] = np.zeros((10, 10))
+    data[1] = np.zeros((5, 5))
+    data[2] = np.zeros((2, 2))
+    validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_increasing():
+    """A sequence with an increasing size should raise ValueError."""
+    data = [np.zeros((5, 5)), np.zeros((10, 10)), np.zeros((2, 2))]
+    with pytest.raises(ValueError, match='non-increasing size'):
+        validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_equal_sizes():
+    """A sequence with equal (non-increasing) sizes should validate.
+
+    Equal-size levels can arise e.g. when projecting a multiscale image
+    along an axis where different levels aren't downsampled (see
+    napari.layers._layer_actions._project).
+    """
+    data = [np.zeros((10, 10)), np.zeros((10, 10))]
+    validate_multiscale_data(data)
+
+
+def test_validate_multiscale_data_different_ndim():
+    """A sequence with differing ndim across levels should raise ValueError,
+    even if sizes are strictly decreasing.
+    """
+    data = [np.zeros((10, 10)), np.zeros((5, 5, 3)), np.zeros((2, 2))]
+    with pytest.raises(ValueError, match='ndim'):
+        validate_multiscale_data(data)
+
+
+def test_multiscale_data_with_multiscale_false_raises():
+    """Passing a MultiScaleData instance with multiscale=False should raise,
+    rather than silently misinterpreting the wrapper as single-scale data.
+    """
+    data = MultiScaleData([np.zeros((10, 10)), np.zeros((5, 5))])
+    with pytest.raises(ValueError, match='multiscale=False'):
+        Image(data, multiscale=False)
+
+
+def test_single_array_with_multiscale_true_is_single_level():
+    """Passing a single (non-sequence) array with multiscale=True should
+    wrap it as a single-level pyramid, not split it along its first axis.
+    """
+    data = np.ones((10, 10, 10), dtype=int)
+    layer = Image(data, multiscale=True)
+
+    assert layer.multiscale is True
+    assert layer.ndim == 3
+    assert layer.data.nlevels == 1
+    assert layer.data.shape == (10, 10, 10)
+    np.testing.assert_array_equal(layer.data[0], data)
 
 
 @pytest.mark.parametrize(
