@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QPointF, Qt
-from qtpy.QtGui import QFont, QFontMetricsF, QImage, QPainter
+from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication, QImage, QPainter
 from vispy.gloo import TextureAtlas
 from vispy.io import load_spatial_filters
 from vispy.visuals.text.text import SDFRendererCPU
@@ -172,6 +172,10 @@ class QtTextureFont:
         self._qfont = QFont(self._font['face'], self._font['size'])
         self._qfont.setBold(self._font.get('bold', False))
         self._qfont.setItalic(self._font.get('italic', False))
+        # QPainter inherits unset attributes (e.g. the app's tabular numerals)
+        # from the application font, but QFontMetricsF does not. Resolve them
+        # here so glyphs are measured with the same font they are drawn with.
+        self._qfont = self._qfont.resolve(QGuiApplication.font())
         self._metrics = QFontMetricsF(self._qfont)
 
     @property
