@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
-    from napari.layers import Image, Surface
+    from napari.layers import Image, Shapes, Surface
     from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
@@ -64,9 +64,33 @@ class ColorManagerWrapper:
         return self.color_manager.continuous_colormap
 
 
+class ShapesColorWrapper:
+    def __init__(self, layer: Shapes, attribute: str):
+        self.layer = layer
+        self.attribute = attribute
+
+    @property
+    def contrast_limits(self) -> tuple[float, float] | None:
+        if getattr(self.layer, f'{self.attribute}_color_mode') != 'colormap':
+            return None
+        return getattr(self.layer, f'{self.attribute}_contrast_limits')
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return np.float32
+
+    @property
+    def gamma(self) -> float:
+        return 1
+
+    @property
+    def colormap(self) -> Colormap:
+        return getattr(self.layer, f'{self.attribute}_colormap')
+
+
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
-    layer: Image | Surface
+    layer: Image | Shapes | Surface
 
     def __init__(
         self,
@@ -82,7 +106,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.x_size = 50
         self.y_size = 250
 
-        self.source_wrapper: IntensityLayerWrapper | ColorManagerWrapper
+        self.source_wrapper: (
+            IntensityLayerWrapper | ColorManagerWrapper | ShapesColorWrapper
+        )
         if self.overlay.colormanager_attribute is not None:
             color_manager = getattr(
                 self.layer, self.overlay.colormanager_attribute
@@ -92,8 +118,18 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             color_manager.events.continuous_colormap.connect(
                 self._on_colormap_change
             )
+        elif self.overlay.layer_attribute is not None:
+            attribute = self.overlay.layer_attribute
+            self.source_wrapper = ShapesColorWrapper(
+                cast('Shapes', self.layer), attribute
+            )
+            color_event = getattr(self.layer.events, f'{attribute}_color')
+            color_event.connect(self._on_data_change)
+            color_event.connect(self._on_colormap_change)
         else:
-            self.source_wrapper = IntensityLayerWrapper(self.layer)
+            self.source_wrapper = IntensityLayerWrapper(
+                cast('Image | Surface', self.layer)
+            )
 
             self.layer.events.colormap.connect(self._on_colormap_change)
             self.layer.events.contrast_limits.connect(self._on_data_change)
@@ -114,6 +150,13 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
 
         self._on_data_change()
 
+    def _should_be_visible(self) -> bool:
+        # nothing to draw without contrast limits (e.g. direct or cycle colors)
+        return (
+            super()._should_be_visible()
+            and self.source_wrapper.contrast_limits is not None
+        )
+
     def _on_visible_change(self) -> None:
         super()._on_visible_change()
         # necessary to update outdated values since we skip updating when
@@ -125,13 +168,11 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         # TODO: this branching is unfortunately necessary for now until we
         #       support some kind of colorbar for categorical data
         # currently unsupported path of categorical colormap
-        # we just make invisible and bail out, and everywhere else
+        # we just stay invisible and bail out, and everywhere else
         # we make sure to not update things when invisible
+        self._on_visible_change()
         clim = self.source_wrapper.contrast_limits
-        if clim is None:
-            self.node.visible = False
-        else:
-            self._on_visible_change()
+        if clim is not None:
             self.node.set_data_and_clim(
                 clim=_coerce_contrast_limits(clim).contrast_limits,
                 dtype=self.source_wrapper.dtype,

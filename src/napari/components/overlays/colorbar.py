@@ -35,6 +35,11 @@ class ColorBarOverlay(CanvasOverlay):
     blending : Blending
         One of a list of preset blending modes that determines how RGB and
         alpha values of the overlay get mixed with the visuals below.
+    colormanager_attribute : str | None
+        Name of the layer's ColorManager to read the colormap from (Points).
+    layer_attribute : str | None
+        Prefix of the layer color attributes to read the colormap from,
+        either 'face' or 'edge' (Shapes).
     """
 
     color: ColorValue | None = None
@@ -45,3 +50,4 @@ class ColorBarOverlay(CanvasOverlay):
     colormanager_attribute: str | None = Field(
         default=None, frozen=True, repr=False
     )
+    layer_attribute: str | None = Field(default=None, frozen=True, repr=False)
