@@ -37,7 +37,3 @@ def test_layer_name_overlay_is_bold():
     assert not text_overlay.node.bold
     # the size used for tiling and the box accounts for the bold glyphs
     assert name_overlay.x_size > text_overlay.x_size
-
-    layer.name_overlay.bold = False
-    assert not name_overlay.node.bold
-    assert name_overlay.x_size == text_overlay.x_size
