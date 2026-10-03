@@ -57,8 +57,8 @@ class VispyPointsLayer(VispyBaseLayer):
             # always pass one invisible point to avoid issues
             data = np.zeros((1, self.layer._slice_input.ndisplay))
             size = np.zeros(1)
-            border_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+            border_color = np.zeros((1, 4), dtype=np.float32)
+            face_color = np.zeros((1, 4), dtype=np.float32)
             border_width = np.zeros(1)
             symbol = ['o']
         else:
@@ -97,7 +97,6 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=face_color,
             **border_kw,
         )
-
         self.reset()
 
     def _on_highlight_change(self):
@@ -166,6 +165,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True):
         """Function to update the text node properties
 
@@ -174,7 +178,11 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self.node.text, layer=self.layer)
+        update_text(
+            node=self.node.text,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
         if update_node:
             self.node.update()
 
