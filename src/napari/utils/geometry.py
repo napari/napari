@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import numpy as np
 import numpy.typing as npt
 
@@ -781,7 +783,7 @@ def distance_between_point_and_line_3d(
 
 def find_nearest_triangle_intersection(
     ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
-) -> tuple[int | None, np.ndarray | None]:
+) -> tuple[int, np.ndarray] | tuple[None, None]:
     """Given an array of triangles, find the index and intersection location
     of a ray and the nearest triangle.
 
@@ -803,15 +805,42 @@ def find_nearest_triangle_intersection(
     intersection : np.ndarray
         The coordinate of where the ray intersects the triangle.
     """
+    iterator = iter_all_triangle_intersections(
+        ray_position, ray_direction, triangles
+    )
+    return next(iterator, (None, None))
+
+
+def iter_all_triangle_intersections(
+    ray_position: np.ndarray, ray_direction: np.ndarray, triangles: np.ndarray
+) -> Generator[tuple[int, np.ndarray], None, None]:
+    """Given an array of triangles, find the index and intersection location
+    of a ray with all the triangles.
+
+    Parameters
+    ----------
+    ray_position : np.ndarray
+        The coordinate of the starting point of the ray.
+    ray_direction : np.ndarray
+        A unit vector describing the direction of the ray.
+    triangles : np.ndarray
+        (N, 3, 3) array containing the vertices of the triangles.
+
+    Yields
+    -------
+    intersected_index : int
+        The index of the intersected triangle.
+    intersection : np.ndarray
+        The coordinate of where the ray intersects the triangle.
+    """
     inside = line_in_triangles_3d(
         line_point=ray_position,
         line_direction=ray_direction,
         triangles=triangles,
     )
 
-    n_intersected_triangles = np.sum(inside)
-    if n_intersected_triangles == 0:
-        return None, None
+    if not np.any(inside):
+        return
 
     # find the intersection points for the
     intersected_triangles = triangles[inside]
@@ -824,14 +853,10 @@ def find_nearest_triangle_intersection(
     # find the intersection closest to the start point of the ray and return
     start_to_intersection = intersection_points - ray_position
     distances = np.linalg.norm(start_to_intersection, axis=1)
-    closest_triangle_index = np.argmin(distances)
-    intersected_triangle_indices = np.argwhere(inside)
-    closest_intersected_triangle_index = intersected_triangle_indices[
-        closest_triangle_index
-    ][0]
-    intersection = intersection_points[closest_triangle_index]
-
-    return closest_intersected_triangle_index, intersection
+    sorted_inside_indices = np.argsort(distances)
+    input_indices = np.flatnonzero(inside)
+    for idx in sorted_inside_indices:
+        yield input_indices[idx], intersection_points[idx]
 
 
 def get_center_bbox(roi: np.ndarray) -> tuple[list[float], int, int]:
