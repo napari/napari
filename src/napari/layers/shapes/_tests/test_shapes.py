@@ -2373,6 +2373,37 @@ def test_value_vertex_with_negative_scale(scale):
     assert layer.get_value((0, 0))[1] is not None
 
 
+def test_value_after_shape_lost_vertices():
+    """Test that hit testing only reports vertices the shape still has."""
+    # the space a shape frees when it loses vertices must not be reported as
+    # part of the shape, see https://github.com/napari/napari/issues/9352
+    polygon = np.array(
+        [
+            [0, 0],
+            [0, 100],
+            [40, 100],
+            [60, 100],
+            [100, 100],
+            [100, 0],
+            [60, 0],
+            [40, 0],
+        ]
+    )
+    layer = Shapes(
+        [polygon, [[200, 200], [200, 300], [300, 300]]], shape_type='polygon'
+    )
+    layer.selected_data = {0}
+    layer.mode = 'direct'
+    assert layer.get_value((0, 0)) == (0, 0)
+
+    # simplify the first shape down to three vertices, as the lasso does
+    layer._data_view.edit(0, polygon[[0, 4, 5]])
+
+    assert layer.get_value((0, 0)) == (0, 0)
+    assert layer.get_value((100, 100)) == (0, 1)
+    assert layer.get_value((0, 100)) == (None, None)
+
+
 def test_value_non_convex():
     """Test getting the value of the data at the current coordinates."""
     data = [

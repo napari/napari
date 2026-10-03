@@ -369,6 +369,51 @@ def test_edit_shape_pentagon(shape_li):
     assert shape_li._mesh.triangles.shape[0] == 43
 
 
+def test_edit_shape_fewer_vertices(shape_li):
+    """Test editing a shape to have fewer vertices in ShapeList."""
+    # a polygon lasso is simplified when the drawing finishes; the padding that
+    # keeps the other shapes in place must not be reported as vertices of the
+    # shape, see #9352
+    shape_li.edit(1, np.array([[5, 5], [15, 5], [10, 15]]), new_type=Polygon)
+
+    # the vertices of the other shapes are not relocated
+    npt.assert_array_equal(np.diff(shape_li._vertices_index), [4, 4, 4, 4])
+    npt.assert_array_equal(
+        shape_li.displayed_vertices_to_shape_num,
+        [0] * 4 + [1, 1, 1, -1] + [2] * 4 + [3] * 4,
+    )
+    npt.assert_array_equal(
+        shape_li.displayed_vertices[
+            shape_li.displayed_vertices_to_shape_num == 1
+        ],
+        shape_li.shapes[1].data_displayed,
+    )
+
+
+def test_edit_shape_fewer_vertices_with_hidden_shape(shape_li_3d):
+    """Test editing a shape to have fewer vertices with a shape out of view."""
+    shape_li = shape_li_3d
+    # only the first and the third shape are inside the slice
+    shape_li.slice_key = np.array([0])
+    shape_li.edit(0, np.array([[0, 0, 0], [0, 10, 10]]), new_type=Polygon)
+    npt.assert_array_equal(
+        shape_li.displayed_vertices_to_shape_num,
+        [0, 0, -1, -1] + [2] * 4,
+    )
+    npt.assert_array_equal(
+        shape_li.displayed_vertices[
+            shape_li.displayed_vertices_to_shape_num == 0
+        ],
+        shape_li.shapes[0].data_displayed,
+    )
+    npt.assert_array_equal(
+        shape_li.displayed_vertices[
+            shape_li.displayed_vertices_to_shape_num == 2
+        ],
+        shape_li.shapes[2].data_displayed,
+    )
+
+
 @pytest.mark.parametrize(
     'new_color',
     [

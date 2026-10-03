@@ -459,7 +459,9 @@ class ShapeList:
         shape = self.shapes[shape_index]
         return slice(start, start + shape.data_displayed.shape[0])
 
-    def _vertices_slice_available(self, shape_index: int) -> slice:
+    def _vertices_slice_available(
+        self, shape_index: int | np.integer
+    ) -> slice:
         """Return the available slice of vertices for a given shape index."""
         start = self._vertices_index[shape_index]
         end = self._vertices_index[shape_index + 1]
@@ -512,16 +514,20 @@ class ShapeList:
     def _vertices_range_seq(
         self, shape_indexes: IndexArray
     ) -> np.ndarray | slice:
-        """Return the range of vertices for a sequence of shape indexes."""
+        """Return the range of vertices for a sequence of shape indexes.
+
+        The range covers the vertices available for each shape, which is more
+        than the shape has if it lost vertices, so that it is aligned with
+        `displayed_vertices_to_shape_num`.
+        """
         if (
             shape_indexes[-1] - shape_indexes[0] == len(shape_indexes) - 1
         ):  # If the sequence is continuous, return a range
             start = self._vertices_index[shape_indexes[0]]
-            end = self._vertices_index[shape_indexes[-1]]
-            end_shape = self.shapes[shape_indexes[-1]]
-            return slice(start, end + end_shape.data_displayed.shape[0])
+            end = self._vertices_index[shape_indexes[-1] + 1]
+            return slice(start, end)
         # If the sequence is not continuous, return a numpy array
-        slicess = [self._vertices_slice(i) for i in shape_indexes]
+        slicess = [self._vertices_slice_available(i) for i in shape_indexes]
         return self._slicess_to_array(slicess)
 
     def _mesh_triangles_slice_available(self, shape_index: int) -> slice:
@@ -738,12 +744,18 @@ class ShapeList:
             )
         shift_idx = 0
         for i in displayed_indices:
-            begin = self._vertices_index[i]
-            end = self._vertices_index[i + 1]
-            elem_num = end - begin
+            elem_num = self._vertices_index[i + 1] - self._vertices_index[i]
             self.displayed_vertices_to_shape_num[
                 shift_idx : shift_idx + elem_num
             ] = i
+            # a shape that lost vertices keeps its freed vertices as padding,
+            # so only the leading vertices belong to the shape and the padding
+            # must not be hit tested or highlighted as if they were real
+            n_padding = int(elem_num) - self.shapes[i].data_displayed.shape[0]
+            if n_padding > 0:
+                self.displayed_vertices_to_shape_num[
+                    shift_idx + elem_num - n_padding : shift_idx + elem_num
+                ] = -1
             shift_idx += elem_num
 
     def _update_displayed(self) -> None:
@@ -1128,6 +1140,8 @@ class ShapeList:
             self._vertices[vertices_slice] = shape.data_displayed
         elif shape.data_displayed.shape[0] < curr_vert_count:
             # To avoid relocation, we add first point few times for padding.
+            # The padding belongs to no shape, see
+            # `_update_displayed_vertices_to_shape_num`.
             new_slice = slice(
                 vertices_slice.start,
                 vertices_slice.start + shape.data_displayed.shape[0],
