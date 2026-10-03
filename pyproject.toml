@@ -161,7 +161,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=4.5.1",
+    "qtconsole>=5.3.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
@@ -251,7 +251,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=4.5.1",
+    "qtconsole>=5.3.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
