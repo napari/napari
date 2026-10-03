@@ -21,6 +21,10 @@ from napari.utils.notifications import (
     notification_manager,
 )
 
+# `_raise_on_show` replaces `show`, so keep the original around for the tests
+# that need notifications to actually be shown
+_real_show = NapariQtNotification.show
+
 
 def _threading_warn():
     thr = threading.Thread(target=_warn)
@@ -280,3 +284,63 @@ def test_notifications_error_with_threading(make_napari_viewer, monkeypatch):
         viewer.add_image(result)
         assert len(notification_manager.records) >= 1
         notification_manager.records = []
+
+
+@pytest.fixture
+def _clean_notification_instances():
+    """`_instances` is a class variable, so keep it out of other tests."""
+    NapariQtNotification._instances.clear()
+    yield
+    NapariQtNotification._instances.clear()
+
+
+@pytest.fixture
+def show_notification(qtbot, monkeypatch, _clean_notification_instances):
+    """Show notifications on a parent widget and return them in order."""
+    monkeypatch.setattr(NapariQtNotification, 'show', _real_show)
+    # the conftest fixture disables the dismiss timer for every test
+    monkeypatch.setattr(NapariQtNotification, 'DISMISS_AFTER', 4000)
+
+    parent = QWidget()
+    qtbot.addWidget(parent)
+
+    def _show(message):
+        for notification in NapariQtNotification._instances:
+            # only the newest notification counts down to being dismissed
+            notification.timer_stop()
+        notification = NapariQtNotification(
+            message, severity=NotificationSeverity.WARNING, parent=parent
+        )
+        notification.show()
+        # windows are never active when running offscreen, so `show` returns
+        # before starting the dismiss timer; start it as an active window would
+        notification.timer_start()
+        return notification
+
+    return _show
+
+
+def test_closing_notification_starts_dismiss_timer_of_next(show_notification):
+    """The notification below a closed one should dismiss itself too."""
+    first = show_notification('first')
+    second = show_notification('second')
+    assert not first.timer.isActive()
+
+    second.close()
+
+    assert first.timer.isActive()
+    # the conftest dangling timer check requires a stopped timer
+    first.timer_stop()
+
+
+def test_closing_notification_keeps_hovered_notification_open(
+    show_notification, monkeypatch
+):
+    """A notification under the mouse is dismissed once the mouse leaves."""
+    first = show_notification('first')
+    second = show_notification('second')
+    monkeypatch.setattr(NapariQtNotification, 'underMouse', lambda self: True)
+
+    second.close()
+
+    assert not first.timer.isActive()
