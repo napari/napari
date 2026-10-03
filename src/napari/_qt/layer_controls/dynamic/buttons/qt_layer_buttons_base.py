@@ -245,7 +245,8 @@ class QtLayerButtons(QGridLayout):
 class QtMultiLayerButtons(QGridLayout):
     """Super simple shim for when multiple layers are selected.
 
-    Effectively does nothing but shows the pan zoom button.
+    Effectively does nothing but shows the pan zoom button and warns
+    that you're in multilayer mode.
     """
 
     def __init__(self, layer: Layer) -> None:

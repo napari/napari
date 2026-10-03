@@ -7,9 +7,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_contrast_limits import (
 from napari._qt.layer_controls.dynamic.widgets.qt_face_color import (
     QtFaceColorControl,
 )
-from napari._qt.layer_controls.dynamic.widgets.qt_gamma_slider import (
-    QtGammaSliderControl,
-)
 from napari._qt.layer_controls.dynamic.widgets.qt_histogram_control import (
     QtHistogramControl,
 )
@@ -33,7 +30,6 @@ __all__ = [
     'QtColormapControl',
     'QtContrastLimitsControl',
     'QtFaceColorControl',
-    'QtGammaSliderControl',
     'QtHistogramControl',
     'QtInterpolationComboBoxControl',
     'QtMultiscaleLevelControl',
