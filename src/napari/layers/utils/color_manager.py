@@ -484,7 +484,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list | None = None
+        self, current_color: ColorType, update_indices: list | None = None
     ):
         """Update the current color and update the colors if requested.
 
@@ -492,7 +492,7 @@ class ColorManager(EventedModel):
 
         Parameters
         ----------
-        current_color : np.ndarray
+        current_color : ColorType
             The new current color value.
         update_indices : list
             The indices of the color elements to update.

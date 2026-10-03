@@ -439,6 +439,53 @@ def test_edge_color_direct():
     np.testing.assert_allclose(layer.edge_color, edge_colors)
 
 
+def test_edge_color_setter_keeps_current_color():
+    """Vectors added by a data assignment use the last color that was set.
+
+    See https://github.com/napari/napari/issues/9330
+    """
+    one = np.array([[[0.0, 0.0], [1.0, 1.0]]])
+    layer = Vectors(one, edge_color='yellow')
+    layer.edge_color = 'red'
+
+    layer.data = np.repeat(one, 3, axis=0)
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([[1.0, 0.0, 0.0, 1.0]], 3, axis=0)
+    )
+
+
+def test_edge_color_setter_keeps_current_color_on_empty_layer():
+    """A color set on an empty layer is kept in the state and used by new vectors."""
+    layer = Vectors(np.empty((0, 2, 2)), edge_color='yellow')
+    layer.edge_color = 'red'
+
+    np.testing.assert_allclose(
+        layer.as_layer_data_tuple()[1]['edge_color'], [[1.0, 0.0, 0.0, 1.0]]
+    )
+
+    layer.data = np.repeat(np.array([[[0.0, 0.0], [1.0, 1.0]]]), 2, axis=0)
+    np.testing.assert_allclose(
+        np.unique(layer.edge_color, axis=0), [[1.0, 0.0, 0.0, 1.0]]
+    )
+
+
+def test_edge_color_setter_with_feature_name():
+    """A feature name is not mistaken for a color name."""
+    data = np.zeros((4, 2, 2))
+    data[:, 1] = [1.0, 1.0]
+    properties = {'vector_type': np.array(['A', 'B', 'A', 'B'])}
+    layer = Vectors(
+        data,
+        properties=properties,
+        edge_color='vector_type',
+        edge_color_cycle=['red', 'blue'],
+    )
+
+    layer.edge_color = 'vector_type'
+
+    assert layer.edge_color_mode == 'cycle'
+
+
 def test_edge_color_cycle():
     """Test creating Vectors where edge color is set by a color cycle"""
     np.random.seed(0)

@@ -578,6 +578,11 @@ class Vectors(Layer):
             properties=self.properties,
             current_properties=self._feature_table.currents(),
         )
+        if self._edge.color_mode == ColorMode.DIRECT:
+            # remember the requested color, so vectors added later, for example
+            # by a `data` assignment that grows the layer, are not filled with
+            # the color of a previous assignment
+            self._edge._update_current_color(edge_color)
         self.events.edge_color()
 
     def refresh_colors(self, update_color_mapping: bool = False):
