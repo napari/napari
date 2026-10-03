@@ -155,13 +155,16 @@ class QContrastLimitsPopup(QtPopup):
         button_layout.setSpacing(5)
 
         def reset():
+            # the contrast_limits setter already widens contrast_limits_range
+            # to fit the new limits, so the range is never narrowed here
             layer.reset_contrast_limits()
-            layer.contrast_limits_range = layer.contrast_limits
             decimals_ = range_to_decimals(
                 layer.contrast_limits_range, layer.dtype
             )
             self.slider.setDecimals(decimals_)
             self.slider.setSingleStep(10**-decimals_)
+            self.slider.setRange(*layer.contrast_limits_range)
+            self.slider.setValue(layer.contrast_limits)
 
         reset_btn = QPushButton('reset')
         reset_btn.setObjectName('reset_clims_button')

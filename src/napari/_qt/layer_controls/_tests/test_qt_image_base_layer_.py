@@ -125,6 +125,44 @@ def test_range_popup_clim_buttons(qtbot, qapp, layer, monkeypatch):
         assert rangebtn is None
 
 
+def test_range_popup_reset_keeps_range(qtbot):
+    """Pressing reset should not narrow the range to the current slice.
+
+    See https://github.com/napari/napari/issues/8604
+    """
+    data = np.zeros((5, 10, 10), dtype=np.uint16)
+    data[0] = np.arange(100).reshape(10, 10)
+    data[1:] = 1000
+    layer = Image(data)
+    popup = QContrastLimitsPopup(layer)
+    qtbot.addWidget(popup)
+    full_range = tuple(layer.contrast_limits_range)
+
+    popup.findChild(QPushButton, 'reset_clims_button').click()
+
+    # the limits are autoscaled to the current slice, which spans less than
+    # the whole data, so the range must be left as it was
+    assert tuple(layer.contrast_limits) == (0, 99)
+    assert tuple(layer.contrast_limits_range) == full_range
+    assert popup.slider.value() == (0, 99)
+
+
+def test_range_popup_reset_outside_of_narrowed_range(qtbot):
+    """Pressing reset after narrowing the range should widen it if needed."""
+    layer = Image(np.random.random((10, 10)) * 100)
+    popup = QContrastLimitsPopup(layer)
+    qtbot.addWidget(popup)
+    popup.slider.setRange(0, 50)
+
+    popup.findChild(QPushButton, 'reset_clims_button').click()
+
+    cmin, cmax = layer.contrast_limits
+    assert cmin < 50 < cmax
+    # the slider is wide enough to show the autoscaled limits
+    assert popup.slider.minimum() <= cmin <= cmax <= popup.slider.maximum()
+    assert popup.slider.value() == (cmin, cmax)
+
+
 @pytest.mark.parametrize('mag', list(range(-16, 16, 4)))
 def test_clim_slider_step_size_and_precision(qtbot, mag):
     """Make sure the slider has a reasonable step size and precision.
