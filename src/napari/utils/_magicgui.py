@@ -321,7 +321,7 @@ def add_worker_data(
         else add_layer_data_to_viewer
     )
     _return_type = get_args(return_type)[0]
-    worker.signals.returned.connect(  # pyrefly: ignore [missing-attribute]
+    worker.signals.returned.connect(
         partial(cb, widget, return_type=_return_type)
     )
 
