@@ -118,12 +118,16 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expected):
             True,
         ),
         (
-            np.array([[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            np.array(
+                [[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'
+            ),
             np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
             True,
         ),
         (
-            np.array([[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            np.array(
+                [[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'
+            ),
             np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
             False,
         ),
@@ -145,9 +149,7 @@ def test_remove_path_duplicates(data, expected, closed, compiled):
     result = remove_duplicates(data, closed=closed)
     npt.assert_array_equal(result, expected)
     assert result.dtype == data.dtype
-    npt.assert_array_equal(
-        result, remove_duplicates(data, closed=closed)
-    )
+    npt.assert_array_equal(result, remove_duplicates(data, closed=closed))
 
 
 @pytest.mark.parametrize('ndim', [3, 7])
