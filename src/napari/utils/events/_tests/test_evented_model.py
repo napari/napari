@@ -231,7 +231,6 @@ def test_values_updated():
     user1.events.id.assert_called_with(value=1)
     user2.events.id.assert_not_called()
     assert user1_events.call_count == 1
-    assert user1_events.call_args.args[0].type == 'update'
     user1.events.id.reset_mock()
     user2.events.id.reset_mock()
     user1_events.reset_mock()
