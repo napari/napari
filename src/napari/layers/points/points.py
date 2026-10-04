@@ -971,10 +971,10 @@ class Points(Layer):
     def current_symbol(
         self, symbol: str | Symbol | Sequence[str | Symbol]
     ) -> None:
-        symbol = coerce_symbols(np.array([symbol]))[0]
-        self._current_symbol = symbol
+        coerced_symbol: Symbol = coerce_symbols(np.array([symbol]))[0]
+        self._current_symbol = coerced_symbol
         if self._update_properties and len(self.selected_data) > 0:
-            self.symbol[list(self.selected_data)] = symbol
+            self.symbol[list(self.selected_data)] = coerced_symbol
             self.events.symbol()
         self.events.current_symbol()
 
