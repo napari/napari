@@ -117,12 +117,37 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expected):
             ),
             True,
         ),
+        (
+            np.array([[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+        (
+            np.array([[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            False,
+        ),
+        (
+            np.ones((5, 2), dtype='float32'),
+            np.ones((1, 2), dtype='float32'),
+            True,
+        ),
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
-def test_remove_path_duplicates(data, expected, closed):
-    result = ac.remove_path_duplicates(data, closed=closed)
-    assert np.all(result == expected)
+@pytest.mark.parametrize('compiled', [False, True])
+def test_remove_path_duplicates(data, expected, closed, compiled):
+    remove_duplicates = (
+        ac.remove_path_duplicates
+        if compiled
+        else _accelerated_triangulate_python.remove_path_duplicates_py
+    )
+    result = remove_duplicates(data, closed=closed)
+    npt.assert_array_equal(result, expected)
+    assert result.dtype == data.dtype
+    npt.assert_array_equal(
+        result, remove_duplicates(data, closed=closed)
+    )
 
 
 @pytest.mark.usefixtures('_disable_jit')

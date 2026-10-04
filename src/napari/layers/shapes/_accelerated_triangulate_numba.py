@@ -11,6 +11,9 @@ from numba import njit
 from numba.core import types
 from numba.typed import List
 
+from napari.layers.shapes._accelerated_triangulate_python import (
+    remove_path_duplicates_py,
+)
 from napari.layers.shapes.shape_types import (
     CoordinateArray,
     CoordinateArray2D,
@@ -695,52 +698,7 @@ def generate_2D_edge_meshes(
     return centers, offsets, triangles
 
 
-@njit(cache=True)
-def remove_path_duplicates(path: np.ndarray, closed: bool) -> np.ndarray:
-    """Remove consecutive duplicates from a path.
-
-    Parameters
-    ----------
-    path : np.ndarray
-        Nx2 or Nx3 array of central coordinates of path to be deduplicated
-
-    Returns
-    -------
-    np.ndarray
-        Nx2 or Nx3 array of central coordinates of deduplicated path
-    """
-    if len(path) <= 2:
-        # part of ugly hack to keep lasso tools working
-        # should be removed after fixing the lasso tool
-        return path
-
-    dup_count = 0
-    # We would like to use len(path) - 1 as the range.
-    # To keep the lasso tool working, we need to allow
-    # duplication of the last point.
-    # If the lasso tool is refactored, update to use the preferred range.
-    for i in range(len(path) - 2):
-        if np.all(path[i] == path[i + 1]):
-            dup_count += 1
-
-    if closed and np.all(path[0] == path[-1]):
-        dup_count += 1
-
-    if dup_count == 0:
-        return path
-
-    target_len = len(path) - dup_count
-    new_path = np.empty((target_len, path.shape[1]), dtype=path.dtype)
-    new_path[0] = path[0]
-    index = 0
-    for i in range(1, len(path)):
-        if index == target_len - 1:
-            break
-        if np.any(new_path[index] != path[i]):
-            new_path[index + 1] = path[i]
-            index += 1
-
-    return new_path
+remove_path_duplicates = njit(cache=True)(remove_path_duplicates_py)
 
 
 @njit(cache=True)
