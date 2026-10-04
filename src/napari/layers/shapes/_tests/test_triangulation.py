@@ -154,7 +154,9 @@ def test_remove_path_duplicates(data, expected, closed, compiled):
 
 @pytest.mark.parametrize('ndim', [3, 7])
 @pytest.mark.parametrize('displayed', [(0, 1), (0, 2)])
-def test_planar_shapes_orthogonal_projection_preserves_vertices(ndim, displayed):
+def test_planar_shapes_orthogonal_projection_preserves_vertices(
+    ndim, displayed
+):
     from napari.components import Dims
     from napari.layers import Shapes
 
@@ -163,7 +165,9 @@ def test_planar_shapes_orthogonal_projection_preserves_vertices(ndim, displayed)
     coordinates = np.zeros((4, ndim), dtype='float32')
     coordinates[:, -3:] = [[2, 3, 3], [2, 3, 5], [2, 5, 5], [2, 5, 3]]
     original = coordinates.copy()
-    layer = Shapes([coordinates], shape_type='polygon', ndim=ndim, visible=False)
+    layer = Shapes(
+        [coordinates], shape_type='polygon', ndim=ndim, visible=False
+    )
     axes = tuple(ndim - 3 + axis for axis in displayed)
     order = tuple(axis for axis in range(ndim) if axis not in axes) + axes
     layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order), force=True)
