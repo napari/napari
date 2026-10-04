@@ -150,6 +150,33 @@ def test_remove_path_duplicates(data, expected, closed, compiled):
     )
 
 
+@pytest.mark.parametrize('ndim', [3, 7])
+@pytest.mark.parametrize('displayed', [(0, 1), (0, 2)])
+def test_planar_shapes_orthogonal_projection_preserves_vertices(ndim, displayed):
+    from napari.components import Dims
+    from napari.layers import Shapes
+
+    # A valid XY rectangle becomes a line with repeated adjacent vertices
+    # when displayed edge-on. The native view must not invent a stray vertex.
+    coordinates = np.zeros((4, ndim), dtype='float32')
+    coordinates[:, -3:] = [[2, 3, 3], [2, 3, 5], [2, 5, 5], [2, 5, 3]]
+    original = coordinates.copy()
+    layer = Shapes([coordinates], shape_type='polygon', ndim=ndim, visible=False)
+    axes = tuple(ndim - 3 + axis for axis in displayed)
+    order = tuple(axis for axis in range(ndim) if axis not in axes) + axes
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order), force=True)
+    layer.visible = True
+    shape = layer._data_view.shapes[0]
+    npt.assert_array_equal(shape.data, original)
+    assert len(shape._face_triangles) == 0
+    assert np.isfinite(shape._edge_vertices).all()
+
+    # Returning to XY restores the original face and source member identity.
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2), force=True)
+    npt.assert_array_equal(layer.data[0], original)
+    assert len(shape._face_triangles) > 0
+
+
 @pytest.mark.usefixtures('_disable_jit')
 def test_create_box_from_bounding():
     bounding = np.array([[0, 0], [2, 2]], dtype='float32')
