@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 from psygnal.containers import Selection
@@ -34,15 +34,10 @@ def _get_shape_and_vertex(
 ) -> tuple[int | None, int | None]:
     """Return the indices of the shape and vertex under the cursor, if any.
 
-    ``Layer.get_value`` is annotated as returning ``tuple[int, ...] | None``,
-    but for a shapes layer it returns the ``(shape_index, vertex_index)``
-    pair of ``Shapes._get_value``, where either index may be ``None``.
-    The cast records that so callers can narrow each index individually.
+    ``Shapes.get_value`` returns None when the layer is not visible, which
+    is treated the same as nothing being under the cursor.
     """
-    return cast(
-        'tuple[int | None, int | None]',
-        layer.get_value(event.position, world=True),
-    )
+    return layer.get_value(event.position, world=True) or (None, None)
 
 
 def highlight(layer: Shapes, event: MouseEvent) -> None:
