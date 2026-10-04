@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 import numpy as np
 
@@ -9,8 +9,6 @@ from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
-
-    from napari.layers._data_protocols import Index
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -81,19 +79,10 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self, key: slice
     ) -> list[LayerDataProtocol]: ...  # pragma: no cover
 
-    @overload
     def __getitem__(
-        self, key: tuple[Index, ...]
-    ) -> NoReturn: ...  # pragma: no cover
-
-    def __getitem__(
-        self, key: int | slice | tuple[Index, ...]
+        self, key: int | slice
     ) -> LayerDataProtocol | list[LayerDataProtocol]:
         """Multiscale indexing."""
-        if isinstance(key, tuple):
-            raise TypeError(
-                'MultiScaleData must be indexed by level, not by coordinates'
-            )
         return self._data[key]
 
     def __len__(self) -> int:
