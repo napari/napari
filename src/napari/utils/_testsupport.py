@@ -506,18 +506,18 @@ def MouseEvent() -> type:
     Returns
     -------
     Event : Type
-        A new dataclass named Event that can be used to create an
-        object with fields "type" and "is_dragging".
+        A new dataclass named Event that can be used in place of
+        a NapariMouseEvent in tests.
     """
 
     @dataclass
     class Event:
         type: str
-        position: tuple[float, float]
+        position: tuple[float, ...]
         is_dragging: bool = False
-        dims_displayed: tuple[int, int] = (0, 1)
-        dims_point: list[float] | None = None
-        view_direction: list[int] | None = None
+        dims_displayed: tuple[int, int] | tuple[int, int, int] = (0, 1)
+        dims_point: tuple[float, ...] = (0, 0)
+        view_direction: tuple[float, float, float] | None = None
         pos: tuple[int, int] = (0, 0)
         button: int | None = None
         handled: bool = False

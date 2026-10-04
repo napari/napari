@@ -459,7 +459,7 @@ class VispyCanvas:
         self,
         position: tuple[int, ...],
         view: ViewBox,
-    ) -> tuple[float, float]:
+    ) -> tuple[float, ...]:
         """Map position from canvas pixels into world coordinates.
 
         Parameters
@@ -469,7 +469,7 @@ class VispyCanvas:
 
         Returns
         -------
-        coords : tuple of two floats
+        coords : tuple of float
             Position in world coordinates, matches the total dimensionality
             of the viewer.
         """
