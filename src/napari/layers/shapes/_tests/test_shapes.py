@@ -2865,3 +2865,45 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_paused_draw_dashed_outline_scales_with_zoom():
+    from napari.utils._test_utils import read_only_mouse_event
+    from napari.utils.interactions import (
+        mouse_move_callbacks,
+        mouse_press_callbacks,
+    )
+
+    layer = Shapes(ndim=3, scale=(1, 2, 2))
+    layer.mode = 'add_polyline'
+    mouse_press_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_press', position=(0, 0, 0), pos=(0, 0)
+        ),
+    )
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', position=(0, 0, 200), pos=(200, 0)
+        ),
+    )
+    solid_vertices, solid_triangles = layer._outline_shapes()
+    assert len(solid_triangles) > 0
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    for scale_factor in [2, 1, 4]:
+        layer.scale_factor = scale_factor
+        vertices, triangles = layer._outline_shapes()
+        quads = vertices.reshape((-1, 4, 2))
+        # Every full dash is eight screen pixels long, separated by eight pixels.
+        lengths = quads[:-1, 2, 0] - quads[:-1, 0, 0]
+        gaps = quads[1:, 0, 0] - quads[:-1, 2, 0]
+        np.testing.assert_allclose(lengths / layer._normalized_scale_factor, 8)
+        np.testing.assert_allclose(gaps / layer._normalized_scale_factor, 8)
+        assert len(triangles) == 2 * len(quads)
+        assert np.all(triangles < len(vertices))
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    layer.scale_factor = 1
+    vertices, triangles = layer._outline_shapes()
+    np.testing.assert_allclose(vertices, solid_vertices)
+    np.testing.assert_array_equal(triangles, solid_triangles)

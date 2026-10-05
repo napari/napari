@@ -429,6 +429,8 @@ class ShapeList:
         self._ndisplay = ndisplay
         self.shapes: list[Shape] = []
         self._displayed = np.array([])
+        self._displayed_override_index: int | None = None
+        self._displayed_override = True
         self._slice_key = np.array([])
         self.displayed_vertices = np.array([], dtype=CoordinateDtype)
         self.displayed_vertices_to_shape_num = np.array([], dtype=IndexDtype)
@@ -771,6 +773,10 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
+        if self._displayed_override_index is not None:
+            self._displayed[self._displayed_override_index] = (
+                self._displayed_override
+            )
         disp_indices: IndexArray = np.nonzero(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
@@ -1893,7 +1899,7 @@ class ShapeList:
     ) -> np.ndarray[tuple[int], np.dtype[IndexDtype]]:
         return np.array([s[0] for s in self._visible_shapes])
 
-    def inside(self, coord):
+    def inside(self, coord, exclude=None):
         """Determines if any shape at given coord by looking inside triangle
         meshes. Looks only at displayed shapes
 
@@ -1901,6 +1907,8 @@ class ShapeList:
         ----------
         coord : sequence of float
             Image coordinates to check if any shapes are at.
+        exclude : int | None
+            Index of a shape to omit from hit testing.
 
         Returns
         -------
@@ -1915,6 +1923,8 @@ class ShapeList:
             (bounding_boxes[0] <= coord) * (bounding_boxes[1] >= coord),
             axis=1,
         )
+        if exclude is not None:
+            in_bbox &= self._visible_shapes_indices != exclude
         inside_indices = np.flatnonzero(in_bbox)
         if inside_indices.size == 0:
             return None
