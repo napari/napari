@@ -137,7 +137,9 @@ def drag_to_zoom(viewer, event):
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > MIN_ZOOMBOX_SIZE:
         box_size_canvas = np.abs(np.diff(zoom_rect.corners_canvas, axis=0))
-        ratio = np.min(viewer._get_viewbox_size() / box_size_canvas)
+        ratio = np.min(
+            viewer.canvas.viewbox_size(viewer.layers) / box_size_canvas
+        )
         box_center_world = np.mean(zoom_rect.corners_world, axis=0)
         camera_center = box_center_world[list(viewer.dims.displayed)]
 
