@@ -1508,6 +1508,44 @@ def test_removing_shapes():
     layer.remove([])
 
 
+def test_removing_selected_shapes_mid_draw_cancels_the_draw():
+    from napari.layers.shapes._shapes_mouse_bindings import (
+        initiate_polygon_draw,
+    )
+
+    layer = Shapes()
+    layer.mode = 'add_polygon'
+    initiate_polygon_draw(layer, np.array([1.0, 1.0]))
+
+    layer.remove_selected()
+
+    assert layer._is_creating is False
+    assert layer.nshapes == 0
+
+
+def test_removing_an_earlier_shape_mid_draw_finishes_the_draw():
+    from napari.layers.shapes._shapes_mouse_bindings import (
+        initiate_polygon_draw,
+    )
+
+    layer = Shapes(np.array([[[0, 0], [0, 1], [1, 1], [1, 0]]]))
+    layer.mode = 'add_polygon'
+    initiate_polygon_draw(layer, np.array([2.0, 2.0]))
+    # three placed vertices plus the trailing cursor vertex
+    placed = np.array([[2.0, 2.0], [2.0, 5.0], [5.0, 5.0]])
+    layer._data_view.edit(1, np.concatenate([placed, [[4.0, 4.0]]]))
+    layer.events.data = Mock()
+
+    layer.remove([0])
+
+    assert layer._is_creating is False
+    assert layer.shape_type == ['polygon']
+    np.testing.assert_array_equal(layer.data[0], placed)
+    assert (
+        layer.events.data.call_args_list[-1][1]['action'] == ActionType.ADDED
+    )
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
