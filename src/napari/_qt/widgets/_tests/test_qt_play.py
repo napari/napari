@@ -152,6 +152,71 @@ def test_play_raises_value_errors(qtbot, ref_view):
         view.dims.play(0, 20, loop_mode=5)
 
 
+def test_playback_survives_axis_shrinking(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((500, 10, 10, 15))
+    view.viewer.dims.set_current_step(0, 480)
+    # Offscreen canvases never paint, so supply the draw that re-arms playback.
+    view.viewer.dims.events.current_step.connect(view.canvas.enable_dims_play)
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    thread = view.dims._animation_thread
+    thread.current = 480
+    # advance() holds this block around its emit, and delivery to the main
+    # thread is queued, so the clamp Dims applies can land while it is held.
+    with view.viewer.dims.events.current_step.blocker(thread._on_axis_changed):
+        layer.data = np.zeros((3, 10, 10, 15))
+
+    assert view.dims.is_playing
+    step = view.viewer.dims.current_step[0]
+    qtbot.wait_until(lambda: view.viewer.dims.current_step[0] != step)
+    assert view.viewer.dims.current_step[0] < 3
+
+
+def test_playback_survives_axis_growing(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((3, 10, 10, 15))
+    view.viewer.dims.events.current_step.connect(view.canvas.enable_dims_play)
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    layer.data = np.zeros((6, 10, 10, 15))
+
+    assert view.dims.is_playing
+    qtbot.wait_until(lambda: view.viewer.dims.current_step[0] >= 3)
+
+
+def test_playback_stops_when_axis_loses_its_slider(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((10, 10, 10, 15))
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20)
+
+    layer.data = np.zeros((1, 10, 10, 15))
+
+    assert not view.dims.is_playing
+
+
+def test_playback_stops_when_frame_range_becomes_invalid(ref_view, qtbot):
+    view = ref_view()
+    layer = view.viewer.layers[0]
+    layer.data = np.zeros((10, 10, 10, 15))
+
+    with qtbot.waitSignal(view.dims._animation_thread.started):
+        view.dims.play(0, 20, frame_range=(2, 6))
+
+    layer.data = np.zeros((3, 10, 10, 15))
+
+    assert not view.dims.is_playing
+
+
 def test_playing_hidden_slider_does_nothing(ref_view):
     """Make sure playing a dimension without a slider does nothing"""
 

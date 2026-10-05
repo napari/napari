@@ -20,7 +20,7 @@ from napari._qt.qthreading import (
     register_threadworker_processors,
     wait_for_workers_to_quit,
 )
-from napari._qt.utils import _maybe_allow_interrupt
+from napari._qt.utils import _maybe_allow_interrupt, use_tabular_numerals
 from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
@@ -249,6 +249,8 @@ def get_qapp(
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
+        use_tabular_numerals(app)
+
     if app.windowIcon().isNull():
         app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
 
@@ -341,7 +343,7 @@ def _ipython_has_eventloop() -> bool:
     if not ipy_module:
         return False
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return False
 
@@ -366,7 +368,7 @@ def _try_enable_ipython_gui(gui='qt'):
     if not ipy_module:
         return
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return
     if shell.active_eventloop != gui:

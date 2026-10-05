@@ -11,9 +11,9 @@ _SURFACE = (data, faces, values)
 
 def _assert_controls_enabled(controls, enabled):
     for control in controls:
-        for label, widget in control.get_widget_controls():
-            assert label.isEnabled() is enabled
-            assert widget.isEnabled() is enabled
+        for widgets in control.get_widget_controls():
+            for widget in widgets:
+                assert widget.isEnabled() is enabled
 
 
 def _scalar_coloring_controls(qtctrl):
