@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.components.dims import Dims
 from napari.layers import Labels
+from napari.layers.base.base import Layer
 
 
 def test_random_multiscale():
@@ -111,3 +112,21 @@ def instantiate_3D_multiscale_labels():
     data_multiscale = [highest_res_scale, middle_res_scale, lowest_res_scale]
 
     return data_multiscale, Labels(data_multiscale, multiscale=True)
+
+
+def test_locked_data_level_argument_and_get_state_method_recreate_layer() -> (
+    None
+):
+    multiscale_data = [
+        np.zeros((8, 8), dtype=np.uint8),
+        np.zeros((4, 4), dtype=np.uint8),
+        np.zeros((2, 2), dtype=np.uint8),
+    ]
+    label_layer = Labels(data=multiscale_data, locked_data_level=1)
+
+    assert label_layer.locked_data_level == 1
+    assert label_layer.data_level == 1
+    assert label_layer._get_state()['locked_data_level'] == 1
+
+    recreated_layer = Layer.create(*label_layer.as_layer_data_tuple())
+    assert recreated_layer.locked_data_level == 1  # type: ignore

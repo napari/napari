@@ -17,7 +17,7 @@ class Cursor(EventedModel):
     canvas_position : tuple of int or None
         Position of the cursor in canvas pixel coordinates (y, x).
         None when cursor is outside the canvas.
-    viewbox : tuple[int, int] or None
+    viewbox : tuple[int, int]
         Position of the cursor in the grid.
     scaled : bool
         Flag to indicate whether cursor size should be scaled to zoom.
@@ -46,12 +46,12 @@ class Cursor(EventedModel):
     _view_direction: np.ndarray[tuple[int], np.dtype[np.floating]] | None = (
         None
     )
-    _viewbox: tuple[int, int] | None = None
+    _viewbox: tuple[int, int] = (0, 0)
 
     @property
     def canvas_position(self) -> tuple[int, int] | None:
         return self._canvas_position
 
     @property
-    def viewbox(self) -> tuple[int, int] | None:
+    def viewbox(self) -> tuple[int, int]:
         return self._viewbox
