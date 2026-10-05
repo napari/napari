@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum, auto
+from functools import cache
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QPoint, QSize, Qt
@@ -92,11 +93,26 @@ def create_crosshair_cursor():
     return QCursor(crosshair_pixmap())
 
 
-class QtCursorVisual(Enum):
-    blank = Qt.CursorShape.BlankCursor
-    pointing = Qt.CursorShape.PointingHandCursor
-    standard = Qt.CursorShape.ArrowCursor
-    crosshair = staticmethod(create_crosshair_cursor)
+class QtCursorVisual(StrEnum):
+    standard = auto()
+    crosshair = auto()
+    pointing = auto()
+    blank = auto()
+
+
+@cache
+def cursor_style_to_qcursor(style):
+    # cannot precompute the pixmaps until the app is spawned,
+    # so we just hide this behind this callable for when it's needed
+    match style:
+        case QtCursorVisual.standard:
+            return Qt.CursorShape.ArrowCursor
+        case QtCursorVisual.blank:
+            return Qt.CursorShape.BlankCursor
+        case QtCursorVisual.crosshair:
+            return create_crosshair_cursor()
+        case QtCursorVisual.pointing:
+            return Qt.CursorShape.PointingHandCursor
 
 
 # cursor style is determined by the active layer and its mode.

@@ -18,7 +18,11 @@ from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
-from napari._vispy.utils.cursor import QtCursorVisual, get_cursor_style
+from napari._vispy.utils.cursor import (
+    QtCursorVisual,
+    cursor_style_to_qcursor,
+    get_cursor_style,
+)
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
@@ -153,10 +157,6 @@ class VispyCanvas:
     camera : napari._vispy.VispyCamera
         The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
         scene is viewed and interacted with.
-    _cursors : QtCursorVisual
-        A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
-        creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
-        contains cursors supported by Napari in Vispy.
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     _last_theme_color : Optional[npt.NDArray[np.float]]
@@ -427,18 +427,15 @@ class VispyCanvas:
 
     def _update_labels_brush_and_get_cursor(
         self, layer: Labels, cursor: str
-    ) -> QCursor | Qt.CursorShape:
+    ) -> QtCursorVisual:
         # on layer init this might not exist yet
         if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
-            return self.cursor
+            return QtCursorVisual.standard
         brush_circle = cast('BrushCircleOverlay', brush_circle)
 
         if cursor != 'circle':
             brush_circle.visible = False
-            if cursor == 'crosshair':
-                # special case cause it needs to be generated on the fly
-                return QtCursorVisual.crosshair()
-            return QtCursorVisual[cursor].value
+            return QtCursorVisual[cursor]
 
         if layer.brush_size_is_canvas:
             size = layer.brush_size
@@ -448,11 +445,11 @@ class VispyCanvas:
         # if too big or small, show a normal cursor instead
         if size < 8 or size > (min(*self.size) - 4):
             brush_circle.visible = False
-            qt_cursor = QtCursorVisual['standard'].value
+            qt_cursor = QtCursorVisual.standard
         elif brush_circle._is_resizing:
             # brush is being resized: also show standard cursor
             brush_circle.visible = True
-            qt_cursor = QtCursorVisual['standard'].value
+            qt_cursor = QtCursorVisual.standard
         else:
             brush_circle.visible = True
             qt_cursor = QtCursorVisual.blank
@@ -463,16 +460,17 @@ class VispyCanvas:
         """Create a QCursor based on the active layer mode and brush overlay."""
         layer = self.viewer.layers.selection.active
         if layer is None:
-            self.cursor = QtCursorVisual['standard'].value
-            return
-
-        cursor = get_cursor_style(layer)
-        if isinstance(layer, Labels):
-            self.cursor = self._update_labels_brush_and_get_cursor(
-                layer, cursor
-            )
+            cursor = QtCursorVisual.standard
         else:
-            self.cursor = QtCursorVisual[cursor].value
+            cursor = get_cursor_style(layer)
+            if isinstance(layer, Labels):
+                cursor = self._update_labels_brush_and_get_cursor(
+                    layer, cursor
+                )
+            else:
+                assert cursor != 'circle'
+                cursor = QtCursorVisual[cursor]
+        self.cursor = cursor_style_to_qcursor(cursor)
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
