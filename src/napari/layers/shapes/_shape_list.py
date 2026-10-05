@@ -431,6 +431,8 @@ class ShapeList:
         self._displayed = np.array([])
         self._displayed_override_index: int | None = None
         self._displayed_override = True
+        # Edits to this shape keep the non-displayed coordinates of its first vertex.
+        self._anchored_index: int | None = None
         self._slice_key = np.array([])
         self.displayed_vertices = np.array([], dtype=CoordinateDtype)
         self.displayed_vertices_to_shape_num = np.array([], dtype=IndexDtype)
@@ -1452,6 +1454,12 @@ class ShapeList:
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".
         """
+        if index == self._anchored_index:
+            shape = self.shapes[index]
+            not_displayed = shape.dims_not_displayed
+            data = np.array(data, copy=True)
+            data[:, not_displayed] = shape.data[0, not_displayed]
+
         if new_type is not None:
             cur_shape = self.shapes[index]
             if isinstance(new_type, str):

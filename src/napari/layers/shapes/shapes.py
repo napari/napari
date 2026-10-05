@@ -1717,8 +1717,10 @@ class Shapes(Layer):
 
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_POLYLINE, ADD_PATH, and
         ADD_POLYGON modes all allow for their corresponding shape type to be
-        added. Drawing pauses when navigating to another slice or displayed
-        axis set. Return to continue drawing, or press Escape to finish.
+        added. On another slice, polygons, polylines and paths keep their
+        vertices on the slice where they were started, while rectangles,
+        ellipses and lines pause. Changing the displayed axes pauses any
+        drawing. Return to continue, or press Escape to finish.
         """
         return str(self._mode)
 
@@ -2444,7 +2446,9 @@ class Shapes(Layer):
                 view_changed = True
             self._data_view.slice_key = slice_key
             if self._data_view._displayed_override_index is not None:
-                self._data_view._displayed_override = not self._drawing_paused
+                self._data_view._displayed_override = not (
+                    self._drawing_paused or self._drawing_off_slice
+                )
                 self._data_view._update_displayed()
 
         self._update_drawing_feedback()
@@ -2566,11 +2570,7 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if (
-            self._highlight_visible
-            and self._drawing_paused
-            and not self._drawing_axes_changed
-        ):
+        if self._highlight_visible and self._drawing_off_slice:
             return self._dashed_drawing_outline()
 
         # Only highlight selected shapes that are in view.
@@ -2686,11 +2686,7 @@ class Shapes(Layer):
         # Only highlight selected shapes that are in view.
         selected_in_view = self._selected_data_in_view
 
-        if (
-            self._highlight_visible
-            and self._drawing_paused
-            and not self._drawing_axes_changed
-        ):
+        if self._highlight_visible and self._drawing_off_slice:
             shape = self._data_view.shapes[self._moving_value[0]]
             vertices = shape.data_displayed[:, ::-1]
             face_color = 'white'
@@ -2803,6 +2799,7 @@ class Shapes(Layer):
         self._drawing_slice_key = np.array(self._data_slice.point)[
             sorted(self._slice_input.not_displayed)
         ]
+        self._data_view._anchored_index = self._moving_value[0]
         with self._data_view.batched_updates():
             self._data_view._displayed_override_index = self._moving_value[0]
             self._data_view._displayed_override = True
@@ -2816,15 +2813,14 @@ class Shapes(Layer):
         )
 
     @property
-    def _drawing_paused(self) -> bool:
+    def _drawing_off_slice(self) -> bool:
         if (
             not self._is_creating
             or self._moving_value[0] is None
             or self._drawing_slice_key is None
+            or self._drawing_axes_changed
         ):
             return False
-        if self._drawing_axes_changed:
-            return True
         slice_key = np.array(self._data_slice.point)[
             sorted(self._slice_input.not_displayed)
         ]
@@ -2832,17 +2828,31 @@ class Shapes(Layer):
             np.round(slice_key), np.round(self._drawing_slice_key)
         )
 
+    @property
+    def _drawing_paused(self) -> bool:
+        if not self._is_creating or self._moving_value[0] is None:
+            return False
+        # Dragged shapes are not anchored, so they still pause off-slice.
+        drag_modes = {Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE}
+        return self._drawing_axes_changed or (
+            self._drawing_off_slice and self._mode in drag_modes
+        )
+
     def _update_drawing_feedback(self) -> None:
-        if self._drawing_paused:
-            if self._drawing_help is None:
-                self._drawing_help = self.help
-            if self._drawing_axes_changed:
-                self.help = 'Drawing paused: return to the original axes to continue, or press Esc to finish'
-            else:
-                self.help = 'Drawing paused: return to the original slice to continue, or press Esc to finish'
+        if not (self._drawing_paused or self._drawing_off_slice):
+            self._restore_drawing_feedback()
+            return
+        if self._drawing_help is None:
+            self._drawing_help = self.help
+        if self._drawing_axes_changed:
+            self.help = 'Drawing paused: return to the original axes to continue, or press Esc to finish'
+            self.cursor = 'forbidden'
+        elif self._drawing_paused:
+            self.help = 'Drawing paused: return to the original slice to continue, or press Esc to finish'
             self.cursor = 'forbidden'
         else:
-            self._restore_drawing_feedback()
+            self.help = 'Vertices are added on the slice where this shape was started. Press Esc to finish'
+            self.cursor = self._cursor_modes[self._mode]
 
     def _restore_drawing_feedback(self) -> None:
         if self._drawing_help is not None:
@@ -2853,6 +2863,7 @@ class Shapes(Layer):
     def _finish_drawing(self, event=None) -> None:
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
+        self._data_view._anchored_index = None
         with self._data_view.batched_updates():
             self._data_view._displayed_override_index = None
             self._data_view._update_displayed()
@@ -2986,6 +2997,7 @@ class Shapes(Layer):
             )
             # Removal shifts indices and finishes the draw, so clear the override first.
             self._data_view._displayed_override_index = None
+            self._data_view._anchored_index = None
             self._data_view.remove_multiple(to_remove)
 
             self._value = (None, None)
@@ -3173,7 +3185,11 @@ class Shapes(Layer):
         if self._slice_input.ndisplay == 3:
             return None, None
 
-        paused_index = self._moving_value[0] if self._drawing_paused else None
+        paused_index = (
+            self._moving_value[0]
+            if self._drawing_paused or self._drawing_off_slice
+            else None
+        )
         if self._is_moving and paused_index is None:
             return self._moving_value
 

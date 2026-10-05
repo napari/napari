@@ -1402,45 +1402,42 @@ def _move(layer, position):
     )
 
 
-def test_polygon_draw_pauses_off_slice_and_resumes():
+def test_polygon_vertices_off_slice_land_on_original_slice():
     layer = Shapes(ndim=3)
     layer.mode = 'add_polygon'
     help_text, cursor = layer.help, layer.cursor
-    # 0.5 and 0.8 are less than a slice apart but round to different slices.
-    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    # 0.4 and 0.8 are less than a slice apart but round to different slices.
+    layer._slice_dims(Dims(ndim=3, point=(0.4, 0, 0)))
     for pos in [(10, 10), (10, 40), (40, 40)]:
-        _click(layer, (0.5, *pos))
-    data = layer.data[0].copy()
-    assert len(data) == 4
+        _click(layer, (0.4, *pos))
+    assert len(layer.data[0]) == 4
 
     layer._slice_dims(Dims(ndim=3, point=(0.8, 0, 0)))
-    assert layer.cursor == 'forbidden'
-    assert 'original slice' in layer.help
+    assert layer.cursor == cursor
+    assert 'where this shape was started' in layer.help
     _move(layer, (0.8, 30, 20))
-    np.testing.assert_allclose(layer.data[0], data)
+    np.testing.assert_allclose(layer.data[0][-1], (0.4, 30, 20))
     _click(layer, (0.8, 30, 20))
-    np.testing.assert_allclose(layer.data[0], data)
-    assert layer.get_value((0.8, 20, 30)) == (None, None)
+    assert len(layer.data[0]) == 5
+    assert layer.get_value((0.8, 200, 300)) == (None, None)
 
-    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    layer._slice_dims(Dims(ndim=3, point=(0.4, 0, 0)))
     assert (layer.help, layer.cursor) == (help_text, cursor)
-    _move(layer, (0.5, 40, 10))
-    np.testing.assert_allclose(layer.data[0][-1], (0.5, 40, 10))
-    _click(layer, (0.5, 40, 10))
-    assert len(layer.data[0]) == len(data) + 1
+    key_bindings.finish_drawing_shape(layer)
+    np.testing.assert_allclose(layer.data[0][:, 0], 0.4)
+    assert layer.get_value((0.4, 30, 20)) == (0, None)
 
 
-def test_automatic_vertices_pause_off_slice():
+def test_automatic_vertices_off_slice_land_on_original_slice():
     layer = Shapes(ndim=3)
     layer.mode = 'add_path'
     _click(layer, (0, 10, 10))
-    data = layer.data[0].copy()
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
 
     _move(layer, (1, 40, 40))
-    np.testing.assert_allclose(layer.data[0], data)
-    _click(layer, (1, 40, 40), release=False)
-    np.testing.assert_allclose(layer.data[0], data)
+
+    assert len(layer.data[0]) == 3
+    np.testing.assert_allclose(layer.data[0][-1], (0, 40, 40))
 
 
 def test_held_rectangle_at_fractional_slice_pauses_and_release_commits():
@@ -1540,7 +1537,7 @@ def test_paused_draw_finish_restores_feedback():
         for pos in clicks:
             _click(layer, (0, *pos))
         layer._slice_dims(paused_dims)
-        assert layer.cursor == 'forbidden'
+        assert 'Esc' in layer.help
 
     triangle = [(10, 10), (10, 40), (40, 40)]
 
@@ -1576,7 +1573,7 @@ def test_remove_earlier_shape_finishes_paused_draw():
         _click(layer, (0, *pos), release=False)
     data = layer.data[1][:-1].copy()
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
-    assert layer.cursor == 'forbidden'
+    assert 'Esc' in layer.help
 
     layer.remove([0])
 
