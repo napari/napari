@@ -130,10 +130,10 @@ def _select_with_rectangle(
         )
         selected_in_view = points_in_box(
             corners_data[:, displayed],
-            layer.data[np.ix_(layer._indices_view, displayed)],
-            layer.size[layer._indices_view],
+            layer.data[np.ix_(layer._view_indices, displayed)],
+            layer.size[layer._view_indices],
         )
-        selected = layer._indices_view[selected_in_view]
+        selected = layer._view_indices[selected_in_view]
         if modify_selection:
             selected = _toggle_selected(initial_selection, selected)
         layer.selected_data = selected
