@@ -127,22 +127,7 @@ class GridCanvas(EventedModel):
                 f'Index {index} is out of bounds for number of layers {len(layers)}.'
             )
 
-        effective_indices = self._effective_indices(layers)
-        if index not in effective_indices:
-            return (-1, -1)
-
-        n_row, n_column = self.actual_shape(layers)
-
-        # Map this layer's viewbox group to its linear position among the
-        # occupied groups (groups with no visible layer are compacted away).
-        group_of, occupied = self._viewbox_groups(layers)
-        adj_i = occupied.index(group_of[index])
-
-        adj_i = adj_i % (n_row * n_column)
-        i_row = adj_i // n_column
-        i_column = adj_i % n_column
-        # convert to python int from np int
-        return (int(i_row), int(i_column))
+        return self._positions(layers)[index]
 
     def contents_at(
         self, position: tuple[int, int], layers: Sequence[Layer]
@@ -162,8 +147,8 @@ class GridCanvas(EventedModel):
         """
         return tuple(
             i
-            for i in range(len(layers))
-            if self.position(i, layers) == position
+            for i, pos in enumerate(self._positions(layers))
+            if pos == position
         )
 
     def iter_viewboxes(
@@ -183,8 +168,11 @@ class GridCanvas(EventedModel):
         indices : tuple of int
             Position of current layer in layer list.
         """
+        contents: dict[tuple[int, int], list[int]] = {}
+        for i, pos in enumerate(self._positions(layers)):
+            contents.setdefault(pos, []).append(i)
         for row, col in np.ndindex(self.actual_shape(layers)):
-            yield (row, col), self.contents_at((row, col), layers)
+            yield (row, col), tuple(contents.get((row, col), ()))
 
     def _compute_canvas_spacing(
         self,
@@ -293,3 +281,24 @@ class GridCanvas(EventedModel):
         visible = self._effective_indices(layers)
         occupied = sorted({group_of[i] for i in visible})
         return group_of, occupied
+
+    def _positions(self, layers: Sequence[Layer]) -> list[tuple[int, int]]:
+        """Return the grid position of every layer, computed in one pass.
+
+        Hidden/excluded layers get (-1, -1). If the grid is not enabled,
+        every layer gets (0, 0).
+        """
+        if not self.enabled or not layers:
+            return [(0, 0)] * len(layers)
+
+        n_row, n_column = self.actual_shape(layers)
+        visible = set(self._effective_indices(layers))
+
+        group_of, occupied = self._viewbox_groups(layers)
+        linear = {
+            group: i % (n_row * n_column) for i, group in enumerate(occupied)
+        }
+        return [
+            divmod(linear[group_of[i]], n_column) if i in visible else (-1, -1)
+            for i in range(len(layers))
+        ]

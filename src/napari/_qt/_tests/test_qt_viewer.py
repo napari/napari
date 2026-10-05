@@ -31,7 +31,10 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer, Points
 from napari.settings import get_settings
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
-from napari.utils.interactions import mouse_press_callbacks
+from napari.utils.interactions import (
+    mouse_move_callbacks,
+    mouse_press_callbacks,
+)
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
@@ -531,6 +534,25 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     viewer_model.dims.ndisplay = 3
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_outside_grid_viewboxes(
+    qt_viewer: QtViewer, viewer_model: ViewerModel
+) -> None:
+    """Test that hovering outside any grid viewbox does not raise.
+
+    Empty grid cells and the gaps between cells have no viewbox, so
+    _get_viewbox_at returns (None, None) and the event must be ignored.
+    """
+    viewer_model.add_image(np.zeros((5, 5)))
+    viewer_model.canvas.grid.enabled = True
+    mouse_event = MouseEvent(type='mouse_move', pos=(10_000, 10_000))
+    assert qt_viewer.canvas._get_viewbox_at(mouse_event.pos) == (None, None)
+
+    qt_viewer.canvas._process_mouse_event(mouse_move_callbacks, mouse_event)
+
+    assert viewer_model.cursor.viewbox == (0, 0)
+    assert mouse_event.handled
 
 
 @pytest.mark.usefixtures(
