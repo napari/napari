@@ -1102,7 +1102,7 @@ def test_reset_view():
 
     viewer.scene.camera.angles = (45, 30, 60)
     viewer.reset_view(reset_camera_angle=False)
-    assert viewer.scene.camera.angles == (45, 30, 60)
+    np.testing.assert_allclose(viewer.scene.camera.angles, (45, 30, 60))
 
 
 def test_fit_to_view_margin():

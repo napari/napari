@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -123,9 +124,13 @@ class Camera(EventedModel):
     def angles(self) -> tuple[float, float, float]:
         from scipy.spatial.transform import Rotation
 
-        return tuple(
-            Rotation.from_quat(self.quaternion).as_euler('xyz', degrees=True)
-        )
+        # gimbal locks are expected, not an issue
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            angles = Rotation.from_quat(self.quaternion).as_euler(
+                'xyz', degrees=True
+            )
+        return tuple(angles)
 
     @angles.setter
     def angles(self, angles: tuple[float, float, float]) -> None:
