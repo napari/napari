@@ -163,7 +163,7 @@ def test_is_theme_available(tmp_path, monkeypatch):
     n_themes = len(available_themes())
 
     def mock_install_theme(_themes):
-        theme_dict = _themes['napari-dark']
+        theme_dict = _themes['napari-dark'].model_copy()
         theme_dict.id = 'test_blue'
         register_theme(theme_dict, 'test')
 
@@ -186,6 +186,7 @@ def test_is_theme_available(tmp_path, monkeypatch):
 )
 def test_theme_registration(monkeypatch, caplog):
     themes = {'napari-dark': get_theme('napari-dark')}
+    monkeypatch.setattr('napari.utils.theme._themes', themes)
 
     manifest = PluginManifest(
         name='theme_test',
@@ -216,7 +217,6 @@ def test_theme_registration(monkeypatch, caplog):
     monkeypatch.setattr(
         PluginManager.instance(), 'iter_manifests', mock_iter_manifests
     )
-    monkeypatch.setattr('napari.utils.theme._themes', themes)
     _install_npe2_themes(themes)
 
     assert 'theme1-dark' in themes
