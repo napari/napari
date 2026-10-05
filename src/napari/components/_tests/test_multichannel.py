@@ -263,3 +263,15 @@ def test_multichannel_xarray_rgb_metadata():
         assert len(layer.scale) == 2
         assert len(layer.translate) == 2
         assert len(layer.units) == 2
+
+
+@pytest.mark.parametrize('colormap', [[None, None], (None, None)])
+def test_multichannel_colormap_sequence_of_none(colormap):
+    """A sequence of only None should give the default colormaps, like None."""
+    data = np.random.random((2, 15, 15))
+    viewer = ViewerModel()
+    expected = viewer.add_image(data, channel_axis=0, colormap=None)
+    result = viewer.add_image(data, channel_axis=0, colormap=colormap)
+    assert [layer.colormap.name for layer in result] == [
+        layer.colormap.name for layer in expected
+    ]
