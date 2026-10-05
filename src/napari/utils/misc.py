@@ -7,11 +7,13 @@ import collections.abc
 import contextlib
 import inspect
 import itertools
+import json
 import os
 import re
 import sys
 import warnings
 from enum import Enum, StrEnum
+from importlib.metadata import version
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -22,6 +24,7 @@ from typing import (
 
 import numpy as np
 import numpy.typing as npt
+from packaging.version import Version
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -717,3 +720,24 @@ def human_readable_size(size_bytes: float) -> str:
             return f'{size_bytes:.1f} {unit}'
         size_bytes /= 1000
     return f'{size_bytes:.1f} PB'
+
+
+def _check_for_updates_threaded(package_name, callback) -> Version | None:
+    from threading import Thread
+    from urllib.request import urlopen
+
+    def checker():
+        installed = Version(version(package_name))
+
+        # TODO: shoudl do differently for conda installs?
+        with urlopen(
+            f'https://pypi.org/pypi/{package_name}/json',
+            timeout=2,
+        ) as response:
+            data = json.load(response)
+
+        latest = Version(data['info']['version'])
+        if latest > installed:
+            callback(latest)
+
+    Thread(target=checker, daemon=True).start()

@@ -9,6 +9,7 @@ from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
 from napari._qt.utils import use_tabular_numerals
+from napari.utils.misc import _check_for_updates_threaded
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -67,6 +68,15 @@ class ViewerStatusBar(QStatusBar):
         # FIXME: feels weird to set this here.
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
+
+        self.check_for_update()
+
+    def check_for_update(self):
+        _check_for_updates_threaded('napari', self._show_update_version)
+
+    def _show_update_version(self, version):
+        self._new_version_icon = QLabel('N')
+        self.addPermanentWidget(self._new_version_icon)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
