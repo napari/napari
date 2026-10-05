@@ -7,7 +7,9 @@ from collections.abc import (
     Sequence,
 )
 from contextlib import contextmanager
+from enum import StrEnum
 from functools import cache, partial
+from pathlib import Path
 from typing import Any, ClassVar, Union
 
 import numpy as np
@@ -25,15 +27,18 @@ from pydantic_core import CoreSchema
 
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
-from napari.utils.misc import pick_equality_operator
+from napari.utils.misc import StringEnum, pick_equality_operator
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
 _BASE_JSON_ENCODERS = {
-    np.ndarray: lambda arr: arr.tolist(),
+    np.ndarray: lambda a: a.tolist(),
     KeyBinding: lambda v: str(v),
     pint.Unit: lambda u: str(u),
+    StrEnum: lambda e: str(e),
+    StringEnum: lambda e: str(e),
+    Path: lambda p: str(p),
 }
 
 
@@ -181,6 +186,8 @@ def _serialize_arbitrary(value: Any, json_encoders=None) -> Any:
     """Serialize using pydantic machinery but unraveling nested objects first."""
     # json_encoders machinery is deprecated since v2 without a replacement
     # in pydantic, so we create our own here.
+
+    # fallback to older machinery, if objects declare a `json_encode`
     if (encoder := getattr(value, '_json_encode', None)) is not None:
         return encoder()
 
