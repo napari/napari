@@ -12,23 +12,22 @@ from napari.utils._dask_utils import _DASK_CACHE
 
 from .utils import Skip, SlowMemoryStore
 
-# Each sample must start cold, so setup runs before every timed call and the
-# global dask cache is cleared there. See
-# https://asv.readthedocs.io/en/stable/benchmarks.html#timing-benchmarks
-PARAMS = ([0, 0.05], ['zarr', 'dask'])
-PARAM_NAMES = ['latency', 'backend']
-
 
 def _as_backend(array, backend):
     return da.from_zarr(array) if backend == 'dask' else array
 
 
-class _ZScroll:
-    params = PARAMS
-    param_names = PARAM_NAMES
+# Each sample must start cold, so setup runs before every timed call and the
+# global dask cache is cleared there. See
+# https://asv.readthedocs.io/en/stable/benchmarks.html#timing-benchmarks
+class _LazySlicing:
+    params = ([0, 0.05], ['zarr', 'dask'])
+    param_names = ['latency', 'backend']
     skip_params = Skip(if_in_pr=lambda latency, backend: latency > 0)
     timeout = 300
 
+
+class _ZScroll(_LazySlicing):
     def setup(self, latency, backend):
         store = SlowMemoryStore(load_delay=latency)
         data = zarr.zeros(
@@ -76,12 +75,7 @@ class LazyZScrollRevisitSuite(_ZScroll):
     time_revisit.warmup_time = 0
 
 
-class _MultiscalePan:
-    params = PARAMS
-    param_names = PARAM_NAMES
-    skip_params = Skip(if_in_pr=lambda latency, backend: latency > 0)
-    timeout = 300
-
+class _MultiscalePan(_LazySlicing):
     def setup(self, latency, backend):
         _DASK_CACHE.cache.clear()
         group = zarr.open_group(SlowMemoryStore(load_delay=latency), mode='w')
