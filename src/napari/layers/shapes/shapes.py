@@ -3219,17 +3219,21 @@ class Shapes(Layer):
             (i.e., the shape most in the foreground). The coordinate is in layer
             coordinates.
         """
+        # TODO: this should be removed/replaced with the proper machinery from #9516
+        #       so we should start warning that it's deprecated soon
         start_point, end_point = self.get_ray_intersections(
             position, view_direction, dims_displayed
         )
-        if (start_point is not None) and (end_point is not None):
-            intersection = self._get_index_and_intersection(
-                start_point=start_point,
-                end_point=end_point,
-                dims_displayed=dims_displayed,
-            )
-            if intersection is not None:
-                return intersection
+        if start_point is None or end_point is None:
+            return None, None
+        intersection = self._get_index_and_intersection(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        )
+        if intersection is not None:
+            return intersection[0], None
+
         return None, None
 
     def move_to_front(self) -> None:
