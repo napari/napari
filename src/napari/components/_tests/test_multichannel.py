@@ -265,13 +265,12 @@ def test_multichannel_xarray_rgb_metadata():
         assert len(layer.units) == 2
 
 
-@pytest.mark.parametrize('colormap', [[None, None], (None, None)])
-def test_multichannel_colormap_sequence_of_none(colormap):
-    """A sequence of only None should give the default colormaps, like None."""
+def test_multichannel_colormap_list_of_none():
+    """A list of only None should give the default colormaps, like None."""
     data = np.random.random((2, 15, 15))
     viewer = ViewerModel()
     expected = viewer.add_image(data, channel_axis=0, colormap=None)
-    result = viewer.add_image(data, channel_axis=0, colormap=colormap)
+    result = viewer.add_image(data, channel_axis=0, colormap=[None, None])
     assert [layer.colormap.name for layer in result] == [
         layer.colormap.name for layer in expected
     ]
@@ -283,3 +282,19 @@ def test_multichannel_colormap_none_and_name():
     viewer = ViewerModel()
     layers = viewer.add_image(data, channel_axis=0, colormap=[None, 'red'])
     assert [layer.colormap.name for layer in layers] == ['gray', 'red']
+
+
+def test_multichannel_colormap_empty_list_still_errors():
+    """An empty colormap list doesn't match the channels, so it errors."""
+    viewer = ViewerModel()
+    with pytest.raises(IndexError):
+        viewer.add_image(
+            np.random.random((2, 15, 15)), channel_axis=0, colormap=[]
+        )
+
+
+def test_colormap_list_of_none_without_channel_axis_errors():
+    """Without channel_axis, a colormap list keeps the helpful TypeError."""
+    viewer = ViewerModel()
+    with pytest.raises(TypeError, match='channel_axis'):
+        viewer.add_image(np.random.random((15, 15)), colormap=[None])

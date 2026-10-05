@@ -1273,11 +1273,15 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
-        # A list or tuple containing only None means "no
-        # colormap specified" for every channel, so treat it like a single None
-        # and use the default colormaps instead of black ones.
-        if isinstance(colormap, (list, tuple)) and all(
-            cmap is None for cmap in colormap
+        # A list of only None (e.g. [None, None]) means "no colormap specified"
+        # for every channel, so treat it like a single None and use the
+        # default colormaps instead of black ones. A tuple is not handled here,
+        # because a tuple is used to create a single colormap.
+        if (
+            channel_axis is not None
+            and isinstance(colormap, list)
+            and len(colormap) > 0
+            and all(cmap is None for cmap in colormap)
         ):
             colormap = None
 
