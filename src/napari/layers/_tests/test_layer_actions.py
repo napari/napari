@@ -330,6 +330,18 @@ def test_convert_dtype(mode):
     assert ll[-1].data.flatten().sum() == 1000
 
 
+def test_convert_dtype_multiscale_not_implemented():
+    ll = LayerList()
+    data = [
+        np.zeros((8, 8), dtype=np.int16),
+        np.zeros((4, 4), dtype=np.int16),
+    ]
+    ll.append(Labels(data, multiscale=True))
+    with pytest.raises(NotImplementedError, match='multiscale'):
+        _convert_dtype(ll, mode='int32')
+    assert ll[-1].data.dtype == np.int16
+
+
 @pytest.mark.filterwarnings('ignore:projection mode :UserWarning')
 @pytest.mark.parametrize(
     ('layer', 'type_'),
