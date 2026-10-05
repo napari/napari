@@ -164,6 +164,11 @@ class Labels(ScalarFieldBase):
         'fast' uses a simple finite difference gradient in x, y, and z. 'smooth' uses an
         isotropic Sobel gradient, which is smoother but more computationally expensive.
         The default value is 'fast'.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict
         Layer metadata.
     multiscale : bool
@@ -367,6 +372,7 @@ class Labels(ScalarFieldBase):
         experimental_clipping_planes=None,
         features=None,
         iso_gradient_mode=IsoCategoricalGradientMode.FAST.value,
+        locked_data_level: int | None = None,
         metadata=None,
         multiscale=None,
         name=None,
@@ -485,6 +491,9 @@ class Labels(ScalarFieldBase):
         self._staged_history: list[HistoryAtom]
         self._block_history: bool
 
+        if locked_data_level is not None:
+            self.locked_data_level = locked_data_level
+
     def _slice_dtype(self):
         """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
@@ -498,7 +507,7 @@ class Labels(ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def rendering(self):  # pyrefly: ignore [bad-override]
+    def rendering(self):
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -759,6 +768,7 @@ class Labels(ScalarFieldBase):
         state.update(
             {
                 'multiscale': self.multiscale,
+                'locked_data_level': self.locked_data_level,
                 'properties': self.properties,
                 'rendering': self.rendering,
                 'iso_gradient_mode': self.iso_gradient_mode,

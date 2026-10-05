@@ -1,6 +1,5 @@
 """Scale bar model."""
 
-import warnings
 from typing import Annotated
 
 from pydantic import Field
@@ -57,26 +56,3 @@ class ScaleBarOverlay(CanvasOverlay):
     font_size: float = 10
     length: float | None = None
     canvas_ratio: Annotated[float, Field(ge=0, le=1)] = 0.25
-
-    @property
-    def unit(self) -> None:
-        warnings.warn(
-            'ScaleBar.unit is deprecated and now always returns None. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
-            stacklevel=4,
-        )
-        return None
-
-    @unit.setter
-    def unit(self, value: str | None) -> None:
-        warnings.warn(
-            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
-            stacklevel=4,
-        )

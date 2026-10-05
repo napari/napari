@@ -39,8 +39,8 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         top_left, bot_right = self.overlay.position
         self.node.set_data(
             # invert axes for vispy
-            top_left[::-1],  # pyrefly: ignore [bad-argument-type]
-            bot_right[::-1],  # pyrefly: ignore [bad-argument-type]
+            top_left[::-1],
+            bot_right[::-1],
             handles=False,
             selected=None,
         )
