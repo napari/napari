@@ -519,6 +519,39 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize('shape_type', ['polyline', 'polygon'])
+def test_mode_change_finishes_complex_shape(
+    shape_type, create_known_shapes_layer
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+
+    desired_shape = [[20, 30], [10, 50], [60, 40]]
+    layer.mode = f'add_{shape_type}'
+    for coord in desired_shape:
+        for event_type, callback in [
+            ('mouse_move', mouse_move_callbacks),
+            ('mouse_press', mouse_press_callbacks),
+            ('mouse_release', mouse_release_callbacks),
+        ]:
+            callback(
+                layer,
+                read_only_mouse_event(
+                    type=event_type, position=coord, pos=np.array(coord)
+                ),
+            )
+    mouse_move_callbacks(
+        layer,
+        read_only_mouse_event(
+            type='mouse_move', position=[70, 70], pos=np.array([70, 70])
+        ),
+    )
+
+    layer.mode = 'select'
+
+    assert len(layer.data) == n_shapes + 1
+    np.testing.assert_allclose(layer.data[-1], desired_shape)
+
+
 @pytest.mark.parametrize(
     'shape_type_vertices',
     [
