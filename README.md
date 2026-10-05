@@ -45,7 +45,7 @@ In the `File` menu, select `Open Sample` and select a sample image to get starte
 For a full installation, we recommend installing napari into a virtual environment, like this:
 
 ```sh
-conda create -y -n napari-env -c conda-forge python=3.11
+conda create -y -n napari-env -c conda-forge python=3.13
 conda activate napari-env
 python -m pip install "napari[all]"
 ```

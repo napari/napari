@@ -1,25 +1,25 @@
 from datetime import date
 from functools import lru_cache
-from importlib import resources
 from pathlib import Path
+from typing import Literal
+
+from napari_resources import logo_path, logo_variants
 
 
 @lru_cache
 def available_logos() -> list[str]:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
-    variants = ['auto']
-    for logo in Path(logo_dir).glob('*-plain-light.svg'):
-        variants.append(logo.stem.rsplit('-', 2)[0])
-    return sorted(variants)
+    return ['auto'] + sorted(logo_variants())
 
 
 def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
     today = today or date.today()
 
+    # date ranges, adding some buffer around single-day stuff
     ranges = {
         'halloween': ((10, 25), (11, 2)),
         'christmas': ((12, 1), (1, 6)),
-        'maythefourth': ((5, 1), (5, 10)),  # let's give it some leeway :P
+        'maythefourth': ((5, 1), (5, 10)),
+        'pride': ((6, 21), (7, 4)),  # international pride day 28 june
     }
 
     theme_variants = {'maythefourth': {'dark': 'sith', 'light': 'jedi'}}
@@ -46,23 +46,15 @@ def _get_seasonal_logo(today: date | None = None, theme: str = 'dark') -> str:
 
 
 def get_logo_path(
-    logo: str, template: str, theme_type: str, today: date | None = None
+    logo: str,
+    template: str,
+    theme_type: Literal['dark', 'light'],
+    today: date | None = None,
 ) -> Path:
-    logo_dir = Path(resources.files('napari').joinpath('resources', 'logos'))  # type: ignore
-    if logo not in available_logos():
-        raise ValueError(
-            f'logo must be one one {set(available_logos())}; got {logo}'
-        )
-
     if template not in {'plain', 'padded'}:
         raise ValueError('template must be either "plain" or "padded"')
-
-    # eventually we should actually use the dark/light "type" that the theme spec of npe2 allows,
-    # which is currently unused in napari
-    if theme_type not in {'dark', 'light'}:
-        theme_type = 'dark'
 
     if logo == 'auto':
         logo = _get_seasonal_logo(today=today, theme=theme_type)
 
-    return logo_dir / f'{logo}-{template}-{theme_type}.svg'
+    return logo_path(logo, template, theme_type)

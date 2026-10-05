@@ -14,7 +14,6 @@ from napari.layers.utils.interaction_box import (
 )
 from napari.utils.events import Event
 from napari.utils.transforms import Affine
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -62,7 +61,8 @@ def highlight_transform_box_handles(layer: Layer, event: Event) -> None:
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
     handle_coords = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
     #       correct and matching the size of the handles in data space?
@@ -144,10 +144,7 @@ def _scale_with_box(
             locked_aspect_ratio = True
         else:
             warnings.warn(
-                trans._(
-                    'Aspect ratio can only be blocked when resizing from a corner',
-                    deferred=True,
-                ),
+                'Aspect ratio can only be blocked when resizing from a corner',
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -220,7 +217,8 @@ def transform_with_box(
     initial_mouse_pos_data = initial_world_to_data(initial_mouse_pos)
 
     initial_handle_coords_data = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     # TODO: this tolerance value is a bit random... could we somehow make *sure* this is
     #       correct and matching the size of the handles in data space?

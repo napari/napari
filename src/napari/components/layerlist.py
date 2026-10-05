@@ -18,11 +18,11 @@ from napari.utils.events import Event
 from napari.utils.events.containers import SelectableEventedList
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from npe2.manifest.io import WriterContribution
-    from typing_extensions import Self
 
 __all__ = ('LayerList',)
 
@@ -79,16 +79,22 @@ class LayerList(SelectableEventedList[Layer]):
     Notes
     -----
 
-    Note that ``changed`` events are only emitted when an element of the
-    list changes, *not* when the list itself changes (for example when items
-    are added or removed). For example, ``layerlist.append(layer)`` will emit
-    an ``inserted`` event. ``layerlist[idx] = layer`` *will* emit a ``changed``
-    event.
+    Note that ``changed`` events are only emitted when an element at a
+    specific index of the list is replaced, *not* when the list itself
+    changes (for example when items are added or removed). For example,
+    ``layerlist.append(layer)`` will emit an ``inserted`` event, whereas
+    ``layerlist[idx] = layer`` will emit a ``changed`` event.
 
-    However, the layerlist does not have a way of detecting when an object in
+    The layerlist also does not have a way of detecting when an object in
     the list is modified in-place. Therefore, although
     ``layerlist[idx].scale = [2, 1, 1]`` changes the *value* of the layer at
-    position ``idx``, a ``changed`` event will not be emitted.
+    position ``idx``, a ``changed`` event will not be emitted. Such changes
+    are instead forwarded by the layerlist: a callback connected to
+    ``layerlist.events`` receives the layer's own event (here ``scale``)
+    with an added ``index`` attribute giving the position of the layer.
+    If you are only interested in a specific layer, you can instead connect
+    directly to that layer's own events, e.g.
+    ``layer.events.scale.connect(callback)``.
 
     Examples
     --------
@@ -186,6 +192,10 @@ class LayerList(SelectableEventedList[Layer]):
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
         item.events.locked.disconnect(self._refresh_selection_ctx_keys)
+        if hasattr(item.events, 'locked_data_level'):
+            item.events.locked_data_level.disconnect(
+                self._refresh_selection_ctx_keys
+            )
         self.unlink_layers([item])
         self._clean_cache()
 
@@ -236,11 +246,7 @@ class LayerList(SelectableEventedList[Layer]):
         for v in values:
             if v in bad:
                 raise ValueError(
-                    trans._(
-                        "Layer '{v}' is already present in layer list",
-                        deferred=True,
-                        v=v,
-                    )
+                    f"Layer '{v}' is already present in layer list"
                 )
         return values
 
@@ -273,6 +279,10 @@ class LayerList(SelectableEventedList[Layer]):
             self._trigger_check_ndim_and_maybe_clean_units
         )
         new_layer.events.locked.connect(self._refresh_selection_ctx_keys)
+        if hasattr(new_layer.events, 'locked_data_level'):
+            new_layer.events.locked_data_level.connect(
+                self._refresh_selection_ctx_keys
+            )
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
@@ -289,11 +299,7 @@ class LayerList(SelectableEventedList[Layer]):
                 repr(lay.name) for lay in sorted(locked, key=lambda x: x.name)
             )
             show_info(
-                trans._(
-                    'Layer(s) {names} are locked and cannot be deleted.',
-                    deferred=False,
-                    names=names,
-                )
+                f'Layer(s) {names} are locked and cannot be deleted.',
             )
         if not deletable:
             return
@@ -361,9 +367,7 @@ class LayerList(SelectableEventedList[Layer]):
             # warning
             warnings.filterwarnings(
                 'ignore',
-                message=str(
-                    trans._('All-NaN axis encountered', deferred=True)
-                ),
+                message='All-NaN axis encountered',
             )
             min_v = np.nanmin(
                 list(itertools.zip_longest(*mins_list, fillvalue=np.nan)),
@@ -465,6 +469,15 @@ class LayerList(SelectableEventedList[Layer]):
             Converted scale.
         """
         clipped_target_units = to_units[-len(from_units) :]
+        try:
+            matching_units = from_units == clipped_target_units
+        except ValueError:
+            # Units from separate registries can still be converted.
+            matching_units = False
+        if matching_units:
+            # Copy, don't `return scale`: callers own the result, and `scale`
+            # may be a view of a layer's cached extent arrays.
+            return np.array(scale)
         return np.array(
             [
                 (s * u).to(cu).magnitude
@@ -653,6 +666,33 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return max((layer.ndim for layer in self), default=2)
 
+    def _find_longest_annotated(self) -> tuple[str, ...]:
+        """Return the annotated axis labels spanning the most dimensions.
+
+        Returns () when no layer is annotated. When more are equally long,
+        the most recent layer wins.
+        """
+        annotated_list = [
+            layer.axis_labels
+            for layer in self
+            if not layer._has_default_axis_labels()
+        ][::-1]
+        return max(annotated_list, key=len, default=())
+
+    @property
+    def axis_labels(self) -> tuple[str, ...]:
+        """Axis labels for the layer list.
+
+        Uses the labels from the layer with the longest annotated axis labels.
+        Missing axes annotations fall back to default indices.
+        """
+        axis_labels = [str(i) for i in range(-self.ndim, 0)]
+        labels = self._find_longest_annotated()
+        offset = self.ndim - len(labels)
+        for idx, label in enumerate(labels):
+            axis_labels[offset + idx] = label
+        return tuple(axis_labels)
+
     def _link_layers(
         self,
         method: str,
@@ -665,7 +705,7 @@ class LayerList(SelectableEventedList[Layer]):
         from napari.layers.utils import _link_layers
 
         if layers is not None:
-            layers = [self[x] if isinstance(x, str) else x for x in layers]  # type: ignore
+            layers = [self[x] if isinstance(x, str) else x for x in layers]
         else:
             layers = self
         getattr(_link_layers, method)(layers, attributes)
@@ -740,10 +780,7 @@ class LayerList(SelectableEventedList[Layer]):
             else list(self)
         )
 
-        if selected:
-            msg = trans._('No layers selected', deferred=True)
-        else:
-            msg = trans._('No layers to save', deferred=True)
+        msg = 'No layers selected' if selected else 'No layers to save'
 
         if not layers:
             warnings.warn(msg)

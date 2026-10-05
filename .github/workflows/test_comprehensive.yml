@@ -26,11 +26,11 @@ jobs:
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: "Set up Python 3.14"
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -52,19 +52,19 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python: ["3.11", "3.12", "3.13", "3.14"]
         backend: [pyqt5]
         include:
           - python: "3.11"
-            platform: macos-latest
+            platform: macos-15
             backend: pyqt5
           # test with minimum specified requirements
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
           # test without any Qt backends
-          - python: "3.10"
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: headless
           - python: "3.14"
@@ -96,7 +96,7 @@ jobs:
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
-        toxenv: py312-linux-pyqt6-examples-cov
+        toxenv: py312-pyqt6-examples
         timeout: 60
         python_version: 3.12
         constraints_suffix: _examples
@@ -120,7 +120,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
           # explicitly set persist-credentials: 'true' to push changes to bot repo

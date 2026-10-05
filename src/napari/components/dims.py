@@ -13,7 +13,6 @@ from pydantic import field_validator, model_validator
 
 from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
-from napari.utils.translations import trans
 
 
 class RangeTuple(NamedTuple):
@@ -138,25 +137,14 @@ class Dims(EventedModel):
         - start < stop
         - step > 0
         """
-        for axis, (start, stop, step) in enumerate(ranges):
+        for axis, (start, stop, step) in enumerate(ranges):  # pyrefly: ignore [bad-unpacking]
             if start > stop:
                 raise ValueError(
-                    trans._(
-                        'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}',
-                        deferred=True,
-                        start=start,
-                        stop=stop,
-                        axis=axis,
-                    )
+                    f'start and stop must be strictly increasing, but got ({start}, {stop}) for axis {axis}'
                 )
             if step <= 0:
                 raise ValueError(
-                    trans._(
-                        'step must be strictly positive, but got {step} for axis {axis}.',
-                        deferred=True,
-                        step=step,
-                        axis=axis,
-                    )
+                    f'step must be strictly positive, but got {step} for axis {axis}.'
                 )
         return ranges
 
@@ -208,12 +196,7 @@ class Dims(EventedModel):
             # Check the order is a permutation of 0, ..., ndim - 1
             if set(self.order) != set(range(ndim)):
                 raise ValueError(
-                    trans._(
-                        'Invalid ordering {order} for {ndim} dimensions',
-                        deferred=True,
-                        order=self.order,
-                        ndim=ndim,
-                    )
+                    f'Invalid ordering {self.order} for {ndim} dimensions'
                 )
 
         # Check the axis labels tuple has same number of elements as ndim
@@ -437,7 +420,7 @@ class Dims(EventedModel):
         # Don't reset axis labels
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
-        self.range = ((0, 2, 1),) * self.ndim
+        self.range = ((0, 2, 1),) * self.ndim  # pyrefly: ignore [bad-assignment]
         self.point = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
@@ -452,7 +435,7 @@ class Dims(EventedModel):
         """
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _increment_dims_right(self, axis: int | None = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -506,7 +489,7 @@ class Dims(EventedModel):
         # encodes axis by number
         valid = np.logical_and(self.rollable, np.array(self.nsteps) > 1)[order]
         order[valid] = np.roll(order[valid], shift=1)
-        self.order = order
+        self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _go_to_center_step(self):
         self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
@@ -524,9 +507,7 @@ class Dims(EventedModel):
                 and not isinstance(value, str)
                 and not value_is_sequence
             ):
-                raise ValueError(
-                    trans._('cannot set multiple values to a single axis')
-                )
+                raise ValueError('cannot set multiple values to a single axis')
             axis = [axis]
             value = [value]
         else:
@@ -534,13 +515,11 @@ class Dims(EventedModel):
             value = list(value)
 
         if len(axis) != len(value):
-            raise ValueError(
-                trans._('axis and value sequences must have equal length')
-            )
+            raise ValueError('axis and value sequences must have equal length')
 
         for ax in axis:
-            ensure_axis_in_bounds(ax, self.ndim)
-        return axis, value
+            ensure_axis_in_bounds(ax, self.ndim)  # pyrefly: ignore [bad-argument-type]
+        return axis, value  # pyrefly: ignore [bad-return]
 
     @contextlib.contextmanager
     def _validating_ctx(self):
@@ -592,13 +571,7 @@ def ensure_axis_in_bounds(axis: int, ndim: int) -> int:
         The given axis index is out of bounds.
     """
     if axis not in range(-ndim, ndim):
-        msg = trans._(
-            'Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).',
-            deferred=True,
-            axis=axis,
-            ndim=ndim,
-            ndim_lower=-ndim,
-        )
+        msg = f'Axis {axis} not defined for dimensionality {ndim}. Must be in [{-ndim}, {ndim}).'
         raise ValueError(msg)
 
     return axis % ndim

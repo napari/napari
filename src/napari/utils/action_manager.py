@@ -5,30 +5,33 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import isgeneratorfunction
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from concurrent.futures import Future
     from typing import Protocol
 
+    from app_model.types import KeyBinding
+    from qtpy.QtWidgets import QAbstractButton
+
+    from napari.utils.events import Event
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None: ...
+        def connect(self, callback: Callable, /) -> object: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None: ...
+        def setToolTip(self, text: str, /) -> None: ...
 
-    class ShortcutEvent:
+    class ShortcutEvent(Event):
         name: str
-        shortcut: str
+        shortcut: KeyBinding | str
         tooltip: str
 
 
@@ -36,7 +39,7 @@ if TYPE_CHECKING:
 class Action:
     command: Callable
     description: str
-    keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
+    keymapprovider: type[KeymapProvider] | None  # subclass, or None if unbound
     repeatable: bool = False
 
     @cached_property
@@ -82,7 +85,7 @@ class ActionManager:
     def __init__(self) -> None:
         # map associating a name/id with a Comm
         self._actions: dict[str, Action] = {}
-        self._shortcuts: dict[str, list[str]] = defaultdict(list)
+        self._shortcuts: dict[str, list[KeyBinding | str]] = defaultdict(list)
         self._stack: list[str] = []
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shortcut_changed=None)
@@ -93,11 +96,7 @@ class ActionManager:
     def _validate_action_name(self, name):
         if len(name.split(':')) != 2:
             raise ValueError(
-                trans._(
-                    'Action names need to be in the form `package:name`, got {name!r}',
-                    name=name,
-                    deferred=True,
-                )
+                f'Action names need to be in the form `package:name`, got {name!r}'
             )
 
     def register_action(
@@ -134,8 +133,8 @@ class ActionManager:
         description : str
             Long string to describe what the command does, will be used in
             tooltips.
-        keymapprovider : KeymapProvider
-            KeymapProvider class or instance to use to bind the shortcut(s) when
+        keymapprovider : type[KeymapProvider] or None
+            KeymapProvider subclass to use to bind the shortcut(s) when
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
         repeatable : bool
@@ -176,7 +175,7 @@ class ActionManager:
             return
         action = self._actions[name]
         km_provider = action.keymapprovider
-        if hasattr(km_provider, 'bind_key'):
+        if km_provider is not None:
             for shortcut in self._shortcuts[name]:
                 # NOTE: it would be better if we could bind `self.trigger` here
                 # as it allow the action manager to be a convenient choke point
@@ -187,7 +186,10 @@ class ActionManager:
                 km_provider.bind_key(shortcut, action.injected, overwrite=True)
 
     def bind_button(
-        self, name: str, button: Button, extra_tooltip_text=''
+        self,
+        name: str,
+        button: Button | QAbstractButton,
+        extra_tooltip_text='',
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
@@ -220,10 +222,7 @@ class ActionManager:
             getattr(action, 'command', None)
         ):
             raise ValueError(
-                trans._(
-                    '`bind_button` cannot be used with generator functions',
-                    deferred=True,
-                )
+                '`bind_button` cannot be used with generator functions'
             )
 
         def _trigger():
@@ -235,15 +234,18 @@ class ActionManager:
                 f'{self._build_tooltip(name)} {extra_tooltip_text}'
             )
 
-        def _update_tt(event: ShortcutEvent):
-            if event.name == name:
-                button.setToolTip(f'{event.tooltip} {extra_tooltip_text}')
+        def _update_tt(event: Event) -> None:
+            shortcut_event = cast('ShortcutEvent', event)
+            if shortcut_event.name == name:
+                button.setToolTip(
+                    f'{shortcut_event.tooltip} {extra_tooltip_text}'
+                )
 
         # if it's a QPushbutton, we'll remove it when it gets destroyed
         until = getattr(button, 'destroyed', None)
         self.events.shortcut_changed.connect(_update_tt, until=until)
 
-    def bind_shortcut(self, name: str, shortcut: str) -> None:
+    def bind_shortcut(self, name: str, shortcut: KeyBinding | str) -> None:
         """
         bind shortcut `shortcut` to trigger action `name`
 
@@ -251,7 +253,7 @@ class ActionManager:
         ----------
         name : str
             name of the corresponding action in the form ``packagename:name``
-        shortcut : str
+        shortcut : KeyBinding | str
             Shortcut to assign to this action use dash as separator. See
             `Shortcut` for known modifiers.
 
@@ -268,7 +270,7 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._emit_shortcut_change(name, shortcut)
 
-    def unbind_shortcut(self, name: str) -> list[str] | None:
+    def unbind_shortcut(self, name: str) -> list[KeyBinding | str] | None:
         """
         Unbind all shortcuts for a given action name.
 
@@ -279,7 +281,7 @@ class ActionManager:
 
         Returns
         -------
-        shortcuts: set of str | None
+        shortcuts: list of KeyBinding or str | None
             Previously bound shortcuts or None if not such shortcuts was bound,
             or no such action exists.
 
@@ -293,17 +295,14 @@ class ActionManager:
         action = self._actions.get(name, None)
         if action is None:
             warnings.warn(
-                trans._(
-                    'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
-                    name=name,
-                ),
+                f'Attempting to unbind an action which does not exists ({name}), this may have no effects. This can happen if your settings are out of date, if you upgraded napari, upgraded or deactivated a plugin, or made a typo in in your custom keybinding.',
                 UserWarning,
                 stacklevel=2,
             )
 
         shortcuts = self._shortcuts.get(name)
         if shortcuts:
-            if action and hasattr(action.keymapprovider, 'bind_key'):
+            if action and action.keymapprovider is not None:
                 for shortcut in shortcuts:
                     action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
@@ -320,7 +319,7 @@ class ActionManager:
         ttip = self._actions[name].description
 
         if name in self._shortcuts:
-            jstr = ' ' + trans._p('<keysequence> or <keysequence>', 'or') + ' '
+            jstr = ' ' + 'or' + ' '
             shorts = jstr.join(f'{Shortcut(s)}' for s in self._shortcuts[name])
             ttip += f' ({shorts})'
 

@@ -9,7 +9,6 @@ from napari.utils.key_bindings import (
     KeyCode,
     coerce_keybinding,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
@@ -85,11 +84,7 @@ def mouse_double_click_callbacks(obj, event) -> None:
     for mouse_click_func in obj.mouse_double_click_callbacks:
         # execute function to run press event code
         if inspect.isgeneratorfunction(mouse_click_func):
-            raise ValueError(
-                trans._(
-                    "Double-click actions can't be generators.", deferred=True
-                )
-            )
+            raise ValueError("Double-click actions can't be generators.")
         mouse_click_func(obj, event)
 
 
@@ -263,10 +258,7 @@ class Shortcut:
         shortcut : keybinding-like
             shortcut to format
         """
-        error_msg = trans._(
-            '`{shortcut}` does not seem to be a valid shortcut Key.',
-            shortcut=shortcut,
-        )
+        error_msg = f'`{shortcut}` does not seem to be a valid shortcut Key.'
         error = False
 
         try:

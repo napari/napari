@@ -10,14 +10,6 @@ class ColorBarOverlay(CanvasOverlay):
 
     Attributes
     ----------
-    position : CanvasPosition
-        The position of the overlay in the canvas.
-    visible : bool
-        If the overlay is visible or not. Inherited from Overlay.
-    opacity : float
-        The opacity of the overlay. 0 is fully transparent. Inherited from Overlay.
-    order : int
-        The rendering order of the overlay: lower numbers get rendered first. Inherited from Overlay.
     color : ColorValue | None
         The color of the outline and ticks of the colorbar.
     size : tuple[float, float]
@@ -26,11 +18,23 @@ class ColorBarOverlay(CanvasOverlay):
         The length of the ticks in pixels.
     font_size : float
         The font size of the tick labels.
-    blending : str
-        One of a list of preset blending modes that determines how RGB and
-        alpha values of the colorbar visual get mixed with other visuals. Defaults to 'translucent_no_depth'. Inherited from CanvasOverlay.
+    position : CanvasPosition
+        The position of the overlay in the canvas.
+    box : bool
+        Whether the background box is visible or not.
+    box_color : ColorValue or None
+        Background box color. If unset, it defaults to the canvas color.
     gridded : bool
-        The overlay will be duplicated across all grid cells in gridded mode. Inherited from CanvasOverlay.
+        The overlay will be duplicated across all grid cells in gridded mode.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     color: ColorValue | None = None

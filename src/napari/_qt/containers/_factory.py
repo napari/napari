@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING
 from napari._qt.containers.qt_axis_model import AxisList, QtAxisListModel
 from napari.components.layerlist import LayerList
 from napari.utils.events import SelectableEventedList
-from napari.utils.translations import trans
 from napari.utils.tree import Group
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget  # type: ignore[attr-defined]
+    from qtpy.QtWidgets import QWidget
 
 
 def create_view(
@@ -37,13 +36,7 @@ def create_view(
         return QtNodeTreeView(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):
         return QtListView(obj, parent=parent)
-    raise TypeError(
-        trans._(
-            'Cannot create Qt view for obj: {obj}',
-            deferred=True,
-            obj=obj,
-        )
-    )
+    raise TypeError(f'Cannot create Qt view for obj: {obj}')
 
 
 def create_model(
@@ -77,10 +70,4 @@ def create_model(
         return QtAxisListModel(obj, parent=parent)
     if isinstance(obj, SelectableEventedList):
         return QtListModel(obj, parent=parent)
-    raise TypeError(
-        trans._(
-            'Cannot create Qt model for obj: {obj}',
-            deferred=True,
-            obj=obj,
-        )
-    )
+    raise TypeError(f'Cannot create Qt model for obj: {obj}')

@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
-from napari.utils.translations import trans
+from napari._qt.utils import use_tabular_numerals
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -18,16 +18,16 @@ class ViewerStatusBar(QStatusBar):
     def __init__(self, parent: '_QtMainWindow') -> None:
         super().__init__(parent=parent)
 
-        self._status = QLabel(trans._('Ready'))
+        self._status = QLabel('Ready')
         self._status.setContentsMargins(0, 0, 0, 0)
 
-        self._layer_base = QElidingLabel(trans._(''))
+        self._layer_base = QElidingLabel('')
         self._layer_base.setObjectName('layer_base status')
         self._layer_base.setElideMode(Qt.TextElideMode.ElideMiddle)
         self._layer_base.setMinimumSize(100, 16)
         self._layer_base.setContentsMargins(0, 0, 0, 0)
 
-        self._plugin_reader = QElidingLabel(trans._(''))
+        self._plugin_reader = QElidingLabel('')
         self._plugin_reader.setObjectName('plugin-reader status')
         self._plugin_reader.setMinimumSize(80, 16)
         self._plugin_reader.setContentsMargins(0, 0, 0, 0)
@@ -57,6 +57,8 @@ class ViewerStatusBar(QStatusBar):
             self._help,
         )
         self.addWidget(main_widget, 1)
+
+        use_tabular_numerals(self)
 
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
@@ -119,7 +121,7 @@ class StatusBarWidget(QWidget):
         plugin_label: QLabel,
         coordinates_label: QLabel,
         help_label: QLabel,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent=parent)
         self._status_label = status_label
