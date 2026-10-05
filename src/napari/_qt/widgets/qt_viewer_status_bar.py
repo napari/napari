@@ -1,18 +1,44 @@
 """Status bar widget on the viewer MainWindow"""
 
 from typing import TYPE_CHECKING, cast
+from webbrowser import open as web_open
 
 from qtpy.QtCore import QEvent, Qt
 from qtpy.QtGui import QFontMetrics, QResizeEvent
 from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
+from napari import __version__
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
 from napari._qt.utils import use_tabular_numerals
-from napari.utils.misc import _check_for_updates_threaded
+from napari.utils.misc import _check_for_updates
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
+
+
+class CheckUpdateIcon(QLabel):
+    def __init__(self, upcoming_releases):
+        super().__init__()
+        self.setText('🚀')
+        self.setToolTip(
+            f'New napari versions available!\n'
+            f'You are currently running napari {__version__}, but napari {upcoming_releases[-1]} is out,\n'
+            f'meaning you are {len(upcoming_releases)} release(s) behind. You might be missing out\n'
+            'on some juicy new features!\n'
+            'Left click here to open the latest napari release notes in your browser.\n'
+            f'Right click to open the release notes for all {len(upcoming_releases)} upcoming releases.'
+        )
+        self.upcoming_releases = upcoming_releases
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            web_open('https://napari.org/stable/release/index.html')
+        if event.button() == Qt.MouseButton.RightButton:
+            for release in self.upcoming_releases:
+                web_open(
+                    f'https://napari.org/stable/release/release_{str(release).replace(".", "_")}.html'
+                )
 
 
 class ViewerStatusBar(QStatusBar):
@@ -69,14 +95,17 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
-        self.check_for_update()
+        # check for updates in a thread so it doesn't block the gui
+        from napari.qt import thread_worker
 
-    def check_for_update(self):
-        _check_for_updates_threaded('napari', self._show_update_version)
+        thread_worker(
+            lambda: _check_for_updates('napari'),
+            connect={'returned': self._show_update_version},
+        )()
 
-    def _show_update_version(self, version):
-        self._new_version_icon = QLabel('N')
-        self.addPermanentWidget(self._new_version_icon)
+    def _show_update_version(self, upcoming):
+        if upcoming:
+            self.addPermanentWidget(CheckUpdateIcon(upcoming))
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)

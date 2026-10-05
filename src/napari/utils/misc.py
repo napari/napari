@@ -722,22 +722,26 @@ def human_readable_size(size_bytes: float) -> str:
     return f'{size_bytes:.1f} PB'
 
 
-def _check_for_updates_threaded(package_name, callback) -> Version | None:
-    from threading import Thread
+def _check_for_updates(package_name) -> list[Version]:
     from urllib.request import urlopen
 
-    def checker():
-        installed = Version(version(package_name))
+    current = Version(version(package_name))
 
-        # TODO: shoudl do differently for conda installs?
-        with urlopen(
-            f'https://pypi.org/pypi/{package_name}/json',
-            timeout=2,
-        ) as response:
-            data = json.load(response)
+    # TODO: shoudl do differently for conda installs?
+    with urlopen(
+        f'https://pypi.org/pypi/{package_name}/json',
+        timeout=2,
+    ) as response:
+        data = json.load(response)
 
-        latest = Version(data['info']['version'])
-        if latest > installed:
-            callback(latest)
+    releases = data['releases']
 
-    Thread(target=checker, daemon=True).start()
+    return sorted(
+        v
+        for vstring, files in releases.items()
+        if files
+        and (v := Version(vstring)) > current
+        and any(not f.get('yanked', False) for f in files)
+        and not v.is_prerelease
+        and not v.is_devrelease
+    )
