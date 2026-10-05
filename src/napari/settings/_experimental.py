@@ -65,7 +65,7 @@ class ExperimentalSettings(EventedSettings):
         description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
         ' or path.',
         ge=1,
-        le=49,
+        le=50,
     )
 
     completion_radius: int = Field(

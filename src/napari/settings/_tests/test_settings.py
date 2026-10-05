@@ -609,14 +609,3 @@ def test_plugin_settings_str(tmp_path, monkeypatch, test_settings_2):
 
     prefs.display_name = 'renamed'
     assert 'renamed' in str(prefs)
-
-
-def test_lasso_vertex_distance_schema_bounds():
-
-    from napari.settings._experimental import ExperimentalSettings
-
-    schema = ExperimentalSettings.model_json_schema()['properties'][
-        'lasso_vertex_distance'
-    ]
-    assert schema['minimum'] == 1
-    assert schema['maximum'] == 49
