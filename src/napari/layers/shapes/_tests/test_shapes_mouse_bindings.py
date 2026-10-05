@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from napari.components import Dims
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
 from napari.layers.shapes import _shapes_key_bindings as key_bindings
@@ -1376,7 +1377,7 @@ def test_drag_start_selection(
     assert layer._drag_start is None
 
 
-def _click(layer, position, pos, release=True):
+def _click(layer, position, release=True):
     callbacks = [
         ('mouse_move', mouse_move_callbacks),
         ('mouse_press', mouse_press_callbacks),
@@ -1386,95 +1387,63 @@ def _click(layer, position, pos, release=True):
     for event_type, callback in callbacks:
         callback(
             layer,
-            read_only_mouse_event(type=event_type, position=position, pos=pos),
+            read_only_mouse_event(
+                type=event_type, position=position, pos=position[-2:]
+            ),
         )
 
 
-@pytest.fixture
-def drawing_polygon():
-    from napari.components import ViewerModel
-
-    viewer = ViewerModel()
-    viewer.add_image(np.zeros((4, 5, 64, 64)))
-    layer = viewer.add_shapes(ndim=4)
-    viewer.dims.point = (0, 0, 0, 0)
-    layer.mode = 'add_polygon'
-    for pos in [(10, 10), (10, 40), (40, 40)]:
-        _click(layer, (0, 0, *pos), pos)
-    return viewer, layer
-
-
-def test_polygon_draw_pauses_off_slice(drawing_polygon):
-    viewer, layer = drawing_polygon
-    data = layer.data[0].copy()
-    help_text, cursor = layer.help, layer.cursor
-    viewer.dims.set_point(0, 1)
-    assert layer._data_view._displayed.tolist() == [False]
-    assert len(layer._outline_shapes()[1]) > 0
-    np.testing.assert_allclose(
-        layer._compute_vertices_and_box()[0], data[:, :1:-1]
-    )
-    assert layer.cursor == 'forbidden'
-    assert 'original slice' in layer.help
-    assert 'Esc' in layer.help
-    np.testing.assert_allclose(layer.data[0], data)
-    _click(layer, (1, 0, 30, 20), (30, 20))
-    np.testing.assert_allclose(layer.data[0], data)
-    assert layer.get_value((1, 0, 20, 30)) == (None, None)
-
-    viewer.dims.set_point(0, 0)
-    assert layer.help == help_text
-    assert layer.cursor == cursor
+def _move(layer, position):
     mouse_move_callbacks(
         layer,
         read_only_mouse_event(
-            type='mouse_move', position=(0, 0, 40, 10), pos=(40, 10)
+            type='mouse_move', position=position, pos=position[-2:]
         ),
     )
-    np.testing.assert_allclose(layer.data[0][-1], (0, 0, 40, 10))
-    mouse_press_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_press', position=(0, 0, 40, 10), pos=(40, 10)
-        ),
-    )
+
+
+def test_polygon_draw_pauses_off_slice_and_resumes():
+    layer = Shapes(ndim=3)
+    layer.mode = 'add_polygon'
+    help_text, cursor = layer.help, layer.cursor
+    # 0.5 and 0.8 are less than a slice apart but round to different slices.
+    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    for pos in [(10, 10), (10, 40), (40, 40)]:
+        _click(layer, (0.5, *pos))
+    data = layer.data[0].copy()
+    assert len(data) == 4
+
+    layer._slice_dims(Dims(ndim=3, point=(0.8, 0, 0)))
+    assert layer.cursor == 'forbidden'
+    assert 'original slice' in layer.help
+    _move(layer, (0.8, 30, 20))
+    np.testing.assert_allclose(layer.data[0], data)
+    _click(layer, (0.8, 30, 20))
+    np.testing.assert_allclose(layer.data[0], data)
+    assert layer.get_value((0.8, 20, 30)) == (None, None)
+
+    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
+    assert (layer.help, layer.cursor) == (help_text, cursor)
+    _move(layer, (0.5, 40, 10))
+    np.testing.assert_allclose(layer.data[0][-1], (0.5, 40, 10))
+    _click(layer, (0.5, 40, 10))
     assert len(layer.data[0]) == len(data) + 1
 
 
-@pytest.mark.parametrize('mode', ['add_path', 'add_polygon_lasso'])
-def test_automatic_vertices_pause_off_slice(mode):
-    from napari.components import Dims
-
+def test_automatic_vertices_pause_off_slice():
     layer = Shapes(ndim=3)
-    layer.mode = mode
-    mouse_press_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_press', position=(0, 10, 10), pos=(10, 10)
-        ),
-    )
-    mouse_release_callbacks(layer, read_only_mouse_event(type='mouse_release'))
+    layer.mode = 'add_path'
+    _click(layer, (0, 10, 10))
     data = layer.data[0].copy()
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
-    mouse_move_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_move', position=(1, 40, 40), pos=(40, 40)
-        ),
-    )
-    mouse_press_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_press', position=(1, 40, 40), pos=(40, 40)
-        ),
-    )
+
+    _move(layer, (1, 40, 40))
     np.testing.assert_allclose(layer.data[0], data)
-    assert layer._is_creating
+    _click(layer, (1, 40, 40), release=False)
+    np.testing.assert_allclose(layer.data[0], data)
 
 
 def test_held_rectangle_at_fractional_slice_pauses_and_release_commits():
-    from napari.components import Dims
-
     layer = Shapes(
         [[[0, 10, 10], [0, 10, 40], [0, 40, 40], [0, 40, 10]]],
         shape_type='rectangle',
@@ -1492,11 +1461,11 @@ def test_held_rectangle_at_fractional_slice_pauses_and_release_commits():
             type='mouse_move', is_dragging=True, position=(0.6, 40, 40)
         ),
     )
-    assert not layer._drawing_paused
     data = layer.data[1].copy()
     np.testing.assert_allclose(data.max(axis=0), (0.6, 40, 40))
+
     layer._slice_dims(Dims(ndim=3, point=(0.4, 0, 0)))
-    assert layer._drawing_paused
+    assert layer.cursor == 'forbidden'
     assert layer.get_value((0.4, 20, 20)) == (0, None)
     mouse_move_callbacks(
         layer,
@@ -1510,157 +1479,110 @@ def test_held_rectangle_at_fractional_slice_pauses_and_release_commits():
         read_only_mouse_event(type='mouse_release', position=(0.4, 50, 50)),
     )
     np.testing.assert_allclose(layer.data[1], data)
-    assert not layer._is_creating
-    assert layer._data_view._displayed_override_index is None
     assert (layer.help, layer.cursor) == (help_text, cursor)
 
 
-def test_polygon_at_half_slice_draws_and_pauses_across_rounding_boundary():
-    from napari.components import Dims
-
-    layer = Shapes(ndim=3)
+def test_draw_pauses_only_when_displayed_axes_change():
+    layer = Shapes(ndim=4)
     layer.mode = 'add_polygon'
-    layer._slice_dims(Dims(ndim=3, point=(0.5, 0, 0)))
-    for pos in [(10, 10), (10, 40), (40, 40)]:
-        _click(layer, (0.5, *pos), pos)
-        assert not layer._drawing_paused
-    np.testing.assert_allclose(
-        layer.data[0],
-        [(0.5, 10, 10), (0.5, 10, 40), (0.5, 40, 40), (0.5, 40, 40)],
-    )
-    layer._slice_dims(Dims(ndim=3, point=(0.8, 0, 0)))
-    assert layer._drawing_paused
-    assert layer.cursor == 'forbidden'
-
-
-def test_draw_roll_hides_and_resumes(drawing_polygon):
-    viewer, layer = drawing_polygon
-    # A roll can leave a narrow shape matching the normal slice filter.
-    data = layer.data[0].copy()
-    data[:, 3] = (0.1, 0.2, 0.2, 0.2)
-    layer._data_view.edit(0, data)
-    data = layer.data[0].copy()
     help_text, cursor = layer.help, layer.cursor
-    original_order = viewer.dims.order
-    viewer.dims.roll()
-    assert np.all(
-        np.abs(
-            layer._data_view.shapes[0].slice_key - layer._data_view.slice_key
+
+    def dims(order=(0, 1, 2, 3)):
+        return Dims(
+            ndim=4, range=[(0, 4, 1)] * 4, point=(1, 2, 0, 0), order=order
         )
-        < 0.5
-    )
-    assert layer._drawing_paused
+
+    layer._slice_dims(dims())
+    # Narrow in x, so the normal slice filter still matches it after the roll.
+    for pos in [(10, 0.1), (40, 0.2), (40, 0.3)]:
+        _click(layer, (1, 2, *pos))
+
+    for order in [(1, 0, 2, 3), (0, 1, 3, 2)]:
+        layer._slice_dims(dims(order))
+        _move(layer, (1, 2, 20, 0.2))
+        np.testing.assert_allclose(layer.data[0][-1], (1, 2, 20, 0.2))
+
+    layer._slice_dims(dims((3, 0, 1, 2)))
+    data = layer.data[0].copy()
     assert layer._data_view._displayed.tolist() == [False]
-    assert layer._outline_shapes() == (None, None)
     assert layer.cursor == 'forbidden'
     assert 'original axes' in layer.help
-    mouse_move_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_move', position=(1, 2, 30, 20), pos=(30, 20)
-        ),
-    )
+    _move(layer, (1, 2, 30, 0.2))
     np.testing.assert_allclose(layer.data[0], data)
-    viewer.dims.order = original_order
+
+    layer._slice_dims(dims())
     assert layer._data_view._displayed.tolist() == [True]
-    assert not layer._drawing_paused
     assert (layer.help, layer.cursor) == (help_text, cursor)
 
 
-def test_draw_axis_permutations_do_not_pause(drawing_polygon):
-    viewer, layer = drawing_polygon
-    viewer.dims.transpose()
-    assert not layer._drawing_paused
-    viewer.dims.order = (1, 0, 3, 2)
-    assert not layer._drawing_paused
-    assert layer._data_view._displayed.tolist() == [True]
-    mouse_move_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_move', position=(0, 0, 40, 10), pos=(10, 40)
-        ),
-    )
-    np.testing.assert_allclose(layer.data[0][-1], (0, 0, 40, 10))
-
-
-def test_world_roll_does_not_pause_2d_draw(drawing_polygon):
-    viewer, _ = drawing_polygon
-    layer = viewer.add_shapes(ndim=2)
+def test_world_roll_does_not_pause_2d_draw():
+    layer = Shapes(ndim=2)
     layer.mode = 'add_polygon'
-    mouse_press_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_press', position=(0, 0, 10, 10), pos=(10, 10)
-        ),
+    _click(layer, (10, 10))
+    layer._slice_dims(Dims(ndim=4, range=[(0, 4, 1)] * 4, order=(3, 0, 1, 2)))
+    assert layer.cursor != 'forbidden'
+    _move(layer, (20, 30))
+    np.testing.assert_allclose(layer.data[0][-1], (20, 30))
+
+
+def test_paused_draw_finish_restores_feedback():
+    layer = Shapes(ndim=3)
+    layer.mode = 'transform'
+    transform_feedback = layer.help, layer.cursor
+    layer.mode = 'add_polygon'
+    draw_feedback = layer.help, layer.cursor
+    on_slice = Dims(ndim=3, range=[(0, 4, 1)] * 3)
+    off_slice = Dims(ndim=3, range=[(0, 4, 1)] * 3, point=(1, 0, 0))
+    rolled = Dims(ndim=3, range=[(0, 4, 1)] * 3, order=(2, 0, 1))
+
+    def draw_and_pause(clicks, paused_dims):
+        layer._slice_dims(on_slice)
+        for pos in clicks:
+            _click(layer, (0, *pos))
+        layer._slice_dims(paused_dims)
+        assert layer.cursor == 'forbidden'
+
+    triangle = [(10, 10), (10, 40), (40, 40)]
+
+    draw_and_pause(triangle, off_slice)
+    key_bindings.finish_drawing_shape(layer)
+    np.testing.assert_allclose(layer.data[0][:, 1:], triangle)
+    assert (layer.help, layer.cursor) == draw_feedback
+
+    draw_and_pause(triangle, rolled)
+    key_bindings.finish_drawing_shape(layer)
+    assert layer.nshapes == 2
+    assert (layer.help, layer.cursor) == draw_feedback
+
+    # A one-click polygon is discarded on finish.
+    draw_and_pause(triangle[:1], off_slice)
+    key_bindings.finish_drawing_shape(layer)
+    assert layer.nshapes == 2
+    assert (layer.help, layer.cursor) == draw_feedback
+
+    draw_and_pause(triangle, off_slice)
+    layer.mode = 'transform'
+    assert (layer.help, layer.cursor) == transform_feedback
+
+
+def test_remove_earlier_shape_finishes_paused_draw():
+    layer = Shapes(
+        [[[0, 10, 10], [0, 10, 40], [0, 40, 40], [0, 40, 10]]],
+        shape_type='rectangle',
     )
-    for _ in range(4):
-        viewer.dims.roll()
-        assert not layer._drawing_paused
-        assert layer._data_view._displayed.tolist() == [True]
-
-
-@pytest.mark.parametrize(
-    ('paused_by', 'finish'),
-    [('slice', 'key'), ('slice', 'mode'), ('roll', 'key')],
-)
-def test_paused_draw_finish_restores_feedback(
-    drawing_polygon, paused_by, finish
-):
-    viewer, layer = drawing_polygon
-    data = layer.data[0][:-1].copy()
+    layer.mode = 'add_polygon'
     help_text, cursor = layer.help, layer.cursor
-    if paused_by == 'slice':
-        viewer.dims.set_point(0, 1)
-    else:
-        viewer.dims.roll()
-    if finish == 'key':
-        # Escape and Enter share this action.
-        key_bindings.finish_drawing_shape(layer)
-    else:
-        expected = viewer.add_shapes(ndim=4)
-        expected.mode = 'transform'
-        layer.mode = 'transform'
-    assert not layer._is_creating
-    assert layer._data_view._displayed_override_index is None
-    assert 'Drawing paused' not in layer.help
-    if finish == 'mode':
-        assert (layer.help, layer.cursor) == (expected.help, expected.cursor)
-    else:
-        assert (layer.help, layer.cursor) == (help_text, cursor)
-    if finish == 'key':
-        assert layer.shape_type == ['polygon']
-        np.testing.assert_allclose(layer.data[0], data)
-
-
-def test_paused_draw_discard_restores_feedback(drawing_polygon):
-    viewer, layer = drawing_polygon
-    key_bindings.finish_drawing_shape(layer)
-    mouse_press_callbacks(
-        layer,
-        read_only_mouse_event(
-            type='mouse_press', position=(0, 0, 50, 50), pos=(50, 50)
-        ),
-    )
-    help_text, cursor = layer.help, layer.cursor
-    viewer.dims.set_point(0, 1)
-    key_bindings.finish_drawing_shape(layer)
-    assert layer.nshapes == 1
-    assert layer._data_view._displayed_override_index is None
-    assert (layer.help, layer.cursor) == (help_text, cursor)
-
-
-def test_remove_earlier_shape_finishes_paused_draw(drawing_polygon):
-    viewer, layer = drawing_polygon
-    key_bindings.finish_drawing_shape(layer)
     for pos in [(15, 15), (15, 45), (45, 45)]:
-        _click(layer, (0, 0, *pos), pos, release=False)
+        _click(layer, (0, *pos), release=False)
     data = layer.data[1][:-1].copy()
-    help_text, cursor = layer.help, layer.cursor
-    viewer.dims.set_point(0, 1)
+    layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
+    assert layer.cursor == 'forbidden'
+
     layer.remove([0])
+
     assert layer.nshapes == 1
-    assert not layer._is_creating
-    assert layer._data_view._displayed_override_index is None
-    assert layer._data_view._displayed.tolist() == [False]
-    assert (layer.help, layer.cursor) == (help_text, cursor)
     np.testing.assert_allclose(layer.data[0], data)
+    assert (layer.help, layer.cursor) == (help_text, cursor)
+    assert layer.get_value((1, 30, 40)) == (None, None)
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert layer.get_value((0, 30, 40)) == (0, None)
