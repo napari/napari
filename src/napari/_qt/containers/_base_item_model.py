@@ -3,7 +3,12 @@ from __future__ import annotations
 from collections.abc import MutableSequence, Sequence, Sized
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
+from qtpy.QtCore import (
+    QAbstractItemModel,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+)
 
 from napari.utils.events import disconnect_events
 from napari.utils.events.containers import SelectableEventedList
@@ -16,6 +21,7 @@ if TYPE_CHECKING:
 
 _NULL_INDEX = QModelIndex()
 ItemType = TypeVar('ItemType')
+ModelIndex = QModelIndex | QPersistentModelIndex
 
 ItemRole = Qt.ItemDataRole.UserRole
 SortRole = Qt.ItemDataRole.UserRole + 1
@@ -85,12 +91,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         self.setRoot(root)
 
     @overload
-    def parent(self, child: QModelIndex) -> QModelIndex: ...
+    def parent(self, child: ModelIndex) -> QModelIndex: ...
     @overload
     def parent(self) -> QObject | None: ...
 
     def parent(
-        self, child: QModelIndex | None = None
+        self, child: ModelIndex | None = None
     ) -> QModelIndex | QObject | None:
         """Return the parent of the model item with the given ``index``.
 
@@ -102,7 +108,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         return QModelIndex()
 
     def data(
-        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+        self, index: ModelIndex, role: int = Qt.ItemDataRole.DisplayRole
     ) -> Any:
         """Returns data stored under `role` for the item at `index`.
 
@@ -122,7 +128,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return index.row()
         return None
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: ModelIndex) -> Qt.ItemFlag:
         """Returns the item flags for the given `index`.
 
         This describes the properties of a given item in the model.  We set
@@ -140,14 +146,14 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return _BASE_FLAGS | Qt.ItemFlag.ItemIsDropEnabled
         return _BASE_FLAGS | Qt.ItemFlag.ItemNeverHasChildren
 
-    def columnCount(self, parent: QModelIndex = _NULL_INDEX) -> int:
+    def columnCount(self, parent: ModelIndex = _NULL_INDEX) -> int:
         """Return the number of columns for the children of the given `parent`.
 
         In a list view, and most tree views, the number of columns is always 1.
         """
         return 1
 
-    def rowCount(self, parent: QModelIndex = _NULL_INDEX) -> int:
+    def rowCount(self, parent: ModelIndex = _NULL_INDEX) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number
@@ -159,7 +165,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         return 0
 
     def index(
-        self, row: int, column: int = 0, parent: QModelIndex | None = None
+        self, row: int, column: int = 0, parent: ModelIndex | None = None
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
 
@@ -286,7 +292,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         self.endMoveRows()
 
     def getItem(
-        self, index: QModelIndex
+        self, index: ModelIndex
     ) -> ItemType | SelectableEventedList[ItemType]:
         """Return python object for a given `QModelIndex`.
 
@@ -294,7 +300,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return self._root[index.row()] if index.isValid() else self._root
 
-    def getItemStrict(self, index: QModelIndex) -> ItemType:
+    def getItemStrict(self, index: ModelIndex) -> ItemType:
         """Return python object for a given `QModelIndex`.
 
         An invalid `QModelIndex` will raise an IndexError.
