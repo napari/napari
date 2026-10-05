@@ -721,7 +721,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     Parameters
     ----------
     colormap : ValidColormapArg
-        See ValidColormapArg for supported input types.
+        See ValidColormapArg for supported input types. If None, the default
+        ``gray`` colormap is returned.
 
     Returns
     -------
