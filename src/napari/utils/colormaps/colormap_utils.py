@@ -744,7 +744,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         or valid inputs to the Colormap constructor.
     """
     with AVAILABLE_COLORMAPS_LOCK:
-        if isinstance(colormap, str):
+        if colormap is None:
+            name = 'gray'
+        elif isinstance(colormap, str):
             # when black given as end color, want reversed grayscale colormap
             # from white to black, named gray_r
             if colormap.startswith('#000000') or colormap.lower() == 'black':

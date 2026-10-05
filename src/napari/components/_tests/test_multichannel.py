@@ -275,3 +275,11 @@ def test_multichannel_colormap_sequence_of_none(colormap):
     assert [layer.colormap.name for layer in result] == [
         layer.colormap.name for layer in expected
     ]
+
+
+def test_multichannel_colormap_none_and_name():
+    """A None entry in a colormap list falls back to gray instead of black."""
+    data = np.random.random((2, 15, 15))
+    viewer = ViewerModel()
+    layers = viewer.add_image(data, channel_axis=0, colormap=[None, 'red'])
+    assert [layer.colormap.name for layer in layers] == ['gray', 'red']
