@@ -63,9 +63,9 @@ class ExperimentalSettings(EventedSettings):
         10,
         title='Minimum distance threshold of shapes lasso and path tool',
         description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-        'or path.',
-        gt=0,
-        lt=50,
+        ' or path.',
+        ge=1,
+        le=49,
     )
 
     completion_radius: int = Field(
