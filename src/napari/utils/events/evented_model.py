@@ -428,7 +428,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                     setattr(self, key, value)
 
         if block.count:
-            self.events(Event(self))  # pyrefly: ignore[bad-argument-type]
+            self.events(Event(value=self, type_name='update'))
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
