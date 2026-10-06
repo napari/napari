@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QPointF, Qt
-from qtpy.QtGui import QFont, QFontMetricsF, QImage, QPainter
+from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication, QImage, QPainter
 from vispy.gloo import TextureAtlas
 from vispy.io import load_spatial_filters
 from vispy.visuals.text.text import SDFRendererCPU
@@ -24,6 +24,21 @@ if TYPE_CHECKING:
 
 # point size glyphs are rendered at before being scaled down to the text size
 SDF_FONT_SIZE = 256
+
+
+def make_qfont(
+    face: str, size: int, bold: bool = False, italic: bool = False
+) -> QFont:
+    """Make a QFont resolved against the application font.
+
+    QPainter inherits unset attributes (e.g. the app's tabular numerals) from
+    the application font, but QFontMetricsF does not. Resolving them here
+    makes text be measured with the same font it is drawn with.
+    """
+    qfont = QFont(face, size)
+    qfont.setBold(bold)
+    qfont.setItalic(italic)
+    return qfont.resolve(QGuiApplication.font())
 
 
 def _load_glyph_qt(
@@ -173,9 +188,12 @@ class QtTextureFont:
         self._glyphs: dict[str, dict[str, Any]] = {}
 
         # Create and cache Qt font and metrics objects
-        self._qfont = QFont(self._font['face'], self._font['size'])
-        self._qfont.setBold(self._font.get('bold', False))
-        self._qfont.setItalic(self._font.get('italic', False))
+        self._qfont = make_qfont(
+            self._font['face'],
+            self._font['size'],
+            bold=self._font.get('bold', False),
+            italic=self._font.get('italic', False),
+        )
         self._metrics = QFontMetricsF(self._qfont)
 
     @property

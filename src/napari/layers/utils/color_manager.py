@@ -583,7 +583,7 @@ class ColorManager(EventedModel):
                 'colormap': categorical_colormap,
             }
 
-        color_kwargs = {
+        color_kwargs: dict[str, Any] = {
             'categorical_colormap': categorical_colormap,
             'continuous_colormap': continuous_colormap,
             'contrast_limits': contrast_limits,
