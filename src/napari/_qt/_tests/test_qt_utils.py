@@ -230,12 +230,17 @@ def test_use_tabular_numerals(qtbot: QtBot) -> None:
     not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
 )
 def test_use_tabular_numerals_keeps_class_fonts(qapp) -> None:
-    class_font = QFont('Courier', 21)
-    QApplication.setFont(class_font, 'NapariTestWidget')
-    app_font = QFont(qapp.font())
+    class_name = 'QMdiSubWindowTitleBar'
+    saved_class_font = QApplication.font(class_name)
+    saved_app_font = QFont(qapp.font())
+    QApplication.setFont(QFont('Courier', 21), class_name)
     try:
         use_tabular_numerals(qapp)
 
-        assert QApplication.font('NapariTestWidget') == class_font
+        class_font = QApplication.font(class_name)
+        assert class_font.family() == 'Courier'
+        assert class_font.pointSize() == 21
+        assert class_font.isFeatureSet(QFont.Tag('tnum'))
     finally:
-        QGuiApplication.setFont(app_font)
+        QGuiApplication.setFont(saved_app_font)
+        QApplication.setFont(saved_class_font, class_name)
