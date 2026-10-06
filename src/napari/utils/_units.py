@@ -69,8 +69,10 @@ def compute_nice_ticks(
         return best_ticks
 
     # Decimal needed for small values float imprecision
-    minv = Decimal(min_value)
-    maxv = Decimal(max_value)
+    # we need to convert to str first, otherwise Decimal just takes the
+    # literal float value, imprecision and all
+    minv = Decimal(str(min_value))
+    maxv = Decimal(str(max_value))
 
     span = maxv - minv
     ideal_step = span / (target_ticks - 1)
