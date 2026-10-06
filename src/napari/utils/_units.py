@@ -52,13 +52,12 @@ def _generate_ticks(
 ) -> np.ndarray:
     step = base * Decimal(10) ** exp
 
-    # ensure we never go past min and max
-    # inore typing because mypy is not happy with numpy and Decimal
-    tick_min = np.ceil(min_value / step) * step  # type: ignore
-    tick_max = np.floor(max_value / step) * step  # type: ignore
+    # inore typing because checkers are not happy with numpy and Decimal
+    tick_min = np.ceil(min_value / step) * step  # pyrefly: ignore [no-matching-overload]
+    tick_max = np.floor(max_value / step) * step  # pyrefly: ignore [no-matching-overload]
 
     # actually generate ticks with the given step
-    return np.arange(tick_min, tick_max + step, step).astype(float)  # type: ignore
+    return np.arange(tick_min, tick_max + step, step).astype(float)  # pyrefly: ignore [no-matching-overload]
 
 
 def compute_nice_ticks(
@@ -76,8 +75,8 @@ def compute_nice_ticks(
     span = maxv - minv
     ideal_step = span / (target_ticks - 1)
 
-    # inore typing because mypy is not happy with numpy and Decimal
-    ideal_exponent = int(np.floor(np.log10(ideal_step)))  # type: ignore
+    # inore typing because checkers are not happy with numpy and Decimal
+    ideal_exponent = int(np.floor(np.log10(ideal_step)))  # pyrefly: ignore [no-matching-overload]
     exp_candidates = range(ideal_exponent - 1, ideal_exponent + 1)
 
     for exp in exp_candidates:
