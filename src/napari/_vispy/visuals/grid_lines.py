@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import floor, log
 from typing import TYPE_CHECKING, Any
 
 from vispy.scene import MatrixTransform, STTransform
@@ -203,6 +204,10 @@ class GridLines3D(Node):
             compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
             for r in ranges
         ]
+        interval_magnitudes = [
+            floor(log((r.stop - r.start) / len(tick_positions), 10))
+            for r in ranges
+        ]
 
         ndim = len(ranges)
         for axis in range(ndim):
@@ -220,7 +225,8 @@ class GridLines3D(Node):
                 else:
                     tick = tick_visuals[i]
 
-                tick.text = f'{val:.3g}'
+                decimals = max(0, -interval_magnitudes[axis])
+                tick.text = f'{val:.{decimals}f}'
                 tick.pos = (val, ranges[next_axis].start, 0)
                 tick.color = self.color
                 tick.opacity = self._opacity
