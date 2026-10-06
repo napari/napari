@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor, QFont
-from qtpy.QtWidgets import QColorDialog, QLabel, QMainWindow
+from qtpy.QtGui import QColor, QFont, QGuiApplication
+from qtpy.QtWidgets import QApplication, QColorDialog, QLabel, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
@@ -224,3 +224,18 @@ def test_use_tabular_numerals(qtbot: QtBot) -> None:
 
     assert label.font().isFeatureSet(QFont.Tag('tnum'))
     assert label.font().family() == family
+
+
+@pytest.mark.skipif(
+    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
+)
+def test_use_tabular_numerals_keeps_class_fonts(qapp) -> None:
+    class_font = QFont('Courier', 21)
+    QApplication.setFont(class_font, 'NapariTestWidget')
+    app_font = QFont(qapp.font())
+    try:
+        use_tabular_numerals(qapp)
+
+        assert QApplication.font('NapariTestWidget') == class_font
+    finally:
+        QGuiApplication.setFont(app_font)

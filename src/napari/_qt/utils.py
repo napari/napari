@@ -25,6 +25,7 @@ from qtpy.QtGui import (
     QCursor,
     QDrag,
     QFont,
+    QGuiApplication,
     QImage,
     QPainter,
     QPixmap,
@@ -50,7 +51,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QGuiApplication
 
 
 class ColorMode(StringEnum):
@@ -450,7 +450,12 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
 
     font = QFont(obj.font())
     font.setFeature(tag('tnum'), 1)
-    obj.setFont(font)
+    if isinstance(obj, QGuiApplication):
+        # QApplication.setFont also clears the per-class fonts, e.g. the
+        # platform's smaller tooltip and header fonts on macOS.
+        QGuiApplication.setFont(font)
+    else:
+        obj.setFont(font)
     return True
 
 
