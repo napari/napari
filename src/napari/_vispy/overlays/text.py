@@ -139,6 +139,12 @@ class VispyTextOverlay(_VispyViewerTextOverlay):
 
 
 class VispyLayerNameOverlay(_VispyLayerTextOverlay):
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        # bold, like the layer names in the layer list
+        self.node.bold = True
+        self._on_position_change()
+
     def _connect_events(self):
         self.layer.events.name.connect(self._on_text_change)
 
