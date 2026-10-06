@@ -229,8 +229,10 @@ class QContrastLimitsPopup(QtPopup):
 
         if visible:
             self.histogram_content._schedule_histogram_compute()
-            h = self.histogram_content.sizeHint().height()
             self.histogram_content.show()
+            # process events to ensure the size hint is up to date
+            QApplication.processEvents()
+            h = self.histogram_content.sizeHint().height()
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
