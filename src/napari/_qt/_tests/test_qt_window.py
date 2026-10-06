@@ -13,6 +13,9 @@ from napari._qt.qt_main_window import (
     _shutdown_open_windows,
 )
 from napari._qt.utils import QImg2array
+from napari._qt.widgets.qt_viewer_status_bar import (
+    _EXPERIMENTAL_FEATURES_TO_WARN,
+)
 from napari._tests.utils import skip_on_win_ci
 from napari.utils.theme import (
     _themes,
@@ -179,6 +182,10 @@ def test_set_status_and_tooltip(make_napari_viewer):
     viewer.window._qt_window.set_status_and_tooltip(None)
     assert viewer.status == 'Text1'
     assert viewer.tooltip.text == 'Text2'
+
+    bar = viewer.window._qt_window.statusBar()
+    for name in _EXPERIMENTAL_FEATURES_TO_WARN:
+        assert name in bar._warn_labels
 
 
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
