@@ -65,7 +65,25 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = [self.viewer.dims.range[i] for i in displayed]
         axis_labels = [self.viewer.dims.axis_labels[i] for i in displayed]
-        return ranges, axis_labels
+
+        if self.viewer.layers.units is not None:
+            # see https://pint.readthedocs.io/en/stable/user/formatting.html
+            units = [
+                f' ({self.viewer.layers.units[i]:~#P})' for i in displayed
+            ]
+        else:
+            units = ['' for _ in displayed]
+
+        axis_labels_with_units = [
+            f'{lab}{unit}'
+            for lab, unit in zip(axis_labels, units, strict=True)
+        ]
+        return ranges, axis_labels_with_units
+
+    def _on_unit_change(self):
+        # NOTE: this is also called by VispyCanvas when layer units are updated
+        #       so it doesn't need to be connected to events for that
+        self._on_axis_labels_change()
 
     def _on_axis_labels_change(self) -> None:
         ranges, axis_labels = self._get_ranges_and_axis_labels()
