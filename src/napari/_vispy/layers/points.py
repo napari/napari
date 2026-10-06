@@ -103,8 +103,13 @@ class VispyPointsLayer(VispyBaseLayer):
     def _on_highlight_change(self):
         settings = get_settings()
 
+        hovered = (
+            {self.layer._hovered_index}
+            if self.layer._hovered_index is not None
+            else set()
+        )
         highlighted = np.fromiter(
-            self.layer.selected_data | set(self.layer._highlight_index),
+            self.layer.selected_data | hovered,
             dtype=int,
         )
         if len(highlighted) > 0:

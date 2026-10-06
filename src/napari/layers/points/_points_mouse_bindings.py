@@ -61,8 +61,8 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
         world=True,
     )
 
-    old_selection = set(layer.selected_data)
     new_selection = None
+    single_pick = False
     if value is not None:
         # if modifying selection add / remove any from existing selection
         if modify_selection:
@@ -73,6 +73,7 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
             # the current selection can be dragged together.
             if value not in layer.selected_data:
                 new_selection = {value}
+                single_pick = True
     elif not modify_selection:
         new_selection = {}
 
@@ -84,10 +85,17 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
             layer.selected_data = new_selection
         return
 
+    # special case when we click and drag a single point and it's newly selected
+    # we ALWAYS want to make it instantly draggable, regardless of what the
+    # selection was beforehand
+    if single_pick:
+        assert new_selection is not None
+        layer.selected_data = new_selection
+
     # the following code only happens on *drag*
 
     # only move points if clicking on a selected point and if we're not modifying
-    if value in old_selection and not modify_selection:
+    if value in layer.selected_data and not modify_selection:
         yield from _move_selection(layer, event, start_pos_world)
     else:
         yield from _select_with_rectangle(
@@ -324,10 +332,7 @@ def highlight(layer: Points, event: Event) -> None:
             dims_displayed=event.dims_displayed,
             world=True,
         )
-        if value is None:
-            layer._highlight_index = []
-        else:
-            layer._highlight_index = [value]
+        layer._hovered_index = value
         layer.events.highlight()
 
 

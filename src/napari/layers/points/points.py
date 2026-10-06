@@ -417,7 +417,7 @@ class Points(Layer):
         self._selected_data_stored = set()
         self._selected_data_history = set()
         self._selected_data: Selection[int] = Selection()
-        self._highlight_index = []
+        self._hovered_index: int | None = None
 
         self._mode = Mode.PAN_ZOOM
         self._status = self.mode
@@ -545,7 +545,6 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self.refresh(extent=False)
-        self._slicing_state.slice_done.connect(self._refresh_highlight)
 
         from napari.components.overlays import ColorBarOverlay
 
@@ -663,13 +662,6 @@ class Points(Layer):
 
         self._update_dims()
         self._reset_editable()
-
-    def _on_selection(self, selected: bool) -> None:
-        if selected:
-            self._set_highlight()
-        else:
-            self._highlight_index = []
-            self.events.highlight()
 
     @property
     def features(self) -> pd.DataFrame:
@@ -1384,45 +1376,47 @@ class Points(Layer):
         self._selected_data.replace_selection(selected_data)
 
         # Update properties based on selected points
-        if not len(self._selected_data):
-            self._set_highlight()
-            return
-        index = list(self._selected_data)
-        with self.block_update_properties():
-            if (
-                unique_border_color := _unique_element(
-                    self.border_color[index]
-                )
-            ) is not None:
-                self.current_border_color = unique_border_color
+        if len(self._selected_data):
+            index = list(self._selected_data)
+            with self.block_update_properties():
+                if (
+                    unique_border_color := _unique_element(
+                        self.border_color[index]
+                    )
+                ) is not None:
+                    self.current_border_color = unique_border_color
 
-            if (
-                unique_face_color := _unique_element(self.face_color[index])
-            ) is not None:
-                self.current_face_color = unique_face_color
+                if (
+                    unique_face_color := _unique_element(
+                        self.face_color[index]
+                    )
+                ) is not None:
+                    self.current_face_color = unique_face_color
 
-            if (unique_size := _unique_element(self.size[index])) is not None:
-                self.current_size = unique_size
+                if (
+                    unique_size := _unique_element(self.size[index])
+                ) is not None:
+                    self.current_size = unique_size
 
-            if (
-                unique_border_width := _unique_element(
-                    self.border_width[index]
-                )
-            ) is not None:
-                self.current_border_width = unique_border_width
-            if (
-                unique_symbol := _unique_element(self.symbol[index])
-            ) is not None:
-                self.current_symbol = unique_symbol
+                if (
+                    unique_border_width := _unique_element(
+                        self.border_width[index]
+                    )
+                ) is not None:
+                    self.current_border_width = unique_border_width
+                if (
+                    unique_symbol := _unique_element(self.symbol[index])
+                ) is not None:
+                    self.current_symbol = unique_symbol
 
-            unique_properties = {}
-            for k, v in self.properties.items():
-                unique_properties[k] = _unique_element(v[index])
+                unique_properties = {}
+                for k, v in self.properties.items():
+                    unique_properties[k] = _unique_element(v[index])
 
-            if all(p is not None for p in unique_properties.values()):
-                self.current_properties = unique_properties
+                if all(p is not None for p in unique_properties.values()):
+                    self.current_properties = unique_properties
 
-        self._set_highlight()
+        self.events.highlight()
 
     @Layer.mode.getter
     def mode(self) -> str:
@@ -1450,7 +1444,7 @@ class Points(Layer):
         elif mode != Mode.SELECT or self._mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self._set_highlight()
+        self.events.highlight()
         return mode
 
     @property
@@ -1611,7 +1605,8 @@ class Points(Layer):
             scale_factor, corner_pixels_displayed, shape_threshold
         )
         # update highlight only if scale has changed, otherwise causes a cycle
-        self._set_highlight(force=(prev_scale != self.scale_factor))
+        if prev_scale != self.scale_factor:
+            self.events.highlight()
 
     def _get_value_(
         self,
@@ -1910,7 +1905,6 @@ class Points(Layer):
                     indices_removed = np.array(indices) < self._value
                     offset = np.sum(indices_removed)
                     self._value -= offset
-                    self._value_stored -= offset
 
             self._set_data(np.delete(self.data, indices, axis=0))
 
@@ -2280,10 +2274,6 @@ class Points(Layer):
     def _set_view_slice(self):
         raise NotImplementedError
 
-    def _refresh_highlight(self):
-        with self.events.highlight.blocker():
-            self._set_highlight(force=True)
-
 
 class _PointsSlicingState(_LayerSlicingState):
     layer: Points
@@ -2330,7 +2320,3 @@ class _PointsSlicingState(_LayerSlicingState):
         self._slice_input = response.slice_input
         self._view_indices = response.indices
         self._view_size = response.size
-
-        # WARNING This `with` will be removed in future
-        with self.layer.events.highlight.blocker():
-            self.layer._set_highlight(force=True)
