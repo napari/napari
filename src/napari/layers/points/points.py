@@ -1797,6 +1797,11 @@ class Points(Layer):
         )
         return start_point, end_point
 
+    def _set_highlight(self, force: bool = False) -> None:
+        # we must keep this stub here because `Layer` uses it via its refresh
+        # mechanism. Once `shapes` is also updated, we might be able to fully remove this.
+        self.events.highlight()
+
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
