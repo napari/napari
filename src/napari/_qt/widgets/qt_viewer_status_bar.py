@@ -11,10 +11,16 @@ from superqt import QElidingLabel
 from napari import __version__
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
 from napari._qt.utils import use_tabular_numerals
+from napari.settings import get_settings
 from napari.utils.misc import _check_for_updates
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
+
+_EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
+    'async_': 'A',
+    'dynamic_layer_controls': 'D',
+}
 
 
 class CheckUpdateIcon(QLabel):
@@ -95,15 +101,37 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
+        self._warn_labels = {}
+        self.update_warning_icons()
+        get_settings().experimental.events.connect(self.update_warning_icons)
+
         # check for updates in a thread so it doesn't block the gui
         from napari.qt import thread_worker
 
         thread_worker(
             lambda: _check_for_updates('napari'),
-            connect={'returned': self._show_update_version},
+            connect={'returned': self.show_update_version},
         )()
 
-    def _show_update_version(self, upcoming):
+    def update_warning_icons(self) -> None:
+        exp_settings = get_settings().experimental
+        for setting_id, letter in _EXPERIMENTAL_FEATURES_TO_WARN.items():
+            if setting_id not in self._warn_labels:
+                label = QLabel(letter)
+                self._warn_labels[setting_id] = label
+                self.addPermanentWidget(label)
+                field = exp_settings.__class__.model_fields[setting_id]
+                label.setToolTip(
+                    f'The experimental feature "{field.title}" is enabled.\n'
+                    f'{field.description}'
+                )
+                # TODO: add click to open settings
+            else:
+                label = self._warn_labels[setting_id]
+
+            label.setVisible(getattr(exp_settings, setting_id))
+
+    def show_update_version(self, upcoming):
         if upcoming:
             self.addPermanentWidget(CheckUpdateIcon(upcoming))
 
