@@ -609,7 +609,8 @@ def test_active_layer_status_update():
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
     viewer.mouse_over_canvas = True
-    viewer.cursor.position = [1, 1, 1, 1, 1]
+    viewer.cursor.position = (1, 1, 1, 1, 1)
+    viewer.cursor._canvas_position = (1, 1)
     assert viewer._calc_status_from_cursor()[
         0
     ] == viewer.layers.selection.active.get_status(
