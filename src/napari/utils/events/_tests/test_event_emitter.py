@@ -849,11 +849,6 @@ def test_dependent_warning_emitter():
         def aa(self):
             return self.a.a + self.b.a
 
-        @aa.setter
-        def aa(self, value):
-            self.a.a = value / 2
-            self.b.a = value / 2
-
     b = B()
 
     assert b.aa == 2
@@ -861,8 +856,10 @@ def test_dependent_warning_emitter():
     assert b.aa == 3
 
     mock = Mock()
+    assert not b.a.events.a.callbacks
     with pytest.warns(FutureWarning, match='aa is deprecated'):
         b.events.aa.connect(mock)
+    assert b.a.events.a.callbacks
     b.a.a = 3
     assert mock.call_args.args[0].value == 4
     mock.assert_called_once()
@@ -876,3 +873,5 @@ def test_dependent_warning_emitter():
 
     b.a.a = 3
     assert mock.call_count == 4
+    b.events.aa.disconnect(mock)
+    assert not b.a.events.a.callbacks
