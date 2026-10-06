@@ -72,7 +72,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def __init__(
         self,
-        qt_viewer,
+        qt_viewer: 'QtViewer',
         widget: Union[QWidget, 'Widget'],
         *,
         name: str = '',
@@ -188,9 +188,8 @@ class QtViewerDockWidget(QDockWidget):
         qt_viewer = self._ref_qt_viewer()
         if qt_viewer is None:
             return
-        viewer = qt_viewer.viewer
-        if isinstance(viewer, Viewer):
-            viewer.window.remove_dock_widget(self)
+        if isinstance(qt_viewer.viewer, Viewer):
+            qt_viewer.viewer.window.remove_dock_widget(self)
 
     def _maybe_add_vertical_stretch(self, widget):
         """Add vertical stretch to the bottom of a vertical layout only
