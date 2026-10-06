@@ -11,7 +11,7 @@ from napari.utils.events import (
     RenamedWarningEmitter,
     WarningEmitter,
 )
-from napari.utils.events.event import DependentEmitter
+from napari.utils.events.event import DependentEmitter, DependentWarningEmitter
 
 
 def test_event_blocker_count_none():
@@ -384,7 +384,7 @@ def test_renamed_emitter_simple():
             self.new_event = EventEmitter(type_name='new_event')
             self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                source_path='new_event',
+                new_path='new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -423,7 +423,7 @@ def test_renamed_emitter_composite():
         def __init__(self, parent):
             self.old_event = RenamedWarningEmitter(
                 type_name='old_event',
-                source_path='composite.new_event',
+                new_path='composite.new_event',
                 source=parent,
                 message='Warning message',
             )
@@ -500,7 +500,7 @@ def test_renamed_emitter_reconnects_nested_objects():
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='branch.leaf.value',
+        new_path='branch.leaf.value',
         message='renamed',
     )
     callback = Mock()
@@ -570,7 +570,7 @@ def test_renamed_emitter_missing_replacement_event(writable):
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='child.value',
+        new_path='child.value',
         message='renamed',
     )
     callback = Mock()
@@ -614,7 +614,7 @@ def test_renamed_emitter_reconnects_property():
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='child.value',
+        new_path='child.value',
         message='renamed',
     )
     callback = Mock()
@@ -628,6 +628,13 @@ def test_renamed_emitter_reconnects_property():
     callback.reset_mock()
     root.child.events.value(value=2)
     callback.assert_called_once()
+    callback.reset_mock()
+    # check if the trigger of event without real replacement event is still working
+    root.events.child(value=root.child)
+    root.child.value = 4
+    callback.assert_called_once()
+
+    # check if disconnect works properly
     alias.disconnect(callback)
     assert not root.events.child.callbacks
     assert not root.child.events.value.callbacks
@@ -676,7 +683,7 @@ def test_renamed_emitter_reconnects_across_event_interfaces(
     alias = RenamedWarningEmitter(
         source=root,
         type_name='old_value',
-        source_path='branch.leaf.value',
+        new_path='branch.leaf.value',
         message='renamed',
     )
     callback = Mock()
@@ -793,3 +800,85 @@ def test_dependant_emitter():
         mock.call_count == 6
     )  # double emission because of two events being set
     assert mock.call_args.args[0].value == 10
+
+
+def test_dependent_warning_emitter():
+    class A:
+        def __init__(self):
+            self.events = EmitterGroup(source=self, a=None)
+            self._a = 1
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+    class B:
+        def __init__(self):
+            self.events = EmitterGroup(
+                source=self,
+                a=None,
+                b=None,
+                aa=DependentWarningEmitter(
+                    sources_list=['a.a', 'b.a'],
+                    property_name='aa',
+                    type_name='aa',
+                    message='aa is deprecated',
+                    category=FutureWarning,
+                ),
+            )
+            self._a = A()
+            self._b = A()
+
+        @property
+        def a(self):
+            return self._a
+
+        @a.setter
+        def a(self, value):
+            self._a = value
+            self.events.a(value=value)
+
+        @property
+        def b(self):
+            return self._b
+
+        @b.setter
+        def b(self, value):  # pragma: no cover
+            self._b = value
+            self.events.b(value=value)
+
+        @property
+        def aa(self):
+            return self.a.a + self.b.a
+
+    b = B()
+
+    assert b.aa == 2
+    b.a.a = 2
+    assert b.aa == 3
+
+    mock = Mock()
+    assert not b.a.events.a.callbacks
+    with pytest.warns(FutureWarning, match='aa is deprecated'):
+        b.events.aa.connect(mock)
+    assert b.a.events.a.callbacks
+    b.a.a = 3
+    assert mock.call_args.args[0].value == 4
+    mock.assert_called_once()
+    b.b.a = 2
+    assert mock.call_count == 2
+    assert mock.call_args.args[0].value == 5
+
+    b.a = A()
+    assert mock.call_count == 3
+    assert mock.call_args.args[0].value == 3
+
+    b.a.a = 3
+    assert mock.call_count == 4
+    b.events.aa.disconnect(mock)
+    assert not b.a.events.a.callbacks
