@@ -332,8 +332,9 @@ def highlight(layer: Points, event: Event) -> None:
             dims_displayed=event.dims_displayed,
             world=True,
         )
-        layer._hovered_index = value
-        layer.events.highlight()
+        if value != layer._hovered_index:
+            layer._hovered_index = value
+            layer.events.highlight()
 
 
 _T = TypeVar('_T')

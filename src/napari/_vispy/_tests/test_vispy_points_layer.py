@@ -168,7 +168,7 @@ def test_highlight_with_rescale_projection():
     vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
 
     # Select point 0 BEFORE slicing so update_selected_view populates
-    # _selected_view and _set_highlight populates _highlight_index.
+    # _selected_view and highlights
     layer.selected_data = {0}
     layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
     layer._slice_dims(
@@ -184,7 +184,7 @@ def test_highlight_with_rescale_projection():
     # all 5 points in view, scale is a per-point array, only 1 highlighted
     assert len(layer._view_indices) == 5
     assert isinstance(layer._view_size, np.ndarray)
-    assert len(layer._highlight_index) == 1
+    assert layer._hovered_index is not None
 
     # Previously, raised ValueError: could not broadcast input array from shape (5,) into shape (1,)
     vispy_layer._on_highlight_change()
