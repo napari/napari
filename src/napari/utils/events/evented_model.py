@@ -17,6 +17,7 @@ from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events._property_dependencies import property_dependencies
 from napari.utils.events.event import (
     DependentEmitter,
+    DependentWarningEmitter,
     EmitterGroup,
     Event,
     EventEmitter,
@@ -651,14 +652,14 @@ def _property_to_event_emitter(
         return RenamedWarningEmitter(
             message=prop.event_message,
             category=prop.category,
-            source_path=prop.new_name,
+            new_path=prop.new_name,
             type_name=type_name,
         )
 
     non_direct = [d for d in dependencies if '.' in d]
     if non_direct:
         if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
-            return DependentEmitter(
+            return DependentWarningEmitter(
                 type_name=type_name,
                 property_name=type_name,
                 sources_list=non_direct,
