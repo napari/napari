@@ -628,6 +628,13 @@ def test_renamed_emitter_reconnects_property():
     callback.reset_mock()
     root.child.events.value(value=2)
     callback.assert_called_once()
+    callback.reset_mock()
+    # check if the trigger of event without real replacement event is still working
+    root.events.child(value=root.child)
+    root.child.value = 4
+    callback.assert_called_once()
+
+    # check if disconnect works properly
     alias.disconnect(callback)
     assert not root.events.child.callbacks
     assert not root.child.events.value.callbacks
