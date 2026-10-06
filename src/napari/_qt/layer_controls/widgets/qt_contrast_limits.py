@@ -238,8 +238,11 @@ class QContrastLimitsPopup(QtPopup):
             return
 
         self._layer.histogram.enabled = enabled
+        # no need to start/stop the worker here, cause this histogram
+        # is linked to the main controls and uses the outputs from that,
+        # saved in layer.metadata
         if enabled:
-            self.histogram_content._schedule_histogram_compute()
+            self.histogram_content._ensure_histogram_content()
             self.histogram_content.show()
             # process events to ensure the size hint is up to date
             QApplication.processEvents()
@@ -250,7 +253,6 @@ class QContrastLimitsPopup(QtPopup):
         else:
             self.histogram_content.hide()
             self.setFixedHeight(self._base_height())
-            self.histogram_content._abort_histogram_worker()
 
 
 class AutoScaleButtons(QWidget):
