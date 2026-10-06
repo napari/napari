@@ -106,12 +106,13 @@ class ViewerStatusBar(QStatusBar):
         get_settings().experimental.events.connect(self.update_warning_icons)
 
         # check for updates in a thread so it doesn't block the gui
-        from napari.qt import thread_worker
+        from napari.qt import create_worker
 
-        thread_worker(
+        worker = create_worker(
             lambda: _check_for_updates('napari'),
-            connect={'returned': self.show_update_version},
-        )()
+        )
+        worker.returned.connect(self.show_update_version)
+        worker.start()
 
     def update_warning_icons(self) -> None:
         exp_settings = get_settings().experimental
