@@ -54,6 +54,7 @@ jobs:
         platform: [ubuntu-latest, windows-latest]
         python: ["3.11", "3.12", "3.13", "3.14"]
         backend: [pyqt6]
+        exclude: [{platform: ubuntu-latest, python: "3.14"}] # testing_extra cover this case
         include:
           - python: "3.11"
             platform: macos-15
