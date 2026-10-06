@@ -79,7 +79,7 @@ def compute_nice_ticks(
 
     # inore typing because checkers are not happy with numpy and Decimal
     ideal_exponent = int(np.floor(np.log10(ideal_step)))  # pyrefly: ignore [no-matching-overload]
-    exp_candidates = range(ideal_exponent - 1, ideal_exponent + 1)
+    exp_candidates = range(ideal_exponent - 1, ideal_exponent + 2)
 
     for exp in exp_candidates:
         for base in PREFERRED_TICK_VALUES:
