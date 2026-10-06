@@ -62,14 +62,14 @@ class LazyZScrollSuite(_ZScroll):
 
 
 class LazyZScrollRevisitSuite(_ZScroll):
-    """Step back through z planes that were already loaded."""
+    """Step through the same z planes again, after they were loaded once."""
 
     def setup(self, latency, backend):
         super().setup(latency, backend)
-        self._scroll(range(1, 8))
+        self._scroll([*range(1, 8), 0])
 
     def time_revisit(self, latency, backend):
-        self._scroll(range(6, 0, -1))
+        self._scroll(range(1, 8))
 
     time_revisit.number = 1
     time_revisit.warmup_time = 0
