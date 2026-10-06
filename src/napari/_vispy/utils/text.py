@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import QRectF, Qt
-from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication
+from qtpy.QtGui import QFontMetricsF, QGuiApplication
 
+from napari._vispy.utils.qt_font import make_qfont
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
 
@@ -109,10 +110,7 @@ def _get_qt_font_metrics(
     QFontMetricsF
         Qt font metrics object.
     """
-    qfont = QFont(face, size)
-    qfont.setBold(bold)
-    qfont.setItalic(italic)
-    return QFontMetricsF(qfont)
+    return QFontMetricsF(make_qfont(face, size, bold=bold, italic=italic))
 
 
 def get_text_metrics(text: Text) -> QFontMetricsF:
