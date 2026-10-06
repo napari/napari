@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -158,7 +158,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         opposite = np.clip(opposite, 0, 1)
         # don't change alpha
         opposite[-1] = bgcolor[-1]
-        return opposite
+        # numpy keeps the ColorValue subclass at runtime, but its stubs don't
+        return cast(ColorValue, opposite)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -191,9 +192,8 @@ class VispySceneOverlay(VispyBaseOverlay):
         self.node.transform = MatrixTransform()
 
 
-class LayerOverlayMixin:
+class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
-    overlay: Overlay
 
     def __init__(self, *, layer: Layer, **kwargs) -> None:
         self.layer = layer
