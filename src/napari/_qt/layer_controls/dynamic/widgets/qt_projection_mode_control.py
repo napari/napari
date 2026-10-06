@@ -89,6 +89,10 @@ class QtProjectionModeControl(QtWidgetControlsBase):
 
     def _change_is_thick(self, is_thick: bool) -> None:
         super()._change_is_thick(is_thick)
+        if all(layer._type_string == 'points' for layer in self._layers):
+            # points are special, the projection mode has effects even
+            # when slice thickness is 0
+            return
         self.projection_combobox_label.setVisible(is_thick)
         self.projection_combobox.setVisible(is_thick)
 
