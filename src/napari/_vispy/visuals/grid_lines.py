@@ -231,6 +231,7 @@ class GridLines3D(Node):
                 tick.color = self.color
                 tick.opacity = self._opacity
                 tick.parent = self.grids[axis]
+                tick.visible = True
 
             for extra_tick in tick_visuals[len(new_tick_values) :]:
                 # disable all extra ones
