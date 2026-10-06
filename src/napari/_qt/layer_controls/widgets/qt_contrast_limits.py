@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -437,9 +436,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.histogram_content_widget = QWidget()
         self.histogram_content_widget.setProperty('foreground', 'true')
         self.histogram_content_widget.hide()
-        self.histogram_content_widget.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
-        )
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(4, 4, 4, 4)
         content_layout.setSpacing(4)
@@ -524,14 +520,8 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         if visible:
             self._ensure_histogram_content()
             self.histogram_content_widget.show()
-            self.histogram_content_widget.setSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
-            )
             self._schedule_histogram_compute()
         else:
-            self.histogram_content_widget.setSizePolicy(
-                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored
-            )
             self.histogram_content_widget.hide()
 
     def _ensure_histogram_content(self) -> None:
