@@ -72,14 +72,18 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.set_axis_labels(
             self.overlay.axis_labels, ranges, axis_labels
         )
-        self._on_blending_change()  # needed to ensure new grids/ticks are up to date
+        # needed to ensure new grids/ticks are up to date
+        self._on_blending_change()
+        self._on_view_direction_change()
 
     def _on_ticks_change(self) -> None:
         ranges, _ = self._get_ranges_and_axis_labels()
         self.node.set_ticks(
             self.overlay.tick_labels, self.overlay.n_ticks, ranges
         )
-        self._on_blending_change()  # needed to ensure new grids/ticks are up to date
+        # needed to ensure new grids/ticks are up to date
+        self._on_blending_change()
+        self._on_view_direction_change()
 
     def _on_extent_change(self) -> None:
         ranges, _ = self._get_ranges_and_axis_labels()
