@@ -632,5 +632,10 @@ authors:
   affiliation: Institute of Science and Technology Austria
   orcid: https://orcid.org/0000-0001-8421-5508
   alias: Suyash-Naik
+- given-names: Bruno
+  family-names: Pannunzio
+  affiliation: Institut Pasteur de Montevideo; Universidad de la República, Uruguay
+  orcid: https://orcid.org/0009-0001-2778-6694
+  alias: bruno-pannunzio
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
