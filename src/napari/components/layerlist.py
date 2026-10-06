@@ -211,8 +211,8 @@ class LayerList(SelectableEventedList[Layer]):
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
-    def __newlike__(self, data):
-        return LayerList(data)
+    def __newlike__(self, iterable):
+        return LayerList(iterable)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -251,13 +251,13 @@ class LayerList(SelectableEventedList[Layer]):
         return values
 
     @typing.overload
-    def __getitem__(self, item: int | str) -> Layer: ...
+    def __getitem__(self, key: int | str) -> Layer: ...
 
     @typing.overload
-    def __getitem__(self, item: slice) -> Self: ...
+    def __getitem__(self, key: slice) -> Self: ...
 
-    def __getitem__(self, item):
-        return super().__getitem__(item)
+    def __getitem__(self, key):
+        return super().__getitem__(key)
 
     def __setitem__(self, key, value):
         old = self._list[key]
@@ -390,7 +390,7 @@ class LayerList(SelectableEventedList[Layer]):
         layer_extent_list,
         augmented: bool = False,
         units: tuple[pint.Unit, ...] | None = None,
-    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float64]]:
         """Extent of layers in world coordinates.
 
         Default to 2D image-like with (0, 511) min/ max values if no data is present.
@@ -618,7 +618,8 @@ class LayerList(SelectableEventedList[Layer]):
             self.events.units(value=self.units)
             return
 
-        if self.extent.units is None:
+        current_units = self.units
+        if current_units is None:
             raise ValueError(
                 'Cannot set units when layers have inconsistent dimensionality.'
             )
@@ -629,7 +630,7 @@ class LayerList(SelectableEventedList[Layer]):
             )
         units = get_units_from_name(units)
         for i, (new_unit, old_unit) in enumerate(
-            zip(units[::-1], self.units[::-1], strict=False), start=1
+            zip(units[::-1], current_units[::-1], strict=False), start=1
         ):
             if new_unit.dimensionality != old_unit.dimensionality:
                 text = (
