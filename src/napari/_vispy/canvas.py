@@ -400,11 +400,11 @@ class VispyCanvas:
             brush_circle.visible = False
         layer.events.mode.disconnect(self._on_cursor)
         layer.events.brush_size.disconnect(self._on_cursor)
-        layer.events.brush_size_is_canvas.disconnect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.disconnect(self._on_cursor)
 
     def _connect_labels_cursor(self, layer: Labels) -> None:
         layer.events.brush_size.connect(self._on_cursor)
-        layer.events.brush_size_is_canvas.connect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.connect(self._on_cursor)
 
     def _on_active_layer_change(self, event=None) -> None:
         """Track the active layer and rewire its mode event to refresh the cursor."""
@@ -437,10 +437,7 @@ class VispyCanvas:
             brush_circle.visible = False
             return QtCursorVisual[cursor]
 
-        if layer.brush_size_is_canvas:
-            size = layer.brush_size
-        else:
-            size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+        size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
 
         # if too big or small, show a normal cursor instead
         if size < 8 or size > (min(*self.size) - 4):

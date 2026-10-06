@@ -16,7 +16,7 @@ def test_paint():
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
     layer.brush_size = 10
-    assert layer._get_brush_size_data(1) == 10
+    assert layer._brush_size_canvas_to_data(1) == 10
 
     layer.mode = 'paint'
     layer.selected_label = 3

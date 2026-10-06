@@ -272,6 +272,9 @@ class Labels(ScalarFieldBase):
         with a thickness equal to its value. Must be >= 0.
     brush_size : float
         Size of the paint brush in data coordinates.
+    brush_size_is_canvas_pixels : bool
+        Whether the brush_size is to be considered in data pixels (False) or canvas
+        pixels (True).
     iso_gradient_mode : str
         Method for calulating the gradient (used to get the surface normal) in the
         'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
@@ -421,7 +424,7 @@ class Labels(ScalarFieldBase):
 
         self.events.add(
             brush_size=Event,
-            brush_size_is_canvas=Event,
+            brush_size_is_canvas_pixels=Event,
             colormap=Event,
             contiguous=Event,
             contour=Event,
@@ -458,7 +461,7 @@ class Labels(ScalarFieldBase):
         self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
-        self._brush_size_is_canvas = False
+        self._brush_size_is_canvas_pixels = False
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
@@ -578,7 +581,7 @@ class Labels(ScalarFieldBase):
     def brush_size(self):
         """float: Size of the paint brush.
 
-        If brush_size_is_canvas is False, this is considered to be in data
+        If brush_size_is_canvas_pixels is False, this is considered to be in data
         pixels, otherwise it's in canvas pixels.
         """
         return self._brush_size
@@ -589,22 +592,36 @@ class Labels(ScalarFieldBase):
         self.events.brush_size()
 
     @property
-    def brush_size_is_canvas(self) -> bool:
+    def brush_size_is_canvas_pixels(self) -> bool:
         """Whether the brush size is considered to be in canvas pixels instead."""
-        return self._brush_size_is_canvas
+        return self._brush_size_is_canvas_pixels
 
-    @brush_size_is_canvas.setter
-    def brush_size_is_canvas(self, value: bool) -> None:
-        self._brush_size_is_canvas = bool(value)
-        self.events.brush_size_is_canvas()
+    @brush_size_is_canvas_pixels.setter
+    def brush_size_is_canvas_pixels(self, value: bool) -> None:
+        self._brush_size_is_canvas_pixels = bool(value)
+        self.events.brush_size_is_canvas_pixels()
 
-    def _get_brush_size_canvas(self, zoom: float) -> float:
+    def _get_brush_size_canvas(self, zoom: float | None) -> float:
+        if self.brush_size_is_canvas_pixels:
+            return self.brush_size
+        if zoom is None:
+            raise RuntimeError(
+                'If Labels.brush_size_is_canvas_pixels is disabled,'
+                'you must provide a zoom value to get the canvas size.'
+            )
         world_scale = self._data_to_world.scale
         displayed = self._slice_input.displayed
         min_scale = np.min([abs(world_scale[d]) for d in displayed])
         return self.brush_size * min_scale * zoom
 
-    def _get_brush_size_data(self, zoom: float) -> float:
+    def _get_brush_size_data(self, zoom: float | None) -> float:
+        if not self.brush_size_is_canvas_pixels:
+            return self.brush_size
+        if zoom is None:
+            raise RuntimeError(
+                'If Labels.brush_size_is_canvas_pixels is enabled,'
+                'you must provide a zoom value to get the data size.'
+            )
         world_scale = self._data_to_world.scale
         displayed = self._slice_input.displayed
         min_scale = np.min([abs(world_scale[d]) for d in displayed])
@@ -1414,7 +1431,9 @@ class Labels(ScalarFieldBase):
             return self.selected_label
         return self.colormap.background_value
 
-    def _draw(self, new_label, last_cursor_coord, coordinates, zoom=None):
+    def _draw(
+        self, new_label, last_cursor_coord, coordinates, brush_size_data
+    ):
         """Paint into coordinates, accounting for mode and cursor movement.
 
         The draw operation depends on the current mode of the layer.
@@ -1427,21 +1446,14 @@ class Labels(ScalarFieldBase):
             last painted cursor coordinates
         coordinates : sequence
             new cursor coordinates
+        brush_size_data : float
+            size of the brush in data coordinates
         """
         if coordinates is None:
             return
 
-        if self.brush_size_is_canvas:
-            if zoom is None:
-                raise RuntimeError(
-                    'When drawing, zoom must be provided if brush_size_is_canvas is True'
-                )
-            brush_size = self._get_brush_size_data(zoom)
-        else:
-            brush_size = self.brush_size
-
         interp_coord = interpolate_coordinates(
-            last_cursor_coord, coordinates, brush_size
+            last_cursor_coord, coordinates, brush_size_data
         )
         for c in interp_coord:
             if (
@@ -1450,7 +1462,12 @@ class Labels(ScalarFieldBase):
             ):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
-                self.paint(c, new_label, refresh=False, zoom=zoom)
+                self.paint(
+                    c,
+                    new_label,
+                    refresh=False,
+                    brush_size_data=brush_size_data,
+                )
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
         self._partial_labels_refresh()
@@ -1461,6 +1478,7 @@ class Labels(ScalarFieldBase):
         new_label: int,
         refresh: bool = True,
         zoom: float | None = None,
+        brush_size_data: float | None = None,
     ) -> None:
         """Paint over existing labels with a new label.
 
@@ -1476,16 +1494,21 @@ class Labels(ScalarFieldBase):
         refresh : bool
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
+        zoom : float | None
+            Used to determine the size of the brush if `brush_size_is_canvas_pixels`
+            is enabled. Here for backward compatibility, prefer explicitly using
+            brush_size_is_data.
+        brush_size_data : float | None
+            size of the brush in data coordinates
         """
-        if self.brush_size_is_canvas:
-            if zoom is None:
-                raise RuntimeError(
-                    'When drawing, zoom must be provided if brush_size_is_canvas is True'
-                )
-            brush_size = self._get_brush_size_data(zoom)
-        else:
-            brush_size = self.brush_size
-
+        if brush_size_data is None:
+            warnings.warn(
+                'Calling labels.paint() without passing `brush_size_data` is deprecated.',
+                FutureWarning,
+                stacklevel=2,
+            )
+            brush_size_data = self._get_brush_size_data(zoom)
+        # TODO: deprecated zoom argument, should be done externally
         self._validate_label_in_range(new_label)
         shape, dims_to_paint = self._get_shape_and_dims_to_paint()
 
@@ -1493,7 +1516,7 @@ class Labels(ScalarFieldBase):
         self._validate_non_painted_coord(slice_coord, dims_to_paint)
 
         brush_info = self._get_brush_mask_and_bbox(
-            slice_coord, dims_to_paint, shape, brush_size=brush_size
+            slice_coord, dims_to_paint, shape, brush_size_data=brush_size_data
         )
 
         if brush_info is None:
@@ -1513,7 +1536,7 @@ class Labels(ScalarFieldBase):
         coord: Sequence[float],
         dims_to_paint: list[int],
         shape: list[int],
-        brush_size: float = 10,
+        brush_size_data: float = 10,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
         """Compute the mask and bounding box for a brush painting operation.
 
@@ -1525,6 +1548,8 @@ class Labels(ScalarFieldBase):
             The dimensions across which the painting will be performed.
         shape : list[int]
             The shape of the data being painted.
+        brush_size_data : float
+            Size of the brush in data coordinates.
 
         Returns
         -------
@@ -1548,7 +1573,7 @@ class Labels(ScalarFieldBase):
             coord_paint = np.array(coord)
 
         # Ensure circle doesn't have spurious point on edge by keeping radius as 0.5
-        radius = np.floor(brush_size / 2) + 0.5
+        radius = np.floor(brush_size_data / 2) + 0.5
 
         # Radius in pixels for each dimension (accounting for scale)
         # Use floor to match old sphere_indices behavior: points where dist <= radius

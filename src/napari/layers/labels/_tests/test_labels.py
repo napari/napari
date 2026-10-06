@@ -1507,9 +1507,9 @@ def test_ndim_paint():
 def test_brush_world_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
-    layer.brush_size_is_canvas = False
+    layer.brush_size_is_canvas_pixels = False
     assert layer._get_brush_size_data(1) > 0
-    layer.brush_size_is_canvas = True
+    layer.brush_size_is_canvas_pixels = True
     assert layer._get_brush_size_data(1) > 0
 
 

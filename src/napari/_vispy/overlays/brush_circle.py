@@ -38,7 +38,9 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._last_mouse_pos = None
 
         self.layer.events.brush_size.connect(self._on_size_change)
-        self.layer.events.brush_size_is_canvas.connect(self._on_size_change)
+        self.layer.events.brush_size_is_canvas_pixels.connect(
+            self._on_size_change
+        )
         self.viewer.scene.camera.events.zoom.connect(self._on_size_change)
         self.viewer.events.mouse_over_canvas.connect(
             self._on_mouse_over_canvas
@@ -60,12 +62,7 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         pass
 
     def _on_size_change(self, event: Event | None = None) -> None:
-        if self.layer.brush_size_is_canvas:
-            size = self.layer.brush_size
-        else:
-            size = self.layer._get_brush_size_canvas(
-                self.viewer.scene.camera.zoom
-            )
+        size = self.layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
         self._white_circle.radius = size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 
