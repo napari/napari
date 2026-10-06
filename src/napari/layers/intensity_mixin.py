@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from napari.components.histogram import Histogram
+from napari.layers import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from napari.layers.surface import Surface
 
 
-class IntensityVisualizationMixin:
+class IntensityVisualizationMixin(Layer):
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
     When used, this should come before the Layer in the inheritance, e.g.:

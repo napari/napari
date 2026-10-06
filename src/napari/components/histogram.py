@@ -73,7 +73,7 @@ class Histogram(EventedModel):
             mode=self.mode,
             log_scale=self.log_scale,
         ):
-            layer.metadata['_computed_histogram'] = {  # pyrefly: ignore [missing-attribute]
+            layer.metadata['_computed_histogram'] = {
                 'bin_edges': bin_edges,
                 'counts': counts,
             }

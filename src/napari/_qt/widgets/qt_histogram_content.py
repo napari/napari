@@ -12,7 +12,7 @@ from napari.qt import create_worker
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
-    from napari._qt.qthreading import GeneratorWorker
+    from napari._qt.qthreading import FunctionWorker, GeneratorWorker
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
 
 
@@ -42,7 +42,7 @@ class QtHistogramContentWidget(QWidget):
         super().__init__(parent)
         self.layer = layer
         self._constructed = False
-        self._histogram_worker: GeneratorWorker | None = None
+        self._histogram_worker: GeneratorWorker | FunctionWorker | None = None
 
         for ev in (
             self.layer.histogram.events.bins,
@@ -83,21 +83,24 @@ class QtHistogramContentWidget(QWidget):
 
         self._constructed = True
 
-    def _yield_histogram(self):
+    def _yield_from_histogram(self, _):
         yield from self.layer.histogram._compute_async_no_events(self.layer)
 
     def _schedule_histogram_compute(self, event=None) -> None:
         """Run the async histogram compute."""
         self._ensure_histogram_content()
         self._abort_histogram_worker()
-        worker = create_worker(self._yield_histogram)
+        worker = create_worker(self._yield_from_histogram)  # pyrefly: ignore [bad-argument-type]
         self._histogram_worker = worker
 
-        worker.yielded.connect(lambda _: self.layer.histogram.events.updated)
+        worker.yielded.connect(self._on_histogram_yield)
         worker.finished.connect(self._on_histogram_done)
         worker.start()
 
-    def _on_histogram_done(self) -> None:
+    def _on_histogram_yield(self, _) -> None:
+        self.layer.histogram.events.updated()
+
+    def _on_histogram_done(self, _) -> None:
         """Emit ``completed`` on the main thread once the worker finishes."""
         self.layer.histogram.events.completed()
         self._abort_histogram_worker()
