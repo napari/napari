@@ -240,7 +240,7 @@ def test_use_tabular_numerals_keeps_class_fonts(qapp) -> None:
         class_font = QApplication.font(class_name)
         assert class_font.family() == 'Courier'
         assert class_font.pointSize() == 21
-        assert class_font.isFeatureSet(QFont.Tag('tnum'))
+        assert class_font.featureValue(QFont.Tag('tnum')) == 1
     finally:
         QGuiApplication.setFont(saved_app_font)
         QApplication.setFont(saved_class_font, class_name)
