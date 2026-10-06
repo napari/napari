@@ -612,6 +612,7 @@ QLCDNumber {
 QMenu::item {
     font-size: {{ font_size }};
     padding: 3px;
+    padding-left: 10px;
 }
 
 QMenu::item:selected {
