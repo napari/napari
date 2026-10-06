@@ -194,10 +194,9 @@ class QContrastLimitsPopup(QtPopup):
             tooltip=('Left click to toggle histogram visualization.\n'),
         )
         self.histogram_button.setCheckable(True)
+        self.histogram_button.setChecked(self._layer.histogram.enabled)
         self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.histogram_button.toggled.connect(
-            self._on_histogram_button_toggled
-        )
+        self.histogram_button.toggled.connect(self._enable_histogram)
         button_layout.addWidget(self.histogram_button)
 
         button_layout.addStretch()
@@ -208,6 +207,11 @@ class QContrastLimitsPopup(QtPopup):
         # Capture frame height WITHOUT histogram (baseline)
         self._layout.activate()
         self._frame_base_height = self.frame.sizeHint().height()
+
+        self._enable_histogram(self._layer.histogram.enabled)
+        self._layer.histogram.events.enabled.connect(
+            self._on_histogram_enabled_change
+        )
 
     def keyPressEvent(self, event):
         """Move focus to the slider when return is pressed."""
@@ -221,13 +225,20 @@ class QContrastLimitsPopup(QtPopup):
         outer = self.layout().contentsMargins()
         return self._frame_base_height + outer.top() + outer.bottom()
 
-    def _on_histogram_button_toggled(self, visible: bool) -> None:
+    def _on_histogram_enabled_change(self) -> None:
+        with qt_signals_blocked(self.histogram_button):
+            enabled = self._layer.histogram.enabled
+            self.histogram_button.setChecked(enabled)
+            self._enable_histogram(enabled)
+
+    def _enable_histogram(self, enabled: bool) -> None:
         """Handle left-click on histogram button to toggle histogram widget."""
         if self._contrast_control is None:
             # should only happen in testing
             return
 
-        if visible:
+        self._layer.histogram.enabled = enabled
+        if enabled:
             self.histogram_content._schedule_histogram_compute()
             self.histogram_content.show()
             # process events to ensure the size hint is up to date
@@ -366,17 +377,17 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         )
         self.histogram_button.setCheckable(True)
         self.histogram_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.histogram_button.toggled.connect(
-            self._on_histogram_button_toggled
-        )
+        self.histogram_button.toggled.connect(self._enable_histogram)
         self.histogram_button.installEventFilter(self)
         self._clim_layout.addWidget(self.histogram_button)
 
-        # empty wrapper, will be populated on first toggle (otherwise
-        # it may segfault in some cases)
         self.histogram_content = QtHistogramContentWidget(self._layer)
         self.histogram_content.setProperty('foreground', 'true')
-        self.histogram_content.hide()
+
+        self._enable_histogram(self._layer.histogram.enabled)
+        self._layer.histogram.events.enabled.connect(
+            self._on_histogram_enabled_change
+        )
 
     def show_clim_popup(self):
         self.clim_popup = QContrastLimitsPopup(
@@ -434,9 +445,16 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             return True
         return super().eventFilter(obj, event)
 
-    def _on_histogram_button_toggled(self, visible: bool) -> None:
+    def _on_histogram_enabled_change(self) -> None:
+        with qt_signals_blocked(self.histogram_button):
+            enabled = self._layer.histogram.enabled
+            self.histogram_button.setChecked(enabled)
+            self._enable_histogram(enabled)
+
+    def _enable_histogram(self, enabled: bool) -> None:
         """Handle left-click on histogram button to toggle histogram widget."""
-        if visible:
+        self._layer.histogram.enabled = enabled
+        if enabled:
             self.histogram_content._schedule_histogram_compute()
             self.histogram_content.show()
         else:

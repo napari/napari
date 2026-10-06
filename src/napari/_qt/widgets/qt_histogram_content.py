@@ -83,7 +83,7 @@ class QtHistogramContentWidget(QWidget):
 
         self._constructed = True
 
-    def _yield_from_histogram(self, _):
+    def _yield_from_histogram(self):
         yield from self.layer.histogram._compute_async_no_events(self.layer)
 
     def _schedule_histogram_compute(self, event=None) -> None:
@@ -97,10 +97,10 @@ class QtHistogramContentWidget(QWidget):
         worker.finished.connect(self._on_histogram_done)
         worker.start()
 
-    def _on_histogram_yield(self, _) -> None:
+    def _on_histogram_yield(self, event=None) -> None:
         self.layer.histogram.events.updated()
 
-    def _on_histogram_done(self, _) -> None:
+    def _on_histogram_done(self, event=None) -> None:
         """Emit ``completed`` on the main thread once the worker finishes."""
         self.layer.histogram.events.completed()
         self._abort_histogram_worker()
