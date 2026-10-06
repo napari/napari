@@ -56,9 +56,6 @@ jobs:
       PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
-      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
-      # different constraints files for Windows. An example with macOS arm64:
-      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
       TOX_TEST_RUNNER: ${{ inputs.coverage == 'cov' && 'coverage run --parallel-mode' || 'python' }}
@@ -137,10 +134,10 @@ jobs:
         # This is required as github actions allow setting only one environment variable in
         # a single line (redirection to $GITHUB_ENV).
         #
-        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # For example, if qt_backend is set to "pyqt6,pyside6", then the following four
         # environment variables will be set:
-        # MAIN=pyqt5
-        # SECOND=pyside2
+        # MAIN=pyqt6
+        # SECOND=pyside6
         # THIRD=none
         # FOURTH=none
         shell: bash

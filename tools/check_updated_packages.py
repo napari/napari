@@ -138,7 +138,6 @@ def calc_only_direct_updates(
 
     packages = (
         metadata['dependencies']
-        + optional_dependencies['pyqt5']
         + optional_dependencies['pyqt6']
         + optional_dependencies['pyside6']
         + optional_dependencies['testing']

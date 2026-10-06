@@ -98,16 +98,11 @@ pyside6 = [
     "PySide6 > 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
-    "PyQt6 > 6.5",
-    "PyQt6 != 6.6.1 ; platform_system == 'Darwin'",
+    "PyQt6 >= 6.7",
     "pyqt6-qt6 !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyside = [
     "napari[pyside6]"
-]
-pyqt5 = [
-    "PyQt5>=5.15.8",
-    "pyqt5-qt5<=5.15.2; sys_platform == 'Windows'",  # 5.15.2 is latest to build on Windows, required for `uv add` compatability as of uv 0.6.9
 ]
 pyqt = [
     "napari[pyqt6]"
