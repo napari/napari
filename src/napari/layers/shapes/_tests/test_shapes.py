@@ -2865,3 +2865,16 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_rectangle_at_fractional_slice_shown_on_nearest_slice():
+    layer = Shapes(
+        [[[0.6, 10, 10], [0.6, 10, 40], [0.6, 40, 40], [0.6, 40, 10]]],
+        shape_type='rectangle',
+    )
+
+    layer._slice_dims(Dims(ndim=3, point=(0.6, 0, 0)))
+    assert layer.get_value((0.6, 20, 30)) == (0, None)
+
+    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
+    assert layer.get_value((0, 20, 30)) == (None, None)
