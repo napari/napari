@@ -562,12 +562,12 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
+        self.viewer.cursor.viewbox = grid_coords
+
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
-
-        self.viewer.cursor.viewbox = grid_coords
 
         napari_event = NapariMouseEvent(
             event=event,
