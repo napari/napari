@@ -66,7 +66,7 @@ def test_toggle_axes_scale_bar_grid_lines_attr(
         * `box`
         * `colored`
         * `ticks`
-    * Viewer `grid_lienes` attributes:
+    * Viewer `grid_lines` attributes:
         * `visible`
         * `labels`
     """
