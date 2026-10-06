@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
 
 
-class HistogramModel(EventedModel):
+class Histogram(EventedModel):
     """Histogram model with controls for histogram generation."""
 
     bins: int = 256

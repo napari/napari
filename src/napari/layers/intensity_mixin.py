@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from napari.components.histogram import HistogramModel
+from napari.components.histogram import Histogram
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
@@ -58,12 +58,10 @@ class IntensityVisualizationMixin:
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
-        from napari.components.histogram import HistogramModel
-
-        self._histogram = HistogramModel()
+        self._histogram = Histogram()
 
     @property
-    def histogram(self) -> HistogramModel:
+    def histogram(self) -> Histogram:
         """Histogram model for this layer (settings only)."""
         return self._histogram
 
