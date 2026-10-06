@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
 
@@ -7,40 +5,34 @@ from napari.utils.events import EventedModel
 class Cursor(EventedModel):
     """Cursor object with position and properties of the cursor.
 
-        Canvas-related attributes are Read-Only and set internally by napari.
+    Canvas-related attributes are Read-Only and set internally by napari.
 
-        Attributes
-        ----------
-        position : tuple of float
-            Position of the cursor in world coordinates. If the cursor is outside of,
-            the canvas, then the last known position is stored instead.
-    <<<<<<< HEAD
-        canvas_position : tuple of int or None
-            Position of the cursor in canvas pixel coordinates (y, x).
-            None when cursor is outside the canvas.
-        viewbox : tuple[int, int] or None
-    ||||||| 26e0edadd
-        viewbox : tuple[int, int] or None
-    =======
-        viewbox : tuple[int, int]
-    >>>>>>> 96d0c69b507bd266647ca9fbfad1e4f9f343093e
-            Position of the cursor in the grid.
-        scaled : bool
-            Flag to indicate whether cursor size should be scaled to zoom.
-            Only relevant for circle and square cursors which are drawn
-            with a particular size.
-        size : float
-            Size of the cursor in canvas pixels. Only relevant for circle
-            and square cursors which are drawn with a particular size.
-        style : str
-            Style of the cursor. Must be one of
-                * square: A square
-                * circle: A circle
-                * cross: A cross
-                * forbidden: A forbidden symbol
-                * pointing: A finger for pointing
-                * standard: The standard cursor
-                # crosshair: A crosshair
+    Attributes
+    ----------
+    position : tuple of float
+        Position of the cursor in world coordinates. If the cursor is outside of,
+        the canvas, then the last known position is stored instead.
+    canvas_position : tuple of int or None
+        Position of the cursor in canvas pixel coordinates (y, x).
+        None when cursor is outside the canvas.
+    viewbox : tuple[int, int]
+        Position of the cursor in the grid.
+    scaled : bool
+        Flag to indicate whether cursor size should be scaled to zoom.
+        Only relevant for circle and square cursors which are drawn
+        with a particular size.
+    size : float
+        Size of the cursor in canvas pixels. Only relevant for circle
+        and square cursors which are drawn with a particular size.
+    style : str
+        Style of the cursor. Must be one of
+            * square: A square
+            * circle: A circle
+            * cross: A cross
+            * forbidden: A forbidden symbol
+            * pointing: A finger for pointing
+            * standard: The standard cursor
+            # crosshair: A crosshair
     """
 
     # fields
@@ -49,12 +41,12 @@ class Cursor(EventedModel):
     size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD
     _canvas_position: tuple[int, int] | None = None
-    _viewbox: tuple[int, int] | None = None
+    _viewbox: tuple[int, int] = (0, 0)
 
     @property
     def canvas_position(self) -> tuple[int, int] | None:
         return self._canvas_position
 
     @property
-    def viewbox(self) -> tuple[int, int] | None:
+    def viewbox(self) -> tuple[int, int]:
         return self._viewbox
