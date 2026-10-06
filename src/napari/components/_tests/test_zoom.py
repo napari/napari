@@ -3,18 +3,18 @@
 import pytest
 from pydantic import ValidationError
 
-from napari.components.overlays.zoom import RectangleSelectOverlay
+from napari.components.overlays.rectangle import SelectionRectOverlay
 
 
 def test_zoom():
     """Test creating zoom object"""
-    zoom = RectangleSelectOverlay()
+    zoom = SelectionRectOverlay()
     assert zoom is not None
 
 
 def test_zoom_values():
     """Test creating zoom object"""
-    zoom = RectangleSelectOverlay()
+    zoom = SelectionRectOverlay()
     # validate position
     zoom.corners_canvas = ((0, 0), (300, 200))
 
