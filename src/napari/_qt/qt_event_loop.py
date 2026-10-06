@@ -249,7 +249,7 @@ def get_qapp(
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
 
-        use_tabular_numerals(app)
+    use_tabular_numerals(app)
 
     if app.windowIcon().isNull():
         app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))

@@ -5,8 +5,8 @@ from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtGui import QFont
-from qtpy.QtWidgets import QAction, QLabel, QShortcut
+from qtpy.QtGui import QFont, QGuiApplication
+from qtpy.QtWidgets import QAction, QShortcut
 
 from napari._qt.qt_event_loop import (
     _ipython_has_eventloop,
@@ -97,26 +97,18 @@ def test_no_wayland_warning(
 @pytest.mark.skipif(
     not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
 )
-def test_status_bar_requests_tabular_numerals_with_preexisting_app(
-    make_napari_viewer, qapp, qtbot
-):
+def test_get_qapp_requests_tabular_numerals_with_preexisting_app(qapp):
     tag = QFont.Tag('tnum')
     app_font = QFont(qapp.font())
-    host_label = QLabel('host')
-    qtbot.addWidget(host_label)
-    host_font = QFont(host_label.font())
+    font = QFont(app_font)
+    font.unsetFeature(tag)
+    QGuiApplication.setFont(font)
+    try:
+        get_qapp()
 
-    viewer = make_napari_viewer()
-    window = viewer.window._qt_window
-    status = window.statusBar()._status
-
-    assert status.font().isFeatureSet(tag)
-    assert qapp.font() == app_font
-    assert host_label.font() == host_font
-
-    viewer.window._update_theme()
-
-    assert status.font().isFeatureSet(tag)
+        assert qapp.font().isFeatureSet(tag)
+    finally:
+        QGuiApplication.setFont(app_font)
 
 
 def test_shortcut_collision(qtbot, make_napari_viewer):
