@@ -17,7 +17,7 @@ from napari.utils.theme import get_theme
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
 
-    from napari.layers import Image
+    from napari.layers.intensity_mixin import IntensityVisualizationMixin
     from napari.utils.events import Event
 
 # Default histogram canvas dimensions
@@ -48,7 +48,7 @@ class QtHistogramWidget(QWidget):
 
     def __init__(
         self,
-        layer: Image,
+        layer: IntensityVisualizationMixin,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)

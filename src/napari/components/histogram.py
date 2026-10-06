@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 class Histogram(EventedModel):
     """Histogram model with controls for histogram generation."""
 
+    enabled: bool = False
     bins: int = 256
     max_samples: int = 1_000_000
     mode: Literal['canvas', 'full'] = 'canvas'
