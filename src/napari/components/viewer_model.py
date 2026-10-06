@@ -908,7 +908,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             if self.cursor.canvas_position is None:
                 return None
             viewbox_size = self.canvas.viewbox_size(self.layers)
-            viewbox_position = (
+            viewbox_position = tuple(
                 np.array(self.cursor.canvas_position) % viewbox_size
             )
             view_direction = self.scene.camera.calculate_nd_view_direction(
