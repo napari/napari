@@ -198,24 +198,14 @@ def _mouse_move_to(widget, pos):
     for testing the event-filter-based menubar toggle behavior.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    if QT_VERSION.startswith('5'):
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            pos,
-            global_pos,
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    else:
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            QPointF(pos),
-            QPointF(global_pos),
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
+    event = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(pos),
+        QPointF(global_pos),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
 
     QApplication.sendEvent(widget, event)
 

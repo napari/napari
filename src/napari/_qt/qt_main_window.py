@@ -23,7 +23,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -87,7 +86,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification, show_warning
+from napari.utils.notifications import Notification
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 
@@ -104,11 +103,6 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 _sentinel = object()
-
-SHOW_QT_WARNING = QT5
-# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
-
-del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -234,8 +228,6 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
-        global SHOW_QT_WARNING
-
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -244,13 +236,6 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
-
-        if SHOW_QT_WARNING:
-            show_warning(
-                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
-            )
-
-            SHOW_QT_WARNING = False
 
         super().showEvent(event)
 
@@ -298,13 +283,7 @@ class _QtMainWindow(QMainWindow):
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
-            # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
-            pnt = (
-                e.globalPosition().toPoint()
-                if hasattr(e, 'globalPosition')
-                else e.globalPos()
-            )
+            pnt = e.globalPosition().toPoint()
             rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
             QToolTip.showText(
                 pnt, self._qt_viewer.viewer.tooltip.text, self, rect

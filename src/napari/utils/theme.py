@@ -6,7 +6,6 @@ import sys
 from ast import literal_eval
 from contextlib import suppress
 from typing import Any, Literal
-from warnings import warn
 
 import npe2
 from pydantic import field_validator
@@ -292,19 +291,9 @@ def get_system_theme() -> str:
     Note: uses Qt6 (version >6.5) property colorScheme
     """
     try:
-        from qtpy import QT6
         from qtpy.QtCore import Qt
         from qtpy.QtGui import QGuiApplication
     except (ImportError, RuntimeError):
-        return 'dark'
-
-    if not QT6:
-        # can remove this check once pyqt5 support is dropped
-        warn(
-            'System theme detection requires a Qt6 backend. '
-            'Please switch to PyQt6 or PySide6 to use it.',
-            stacklevel=2,
-        )
         return 'dark'
 
     style_hints = QGuiApplication.styleHints()
