@@ -7,7 +7,7 @@ from app_model.types import KeyCode, KeyMod
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils.action_manager import action_manager
-from napari.utils.notifications import show_info, show_warning
+from napari.utils.notifications import show_info
 from napari.utils.theme import available_themes, get_system_theme
 from napari.utils.transforms import Affine
 
@@ -165,18 +165,6 @@ def rotate_layers(viewer: ViewerModel) -> None:
             .compose(initial_affine)
         )
         layer.affine = layer.affine.replace_slice(visible_dims, new_affine)
-
-
-@register_viewer_action('Toggle grid mode')
-def toggle_grid(viewer: ViewerModel) -> None:
-    if (
-        1 < len(viewer.layers) <= abs(viewer.canvas.grid.stride)
-        and not viewer.canvas.grid.enabled
-    ):
-        show_warning(
-            'Grid stride is too large for number of layers. Will render as 1x1 grid.'
-        )
-    viewer.canvas.grid.enabled = not viewer.canvas.grid.enabled
 
 
 @register_viewer_action('Toggle visibility of selected layers')

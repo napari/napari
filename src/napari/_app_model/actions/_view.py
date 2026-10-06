@@ -152,6 +152,21 @@ def _get_current_synced_camera(viewer: ViewerModel) -> bool:
 
 
 VIEW_ACTIONS: list[Action] = [
+    ViewerModelToggleAction(
+        id='napari.canvas.toggle_grid',
+        title='Toggle Grid Canvas',
+        attribute_path='canvas.grid.enabled',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        keybindings=[
+            KeyBindingRule(primary='Ctrl+G', mac='Cmd+G'),
+        ],
+    ),
     Action(
         id='napari.scene.fit_to_view',
         title='Fit to View',
