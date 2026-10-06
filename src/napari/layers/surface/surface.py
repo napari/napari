@@ -325,7 +325,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is not None:
-            self._contrast_limits_range = contrast_limits
+            self._contrast_limits_range = tuple(contrast_limits)
         else:
             self._contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
 
