@@ -1,6 +1,6 @@
 """
 Prapare Tracks example
-=====================
+======================
 
 This example demonstrates how to create a Tracks layer from a pandas
 DataFrame by mapping column names to the coordinate and track id
