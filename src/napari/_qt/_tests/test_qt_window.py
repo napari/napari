@@ -76,10 +76,11 @@ def test_shutdown_stops_worker_threads(make_napari_viewer):
     stop_animation.assert_called_once_with()
 
 
-def test_layer_context_change_after_window_close(make_napari_viewer):
+def test_layer_selection_after_window_close(make_napari_viewer):
     viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((2, 2)))
     viewer.window.close()
-    viewer.layers._ctx.changed.emit({'num_layers'})
+    viewer.layers.selection.clear()
 
 
 def test_set_geometry(make_napari_viewer):
