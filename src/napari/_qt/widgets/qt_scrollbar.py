@@ -52,7 +52,7 @@ class ModifiedScrollBar(QScrollBar):
         sr = style.subControlRect(
             CC.CC_ScrollBar, opt, SC.SC_ScrollBarSlider, self
         )
-        upside_down = bool(opt.upsideDown)
+        upside_down: bool = opt.upsideDown  # pyrefly: ignore[bad-assignment]
         if self.orientation() == Qt.Orientation.Horizontal:
             pos = point.x()
             slider_length = sr.width()
