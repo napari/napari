@@ -460,7 +460,7 @@ class Labels(ScalarFieldBase):
 
         self._n_edit_dimensions = 2
         self._contiguous = True
-        self._brush_size = 10
+        self._brush_size = 10.0
         self._brush_size_is_canvas_pixels = False
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
@@ -588,7 +588,7 @@ class Labels(ScalarFieldBase):
 
     @brush_size.setter
     def brush_size(self, brush_size):
-        self._brush_size = int(brush_size)
+        self._brush_size = max(float(brush_size), 1)
         self.events.brush_size()
 
     @property

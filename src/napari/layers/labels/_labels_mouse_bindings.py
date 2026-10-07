@@ -106,24 +106,24 @@ def resize_or_continue_stroke(layer, event):
 
 
 def resize_on_mouse_move(layer, event):
-    min_brush_size = 1
-    start_pos = event.pos
-    start_brush_size = layer.brush_size
+    start_pos = np.array(event.pos)
+    start_pos_world = np.array(event.position)[event.dims_displayed]
     brush_overlay = layer._overlays['brush_circle']
-
     brush_overlay._is_resizing = True
+    start_brush_size = layer.brush_size
     yield
 
     while event.type == 'mouse_move' and all(
         modifier in event.modifiers for modifier in resize_modifiers
     ):
-        brush_size_delta = round(
-            (event.pos[0] - start_pos[0]) / event.camera_zoom
-        )
-        new_brush_size = start_brush_size + brush_size_delta
-
-        bounded_brush_size = max(new_brush_size, min_brush_size)
-        layer.brush_size = bounded_brush_size
+        if layer.brush_size_is_canvas_pixels:
+            radius_delta = event.pos[0] - start_pos[0]
+        else:
+            radius_delta = (
+                layer.world_to_data(event.position)[-1]
+                - layer.world_to_data(start_pos_world)[-1]
+            )
+        layer.brush_size = start_brush_size + radius_delta * 2
         yield
 
     brush_overlay._is_resizing = False
