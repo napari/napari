@@ -1050,7 +1050,7 @@ class Window:
             title='&Window',
             parent=self._qt_window,
         )
-        self.plugins_menu.aboutToShow.connect(
+        self.window_menu.aboutToShow.connect(
             self._update_window_menu_state,
         )
         self.main_menu.addMenu(self.window_menu)
