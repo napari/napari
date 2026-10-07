@@ -218,7 +218,7 @@ class GridLines3D(Node):
                 if i >= len(tick_visuals):
                     # more ticks than before, make a new one
                     tick = Text(
-                        font_info=self.font_info,
+                        font_info=self.font_info, font_size=self.font_size
                     )
                     tick.transform = STTransform()
                     tick_visuals.append(tick)
