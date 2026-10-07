@@ -89,19 +89,11 @@ def pick(layer, event):
     )
 
 
-resize_modifiers = tuple(BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS)
-
-
-def _on_modifiers_change():
-    global resize_modifiers
-    modifiers_setting = (
-        get_settings().application.brush_size_on_mouse_move_modifiers
-    )
-    resize_modifiers = tuple(modifiers_setting.value.split('+'))
-
-
 def resize_or_continue_stroke(layer, event):
-    if all(modifier in event.modifiers for modifier in resize_modifiers):
+    if all(
+        modifier in event.modifiers
+        for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+    ):
         yield from resize_on_mouse_move(layer, event)
         return
 
@@ -119,7 +111,8 @@ def resize_on_mouse_move(layer, event):
     yield
 
     while event.type == 'mouse_move' and all(
-        modifier in event.modifiers for modifier in resize_modifiers
+        modifier in event.modifiers
+        for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
     ):
         if layer.brush_size_is_canvas_pixels:
             radius_delta = event.pos[0] - start_pos[0]
