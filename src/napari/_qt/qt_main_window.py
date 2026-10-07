@@ -760,6 +760,9 @@ class Window:
         # menus. We need a single context to contain all keys required for
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
+        # Keep menu shortcuts in sync with the layer list. Menus still refresh
+        # on show too, since app-model builds actions added later (e.g. by
+        # plugins) against the app context, not the layer list one.
         self._qt_viewer.viewer.layers._ctx.changed.connect(
             self._update_menus_state
         )
