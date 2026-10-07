@@ -12,10 +12,11 @@ with the POI. Requires geopandas and contextily to be installed.
 import contextily as ctx
 import geopandas as gpd
 import pandas as pd
-import zarr
+import pooch
 from requests.exceptions import HTTPError
 
 import napari
+from napari.utils import open_cached_zarr
 
 # some point of interest with lat/lon coordinates and a description
 df = pd.DataFrame([
@@ -54,7 +55,12 @@ bounds = gpd.GeoSeries(corners.to_crs(3857).geometry).total_bounds
 try:
     bg_map, bg_extent = ctx.bounds2img(*bounds, zoom=13)
 except (ConnectionError, HTTPError):
-    bg_map = zarr.open('https://data.napari.dev/prague-map.zarr')
+    # read the whole map into memory, since zarr arrays do not support the
+    # negative step used to flip the map below
+    bg_map = open_cached_zarr(
+        'https://data.napari.dev/prague-map.zarr',
+        pooch.os_cache('napari-latlon-example') / 'prague-map.zarr',
+    )[:]
     bg_extent = (
             1599674.1279521685, 1609458.067572671,
             6452508.179721437, 6467184.089152193,
