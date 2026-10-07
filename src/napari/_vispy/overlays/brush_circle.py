@@ -34,32 +34,43 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
             node=Compound([self._white_circle, self._black_circle]),
             **kwargs,
         )
-
-        self._last_mouse_pos = None
+        self._outside = (-1000, -1000)
+        self._last_mouse_pos = self._outside
 
         self.layer.events.brush_size.connect(self._on_size_change)
         self.layer.events.brush_size_is_canvas_pixels.connect(
             self._on_size_change
         )
         self.viewer.scene.camera.events.zoom.connect(self._on_size_change)
+        self.viewer.cursor.events.canvas_position.connect(
+            self._on_canvas_position_change
+        )
+        # TODO: mouse_over_canvas behaveiour will be merged into canvas_position
         self.viewer.events.mouse_over_canvas.connect(
             self._on_mouse_over_canvas
         )
         # no need to connect position, since that's in the base classes of CanvasOverlay
 
-        self.node.events.canvas_change.connect(self._on_canvas_change)
         self.reset()
-
-        # manually connect this once and get the correct canvas
-        if self.node.parent is not None:
-            self.node.parent.scene.canvas.events.mouse_move.connect(
-                self._on_mouse_move
-            )
 
     def _on_position_change(self, event: Event | None = None) -> None:
         # TODO: this overrides behaviuour of tiled overlays. To be removed
         #       with #9083
         pass
+
+    def _on_canvas_position_change(self) -> None:
+        pos = self.viewer.cursor.canvas_position
+        if self.overlay._is_resizing:
+            return
+
+        # TODO: cannot yet fully replace mouse_over_canvas, it needs to be removed
+        # and replaced with canvas_position = None at the qt level
+        self._set_position(pos[::-1] if pos is not None else self._outside)
+
+    def _set_position(self, pos: tuple[int, int]) -> None:
+        self.node.transform.translate = [pos[0], pos[1], 0, 0]
+        self.node.visible = True
+        self._last_mouse_pos = pos
 
     def _on_size_change(self, event: Event | None = None) -> None:
         size = self.layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
@@ -67,44 +78,24 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._black_circle.radius = self._white_circle.radius - 1
 
     def _on_visible_change(self) -> None:
-        if self._last_mouse_pos is not None:
-            self._set_position(self._last_mouse_pos)
+        self._set_position(self._last_mouse_pos)
         self.node.visible = (
             self.overlay.visible and self.viewer.mouse_over_canvas
         )
-
-    def _on_mouse_move(self, event: Event) -> None:
-        self._last_mouse_pos = event.pos
-        self._set_position(event.pos)
-
-    def _set_position(self, pos: tuple[int, int]) -> None:
-        if not self.overlay._is_resizing:
-            self.node.transform.translate = [pos[0], pos[1], 0, 0]
-
-    def _on_canvas_change(self, event: Event) -> None:
-        if event.new is not None:
-            event.new.events.mouse_move.connect(self._on_mouse_move)
-        if event.old is not None:
-            event.old.events.mouse_move.disconnect(self._on_mouse_move)
 
     def _on_mouse_over_canvas(self) -> None:
         if self.viewer.mouse_over_canvas:
             # Move the cursor outside the canvas when the mouse leaves it.
             # It fixes the bug described in PR #5763:
             # https://github.com/napari/napari/pull/5763#issuecomment-1523182141
-            self._set_position((-1000, -1000))
-            self.node.visible = self.overlay.visible
-        else:
+            self._set_position(self._last_mouse_pos)
             if self.overlay.visible:
                 self.node.visible = self.overlay._is_resizing
-            else:
-                self.node.visible = False
+        else:
+            self._set_position(self._outside)
+            self.overlay.visible = False
 
     def reset(self) -> None:
         super().reset()
         self._on_size_change()
-        self._last_mouse_pos = None
-
-    def close(self) -> None:
-        self.node.events.canvas_change.disconnect(self._on_canvas_change)
-        super().close()
+        self._last_mouse_pos = self._outside

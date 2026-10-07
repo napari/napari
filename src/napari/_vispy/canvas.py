@@ -442,7 +442,7 @@ class VispyCanvas:
         # if too big or small, show a normal cursor instead
         if size < 8 or size > (min(*self.size) - 4):
             brush_circle.visible = False
-            qt_cursor = QtCursorVisual.standard
+            qt_cursor = QtCursorVisual.crosshair
         elif brush_circle._is_resizing:
             # brush is being resized: also show standard cursor
             brush_circle.visible = True
@@ -611,6 +611,8 @@ class VispyCanvas:
         self.viewer.cursor._viewbox = grid_coords
         # flip to napari-land
         self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
+        self.viewer.cursor.events.viewbox()
+        self.viewer.cursor.events.canvas_position()
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
