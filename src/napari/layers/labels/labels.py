@@ -37,7 +37,7 @@ from napari.layers.labels._labels_constants import (
 from napari.layers.labels._labels_mouse_bindings import (
     draw,
     pick,
-    resize_brush_on_mouse_move,
+    resize_or_continue_stroke,
 )
 from napari.layers.labels._labels_utils import (
     expand_slice,
@@ -342,9 +342,9 @@ class Labels(ScalarFieldBase):
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
-        Mode.PAINT: resize_brush_on_mouse_move,
+        Mode.PAINT: resize_or_continue_stroke,
         Mode.FILL: no_op,
-        Mode.ERASE: resize_brush_on_mouse_move,
+        Mode.ERASE: resize_or_continue_stroke,
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
@@ -919,7 +919,6 @@ class Labels(ScalarFieldBase):
             return mode
 
         self._overlays['polygon'].enabled = mode == Mode.POLYGON
-        self._overlays['brush_stroke'].enabled = mode == Mode.PAINT
 
         return mode
 
@@ -1143,31 +1142,6 @@ class Labels(ScalarFieldBase):
         if self._staged_history:
             self._append_to_undo_history(self._staged_history)
             self._staged_history = []
-
-    def _begin_stroke(self):
-        """Start grouping edits that span multiple events into one undo item.
-
-        Unlike `block_history`, a stroke spans discrete mouse events and so
-        cannot be expressed as a single `with` block.
-        """
-        self._block_history = True
-
-    def _commit_stroke(self):
-        """Commit a stroke started with `_begin_stroke` as one undo item."""
-        self._block_history = False
-        self._commit_staged_history()
-
-    def _abort_stroke(self) -> None:
-        """Discard the staged (uncommitted) edits of an in-progress stroke."""
-        for atom in reversed(self._staged_history):
-            if isinstance(atom, _MaskedPaintAtom):
-                self._replay_masked_atom(atom, undoing=True)
-                continue
-            indices, prev_values, _ = atom
-            self.data[indices] = prev_values  # pyrefly: ignore [unsupported-operation]
-        self._staged_history = []
-        self._block_history = False
-        self.refresh()
 
     def _append_to_undo_history(self, item):
         """Append item to history and emit paint event.

@@ -7,7 +7,7 @@ from napari._vispy.overlays.labels_brush_stroke import (
 )
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
-from napari.layers.labels._labels_key_bindings import reset_polygon
+from napari.layers.labels._labels_key_bindings import reset_polygon_or_stroke
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -81,7 +81,7 @@ def test_escape_aborts_and_restores():
         mouse_move_callbacks(layer, event)
 
     # Escape -> abort
-    reset_polygon(layer)
+    reset_polygon_or_stroke(layer)
 
     assert overlay.active is False
     assert vispy._circle.visible is False
