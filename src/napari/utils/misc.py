@@ -21,6 +21,7 @@ from typing import (
     Any,
     TypeVar,
 )
+from urllib.error import HTTPError, URLError
 
 import numpy as np
 import numpy.typing as npt
@@ -728,11 +729,16 @@ def _check_for_updates(package_name) -> list[Version]:
     current = Version(version(package_name))
 
     # TODO: shoudl do differently for conda installs?
-    with urlopen(
-        f'https://pypi.org/pypi/{package_name}/json',
-        timeout=2,
-    ) as response:
-        data = json.load(response)
+    try:
+        with urlopen(
+            f'https://pypi.org/pypi/{package_name}/json',
+            timeout=5,
+        ) as response:
+            data = json.load(response)
+    except (HTTPError, URLError):
+        # something went wrong with checking for updates, just fail
+        # gracefully since it's not a vital feature
+        return []
 
     releases = data['releases']
 

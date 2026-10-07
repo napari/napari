@@ -10,9 +10,9 @@ from superqt import QElidingLabel
 
 from napari import __version__
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.qt_event_loop import NAPARI_UPCOMING_VERSIONS
 from napari._qt.utils import use_tabular_numerals
 from napari.settings import get_settings
-from napari.utils.misc import _check_for_updates
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
@@ -23,7 +23,7 @@ _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
 }
 
 
-class CheckUpdateIcon(QLabel):
+class UpcomingUpdatesIcon(QLabel):
     def __init__(self, upcoming_releases):
         super().__init__()
         self.setText('🚀')
@@ -105,14 +105,7 @@ class ViewerStatusBar(QStatusBar):
         self.update_warning_icons()
         get_settings().experimental.events.connect(self.update_warning_icons)
 
-        # check for updates in a thread so it doesn't block the gui
-        from napari.qt import create_worker
-
-        worker = create_worker(
-            lambda: _check_for_updates('napari'),
-        )
-        worker.returned.connect(self.show_update_version)
-        worker.start()
+        self._updates_icon = None
 
     def update_warning_icons(self) -> None:
         exp_settings = get_settings().experimental
@@ -132,9 +125,13 @@ class ViewerStatusBar(QStatusBar):
 
             label.setVisible(getattr(exp_settings, setting_id))
 
-    def show_update_version(self, upcoming):
-        if upcoming:
-            self.addPermanentWidget(CheckUpdateIcon(upcoming))
+    def update_upcoming_versions_icon(self, upcoming=None):
+        if upcoming is None:
+            # use the predetermined values
+            upcoming = NAPARI_UPCOMING_VERSIONS
+        if upcoming and self._updates_icon is None:
+            self._updates_icon = UpcomingUpdatesIcon(upcoming)
+            self.addPermanentWidget(self._updates_icon)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
