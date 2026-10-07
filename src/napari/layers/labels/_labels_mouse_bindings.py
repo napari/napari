@@ -33,12 +33,12 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
+    # guard to prevent painting while resizing
+    brush_overlay = layer._overlays['brush_circle']
+    if brush_overlay._is_resizing:
+        return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
-    if layer._mode == Mode.ERASE:
-        new_label = layer.colormap.background_value
-    else:
-        new_label = layer.selected_label
 
     # right click means we are entering paint-and-fill mode, will be continued by the move
     # callback
@@ -46,6 +46,11 @@ def draw(layer, event):
         brush_stroke = layer._overlays['brush_stroke']
         brush_stroke.position = coordinates
         return
+
+    if layer._mode == Mode.ERASE:
+        new_label = layer.colormap.background_value
+    else:
+        new_label = layer.selected_label
 
     # on press
     with layer.block_history():
