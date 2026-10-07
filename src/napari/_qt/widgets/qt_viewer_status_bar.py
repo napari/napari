@@ -33,7 +33,8 @@ class UpcomingUpdatesIcon(QLabel):
             f'meaning you are {len(upcoming_releases)} release(s) behind. You might be missing out\n'
             'on some juicy new features!\n'
             'Left click here to open the latest napari release notes in your browser.\n'
-            f'Right click to open the release notes for all {len(upcoming_releases)} upcoming releases.'
+            f'Right click to open the release notes for all {len(upcoming_releases)} upcoming releases.\n'
+            f'If you choose to update, remember to reinstall napari in a fresh environment to avoid issues!'
         )
         self.upcoming_releases = upcoming_releases
 
