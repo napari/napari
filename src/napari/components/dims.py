@@ -543,7 +543,7 @@ def ensure_len(value: tuple, length: int, pad_width: Any) -> tuple:
         A tuple of values to be resized.
     length : int
         Number of desired values.
-    pad_width : Tuple
+    pad_width : Any
         Default element for left-padding.
     """
     if len(value) < length:
