@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -23,7 +23,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self,
         *,
         font_info: FontInfo,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self._scale = 1.0
 
@@ -51,7 +51,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # Determine which axes are displayed
         axes = self.viewer.dims.displayed[::-1]
 
@@ -71,15 +71,15 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
 
         self._on_labels_text_change()
 
-    def _on_labels_visible_change(self):
+    def _on_labels_visible_change(self) -> None:
         self.node.text.visible = self.overlay.labels
 
-    def _on_labels_text_change(self):
+    def _on_labels_text_change(self) -> None:
         axes = self.viewer.dims.displayed[::-1]
         axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
         self.node.text.text = axis_labels
 
-    def _on_zoom_change(self):
+    def _on_zoom_change(self) -> None:
         scale = 1 / self.viewer.scene.camera.zoom
 
         # If scale has not changed, do not redraw
@@ -91,7 +91,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.transform.reset()
         self.node.transform.scale([scale, scale, scale, 1])
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_data_change()
         self._on_labels_visible_change()

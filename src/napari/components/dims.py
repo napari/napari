@@ -1,5 +1,5 @@
 import contextlib
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from numbers import Integral
 from typing import (
     Any,
@@ -522,7 +522,7 @@ class Dims(EventedModel):
         return axis, value  # pyrefly: ignore [bad-return]
 
     @contextlib.contextmanager
-    def _validating_ctx(self):
+    def _validating_ctx(self) -> Generator[None, None, None]:
         prev = self._validating
         self._validating = True
         try:
@@ -531,7 +531,7 @@ class Dims(EventedModel):
             self._validating = prev
 
 
-def ensure_len(value: tuple, length: int, pad_width: Any):
+def ensure_len(value: tuple, length: int, pad_width: Any) -> tuple:
     """
     Ensure that the value has the required number of elements.
 
@@ -541,9 +541,9 @@ def ensure_len(value: tuple, length: int, pad_width: Any):
     ----------
     value : Tuple
         A tuple of values to be resized.
-    ndim : int
+    length : int
         Number of desired values.
-    default : Tuple
+    pad_width : Tuple
         Default element for left-padding.
     """
     if len(value) < length:
