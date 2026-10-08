@@ -71,7 +71,7 @@ def toggle_theme(viewer: ViewerModel) -> None:
     current_theme = viewer.theme
     # Check what the system theme is, to toggle properly
     if current_theme == 'system':
-        current_theme = get_system_theme()
+        current_theme = f'napari-{get_system_theme()}'
     idx = themes.index(current_theme)
     idx = (idx + 1) % len(themes)
     # Don't toggle to system, just among actual themes

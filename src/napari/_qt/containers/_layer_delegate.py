@@ -187,7 +187,10 @@ class LayerDelegate(QStyledItemDelegate):
         except (ValueError, FileNotFoundError):
             return
         bg = option.palette.color(option.palette.ColorRole.Window).red()
-        colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
+        # TODO: actually get current viewer theme somehow?
+        colored_icon = icon.colored(
+            theme='napari-dark' if bg < 128 else 'napari-light'
+        )
         lock_rect = self._lock_icon_rect(option, index)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
 

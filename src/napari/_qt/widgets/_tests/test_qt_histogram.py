@@ -88,8 +88,8 @@ def test_qt_histogram_widget_updates_theme(qtbot):
     layer.histogram.compute()
 
     try:
-        settings.appearance.theme = 'light'
-        light_theme = get_theme('light')
+        settings.appearance.theme = 'napari-light'
+        light_theme = get_theme('napari-light')
 
         qtbot.waitUntil(
             lambda: np.allclose(
@@ -134,8 +134,8 @@ def test_qt_histogram_widget_updates_from_settings_theme(
     layer.histogram.compute()
 
     try:
-        settings.appearance.theme = 'light'
-        light_theme = get_theme('light')
+        settings.appearance.theme = 'napari-light'
+        light_theme = get_theme('napari-light')
 
         qtbot.waitUntil(
             lambda: np.allclose(

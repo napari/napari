@@ -83,7 +83,7 @@ figure_no_outside_shape = viewer.export_figure()
 # The final one shows how the exported figure adapts to change in the layer extent.
 # In the second row are the screenshots, showing the fact that the entire canvas
 # is captured and that zoom is preserved.
-viewer.theme = 'dark'
+viewer.theme = 'napari-dark'
 viewer.layers.select_all()
 viewer.layers.remove_selected()
 

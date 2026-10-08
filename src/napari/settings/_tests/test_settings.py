@@ -13,7 +13,7 @@ from yaml import safe_load
 from napari import settings
 from napari._pydantic_util import get_inner_type
 from napari.settings import CURRENT_SCHEMA_VERSION, NapariSettings
-from napari.utils.theme import get_theme, register_theme
+from napari.utils.theme import Theme, get_theme, register_theme
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def test_settings_file(test_settings):
 
 def test_settings_autosave(test_settings):
     assert not Path(test_settings.config_path).exists()
-    test_settings.appearance.theme = 'light'
+    test_settings.appearance.theme = 'napari-light'
     assert Path(test_settings.config_path).exists()
 
 
@@ -52,15 +52,15 @@ def test_settings_autosave_recursive(test_settings):
 def test_settings_file_not_created(test_settings):
     assert not Path(test_settings.config_path).exists()
     test_settings._save_on_change = False
-    test_settings.appearance.theme = 'light'
+    test_settings.appearance.theme = 'napari-light'
     assert not Path(test_settings.config_path).exists()
 
 
 def test_settings_loads(tmp_path):
-    data = 'appearance:\n   theme: light'
+    data = 'appearance:\n   theme: napari-light'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
-    assert NapariSettings(fake_path).appearance.theme == 'light'
+    assert NapariSettings(fake_path).appearance.theme == 'napari-light'
 
 
 def test_settings_load_invalid_content(tmp_path):
@@ -138,13 +138,15 @@ def test_settings_to_dict(test_settings):
 
 def test_settings_to_dict_no_env(monkeypatch):
     """Test that exclude_env works to exclude variables coming from the env."""
-    s = NapariSettings(None, appearance={'theme': 'light'})
-    assert s.model_dump()['appearance']['theme'] == 'light'
-    assert s.model_dump(exclude_env=True)['appearance']['theme'] == 'light'
+    s = NapariSettings(None, appearance={'theme': 'napari-light'})
+    assert s.model_dump()['appearance']['theme'] == 'napari-light'
+    assert (
+        s.model_dump(exclude_env=True)['appearance']['theme'] == 'napari-light'
+    )
 
-    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
+    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'napari-light')
     s = NapariSettings(None)
-    assert s.model_dump()['appearance']['theme'] == 'light'
+    assert s.model_dump()['appearance']['theme'] == 'napari-light'
     assert 'theme' not in s.model_dump(exclude_env=True).get('appearance', {})
 
 
@@ -152,11 +154,11 @@ def test_settings_reset(test_settings):
     appearance_id = id(test_settings.appearance)
     test_settings.reset()
     assert id(test_settings.appearance) == appearance_id
-    assert test_settings.appearance.theme == 'dark'
-    test_settings.appearance.theme = 'light'
-    assert test_settings.appearance.theme == 'light'
+    assert test_settings.appearance.theme == 'napari-dark'
+    test_settings.appearance.theme = 'napari-light'
+    assert test_settings.appearance.theme == 'napari-light'
     test_settings.reset()
-    assert test_settings.appearance.theme == 'dark'
+    assert test_settings.appearance.theme == 'napari-dark'
     assert id(test_settings.appearance) == appearance_id
 
 
@@ -178,17 +180,19 @@ def test_custom_theme_settings(test_settings):
     with pytest.raises(ValidationError):
         test_settings.appearance.theme = custom_theme_name
 
-    blue_theme = get_theme('dark').to_rgb_dict()
+    blue_theme = get_theme('napari-dark').to_rgb_dict()
     blue_theme.update(
+        id='blue',
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
         primary='rgb(80, 88, 108)',
         current='rgb(184, 112, 0)',
     )
-    register_theme(custom_theme_name, blue_theme, 'test')
+    blue_theme = Theme(**blue_theme)
+    register_theme(blue_theme, 'test')
 
     # Theme registered, should pass validation
-    test_settings.appearance.theme = custom_theme_name
+    test_settings.appearance.theme = blue_theme.full_id
 
 
 def test_settings_string(test_settings):
@@ -216,10 +220,10 @@ def test_model_fields_are_annotated(test_settings):
 
 
 def test_settings_env_variables(monkeypatch):
-    assert NapariSettings(None).appearance.theme == 'dark'
+    assert NapariSettings(None).appearance.theme == 'napari-dark'
     # NOTE: this was previously tested as NAPARI_THEME
-    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
-    assert NapariSettings(None).appearance.theme == 'light'
+    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'napari-light')
+    assert NapariSettings(None).appearance.theme == 'napari-light'
 
 
 def test_settings_env_variables_json(monkeypatch):
@@ -276,35 +280,37 @@ def test_subfield_env_field(monkeypatch):
 # Failing because dark is actually the default...
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     # create a settings file with light theme
-    data = 'appearance:\n   theme: light'
+    data = 'appearance:\n   theme: napari-light'
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
     # make sure they wrote correctly
     disk_settings = fake_path.read_text()
-    assert 'theme: light' in disk_settings
+    assert 'theme: napari-light' in disk_settings
     # make sure they load correctly
-    assert NapariSettings(fake_path).appearance.theme == 'light'
+    assert NapariSettings(fake_path).appearance.theme == 'napari-light'
 
     # now load settings again with an Env-var override
-    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'dark')
+    monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'napari-dark')
     settings = NapariSettings(fake_path)
     # make sure the override worked, and save again
-    assert settings.appearance.theme == 'dark'
+    assert settings.appearance.theme == 'napari-dark'
     # data from the config file is still "known"
-    assert settings.config_file_settings['appearance']['theme'] == 'light'
+    assert (
+        settings.config_file_settings['appearance']['theme'] == 'napari-light'
+    )
     # but we know what came from env vars as well:
-    assert settings.env_settings['appearance']['theme'] == 'dark'
+    assert settings.env_settings['appearance']['theme'] == 'napari-dark'
 
     # when we save it shouldn't use environment variables and it shouldn't
-    # have overridden our non-default value of `theme: light`
+    # have overridden our non-default value of `theme: napari-light`
     settings.save()
     disk_settings = fake_path.read_text()
-    assert 'theme: light' in disk_settings
+    assert 'theme: napari-light' in disk_settings
 
     # and it's back if we reread without the env var override
     monkeypatch.delenv('NAPARI_APPEARANCE_THEME')
-    assert NapariSettings(fake_path).appearance.theme == 'light'
+    assert NapariSettings(fake_path).appearance.theme == 'napari-light'
 
 
 def test_settings_env_variables_override_file(tmp_path, monkeypatch):
@@ -378,7 +384,7 @@ def test_first_time():
 #     from napari.settings import SETTINGS
 
 #     with pytest.warns(FutureWarning):
-#         assert SETTINGS.appearance.theme == 'dark'
+#         assert SETTINGS.appearance.theme == 'napari-dark'
 
 
 def test_no_save_path():
@@ -398,15 +404,15 @@ def test_settings_events(test_settings):
 
     mock = MagicMock()
     test_settings.events.changed.connect(mock)
-    test_settings.appearance.theme = 'light'
+    test_settings.appearance.theme = 'napari-light'
 
     assert mock.called
     event = mock.call_args_list[0][0][0]
     assert event.key == 'appearance.theme'
-    assert event.value == 'light'
+    assert event.value == 'napari-light'
 
     mock.reset_mock()
-    test_settings.appearance.theme = 'light'
+    test_settings.appearance.theme = 'napari-light'
     mock.assert_not_called()
 
 
