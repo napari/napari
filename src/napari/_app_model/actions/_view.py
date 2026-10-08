@@ -153,6 +153,10 @@ def _zoom_to_selected_label(viewer: ViewerModel) -> None:
     extent[:, offset:] = get_extent_world(
         np.stack([min_vals, max_vals]) - 0.5, layer._data_to_world
     )
+    min_size = 16 * np.abs(layer.scale)
+    grow = np.maximum(min_size - (extent[1, offset:] - extent[0, offset:]), 0)
+    extent[0, offset:] -= grow / 2
+    extent[1, offset:] += grow / 2
     viewer._fit_to_extent(extent[:, viewer.dims.displayed], margin=0.2)
 
 
