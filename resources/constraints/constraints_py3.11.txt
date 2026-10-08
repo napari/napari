@@ -45,7 +45,7 @@ coverage==7.16.2
     # via napari (pyproject.toml)
 cuda-bindings==13.4.3
     # via torch
-cuda-pathfinder==1.8.2
+cuda-pathfinder==1.8.3
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
@@ -65,7 +65,7 @@ donfig==0.8.1.post1
     # via zarr
 executing==2.2.1
     # via stack-data
-filelock==4.0.7
+filelock==4.0.11
     # via
     #   python-discovery
     #   torch
@@ -93,7 +93,7 @@ heapdict==1.0.1
     # via cachey
 hsluv==5.0.4
     # via vispy
-hypothesis==6.168.3
+hypothesis==6.168.4
     # via napari (pyproject.toml)
 idna==3.20
     # via
@@ -149,7 +149,7 @@ lazy-loader==0.6
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-llvmlite==0.49.0
+llvmlite==0.50.0
     # via numba
 locket==1.0.0
     # via partd
@@ -164,7 +164,7 @@ magicgui==0.10.2
     # via napari (pyproject.toml)
 markdown-it-py==4.2.0
     # via rich
-markupsafe==3.0.3
+markupsafe==3.0.4
     # via jinja2
 matplotlib==3.11.2
     # via napari (pyproject.toml)
@@ -204,7 +204,7 @@ npe2==0.9.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
-numba==0.67.0
+numba==0.68.0
     # via napari (pyproject.toml)
 numcodecs==0.16.5
     # via zarr
@@ -313,7 +313,7 @@ pint==0.25.3
     #   napari-metadata
 pip==26.2.1
     # via napari-plugin-manager
-platformdirs==4.12.2
+platformdirs==4.12.3
     # via
     #   napari (pyproject.toml)
     #   jupyter-core
@@ -393,7 +393,7 @@ pyqt6-qt6==6.11.2
     # via
     #   napari (pyproject.toml)
     #   pyqt6
-pyqt6-sip==13.12.0
+pyqt6-sip==13.13.0
     # via pyqt6
 pyside6==6.11.2
     # via
@@ -430,7 +430,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 python-discovery==1.6.1
     # via virtualenv
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3
     # via
@@ -471,7 +471,7 @@ rich==15.0.0
     #   npe2
     #   pytest-pretty
     #   typer
-rpds-py==2026.6.3
+rpds-py==2026.9.1
     # via
     #   jsonschema
     #   referencing
@@ -519,7 +519,7 @@ toolz==1.1.0
     #   napari (pyproject.toml)
     #   dask
     #   partd
-torch==2.14.0
+torch==2.14.1
     # via napari (pyproject.toml:testing-extra)
 tornado==6.5.10
     # via
@@ -568,13 +568,13 @@ typing-inspection==0.4.4
     #   pydantic-settings
 urllib3==2.8.0
     # via requests
-virtualenv==21.14.1
+virtualenv==21.14.5
     # via napari (pyproject.toml)
 vispy==0.17.0
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-wcwidth==0.9.1
+wcwidth==0.9.2
     # via prompt-toolkit
 wrapt==2.5.0
     # via
@@ -588,5 +588,5 @@ zarr==3.1.6
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-zipp==4.1.0
+zipp==4.1.1
     # via importlib-metadata
