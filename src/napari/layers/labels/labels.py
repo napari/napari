@@ -157,7 +157,11 @@ class Labels(ScalarFieldBase):
         Values on the negative side of the normal are discarded if the plane is enabled.
     features : dict[str, array-like] or DataFrame
         Features table where each row corresponds to a label and each column
-        is a feature. The first row corresponds to the background label.
+        is a feature. If there is an ``index`` column, each row belongs to
+        the label with that value. Otherwise row i belongs to label i, so
+        the first row corresponds to the background label. Tables from
+        ``skimage.measure.regionprops_table`` skip the background, so rename
+        their ``label`` column to ``index``.
     iso_gradient_mode : str
         Method for calulating the gradient (used to get the surface normal) in the
         'iso_categorical' rendering mode. Must be one of {'fast', 'smooth'}.
@@ -247,7 +251,8 @@ class Labels(ScalarFieldBase):
         ``colormap`` directly, using `napari.utils.colormaps.label_colormap`.
     features : Dataframe-like
         Features table where each row corresponds to a label and each column
-        is a feature. The first row corresponds to the background label.
+        is a feature. If there is an ``index`` column, each row belongs to
+        the label with that value. Otherwise row i belongs to label i.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
