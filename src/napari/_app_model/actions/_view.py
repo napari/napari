@@ -163,9 +163,7 @@ VIEW_ACTIONS: list[Action] = [
                 'order': 1,
             }
         ],
-        keybindings=[
-            KeyBindingRule(primary='Ctrl+G', mac='Cmd+G'),
-        ],
+        # keybinding declared via _viewer_key_bindings
     ),
     Action(
         id='napari.scene.fit_to_view',
