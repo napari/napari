@@ -11,6 +11,7 @@ from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import ViewerModel
+from napari.layers import Labels
 from napari.layers.utils.layer_utils import get_extent_world
 from napari.settings import get_settings
 from napari.utils.notifications import show_info
@@ -131,6 +132,8 @@ def _fit_to_view(viewer: ViewerModel) -> None:
 
 def _zoom_to_selected_label(viewer: ViewerModel) -> None:
     layer = viewer.layers.selection.active
+    if not isinstance(layer, Labels):
+        return
     location = layer._locate_label(layer.selected_label)
     if location is None:
         show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
@@ -143,7 +146,7 @@ def _zoom_to_selected_label(viewer: ViewerModel) -> None:
         world_point = layer._data_to_world(point)
         viewer.dims.set_point(
             [axis + offset for axis in not_displayed],
-            world_point[not_displayed],
+            world_point[not_displayed].tolist(),
         )
 
     extent = viewer.layers._extent_world_augmented.copy()
