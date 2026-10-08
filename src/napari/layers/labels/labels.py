@@ -66,7 +66,7 @@ from napari.utils.colormaps.colormap import (
 from napari.utils.colormaps.colormap_utils import shuffle_and_extend_colormap
 from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
-from napari.utils.misc import StringEnum
+from napari.utils.misc import StringEnum, _external_stacklevel
 from napari.utils.naming import magic_name
 from napari.utils.status_messages import format_feature_value
 
@@ -713,15 +713,20 @@ class Labels(ScalarFieldBase):
             label_index = {i: k for k, i in enumerate(features['index'])}
         elif features.shape[1] > 0:
             label_index = {i: i for i in range(features.shape[0])}
-            labels = np.asarray(features.get('label', []))
-            if np.issubdtype(labels.dtype, np.integer) and not np.array_equal(
-                labels, np.arange(features.shape[0])
+            labels = features.get('label')
+            if (
+                labels is not None
+                and labels.dtype.kind in 'iu'
+                and not np.array_equal(
+                    labels.to_numpy(dtype=float, na_value=np.nan),
+                    np.arange(features.shape[0]),
+                )
             ):
                 warnings.warn(
                     "Labels features have a 'label' column but no 'index' "
                     'column, so row i is used for label i. Rename the '
                     "'label' column to 'index' to match rows by label value.",
-                    stacklevel=3,
+                    stacklevel=_external_stacklevel(),
                 )
         return label_index
 
