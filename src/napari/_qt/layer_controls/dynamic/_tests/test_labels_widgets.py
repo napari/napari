@@ -204,6 +204,20 @@ class TestQtDisplaySelectedLabelCheckBoxControl:
         control.selected_color_checkbox.setChecked(False)
         assert not labels.show_selected_label
 
+    def test_zoom_to_selected_sync(self, qt_wrap: QtWrap) -> None:
+        labels = [
+            Labels(data=np.zeros((10, 10), dtype=np.uint8)) for _ in range(2)
+        ]
+        control = QtDisplaySelectedLabelCheckBoxControl(labels)
+        qt_wrap.add_control(control)
+
+        assert not control.zoom_checkbox.isChecked()
+        control.zoom_checkbox.setChecked(True)
+        assert all(layer.zoom_to_selected_label for layer in labels)
+
+        labels[0].zoom_to_selected_label = False
+        assert not control.zoom_checkbox.isChecked()
+
 
 class TestQtNdimSpinBoxControl:
     def test_init(self, qt_wrap: QtWrap) -> None:
