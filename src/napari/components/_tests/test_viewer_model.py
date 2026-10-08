@@ -608,9 +608,8 @@ def test_active_layer_status_update():
 
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
-    viewer.mouse_over_canvas = True
-    viewer.cursor.position = (1, 1, 1, 1, 1)
     viewer.cursor._canvas_position = (1, 1)
+    viewer.cursor.position = [1, 1, 1, 1, 1]
     assert viewer._calc_status_from_cursor()[
         0
     ] == viewer.layers.selection.active.get_status(
@@ -1025,9 +1024,9 @@ def test_make_layer_visible_after_slicing():
 
 def test_get_status_text():
     viewer = ViewerModel(ndisplay=2)
-    viewer.mouse_over_canvas = False
+    viewer.cursor._canvas_position = None
     assert viewer._calc_status_from_cursor() is None
-    viewer.mouse_over_canvas = True
+    viewer.cursor._canvas_position = (1, 1)
     assert viewer._calc_status_from_cursor() == (' » [empty]', '')
     viewer.cursor.position = (1, 2)
     viewer.add_labels(
@@ -1073,6 +1072,16 @@ def test_get_status_text():
         }.items()
     )
     assert viewer.tooltip.text == '0\na: 1'
+
+
+def test_mouse_over_canvas_deprecated():
+    viewer = ViewerModel()
+    with pytest.warns(FutureWarning, match='mouse_over_canvas'):
+        assert not viewer.mouse_over_canvas
+
+    viewer.cursor._canvas_position = (1, 1)
+    with pytest.warns(FutureWarning, match='mouse_over_canvas'):
+        assert viewer.mouse_over_canvas
 
 
 def test_reset_view():
