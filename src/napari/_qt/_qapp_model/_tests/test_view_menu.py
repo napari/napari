@@ -387,14 +387,14 @@ def test_zoom_to_selected_label(make_napari_viewer):
     data = np.zeros((10, 200, 300), dtype=np.uint8)
     data[8, 50:60, 100:120] = 3
     layer = viewer.add_labels(data, scale=(1, 2, 2), translate=(0, 10, 20))
-    fit_zoom = viewer.camera.zoom
+    fit_zoom = viewer.scene.camera.zoom
     layer.selected_label = 3
 
     app.commands.execute_command('napari.scene.zoom_to_selected_label')
 
     assert viewer.dims.point[0] == 8
-    assert viewer.camera.center[1:] == pytest.approx((119, 239))
-    assert viewer.camera.zoom > fit_zoom
+    assert viewer.scene.camera.center[1:] == pytest.approx((119, 239))
+    assert viewer.scene.camera.zoom > fit_zoom
 
 
 def test_zoom_to_selected_label_enablement(make_napari_viewer):
@@ -413,10 +413,10 @@ def test_zoom_to_selected_label_enablement(make_napari_viewer):
 def test_zoom_to_selected_label_absent_keeps_camera():
     viewer = ViewerModel()
     viewer.add_labels(np.zeros((20, 20), dtype=np.uint8))
-    center, zoom = viewer.camera.center, viewer.camera.zoom
+    center, zoom = viewer.scene.camera.center, viewer.scene.camera.zoom
     _zoom_to_selected_label(viewer)
-    assert viewer.camera.center == center
-    assert viewer.camera.zoom == zoom
+    assert viewer.scene.camera.center == center
+    assert viewer.scene.camera.zoom == zoom
 
 
 def test_zoom_to_selected_label_3d_display():
@@ -426,7 +426,7 @@ def test_zoom_to_selected_label_3d_display():
     viewer.add_labels(data)
     viewer.dims.ndisplay = 3
     _zoom_to_selected_label(viewer)
-    assert viewer.camera.center == pytest.approx((2.5, 5.5, 10.5))
+    assert viewer.scene.camera.center == pytest.approx((2.5, 5.5, 10.5))
 
 
 def test_zoom_to_selected_label_lower_dim_layer():
@@ -436,4 +436,4 @@ def test_zoom_to_selected_label_lower_dim_layer():
     data[5:7, 10:12] = 1
     viewer.add_labels(data)
     _zoom_to_selected_label(viewer)
-    assert viewer.camera.center[1:] == pytest.approx((5.5, 10.5))
+    assert viewer.scene.camera.center[1:] == pytest.approx((5.5, 10.5))
