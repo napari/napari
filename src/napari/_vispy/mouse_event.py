@@ -21,8 +21,8 @@ class NapariMouseEvent(MouseEvent):
         The direction of the camera up vector.
     camera_zoom : float
         The camera zoom level.
-    position : tuple[float, float]
-        The position of the mouse in the canvas mapped to data coordinates.
+    position : tuple[float, ...]
+        The position of the mouse mapped to world coordinates.
     dims_displayed : list[int]
         The dimensions displayed in the viewer.
     dims_point : list[float]
@@ -37,7 +37,7 @@ class NapariMouseEvent(MouseEvent):
         view_direction: np.ndarray[tuple[int], np.dtype[np.floating]] | None,
         up_direction: np.ndarray[tuple[int], np.dtype[np.floating]] | None,
         camera_zoom: float,
-        position: tuple[float, float],
+        position: tuple[float, ...],
         dims_displayed: list[int],
         dims_point: list[float],
         viewbox: tuple[int, int],
