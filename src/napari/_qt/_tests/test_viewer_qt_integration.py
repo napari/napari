@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from numpy import testing as npt
 from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
-from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
+from qtpy.QtGui import QGuiApplication, QKeyEvent, QMouseEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
@@ -290,19 +290,36 @@ def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
     assert viewer.cursor.canvas_position is None
 
     canvas = qt_viewer.canvas.native
-    canvas.enterEvent(
-        QEnterEvent(
+    # the hover state comes from the canvas itself: a mouse move over the
+    # canvas is what sets cursor.canvas_position
+    QApplication.sendEvent(
+        canvas,
+        QMouseEvent(
+            QEvent.Type.MouseMove,
             QPointF(10, 10),
             QPointF(10, 10),
-            QPointF(10, 10),
-        )
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
     )
+    # the canvas mouse move handler is throttled, let it finish so the
+    # timer is not dangling running when the test ends
+    qtbot.wait(20)
     assert viewer.cursor.canvas_position is not None
-    assert viewer.status == 'Ready'
 
-    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
+    # the status is computed by a background thread which does not run in
+    # tests, so ask it to compute it synchronously
+    viewer.window._qt_window.status_thread.calculate_status()
+    assert viewer.status == ' » [empty]'
+
+    # leaving the canvas clears the hover state, because the main window
+    # catches the leave event of the canvas
+    QApplication.sendEvent(canvas, QEvent(QEvent.Type.Leave))
     assert viewer.cursor.canvas_position is None
-    assert viewer.status == ''
+
+    viewer.window._qt_window.status_thread.calculate_status()
+    assert viewer.status == 'Ready'
 
 
 def test_qt_viewer_with_console(make_napari_viewer):
