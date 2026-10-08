@@ -152,6 +152,18 @@ def _get_current_synced_camera(viewer: ViewerModel) -> bool:
 
 
 VIEW_ACTIONS: list[Action] = [
+    ViewerModelToggleAction(
+        id='napari.scene.toggle_crosshair',
+        title='Toggle Crosshair',
+        attribute_path='scene.overlays.crosshair.visible',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+    ),
     Action(
         id='napari.scene.fit_to_view',
         title='Fit to View',
