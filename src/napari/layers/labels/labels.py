@@ -404,6 +404,7 @@ class Labels(ScalarFieldBase):
         self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
+        self._zoom_to_selected_label = False
         self._contour = 0
 
         data = self._ensure_int_labels(data)
@@ -446,6 +447,7 @@ class Labels(ScalarFieldBase):
             properties=Event,
             selected_label=Event,
             show_selected_label=Event,
+            zoom_to_selected_label=Event,
         )
 
         from napari.components.overlays.labels_brush_stroke import (
@@ -856,6 +858,16 @@ class Labels(ScalarFieldBase):
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
+
+    @property
+    def zoom_to_selected_label(self) -> bool:
+        """Whether the viewer zooms to the selected label when it changes."""
+        return self._zoom_to_selected_label
+
+    @zoom_to_selected_label.setter
+    def zoom_to_selected_label(self, zoom: bool) -> None:
+        self._zoom_to_selected_label = zoom
+        self.events.zoom_to_selected_label(zoom_to_selected_label=zoom)
 
     # Only overriding to change the docstring
     @property
