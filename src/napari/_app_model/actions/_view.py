@@ -12,6 +12,7 @@ from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import ViewerModel
 from napari.layers import Labels
 from napari.settings import get_settings
+from napari.utils.notifications import show_info
 
 VIEW_SUBMENUS = [
     (
@@ -131,7 +132,8 @@ def _zoom_to_selected_label(viewer: ViewerModel) -> None:
     layer = viewer.layers.selection.active
     if not isinstance(layer, Labels):
         return
-    viewer._zoom_to_label(layer)
+    if not viewer._zoom_to_label(layer):
+        show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
 
 
 def _zoom_in(viewer: ViewerModel) -> None:

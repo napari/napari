@@ -91,7 +91,6 @@ from napari.utils.events import (
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
-from napari.utils.notifications import show_info
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 
@@ -569,14 +568,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 extent, scale_factor
             )
 
-    def _zoom_to_label(self, layer: Labels) -> None:
-        """Center and zoom the camera on the selected label of a layer."""
+    def _zoom_to_label(self, layer: Labels) -> bool:
+        """Center and zoom the camera on the selected label of a layer.
+
+        Returns False if the label is not in the layer.
+        """
         location = layer._locate_label(layer.selected_label)
         if location is None:
-            show_info(
-                f'Label {layer.selected_label} is not in layer {layer.name}'
-            )
-            return
+            return False
         min_vals, max_vals, point = location
 
         offset = self.dims.ndim - layer.ndim
@@ -599,6 +598,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         extent[0, offset:] -= grow / 2
         extent[1, offset:] += grow / 2
         self._fit_to_extent(extent[:, self.dims.displayed], margin=0.2)
+        return True
+
+    def _on_selected_label_change(self, event) -> None:
+        if event.source.zoom_to_selected_label:
+            self._zoom_to_label(event.source)
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').
@@ -1061,6 +1065,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
+        if isinstance(layer, Labels):
+            layer.events.selected_label.connect(self._on_selected_label_change)
+            layer.events.zoom_to_selected_label.connect(
+                self._on_selected_label_change
+            )
         self._layer_help_from_mode(layer)
 
         # Update dims
