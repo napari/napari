@@ -14,7 +14,12 @@ if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
+    from napari.components.overlays import (
+        CanvasOverlay,
+        Overlay,
+        SceneOverlay,
+        TiledCanvasOverlay,
+    )
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
     from napari.utils.events import Event
@@ -115,6 +120,8 @@ class VispyTiledCanvasOverlay(VispyCanvasOverlay):
     canvas_position_callback is set by the VispyCanvas object, and is responsible
     to update the position of all canvas overlays whenever necessary
     """
+
+    overlay: TiledCanvasOverlay
 
     def __init__(self, **kwargs) -> None:
 
