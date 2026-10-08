@@ -872,6 +872,21 @@ class Shapes(Layer):
         maxs = np.max(bounding_boxes[:, 1, :], axis=0)
         return np.vstack([mins, maxs])
 
+    def _locate_selection(self) -> tuple[np.ndarray, np.ndarray] | None:
+        if not self.selected_data:
+            return None
+        shapes = [self._data_view.shapes[i] for i in self.selected_data]
+        boxes = np.array([shape._bounding_box for shape in shapes])
+        extent = np.stack([boxes[:, 0].min(0), boxes[:, 1].max(0)])
+        point = extent.mean(0)
+        not_displayed = sorted(self._slice_input.not_displayed)
+        if not_displayed:
+            vertices = np.concatenate([shape.data for shape in shapes])
+            point[not_displayed] = self._pick_slice(
+                vertices[:, not_displayed], point[not_displayed]
+            )
+        return extent, point
+
     @property
     def nshapes(self):
         """int: Total number of shapes."""
