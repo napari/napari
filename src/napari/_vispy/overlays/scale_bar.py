@@ -89,7 +89,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._on_size_or_zoom_change()
 
     def _on_font_size_change(self):
-        self._on_size_or_zoom_change()
+        self._on_rendering_change()
 
     def _calculate_best_length(
         self, desired_length: float
@@ -201,11 +201,17 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else self._default_font_size
+        )
+
         width, height = self.node.set_data(
             length=self._canvas_length,
             tick_length=self._canvas_tick_length if self.overlay.ticks else 0,
             thickness=self._canvas_thickness,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
             color=color,
         )
 

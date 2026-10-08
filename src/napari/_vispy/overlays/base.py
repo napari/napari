@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -42,6 +42,7 @@ class VispyBaseOverlay:
         super().__init__()
         self.overlay = overlay
         self._font_info = font_info
+        self._default_font_size = 9
         self.viewer = viewer
 
         self.node = node
@@ -67,10 +68,19 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
+    def _on_font_size_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
+
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
+        self._on_font_size_change()
 
     def close(self) -> None:
         self.overlay.events.visible.disconnect(self._on_visible_change)
@@ -158,7 +168,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         opposite = np.clip(opposite, 0, 1)
         # don't change alpha
         opposite[-1] = bgcolor[-1]
-        return opposite
+        # numpy keeps the ColorValue subclass at runtime, but its stubs don't
+        return cast(ColorValue, opposite)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -191,9 +202,8 @@ class VispySceneOverlay(VispyBaseOverlay):
         self.node.transform = MatrixTransform()
 
 
-class LayerOverlayMixin:
+class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
-    overlay: Overlay
 
     def __init__(self, *, layer: Layer, **kwargs) -> None:
         self.layer = layer
