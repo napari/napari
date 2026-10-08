@@ -2876,3 +2876,21 @@ def test_locate_label_multiscale():
     npt.assert_array_equal(min_vals, [4, 8])
     npt.assert_array_equal(max_vals, [8, 12])
     npt.assert_array_equal(point, [5.5, 9.5])
+
+
+def test_locate_label_multiscale_exact_bbox():
+    data = np.zeros((64, 64), dtype=np.uint8)
+    data[5:9, 13:22] = 3
+    layer = Labels([data, data[::2, ::2], data[::4, ::4]], multiscale=True)
+    min_vals, max_vals, _ = layer._locate_label(3)
+    npt.assert_array_equal(min_vals, [5, 13])
+    npt.assert_array_equal(max_vals, [9, 22])
+
+
+def test_locate_label_multiscale_only_in_full_resolution():
+    data = np.zeros((64, 64), dtype=np.uint8)
+    data[9, 9] = 5
+    layer = Labels([data, data[::2, ::2], data[::4, ::4]], multiscale=True)
+    min_vals, max_vals, _ = layer._locate_label(5)
+    npt.assert_array_equal(min_vals, [9, 9])
+    npt.assert_array_equal(max_vals, [10, 10])
