@@ -24,6 +24,7 @@ from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
 from napari.components.overlays import CanvasOverlay
+from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
@@ -321,6 +322,9 @@ class VispyCanvas:
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
         self.destroyed.connect(self._disconnect_events)
+        get_settings().appearance.events.font_size.connect(
+            self._update_overlay_font_sizes
+        )
 
     @property
     def events(self):
@@ -524,7 +528,10 @@ class VispyCanvas:
 
         self.viewer.cursor._viewbox = grid_coords
         # flip to napari-land
-        self.viewer.cursor._canvas_position = tuple(event.pos[::-1])
+        canvas_pos = tuple(event.pos[::-1])
+        self.viewer.cursor._canvas_position = canvas_pos
+        self.viewer.cursor.events.viewbox()
+        self.viewer.cursor.events.canvas_position()
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
@@ -532,15 +539,13 @@ class VispyCanvas:
             self.viewer.cursor._view_direction = None
             return
 
+        self.viewer.cursor.position = self.viewer.canvas_to_world(
+            canvas_pos, grid_coords
+        )
         # TODO: this will be cleaned up by followup PRs, as it shouldn't be
         #       calculated via vispy, and it probably shouldn't live on the cursor
         self.viewer.cursor._view_direction = self._calculate_view_direction(
             event.pos
-        )
-        self.viewer.cursor.position = tuple(
-            self.viewer.canvas_to_world(
-                self.viewer.cursor.canvas_position, grid_coords
-            )
         )
 
         napari_event = NapariMouseEvent(
@@ -1273,6 +1278,16 @@ class VispyCanvas:
             vispy_overlay.node.transform.translate = [x, y, 0, 0]
 
         self._needs_overlay_position_update = False
+
+    def _update_overlay_font_sizes(self, *, font_size: float | None = None):
+        if font_size is None:
+            font_size = get_settings().appearance.font_size
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay.set_default_font_size(font_size)
+        for overlay_to_visual in self._layer_overlay_to_visual.values():
+            for vispy_overlay in overlay_to_visual.values():
+                vispy_overlay.set_default_font_size(font_size)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
