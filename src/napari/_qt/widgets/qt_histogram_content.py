@@ -121,6 +121,7 @@ class QtHistogramContentWidget(QWidget):
 
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self.layer.histogram.events, self)
+        disconnect_events(self.layer.events, self)
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up child widgets."""

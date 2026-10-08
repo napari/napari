@@ -153,27 +153,26 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         # Content starts hidden.
-        assert control.histogram_content_widget.isHidden()
-        assert control.histogram_content is None
+        assert control.histogram_content.isHidden()
 
-        control._on_histogram_button_toggled(True)
-        assert not control.histogram_content_widget.isHidden()
+        control._enable_histogram(True)
+        assert not control.histogram_content.isHidden()
         assert control.histogram_content is not None
         assert control.histogram_content.histogram_widget is not None
         assert control.histogram_content.settings_widget is not None
 
-        control._on_histogram_button_toggled(False)
-        assert control.histogram_content_widget.isHidden()
+        control._enable_histogram(False)
+        assert control.histogram_content.isHidden()
         # Content is kept around (just hidden) until disconnect.
         assert control.histogram_content is not None
 
         control.disconnect_widget_controls()
 
-    def test_content_widget_starts_hidden(self, qt_wrap: QtWrap) -> None:
+    def test_content_starts_hidden(self, qt_wrap: QtWrap) -> None:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        assert control.histogram_content_widget.isHidden()
+        assert control.histogram_content.isHidden()
 
     def test_get_widget_controls_includes_histogram(
         self, qt_wrap: QtWrap
@@ -183,7 +182,7 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         controls = control.get_widget_controls()
-        assert any(control.histogram_content_widget in c for c in controls)
+        assert any(control.histogram_content in c for c in controls)
 
     def test_histogram_computes_on_enable(
         self, qt_wrap: QtWrap, qtbot: QtBot
@@ -192,8 +191,8 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control._ensure_histogram_content()
-        control._schedule_histogram_compute()
+        control.histogram_content._ensure_histogram_content()
+        control.histogram_content._schedule_histogram_compute()
 
         qtbot.waitUntil(
             lambda: _get_computed(layer)['counts'].sum() > 0, timeout=10000
@@ -210,7 +209,7 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
 
-        control._ensure_histogram_content()
+        control.histogram_content._ensure_histogram_content()
         assert control.histogram_content is not None
 
         control.disconnect_widget_controls()
@@ -231,8 +230,8 @@ class TestQtContrastLimitsControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control._ensure_histogram_content()
-        control._schedule_histogram_compute()
+        control.histogram_content._ensure_histogram_content()
+        control.histogram_content._schedule_histogram_compute()
         QThreadPool.globalInstance().waitForDone(2000)
         control.disconnect_widget_controls()
         # should not hang or error after the worker is aborted
@@ -245,7 +244,6 @@ class TestQContrastLimitsPopup:
         widget = QContrastLimitsPopup([image])
         qtbot.add_widget(widget)
         assert widget.slider.decimals() == 0
-        assert not widget._needs_content_on_show
 
     def test_init_float_image(self, qtbot: QtBot) -> None:
         image = Image(np.zeros((10, 10), dtype=np.float32))
@@ -266,43 +264,17 @@ class TestQContrastLimitsPopup:
         assert image.contrast_limits == [0, 255]
         assert widget.slider.maximum() == 255
 
-    def test_need_content_on_show(self, qtbot: QtBot) -> None:
-        """Check that the histogram content is created lazily and cleaned up."""
-        image = Image(np.zeros((10, 10), dtype=np.uint8))
-        widget = QContrastLimitsPopup([image])
-        qtbot.add_widget(widget)
-
-        # The popup never auto-creates content on show anymore.
-        assert not widget._needs_content_on_show
-        assert widget.histogram_content is None
-
-        widget._ensure_histogram_content()
-        hc = widget.histogram_content
-        assert hc is not None
-        widget._ensure_histogram_content()
-        assert widget.histogram_content is hc, (
-            'Histogram content should not be recreated on second call'
-        )
-
-        widget._cleanup()
-
-        assert widget.histogram_content is None
-
     def test_popup_opens_with_histogram(self, qtbot: QtBot) -> None:
         image = Image(np.zeros((10, 10), dtype=np.uint8))
         widget = QContrastLimitsPopup([image])
         qtbot.add_widget(widget)
 
-        assert widget.histogram_content is None
-        widget._ensure_histogram_content()
+        widget.histogram_content._ensure_histogram_content()
 
         hc = widget.histogram_content
         assert hc is not None
         assert hc.histogram_widget is not None
         assert hc.settings_widget is not None
-
-        widget._cleanup()
-        assert widget.histogram_content is None
 
 
 class TestQtFaceColorControl:
@@ -352,17 +324,17 @@ class TestQtHistogramControl:
         image = Image(np.random.rand(10, 10))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        qt_wrap.add_widget(control.histogram_content_widget)
+        qt_wrap.add_widget(control.histogram_content)
 
     def test_histogram_update(self, qt_wrap: QtWrap) -> None:
         image = Image(np.random.rand(10, 10))
         control = QtContrastLimitsControl([image])
         qt_wrap.add_control(control)
-        qt_wrap.add_widget(control.histogram_content_widget)
-        control._ensure_histogram_content()
+        qt_wrap.add_widget(control.histogram_content)
+        control.histogram_content._ensure_histogram_content()
         hit_content = control.histogram_content
         assert hit_content is not None
-        control._ensure_histogram_content()
+        control.histogram_content._ensure_histogram_content()
         assert control.histogram_content is hit_content
 
     @pytest.mark.parametrize(
@@ -381,7 +353,7 @@ class TestQtHistogramControl:
         control = QtContrastLimitsControl([layer])
         qt_wrap.add_control(control)
 
-        control._ensure_histogram_content()
+        control.histogram_content._ensure_histogram_content()
         assert control.histogram_content is not None
         assert control.histogram_content.histogram_widget is not None
         assert control.histogram_content.settings_widget is not None

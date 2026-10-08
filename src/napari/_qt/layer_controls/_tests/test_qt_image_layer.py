@@ -4,7 +4,6 @@ from qtpy.QtCore import Qt
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari.components.dims import Dims
 from napari.layers import Image
-from napari.utils.histogram import _get_computed
 
 
 def test_interpolation_combobox(qtbot):
@@ -146,33 +145,6 @@ def test_auto_contrast_buttons(qtbot):
     assert layer.contrast_limits == [192, 255]
 
 
-def test_histogram_button_toggles_inline_histogram(qtbot):
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    button = qtctrl._contrast_limits_control.histogram_button
-    assert button is not None
-    assert qtctrl._contrast_limits_control is not None
-    assert qtctrl._contrast_limits_control.histogram_content_wrapper.isHidden()
-
-    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-
-    assert not qtctrl._contrast_limits_control.histogram_content_wrapper.isHidden()
-    assert (
-        qtctrl.layout().labelForField(
-            qtctrl._contrast_limits_control.histogram_content_wrapper
-        )
-        is None
-    )
-    assert button.isChecked()
-
-    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-
-    assert qtctrl._contrast_limits_control.histogram_content_wrapper.isHidden()
-    assert not button.isChecked()
-
-
 def test_histogram_button_right_click_opens_popup(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtImageControls(layer)
@@ -194,36 +166,6 @@ def test_histogram_button_right_click_opens_popup(qtbot):
     popup.close()
 
 
-def test_histogram_control_lazy_creation(qtbot):
-    """Histogram control should lazily create content on first _ensure_histogram_content() call."""
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    # Before _ensure_histogram_content: content_widget exists but histogram_content is None
-    assert qtctrl._contrast_limits_control is not None
-    assert (
-        qtctrl._contrast_limits_control.histogram_content_wrapper is not None
-    )
-    assert qtctrl._contrast_limits_control.histogram_content is None
-
-    # After _ensure_histogram_content: all sub-widgets exist
-    qtctrl._contrast_limits_control._ensure_histogram_content()
-    assert qtctrl._contrast_limits_control.histogram_content is not None
-    assert (
-        qtctrl._contrast_limits_control.histogram_content.histogram_widget
-        is not None
-    )
-    assert (
-        qtctrl._contrast_limits_control.histogram_content.settings_widget
-        is not None
-    )
-
-    # Second call is idempotent
-    qtctrl._contrast_limits_control._ensure_histogram_content()
-    assert qtctrl._contrast_limits_control.histogram_content is not None
-
-
 def test_histogram_widget_responds_to_viewer_theme_toggle(
     qtbot, make_napari_viewer
 ):
@@ -240,13 +182,13 @@ def test_histogram_widget_responds_to_viewer_theme_toggle(
         np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
     )
     controls = viewer.window._qt_viewer.controls.widgets[layer]
-    controls._contrast_limits_control._ensure_histogram_content()
+    controls._contrast_limits_control.histogram_content._ensure_histogram_content()
     widget = (
         controls._contrast_limits_control.histogram_content.histogram_widget
     )
     assert widget is not None
 
-    controls._contrast_limits_control._on_histogram_button_toggled(True)
+    controls._contrast_limits_control._enable_histogram(True)
     layer.histogram.compute(layer)
 
     # Pick a theme different from the current one, same as Ctrl+Shift+T.
@@ -305,7 +247,7 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
 
     # 1. Enable inline histogram via left-click
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert not control.histogram_content_widget.isHidden()
+    assert not control.histogram_content.isHidden()
     assert button.isChecked()
 
     # 2. Open popup via right-click (while inline is showing)
@@ -320,103 +262,9 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
     # 3. Close popup — inline histogram should still be enabled
     popup.close()
     assert button.isChecked()
-    assert not control.histogram_content_widget.isHidden()
+    assert not control.histogram_content.isHidden()
 
     # 4. Toggle inline off
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert control.histogram_content_widget.isHidden()
+    assert control.histogram_content.isHidden()
     assert not button.isChecked()
-
-
-def test_api_enable_shows_inline_widget(qtbot):
-    """Enabling the inline histogram via the button should show the inline content widget."""
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    control = qtctrl._contrast_limits_control
-    assert control is not None
-    assert control.histogram_content_wrapper.isHidden()
-
-    # API enable — should show widget and trigger computation
-    qtctrl._contrast_limits_control._on_histogram_button_toggled(True)
-
-    assert not control.histogram_content_wrapper.isHidden()
-    assert control.histogram_content is not None
-    # Bin edges should have been computed
-    layer.histogram.compute(layer)
-    assert len(_get_computed(layer)['bin_edges']) == 257
-
-    # API disable — should hide widget
-    qtctrl._contrast_limits_control._on_histogram_button_toggled(False)
-    assert control.histogram_content_wrapper.isHidden()
-
-
-def test_popup_does_not_include_histogram_when_disabled(qtbot):
-    """Right-click popup's histogram content should be hidden when ``enabled`` is False.
-
-    The histogram content widget is always present for Image layers (to avoid
-    layout blink on toggle), but starts hidden.  Inline state must remain
-    unaffected by opening the popup.
-    """
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    control = qtctrl._contrast_limits_control
-    button = qtctrl._contrast_limits_control.histogram_button
-    assert control.histogram_content_wrapper.isHidden()
-    assert not button.isChecked()
-
-    # Right-click to open popup — histogram is disabled, so popup
-    # histogram content should be lazy-created but hidden.
-    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
-
-    popup = qtctrl._contrast_limits_control.clim_popup
-    assert popup is not None
-    # Content not yet created (disabled, no showEvent trigger)
-    assert popup.histogram_content is None
-
-    # Inline widget should not have been affected
-    assert control.histogram_content_wrapper.isHidden()
-    assert not button.isChecked()
-
-    # Close popup — inline state should still be unchanged
-    popup.close()
-    assert control.histogram_content_wrapper.isHidden()
-    assert not button.isChecked()
-
-
-def test_popup_histogram_toggle(qtbot):
-    """Popup histogram toggle button should lazy-create and show/hide histogram content."""
-    layer = Image(np.random.rand(8, 8))
-    qtctrl = QtImageControls(layer)
-    qtbot.addWidget(qtctrl)
-
-    # Open popup
-    qtbot.mouseClick(
-        qtctrl._contrast_limits_control.histogram_button,
-        Qt.MouseButton.RightButton,
-    )
-    popup = qtctrl._contrast_limits_control.clim_popup
-    assert popup is not None
-    assert popup._histogram_checkbox is not None
-
-    # Histogram content not yet created (disabled by default)
-    assert popup.histogram_content is None
-    assert not popup._histogram_checkbox.isChecked()
-
-    # Toggle on — histogram should be lazy-created and show
-    popup._histogram_checkbox.setChecked(True)
-    qtbot.waitUntil(lambda: popup.histogram_content is not None)
-    qtbot.waitUntil(lambda: not popup.histogram_content.isHidden())
-    assert popup._histogram_checkbox.isChecked()
-
-    # Toggle off — histogram should hide
-    popup._histogram_checkbox.setChecked(False)
-    qtbot.waitUntil(lambda: popup.histogram_content.isHidden())
-    assert not popup._histogram_checkbox.isChecked()
-
-    # need to disconnect to stop the timer (otherwise dangling timer error)
-    qtctrl._contrast_limits_control.disconnect_widget_controls()
-    popup.close()
