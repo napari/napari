@@ -608,7 +608,6 @@ project-excludes = [
     'src/napari/_qt/widgets/qt_highlight_preview.py',
     'src/napari/_qt/widgets/qt_keyboard_settings.py',
     'src/napari/_qt/widgets/qt_scrollbar.py',
-    'src/napari/_qt/widgets/qt_viewer_buttons.py',
     'src/napari/_qt/widgets/qt_viewer_dock_widget.py',
     'src/napari/_qt/widgets/qt_welcome.py',
     'src/napari/_vispy/canvas.py',
