@@ -1743,7 +1743,7 @@ class Labels(ScalarFieldBase):
         """
         # ponytail: full scan per call, cache bboxes per label if it gets slow
         levels = self.data if self.multiscale else [self.data]
-        for level in reversed(range(len(levels))):
+        for level in reversed(range(len(self.downsample_factors))):
             mask = np.asarray(levels[level] == label)
             if mask.any():
                 break
