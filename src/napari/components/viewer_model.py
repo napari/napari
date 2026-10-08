@@ -519,8 +519,29 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
-        # Get the scene parameters
-        extent, scene_size, corner = self._get_scene_parameters(layers=layers)
+        extent, _, _ = self._get_scene_parameters(layers=layers)
+        self._fit_to_extent(extent, margin=margin)
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
+        self.events.reset_view(
+            center=self.scene.camera.center,
+            zoom=self.scene.camera.zoom,
+            angles=self.scene.camera.angles,
+        )
+
+    def _fit_to_extent(self, extent: np.ndarray, margin: float) -> None:
+        """Center and zoom the camera on a world extent of the displayed dims.
+
+        Parameters
+        ----------
+        extent : array, shape (2, D)
+            Min/max world coordinates of the displayed dimensions.
+        margin : float in [0, 1)
+            Margin as fraction of the canvas.
+        """
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
 
         self.scene.camera.center = self._calculate_view_center(
             corner, scene_size
@@ -545,14 +566,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.scene.camera.zoom = self._get_3d_camera_zoom(
                 extent, scale_factor
             )
-
-        # Emit a reset view event, which is no longer used internally, but
-        # which maybe useful for building on napari.
-        self.events.reset_view(
-            center=self.scene.camera.center,
-            zoom=self.scene.camera.zoom,
-            angles=self.scene.camera.angles,
-        )
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').
