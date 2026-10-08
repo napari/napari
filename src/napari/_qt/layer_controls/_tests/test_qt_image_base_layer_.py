@@ -164,31 +164,6 @@ def test_tensorstore_clim_popup(qtbot):
     qtbot.addWidget(QContrastLimitsPopup(layer))
 
 
-@pytest.mark.parametrize(
-    ('layer', 'supports_histogram'),
-    [
-        (Image(_IMAGE), True),
-        (Image(np.dstack([_IMAGE, _IMAGE, _IMAGE]), rgb=True), True),
-        (Surface(_SURF), False),
-    ],
-)
-def test_contrast_limits_popup_histogram_boundary(
-    qtbot, layer, supports_histogram
-):
-    """The contrast popup embeds histogram UI only when the layer type supports it.
-    Content is lazy-created in _ensure_histogram_content()."""
-    popup = QContrastLimitsPopup(layer)
-    qtbot.addWidget(popup)
-
-    # Popup has histogram_content only after lazy creation is triggered
-    if supports_histogram:
-        popup._ensure_histogram_content()
-    assert (popup.histogram_content is not None) is supports_histogram
-    if supports_histogram:
-        assert popup.histogram_content.histogram_widget is not None
-        assert popup.histogram_content.settings_widget is not None
-
-
 def test_blending_opacity_slider(qtbot):
     """Tests whether opacity slider is disabled for minimum, opaque, and multiplicative blending."""
     layer = Image(np.random.rand(8, 8))

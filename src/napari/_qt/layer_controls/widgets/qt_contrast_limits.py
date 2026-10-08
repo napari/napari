@@ -185,8 +185,7 @@ class QContrastLimitsPopup(QtPopup):
         # QtHistogramContentWidget full construction (vispy canvas) is deferred to
         # _schedule_histogram_compute() to avoid a PySide6 segfault when creating
         # native GL widgets during __init__.
-        if self._contrast_control is not None:
-            self.histogram_content = QtHistogramContentWidget(self._layer)
+        self.histogram_content = QtHistogramContentWidget(self._layer)
         self._layout.addWidget(self.histogram_content)
         self.histogram_button = QtModePushButton(
             self._layer,

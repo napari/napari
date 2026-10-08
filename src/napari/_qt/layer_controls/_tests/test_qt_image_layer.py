@@ -185,9 +185,9 @@ def test_histogram_button_right_click_opens_popup(qtbot):
 
     popup = qtctrl._contrast_limits_control.clim_popup
     assert popup is not None
-    # Histogram content is lazy-created on demand; call _ensure first
-    popup._ensure_histogram_content()
     assert popup.histogram_content is not None
+    # Histogram content is lazy-created on demand; call _ensure first
+    popup.histogram_content._ensure_histogram_content()
     assert popup.histogram_content.histogram_widget is not None
     assert popup.histogram_content.settings_widget is not None
 
@@ -312,8 +312,6 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)
     popup = controls._contrast_limits_control.clim_popup
     assert popup is not None
-    # Histogram content is not auto-created; ensure it explicitly
-    popup._ensure_histogram_content()
     assert popup.histogram_content is not None
 
     # The popup's histogram should have its own content widget instance
