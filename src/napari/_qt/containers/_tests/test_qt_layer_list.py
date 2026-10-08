@@ -200,7 +200,7 @@ def test_contextual_menu_zoom_to_selected_label(monkeypatch, qtbot):
     monkeypatch.setattr(
         'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
     )
-    action_id = 'napari.scene.zoom_to_selected_label'
+    action_id = 'napari.scene.zoom_to_selection'
 
     app = get_app_model()
     providers = {LayerList: viewer.layers, ViewerModel: viewer}
