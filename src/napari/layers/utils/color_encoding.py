@@ -8,7 +8,7 @@ from typing import (
 
 import numpy as np
 from pydantic import Field, GetCoreSchemaHandler, TypeAdapter, field_validator
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 
 from napari.layers.utils.color_transformations import ColorType
 from napari.layers.utils.style_encoding import (
@@ -32,8 +32,8 @@ class ColorEncoding(StyleEncoding[ColorValue, ColorArray], Protocol):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source, handler: GetCoreSchemaHandler
-    ):
+        cls, source: Any, handler: GetCoreSchemaHandler, /
+    ) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate, core_schema.any_schema()
         )
@@ -165,7 +165,7 @@ class NominalColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         # map is not expecting some column-likes (e.g. pandas.Series), so ensure
         # this is a numpy array first.
         values = np.asarray(features[self.feature])
-        return self.colormap.map(values)
+        return ColorArray(self.colormap.map(values))
 
 
 class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
@@ -202,7 +202,7 @@ class QuantitativeColorEncoding(_DerivedStyleEncoding[ColorValue, ColorArray]):
         )
         if contrast_limits is not None:
             values = np.interp(values, contrast_limits, (0, 1))
-        return self.colormap.map(values)
+        return ColorArray(self.colormap.map(values))
 
     @field_validator('colormap', mode='before')
     @classmethod

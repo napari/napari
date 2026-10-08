@@ -22,7 +22,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-from app_model.expressions import Context
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -189,8 +188,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
-    _ctx: Mapping
-        Viewer object context mapping.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
         A layer slicer object controlling the creation of a slice
     """
@@ -208,7 +205,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     status: Union[str, Dict[str, str]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
-    _ctx: Context = PrivateAttr()
     # To check if mouse is over canvas to avoid race conditions between
     # different events systems
     mouse_over_canvas: bool = False
@@ -227,11 +223,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        # max_depth=0 means don't look for parent contexts.
-
-        # FIXME: just like the LayerList, this object should ideally be created
-        # elsewhere.  The app should know about the ViewerModel, but not vice versa.
-        # self._ctx = create_context(self, max_depth=0)
         # allow extra attributes during model initialization, useful for mixins
         self.model_config['extra'] = 'allow'
         super().__init__(
@@ -496,8 +487,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Simple string representation"""
         return 'napari.ViewerModel'
 
-    @property
-    def _sliced_extent_world_augmented(self) -> np.ndarray:
+    def _sliced_extent_world_augmented(self, layers=None) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
@@ -506,24 +496,39 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         -------
         sliced_extent_world : array, shape (2, D)
         """
-        # if not layers are present, assume image-like with dimensions of size 512
-        if len(self.layers) == 0:
+        layers = LayerList(layers) if layers is not None else self.layers
+        for layer in layers:
+            if layer not in self.layers:
+                raise ValueError(
+                    f'layer "{layer.name}" is not part of this viewer.'
+                )
+        if len(layers) == 0:
+            # if no layers are present, assume image-like
+            # with dimensions of size 512
             return np.vstack(
                 [np.full(self.dims.ndim, -0.5), np.full(self.dims.ndim, 511.5)]
             )
-        return self.layers._extent_world_augmented[:, self.dims.displayed]
+        return layers._extent_world_augmented[:, self.dims.displayed]
 
     def reset_view(
-        self, *, margin: float = 0.05, reset_camera_angle: bool = True
+        self,
+        *,
+        layers: Sequence[Layer] | None = None,
+        margin: float = 0.05,
+        reset_camera_angle: bool = True,
     ) -> None:
         """Reset the camera and fit the current layers to the canvas.
 
         Resets the angles of the camera, adjust the camera zoom,
-        and centers the view so that all layers are visible,
+        and centers the view so that all layers (or the given ones) are visible,
         accounting for the current grid mode and margin.
 
         Parameters
         ----------
+        layers : sequence of Layer, optional
+            If given, only consider the extent of the given layers when
+            resetting the view. Otherwise, all layers in viewer.layers are
+            used.
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
@@ -533,22 +538,28 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         if self.dims.ndisplay == 3 and reset_camera_angle:
             self.scene.camera.angles = (0, 0, 0)
-        self.fit_to_view(margin=margin)
+        self.fit_to_view(layers=layers, margin=margin)
 
-    def fit_to_view(self, *, margin: float = 0.05) -> None:
-        """Fit the current data view to the canvas.
+    def fit_to_view(
+        self, *, layers: Sequence[Layer] | None = None, margin: float = 0.05
+    ) -> None:
+        """Fit the layers content to the whole canvas.
 
         Adjusts the camera zoom and centers the view so that all visible layers
-        are within the canvas.
+        (or the given ones) are within the canvas.
 
         Parameters
         ----------
+        layers : sequence of Layer, optional
+            If given, only consider the extent of the given layers when
+            fitting to the view. Otherwise, all layers in viewer.layers are
+            used.
         margin : float in [0, 1)
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
         # Get the scene parameters
-        extent, scene_size, corner = self._get_scene_parameters()
+        extent, scene_size, corner = self._get_scene_parameters(layers=layers)
 
         self.scene.camera.center = self._calculate_view_center(
             corner, scene_size
@@ -631,6 +642,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _get_scene_parameters(
         self,
+        *,
+        layers: Sequence[Layer] | None = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Get the scene parameters for the current grid mode.
 
@@ -644,7 +657,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         corner : array, shape (D,)
             Minimum coordinate values of the bounding box (i.e. extent[0]).
         """
-        extent = self._sliced_extent_world_augmented
+        extent = self._sliced_extent_world_augmented(layers=layers)
         scene_size = extent[1] - extent[0]
         corner = extent[0]
 
@@ -919,88 +932,78 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
+        """Calculate coordinates and status info from cursor position.
+
+        General logic:
+        - restrict info to only layers inside the hovered grid viewbox
+        - restrict info to only selected layers, if any
+        - if only one is shown, show more detailed info
+        """
         if not self.mouse_over_canvas:
             return None
-        coord2val: dict[str, list[str]] = {}
-        coord_str = ''
-        status_str = ''
-        tooltip_text = ''
+
         selection = self.layers.selection
-        active = selection.active
-        # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
-
-        # Compute the tooltip first since it is always needed.
-        if (
-            self.tooltip.visible
-            and active is not None
-            and active._slicing_state._loaded
-        ):
-            tooltip_text = active._get_tooltip_text(
-                np.asarray(self.cursor.position),
-                view_direction=self.cursor._view_direction,
-                dims_displayed=list(self.dims.displayed),
-                world=True,
+        valid_layers: Sequence[Layer]
+        layers_in_viewbox = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
             )
+        ]
+        valid_layers = [
+            layer
+            for layer in layers_in_viewbox
+            if (not selection or layer in selection)
+            and layer._slicing_state._loaded
+        ]
 
-        # If there is an active layer and a single selection, calculate status using "the classic way".
-        # Then return the status and the tooltip.
-        if (
-            active is not None
-            and active._slicing_state._loaded
-            and len(selection) < 2
-        ):
-            status = active.get_status(
+        # if showing status for a single layer, we give more info (old version)
+        # and set the tooltip text
+        if len(valid_layers) == 1:
+            if self.tooltip.visible:
+                tooltip_text = valid_layers[0]._get_tooltip_text(
+                    np.asarray(self.cursor.position),
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
+                )
+            else:
+                tooltip_text = ''
+
+            status = valid_layers[0].get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
+            if status['value'] == '':
+                # 'coordinates' is the one used by the status bar itself
+                status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
 
-        # Otherwise, return the layer status of multiple selected layers
-        # or gridded layers as well as the tooltip.
-        for layer in self.layers[::-1]:
-            if (
-                not layer.visible
-                or layer.opacity == 0
-                or not layer._slicing_state._loaded
-                or (layer not in selection and not self.canvas.grid.enabled)
-            ):
-                continue
+        # for multiple layers, combine the statuses
+        statuses: list[str] = []
+        coords = ''
+        for layer in valid_layers:
             status = layer.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            separator = '    '
-            emphasis = separator if layer is active else ''
-            coord_str = f'{status["coords"]} » '
-            if status['value'] != '':
-                if coord_str not in coord2val:
-                    coord2val[coord_str] = []
-                coord2val[coord_str].append(
-                    f'{layer.name}: {status["value"]}{emphasis}'
-                )
-        if coord2val:
-            if not self.canvas.grid.enabled:
-                # use a single coordinate system
-                values = list(itertools.chain(*coord2val.values()))
-                key = next(iter(coord2val))  # choose arbitrary coordinate
-                coord2val = {key: values}
-            status_strs = [
-                key + separator.join(values)  # pyrefly: ignore [unbound-name]
-                for key, values in coord2val.items()
-            ]
-            status_str = separator.join(status_strs)  # pyrefly: ignore [unbound-name]
-        elif coord_str and not self.canvas.grid.enabled:
-            status_str = coord_str + '[empty]'
-        elif self.canvas.grid.enabled:
-            status_str = '[empty]'
-        else:
-            status_str = 'Ready'
+            if not coords or not layer._use_integer_coords_in_status():
+                # we prioritize float coords if any layer wants them
+                coords = status['coords']
+            if status['value']:
+                statuses.append(f'{layer.name}: {status["value"]}')
 
-        return status_str, tooltip_text
+        separator = '    '
+        values = '[empty]' if not statuses else separator.join(statuses)
+
+        status_str = f'{coords} » {values}'
+        return status_str, ''
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
@@ -1009,6 +1012,69 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
+
+    def canvas_to_world(
+        self,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int] | None = None,
+    ) -> np.ndarray:
+        """Convert canvas pixel position to world coordinates.
+
+        The position is calculated on a plane parallel to the screen and passing
+        through the camera center, so it is unaffected by perspective.
+
+        Parameters
+        ----------
+        canvas_position : tuple of int
+            (y, x) position in canvas pixels.
+        viewbox : tuple of int
+            (col, row) coordinates of the grid viewbox relative to which
+            to calculate the transformation. If None, use the first viewbox
+            or the whole canvas if the grid is disabled.
+
+        Returns
+        -------
+        world_position : np.ndarray
+            Canvas position (on the canvas plane) converted to world coordinates.
+        """
+        from scipy.spatial.transform import Rotation as R
+
+        ndisplay = self.dims.ndisplay
+        camera = self.scene.camera
+
+        if viewbox is None:
+            viewbox = (0, 0)
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        world_center = np.array(camera.center)
+
+        if ndisplay == 2:
+            world_displayed = (
+                np.array(canvas_position) - viewbox_center
+            ) / camera.zoom + world_center[-2:]
+        else:
+            # note that while we call napari axes "zyx", in terms of angles to
+            # rot conversion we need to treat them as normal xyz for internal
+            # consistency (zyx actually describes a different rotation order)
+            rot = R.from_euler('xyz', camera.angles, degrees=True)
+            rot_matrix = rot.as_matrix()
+            # the depth is set to zero because we want the position at the
+            # plane of the camera center.
+            # Any modifications should be done by callers afterwards.
+            canvas_position_3d = np.array([0, *canvas_position])
+            viewbox_center_3d = np.array([0, *viewbox_center])
+            world_displayed = (
+                rot_matrix.T
+                @ (canvas_position_3d - viewbox_center_3d)
+                / camera.zoom
+                + world_center
+            )
+
+        # embed it in the world point
+        position_world = list(self.dims.point)
+        for i, d in enumerate(self.dims.displayed):
+            position_world[d] = world_displayed[i]
+        return np.array(position_world)
 
     @property
     def experimental(self):
@@ -1464,7 +1530,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 added = []
                 needs_error = True
                 for datum in ensure_list_of_layer_data_tuple(
-                    list(data(**kwargs))  # pyrefly: ignore [bad-argument-type]
+                    list(data(**kwargs))
                 ):
                     if datum[0] is not None:
                         needs_error = False

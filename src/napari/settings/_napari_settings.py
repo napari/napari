@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
+from napari.settings._advanced import AdvancedSettings
 from napari.settings._appearance import AppearanceSettings
 from napari.settings._application import ApplicationSettings
 from napari.settings._base import (
@@ -61,6 +62,13 @@ class NapariSettings(EventedConfigFileSettings):
         description='Shortcut settings.',
         frozen=True,
     )
+    advanced: AdvancedSettings = Field(
+        default_factory=AdvancedSettings,
+        title='Advanced',
+        description='Advanced settings.',
+        frozen=True,
+    )
+
     experimental: ExperimentalSettings = Field(
         default_factory=ExperimentalSettings,
         title='Experimental',
