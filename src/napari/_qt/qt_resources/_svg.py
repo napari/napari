@@ -34,7 +34,7 @@ class QColoredSVGIcon(QIcon):
     # Create colored icon using theme
     >>> label = QLabel()
     >>> icon = QColoredSVGIcon.from_resources('new_points')
-    >>> label.setPixmap(icon.colored(theme='light').pixmap(300, 300))
+    >>> label.setPixmap(icon.colored(theme='napari-light').pixmap(300, 300))
     >>> label.show()
     """
 

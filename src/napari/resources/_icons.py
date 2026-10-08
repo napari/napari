@@ -152,12 +152,12 @@ def _theme_path(theme_name: str) -> Path:
     return Path(user_cache_dir()) / '_themes' / theme_name
 
 
-def build_theme_svgs(theme_name: str, source) -> str:
-    out = _theme_path(theme_name)
+def build_theme_svgs(full_theme_name: str, source) -> str:
+    out = _theme_path(full_theme_name)
     write_colorized_svgs(
         out,
         svg_paths=ICONS.values(),
-        colors=[(theme_name, 'icon')],
+        colors=[(full_theme_name, 'icon')],
         opacities=(0.5, 1),
         theme_override={
             'warning': 'warning',

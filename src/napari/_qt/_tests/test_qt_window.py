@@ -18,6 +18,7 @@ from napari._qt.widgets.qt_viewer_status_bar import (
 )
 from napari._tests.utils import skip_on_win_ci
 from napari.utils.theme import (
+    Theme,
     _themes,
     get_theme,
     register_theme,
@@ -94,21 +95,21 @@ def test_update_theme(
 ):
     viewer = make_napari_viewer()
 
-    blue = get_theme('dark')
+    blue = get_theme('napari-dark').model_copy()
     blue.id = 'blue'
-    register_theme('blue', blue, 'test')
+    register_theme(Theme(**blue.model_dump()), 'test')
 
     # triggered when theme was added
     mock_add_theme.assert_called()
     mock_remove_theme.assert_not_called()
 
-    unregister_theme('blue')
+    unregister_theme('blue-dark')
     # triggered when theme was removed
     mock_remove_theme.assert_called()
 
     mock_update_theme_no_event.assert_not_called()
-    viewer.theme = 'light'
-    theme = _themes['light']
+    viewer.theme = 'napari-light'
+    theme = _themes['napari-light']
     theme.icon = '#FF0000'
     mock_update_theme_no_event.assert_called()
 

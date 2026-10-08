@@ -15,5 +15,5 @@ def test_colored_svg_from_theme(qtbot):
     """Test that we can create a colored icon using a theme name."""
     icon = QColoredSVGIcon.from_resources('new_points')
     assert isinstance(icon, QIcon)
-    assert isinstance(icon.colored(theme='light'), QColoredSVGIcon)
+    assert isinstance(icon.colored(theme='napari-light'), QColoredSVGIcon)
     assert icon.pixmap(250, 250)

@@ -207,11 +207,11 @@ def test_changing_theme(make_napari_viewer):
     size = viewer.window._qt_viewer.size()
     viewer.window._qt_viewer.setFixedSize(size)
 
-    assert viewer.theme == 'dark'
+    assert viewer.theme == 'napari-dark'
     screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
 
-    viewer.theme = 'light'
-    assert viewer.theme == 'light'
+    viewer.theme = 'napari-light'
+    assert viewer.theme == 'napari-light'
     screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
 
     equal = (screenshot_dark == screenshot_light).min(-1)

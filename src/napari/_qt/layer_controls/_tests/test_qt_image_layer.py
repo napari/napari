@@ -245,7 +245,9 @@ def test_histogram_widget_responds_to_viewer_theme_toggle(
     layer.histogram.compute()
 
     # Pick a theme different from the current one, same as Ctrl+Shift+T.
-    new_theme = 'light' if viewer.theme != 'light' else 'dark'
+    new_theme = (
+        'napari-light' if viewer.theme != 'napari-light' else 'napari-dark'
+    )
     viewer.theme = new_theme
     expected = get_theme(new_theme)
 
