@@ -134,7 +134,7 @@ class StatusChecker(QThread):
             notification_manager.dispatch(Notification.from_exception(e))
             return
         # Emit the signal with the updated status
-        self.status_and_tooltip_changed.emit(res)  # pyrefly: ignore [missing-attribute]
+        self.status_and_tooltip_changed.emit(res)
 
 
 if os.environ.get('ASV') == 'true':
