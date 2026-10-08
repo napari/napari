@@ -568,15 +568,15 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 extent, scale_factor
             )
 
-    def _zoom_to_label(self, layer: Labels) -> bool:
-        """Center and zoom the camera on the selected label of a layer.
+    def _zoom_to_selection(self, layer: Layer) -> bool:
+        """Center and zoom the camera on the selection of a layer.
 
-        Returns False if the label is not in the layer.
+        Returns False if there is nothing to zoom to.
         """
-        location = layer._locate_label(layer.selected_label)
+        location = layer._locate_selection()
         if location is None:
             return False
-        min_vals, max_vals, point = location
+        extent_data, point = location
 
         offset = self.dims.ndim - layer.ndim
         not_displayed = layer._slice_input.not_displayed
@@ -589,7 +589,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         extent = self.layers._extent_world_augmented.copy()
         extent[:, offset:] = get_extent_world(
-            np.stack([min_vals, max_vals]) - 0.5, layer._data_to_world
+            extent_data, layer._data_to_world
         )
         min_size = 16 * np.abs(layer.scale)
         grow = np.maximum(
@@ -604,14 +604,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer = event.source
         if layer.zoom_to_selected_label:
             layer.events.selected_label.connect(self._on_selected_label_change)
-            self._zoom_to_label(layer)
+            self._zoom_to_selection(layer)
         else:
             layer.events.selected_label.disconnect(
                 self._on_selected_label_change
             )
 
     def _on_selected_label_change(self, event) -> None:
-        self._zoom_to_label(event.source)
+        self._zoom_to_selection(event.source)
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').

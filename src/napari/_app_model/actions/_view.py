@@ -128,12 +128,21 @@ def _fit_to_view(viewer: ViewerModel) -> None:
     viewer.fit_to_view()
 
 
-def _zoom_to_selected_label(viewer: ViewerModel) -> None:
+_ACTIVE_LAYER_HAS_SELECTION = (
+    (LLSCK.active_layer_type == 'labels')
+    | (LLSCK.active_layer_type == 'points')
+    | (LLSCK.active_layer_type == 'shapes')
+)
+
+
+def _zoom_to_selection(viewer: ViewerModel) -> None:
     layer = viewer.layers.selection.active
-    if not isinstance(layer, Labels):
+    if layer is None or viewer._zoom_to_selection(layer):
         return
-    if not viewer._zoom_to_label(layer):
+    if isinstance(layer, Labels):
         show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
+    else:
+        show_info(f'Nothing is selected in layer {layer.name}')
 
 
 def _zoom_in(viewer: ViewerModel) -> None:
@@ -177,8 +186,8 @@ VIEW_ACTIONS: list[Action] = [
         keybindings=[StandardKeyBinding.OriginalSize],
     ),
     Action(
-        id='napari.scene.zoom_to_selected_label',
-        title='Zoom to Selected Label',
+        id='napari.scene.zoom_to_selection',
+        title='Zoom to Selection',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -188,11 +197,11 @@ VIEW_ACTIONS: list[Action] = [
             {
                 'id': MenuId.LAYERLIST_CONTEXT,
                 'group': MenuGroup.LAYERLIST_CONTEXT.ZOOM,
-                'when': LLSCK.active_layer_type == 'labels',
+                'when': _ACTIVE_LAYER_HAS_SELECTION,
             },
         ],
-        callback=_zoom_to_selected_label,
-        enablement=LLSCK.active_layer_type == 'labels',
+        callback=_zoom_to_selection,
+        enablement=_ACTIVE_LAYER_HAS_SELECTION,
     ),
     Action(
         id='napari.scene.zoom_in',
