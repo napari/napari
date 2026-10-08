@@ -27,5 +27,5 @@ class LabelsPolygonOverlay(SceneOverlay):
         alpha values of the overlay get mixed with the visuals below.
     """
 
-    points: tuple[tuple[float, float], ...] = ()
-    floating_point: tuple[float, float] | None = None
+    points: tuple[tuple[float, ...], ...] = ()
+    floating_point: tuple[float, ...] | None = None
