@@ -14,7 +14,6 @@ from napari._qt.layer_controls.widgets._points import (
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.layers.points._points_constants import Mode
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     import napari.layers
@@ -137,8 +136,3 @@ class QtPointsControls(QtLayerControls):
     def _on_ndisplay_changed(self):
         self.layer.editable = not (self.layer.ndim == 2 and self.ndisplay == 3)
         super()._on_ndisplay_changed()
-
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.text.events, self)
-        super().close()

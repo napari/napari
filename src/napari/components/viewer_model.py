@@ -85,8 +85,8 @@ from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
     EventedModel,
-    disconnect_events,
 )
+from napari.utils.events.event_utils import _disconnect_all_events
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
@@ -1140,8 +1140,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer = event.value
 
         # Disconnect all connections from layer
-        disconnect_events(layer.events, self)
-        disconnect_events(layer.events, self.layers)
+        _disconnect_all_events(layer, self)
+        _disconnect_all_events(layer, self.layers)
 
         self._on_layers_change()
 

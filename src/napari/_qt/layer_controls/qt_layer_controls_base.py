@@ -17,7 +17,7 @@ from napari._qt.widgets.qt_mode_buttons import QtModeRadioButton
 from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 
 class LayerFormLayout(QFormLayout):
@@ -293,14 +293,14 @@ class QtLayerControls(QFrame):
         return super().eventFilter(qobject, event)
 
     def deleteLater(self) -> None:
-        disconnect_events(self.layer.events, self)
+        _disconnect_all_events(self.layer, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
     def close(self) -> bool:
         """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
+        _disconnect_all_events(self.layer, self)
         for child in self.children():
             close_method = getattr(child, 'close', None)
             self._disconnect_child_widget_controls(child)
