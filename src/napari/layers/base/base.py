@@ -1259,6 +1259,38 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         """Slice in data coordinates."""
         return self._slicing_state.data_slice
 
+    def _locate_selection(self) -> tuple[np.ndarray, np.ndarray] | None:
+        """Extent of the selection in data coordinates and a point to go to.
+
+        The point is the extent center on the displayed axes and a slice
+        that contains the selection on the other axes. Returns None if
+        there is nothing to zoom to.
+        """
+        return None
+
+    def _pick_slice(
+        self, candidates: np.ndarray, center: np.ndarray
+    ) -> np.ndarray:
+        """Pick a point on the non-displayed axes from candidates.
+
+        Keeps the current slice if a candidate is on it, otherwise returns
+        the candidate nearest to center.
+
+        Parameters
+        ----------
+        candidates : array, shape (N, M)
+            Coordinates on the M non-displayed axes, in data coordinates.
+        center : array, shape (M,)
+            Center of the selection on the non-displayed axes.
+        """
+        not_displayed = sorted(self._slice_input.not_displayed)
+        current = np.asarray(self._data_slice.point)[not_displayed]
+        on_current = np.all(np.round(candidates) == np.round(current), axis=1)
+        if on_current.any():
+            return current
+        distance = ((candidates - center) ** 2).sum(axis=1)
+        return candidates[np.argmin(distance)]
+
     @abstractmethod
     def _get_ndim(self) -> int:
         raise NotImplementedError

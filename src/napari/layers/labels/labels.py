@@ -1787,16 +1787,19 @@ class Labels(ScalarFieldBase):
         not_displayed = sorted(self._slice_input.not_displayed)
         if not_displayed:
             present = mask.any(axis=tuple(self._slice_input.displayed))
-            current = np.asarray(self._data_slice.point)[not_displayed]
-            index = np.floor(current + 0.5).astype(int) - start[not_displayed]
-            in_bounds = np.all((index >= 0) & (index < present.shape))
-            if not (in_bounds and present[tuple(index)]):
-                candidates = np.argwhere(present) + start[not_displayed]
-                distance = ((candidates - point[not_displayed]) ** 2).sum(1)
-                index = candidates[np.argmin(distance)] - start[not_displayed]
-            point[not_displayed] = index + start[not_displayed]
+            candidates = np.argwhere(present) + start[not_displayed]
+            point[not_displayed] = self._pick_slice(
+                candidates, point[not_displayed]
+            )
 
         return min_vals, max_vals, point
+
+    def _locate_selection(self) -> tuple[np.ndarray, np.ndarray] | None:
+        location = self._locate_label(self.selected_label)
+        if location is None:
+            return None
+        min_vals, max_vals, point = location
+        return np.stack([min_vals, max_vals]) - 0.5, point
 
     @staticmethod
     def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
