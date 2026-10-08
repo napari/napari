@@ -303,9 +303,7 @@ QtDimSliderWidget > QLineEdit {
 
 #CustomColorDialog QLabel {
   background-color: {{ foreground }};
-  color: {{ primary }};
 }
-
 
 /* editable slice label and axis name */
 QtDimSliderWidget > QLineEdit {
