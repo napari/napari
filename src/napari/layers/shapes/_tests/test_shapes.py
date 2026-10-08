@@ -2599,6 +2599,25 @@ def test_to_labels_3D():
     assert np.array_equal(np.unique(labels), [0, 1, 2, 3])
 
 
+def test_to_labels_and_masks_in_3d_display():
+    data = [
+        [[0, 100, 100], [0, 100, 200], [0, 200, 200], [0, 200, 100]],
+        [[1, 125, 125], [1, 125, 175], [1, 175, 175], [1, 175, 125]],
+        [[2, 100, 100], [2, 100, 200], [2, 200, 200], [2, 200, 100]],
+    ]
+    layer = Shapes(np.array(data), shape_type='polygon')
+    labels_2d = layer.to_labels(labels_shape=(3, 300, 300))
+    masks_2d = layer.to_masks(mask_shape=(3, 300, 300))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    np.testing.assert_array_equal(
+        layer.to_labels(labels_shape=(3, 300, 300)), labels_2d
+    )
+    np.testing.assert_array_equal(
+        layer.to_masks(mask_shape=(3, 300, 300)), masks_2d
+    )
+
+
 def test_add_single_shape_consistent_properties():
     """Test adding a single shape ensures correct number of added properties"""
     data = [
