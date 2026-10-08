@@ -708,6 +708,16 @@ class Labels(ScalarFieldBase):
             label_index = {i: k for k, i in enumerate(features['index'])}
         elif features.shape[1] > 0:
             label_index = {i: i for i in range(features.shape[0])}
+            labels = np.asarray(features.get('label', []))
+            if np.issubdtype(labels.dtype, np.integer) and not np.array_equal(
+                labels, np.arange(features.shape[0])
+            ):
+                warnings.warn(
+                    "Labels features have a 'label' column but no 'index' "
+                    'column, so row i is used for label i. Rename the '
+                    "'label' column to 'index' to match rows by label value.",
+                    stacklevel=3,
+                )
         return label_index
 
     def _is_default_colors(self, color: dict) -> bool:
