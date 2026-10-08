@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import combine_widgets
+from napari._qt.widgets.qt_viewer_dock_widget import QtCustomTitleBar
 
 
 def test_add_dock_widget(make_napari_viewer):
@@ -250,3 +251,15 @@ def test_combine_widgets_error():
         TypeError, match='"widgets" must be a QWidget, a magicgui'
     ):
         combine_widgets(['string'])
+
+
+def test_update_font_metrics_without_title(qtbot, monkeypatch):
+    """``_update_font_metrics`` is a no-op before the title label exists."""
+    dock = QDockWidget()
+    qtbot.addWidget(dock)
+    title_bar = QtCustomTitleBar(dock, 'test')
+    # simulate a font change arriving before the title label is created
+    monkeypatch.delattr(title_bar, 'title')
+    height = title_bar.minimumHeight()
+    title_bar._update_font_metrics()
+    assert title_bar.minimumHeight() == height
