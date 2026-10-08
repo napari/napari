@@ -97,7 +97,6 @@ class QContrastLimitsPopup(QtPopup):
 
         self._layer = layer
         self._contrast_control = contrast_control
-        self._cleaned_up = False
         self._frame_base_height = 0
 
         self._layout = QVBoxLayout()
