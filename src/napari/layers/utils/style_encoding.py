@@ -6,6 +6,7 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
+    cast,
     runtime_checkable,
 )
 
@@ -180,13 +181,15 @@ class _ManualStyleEncoding(
     array: StyleArray
     default: StyleValue
 
-    def __call__(self, features: Any) -> StyleArray | StyleValue:
+    def __call__(self, features: Any) -> StyleArray:
         n_values = self.array.shape[0]
         n_rows = features.shape[0]
         if n_rows > n_values:
             tail_array = np.array([self.default] * (n_rows - n_values))
-            return np.append(self.array, tail_array, axis=0)
-        return np.array(self.array[:n_rows])
+            return cast(
+                'StyleArray', np.append(self.array, tail_array, axis=0)
+            )
+        return cast('StyleArray', np.array(self.array[:n_rows]))
 
     @property
     def _values(self) -> StyleValue | StyleArray:
@@ -241,7 +244,7 @@ class _DerivedStyleEncoding(
             tail_array = self._call_safely(features.iloc[n_cached:n_rows])
             self._append(tail_array)
         elif n_cached > n_rows:
-            self._cached = self._cached[:n_rows]
+            self._cached = cast('StyleArray', self._cached[:n_rows])
 
     def _call_safely(self, features: Any) -> StyleArray:
         """Calls this without raising encoding errors, warning instead."""
@@ -254,7 +257,7 @@ class _DerivedStyleEncoding(
             )
             shape = (features.shape[0], *self.fallback.shape)
             array = np.broadcast_to(self.fallback, shape)
-        return array
+        return cast('StyleArray', array)
 
     def _append(self, array: StyleArray) -> None:
         self._cached = np.append(self._cached, array, axis=0)
@@ -282,4 +285,4 @@ def _get_style_values(
 def _empty_array_like(value: StyleValue) -> StyleArray:
     """Returns an empty array with the same type and remaining shape of the given value."""
     shape = (0, *value.shape)
-    return np.empty_like(value, shape=shape)
+    return cast('StyleArray', np.empty_like(value, shape=shape))
