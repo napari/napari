@@ -492,9 +492,7 @@ def test_process_mouse_event(
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer_model.dims.ndisplay = 3
@@ -521,9 +519,7 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     @image.mouse_drag_callbacks.append
     def on_click(layer, event):
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     assert viewer_model.dims.ndisplay == 2
@@ -658,12 +654,19 @@ def test_insert_layer_ordering(
     assert pl2_vispy.order == 0
 
 
-def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
+@pytest.mark.parametrize('grid', [False, True])
+def test_create_non_empty_viewer_model(qtbot: QtBot, grid: bool) -> None:
     viewer_model = ViewerModel()
+    viewer_model.add_image(np.zeros((4, 4)))
     viewer_model.add_points([(1, 2), (2, 3)])
+    viewer_model.canvas.grid.enabled = grid
 
     viewer = QtViewer(viewer=viewer_model)
 
+    assert all(
+        visual.node.parent is not None
+        for visual in viewer.canvas.layer_to_visual.values()
+    )
     viewer.close()
     viewer.deleteLater()
     # try to del local reference for gc.
