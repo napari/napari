@@ -36,8 +36,11 @@ from napari.layers.labels._labels_constants import (
 )
 from napari.layers.labels._labels_mouse_bindings import (
     BrushSizeOnMouseMove,
+    complete_polygon,
     draw,
+    draw_polygon,
     pick,
+    update_polygon,
 )
 from napari.layers.labels._labels_utils import (
     expand_slice,
@@ -330,7 +333,19 @@ class Labels(ScalarFieldBase):
         Mode.PAINT: draw,
         Mode.FILL: draw,
         Mode.ERASE: draw,
-        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
+        Mode.POLYGON: draw_polygon,
+    }
+
+    _double_click_modes: ClassVar[  # pyrefly: ignore [bad-override]
+        dict[StringEnum, Callable[[Labels, Event], None]]
+    ] = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.TRANSFORM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+        Mode.POLYGON: complete_polygon,
     }
 
     brush_size_on_mouse_move = BrushSizeOnMouseMove(min_brush_size=1)
@@ -344,7 +359,7 @@ class Labels(ScalarFieldBase):
         Mode.PAINT: brush_size_on_mouse_move,
         Mode.FILL: no_op,
         Mode.ERASE: brush_size_on_mouse_move,
-        Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
+        Mode.POLYGON: update_polygon,
     }
 
     _cursor_modes: ClassVar[dict[Mode, str]] = {  # pyrefly: ignore [bad-override]
@@ -896,7 +911,6 @@ class Labels(ScalarFieldBase):
         if mode == self._mode:
             return mode
 
-        self._overlays['polygon'].enabled = mode == Mode.POLYGON
         self._overlays['brush_stroke'].enabled = mode == Mode.PAINT
         if mode in {Mode.PAINT, Mode.ERASE}:
             self.cursor_size = self._calculate_cursor_size()

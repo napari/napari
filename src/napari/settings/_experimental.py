@@ -75,6 +75,7 @@ class ExperimentalSettings(EventedSettings):
         default=-1,
         title='Double-click Labels polygon completion radius (-1 to always complete)',
         description='Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.',
+        ne=0,
     )
 
     triangulation_backend: TriangulationBackend = Field(
