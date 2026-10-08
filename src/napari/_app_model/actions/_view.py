@@ -208,7 +208,12 @@ VIEW_ACTIONS: list[Action] = [
                 'id': MenuId.MENUBAR_VIEW,
                 'group': MenuGroup.ZOOM,
                 'order': 1,
-            }
+            },
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.LAYERLIST_CONTEXT.ZOOM,
+                'when': LLSCK.active_layer_type == 'labels',
+            },
         ],
         callback=_zoom_to_selected_label,
         enablement=LLSCK.active_layer_type == 'labels',

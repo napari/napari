@@ -111,6 +111,7 @@ class MenuGroup:
         CONVERSION = '1_conversion'
         COPY_SPATIAL = '4_copy_spatial'
         SPLIT_MERGE = '5_split_merge'
+        ZOOM = '6_zoom'
         LINK = '9_link'
 
     class LAYERS:
