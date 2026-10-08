@@ -1725,6 +1725,50 @@ class Labels(ScalarFieldBase):
 
         return dist_sq <= radius**2  # pyrefly: ignore [bad-return]
 
+    def _locate_label(
+        self, label: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+        """Find where a label is in the data.
+
+        Returns None if the label is not in the data.
+
+        Returns
+        -------
+        min_vals, max_vals : np.ndarray
+            Bounding box of the label in data coordinates of the highest
+            resolution level, max exclusive.
+        point : np.ndarray
+            The bounding box center on the displayed axes, and a slice that
+            contains the label on the other axes, the current one if it does.
+        """
+        # ponytail: full scan per call (lowest level if multiscale), cache bboxes per label if it gets slow
+        data = self.data[-1] if self.multiscale else self.data
+        mask = np.asarray(data == label)
+        if not mask.any():
+            return None
+        min_vals, max_vals = self._compute_mask_bbox(mask)
+        factors = self.downsample_factors[-1]
+        point = (min_vals + max_vals - 1) / 2
+
+        not_displayed = sorted(self._slice_input.not_displayed)
+        if not_displayed:
+            present = mask.any(axis=tuple(self._slice_input.displayed))
+            current = np.asarray(self._data_slice.point)[not_displayed]
+            index = np.floor((current + 0.5) / factors[not_displayed])
+            index = index.astype(int)
+            in_bounds = np.all((index >= 0) & (index < present.shape))
+            if not (in_bounds and present[tuple(index)]):
+                candidates = np.argwhere(present)
+                distance = ((candidates - point[not_displayed]) ** 2).sum(1)
+                index = candidates[np.argmin(distance)]
+            point[not_displayed] = index
+
+        return (
+            min_vals * factors,
+            max_vals * factors,
+            (point + 0.5) * factors - 0.5,
+        )
+
     @staticmethod
     def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Compute the bounding box of True values in a boolean mask.
