@@ -202,6 +202,8 @@ def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
     polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
 
-    _maybe_add_polygon_point(polygon, polygon.floating_point)
-    layer.paint_polygon(list(polygon.points), layer.selected_label)
-    polygon.points = ()
+    if polygon.floating_point is not None:
+        _maybe_add_polygon_point(polygon, polygon.floating_point)
+    if len(polygon.points) > 3:
+        layer.paint_polygon(list(polygon.points), layer.selected_label)
+        polygon.points = ()

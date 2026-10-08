@@ -136,6 +136,10 @@ def test_labels_drawing_with_polygons(MouseEvent):
         )
         mouse_press_callbacks(layer, event)
 
+    # disable floating point (would be used normally when calling complete_polygon
+    # but in this case we're just testing the logic of pure points)
+    polygon = layer._overlays['polygon']
+    polygon.floating_point = None
     # Finish drawing
     complete_polygon(layer)
 
