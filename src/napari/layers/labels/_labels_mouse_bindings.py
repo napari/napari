@@ -73,6 +73,7 @@ def _maybe_add_polygon_point(polygon, pos):
         or np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0
     ):
         polygon.points = polygon.points + (tuple(pos),)
+        polygon.floating_point = None
 
         # TODO: there used to be some adjustment based on pixel offset
         #       is it still needed?
@@ -119,13 +120,19 @@ def complete_polygon(layer, event):
         else:
             layer.paint_polygon(list(polygon.points), layer.selected_label)
         polygon.points = ()
+        polygon.floating_point = None
 
 
 def update_polygon(layer, event):
+    if len(event.dims_displayed) != 2:
+        return
+
     polygon = layer._overlays['polygon']
     if polygon.points:
-        coordinates = mouse_event_to_labels_coordinate(layer, event)
-        polygon.floating_point = tuple(coordinates)
+        pos = mouse_event_to_labels_coordinate(layer, event)
+        # only add if we moved, to avoid degenerate
+        if np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0:
+            polygon.floating_point = tuple(pos)
 
 
 def pick(layer, event):
