@@ -30,7 +30,7 @@ class IntensityLayerWrapper:
 
     @property
     def contrast_limits(self) -> tuple[float, float]:
-        return self.layer.contrast_limits
+        return self.layer.contrast_limits  # pyrefly: ignore [bad-return]
 
     @property
     def dtype(self) -> DTypeLike:
@@ -152,6 +152,11 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
         self.node.set_size(self.overlay.size)
         self._on_ticks_change()
 
+    def _on_font_size_change(self) -> None:
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._on_ticks_change()
+
     def _on_ticks_change(self) -> None:
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
@@ -168,9 +173,15 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyTiledCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else self._default_font_size
+        )
+
         text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
             clim=_coerce_contrast_limits(
                 self.source_wrapper.contrast_limits
             ).contrast_limits,

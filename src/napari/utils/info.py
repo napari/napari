@@ -128,7 +128,7 @@ def get_plugin_list() -> str:
 
         pm = PluginManager.instance()
         pm.discover(include_npe1=True)
-        pm.index_npe1_adapters()  # type: ignore[no-untyped-call]
+        pm.index_npe1_adapters()
         fields = [
             'name',
             'package_metadata.version',
@@ -210,7 +210,7 @@ def sys_info(as_html: bool = False) -> str:
             API_VERSION = ''
 
         text += (
-            f'<b>Qt</b>: {QtCore.__version__}<br>'
+            f'<b>Qt</b>: {QtCore.qVersion()}<br>'
             f'<b>{API_NAME}</b>: {API_VERSION}<br>'
         )
 

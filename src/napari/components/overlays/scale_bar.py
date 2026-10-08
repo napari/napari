@@ -1,7 +1,5 @@
 """Scale bar model."""
 
-import warnings
-
 from pydantic import Field
 
 from napari.components.overlays.base import TiledCanvasOverlay
@@ -23,7 +21,7 @@ class ScaleBarOverlay(TiledCanvasOverlay):
         See ``ColorValue.validate`` for supported values.
     ticks : bool
         If scale bar has ticks at ends or not.
-    font_size : float
+    font_size : float, optional
         The font size (in points) of the text.
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
@@ -50,28 +48,5 @@ class ScaleBarOverlay(TiledCanvasOverlay):
     colored: bool = False
     color: ColorValue = Field(default_factory=lambda: ColorValue([1, 0, 1, 1]))
     ticks: bool = True
-    font_size: float = 10
+    font_size: float | None = None
     length: float | None = None
-
-    @property
-    def unit(self) -> None:
-        warnings.warn(
-            'ScaleBar.unit is deprecated and now always returns None. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
-            stacklevel=4,
-        )
-        return None
-
-    @unit.setter
-    def unit(self, value: str | None) -> None:
-        warnings.warn(
-            'Setting unit on the ScaleBar model is deprecated and no longer has any effect. '
-            'This attribute will be removed in 0.10.0.\n'
-            'Units are instead computed from the layers in the layerlist. '
-            'Use `Layer.units` to set units for each layer.',
-            category=FutureWarning,
-            stacklevel=4,
-        )

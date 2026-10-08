@@ -260,7 +260,7 @@ def zero_preserving_modulo_partsegcore(
     values: np.ndarray, n: int, dtype: np.dtype, to_zero: int = 0
 ) -> np.ndarray:
     out = np.empty(values.size, dtype=dtype)
-    partsegcore_mapping.zero_preserving_modulo_parallel(
+    partsegcore_mapping.zero_preserving_modulo_parallel(  # pyrefly: ignore [missing-attribute]
         values.reshape(-1), n, to_zero, out
     )
     return out.reshape(values.shape)
@@ -284,7 +284,7 @@ def labels_raw_to_texture_direct_partsegcore(
         direct_colormap._num_unique_colors + 2
     )
     out = np.empty(data.size, dtype=target_dtype)
-    partsegcore_mapping.map_array_parallel(
+    partsegcore_mapping.map_array_parallel(  # pyrefly: ignore [missing-attribute]
         data.reshape(-1), dkt, MAPPING_OF_UNKNOWN_VALUE, out
     )
     return out.reshape(data.shape)
