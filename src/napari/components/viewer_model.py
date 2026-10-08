@@ -600,9 +600,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self._fit_to_extent(extent[:, self.dims.displayed], margin=0.2)
         return True
 
+    def _on_zoom_to_selected_label_change(self, event) -> None:
+        layer = event.source
+        if layer.zoom_to_selected_label:
+            layer.events.selected_label.connect(self._on_selected_label_change)
+            self._zoom_to_label(layer)
+        else:
+            layer.events.selected_label.disconnect(
+                self._on_selected_label_change
+            )
+
     def _on_selected_label_change(self, event) -> None:
-        if event.source.zoom_to_selected_label:
-            self._zoom_to_label(event.source)
+        self._zoom_to_label(event.source)
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').
@@ -1066,10 +1075,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
         if isinstance(layer, Labels):
-            layer.events.selected_label.connect(self._on_selected_label_change)
             layer.events.zoom_to_selected_label.connect(
-                self._on_selected_label_change
+                self._on_zoom_to_selected_label_change
             )
+            if layer.zoom_to_selected_label:
+                layer.events.selected_label.connect(
+                    self._on_selected_label_change
+                )
         self._layer_help_from_mode(layer)
 
         # Update dims
