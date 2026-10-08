@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable, Collection, Iterable, Sized
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -42,7 +41,6 @@ from napari.layers.shapes._shapes_mouse_bindings import (
     vertex_remove,
 )
 from napari.layers.shapes._shapes_utils import (
-    create_box,
     extract_shape_type,
     get_default_shape_type,
     get_shape_ndim,
@@ -50,7 +48,6 @@ from napari.layers.shapes._shapes_utils import (
     rdp,
     validate_num_vertices,
 )
-from napari.layers.shapes.shape_types import BoxArray
 from napari.layers.utils.color_manager import DEFAULT_COLOR_CYCLE
 from napari.layers.utils.color_manager_utils import (
     guess_continuous,
@@ -64,7 +61,7 @@ from napari.layers.utils.color_transformations import (
 from napari.layers.utils.interactivity_utils import (
     nd_line_segment_to_displayed_data_ray,
 )
-from napari.layers.utils.layer_utils import _FeatureTable, _unique_element
+from napari.layers.utils.layer_utils import _FeatureTable
 from napari.layers.utils.text_manager import TextManager
 from napari.settings import get_settings
 from napari.types import LayerDataType
@@ -82,6 +79,7 @@ from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Collection
     from itertools import cycle
 
     import pandas as pd
@@ -287,23 +285,6 @@ class Shapes(Layer):
     _selected_data_stored : set
         Set of selected previously displayed. Used to prevent rerendering the
         same highlighted shapes when no data has changed.
-    _selected_box : None | np.ndarray
-        `None` if no shapes are selected, otherwise a 10x2 array of vertices of
-        the interaction box. The first 8 points are the corners and midpoints
-        of the box. The 9th point is the center of the box, and the last point
-        is the location of the rotation handle that can be used to rotate the
-        box.
-    _drag_start : None | np.ndarray
-        If a drag has been started and is in progress then a length 2 array of
-        the initial coordinates of the drag. `None` otherwise.
-    _drag_box : None | np.ndarray
-        If a drag box is being created to select shapes then this is a 2x2
-        array of the two extreme corners of the drag. `None` otherwise.
-    _drag_box_stored : None | np.ndarray
-        If a drag box is being created to select shapes then this is a 2x2
-        array of the two extreme corners of the drag that have previously been
-        rendered. `None` otherwise. Used to prevent rerendering the same
-        drag box when no data has changed.
     _is_moving : bool
         Bool indicating if any shapes are currently being moved.
     _is_selecting : bool
@@ -1251,53 +1232,6 @@ class Shapes(Layer):
         self, selected_data: Collection[int | np.integer]
     ) -> None:
         self._selected_data.replace_selection(selected_data)
-
-    def _on_selection_changed(self, added, removed):
-        # Drop a stale hover value if the hovered shape is no longer in view.
-        if (
-            self._value[0] is not None
-            and self._value[0] not in self._view_indices
-        ):
-            self._value = (None, None)
-
-        # The interaction box (and its handles) is only drawn around the
-        # selected shapes that are currently in view.
-        self._selected_box = self.interaction_box(self._selected_data_in_view)
-
-        # Update properties based on selected shapes
-        if len(self.selected_data) > 0:
-            selected_data_indices = list(self.selected_data)
-            selected_face_colors = self._data_view._face_color[
-                selected_data_indices
-            ]
-            if (
-                unique_face_color := _unique_element(selected_face_colors)
-            ) is not None:
-                with self.block_update_properties():
-                    self.current_face_color = unique_face_color
-
-            selected_edge_colors = self._data_view._edge_color[
-                selected_data_indices
-            ]
-            if (
-                unique_edge_color := _unique_element(selected_edge_colors)
-            ) is not None:
-                with self.block_update_properties():
-                    self.current_edge_color = unique_edge_color
-
-            unique_edge_width = _unique_element(
-                np.array(
-                    [
-                        self._data_view.shapes[i].edge_width
-                        for i in self.selected_data
-                    ]
-                )
-            )
-            if unique_edge_width is not None:
-                with self.block_update_properties():
-                    self.current_edge_width = unique_edge_width
-
-        self._set_highlight()
 
     @property
     def _is_moving(self) -> bool:
@@ -2447,73 +2381,6 @@ class Shapes(Layer):
         if view_changed:
             self._value = (None, None)
             self._outlines_cache.clear()
-            self._selected_box = self.interaction_box(
-                self._selected_data_in_view
-            )
-
-    def interaction_box(self, index: int | Iterable[int]) -> BoxArray | None:
-        """Create the interaction box around a shape or list of shapes.
-        If a single index is passed then the bounding box will be inherited
-        from that shapes interaction box. If list of indices is passed it will
-        be computed directly.
-
-        Parameters
-        ----------
-        index : int or iterable of int
-            Index of a single shape, list of shapes or Selection around which to
-            construct the interaction box
-
-        Returns
-        -------
-        box : np.ndarray
-            10x2 array of vertices of the interaction box. The first 8 points
-            are the corners and midpoints of the box in clockwise order
-            starting in the upper-left corner. The 9th point is the center of
-            the box, and the last point is the location of the rotation handle
-            that can be used to rotate the box
-        """
-        if isinstance(index, Iterable):
-            if not isinstance(index, Sized):
-                index = list(index)
-            if len(index) == 0:
-                box = None
-            elif len(index) == 1:
-                box = copy(self._data_view.shapes[next(iter(index))]._box)
-            else:
-                displayed_shape_indices = [
-                    i for i in index if self._data_view._displayed[i]
-                ]
-                if not displayed_shape_indices:
-                    box = None
-                else:
-                    mask = np.isin(
-                        self._data_view.displayed_vertices_to_shape_num,
-                        displayed_shape_indices,
-                    )
-                    verts = self._data_view.displayed_vertices[mask]
-                    box = create_box(verts)
-        else:
-            box = copy(self._data_view.shapes[index]._box)
-
-        if box is not None:
-            rot = box[Box.TOP_CENTER]
-            length_box = np.linalg.norm(
-                box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
-            )
-            if length_box > 0:
-                r = (
-                    self._rotation_handle_length
-                    * self._normalized_scale_factor
-                )
-                rot = (
-                    rot
-                    - r
-                    * (box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT])
-                    / length_box
-                )
-            box = np.append(box, [rot], axis=0)
-
-        return box
 
     def refresh(
         self,
@@ -2598,104 +2465,6 @@ class Shapes(Layer):
             triangles = None
 
         return vertices, triangles
-
-    def _compute_vertices_and_box(self):
-        """Compute location of highlight vertices and box for rendering.
-
-        Returns
-        -------
-        vertices : np.ndarray
-            Nx2 array of any vertices to be rendered as Markers
-        face_color : str
-            String of the face color of the Markers
-        edge_color : str
-            String of the edge color of the Markers and Line for the box
-        pos : np.ndarray
-            Nx2 array of vertices of the box that will be rendered using a
-            Vispy Line
-        width : float
-            Width of the box edge
-        """
-        # Only highlight selected shapes that are in view.
-        selected_in_view = self._selected_data_in_view
-
-        if self._highlight_visible and len(selected_in_view) > 0:
-            if self._mode == Mode.SELECT and self._selected_box is not None:
-                # In select mode show the interaction bounding box (with its
-                # vertices and rotation handle). ``_selected_box`` is the single
-                # source of truth: it is rebuilt from the in-view selection on
-                # selection/view changes and transformed in place while
-                # dragging (so it stays rotated/scaled with the shape).
-                # Hover-only highlights are drawn separately by _outline_shapes.
-                box = self._selected_box[Box.WITH_HANDLE]
-                if self._value[0] is None or self._value[1] is None:
-                    face_color = 'white'
-                else:
-                    face_color = self._highlight_color
-                edge_color = self._highlight_color
-                vertices = box[:, ::-1]
-                # Use a subset of the vertices of the interaction_box to plot
-                # the line around the edge
-                pos = box[Box.LINE_HANDLE][:, ::-1]
-                width = 1.5
-            elif self._mode in (
-                [
-                    Mode.DIRECT,
-                    Mode.ADD_PATH,
-                    Mode.ADD_POLYGON,
-                    Mode.ADD_POLYGON_LASSO,
-                    Mode.ADD_RECTANGLE,
-                    Mode.ADD_ELLIPSE,
-                    Mode.ADD_LINE,
-                    Mode.ADD_POLYLINE,
-                    Mode.VERTEX_INSERT,
-                    Mode.VERTEX_REMOVE,
-                ]
-            ):
-                # If in one of these mode show the vertices of the shape itself
-                inds = np.isin(
-                    self._data_view.displayed_vertices_to_shape_num,
-                    list(selected_in_view),
-                )
-                vertices = self._data_view.displayed_vertices[inds][:, ::-1]
-                # If currently adding path don't show box over last vertex
-                if self._mode == Mode.ADD_POLYLINE:
-                    vertices = vertices[:-1]
-
-                if self._value[0] is None or self._value[1] is None:
-                    face_color = 'white'
-                else:
-                    face_color = self._highlight_color
-                edge_color = self._highlight_color
-                pos = None
-                width = 0
-            else:
-                # Otherwise show nothing
-                vertices = np.empty((0, 2))
-                face_color = 'white'
-                edge_color = 'white'
-                pos = None
-                width = 0
-        elif self._highlight_visible and self._is_selecting:
-            # If currently dragging a selection box just show an outline of
-            # that box
-            vertices = np.empty((0, 2))
-            edge_color = self._highlight_color
-            face_color = 'white'
-            box = create_box(self._drag_box)
-            width = 1.5
-            # Use a subset of the vertices of the interaction_box to plot
-            # the line around the edge
-            pos = box[Box.LINE][:, ::-1]
-        else:
-            # Otherwise show nothing
-            vertices = np.empty((0, 2))
-            face_color = 'white'
-            edge_color = 'white'
-            pos = None
-            width = 0
-
-        return vertices, face_color, edge_color, pos, width
 
     def _set_highlight(self, force=False) -> None:
         """Render highlights of shapes.

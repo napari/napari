@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
@@ -62,6 +64,75 @@ def draw(layer, event):
                 layer._draw(new_label, last_cursor_coord, coordinates)
             last_cursor_coord = coordinates
             yield
+
+
+def _maybe_add_polygon_point(polygon, pos):
+    # Add a new point only if it differs from the previous one
+    if (
+        not polygon.points
+        or np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0
+    ):
+        polygon.points = polygon.points + (tuple(pos),)
+        polygon.floating_point = None
+
+        # TODO: there used to be some adjustment based on pixel offset
+        #       is it still needed?
+        # pos = np.array(pos, dtype=float)
+        # pos[self._dims_displayed] += 0.5
+
+
+def draw_polygon(layer, event):
+    if len(event.dims_displayed) != 2:
+        return
+
+    polygon = layer._overlays['polygon']
+    if event.button == 1:
+        pos = mouse_event_to_labels_coordinate(layer, event)
+        _maybe_add_polygon_point(polygon, pos)
+
+    elif event.button == 2 and polygon.points:
+        polygon.points = polygon.points[:-1]
+
+
+def complete_polygon(layer, event):
+    if len(event.dims_displayed) != 2:
+        return
+
+    if event.button == 2:
+        # just fall back to single click deletion behavior
+        draw_polygon(layer, event)
+    elif event.button == 1:
+        pos = mouse_event_to_labels_coordinate(layer, event)
+        polygon = layer._overlays['polygon']
+
+        first_point_dist = np.linalg.norm(pos - polygon.points[0])
+        completion_radius = get_settings().experimental.completion_radius
+        if completion_radius > 0 and first_point_dist > completion_radius:
+            # fall back to single click
+            draw_polygon(layer, event)
+            return
+
+        completion_radius = get_settings().experimental.completion_radius
+        if completion_radius > 0:
+            layer.paint_polygon(
+                list(polygon.points[:-1]), layer.selected_label
+            )
+        else:
+            layer.paint_polygon(list(polygon.points), layer.selected_label)
+        polygon.points = ()
+        polygon.floating_point = None
+
+
+def update_polygon(layer, event):
+    if len(event.dims_displayed) != 2:
+        return
+
+    polygon = layer._overlays['polygon']
+    if polygon.points:
+        pos = mouse_event_to_labels_coordinate(layer, event)
+        # only add if we moved, to avoid degenerate
+        if np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0:
+            polygon.floating_point = tuple(pos)
 
 
 def pick(layer, event):
