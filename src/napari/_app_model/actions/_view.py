@@ -1,3 +1,4 @@
+import numpy as np
 from app_model import Action
 from app_model.types import (
     KeyBindingRule,
@@ -8,8 +9,11 @@ from app_model.types import (
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import ViewerModel
+from napari.layers.utils.layer_utils import get_extent_world
 from napari.settings import get_settings
+from napari.utils.notifications import show_info
 
 VIEW_SUBMENUS = [
     (
@@ -125,6 +129,30 @@ def _fit_to_view(viewer: ViewerModel) -> None:
     viewer.fit_to_view()
 
 
+def _zoom_to_selected_label(viewer: ViewerModel) -> None:
+    layer = viewer.layers.selection.active
+    location = layer._locate_label(layer.selected_label)
+    if location is None:
+        show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
+        return
+    min_vals, max_vals, point = location
+
+    offset = viewer.dims.ndim - layer.ndim
+    not_displayed = layer._slice_input.not_displayed
+    if not_displayed:
+        world_point = layer._data_to_world(point)
+        viewer.dims.set_point(
+            [axis + offset for axis in not_displayed],
+            world_point[not_displayed],
+        )
+
+    extent = viewer.layers._extent_world_augmented.copy()
+    extent[:, offset:] = get_extent_world(
+        np.stack([min_vals, max_vals]) - 0.5, layer._data_to_world
+    )
+    viewer._fit_to_extent(extent[:, viewer.dims.displayed], margin=0.2)
+
+
 def _zoom_in(viewer: ViewerModel) -> None:
     viewer.scene.camera.zoom *= 1.5
 
@@ -164,6 +192,19 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_fit_to_view,
         keybindings=[StandardKeyBinding.OriginalSize],
+    ),
+    Action(
+        id='napari.scene.zoom_to_selected_label',
+        title='Zoom to Selected Label',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+        callback=_zoom_to_selected_label,
+        enablement=LLSCK.active_layer_type == 'labels',
     ),
     Action(
         id='napari.scene.zoom_in',
