@@ -14,3 +14,11 @@ class AdvancedSettings(EventedSettings):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = ('schema_version',)
+
+    paint_fill_completion_radius: float = Field(
+        default=1.5,
+        title='Brush size multiplier within which Labels paint-and-fill autocompletes.',
+        description='When painting and filling, the brush stroke will be completed and auto-filled\n'
+        'once the mouse re-approaches the starting point within a radius equal\n'
+        'to the brush size multiplied by this value.',
+    )

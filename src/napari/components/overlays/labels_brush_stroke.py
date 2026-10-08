@@ -1,38 +1,28 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from napari.components.overlays.base import SceneOverlay
-
-if TYPE_CHECKING:
-    from napari.layers import Labels
 
 
 class LabelsBrushStrokeOverlay(SceneOverlay):
     """Overlay for the right-click "encircle and fill" brush stroke.
 
-    While a stroke is active, a circle of `radius` (in data units) is drawn
-    centered on `center` to indicate the radius within which returning the
-    cursor completes the stroke.
-
     Attributes
     ----------
-    enabled : bool
-        Whether the overlay is active (gated to PAINT mode).
-    active : bool
-        Whether a stroke is currently in progress (circle visible).
-    center : tuple
-        Data coordinates (full-ndim) of the initial right-click point.
-    radius : float
-        Radius of the stop circle, in data units.
+    box : bool
+        Whether the background box is visible or not.
+    box_color : ColorValue or None
+        Background box color. If unset, it defaults to the canvas color.
+    gridded : bool
+        The overlay will be duplicated across all grid cells in gridded mode.
+    visible : bool
+        If the overlay is visible or not.
+    opacity : float
+        The opacity of the overlay. 0 is fully transparent.
+    order : int
+        The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
-    enabled: bool = False
-    active: bool = False
-    center: tuple = (0.0, 0.0)
-    radius: float = 0.0
-
-    def abort(self, layer: Labels) -> None:
-        """Revert the staged (uncommitted) stroke pixels and end the stroke."""
-        layer._abort_stroke()
-        self.active = False
+    position: tuple[float, ...] | None = None

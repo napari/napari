@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
@@ -31,19 +33,20 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
-
-    # Do not allow drawing while adjusting the brush size with the mouse
-    if layer.cursor == 'circle_frozen':
-        return
-
-    # In PAINT mode the right button (and any click during an active stroke) is
-    # reserved for the encircle-and-fill brush stroke handled by the
-    # brush_stroke overlay.
-    brush_stroke = layer._overlays['brush_stroke']
-    if brush_stroke.active or (brush_stroke.enabled and event.button == 2):
+    # guard to prevent painting while resizing
+    brush_overlay = layer._overlays['brush_circle']
+    if brush_overlay._is_resizing:
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
+
+    # right click means we are entering paint-and-fill mode, will be continued by the move
+    # callback
+    if event.button == 2 and len(event.dims_displayed) == 2:
+        brush_stroke = layer._overlays['brush_stroke']
+        brush_stroke.position = coordinates
+        return
+
     if layer._mode == Mode.ERASE:
         new_label = layer.colormap.background_value
     else:
@@ -51,7 +54,8 @@ def draw(layer, event):
 
     # on press
     with layer.block_history():
-        layer._draw(new_label, coordinates, coordinates)
+        brush_size_data = layer._get_brush_size_data(event.camera_zoom)
+        layer._draw(new_label, coordinates, coordinates, brush_size_data)
         yield
 
         last_cursor_coord = coordinates
@@ -59,7 +63,14 @@ def draw(layer, event):
         while event.type == 'mouse_move':
             coordinates = mouse_event_to_labels_coordinate(layer, event)
             if coordinates is not None or last_cursor_coord is not None:
-                layer._draw(new_label, last_cursor_coord, coordinates)
+                # zoom might have changed in between
+                brush_size_data = layer._get_brush_size_data(event.camera_zoom)
+                layer._draw(
+                    new_label,
+                    last_cursor_coord,
+                    coordinates,
+                    brush_size_data,
+                )
             last_cursor_coord = coordinates
             yield
 
@@ -78,52 +89,93 @@ def pick(layer, event):
     )
 
 
-class BrushSizeOnMouseMove:
-    """Enables changing the brush size by moving the mouse while holding down the specified modifiers
+def resize_or_continue_stroke(layer, event):
+    if all(
+        modifier in event.modifiers
+        for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+    ):
+        yield from resize_on_mouse_move(layer, event)
+        return
 
-    When hold down specified modifiers and move the mouse,
-    the callback will adjust the brush size based on the direction of the mouse movement.
-    Moving the mouse right will increase the brush size, while moving it left will decrease it.
-    The amount of change is proportional to the distance moved by the mouse.
+    brush_stroke = layer._overlays['brush_stroke']
+    if brush_stroke.position is not None and len(event.dims_displayed) == 2:
+        yield from continue_stroke(layer, event)
 
-    Parameters
-    ----------
-    min_brush_size : int
-        The minimum brush size.
 
-    """
+def resize_on_mouse_move(layer, event):
+    start_pos = np.array(event.pos)
+    start_pos_world = np.array(event.position)[event.dims_displayed]
+    brush_overlay = layer._overlays['brush_circle']
+    brush_overlay._is_resizing = True
+    start_brush_size = layer.brush_size
+    yield
 
-    def __init__(self, min_brush_size: int = 1):
-        self.min_brush_size = min_brush_size
-        self.init_pos = None
-        self.init_brush_size = None
-
-    def __call__(self, layer, event):
-        if all(
-            modifier in event.modifiers
-            for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
-        ):
-            pos = event.pos  # position in the canvas coordinates (x, y)
-
-            if self.init_pos is None:
-                self.init_pos = pos
-                self.init_brush_size = layer.brush_size
-                layer.cursor = 'circle_frozen'
-            else:
-                brush_size_delta = round(
-                    (pos[0] - self.init_pos[0]) / event.camera_zoom
-                )
-                new_brush_size = self.init_brush_size + brush_size_delta
-
-                bounded_brush_size = max(new_brush_size, self.min_brush_size)
-                layer.brush_size = bounded_brush_size
+    while event.type == 'mouse_move' and all(
+        modifier in event.modifiers
+        for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
+    ):
+        if layer.brush_size_is_canvas_pixels:
+            radius_delta = event.pos[0] - start_pos[0]
         else:
-            self.init_pos = None
-            if layer.cursor == 'circle_frozen':
-                layer.cursor = 'circle'
+            radius_delta = (
+                layer.world_to_data(event.position)[-1]
+                - layer.world_to_data(start_pos_world)[-1]
+            )
+        layer.brush_size = start_brush_size + radius_delta * 2
+        yield
 
-    def _on_modifiers_change(self):
-        modifiers_setting = (
-            get_settings().application.brush_size_on_mouse_move_modifiers
-        )
-        self.modifiers = modifiers_setting.value.split('+')
+    brush_overlay._is_resizing = False
+
+
+def _within_start_radius(start, current, brush_size_data):
+    return np.linalg.norm(current - start) <= brush_size_data
+
+
+def continue_stroke(layer, event):
+    has_left_start = False
+    stroke_points = []
+    radius_factor = get_settings().advanced.paint_fill_completion_radius
+    brush_stroke = layer._overlays['brush_stroke']
+
+    if layer._mode == Mode.ERASE:
+        new_label = layer.colormap.background_value
+    else:
+        new_label = layer.selected_label
+
+    last_cursor_coord = mouse_event_to_labels_coordinate(layer, event)
+    with layer.block_history():
+        # on move
+        while brush_stroke.position is not None:
+            coordinates = mouse_event_to_labels_coordinate(layer, event)
+            if coordinates is not None or last_cursor_coord is not None:
+                # zoom might have changed in between
+                brush_size_data = layer._get_brush_size_data(event.camera_zoom)
+                layer._draw(
+                    new_label,
+                    last_cursor_coord,
+                    coordinates,
+                    brush_size_data,
+                )
+                stroke_points.append(coordinates)
+                within_range = _within_start_radius(
+                    brush_stroke.position,
+                    coordinates,
+                    brush_size_data * radius_factor,
+                )
+
+                if not within_range:
+                    has_left_start = True
+                elif has_left_start:
+                    # done painting, return to start and fill the center
+                    layer._draw(
+                        new_label,
+                        coordinates,
+                        brush_stroke.position,
+                        brush_size_data,
+                    )
+                    layer.paint_polygon(stroke_points, layer.selected_label)
+                    brush_stroke.position = None
+            last_cursor_coord = coordinates
+            yield
+
+    brush_stroke.position = None
