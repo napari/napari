@@ -2830,3 +2830,49 @@ def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
     brush.paint(coord, 1)
     assert np.any(brush.data[0])  # -1 clipped to the near edge
     assert not np.any(brush.data[-1])
+
+
+def test_locate_label_absent():
+    layer = Labels(np.zeros((10, 10), dtype=np.uint8))
+    assert layer._locate_label(1) is None
+
+
+def test_locate_label_2d():
+    data = np.zeros((20, 30), dtype=np.uint8)
+    data[5:8, 10:15] = 3
+    min_vals, max_vals, point = Labels(data)._locate_label(3)
+    npt.assert_array_equal(min_vals, [5, 10])
+    npt.assert_array_equal(max_vals, [8, 15])
+    npt.assert_array_equal(point, [6, 12])
+
+
+@pytest.mark.parametrize(('current', 'expected'), [(0, 2), (8, 8), (9, 2)])
+def test_locate_label_picks_slice_containing_label(current, expected):
+    data = np.zeros((10, 20, 30), dtype=np.uint8)
+    data[2, 5:8, 10:15] = 3
+    data[8, 5:8, 10:15] = 3
+    viewer = ViewerModel()
+    layer = viewer.add_labels(data)
+    viewer.dims.set_point(0, current)
+    _, _, point = layer._locate_label(3)
+    npt.assert_array_equal(point, [expected, 6, 12])
+
+
+def test_locate_label_rolled_dims():
+    data = np.zeros((10, 20, 30), dtype=np.uint8)
+    data[2:4, 5, 10:15] = 3
+    viewer = ViewerModel()
+    layer = viewer.add_labels(data)
+    viewer.dims.order = (1, 0, 2)
+    _, _, point = layer._locate_label(3)
+    npt.assert_array_equal(point, [2.5, 5, 12])
+
+
+def test_locate_label_multiscale():
+    data = np.zeros((16, 16), dtype=np.uint8)
+    data[4:8, 8:12] = 3
+    layer = Labels([data, data[::2, ::2]], multiscale=True)
+    min_vals, max_vals, point = layer._locate_label(3)
+    npt.assert_array_equal(min_vals, [4, 8])
+    npt.assert_array_equal(max_vals, [8, 12])
+    npt.assert_array_equal(point, [5.5, 9.5])
