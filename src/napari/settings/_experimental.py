@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Annotated
 
 from pydantic import AliasChoices, Field
 
@@ -8,6 +9,7 @@ from napari.utils.colormap_backend import (
     set_backend as set_colormap_backend,
 )
 from napari.utils.events import Event
+from napari.utils.events.custom_types import NotEqual
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
     set_backend as set_triangulation_backend,
@@ -71,11 +73,10 @@ class ExperimentalSettings(EventedSettings):
         lt=50,
     )
 
-    completion_radius: int = Field(
+    completion_radius: Annotated[int, NotEqual(0)] = Field(
         default=-1,
         title='Double-click Labels polygon completion radius (-1 to always complete)',
         description='Max radius in pixels from first vertex for double-click to complete a polygon; set -1 to always complete.',
-        ne=0,
     )
 
     triangulation_backend: TriangulationBackend = Field(

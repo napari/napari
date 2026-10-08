@@ -76,10 +76,10 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _on_points_change(self):
         points = list(self.overlay.points)
-        if self.overlay.floating_point is not None:
-            points.append(self.overlay.floating_point)
         if points:
             # Create full-dimensional points for transformation
+            if self.overlay.floating_point is not None:
+                points.append(self.overlay.floating_point)
             points_full = np.array(points)
 
             # Apply tile2data inverse transform if downsampling is active.

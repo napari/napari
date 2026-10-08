@@ -67,13 +67,12 @@ def test_labels_drawing_with_polygons(MouseEvent):
     viewer = ViewerModel()
     layer = viewer.add_labels(data)
 
-    vispy_labels_polygon = VispyLabelsPolygonOverlay(
+    VispyLabelsPolygonOverlay(
         layer=layer,
         font_info=FontInfo(),
         viewer=viewer,
         overlay=layer._overlays['polygon'],
     )
-    vispy_labels_polygon.overlay.enabled = True
 
     layer.mode = 'polygon'
     layer.selected_label = 1

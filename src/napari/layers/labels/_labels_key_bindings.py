@@ -1,10 +1,13 @@
 from collections.abc import Callable
-from typing import TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
 
 from napari.layers.labels._labels_constants import Mode
+from napari.layers.labels._labels_mouse_bindings import (
+    _maybe_add_polygon_point,
+)
 from napari.layers.labels.labels import Labels, WrongSelectedLabelError
 from napari.layers.utils.layer_utils import (
     register_layer_action,
@@ -15,6 +18,8 @@ from napari.utils.notifications import show_info, show_warning
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
 
+if TYPE_CHECKING:
+    from napari.components.overlays import LabelsPolygonOverlay
 
 TFunc = TypeVar('TFunc', bound=Callable)
 
@@ -185,7 +190,9 @@ def reset_polygon(layer: Labels) -> None:
     if brush_stroke.active:
         brush_stroke.abort(layer)
         return
-    layer._overlays['polygon'].points = []
+
+    polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
+    polygon.points = ()
 
 
 @register_label_action(
@@ -193,13 +200,8 @@ def reset_polygon(layer: Labels) -> None:
 )
 def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
-    # Because layer._overlays has type Overlay, pyrefly doesn't know that
-    # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
-    # TODO: Improve typing of layer._overlays to fix this
-    from napari.components.overlays.labels_polygon import (
-        LabelsPolygonOverlay,
-    )
+    polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
 
-    cast(
-        LabelsPolygonOverlay, layer._overlays['polygon']
-    ).add_polygon_to_labels(layer)
+    _maybe_add_polygon_point(polygon, polygon.floating_point)
+    layer.paint_polygon(list(polygon.points), layer.selected_label)
+    polygon.points = ()

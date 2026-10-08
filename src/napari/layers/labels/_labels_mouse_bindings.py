@@ -66,6 +66,20 @@ def draw(layer, event):
             yield
 
 
+def _maybe_add_polygon_point(polygon, pos):
+    # Add a new point only if it differs from the previous one
+    if (
+        not polygon.points
+        or np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0
+    ):
+        polygon.points = polygon.points + (tuple(pos),)
+
+        # TODO: there used to be some adjustment based on pixel offset
+        #       is it still needed?
+        # pos = np.array(pos, dtype=float)
+        # pos[self._dims_displayed] += 0.5
+
+
 def draw_polygon(layer, event):
     if len(event.dims_displayed) != 2:
         return
@@ -73,15 +87,10 @@ def draw_polygon(layer, event):
     polygon = layer._overlays['polygon']
     if event.button == 1:
         pos = mouse_event_to_labels_coordinate(layer, event)
-        # Add a new point only if it differs from the previous one
-        if not polygon.points or np.linalg.norm(pos - polygon.points[-1]) > 0:
-            polygon.points = polygon.points + (tuple(pos),)
-
-            # pos = np.array(pos, dtype=float)
-            # pos[self._dims_displayed] += 0.5
+        _maybe_add_polygon_point(polygon, pos)
 
     elif event.button == 2 and polygon.points:
-        polygon.points.pop()
+        polygon.points = polygon.points[:-1]
 
 
 def complete_polygon(layer, event):
@@ -102,12 +111,14 @@ def complete_polygon(layer, event):
             draw_polygon(layer, event)
             return
 
+        completion_radius = get_settings().experimental.completion_radius
         if completion_radius > 0:
-            layer.paint_polygon(polygon.points[:-1], layer.selected_label)
+            layer.paint_polygon(
+                list(polygon.points[:-1]), layer.selected_label
+            )
         else:
-            layer.paint_polygon(polygon.points, layer.selected_label)
+            layer.paint_polygon(list(polygon.points), layer.selected_label)
         polygon.points = ()
-        polygon.floating_point = None
 
 
 def update_polygon(layer, event):
