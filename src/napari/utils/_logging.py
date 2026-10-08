@@ -45,7 +45,7 @@ class _LogStream:
 
     def get_filtered_logs_html(
         self,
-        level: int = logging.DEBUG,
+        level: int | str = logging.DEBUG,
         text_filter: str = '',
         last_only: bool = False,
     ) -> list[str]:
