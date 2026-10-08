@@ -211,7 +211,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
+    callback: Callable[..., Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -331,9 +331,9 @@ class QtViewerButtons(QFrame):
         """Have Alt/Option key rotate layers with the transpose button."""
         modifiers = QApplication.keyboardModifiers()
         if (
-            modifiers == Qt.AltModifier
+            modifiers == Qt.KeyboardModifier.AltModifier
             and qobject == self.transposeDimsButton
-            and event.type() == QEvent.MouseButtonPress
+            and event.type() == QEvent.Type.MouseButtonPress
         ):
             action_manager.trigger('napari:rotate_layers')
             return True
@@ -611,15 +611,14 @@ class QtViewerButtons(QFrame):
         value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
             New orientation value for the updated axis.
         """
-        axes = (
-            DepthAxisOrientation,
-            VerticalAxisOrientation,
-            HorizontalAxisOrientation,
-        )
-        axis_to_update = axes.index(orientation_type)
-        new_orientation = list(self.viewer.scene.camera.orientation)
-        new_orientation[axis_to_update] = orientation_type(orientation_value)
-        self.viewer.scene.camera.orientation = tuple(new_orientation)
+        depth, vertical, horizontal = self.viewer.scene.camera.orientation
+        if orientation_type is DepthAxisOrientation:
+            depth = DepthAxisOrientation(orientation_value)
+        elif orientation_type is VerticalAxisOrientation:
+            vertical = VerticalAxisOrientation(orientation_value)
+        else:
+            horizontal = HorizontalAxisOrientation(orientation_value)
+        self.viewer.scene.camera.orientation = (depth, vertical, horizontal)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
@@ -634,7 +633,7 @@ class QtViewerButtons(QFrame):
 
         angles = list(self.viewer.scene.camera.angles)
         angles[idx] = value
-        self.viewer.scene.camera.angles = tuple(angles)
+        self.viewer.scene.camera.angles = (angles[0], angles[1], angles[2])
 
     def _update_zoom(self, value: float) -> None:
         """Update the camera zoom.

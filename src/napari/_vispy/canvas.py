@@ -326,6 +326,9 @@ class VispyCanvas:
             self._update_font_sizes
         )
         self.destroyed.connect(self._disconnect_events)
+        get_settings().appearance.events.font_size.connect(
+            self._update_overlay_font_sizes
+        )
 
     @property
     def events(self):
@@ -460,46 +463,6 @@ class VispyCanvas:
         )
         self.viewer.scene.camera.center = box_center_world
 
-    def _map_canvas2world(
-        self,
-        position: tuple[int, ...],
-        view: ViewBox,
-    ) -> tuple[float, float]:
-        """Map position from canvas pixels into world coordinates.
-
-        Parameters
-        ----------
-        position : list(int, int)
-            Position in canvas (x, y).
-
-        Returns
-        -------
-        coords : tuple of two floats
-            Position in world coordinates, matches the total dimensionality
-            of the viewer.
-        """
-        nd = self.viewer.dims.ndisplay
-
-        transform = view.transform * view.scene.transform
-
-        # cartesian to homogeneous coordinates
-        mapped_position = transform.imap(list(position))
-        if nd == 3:
-            mapped_position = mapped_position[0:nd] / mapped_position[nd]
-        else:
-            mapped_position = mapped_position[0:nd]
-        position_world_slice = np.array(mapped_position[::-1])
-        # handle position for 3D views of 2D data
-        nd_point = len(self.viewer.dims.point)
-        if nd_point < nd:
-            position_world_slice = position_world_slice[-nd_point:]
-
-        position_world = list(self.viewer.dims.point)
-        for i, d in enumerate(self.viewer.dims.displayed):
-            position_world[d] = position_world_slice[i]
-
-        return tuple(position_world)
-
     def _get_viewbox_at(self, position):
         """Get the viewbox and its grid coordinates from the mouse position.
 
@@ -574,6 +537,8 @@ class VispyCanvas:
             event.handled = True
             return
 
+        canvas_position = tuple(event.pos[::-1])
+
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
@@ -581,7 +546,7 @@ class VispyCanvas:
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self._map_canvas2world(event.pos, viewbox),
+            position=self.viewer.canvas_to_world(canvas_position, grid_coords),
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
@@ -693,15 +658,11 @@ class VispyCanvas:
         corners : np.ndarray
             Coordinates of top left and bottom right canvas pixel in the world.
         """
-        if self.viewer.canvas.grid.enabled and self.grid_views:
-            # they are all the same, just take the first one
-            view = self.grid_views[0]
-        else:
-            view = self.view
-
-        # Find corners of canvas in world coordinates
-        top_left = self._map_canvas2world((0, 0), view)
-        bottom_right = self._map_canvas2world(view.rect.size, view)
+        # viewboxes are all the same for this purpose, just take the first one
+        top_left = self.viewer.canvas_to_world((0, 0), (0, 0))
+        bottom_right = self.viewer.canvas_to_world(
+            self.viewer.canvas.viewbox_size(self.viewer.layers), (0, 0)
+        )
         return np.array([top_left, bottom_right])
 
     def on_draw(self, event: DrawEvent | None = None) -> None:
@@ -1319,14 +1280,14 @@ class VispyCanvas:
                 self.viewer.default_font_size
                 or get_settings().appearance.font_size
             )
-        for vispy_layer in self.layer_to_visual.values():
-            vispy_layer.set_default_font_size(font_size)
         for vispy_overlays in self._viewer_overlay_to_visual.values():
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.set_default_font_size(font_size)
         for overlay_to_visual in self._layer_overlay_to_visual.values():
             for vispy_overlay in overlay_to_visual.values():
                 vispy_overlay.set_default_font_size(font_size)
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
