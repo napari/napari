@@ -861,7 +861,10 @@ class Labels(ScalarFieldBase):
 
     @property
     def zoom_to_selected_label(self) -> bool:
-        """Whether the viewer zooms to the selected label when it changes."""
+        """Whether the viewer zooms to the selected label when it changes.
+
+        .. versionadded:: 0.10.0
+        """
         return self._zoom_to_selected_label
 
     @zoom_to_selected_label.setter
