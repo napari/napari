@@ -2864,3 +2864,32 @@ def test_features_index_column_matches_label_values():
     features = pd.DataFrame({'index': [1, 2], 'area': [4.0, 16.0]})
     layer = Labels(data, features=features)
     assert layer.get_status((1, 1))['coordinates'].endswith('area: 4')
+
+
+def test_features_label_column_nullable_int_warns():
+    data = np.zeros((10, 10), dtype=int)
+    features = pd.DataFrame(
+        {'label': pd.array([1, None], dtype='Int64'), 'area': [4.0, 16.0]}
+    )
+    with pytest.warns(UserWarning, match="'index'"):
+        Labels(data, features=features)
+
+
+@pytest.mark.parametrize(
+    'code',
+    [
+        'Labels(data, features=features)',
+        'Labels(data).features = features',
+        'ViewerModel().add_labels(data, features=features)',
+    ],
+)
+def test_features_label_column_warning_points_at_caller(code):
+    namespace = {
+        'Labels': Labels,
+        'ViewerModel': ViewerModel,
+        'data': np.zeros((10, 10), dtype=int),
+        'features': pd.DataFrame({'label': [1, 2], 'area': [4.0, 16.0]}),
+    }
+    with pytest.warns(UserWarning, match="'index'") as record:
+        exec(compile(code, 'user_script.py', 'exec'), namespace)
+    assert record[0].filename == 'user_script.py'
