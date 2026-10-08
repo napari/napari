@@ -1289,7 +1289,7 @@ def test_viewer_drag_to_zoom(
 
     zoom_area_mock = mock.Mock(side_effect=zoom_callback)
 
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1297,7 +1297,7 @@ def test_viewer_drag_to_zoom(
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1306,7 +1306,7 @@ def test_viewer_drag_to_zoom(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1320,10 +1320,10 @@ def test_viewer_drag_to_zoom(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model.canvas.overlays._zoom_box.position == (
+    assert viewer_model.canvas.overlays._zoom_rect.position == (
         (0, 0),
         (100, 100),
     ), 'Zoom box canvas positions should match the drag coordinates'
@@ -1333,7 +1333,7 @@ def test_viewer_drag_to_zoom(
         pos=(100, 100), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden after release'
     )
 
@@ -1349,7 +1349,7 @@ def test_viewer_drag_to_zoom_with_cancel(
 
     zoom_area_mock = mock.Mock()
 
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1357,7 +1357,7 @@ def test_viewer_drag_to_zoom_with_cancel(
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1366,7 +1366,7 @@ def test_viewer_drag_to_zoom_with_cancel(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1380,10 +1380,10 @@ def test_viewer_drag_to_zoom_with_cancel(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model.canvas.overlays._zoom_box.position == (
+    assert viewer_model.canvas.overlays._zoom_rect.position == (
         (0, 0),
         (0, 0),
     ), 'Zoom box canvas positions should match the drag coordinates'
@@ -1403,7 +1403,7 @@ def test_viewer_drag_to_zoom_3d_data(
     canvas = qt_viewer.canvas
 
     zoom_area_mock = mock.Mock()
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1418,7 +1418,7 @@ def test_viewer_drag_to_zoom_3d_data(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True
 
     canvas._scene_canvas.events.mouse_move(
         pos=(100, 100),
@@ -1436,7 +1436,7 @@ def test_viewer_drag_to_zoom_3d_data(
     )
     qtbot.wait(10)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden after release'
     )
     # zoom_area should have been set with 2-tuples (last 2 world coords)

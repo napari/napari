@@ -14,7 +14,7 @@ from napari.components.overlays import (
     CurrentSliceOverlay,
     ScaleBarOverlay,
     TextOverlay,
-    ZoomOverlay,
+    ZoomRectOverlay,
 )
 from napari.settings import get_settings
 from napari.utils.color import ColorValue
@@ -83,7 +83,7 @@ class Canvas(EventedModel):
                 'scale_bar': ScaleBarOverlay(),
                 'text': TextOverlay(),
                 '_brush_circle': BrushCircleOverlay(),
-                '_zoom_box': ZoomOverlay(),
+                '_zoom_rect': ZoomRectOverlay(),
                 'current_slice': CurrentSliceOverlay(),
                 'axes': CanvasAxesOverlay(),
             }

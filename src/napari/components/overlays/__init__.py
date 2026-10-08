@@ -15,6 +15,10 @@ from napari.components.overlays.labels_brush_stroke import (
     LabelsBrushStrokeOverlay,
 )
 from napari.components.overlays.labels_polygon import LabelsPolygonOverlay
+from napari.components.overlays.rectangle import (
+    SelectionRectOverlay,
+    ZoomRectOverlay,
+)
 from napari.components.overlays.scale_bar import ScaleBarOverlay
 from napari.components.overlays.scene_axes import SceneAxesOverlay
 from napari.components.overlays.text import (
@@ -22,7 +26,6 @@ from napari.components.overlays.text import (
     LayerNameOverlay,
     TextOverlay,
 )
-from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
     'BoundingBoxOverlay',
@@ -39,7 +42,8 @@ __all__ = [
     'SceneAxesOverlay',
     'SceneOverlay',
     'SelectionBoxOverlay',
+    'SelectionRectOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
-    'ZoomOverlay',
+    'ZoomRectOverlay',
 ]

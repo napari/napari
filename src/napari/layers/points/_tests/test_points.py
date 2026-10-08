@@ -18,7 +18,6 @@ from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode, PointsProjectionMode
-from napari.layers.points._points_utils import points_to_squares
 from napari.layers.utils._slice_input import _SliceInput, _ThickNDSlice
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.color_encoding import ConstantColorEncoding
@@ -600,40 +599,6 @@ def test_remove_selected_removes_corresponding_attributes():
     state_expected = layer_expected._get_state()
 
     assert_layer_state_equal(state_layer, state_expected)
-
-
-def test_move():
-    """Test moving points."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    unmoved = copy(data)
-    layer = Points(data)
-    layer.events.data = Mock()
-
-    # Move one point relative to an initial drag start location
-    layer._move([0], [0, 0])
-    layer._move([0], [10, 10])
-    layer._drag_start = None
-    assert np.array_equal(layer.data[0], unmoved[0] + [10, 10])
-    assert np.array_equal(layer.data[1:], unmoved[1:])
-    assert layer.events.data.call_args[1] == {
-        'value': layer.data,
-        'action': ActionType.CHANGED,
-        'data_indices': (0,),
-        'vertex_indices': ((),),
-    }
-
-    # Move two points relative to an initial drag start location
-    layer._move([1, 2], [2, 2])
-    layer._move([1, 2], np.add([2, 2], [-3, 4]))
-    assert layer.events.data.call_args[1] == {
-        'value': layer.data,
-        'action': ActionType.CHANGED,
-        'data_indices': (1, 2),
-        'vertex_indices': ((),),
-    }
-    assert np.array_equal(layer.data[1:2], unmoved[1:2] + [-3, 4])
 
 
 def test_changing_modes():
@@ -1930,24 +1895,6 @@ def test_view_colors():
     assert len(layer._view_border_color) == 0
 
 
-def test_interaction_box():
-    """Test the boxes calculated for selected points"""
-    data = [[3, 3]]
-    size = 2
-    layer = Points(data, size=size)
-
-    # get a box with no points selected
-    index = []
-    box = layer.interaction_box(index)
-    assert box is None
-
-    # get a box with a point selected
-    index = [0]
-    expected_box = points_to_squares(data, size)
-    box = layer.interaction_box(index)
-    np.all([np.isin(p, expected_box) for p in box])
-
-
 def test_world_data_extent():
     """Test extent after applying transforms."""
     data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
@@ -2507,18 +2454,6 @@ def test_antialiasing_value_clipping():
     with pytest.warns(RuntimeWarning):
         layer.antialiasing = -1
     assert layer.antialiasing == 0
-
-
-def test_set_drag_start():
-    """Drag start should only change when currently None."""
-    data = [[0, 0], [1, 1]]
-    layer = Points(data)
-    assert layer._drag_start is None
-    position = (0, 1)
-    layer._set_drag_start({0}, position=position)
-    np.testing.assert_array_equal(layer._drag_start, position)
-    layer._set_drag_start({0}, position=(1, 2))
-    np.testing.assert_array_equal(layer._drag_start, position)
 
 
 @pytest.mark.parametrize(

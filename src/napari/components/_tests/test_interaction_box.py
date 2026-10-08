@@ -4,7 +4,7 @@ from napari.components.overlays.interaction_box import SelectionBoxOverlay
 from napari.layers.base._base_constants import InteractionBoxHandle
 from napari.layers.points import Points
 from napari.layers.utils.interaction_box import (
-    generate_interaction_box_vertices,
+    generate_interaction_box_handles,
     generate_transform_box_from_layer,
     get_nearby_handle,
 )
@@ -28,11 +28,11 @@ def test_transform_box_vertices_from_bounds():
     top_left = 0, 0
     bottom_right = 10, 10
     # works in vispy coordinates, so x and y are swapped
-    vertices = generate_interaction_box_vertices(
+    vertices = generate_interaction_box_handles(
         top_left, bottom_right, handles=False, rotation=True
     )
     np.testing.assert_allclose(vertices, expected[:4, ::-1])
-    vertices = generate_interaction_box_vertices(
+    vertices = generate_interaction_box_handles(
         top_left, bottom_right, handles=True, rotation=True
     )
     np.testing.assert_allclose(vertices, expected[:, ::-1])

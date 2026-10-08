@@ -6,7 +6,7 @@ from vispy.scene.visuals import Compound, Line
 
 from napari._vispy.visuals.markers import Markers
 from napari.layers.utils.interaction_box import (
-    generate_interaction_box_vertices,
+    generate_interaction_box_handles,
 )
 
 
@@ -40,10 +40,10 @@ class InteractionBox(Compound):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._marker_color = (1, 1, 1, 1)
         self._marker_size = 10
-        self._highlight_width = 2
         # squares for corners, diamonds for midpoints, disc for rotation handle
         self._marker_symbol = ['square'] * 4 + ['diamond'] * 4 + ['disc']
-        self._edge_color = (0.0, 0.0, 1.0, 1.0)
+        self.highlight_color = (0, 0, 1, 1)
+        self.highlight_width = 2
 
         super().__init__(
             [Line(antialias=True), Markers(antialias=0)], *args, **kwargs
@@ -82,7 +82,7 @@ class InteractionBox(Compound):
         rotation : bool
             Whether to show the rotation handle. Default is True.
         """
-        vertices = generate_interaction_box_vertices(
+        vertices = generate_interaction_box_handles(
             top_left, bot_right, handles=handles, rotation=rotation
         )
 
@@ -93,14 +93,14 @@ class InteractionBox(Compound):
         self.line.set_data(
             pos=vertices,
             connect=edges,
-            color=self._edge_color,
-            width=self._highlight_width,
+            color=self.highlight_color,
+            width=self.highlight_width,
         )
 
         if handles:
             marker_edges = np.zeros(len(vertices))
             if selected is not None:
-                marker_edges[selected] = self._highlight_width
+                marker_edges[selected] = self.highlight_width
 
             self.markers.set_data(
                 pos=vertices,
@@ -108,7 +108,7 @@ class InteractionBox(Compound):
                 face_color=self._marker_color,
                 symbol=markers,
                 edge_width=marker_edges,
-                edge_color=self._edge_color,
+                edge_color=self.highlight_color,
             )
         else:
             self.markers.set_data(pos=np.empty((0, 2)))
