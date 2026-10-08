@@ -112,6 +112,18 @@ if TYPE_CHECKING:
 
 DEFAULT_THEME = 'dark'
 
+# layers cannot be currently serialized properly. To be removed once they are
+# evented models.
+# also callbacks functions should not be serialized
+EXCLUDE_DICT = {
+    'keymap',
+    'mouse_move_callbacks',
+    'mouse_drag_callbacks',
+    'mouse_wheel_callbacks',
+    'mouse_double_click_callbacks',
+}
+
+
 __all__ = ['ViewerModel', 'valid_add_kwargs']
 
 
@@ -416,35 +428,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def model_dump_json(self, *args, **kwargs):
         exclude = set(kwargs.pop('exclude', set()))
-        # layers cannot be currently serialized properly. To be removed once they are
-        # evented models.
-        # also callbacks functions should not be serialized
-        exclude.update(
-            {
-                'layers',
-                'mouse_move_callbacks',
-                'mouse_drag_callbacks',
-                'mouse_wheel_callbacks',
-                'mouse_double_click_callbacks',
-            }
-        )
+        exclude.update(EXCLUDE_DICT)
         kwargs['exclude'] = exclude
         return super().model_dump_json(*args, **kwargs)
 
     def model_dump(self, *args, **kwargs):
         exclude = set(kwargs.pop('exclude', set()))
-        # layers cannot be currently serialized properly. To be removed once they are
-        # evented models.
-        # also callbacks functions should not be serialized
-        exclude.update(
-            {
-                'layers',
-                'mouse_move_callbacks',
-                'mouse_drag_callbacks',
-                'mouse_wheel_callbacks',
-                'mouse_double_click_callbacks',
-            }
-        )
+        exclude.update(EXCLUDE_DICT)
         kwargs['exclude'] = exclude
         return super().model_dump(*args, **kwargs)
 
