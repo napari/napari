@@ -2865,3 +2865,25 @@ def test_outline_not_drawn_off_slice():
     layer.selected_data = set()
     layer._value = (0, None)
     assert layer._outline_shapes() == (None, None)  # hover-only path
+
+
+def test_locate_selection_none_selected():
+    layer = Shapes(np.array([[0, 0], [0, 10], [10, 10], [10, 0]]))
+    assert layer._locate_selection() is None
+
+
+def test_locate_selection_shapes():
+    def rect(z, y0, x0, y1, x1):
+        return np.array([[z, y0, x0], [z, y0, x1], [z, y1, x1], [z, y1, x0]])
+
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((10, 100, 100)))
+    layer = viewer.add_shapes(
+        [rect(2, 10, 10, 20, 20), rect(7, 60, 60, 80, 90)],
+        shape_type='rectangle',
+    )
+    viewer.dims.set_point(0, 0)
+    layer.selected_data = {1}
+    extent, point = layer._locate_selection()
+    np.testing.assert_array_equal(extent, [[7, 60, 60], [7, 80, 90]])
+    np.testing.assert_array_equal(point, [7, 70, 75])
