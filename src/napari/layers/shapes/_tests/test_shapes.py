@@ -1508,6 +1508,44 @@ def test_removing_shapes():
     layer.remove([])
 
 
+def test_removing_selected_shapes_mid_draw_cancels_the_draw():
+    from napari.layers.shapes._shapes_mouse_bindings import (
+        initiate_polygon_draw,
+    )
+
+    layer = Shapes()
+    layer.mode = 'add_polygon'
+    initiate_polygon_draw(layer, np.array([1.0, 1.0]))
+
+    layer.remove_selected()
+
+    assert layer._is_creating is False
+    assert layer.nshapes == 0
+
+
+def test_removing_an_earlier_shape_mid_draw_finishes_the_draw():
+    from napari.layers.shapes._shapes_mouse_bindings import (
+        initiate_polygon_draw,
+    )
+
+    layer = Shapes(np.array([[[0, 0], [0, 1], [1, 1], [1, 0]]]))
+    layer.mode = 'add_polygon'
+    initiate_polygon_draw(layer, np.array([2.0, 2.0]))
+    # three placed vertices plus the trailing cursor vertex
+    placed = np.array([[2.0, 2.0], [2.0, 5.0], [5.0, 5.0]])
+    layer._data_view.edit(1, np.concatenate([placed, [[4.0, 4.0]]]))
+    layer.events.data = Mock()
+
+    layer.remove([0])
+
+    assert layer._is_creating is False
+    assert layer.shape_type == ['polygon']
+    np.testing.assert_array_equal(layer.data[0], placed)
+    assert (
+        layer.events.data.call_args_list[-1][1]['action'] == ActionType.ADDED
+    )
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
@@ -2557,6 +2595,25 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.array_equal(labels.shape, labels_shape)
     assert np.array_equal(np.unique(labels), [0, 1, 2, 3])
+
+
+def test_to_labels_and_masks_in_3d_display():
+    data = [
+        [[0, 100, 100], [0, 100, 200], [0, 200, 200], [0, 200, 100]],
+        [[1, 125, 125], [1, 125, 175], [1, 175, 175], [1, 175, 125]],
+        [[2, 100, 100], [2, 100, 200], [2, 200, 200], [2, 200, 100]],
+    ]
+    layer = Shapes(np.array(data), shape_type='polygon')
+    labels_2d = layer.to_labels(labels_shape=(3, 300, 300))
+    masks_2d = layer.to_masks(mask_shape=(3, 300, 300))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    np.testing.assert_array_equal(
+        layer.to_labels(labels_shape=(3, 300, 300)), labels_2d
+    )
+    np.testing.assert_array_equal(
+        layer.to_masks(mask_shape=(3, 300, 300)), masks_2d
+    )
 
 
 def test_add_single_shape_consistent_properties():
