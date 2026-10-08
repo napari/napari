@@ -437,3 +437,27 @@ def test_zoom_to_selected_label_lower_dim_layer():
     viewer.add_labels(data)
     _zoom_to_selected_label(viewer)
     assert viewer.scene.camera.center[1:] == pytest.approx((5.5, 10.5))
+
+
+def test_zoom_to_selected_label_tiny_label_min_size():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[50, 50] = 1
+    viewer.add_labels(data, scale=(2, 2))
+    _zoom_to_selected_label(viewer)
+    tiny_zoom = viewer.scene.camera.zoom
+    data[42:58, 42:58] = 1
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.zoom == pytest.approx(tiny_zoom)
+    assert viewer.scene.camera.center[1:] == pytest.approx((99, 99))
+
+
+def test_zoom_to_selected_label_rotated_layer():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[40:50, 60:70] = 1
+    layer = viewer.add_labels(data, rotate=30, translate=(5, 5))
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.center[1:] == pytest.approx(
+        layer.data_to_world((44.5, 64.5))
+    )
