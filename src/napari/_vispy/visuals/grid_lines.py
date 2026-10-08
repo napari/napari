@@ -96,8 +96,8 @@ class GridLines3D(Node):
 
     def set_view_direction(
         self,
-        ranges: tuple[RangeTuple, ...],
-        view_is_flipped: tuple[bool, ...],
+        ranges: tuple[RangeTuple, RangeTuple, RangeTuple],
+        view_is_flipped: tuple[bool, bool, bool],
         zoom: float,
     ) -> None:
 

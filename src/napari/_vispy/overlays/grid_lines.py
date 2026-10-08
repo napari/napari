@@ -125,12 +125,14 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         displayed = self.viewer.dims.displayed[::-1]
         ranges = tuple(self.viewer.dims.range[i] for i in displayed)
 
-        if self.viewer.dims.ndisplay == 3:
+        if len(ranges) == 3:
             view_direction = np.sign(self.viewer.scene.camera.view_direction)
             view_is_flipped = tuple(view_direction >= 0)[::-1]
-        else:
+        elif len(ranges) == 2:
             view_is_flipped = (False, False, False)
             ranges = ranges + (RangeTuple(0, 0, 1),)
+        else:
+            raise RuntimeError('unreachable')
 
         self.node.set_view_direction(
             ranges,
