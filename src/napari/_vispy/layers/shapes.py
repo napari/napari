@@ -99,9 +99,7 @@ class VispyShapesLayer(VispyBaseLayer):
         vertices, faces = self.layer._outline_shapes()
 
         has_outline = (
-            vertices is not None
-            and len(vertices) > 0
-            and len(faces) > 0  # pyrefly: ignore [bad-argument-type]
+            vertices is not None and len(vertices) > 0 and len(faces) > 0  # pyrefly: ignore [bad-argument-type]
         )
 
         if not has_outline:
