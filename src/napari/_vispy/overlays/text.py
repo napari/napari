@@ -29,13 +29,12 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        self.node.font_size = self.overlay.font_size
         self.node.anchors = ('left', 'bottom')
 
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.box.connect(self._on_color_change)
         self.overlay.events.box_color.connect(self._on_color_change)
-        self.overlay.events.font_size.connect(self._on_position_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
 
         self.viewer.canvas.events.background_color.connect(
             self._on_color_change
@@ -63,7 +62,11 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         )
 
     def _on_font_size_change(self):
-        self.node.font_size = self.overlay.font_size
+        self.node.font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else self._default_font_size
+        )
         self._on_position_change()
 
     def _on_position_change(self, event=None):
@@ -83,7 +86,6 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             anchors = ('center', 'top')
 
         self.node.anchors = anchors
-        self.node.font_size = self.overlay.font_size
 
         self.x_size, self.y_size = self.node.get_width_height()
 
@@ -142,6 +144,12 @@ class VispyTextOverlay(_VispyViewerTextOverlay):
 
 
 class VispyLayerNameOverlay(_VispyLayerTextOverlay):
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        # bold, like the layer names in the layer list
+        self.node.bold = True
+        self._on_position_change()
+
     def _connect_events(self):
         self.layer.events.name.connect(self._on_text_change)
         if isinstance(self.layer, IntensityVisualizationMixin):
