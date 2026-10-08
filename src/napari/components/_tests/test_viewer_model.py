@@ -1391,3 +1391,42 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_zoom_to_selected_label_follows_selection():
+    viewer = ViewerModel()
+    data = np.zeros((10, 100, 100), dtype=np.uint8)
+    data[2, 10:20, 10:20] = 1
+    data[7, 70:80, 60:70] = 2
+    layer = viewer.add_labels(data)
+    center = viewer.scene.camera.center
+
+    layer.selected_label = 2
+    assert viewer.scene.camera.center == center
+
+    layer.zoom_to_selected_label = True
+    assert viewer.dims.point[0] == 7
+    assert viewer.scene.camera.center[1:] == pytest.approx((74.5, 64.5))
+
+    layer.selected_label = 1
+    assert viewer.dims.point[0] == 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+    layer.selected_label = 5
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+    layer.zoom_to_selected_label = False
+    layer.selected_label = 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+
+def test_zoom_to_selected_label_disconnects_on_remove():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[70:80, 60:70] = 2
+    layer = viewer.add_labels(data)
+    layer.zoom_to_selected_label = True
+    viewer.layers.remove(layer)
+    center = viewer.scene.camera.center
+    layer.selected_label = 2
+    assert viewer.scene.camera.center == center
