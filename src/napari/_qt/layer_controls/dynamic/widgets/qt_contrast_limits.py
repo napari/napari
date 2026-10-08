@@ -408,12 +408,19 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         self.histogram_button.installEventFilter(self)
         self._clim_layout.addWidget(self.histogram_button)
 
-        self.histogram_content = QtHistogramContentWidget(self._layers[0])
-        self.histogram_content.setProperty('foreground', 'true')
-
         # Histogram is only supported for a single selected layer; multiple
         # selected layers are disabled until we figure out how to handle them.
-        if len(self._layers) != 1:
+        if len(self._layers) == 1:
+            layer = self._layers[0]
+
+            self.histogram_content = QtHistogramContentWidget(layer)
+            self.histogram_content.setProperty('foreground', 'true')
+
+            self._enable_histogram(layer.histogram.enabled)
+            layer.histogram.events.enabled.connect(
+                self._on_histogram_enabled_change
+            )
+        else:
             self.histogram_button.setToolTip(
                 'Histogram is currently only supported for a single selected '
                 'layer, not for multiple selected layers.'
@@ -505,6 +512,6 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             (self.auto_scale_buttons_label, self.auto_scale_buttons),
             (self.contrast_limits_slider_label, self._clim_row),
         ]
-        if (self._layers) == 1:
+        if len(self._layers) == 1:
             controls.append((self.histogram_content,))
         return controls
