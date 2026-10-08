@@ -3,6 +3,7 @@ import pint
 import pytest
 import zarr
 
+from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
@@ -407,6 +408,35 @@ def test_convert_warns_with_projection_mode():
     with pytest.warns(UserWarning, match='projection mode'):
         _convert(ll, 'labels')
     assert isinstance(ll['Image [1]'], Labels)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
+    polygon = np.array([[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]])
+    ll = LayerList([Image(np.zeros((20, 100, 100))), Shapes([polygon])])
+    ll.selection = {ll[1]}
+    ll[1]._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels.shape == (20, 100, 100)
+    assert labels[5, 30, 30] == 1
+    assert np.count_nonzero(labels[:5]) == 0
+    assert np.count_nonzero(labels[6:]) == 0
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_with_rolled_dims(ndisplay):
+    shapes = Shapes(ndim=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=ndisplay, order=(2, 0, 1)))
+    shapes.add_polygons(
+        [np.array([[5, 10, 7], [5, 50, 7], [50, 50, 7], [50, 10, 7]])]
+    )
+    ll = LayerList([Image(np.zeros((60, 60, 20))), shapes])
+    ll.selection = {shapes}
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels[30, 30, 7] == 1
+    assert np.count_nonzero(labels) == np.count_nonzero(labels[:, :, 7])
 
 
 def make_three_layer_layerlist():
