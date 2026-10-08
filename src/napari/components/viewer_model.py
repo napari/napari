@@ -66,6 +66,7 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
+from napari.layers.utils.layer_utils import get_extent_world
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins import _npe2
@@ -90,6 +91,7 @@ from napari.utils.events import (
 from napari.utils.key_bindings import KeymapProvider
 from napari.utils.misc import ensure_list_of_layer_data_tuple, is_sequence
 from napari.utils.mouse_bindings import MousemapProviderPydantic
+from napari.utils.notifications import show_info
 from napari.utils.progress import progress
 from napari.utils.theme import available_themes, is_theme_available
 
@@ -566,6 +568,37 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.scene.camera.zoom = self._get_3d_camera_zoom(
                 extent, scale_factor
             )
+
+    def _zoom_to_label(self, layer: Labels) -> None:
+        """Center and zoom the camera on the selected label of a layer."""
+        location = layer._locate_label(layer.selected_label)
+        if location is None:
+            show_info(
+                f'Label {layer.selected_label} is not in layer {layer.name}'
+            )
+            return
+        min_vals, max_vals, point = location
+
+        offset = self.dims.ndim - layer.ndim
+        not_displayed = layer._slice_input.not_displayed
+        if not_displayed:
+            world_point = layer._data_to_world(point)
+            self.dims.set_point(
+                [axis + offset for axis in not_displayed],
+                world_point[not_displayed].tolist(),
+            )
+
+        extent = self.layers._extent_world_augmented.copy()
+        extent[:, offset:] = get_extent_world(
+            np.stack([min_vals, max_vals]) - 0.5, layer._data_to_world
+        )
+        min_size = 16 * np.abs(layer.scale)
+        grow = np.maximum(
+            min_size - (extent[1, offset:] - extent[0, offset:]), 0
+        )
+        extent[0, offset:] -= grow / 2
+        extent[1, offset:] += grow / 2
+        self._fit_to_extent(extent[:, self.dims.displayed], margin=0.2)
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').

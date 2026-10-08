@@ -1,4 +1,3 @@
-import numpy as np
 from app_model import Action
 from app_model.types import (
     KeyBindingRule,
@@ -12,9 +11,7 @@ from napari._app_model.constants import MenuGroup, MenuId
 from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import ViewerModel
 from napari.layers import Labels
-from napari.layers.utils.layer_utils import get_extent_world
 from napari.settings import get_settings
-from napari.utils.notifications import show_info
 
 VIEW_SUBMENUS = [
     (
@@ -134,30 +131,7 @@ def _zoom_to_selected_label(viewer: ViewerModel) -> None:
     layer = viewer.layers.selection.active
     if not isinstance(layer, Labels):
         return
-    location = layer._locate_label(layer.selected_label)
-    if location is None:
-        show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
-        return
-    min_vals, max_vals, point = location
-
-    offset = viewer.dims.ndim - layer.ndim
-    not_displayed = layer._slice_input.not_displayed
-    if not_displayed:
-        world_point = layer._data_to_world(point)
-        viewer.dims.set_point(
-            [axis + offset for axis in not_displayed],
-            world_point[not_displayed].tolist(),
-        )
-
-    extent = viewer.layers._extent_world_augmented.copy()
-    extent[:, offset:] = get_extent_world(
-        np.stack([min_vals, max_vals]) - 0.5, layer._data_to_world
-    )
-    min_size = 16 * np.abs(layer.scale)
-    grow = np.maximum(min_size - (extent[1, offset:] - extent[0, offset:]), 0)
-    extent[0, offset:] -= grow / 2
-    extent[1, offset:] += grow / 2
-    viewer._fit_to_extent(extent[:, viewer.dims.displayed], margin=0.2)
+    viewer._zoom_to_label(layer)
 
 
 def _zoom_in(viewer: ViewerModel) -> None:
