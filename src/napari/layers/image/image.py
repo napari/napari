@@ -367,7 +367,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.locked_data_level = locked_data_level
 
     @property
-    def rendering(self) -> str:  # pyrefly: ignore [bad-override]
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how

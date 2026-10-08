@@ -498,7 +498,7 @@ class Labels(ScalarFieldBase):
         self._reset_editable()
 
     @property
-    def rendering(self):  # pyrefly: ignore [bad-override]
+    def rendering(self):
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
