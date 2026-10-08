@@ -1092,6 +1092,16 @@ def test_get_status_text():
     assert viewer.tooltip.text == '0\na: 1'
 
 
+def test_mouse_over_canvas_deprecated():
+    viewer = ViewerModel()
+    with pytest.warns(FutureWarning, match='mouse_over_canvas'):
+        assert not viewer.mouse_over_canvas
+
+    viewer.cursor._canvas_position = (1, 1)
+    with pytest.warns(FutureWarning, match='mouse_over_canvas'):
+        assert viewer.mouse_over_canvas
+
+
 def test_reset_view():
     """Test camera angle behavior after a viewer reset."""
     viewer = ViewerModel(ndisplay=3)
