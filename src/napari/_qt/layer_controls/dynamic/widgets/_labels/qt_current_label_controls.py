@@ -20,6 +20,7 @@ from napari._qt.utils import attr_to_settr, qt_signals_blocked
 from napari.layers.labels._labels_key_bindings import new_label
 from napari.layers.labels._labels_utils import get_dtype
 from napari.utils._dtype import get_dtype_limits
+from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
     from napari.layers import Labels
@@ -185,7 +186,8 @@ class QtCurrentLabelControls(QtWidgetControlsBase):
             self.selection_spinbox.setRange(*dtype_lims)
 
     def disconnect_widget_controls(self) -> None:
-        self.colorbox.disconnect_widget_controls()
+        for layer in self._layers:
+            _disconnect_all_events(layer, self.colorbox)
         super().disconnect_widget_controls()
 
     def _on_button_click(self):
