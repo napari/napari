@@ -13,7 +13,7 @@ from napari._tests.utils import (
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers.shapes._tests.conftest import (
     ten_four_corner,  # noqa: F401
 )  # import to not put this data in top level conftest.py
@@ -1430,3 +1430,29 @@ def test_zoom_to_selected_label_disconnects_on_remove():
     center = viewer.scene.camera.center
     layer.selected_label = 2
     assert viewer.scene.camera.center == center
+
+
+def test_zoom_to_selected_label_connects_only_while_on():
+    viewer = ViewerModel()
+    layer = viewer.add_labels(np.zeros((10, 10), dtype=np.uint8))
+    callbacks = layer.events.selected_label.callbacks
+    assert not any('_on_selected_label_change' in str(c) for c in callbacks)
+
+    layer.zoom_to_selected_label = True
+    callbacks = layer.events.selected_label.callbacks
+    assert any('_on_selected_label_change' in str(c) for c in callbacks)
+
+    layer.zoom_to_selected_label = False
+    callbacks = layer.events.selected_label.callbacks
+    assert not any('_on_selected_label_change' in str(c) for c in callbacks)
+
+
+def test_zoom_to_selected_label_set_before_adding_layer():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[70:80, 60:70] = 2
+    layer = Labels(data)
+    layer.zoom_to_selected_label = True
+    viewer.add_layer(layer)
+    layer.selected_label = 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((74.5, 64.5))
