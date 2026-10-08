@@ -461,3 +461,42 @@ def test_zoom_to_selected_label_rotated_layer():
     assert viewer.scene.camera.center[1:] == pytest.approx(
         layer.data_to_world((44.5, 64.5))
     )
+
+
+@pytest.mark.parametrize('layer_type', ['points', 'shapes'])
+def test_zoom_to_selection_enabled_for_points_and_shapes(
+    make_napari_viewer, layer_type
+):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((10, 10)))
+    getattr(viewer, f'add_{layer_type}')()
+    action = viewer.window.view_menu.findAction(
+        'napari.scene.zoom_to_selection'
+    )
+    viewer.window.view_menu.update_from_context(viewer.layers._ctx)
+    assert action.isEnabled()
+
+
+def test_zoom_to_selection_points():
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((100, 100)))
+    layer = viewer.add_points([[10, 10], [80, 60]])
+    center = viewer.scene.camera.center
+    _zoom_to_selection(viewer)
+    assert viewer.scene.camera.center == center
+
+    layer.selected_data = {1}
+    _zoom_to_selection(viewer)
+    assert viewer.scene.camera.center[1:] == pytest.approx((80, 60))
+
+
+def test_zoom_to_selection_shapes():
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((100, 100)))
+    layer = viewer.add_shapes(
+        np.array([[60, 60], [60, 90], [80, 90], [80, 60]]),
+        shape_type='rectangle',
+    )
+    layer.selected_data = {0}
+    _zoom_to_selection(viewer)
+    assert viewer.scene.camera.center[1:] == pytest.approx((70, 75))
