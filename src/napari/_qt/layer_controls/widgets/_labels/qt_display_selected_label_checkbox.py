@@ -30,6 +30,10 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
         Checkbox to control if only currently selected label is shown.
     selected_color_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the layer should show only currently selected label chooser widget.
+    zoom_checkbox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if the viewer zooms to the selected label when it changes.
+    zoom_checkbox_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
+        Label for the zoom to selected label checkbox.
     """
 
     def __init__(self, parent: QWidget, layer: Labels) -> None:
@@ -56,9 +60,30 @@ class QtDisplaySelectedLabelCheckBoxControl(QtWidgetControlsBase):
 
         self.selected_color_checkbox_label = QtWrappedLabel('show\nselected:')
 
+        zoom_checkbox = QCheckBox()
+        zoom_checkbox.setToolTip('Zoom to the selected label when it changes')
+        zoom_checkbox.setChecked(self._layer.zoom_to_selected_label)
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer,
+                'zoom_to_selected_label',
+                zoom_checkbox,
+                'setChecked',
+            )
+        )
+        connect_setattr(
+            zoom_checkbox.stateChanged,
+            layer,
+            'zoom_to_selected_label',
+            convert_fun=checked_to_bool,
+        )
+        self.zoom_checkbox = zoom_checkbox
+        self.zoom_checkbox_label = QtWrappedLabel('zoom to\nselected:')
+
     def get_widget_controls(
         self,
     ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
-            (self.selected_color_checkbox_label, self.selected_color_checkbox)
+            (self.selected_color_checkbox_label, self.selected_color_checkbox),
+            (self.zoom_checkbox_label, self.zoom_checkbox),
         ]

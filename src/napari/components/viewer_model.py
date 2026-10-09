@@ -66,6 +66,7 @@ from napari.layers.points._points_key_bindings import points_fun_to_mode
 from napari.layers.shapes._shapes_key_bindings import shapes_fun_to_mode
 from napari.layers.surface._surface_key_bindings import surface_fun_to_mode
 from napari.layers.tracks._tracks_key_bindings import tracks_fun_to_mode
+from napari.layers.utils.layer_utils import get_extent_world
 from napari.layers.utils.stack_utils import split_channels
 from napari.layers.vectors._vectors_key_bindings import vectors_fun_to_mode
 from napari.plugins import _npe2
@@ -519,8 +520,29 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Margin as fraction of the canvas, showing blank space around the
             data. Default is 0.05 (5% of the canvas).
         """
-        # Get the scene parameters
-        extent, scene_size, corner = self._get_scene_parameters(layers=layers)
+        extent, _, _ = self._get_scene_parameters(layers=layers)
+        self._fit_to_extent(extent, margin=margin)
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
+        self.events.reset_view(
+            center=self.scene.camera.center,
+            zoom=self.scene.camera.zoom,
+            angles=self.scene.camera.angles,
+        )
+
+    def _fit_to_extent(self, extent: np.ndarray, margin: float) -> None:
+        """Center and zoom the camera on a world extent of the displayed dims.
+
+        Parameters
+        ----------
+        extent : array, shape (2, D)
+            Min/max world coordinates of the displayed dimensions.
+        margin : float in [0, 1)
+            Margin as fraction of the canvas.
+        """
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
 
         self.scene.camera.center = self._calculate_view_center(
             corner, scene_size
@@ -546,13 +568,50 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 extent, scale_factor
             )
 
-        # Emit a reset view event, which is no longer used internally, but
-        # which maybe useful for building on napari.
-        self.events.reset_view(
-            center=self.scene.camera.center,
-            zoom=self.scene.camera.zoom,
-            angles=self.scene.camera.angles,
+    def _zoom_to_selection(self, layer: Layer) -> bool:
+        """Center and zoom the camera on the selection of a layer.
+
+        Returns False if there is nothing to zoom to.
+        """
+        location = layer._locate_selection()
+        if location is None:
+            return False
+        extent_data, point = location
+
+        offset = self.dims.ndim - layer.ndim
+        not_displayed = layer._slice_input.not_displayed
+        if not_displayed:
+            world_point = layer._data_to_world(point)
+            self.dims.set_point(
+                [axis + offset for axis in not_displayed],
+                world_point[not_displayed].tolist(),
+            )
+
+        extent = self.layers._extent_world_augmented.copy()
+        extent[:, offset:] = get_extent_world(
+            extent_data, layer._data_to_world
         )
+        min_size = 16 * np.abs(layer.scale)
+        grow = np.maximum(
+            min_size - (extent[1, offset:] - extent[0, offset:]), 0
+        )
+        extent[0, offset:] -= grow / 2
+        extent[1, offset:] += grow / 2
+        self._fit_to_extent(extent[:, self.dims.displayed], margin=0.2)
+        return True
+
+    def _on_zoom_to_selected_label_change(self, event) -> None:
+        layer = event.source
+        if layer.zoom_to_selected_label:
+            layer.events.selected_label.connect(self._on_selected_label_change)
+            self._zoom_to_selection(layer)
+        else:
+            layer.events.selected_label.disconnect(
+                self._on_selected_label_change
+            )
+
+    def _on_selected_label_change(self, event) -> None:
+        self._zoom_to_selection(event.source)
 
     def _save_camera_state(self) -> None:
         """Save camera state for the mode we're leaving (runs at 'first').
@@ -1078,6 +1137,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
+        if isinstance(layer, Labels):
+            layer.events.zoom_to_selected_label.connect(
+                self._on_zoom_to_selected_label_change
+            )
+            if layer.zoom_to_selected_label:
+                layer.events.selected_label.connect(
+                    self._on_selected_label_change
+                )
         self._layer_help_from_mode(layer)
 
         # Update dims
