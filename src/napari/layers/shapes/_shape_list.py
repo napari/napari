@@ -1463,6 +1463,7 @@ class ShapeList:
                 edge_width=cur_shape.edge_width,
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
+                ndisplay=cur_shape.ndisplay,
             )
             self.shapes[index] = shape
         else:
