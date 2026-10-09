@@ -20,6 +20,8 @@ class SceneAxesOverlay(SceneOverlay):
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
+    font_size : float, optional
+        The font size (in points) of the text.
     visible : bool
         If the overlay is visible or not.
     opacity : float
@@ -35,3 +37,4 @@ class SceneAxesOverlay(SceneOverlay):
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
+    font_size: float | None = None

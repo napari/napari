@@ -42,7 +42,7 @@ class NapariMouseEvent(MouseEvent):
         dims_displayed: list[int],
         dims_point: list[float],
         viewbox: tuple[int, int],
-    ):
+    ) -> None:
         public_attrs = {
             k: v for k, v in event.__dict__.items() if not k.startswith('_')
         }

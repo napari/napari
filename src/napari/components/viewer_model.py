@@ -893,88 +893,78 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
+        """Calculate coordinates and status info from cursor position.
+
+        General logic:
+        - restrict info to only layers inside the hovered grid viewbox
+        - restrict info to only selected layers, if any
+        - if only one is shown, show more detailed info
+        """
         if not self.mouse_over_canvas:
             return None
-        coord2val: dict[str, list[str]] = {}
-        coord_str = ''
-        status_str = ''
-        tooltip_text = ''
+
         selection = self.layers.selection
-        active = selection.active
-        # TODO: this doesn't work well yet with grid mode (and is broken by wide borders too)
-
-        # Compute the tooltip first since it is always needed.
-        if (
-            self.tooltip.visible
-            and active is not None
-            and active._slicing_state._loaded
-        ):
-            tooltip_text = active._get_tooltip_text(
-                np.asarray(self.cursor.position),
-                view_direction=self.cursor._view_direction,
-                dims_displayed=list(self.dims.displayed),
-                world=True,
+        valid_layers: Sequence[Layer]
+        layers_in_viewbox = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
             )
+        ]
+        valid_layers = [
+            layer
+            for layer in layers_in_viewbox
+            if (not selection or layer in selection)
+            and layer._slicing_state._loaded
+        ]
 
-        # If there is an active layer and a single selection, calculate status using "the classic way".
-        # Then return the status and the tooltip.
-        if (
-            active is not None
-            and active._slicing_state._loaded
-            and len(selection) < 2
-        ):
-            status = active.get_status(
+        # if showing status for a single layer, we give more info (old version)
+        # and set the tooltip text
+        if len(valid_layers) == 1:
+            if self.tooltip.visible:
+                tooltip_text = valid_layers[0]._get_tooltip_text(
+                    np.asarray(self.cursor.position),
+                    view_direction=self.cursor._view_direction,
+                    dims_displayed=list(self.dims.displayed),
+                    world=True,
+                )
+            else:
+                tooltip_text = ''
+
+            status = valid_layers[0].get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
+
+            if status['value'] == '':
+                # 'coordinates' is the one used by the status bar itself
+                status['coordinates'] = f'{status["coords"]}: [empty]'
             return status, tooltip_text
 
-        # Otherwise, return the layer status of multiple selected layers
-        # or gridded layers as well as the tooltip.
-        for layer in self.layers[::-1]:
-            if (
-                not layer.visible
-                or layer.opacity == 0
-                or not layer._slicing_state._loaded
-                or (layer not in selection and not self.canvas.grid.enabled)
-            ):
-                continue
+        # for multiple layers, combine the statuses
+        statuses: list[str] = []
+        coords = ''
+        for layer in valid_layers:
             status = layer.get_status(
                 self.cursor.position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            separator = '    '
-            emphasis = separator if layer is active else ''
-            coord_str = f'{status["coords"]} » '
-            if status['value'] != '':
-                if coord_str not in coord2val:
-                    coord2val[coord_str] = []
-                coord2val[coord_str].append(
-                    f'{layer.name}: {status["value"]}{emphasis}'
-                )
-        if coord2val:
-            if not self.canvas.grid.enabled:
-                # use a single coordinate system
-                values = list(itertools.chain(*coord2val.values()))
-                key = next(iter(coord2val))  # choose arbitrary coordinate
-                coord2val = {key: values}
-            status_strs = [
-                key + separator.join(values)  # pyrefly: ignore [unbound-name]
-                for key, values in coord2val.items()
-            ]
-            status_str = separator.join(status_strs)  # pyrefly: ignore [unbound-name]
-        elif coord_str and not self.canvas.grid.enabled:
-            status_str = coord_str + '[empty]'
-        elif self.canvas.grid.enabled:
-            status_str = '[empty]'
-        else:
-            status_str = 'Ready'
+            if not coords or not layer._use_integer_coords_in_status():
+                # we prioritize float coords if any layer wants them
+                coords = status['coords']
+            if status['value']:
+                statuses.append(f'{layer.name}: {status["value"]}')
 
-        return status_str, tooltip_text
+        separator = '    '
+        values = '[empty]' if not statuses else separator.join(statuses)
+
+        status_str = f'{coords} » {values}'
+        return status_str, ''
 
     def update_status_from_cursor(self):
         """Update the status and tooltip from the cursor position."""
@@ -983,6 +973,69 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
+
+    def canvas_to_world(
+        self,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int] | None = None,
+    ) -> np.ndarray:
+        """Convert canvas pixel position to world coordinates.
+
+        The position is calculated on a plane parallel to the screen and passing
+        through the camera center, so it is unaffected by perspective.
+
+        Parameters
+        ----------
+        canvas_position : tuple of int
+            (y, x) position in canvas pixels.
+        viewbox : tuple of int
+            (col, row) coordinates of the grid viewbox relative to which
+            to calculate the transformation. If None, use the first viewbox
+            or the whole canvas if the grid is disabled.
+
+        Returns
+        -------
+        world_position : np.ndarray
+            Canvas position (on the canvas plane) converted to world coordinates.
+        """
+        from scipy.spatial.transform import Rotation as R
+
+        ndisplay = self.dims.ndisplay
+        camera = self.scene.camera
+
+        if viewbox is None:
+            viewbox = (0, 0)
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        world_center = np.array(camera.center)
+
+        if ndisplay == 2:
+            world_displayed = (
+                np.array(canvas_position) - viewbox_center
+            ) / camera.zoom + world_center[-2:]
+        else:
+            # note that while we call napari axes "zyx", in terms of angles to
+            # rot conversion we need to treat them as normal xyz for internal
+            # consistency (zyx actually describes a different rotation order)
+            rot = R.from_euler('xyz', camera.angles, degrees=True)
+            rot_matrix = rot.as_matrix()
+            # the depth is set to zero because we want the position at the
+            # plane of the camera center.
+            # Any modifications should be done by callers afterwards.
+            canvas_position_3d = np.array([0, *canvas_position])
+            viewbox_center_3d = np.array([0, *viewbox_center])
+            world_displayed = (
+                rot_matrix.T
+                @ (canvas_position_3d - viewbox_center_3d)
+                / camera.zoom
+                + world_center
+            )
+
+        # embed it in the world point
+        position_world = list(self.dims.point)
+        for i, d in enumerate(self.dims.displayed):
+            position_world[d] = world_displayed[i]
+        return np.array(position_world)
 
     @property
     def experimental(self):
