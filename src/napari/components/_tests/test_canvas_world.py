@@ -220,7 +220,7 @@ def test_viewbox_to_world_is_persistent_affine():
     from napari.utils.transforms import Affine
 
     viewer2d = _make_2d_viewer()
-    tr2d = viewer2d.viewbox_to_world
+    tr2d = viewer2d._viewbox_to_world
     assert isinstance(tr2d, Affine)
     assert tr2d.ndim == 2
     assert tr2d.linear_matrix.shape == (2, 2)
@@ -228,7 +228,7 @@ def test_viewbox_to_world_is_persistent_affine():
     assert tr2d.name == 'viewbox_to_world'
 
     viewer3d = _make_3d_viewer()
-    tr3d = viewer3d.viewbox_to_world
+    tr3d = viewer3d._viewbox_to_world
     assert isinstance(tr3d, Affine)
     assert tr3d.ndim == 3
     assert tr3d.linear_matrix.shape == (3, 3)
@@ -237,7 +237,7 @@ def test_viewbox_to_world_is_persistent_affine():
 
 def test_viewbox_to_world_matches_methods():
     viewer2d = _make_2d_viewer(center=(0, 4, 5), zoom=1.7)
-    tr = viewer2d.viewbox_to_world
+    tr = viewer2d._viewbox_to_world
     rng = np.random.default_rng(0)
     for _ in range(5):
         cw = np.array([float(rng.uniform(0, 800)), float(rng.uniform(0, 600))])
@@ -257,7 +257,7 @@ def test_viewbox_to_world_matches_methods():
     viewer3d = _make_3d_viewer(
         center=(1, 2, 3), zoom=1.5, angles=(25, -30, 45)
     )
-    tr3d = viewer3d.viewbox_to_world
+    tr3d = viewer3d._viewbox_to_world
     for _ in range(5):
         cw = (float(rng.uniform(0, 800)), float(rng.uniform(0, 600)))
         local = viewer3d.canvas_to_viewbox(cw, (0, 0))
@@ -287,13 +287,13 @@ def test_viewbox_to_world_matches_methods():
 
 def test_viewbox_to_world_stays_in_sync():
     viewer = _make_2d_viewer(center=(0, 4, 5), zoom=1.0)
-    tr = viewer.viewbox_to_world
+    tr = viewer._viewbox_to_world
     emissions = []
     tr.changed.connect(lambda: emissions.append(1))
 
     # same ndim: updated in place, so references stay valid
     viewer.scene.camera.zoom = 3.0
-    assert viewer.viewbox_to_world is tr
+    assert viewer._viewbox_to_world is tr
     np.testing.assert_allclose(tr.linear_matrix, np.eye(2) / 3.0)
     world = np.array(viewer.scene.camera.center)
     np.testing.assert_allclose(
@@ -302,13 +302,13 @@ def test_viewbox_to_world_stays_in_sync():
     assert len(emissions) > 0
 
     viewer.scene.camera.center = (0, 10, 20)
-    assert viewer.viewbox_to_world is tr
+    assert viewer._viewbox_to_world is tr
     np.testing.assert_allclose(
         tr.translate, np.array([10, 20]) - np.array([400, 300]) / 3.0
     )
 
     viewer.canvas.size = (400, 300)
-    assert viewer.viewbox_to_world is tr
+    assert viewer._viewbox_to_world is tr
     # world -> canvas still roundtrips after resize
     cw = (37.0, 123.0)
     np.testing.assert_allclose(
@@ -317,7 +317,7 @@ def test_viewbox_to_world_stays_in_sync():
 
     # ndisplay change replaces the object (dimensionality changes)
     viewer.dims.ndisplay = 3
-    tr3d = viewer.viewbox_to_world
+    tr3d = viewer._viewbox_to_world
     assert tr3d is not tr
     assert tr3d.ndim == 3
     cw = (37.0, 123.0)
