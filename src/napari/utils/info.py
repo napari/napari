@@ -299,7 +299,7 @@ def sys_info(as_html: bool = False) -> str:
         from napari.settings import get_settings
 
         _async_setting = str(get_settings().experimental.async_)
-        _autoswap_buffers = str(get_settings().experimental.autoswap_buffers)
+        _autoswap_buffers = str(get_settings().advanced.autoswap_buffers)
         _triangulation_backend = str(
             get_settings().experimental.triangulation_backend
         )

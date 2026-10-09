@@ -201,7 +201,7 @@ class QtViewer(QSplitter):
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
-            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            autoswap=get_settings().advanced.autoswap_buffers,  # see #5734
             config={
                 'samples': 4 if get_settings().advanced.multisampling else 0
             },
