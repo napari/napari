@@ -135,6 +135,7 @@ class _QtMainWindow(QMainWindow):
         viewer: Viewer,
         window: Window,
         parent=None,
+        title='napari',
         show_welcome_screen=True,
     ) -> None:
         super().__init__(parent)
@@ -155,7 +156,7 @@ class _QtMainWindow(QMainWindow):
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
-        self.setWindowTitle(self._qt_viewer.viewer.title)
+        self.setWindowTitle(title)
 
         self._maximized_flag = False
         self._normal_geometry = QRect()
@@ -721,6 +722,7 @@ class Window:
         *,
         show: bool = True,
         show_welcome_screen: bool = True,
+        title: str = 'napari',
     ) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_qapp()
@@ -737,7 +739,10 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(
-            viewer, self, show_welcome_screen=show_welcome_screen
+            viewer,
+            self,
+            show_welcome_screen=show_welcome_screen,
+            title=title,
         )
         qapp.installEventFilter(self._qt_window)
 
@@ -781,7 +786,6 @@ class Window:
             )
 
         viewer.events.help.connect(self._help_changed)
-        viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
         viewer.events.status.connect(self._status_changed)
 
@@ -1636,17 +1640,6 @@ class Window:
                 coordinates=status_info['coordinates'],
             )
 
-    def _title_changed(self, event):
-        """Update window title.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if hasattr(self, '_qt_window'):
-            self._qt_window.setWindowTitle(event.value)
-
     def _help_changed(self, event):
         """Update help message on status bar.
 
@@ -1904,6 +1897,14 @@ class Window:
         )
         if dial.exec_():
             update_save_history(dial.selectedFiles()[0])
+
+    @property
+    def title(self) -> str:
+        return self._qt_window.windowTitle()
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self._qt_window.setWindowTitle(title)
 
 
 def _instantiate_dock_widget(wdg_cls, viewer: Viewer):

@@ -1,7 +1,8 @@
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from types import FunctionType
+from typing import Any, ClassVar, NotRequired, TypedDict, Union
 
 import numpy as np
 from app_model.types import KeyBinding
@@ -13,7 +14,7 @@ from pydantic import (
 from pydantic._internal._model_construction import ModelMetaclass
 
 from napari._pydantic_util import get_inner_type, get_outer_type
-from napari.utils.events.event import EmitterGroup, Event
+from napari.utils.events.event import EmitterGroup, Event, WarningEmitter
 from napari.utils.misc import pick_equality_operator
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -82,6 +83,12 @@ class EventedMetaclass(ModelMetaclass):
                     cls.__eq_operators__[name] = pick_equality_operator(
                         attr.fget.__annotations__['return']
                     )
+        cls.__properties__.pop(
+            'events', None
+        )  # we don't want to treat events as a usual property
+        cls.__properties__.pop(
+            '_defaults', None
+        )  # don't want to treat _defaults as a usual property
 
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
@@ -223,9 +230,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if not field.frozen
         ]
 
-        self._events.add(
-            **dict.fromkeys(field_events + list(self.__properties__))
-        )
+        property_events = {
+            name: WarningEmitter(**_get_deprecated_params(prop.fget))
+            if hasattr(prop.fget, '__deprecated__')
+            else None
+            for name, prop in self.__properties__.items()
+        }
+
+        self._events.add(**(dict.fromkeys(field_events) | property_events))
 
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
@@ -522,3 +534,22 @@ class ComparisonDelayer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()
+
+
+class _DeprecatedParam(TypedDict):
+    message: str
+    category: NotRequired[type[Warning]]
+
+
+def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
+    message = getattr(function, '__deprecated__', '')
+    if (closure := function.__closure__) is None:
+        return _DeprecatedParam(message=message)
+
+    for idx, name in enumerate(function.__code__.co_freevars):
+        if idx >= len(closure):
+            break
+        if name == 'category':
+            category = closure[idx].cell_contents
+            return _DeprecatedParam(message=message, category=category)
+    return _DeprecatedParam(message=message)
