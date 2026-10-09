@@ -245,14 +245,22 @@ class ScalarFieldBase(Layer, ABC):
 
         # Determine if data is a multiscale
         self._data_raw = data
+        if multiscale is False and isinstance(data, MultiScaleData):
+            raise ValueError(
+                'Cannot pass multiscale=False with a MultiScaleData instance.'
+            )
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
+            if isinstance(data, LayerDataProtocol):
+                # a single array-like is not itself a sequence of levels;
+                # treat it as the (only) level of a single-level pyramid.
+                data = [data]
             data = MultiScaleData(data)
 
         # Determine dimensionality of the data
         if ndim is None:
-            ndim = len(data.shape)  # pyrefly: ignore [missing-attribute]
+            ndim = len(data.shape)
         self._data = data
 
         # Xarray metadata inference is a no-op if data is not xarray-like
@@ -263,7 +271,7 @@ class ScalarFieldBase(Layer, ABC):
             if isinstance(data, (list, tuple, MultiScaleData))
             else data
         )
-        rgb = len(xr_source.shape) != ndim  # pyrefly: ignore [missing-attribute]
+        rgb = len(xr_source.shape) != ndim
         xr_metadata = _get_xr_metadata(
             xr_source,  # pyrefly: ignore [bad-argument-type]
             rgb=rgb,
@@ -371,7 +379,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @property
     def dtype(self):
-        return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
+        return normalize_dtype(self._data.dtype)
 
     @property
     def data_raw(
@@ -383,13 +391,23 @@ class ScalarFieldBase(Layer, ABC):
     @property
     def data(self) -> LayerDataProtocol | MultiScaleData:
         """Data, possibly in multiscale wrapper. Obeys LayerDataProtocol."""
-        return self._data  # pyrefly: ignore [bad-return]
+        return self._data
 
     @data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+    def data(
+        self,
+        data: LayerDataProtocol | Sequence[LayerDataProtocol] | MultiScaleData,
+    ) -> None:
         self._data_raw = data
         # note, we don't support changing from/to multiscale after construction
-        self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
+        if self.multiscale and not isinstance(data, MultiScaleData):
+            if isinstance(data, LayerDataProtocol) and data.ndim > 1:
+                raise ValueError(
+                    'This layer is multiscale; data must be a MultiScaleData '
+                    'instance or a sequence of levels, not a single array.'
+                )
+            data = MultiScaleData(data)  # pyrefly: ignore [bad-argument-type]
+        self._data = data
         self._reset_data_level()
         self._reset_thumbnail_level_data()
         self._update_dims()
@@ -711,7 +729,7 @@ class ScalarFieldBase(Layer, ABC):
 
         raw = self._slice.image.raw
         shape = (
-            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape  # pyrefly: ignore [missing-attribute]
+            raw.shape[:-1] if self.ndim != len(self._data.shape) else raw.shape
         )
 
         if self.ndim < len(coord):

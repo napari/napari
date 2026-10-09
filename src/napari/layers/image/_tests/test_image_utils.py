@@ -120,16 +120,27 @@ def test_guess_multiscale_strip_single_scale():
     assert guess is False
 
 
-def test_guess_multiscale_non_array_list():
-    """Check that non-decreasing list input raises ValueError"""
+def test_guess_multiscale_strip_single_scale_object_array():
+    """A length-1 sequence should be unwrapped even when it isn't a
+    list/tuple, e.g. a 1D numpy array of dtype=object."""
+    data = np.empty(1, dtype=object)
+    data[0] = np.empty((10, 10))
+    guess, data_out = guess_multiscale(data)
+    assert data_out is data[0]
+    assert guess is False
+
+
+def test_guess_multiscale_equal_size_list():
+    """Check that a list of equal-size levels is accepted (non-increasing)."""
     data = [np.empty((10, 15, 6))] * 2
-    with pytest.raises(ValueError, match='decreasing size'):
-        _, _ = guess_multiscale(data)
+    guess, out = guess_multiscale(data)
+    assert guess is True
+    assert out.shapes == ((10, 15, 6), (10, 15, 6))
 
 
 def test_guess_multiscale_incorrect_order():
     data = [np.empty((10, 15)), np.empty((5, 6)), np.empty((20, 15))]
-    with pytest.raises(ValueError, match='decreasing size'):
+    with pytest.raises(ValueError, match='non-increasing size'):
         _, _ = guess_multiscale(data)
 
 
