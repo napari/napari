@@ -216,8 +216,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
     ) -> None:
-        # allow extra attributes during model initialization, useful for mixins
-        self.model_config['extra'] = 'allow'
         super().__init__(
             title=title,
             dims={
@@ -227,7 +225,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 'order': order,
             },
         )
-        self.model_config['extra'] = 'ignore'
 
         settings = get_settings()
         self.tooltip.visible = settings.appearance.layer_tooltip_visibility
@@ -292,7 +289,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
         self.mouse_drag_callbacks.append(drag_to_zoom)
 
-        self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
+        self.events.theme.connect(self.canvas.events.background_color)
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -654,9 +651,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Get the camera zoom for 2D view."""
         scale = np.array(scene_size[-2:])
         scale[np.isclose(scale, 0)] = 1
-        return scale_factor * np.min(
-            self.canvas.viewbox_size(self.layers) / scale
-        )
+        return scale_factor * np.min(self.canvas.viewbox_size() / scale)
 
     def _get_3d_camera_zoom(
         self, extent: np.ndarray, scale_factor: float
@@ -667,9 +662,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             view_direction=self.scene.camera.view_direction,
             up_direction=self.scene.camera.up_direction,
         )
-        return scale_factor * np.min(
-            self.canvas.viewbox_size(self.layers) / bounding_box
-        )
+        return scale_factor * np.min(self.canvas.viewbox_size() / bounding_box)
 
     @staticmethod
     def _calculate_bounding_box(
