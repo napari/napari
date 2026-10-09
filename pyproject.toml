@@ -847,6 +847,14 @@ errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 matches = "src/napari/__main__.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_viewer_buttons.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_logger.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",

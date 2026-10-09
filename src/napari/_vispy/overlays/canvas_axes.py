@@ -106,7 +106,7 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.axes.text.text = axis_labels
         self.node.axes.text.visible = self.overlay.labels
 
-    def _on_font_size_change(self):
+    def _on_font_size_change(self) -> None:
         self.node.axes.text.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
