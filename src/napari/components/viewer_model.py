@@ -1068,7 +1068,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ) + self._viewbox_origin(viewbox)
 
     def _update_viewbox_to_world(self, event=None) -> None:
-        """Recompute the persistent viewbox-local canvas -> world affine."""
+        """Recompute the persistent viewbox-local -> world affine."""
         from scipy.spatial.transform import Rotation as R
 
         ndisplay = self.dims.ndisplay
@@ -1188,8 +1188,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             return self.viewbox_to_canvas(viewbox_coords, viewbox)
 
         # 3D: inverse-affine viewbox position, plus perspective divide
-        # (in viewbox-local coordinates, whose center is viewbox_size / 2).
-        # caiiiim3d[..., 0] is depth in pixels; viewbox depth is 0
         depth = viewbox_coords[..., 0] / float(camera.zoom)
         ortho = viewbox_coords[..., 1:]
         viewbox_center = viewbox_size / 2
