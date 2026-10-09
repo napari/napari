@@ -103,7 +103,7 @@ class Transform:
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     @property
-    def _is_diagonal(self):
+    def _is_diagonal(self) -> bool:
         """Indicate when a transform does not mix or permute dimensions.
 
         Can be overridden in subclasses to enable performance optimizations
@@ -119,18 +119,19 @@ class Transform:
 _T = TypeVar('_T', bound=Transform)
 
 
-class TransformChain(EventedList[_T], Transform, Generic[_T]):
-    def __init__(self, transforms: Iterable[Transform] | None = None) -> None:
+# ``_T`` narrows the element type for callers, e.g. ``TransformChain[Affine]``.
+class TransformChain(Transform, EventedList[Transform], Generic[_T]):
+    def __init__(self, transforms: Iterable[_T] | None = None) -> None:
         if transforms is None:
             transforms = []
-        super().__init__(
+        # The two bases have incompatible ``__init__`` signatures and do not
+        # chain to each other via ``super()``, so call both explicitly.
+        EventedList.__init__(
+            self,
             data=transforms,
             basetype=Transform,
             lookup={str: lambda x: x.name},
         )
-        # The above super().__init__() will not call Transform.__init__().
-        # For that to work every __init__() called using super() needs to
-        # in turn call super().__init__(). So we call it explicitly here.
         Transform.__init__(self)
         for tr in self:
             if hasattr(tr, 'changed'):
@@ -306,7 +307,7 @@ class ScaleTranslate(Transform):
     def compose(self, transform: Transform) -> Transform:
         """Return the composite of this transform and the provided one."""
         if not isinstance(transform, ScaleTranslate):
-            super().compose(transform)
+            return super().compose(transform)
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
