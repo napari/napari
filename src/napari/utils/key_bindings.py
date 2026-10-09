@@ -45,9 +45,6 @@ from vispy.util import keys
 KeyBindingLike = Union[KeyBinding, str, int]
 Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
-# global user keymap; to be made public later in refactoring process
-USER_KEYMAP: Mapping[str, Callable] = {}
-
 KEY_SUBS = {
     'Super': 'Meta',
     'Command': 'Meta',
@@ -215,27 +212,6 @@ def bind_key(
     return unbound
 
 
-def _get_user_keymap() -> Keymap:
-    """Retrieve the current user keymap. The user keymap is global and takes precedent over all other keymaps.
-
-    Returns
-    -------
-    user_keymap : dict of str: callable
-        User keymap.
-    """
-    return USER_KEYMAP
-
-
-def _bind_user_key(
-    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
-):
-    """Bind a key combination to the user keymap.
-
-    See ``bind_key`` docs for details.
-    """
-    return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
-
-
 def _vispy2appmodel(event) -> KeyBinding:
     key, modifiers = event.key.name, event.modifiers
     if len(key) == 1 and key.isalpha():  # it's a letter
@@ -355,7 +331,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = [_get_user_keymap()]
+        maps = []
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
