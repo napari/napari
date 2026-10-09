@@ -210,7 +210,7 @@ def sys_info(as_html: bool = False) -> str:
             API_VERSION = ''
 
         text += (
-            f'<b>Qt</b>: {QtCore.__version__}<br>'
+            f'<b>Qt</b>: {QtCore.qVersion()}<br>'
             f'<b>{API_NAME}</b>: {API_VERSION}<br>'
         )
 
