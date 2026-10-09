@@ -28,6 +28,7 @@ class MenuId(StrEnum):
     VIEW_SCENE_AXES = 'napari/view/scene_axes'
     VIEW_CANVAS_AXES = 'napari/view/canvas_axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
+    VIEW_GRIDLINES = 'napari/view/gridlines'
 
     MENUBAR_LAYERS = 'napari/layers'
     LAYERS_VISUALIZE = 'napari/layers/visualize'
