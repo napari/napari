@@ -94,9 +94,6 @@ def test_no_wayland_warning(
     )
 
 
-@pytest.mark.skipif(
-    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
-)
 def test_status_bar_requests_tabular_numerals_with_preexisting_app(
     make_napari_viewer, qapp, qtbot
 ):

@@ -29,10 +29,7 @@ def _qt_plugins_path() -> str | None:
     try:
         from qtpy.QtCore import QLibraryInfo
 
-        try:
-            return QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
-        except AttributeError:  # PyQt5 spelling
-            return QLibraryInfo.location(QLibraryInfo.PluginsPath)  # pyrefly: ignore [missing-attribute]
+        return QLibraryInfo.path(QLibraryInfo.LibraryPath.PluginsPath)
     except (ImportError, AttributeError, OSError):
         return None
 

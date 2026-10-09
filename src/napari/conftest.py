@@ -1063,8 +1063,6 @@ with contextlib.suppress(ImportError):
     # So we cannot inherit from QtBot and declare the fixture
 
     from pytestqt.qtbot import QtBot
-    from qtpy import PYQT5
-    from qtpy.QtCore import Qt
     from qtpy.QtWidgets import QApplication
 
     class QtBotWithOnCloseRenaming(QtBot):
@@ -1128,11 +1126,6 @@ with contextlib.suppress(ImportError):
 
         We need to set attributte before the QApplication is created.
         """
-        if PYQT5:
-            # As Qt6 autodetect High dpi scaling, we need to
-            # enable it only on Qt5 bindings.
-            # https://doc.qt.io/qtforpython-6/faq/porting_from2.html#class-function-deprecations
-            QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # pyrefly: ignore [missing-attribute]
         return QApplication
 
     @pytest.fixture(autouse=True)
