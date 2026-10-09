@@ -166,6 +166,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True):
         """Function to update the text node properties
 
@@ -174,7 +179,11 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self.node.text, layer=self.layer)
+        update_text(
+            node=self.node.text,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
         if update_node:
             self.node.update()
 
