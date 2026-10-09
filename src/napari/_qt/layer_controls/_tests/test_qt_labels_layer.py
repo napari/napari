@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from qtpy.QtGui import QColor
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari.layers import Labels
@@ -24,9 +25,9 @@ _COLOR = DirectLabelColormap(
 
 
 @pytest.fixture
-def make_labels_controls(qtbot, colormap=None):
-    def _make_labels_controls(colormap=colormap):
-        layer = Labels(_LABELS, colormap=colormap)
+def make_labels_controls(qtbot, color=None, categories=None):
+    def _make_labels_controls(color=color, categories=categories):
+        layer = Labels(_LABELS, color=color, categories=categories)
         qtctrl = QtLabelsControls(layer)
         qtbot.add_widget(qtctrl)
         return layer, qtctrl
@@ -79,27 +80,21 @@ def test_rendering_combobox(make_labels_controls):
 def test_changing_colormap_updates_colorbox(make_labels_controls):
     """Test that changing the colormap on a layer will update color swatch in the combo box"""
     layer, qtctrl = make_labels_controls(colormap=_COLOR)
-    color_box = qtctrl._label_control.colorbox
+    color_box = qtctrl.colorBox
 
     layer.selected_label = 1
 
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
+    np.testing.assert_equal(color_box._color, layer._selected_color)
 
     layer.colormap = colormap_utils.label_colormap(num_colors=5)
 
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
+    np.testing.assert_equal(color_box._color, layer._selected_color)
 
 
 def test_selected_color_checkbox(make_labels_controls):
@@ -214,7 +209,77 @@ def test_iso_gradient_mode_with_rendering(make_labels_controls):
     layer.rendering = LabelsRendering.TRANSLUCENT
     assert not qtctrl._render_control.iso_gradient_combobox.isEnabled()
     layer.rendering = LabelsRendering.ISO_CATEGORICAL
-    assert qtctrl._render_control.iso_gradient_combobox.isEnabled()
+    assert qtctrl.isoGradientComboBox.isEnabled()
+
+
+def test_labels_combobox(make_labels_controls):
+    """Tests that QtLabelsCombobox interacts correctly with the Labels layer."""
+    categories = [10, 20, 30, 40, 50]
+    layer, qtctrl = make_labels_controls(categories=categories)
+
+    qtctrl.labelsCombobox.setCurrentIndex(2)
+    assert layer.selected_label == 20
+
+    # Check that selected labels matches the correct combobox item
+    # and that all the combobox items are created properly
+    for label_id in categories:
+        layer.selected_label = label_id
+
+        assert qtctrl.labelsCombobox.currentText() == str(label_id)
+
+        icon = qtctrl.labelsCombobox.itemIcon(
+            qtctrl.labelsCombobox.currentIndex()
+        )
+        icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
+        color = QColor(icon_image.pixel(5, 5)).getRgbF()
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], atol=0.05)
+
+    # Check if the icons are updated after setting a new colormap
+    layer.new_colormap()
+    for label_id in categories:
+        layer.selected_label = label_id
+        icon = qtctrl.labelsCombobox.itemIcon(
+            qtctrl.labelsCombobox.currentIndex()
+        )
+        icon_image = icon.pixmap(qtctrl.labelsCombobox._height).toImage()
+        color = QColor(icon_image.pixel(5, 5)).getRgbF()
+        assert np.allclose(color[:3], layer.get_color(label_id)[:3], atol=0.05)
+
+    layer.selected_label = layer.colormap.background_value
+    assert qtctrl.labelsCombobox.currentText().endswith(': background')
+
+    layer.selected_label = 5
+    assert qtctrl.labelsCombobox.currentText() == '5: unspecified'
+
+
+def test_switching_labels_selection_widget(make_labels_controls):
+    """Tests changing the labels selection widget."""
+    categories = [1, 2, 3]
+    layer, qtctrl = make_labels_controls(categories=[1, 2, 3])
+
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
+
+    layer.categories = None
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) != -1
+
+    qtctrl.labelsSpinbox.selectionSpinBox.setValue(3)
+    assert layer.selected_label == 3
+
+    layer.selected_label = 2
+    assert qtctrl.labelsSpinbox.selectionSpinBox.value() == 2
+
+    layer.categories = categories
+    assert qtctrl.layout().indexOf(qtctrl.labelsSpinbox) == -1
+    assert qtctrl.layout().indexOf(qtctrl.labelsCombobox) != -1
+
+    layer.selected_label = 3
+    assert qtctrl.labelsCombobox.currentText().startswith('3')
+    assert qtctrl.labelsSpinbox.selectionSpinBox.value() != 3
+
+    qtctrl.labelsCombobox.setCurrentIndex(0)
+    assert layer.selected_label != 3
 
 
 def test_label_button_exists(make_labels_controls):

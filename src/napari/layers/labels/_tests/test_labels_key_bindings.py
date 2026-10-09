@@ -74,3 +74,32 @@ def test_label_overflow(monkeypatch):
     assert labels.selected_label == 1
     show_warning_mock.assert_called_once()
     show_warning_mock.call_args_list[0][0][0].startswith('The value 256')
+
+
+def test_categories_switching(labels_data_4d):
+    categories = dict.fromkeys([21, 1, 20, 30, 40, 2, 10])
+    labels = Labels(labels_data_4d, categories=categories)
+    categories = sorted(categories)
+
+    labels.selected_label = 1
+    for label_id in categories[1:]:
+        increase_label_id(labels)
+        assert labels.selected_label == label_id
+
+    # loops back to the beginning
+    labels.selected_label = 30
+    for _i in range(3):
+        increase_label_id(labels)
+    assert labels.selected_label == 1
+
+    # backwards is fine
+    labels.selected_label = 40
+    for label_id in categories[::-1][1:]:
+        decrease_label_id(labels)
+        assert labels.selected_label == label_id
+
+    # loops back to the end
+    labels.selected_label = 1
+    for _i in range(3):
+        decrease_label_id(labels)
+    assert labels.selected_label == 30
