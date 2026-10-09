@@ -76,6 +76,12 @@ def test_shutdown_stops_worker_threads(make_napari_viewer):
     stop_animation.assert_called_once_with()
 
 
+def test_layer_context_change_after_window_close(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.window.close()
+    viewer.layers._ctx.changed.emit({'num_layers'})
+
+
 def test_set_geometry(make_napari_viewer):
     viewer = make_napari_viewer()
     values = (70, 70, 1000, 700)

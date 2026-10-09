@@ -333,7 +333,7 @@ def test_preference_dialog(make_napari_viewer, mock_qt_method):
 
 
 def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
-    """Test that enablement status of save layer actions updated correctly."""
+    """Test that save layer actions follow layer changes without reopening the menu."""
     get_app_model()
     viewer = make_napari_viewer()
 
@@ -353,15 +353,18 @@ def test_save_layers_enablement_updated_context(make_napari_viewer, builtins):
     layer = Image(np.random.random((10, 10)))
     viewer.layers.append(layer)
     assert len(viewer.layers) == 1
-    viewer.window._update_file_menu_state()
     assert save_layers_action.isEnabled()
     assert save_selected_layers_action.isEnabled()
 
     # Remove selection and check 'Save All Layers...' is enabled but
     # 'Save Selected Layers...' is not
     viewer.layers.selection.clear()
-    viewer.window._update_file_menu_state()
     assert save_layers_action.isEnabled()
+    assert not save_selected_layers_action.isEnabled()
+
+    # Remove all layers and check both save actions are disabled again
+    viewer.layers.clear()
+    assert not save_layers_action.isEnabled()
     assert not save_selected_layers_action.isEnabled()
 
 

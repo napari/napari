@@ -760,6 +760,12 @@ class Window:
         # menus. We need a single context to contain all keys required for
         # menu update, so we add them to the layerlist context for now.
         add_dummy_actions(self._qt_viewer.viewer.layers._ctx)
+        # Keep menu shortcuts in sync with the layer list. Menus still refresh
+        # on show too, since app-model builds actions added later (e.g. by
+        # plugins) against the app context, not the layer list one.
+        self._qt_viewer.viewer.layers._ctx.changed.connect(
+            self._update_menus_state
+        )
         self._update_theme()
         get_settings().appearance.events.theme.connect(self._update_theme)
         get_settings().appearance.events.font_size.connect(
@@ -903,6 +909,17 @@ class Window:
         menu_model = getattr(self, menu)
         menu_model.update_from_context(get_context(layerlist))
 
+    def _update_menus_state(self, *_):
+        for menu in (
+            'file_menu',
+            'view_menu',
+            'layers_menu',
+            'window_menu',
+            'plugins_menu',
+            'help_menu',
+        ):
+            self._update_menu_state(menu)
+
     def _update_file_menu_state(self):
         self._update_menu_state('file_menu')
 
@@ -1036,7 +1053,7 @@ class Window:
             title='&Window',
             parent=self._qt_window,
         )
-        self.plugins_menu.aboutToShow.connect(
+        self.window_menu.aboutToShow.connect(
             self._update_window_menu_state,
         )
         self.main_menu.addMenu(self.window_menu)
@@ -1858,6 +1875,9 @@ class Window:
         self._setup_existing_themes(False)
         _themes.events.added.disconnect(self._add_theme)
         _themes.events.removed.disconnect(self._remove_theme)
+        self._qt_viewer.viewer.layers._ctx.changed.disconnect(
+            self._update_menus_state
+        )
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
