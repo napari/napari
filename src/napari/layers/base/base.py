@@ -1518,10 +1518,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple[int, ...] | None:
+    ) -> Any:
         """Value of the data at a position.
 
-        If the layer is not visible, return None.
+        If the layer is not visible, return None. The type of the value
+        depends on the layer type, so subclasses should override this
+        method with a narrower return annotation.
 
         Parameters
         ----------
@@ -1584,7 +1586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':
             self._value = value
-        return value  # pyrefly: ignore [bad-return]
+        return value
 
     def _get_value_3d(
         self,
