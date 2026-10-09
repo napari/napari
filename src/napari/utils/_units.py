@@ -77,7 +77,7 @@ def compute_nice_ticks(
     span = maxv - minv
     ideal_step = span / (target_ticks - 1)
 
-    # inore typing because checkers are not happy with numpy and Decimal
+    # ignore typing because checkers are not happy with numpy and Decimal
     ideal_exponent = int(np.floor(np.log10(ideal_step)))  # pyrefly: ignore [no-matching-overload]
     exp_candidates = range(ideal_exponent - 1, ideal_exponent + 2)
 
