@@ -174,7 +174,7 @@ def _toggle_or_get_widget(
     plugin: str,
     widget_name: str,
     full_name: str,
-) -> tuple[FunctionGui | QWidget | Widget, str] | None:
+) -> tuple[FunctionGui | QWidget | Widget, str, str] | None:
     """Toggle if widget already built otherwise return widget.
 
     Returned widget will be added to main window by a processor.
@@ -191,13 +191,15 @@ def _toggle_or_get_widget(
         return None
 
     # Get widget param name (if any) and check type
-    widget_callable, _ = get_widget_contribution(plugin, widget_name)  # pyrefly: ignore [not-iterable]
+    widget_callable, _, default_dock_area = get_widget_contribution(
+        plugin, widget_name
+    )
     widget_param = _get_widget_viewer_param(widget_callable, widget_name)
 
     kwargs = {}
     if widget_param:
         kwargs[widget_param] = viewer
-    return widget_callable(**kwargs), full_name
+    return widget_callable(**kwargs), full_name, default_dock_area
 
 
 def _get_current_dock_status(full_name: str) -> bool:

@@ -195,7 +195,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     class InnerWidget(BaseClass):
         pass
 
-    mock = MagicMock(return_value=(InnerWidget, 'widget name'))
+    mock = MagicMock(return_value=(InnerWidget, 'widget name', 'right'))
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
     assert list(viewer.window.dock_widgets.keys()) == []
