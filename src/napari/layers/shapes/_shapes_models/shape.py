@@ -15,8 +15,8 @@ from napari.layers.shapes._shapes_utils import (
     _save_failed_triangulation,
     find_planar_axis,
     is_collinear,
-    path_to_mask,
-    poly_to_mask,
+    path_to_indices,
+    poly_to_indices,
     triangulate_edge,
     triangulate_face,
     triangulate_face_and_edges,
@@ -28,7 +28,6 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray,
     TriangleArray,
 )
-from napari.utils.misc import argsort
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
@@ -801,56 +800,51 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
-        # The shape is drawn in `plane`, the two dims shown in 2D display.
-        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
-        plane = self.dims_order[-2:]
         if mask_shape is None:
+            plane = self.dims_order[-2:]
             mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
+        mask = np.zeros(mask_shape, dtype=bool)
+        mask[self._mask_index(mask_shape, zoom_factor, offset)] = True
+        return mask
 
-        if len(mask_shape) == 2:
-            embedded = False
+    def _mask_index(self, mask_shape, zoom_factor=1, offset=(0, 0)) -> tuple:
+        """Index selecting the shape's pixels in an array of mask_shape.
+
+        Same pixels as ``to_mask``, without allocating a mask, so callers can
+        write the shape straight into a labels or colors array.
+        """
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
+        plane = self.dims_order[-2:]
+        embedded = len(mask_shape) != 2
+        if not embedded:
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
-            embedded = True
             shape_plane = [mask_shape[d] for d in plane]
         else:
             raise ValueError(
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        data = self._vertices_for_mask(plane)
-        if self._filled:
-            mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
-        else:
-            mask_p = path_to_mask(shape_plane, (data - offset) * zoom_factor)  # pyrefly: ignore [bad-argument-type]
+        data = (self._vertices_for_mask(plane) - offset) * zoom_factor
+        to_indices = poly_to_indices if self._filled else path_to_indices
+        rows, cols = to_indices(shape_plane, data)
+        if not embedded:
+            return rows, cols
 
-        # If the mask is to be embedded in a larger array, compute array
-        # and embed as a slice.
-        if embedded:
-            mask = np.zeros(mask_shape, dtype=bool)
-            # `others` are the remaining dims. The 2D mask is repeated over
-            # the range the shape's bounding box covers in each of them,
-            # which is a single slice for a shape drawn in a 2D view.
-            others = self.dims_order[:-2]
-            others_key = self._slice_key_of(others)
-            slice_key: list[int | slice] = [slice(None)] * len(mask_shape)
-            for col, dim in enumerate(others):
-                slice_key[dim] = slice(
-                    others_key[0, col], others_key[1, col] + 1
-                )
-            # mask_p has its axes in `plane` order: put them in data order
-            # and add a length one axis for each dim in `others`, so it
-            # broadcasts over the slices chosen above.
-            plane_in_data_order = argsort(plane)
-            mask[tuple(slice_key)] = np.expand_dims(
-                mask_p.transpose(plane_in_data_order), tuple(others)
-            )
-        else:
-            mask = mask_p
-
-        return mask
+        # `others` are the remaining dims. The shape covers the range its
+        # bounding box spans in each of them, which is a single slice for a
+        # shape drawn in a 2D view.
+        others = self.dims_order[:-2]
+        others_key = self._slice_key_of(others)
+        index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
+        for col, dim in enumerate(others):
+            index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
+        # the pixels drawn in `plane` go on its two dims
+        index[plane[0]], index[plane[1]] = rows, cols
+        return tuple(index)
 
     def _slice_key_of(self, dims) -> np.ndarray:
         """First and last integer index of the bounding box along dims.
