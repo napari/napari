@@ -341,9 +341,6 @@ class _QtMainWindow(QMainWindow):
     def eventFilter(self, source, event):
         # catch enter/leave events for the canvas and update status accordingly
         if source is self._qt_viewer.canvas._scene_canvas.native:
-            if event.type() in (QEvent.Type.MouseMove, QEvent.Type.Enter):
-                self._status_locked = False
-                self.status_thread.trigger_status_update()
             if event.type() == QEvent.Type.Leave:
                 # Lock the status to "ready" until we come back in.
                 # We have to shortcut it with an instance attribute because
@@ -351,6 +348,13 @@ class _QtMainWindow(QMainWindow):
                 # mouse is already out, overriding our status
                 self.set_status_and_tooltip(('Ready', ''))
                 self._status_locked = True
+            if (
+                event.type() in (QEvent.Type.MouseMove, QEvent.Type.Enter)
+                and self._qt_viewer.viewer.layers
+            ):
+                # only update status when on the canvas and there are layers
+                self._status_locked = False
+                self.status_thread.trigger_status_update()
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
