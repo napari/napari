@@ -550,7 +550,9 @@ class VispyCanvas:
     def _on_mouse_leave(self, event=None) -> None:
         """Called by qt whenever the mouse leaves the canvas, so we can do somethign about it."""
         # TODO: should we actually just send a NapariMouseEvent with pos = None?
-        #       And maybe make vispy_overlays into a mousemapprovider?
+        #       This way, mousemaproviders would be able to handle it either as a normal mouse_move
+        #       event, or as a separate mouse_leave event type.
+        #       And/Or maybe make vispy_overlays into a mousemapprovider?
         for vispy_overlays in self._viewer_overlay_to_visual.values():
             for vispy_overlay in vispy_overlays:
                 if callback := getattr(vispy_overlay, '_on_mouse_leave', None):
