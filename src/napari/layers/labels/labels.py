@@ -404,6 +404,7 @@ class Labels(ScalarFieldBase):
         self._colormap = self._random_colormap
         self._color_mode = LabelColorMode.AUTO
         self._show_selected_label = False
+        self._zoom_to_selected_label = False
         self._contour = 0
 
         data = self._ensure_int_labels(data)
@@ -446,6 +447,7 @@ class Labels(ScalarFieldBase):
             properties=Event,
             selected_label=Event,
             show_selected_label=Event,
+            zoom_to_selected_label=Event,
         )
 
         from napari.components.overlays.labels_brush_stroke import (
@@ -856,6 +858,19 @@ class Labels(ScalarFieldBase):
         self.colormap.selection = self.selected_label
         self.events.show_selected_label(show_selected_label=show_selected)
         self.refresh(extent=False)
+
+    @property
+    def zoom_to_selected_label(self) -> bool:
+        """Whether the viewer zooms to the selected label when it changes.
+
+        .. versionadded:: 0.10.0
+        """
+        return self._zoom_to_selected_label
+
+    @zoom_to_selected_label.setter
+    def zoom_to_selected_label(self, zoom: bool) -> None:
+        self._zoom_to_selected_label = zoom
+        self.events.zoom_to_selected_label(zoom_to_selected_label=zoom)
 
     # Only overriding to change the docstring
     @property
@@ -1724,6 +1739,64 @@ class Labels(ScalarFieldBase):
         )
 
         return dist_sq <= radius**2  # pyrefly: ignore [bad-return]
+
+    def _locate_label(
+        self, label: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+        """Find where a label is in the data.
+
+        Returns None if the label is not in the data.
+
+        Returns
+        -------
+        min_vals, max_vals : np.ndarray
+            Bounding box of the label in data coordinates of the highest
+            resolution level, max exclusive.
+        point : np.ndarray
+            The bounding box center on the displayed axes, and a slice that
+            contains the label on the other axes, the current one if it does.
+        """
+        # ponytail: full scan per call, cache bboxes per label if it gets slow
+        levels = self.data if self.multiscale else [self.data]
+        for level in reversed(range(len(self.downsample_factors))):
+            mask = np.asarray(levels[level] == label)
+            if mask.any():
+                break
+        else:
+            return None
+
+        start = np.zeros(mask.ndim, dtype=int)
+        if level > 0:
+            factors = self.downsample_factors[level]
+            min_vals, max_vals = self._compute_mask_bbox(mask)
+            start = np.maximum(np.floor((min_vals - 1) * factors), 0)
+            stop = np.ceil((max_vals + 1) * factors)
+            window = tuple(
+                slice(int(a), int(b)) for a, b in zip(start, stop, strict=True)
+            )
+            start = start.astype(int)
+            mask = np.asarray(levels[0][window] == label)
+            if not mask.any():
+                return None
+
+        min_vals, max_vals = self._compute_mask_bbox(mask)
+        min_vals += start
+        max_vals += start
+        point = (min_vals + max_vals - 1) / 2
+
+        not_displayed = sorted(self._slice_input.not_displayed)
+        if not_displayed:
+            present = mask.any(axis=tuple(self._slice_input.displayed))
+            current = np.asarray(self._data_slice.point)[not_displayed]
+            index = np.floor(current + 0.5).astype(int) - start[not_displayed]
+            in_bounds = np.all((index >= 0) & (index < present.shape))
+            if not (in_bounds and present[tuple(index)]):
+                candidates = np.argwhere(present) + start[not_displayed]
+                distance = ((candidates - point[not_displayed]) ** 2).sum(1)
+                index = candidates[np.argmin(distance)] - start[not_displayed]
+            point[not_displayed] = index + start[not_displayed]
+
+        return min_vals, max_vals, point
 
     @staticmethod
     def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

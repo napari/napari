@@ -13,7 +13,7 @@ from napari._tests.utils import (
 from napari.components import ViewerModel
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.errors.reader_errors import NoAvailableReaderError
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.layers.shapes._tests.conftest import (
     ten_four_corner,  # noqa: F401
 )  # import to not put this data in top level conftest.py
@@ -1391,3 +1391,68 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_zoom_to_selected_label_follows_selection():
+    viewer = ViewerModel()
+    data = np.zeros((10, 100, 100), dtype=np.uint8)
+    data[2, 10:20, 10:20] = 1
+    data[7, 70:80, 60:70] = 2
+    layer = viewer.add_labels(data)
+    center = viewer.scene.camera.center
+
+    layer.selected_label = 2
+    assert viewer.scene.camera.center == center
+
+    layer.zoom_to_selected_label = True
+    assert viewer.dims.point[0] == 7
+    assert viewer.scene.camera.center[1:] == pytest.approx((74.5, 64.5))
+
+    layer.selected_label = 1
+    assert viewer.dims.point[0] == 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+    layer.selected_label = 5
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+    layer.zoom_to_selected_label = False
+    layer.selected_label = 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((14.5, 14.5))
+
+
+def test_zoom_to_selected_label_disconnects_on_remove():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[70:80, 60:70] = 2
+    layer = viewer.add_labels(data)
+    layer.zoom_to_selected_label = True
+    viewer.layers.remove(layer)
+    center = viewer.scene.camera.center
+    layer.selected_label = 2
+    assert viewer.scene.camera.center == center
+
+
+def test_zoom_to_selected_label_connects_only_while_on():
+    viewer = ViewerModel()
+    layer = viewer.add_labels(np.zeros((10, 10), dtype=np.uint8))
+    callbacks = layer.events.selected_label.callbacks
+    assert not any('_on_selected_label_change' in str(c) for c in callbacks)
+
+    layer.zoom_to_selected_label = True
+    callbacks = layer.events.selected_label.callbacks
+    assert any('_on_selected_label_change' in str(c) for c in callbacks)
+
+    layer.zoom_to_selected_label = False
+    callbacks = layer.events.selected_label.callbacks
+    assert not any('_on_selected_label_change' in str(c) for c in callbacks)
+
+
+def test_zoom_to_selected_label_set_before_adding_layer():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[70:80, 60:70] = 2
+    layer = Labels(data)
+    layer.zoom_to_selected_label = True
+    viewer.add_layer(layer)
+    layer.selected_label = 2
+    assert viewer.scene.camera.center[1:] == pytest.approx((74.5, 64.5))

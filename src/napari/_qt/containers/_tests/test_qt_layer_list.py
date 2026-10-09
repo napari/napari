@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QLineEdit, QStyleOptionViewItem
 
@@ -6,7 +7,7 @@ from napari._qt.containers import QtLayerList
 from napari._qt.containers._layer_delegate import LayerDelegate
 from napari._qt.containers.qt_layer_model import LockedRole
 from napari._tests.utils import skip_local_focus
-from napari.components import LayerList
+from napari.components import LayerList, ViewerModel
 from napari.layers import Image, Labels, Shapes
 
 
@@ -183,6 +184,41 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
         assert delegate._context_menu.findAction(
             'napari.layer.convert_to_labels'
         ).isEnabled()
+
+
+def test_contextual_menu_zoom_to_selected_label(monkeypatch, qtbot):
+    from napari._app_model import get_app_model
+
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((100, 100)))
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[40:50, 60:70] = 1
+    viewer.add_labels(data)
+    view = QtLayerList(viewer.layers)
+    qtbot.addWidget(view)
+    delegate = view.itemDelegate()
+    monkeypatch.setattr(
+        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+    )
+    action_id = 'napari.scene.zoom_to_selected_label'
+
+    app = get_app_model()
+    providers = {LayerList: viewer.layers, ViewerModel: viewer}
+    with app.injection_store.register(providers=providers):
+        viewer.layers.selection.active = viewer.layers[0]
+        delegate.show_context_menu(
+            layer_to_model_index(view, 1), view.model(), QPoint(10, 10), view
+        )
+        assert not delegate._context_menu.findAction(action_id).isVisible()
+
+        viewer.layers.selection.active = viewer.layers[1]
+        delegate.show_context_menu(
+            layer_to_model_index(view, 0), view.model(), QPoint(10, 10), view
+        )
+        action = delegate._context_menu.findAction(action_id)
+        assert action.isVisible()
+        action.trigger()
+    assert viewer.scene.camera.center[1:] == pytest.approx((44.5, 64.5))
 
 
 def _lock_blocks_action(qtbot, monkeypatch, layers_factory, action_id):
