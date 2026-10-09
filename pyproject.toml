@@ -664,10 +664,6 @@ matches = "src/napari/window.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/viewer.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/transforms/transform_utils.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
