@@ -94,8 +94,6 @@ class QtPointsControls(QtLayerControls):
         self.button_grid.addWidget(self.select_button, 0, 5)
 
         # Setup widgets controls
-        self._projection_mode_control = QtProjectionModeControl(self, layer)
-        self._add_widget_controls(self._projection_mode_control)
         self._current_size_slider_control = QtCurrentSizeSliderControl(
             self, layer
         )
@@ -112,6 +110,8 @@ class QtPointsControls(QtLayerControls):
         self._add_widget_controls(self._border_color_control)
         self._text_visibility_control = QtTextVisibilityControl(self, layer)
         self._add_widget_controls(self._text_visibility_control)
+        self._projection_mode_control = QtProjectionModeControl(self, layer)
+        self._add_widget_controls(self._projection_mode_control)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when points layer mode is changed.

@@ -320,6 +320,15 @@ class Dims(EventedModel):
         )
 
     @property
+    def is_thick(self) -> bool:
+        """Return whether the current slice is thick.
+
+        A slice is thick if the currently non-displayed dimensions
+        have nonzero margins.
+        """
+        return bool(np.any(np.array(self.thickness)[list(self.not_displayed)]))
+
+    @property
     def displayed(self) -> tuple[int, ...]:
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
