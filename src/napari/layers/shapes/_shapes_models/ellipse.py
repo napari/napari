@@ -80,12 +80,7 @@ class Ellipse(Shape):
         self._update_displayed_data()
 
     def _vertices_for_mask(self, plane) -> np.ndarray:
-        if self.ndisplay == 2:
-            return self._face_vertices
         return triangulate_ellipse(self.data[:, plane])[0]
-
-    def _slice_key_of(self, dims) -> np.ndarray:
-        return self._bounding_box[:, dims].astype(int)
 
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
