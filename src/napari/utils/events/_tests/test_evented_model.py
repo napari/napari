@@ -1,6 +1,8 @@
 import inspect
 import operator
+from contextlib import nullcontext
 from enum import auto
+from functools import wraps
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, runtime_checkable
 from unittest.mock import Mock
 
@@ -11,10 +13,12 @@ from dask import delayed
 from dask.delayed import Delayed
 from pydantic import Field, GetCoreSchemaHandler, ValidationError
 from pydantic_core import core_schema
+from typing_extensions import deprecated
 
 from napari._pydantic_util import NapariConfigDict
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.events.custom_types import Array
+from napari.utils.migrations import RenamedProperty
 from napari.utils.misc import StringEnum
 
 if TYPE_CHECKING:
@@ -62,8 +66,10 @@ def test_evented_model():
     # ClassVars are excluded from events
     assert 'age' not in user.events
     # mocking EventEmitters to spy on events
-    user.events.id = Mock(user.events.id)
-    user.events.name = Mock(user.events.name)
+    user.events.id = Mock(spec=user.events.id)
+    user.events.id.blocker = nullcontext
+    user.events.name = Mock(spec=user.events.name)
+    user.events.name.blocker = nullcontext
     # setting an attribute should, by default, emit an event with the value
     user.id = 4
     user.events.id.assert_called_with(value=4)
@@ -127,6 +133,7 @@ def test_evented_model_array_updates():
 
     # Mock events
     model.events.values = Mock(model.events.values)
+    model.events.values.blocker = nullcontext
 
     np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
 
@@ -215,10 +222,12 @@ def test_values_updated():
     user2 = User(id=1, name='K')
 
     # Add mocks
-    user1_events = Mock(user1.events)
+    user1_events = Mock()
     user1.events.connect(user1_events)
     user1.events.id = Mock(user1.events.id)
+    user1.events.id.blocker = nullcontext
     user2.events.id = Mock(user2.events.id)
+    user2.events.id.blocker = nullcontext
 
     # Check user1 and user2 dicts
     assert user1.model_dump() == {'id': 0, 'name': 'A'}
@@ -534,10 +543,15 @@ def test_inheritance_and_calculated_helpers():
 def mocked_object():
     t = T()
     t.events.a = Mock(t.events.a)
+    t.events.a.blocker = nullcontext
     t.events.b = Mock(t.events.b)
+    t.events.b.blocker = nullcontext
     t.events.c = Mock(t.events.c)
+    t.events.c.blocker = nullcontext
     t.events.d = Mock(t.events.d)
+    t.events.d.blocker = nullcontext
     t.events.e = Mock(t.events.e)
+    t.events.e.blocker = nullcontext
     return t
 
 
@@ -588,7 +602,9 @@ def test_evented_model_with_provided_dependencies():
 
     t = T()
     t.events.a = Mock(t.events.a)
+    t.events.a.blocker = nullcontext
     t.events.b = Mock(t.events.b)
+    t.events.b.blocker = nullcontext
 
     t.a = 2
     t.events.a.assert_called_with(value=2)
@@ -834,3 +850,519 @@ def test_events_called():
     s.a = 2
 
     e_m.assert_called_once()
+
+
+def test_identical_assignment_evented_model_emit():
+    class SubClass(EventedModel):
+        a: int = 1
+
+    class SampleClass(EventedModel):
+        s: SubClass = Field(default_factory=SubClass)
+
+    s = SampleClass()
+    mock = Mock()
+    s.events.s.connect(mock)
+
+    previous = s.s
+    s.s = SubClass()
+
+    assert s.s == previous
+    assert s.s is not previous
+    mock.assert_called_once()
+
+    mock.reset_mock()
+    s.s = s.s
+    mock.assert_not_called()
+
+
+def test_property_deprecation():
+    class SampleClass(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):
+            return self.a * 2
+
+        @b.setter
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self, value):
+            self.a = value // 2
+
+    s = SampleClass()
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.b = 4
+
+    assert s.a == 2
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        assert s.b == 4
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.events.b.connect(lambda x: None)
+
+
+def test_deprecated_property_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):
+            return self.a * 2
+
+    class Sub(Base):
+        c: int = 3
+
+        @property
+        @deprecated('deprecation text', category=DeprecationWarning)
+        def d(self):
+            return self.c + self.b
+
+    s = Sub()
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        assert s.b == 2
+
+    with pytest.warns(DeprecationWarning, match='deprecation text'):
+        assert s.d == 5
+
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        s.events.b.connect(lambda x: None)
+
+    with pytest.warns(DeprecationWarning, match='deprecation text'):
+        s.events.d.connect(lambda x: None)
+
+
+def test_overwriting_deprecation_text_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=FutureWarning)
+        def b(self):  # pragma: no cover
+            return self.a * 2
+
+    class Sub(Base):
+        @property
+        @deprecated('new deprecation text', category=DeprecationWarning)
+        def b(self):
+            return self.a * 3
+
+    s = Sub()
+
+    with pytest.warns(DeprecationWarning, match='new deprecation text'):
+        assert s.b == 3
+
+    with pytest.warns(DeprecationWarning, match='new deprecation text'):
+        s.events.b.connect(lambda x: None)
+
+
+def test_renamed_property():
+    class Base(EventedModel):
+        a: int = 1
+        b = RenamedProperty(
+            new_name='a',
+            since_version='0.1.0',
+            due_date='fall 2027',
+        )
+
+    s = Base()
+
+    with pytest.warns(FutureWarning, match='Base.b is deprecated since 0.1.0'):
+        assert s.b == 1
+
+    mock = Mock()
+    with pytest.warns(
+        FutureWarning,
+        match='Base.events.b is deprecated since 0.1.0.*Please use .*Base.events.a instead',
+    ):
+        s.events.b.connect(mock)
+
+    s.a = 2
+    mock.assert_called_once()
+
+
+def test_renamed_property_assignment_emits_once():
+    """Assigning through an alias should only emit the forwarded target event."""
+
+    class Model(EventedModel):
+        value: int = 1
+        old_value = RenamedProperty(new_name='value', since_version='0.1.0')
+
+    model = Model()
+    alias_callback = Mock()
+    target_callback = Mock()
+    with pytest.warns(FutureWarning, match='events.old_value is deprecated'):
+        model.events.old_value.connect(alias_callback)
+    model.events.value.connect(target_callback)
+
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.old_value = 2
+
+    assert model.value == 2
+    target_callback.assert_called_once()
+    alias_callback.assert_called_once()
+    assert alias_callback.call_args.args[0].value == 2
+
+
+def test_renamed_property_nested():
+
+    class Sub(EventedModel):
+        a: int = 2
+
+    class Base(EventedModel):
+        s: Sub = Field(default_factory=Sub)
+        a = RenamedProperty(
+            new_name='s.a',
+            since_version='0.1.0',
+            due_date='fall 2027',
+        )
+
+    s = Base()
+
+    with pytest.warns(FutureWarning, match='Base.a is deprecated since 0.1.0'):
+        assert s.a == 2
+
+    mock = Mock()
+
+    with pytest.warns(
+        FutureWarning,
+        match='Base.events.a is deprecated since 0.1.0.*Please use .*Base.s.events.a instead',
+    ):
+        s.events.a.connect(mock)
+
+    s.s.a = 3
+
+    mock.assert_called_once()
+    mock2 = Mock()
+    s.s.events.a.connect(mock2)
+    with pytest.warns(
+        FutureWarning,
+        match='Base.a is deprecated since 0.1.0.*Please use .*s.a instead',
+    ):
+        s.a = 1
+
+    mock2.assert_called_once()
+
+    assert s.s.a == 1
+
+
+def test_renamed_property_in_parent_class_used_in_subclass():
+    class Base(EventedModel):
+        a: int = 1
+        b = RenamedProperty(
+            new_name='a',
+            since_version='0.1.0',
+            due_date='fall 2027',
+        )
+
+    class Sub(Base):
+        @property
+        def c(self):
+            return self.b + 2
+
+        @c.setter
+        def c(self, value):  # pragma: no cover
+            self.b = value - 2
+
+    s = Sub()
+    mock = Mock()
+    s.a = 2
+
+    s.events.c.connect(mock)
+
+    with pytest.warns(FutureWarning, match='Base.b is deprecated since 0.1.0'):
+        # warning is emitted during compression phase.
+        s.a = 3
+    mock.assert_called_once()
+
+
+def test_renamed_nested_dependency_tracks_child_replacement():
+    class Child(EventedModel):
+        value: int = 1
+        value2: int = 2
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+        old_value = RenamedProperty(
+            new_name='child.value',
+            since_version='0.9.2',
+        )
+
+        @property
+        def doubled(self):
+            return self.old_value * 2
+
+        @doubled.setter
+        def doubled(self, value):
+            self.old_value = value // 2
+
+    model = Model()
+    callback = Mock()
+    model.events.doubled.connect(callback)
+
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child.value = 3
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6
+    callback.reset_mock()
+
+    model.child.value2 = 3
+    callback.assert_not_called()
+
+    previous_child = model.child
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child = Child(value=4)
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 8
+    callback.reset_mock()
+
+    previous_child.value = 5
+    callback.assert_not_called()
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.child.value = 6
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 12
+    callback.reset_mock()
+
+    with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
+        model.doubled = 16
+    assert (
+        callback.call_count == 1
+    )  # TODO check if we could reduce this to 1 call
+    assert callback.call_args.args[0].value == 16
+    assert model.child.value == 8
+
+
+def test_nested_dependency_is_lazy_and_batched():
+
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+        offset: int = 0
+        old_value = RenamedProperty(
+            new_name='child.value', since_version='0.9'
+        )
+
+        @property
+        def total(self):
+            return self.old_value + self.offset
+
+    model = Model()
+    assert not model.child.events.value.callbacks
+    callback = Mock()
+    emitter = model.events.total
+    emitter.connect(callback)
+    assert model.child.events.value.callbacks
+    with pytest.warns(FutureWarning, match='old_value is deprecated'):
+        model.child.value = 3
+    callback.assert_called_once()
+    emitter.disconnect(callback)
+    assert not model.child.events.value.callbacks
+    # Internal subscriptions must not consume the public alias warning.
+    with pytest.warns(FutureWarning, match='events.old_value is deprecated'):
+        model.events.old_value.connect(Mock())
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason='Child-derived properties bypass parent setter batching and emit intermediate values',
+)
+def test_nested_dependent_property_is_batched_during_setter():
+    class Child(EventedModel):
+        x: int = 1
+        y: int = 2
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+
+        @property
+        def total(self):
+            return self.child.x + self.child.y
+
+        @total.setter
+        def total(self, value):
+            self.child.x = value // 2
+            self.child.y = value - self.child.x
+
+        @property
+        def twice(self):
+            return self.total * 2
+
+    model = Model()
+    total_callback = Mock()
+    twice_callback = Mock()
+    model.events.total.connect(total_callback)
+    model.events.twice.connect(twice_callback)
+
+    model.total = 10
+
+    assert model.child.x == model.child.y == 5
+    # The assigned property's blocker already suppresses intermediate events.
+    total_callback.assert_called_once()
+    assert total_callback.call_args.args[0].value == 10
+    # Other dependent properties should also emit only the completed value.
+    twice_callback.assert_called_once()
+    assert twice_callback.call_args.args[0].value == 20
+
+
+def test_nested_dependency_property_deprecation():
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        child: Child = Field(default_factory=Child)
+
+        @property
+        @deprecated('use child.doubled instead', category=FutureWarning)
+        def doubled(self):
+            return self.child.value * 2
+
+    model = Model()
+    callback = Mock()
+    with pytest.warns(FutureWarning, match='use child.doubled instead'):
+        model.events.doubled.connect(callback)
+    with pytest.warns(FutureWarning, match='use child.doubled instead'):
+        model.child.value = 3
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6
+
+
+def test_deprecated_property_without_category():
+    class Model(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=None)
+        def b(self):
+            return self.a * 2
+
+    model = Model()
+
+    assert model.b == 2
+
+    mock = Mock()
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        model.events.b.connect(mock)
+
+    model.a = 3
+    mock.assert_called_once()
+
+
+def test_deprecated_without_category_with_additional_decorator():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(arg):
+            return func(arg)
+
+        return wrapper
+
+    class Model(EventedModel):
+        a: int = 1
+
+        @property
+        @deprecated('deprecation text', category=None)
+        @decorator
+        def b(self):
+            return self.a * 2
+
+    model = Model()
+
+    assert model.b == 2
+
+    mock = Mock()
+    with pytest.warns(FutureWarning, match='deprecation text'):
+        model.events.b.connect(mock)
+
+    model.a = 3
+    mock.assert_called_once()
+
+
+def test__non_evented_properties():
+    class Model(EventedModel):
+        __non_evented_properties__ = {'non_evented'}
+        a: int = 1
+
+        def non_evented(self):
+            return self.a * 2
+
+    m = Model()
+
+    assert m.non_evented() == 2
+    assert 'non_evented' not in m.events
+    assert 'a' in m.events
+    assert 'events' not in m.events
+
+
+def test_complex_value():
+    class Model(EventedModel):
+        c: complex = Field(default=1 + 2j)
+
+        @property
+        def real(self):
+            return self.c.real
+
+    model = Model()
+    mock = Mock()
+    model.events.real.connect(mock)
+
+    model.c = 3 + 5j
+
+    mock.assert_called_once()
+
+
+def test_complex_nested_value():
+    class Model(EventedModel):
+        c: complex = 1 + 2j
+
+        @property
+        def value(self):
+            return self.c
+
+        @property
+        def real(self):
+            return self.value.real
+
+    # assert Model.__properties_dependence__ == {'real': {'c'}, 'value': {'c'}}
+
+    model = Model()
+    callback = Mock()
+    model.events.real.connect(callback)
+
+    model.c = 3 + 5j
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 3.0
+
+
+@pytest.mark.parametrize('nested', [False, True])
+def test_property_dependencies_without_source(nested, monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise AssertionError('Dependency discovery must not read source')
+
+    monkeypatch.setattr(inspect, 'getsource', unavailable)
+    namespace = {}
+    expression = 'self.child.value' if nested else 'self.value'
+    exec(f'def doubled(self):\n    return {expression} * 2', namespace)
+
+    class Child(EventedModel):
+        value: int = 1
+
+    class Model(EventedModel):
+        value: int = 1
+        child: Child = Field(default_factory=Child)
+        doubled = property(namespace['doubled'])
+
+    model = Model()
+    callback = Mock()
+    model.events.doubled.connect(callback)
+    target = model.child if nested else model
+    target.value = 3
+
+    callback.assert_called_once()
+    assert callback.call_args.args[0].value == 6
