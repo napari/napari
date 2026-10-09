@@ -376,7 +376,7 @@ class KeymapProvider:
     def keymap(self, value: Keymap) -> None:
         self._keymap = _coerce_keymap(value)
 
-    def __init_subclass__(cls, **kwargs: Any):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
         if 'class_keymap' not in cls.__dict__:
