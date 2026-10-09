@@ -350,14 +350,14 @@ def test_vertex_colors():
 
 
 @pytest.mark.parametrize(
-    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_position'),
     [
-        ([0, 1, 1], [1, 0, 0], 2, 0),
-        ([10, 1, 1], [-1, 0, 0], 2, 1),
+        ([0, 1, 1], [1, 0, 0], 2, [3, 1, 1]),
+        ([10, 1, 1], [-1, 0, 0], 2, [5, 1, 1]),
     ],
 )
 def test_get_value_3d(
-    ray_start, ray_direction, expected_value, expected_index
+    ray_start, ray_direction, expected_value, expected_position
 ):
     vertices = np.array(
         [
@@ -377,25 +377,29 @@ def test_get_value_3d(
     surface_layer = Surface((vertices, faces, values))
 
     surface_layer._slice_dims(Dims(ndim=3, ndisplay=3))
-    value, index = surface_layer.get_value(
-        position=ray_start,
-        view_direction=ray_direction,
-        dims_displayed=[0, 1, 2],
-        world=False,
+    hits = list(
+        surface_layer.iter_values_along_ray(
+            position=ray_start,
+            view_direction=ray_direction,
+            dims_displayed=[0, 1, 2],
+            world=False,
+        )
     )
-    assert index == expected_index
+    assert len(hits) == 1
+    value, position = hits[0]
     np.testing.assert_allclose(value, expected_value)
+    np.testing.assert_allclose(position, expected_position)
 
 
 @pytest.mark.parametrize(
-    ('ray_start', 'ray_direction', 'expected_value', 'expected_index'),
+    ('ray_start', 'ray_direction', 'expected_value', 'expected_position'),
     [
-        ([0, 0, 1, 1], [0, 1, 0, 0], 2, 0),
-        ([0, 10, 1, 1], [0, -1, 0, 0], 2, 1),
+        ([0, 0, 1, 1], [0, 1, 0, 0], 2, [0, 3, 1, 1]),
+        ([0, 10, 1, 1], [0, -1, 0, 0], 2, [0, 5, 1, 1]),
     ],
 )
 def test_get_value_3d_nd(
-    ray_start, ray_direction, expected_value, expected_index
+    ray_start, ray_direction, expected_value, expected_position
 ):
     vertices = np.array(
         [
@@ -415,14 +419,18 @@ def test_get_value_3d_nd(
     surface_layer = Surface((vertices, faces, values))
 
     surface_layer._slice_dims(Dims(ndim=4, ndisplay=3))
-    value, index = surface_layer.get_value(
-        position=ray_start,
-        view_direction=ray_direction,
-        dims_displayed=[1, 2, 3],
-        world=False,
+    hits = list(
+        surface_layer.iter_values_along_ray(
+            position=ray_start,
+            view_direction=ray_direction,
+            dims_displayed=[1, 2, 3],
+            world=False,
+        )
     )
-    assert index == expected_index
+    assert len(hits) == 1
+    value, position = hits[0]
     np.testing.assert_allclose(value, expected_value)
+    np.testing.assert_allclose(position, expected_position)
 
 
 def test_surface_normals():
@@ -526,8 +534,10 @@ def test_surface_with_no_visible_faces():
     with pytest.raises(
         ValueError, match='operands could not be broadcast together'
     ):
-        layer._get_value_3d(
-            np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+        list(
+            layer._iter_values_along_ray(
+                np.array([1, 0, 0, 0]), np.array([1, 1, 0, 0]), [1, 2, 3]
+            )
         )
 
 

@@ -67,6 +67,7 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import (
         Callable,
+        Generator,
         Iterable,
         Sequence,
         Set as AbstractSet,
@@ -1678,7 +1679,7 @@ class Points(Layer):
         )
 
     def _get_value(self, position) -> int | None:
-        """Index of the point at a given 2D position in data coordinates.
+        """Index of the point at a given position in data coordinates.
 
         Parameters
         ----------
@@ -1719,31 +1720,30 @@ class Points(Layer):
 
         return selection
 
-    def _get_value_3d(
+    def _iter_values_along_ray(
         self,
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> int | None:
-        """Get the layer data value along a ray
+    ) -> Generator[tuple[int, np.ndarray], None, None]:
+        """Get all points along a ray in 3D.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the Viewer.
+            End of ray in data coordinates.
+        dims_displayed : list of int
+            Displayed dimensions.
 
-        Returns
-        -------
-        value : Union[int, None]
-            The data value along the supplied ray.
+        Yields
+        ------
+        hits : tuple of (point_index, position)
+            Each tuple contains the index and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
         """
-        if (start_point is None) or (end_point is None):
-            # if the ray doesn't intersect the data volume, no points could have been intersected
-            return None
         plane_point, plane_normal = displayed_plane_from_nd_line_segment(
             start_point, end_point, dims_displayed
         )
@@ -1777,22 +1777,25 @@ class Points(Layer):
         )
         indices = np.where(in_slice_matches)[0]
 
-        if len(indices) > 0:
-            # find the point that is most in the foreground
-            candidate_point_distances = projection_distances[indices]
-            closest_index = indices[np.argmin(candidate_point_distances)]
-            selection = self._view_indices[closest_index]
-        else:
-            selection = None
-        return selection
+        if len(indices) == 0:
+            return
+
+        # sort by distance along the ray
+        distances = projection_distances[indices]
+        sorted_indices = indices[np.argsort(distances)]
+
+        for idx in sorted_indices:
+            point_index = self._view_indices[idx]
+            point_position = self.data[point_index]
+            yield point_index, point_position
 
     def get_ray_intersections(
         self,
-        position: list[float],
-        view_direction: np.ndarray,
+        position: npt.ArrayLike,
+        view_direction: npt.ArrayLike,
         dims_displayed: list[int],
         world: bool = True,
-    ) -> tuple[np.ndarray, np.ndarray] | tuple[None, None]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         """Get the start and end point for the ray extending
         from a point through the displayed bounding box.
 
@@ -1829,6 +1832,8 @@ class Points(Layer):
             If the click does not intersect the axis-aligned data bounding box,
             None is returned.
         """
+        position = np.asarray(position)
+        view_direction = np.asarray(view_direction)
         if len(dims_displayed) != 3:
             return None, None
 

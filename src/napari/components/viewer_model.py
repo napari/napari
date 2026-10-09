@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from collections.abc import (
+    Iterable,
     Iterator,
     Mapping,
     MutableMapping,
@@ -13,15 +14,11 @@ from collections.abc import (
 )
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Union, cast
 from urllib.parse import urlparse
 
 import numpy as np
+from numpy import typing as npt
 
 # This cannot be condition to TYPE_CHECKING or the stubgen fails
 # with undefined Context.
@@ -35,6 +32,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_cursor_model,
 )
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
@@ -287,6 +285,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
+        self.mouse_move_callbacks.append(update_cursor_model)
+        # TODO: this second connectionwill not be necessary if #9513 is merged
+        self.mouse_drag_callbacks.append(update_cursor_model)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
@@ -1036,6 +1037,79 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         for i, d in enumerate(self.dims.displayed):
             position_world[d] = world_displayed[i]
         return np.array(position_world)
+
+    def get_layer_values(
+        self,
+        canvas_position: tuple[int, int] | None = None,
+        view_direction: npt.ArrayLike | None = None,
+        layers: Iterable[Layer] | None = None,
+    ) -> list[tuple[Layer, Any, np.ndarray]]:
+        """Get all layer values at canvas position, sorted by distance from camera.
+
+        If no position is provided, uses the values of cursor.canvas_position and
+        cursor._view_direction. If a position is provided, uses camera.view_direction
+        (orthographic) unless a view direction is provided as well.
+
+        Parameters
+        ----------
+        canvas_position : tuple of int, optional
+            (x, y) position in canvas pixels.
+        view_direction : np.ndarray, optional
+            View direction at the canvas position.
+
+        Returns
+        ------
+        hits : list[tuple[Layer, Any, np.ndarray]]
+            list of (layer, value, world position), sorted by distance
+            from camera (closest first).
+        """
+        if canvas_position is None:
+            canvas_position = self.cursor.canvas_position
+            view_direction = self.cursor._view_direction
+        elif self.dims.ndisplay == 2:
+            view_direction = None
+        elif view_direction is None:
+            view_direction = self.scene.camera.view_direction
+
+        if canvas_position is None:
+            # happens if the cursor is not on the canvas
+            return []
+
+        if layers is None:
+            layers = self.layers
+        elif not all(layer in self.layers for layer in layers):
+            raise ValueError(
+                'can only get values of layers that are in this viewer'
+            )
+
+        # loop layers front to back: in case of identical hit depths,
+        # the frontmost is prioritized (as in 2D)
+        layers = sorted(
+            layers, key=lambda layer: self.layers.index(layer), reverse=True
+        )
+
+        world_position = self.canvas_to_world(canvas_position)
+
+        hits = []
+        for layer in layers[::-1]:
+            if not layer.visible or layer.opacity == 0:
+                # TODO: is this ok? this is how it works elsewhere...
+                continue
+
+            for value, hit_position in layer.iter_values_along_ray(
+                world_position,
+                view_direction=view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            ):
+                distance = np.linalg.norm(
+                    np.asarray(hit_position) - world_position
+                )
+                hits.append((layer, value, hit_position, distance))
+
+        # sort by distance from the camera and discard that
+        hits.sort(key=lambda x: x[3])
+        return [(layer, value, pos) for layer, value, pos, _ in hits]
 
     @property
     def experimental(self):

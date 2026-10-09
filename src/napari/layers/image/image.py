@@ -32,7 +32,7 @@ from napari.utils.colormaps import ensure_colormap
 from napari.utils.colormaps.colormap_utils import _coerce_contrast_limits
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Generator, Sequence
 
     import numpy.typing as npt
     import pint
@@ -659,55 +659,87 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             finally:
                 self._auto_contrast = prev
 
-    def _calculate_value_from_ray(
-        self, values: npt.NDArray
-    ) -> float | npt.NDArray | None:
-        if not values.size:
-            return None
+    def _calculate_values_and_positions_from_ray_samples(
+        self,
+        sample_values: npt.NDArray,
+        sample_points: npt.NDArray,
+    ) -> Generator[tuple[float, np.ndarray], None, None]:
+        """Calculate values and positions from ray samples.
+
+        Parameters
+        ----------
+        sample_values : np.ndarray
+            Values sampled along the ray.
+        sample_points : np.ndarray
+            Points along the ray in displayed slice pixel coordinates,
+            clamped to the slice bounding box.
+
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and the position (in displayed
+            slice pixel coordinates) where it was found. The caller maps
+            these back to full nD data coordinates.
+        """
+        if not sample_values.size:
+            return
 
         # translucent is special: just return the first value, no matter what
         if self.rendering == ImageRendering.TRANSLUCENT:
-            return values[0]
+            yield sample_values[0], sample_points[0]
+            return
 
-        # if the whole ray is NaN, we should see nothing, so return None
+        # if the whole ray is NaN, we should see nothing, so return early;
         # this check saves us some warnings later as well, so better do it now
-        if np.all(np.isnan(values)):
-            return None
+        if np.all(np.isnan(sample_values)):
+            return
 
-        luminance = rgb_to_luminance(values) if self.rgb else values
+        luminance = (
+            rgb_to_luminance(sample_values) if self.rgb else sample_values
+        )
 
-        # in isosurface we return the value at the hit surface;
-        # in non-rgb it's ~= iso_threshold. Return None if nothing was hit.
+        # in isosurface we yield where the value crosses the thresholds
         if self.rendering == ImageRendering.ISO:
-            hits = luminance >= self.iso_threshold
-            if np.any(hits):
-                return values[np.nanargmax(hits)]
-            return None
+            inside = luminance >= self.iso_threshold
+            previous = np.empty_like(inside)
+            previous[0] = False
+            previous[1:] = inside[:-1]
+            cross_in = np.where(inside & ~previous)[0]
+            cross_out = np.where(~inside & previous)[0]
+            for crossing in cross_in | cross_out:
+                yield sample_values[crossing], sample_points[crossing]
+            return
 
-        # "summary" renderings; they do not represent a specific pixel, so we just
-        # return the summary value. We should probably differentiate these somehow.
-        # these are also probably not the same as how the gpu does it...
-        # TODO: this is "broken" cause same pixel gets multisampled, getting worse
-        #       when the sampling rate is high (and especially bad for additive).
-        #       But it looks like it's also similarly overdoing it in vispy vis too.
-        #       I don't know if there's a way to *not* do it...
+        # "summary" renderings; they do not represent a specific pixel,
+        # just use the center point as coordinate
+        mid_idx = len(sample_values) // 2
         if self.rendering == ImageRendering.AVERAGE:
-            return np.nanmean(values, axis=0)
-        if self.rendering == ImageRendering.ADDITIVE:
-            return np.nansum(values, axis=0)
+            value = np.nanmean(sample_values, axis=0)
+            yield value, sample_points[mid_idx]
+            return
 
-        # all the following cases are returning the *actual* value of the image at the
+        if self.rendering == ImageRendering.ADDITIVE:
+            value = np.nansum(sample_values, axis=0)
+            yield value, sample_points[mid_idx]
+            return
+
+        # all the following cases are returning the *actual* value at the
         # "selected" pixel, whose position changes depending on the rendering mode.
         if self.rendering == ImageRendering.MIP:
-            return values[np.nanargmax(luminance)]
+            idx = np.nanargmax(sample_values, axis=0)
+            yield sample_values[idx], sample_points[idx]
+            return
+
         if self.rendering == ImageRendering.MINIP:
-            return values[np.nanargmin(luminance)]
+            idx = np.nanargmin(sample_values, axis=0)
+            yield sample_values[idx], sample_points[idx]
+            return
+
         if self.rendering == ImageRendering.ATTENUATED_MIP:
             # normalize values so attenuation applies from 0 to 1
             attenuated = (  # pyrefly: ignore [unsupported-operation]
-                luminance - self.contrast_limits[0]  # pyrefly: ignore [unsupported-operation]
+                sample_values - self.contrast_limits[0]  # pyrefly: ignore [unsupported-operation]
             ) / self.contrast_limits[1]
-            # approx, step size is actually calculated with int(lenght(ray) * 2)
             step_size = 0.5
             sumval = (
                 step_size
@@ -715,7 +747,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 * len(attenuated)
             )
             scale = np.exp(-self.attenuation * (sumval - 1))
-            return values[np.nanargmin(attenuated * scale)]
+            idx = np.nanargmin(attenuated * scale)
+            yield sample_values[idx], sample_points[idx]
+            return
 
         raise RuntimeError(  # pragma: no cover
             f'ray value calculation not implemented for {self.rendering}'
