@@ -580,7 +580,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 if self.dims.ndisplay == 3:
                     center[0] = float(self.dims.point[new_display_dim])
                 else:
-                    self.dims.set_point(new_display_dim, center[0])
+                    if not self.dims.is_axis_locked(new_display_dim):
+                        self.dims.set_point(new_display_dim, center[0])
                     center[0] = 0.0
             elif self.dims.ndisplay == 2:
                 center[0] = 0.0
