@@ -1,6 +1,7 @@
 import copy
 import itertools
 import time
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
@@ -2830,3 +2831,65 @@ def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
     brush.paint(coord, 1)
     assert np.any(brush.data[0])  # -1 clipped to the near edge
     assert not np.any(brush.data[-1])
+
+
+def test_features_label_column_without_index_warns():
+    data = np.zeros((10, 10), dtype=int)
+    data[1:3, 1:3] = 1
+    data[5:9, 5:9] = 2
+    features = pd.DataFrame({'label': [1, 2], 'area': [4.0, 16.0]})
+    with pytest.warns(UserWarning, match="'index'"):
+        Labels(data, features=features)
+
+
+@pytest.mark.parametrize(
+    'features',
+    [
+        {'label': [0, 1, 2], 'area': [80.0, 4.0, 16.0]},
+        {'index': [1, 2], 'label': [1, 2], 'area': [4.0, 16.0]},
+        {'label': ['cell', 'nucleus'], 'area': [4.0, 16.0]},
+    ],
+)
+def test_features_label_column_no_warning(features):
+    data = np.zeros((10, 10), dtype=int)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        Labels(data, features=pd.DataFrame(features))
+
+
+def test_features_index_column_matches_label_values():
+    data = np.zeros((10, 10), dtype=int)
+    data[1:3, 1:3] = 1
+    data[5:9, 5:9] = 2
+    features = pd.DataFrame({'index': [1, 2], 'area': [4.0, 16.0]})
+    layer = Labels(data, features=features)
+    assert layer.get_status((1, 1))['coordinates'].endswith('area: 4')
+
+
+def test_features_label_column_nullable_int_warns():
+    data = np.zeros((10, 10), dtype=int)
+    features = pd.DataFrame(
+        {'label': pd.array([1, None], dtype='Int64'), 'area': [4.0, 16.0]}
+    )
+    with pytest.warns(UserWarning, match="'index'"):
+        Labels(data, features=features)
+
+
+@pytest.mark.parametrize(
+    'code',
+    [
+        'Labels(data, features=features)',
+        'Labels(data).features = features',
+        'ViewerModel().add_labels(data, features=features)',
+    ],
+)
+def test_features_label_column_warning_points_at_caller(code):
+    namespace = {
+        'Labels': Labels,
+        'ViewerModel': ViewerModel,
+        'data': np.zeros((10, 10), dtype=int),
+        'features': pd.DataFrame({'label': [1, 2], 'area': [4.0, 16.0]}),
+    }
+    with pytest.warns(UserWarning, match="'index'") as record:
+        exec(compile(code, 'user_script.py', 'exec'), namespace)
+    assert record[0].filename == 'user_script.py'
