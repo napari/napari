@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import itertools
 import os
 from collections.abc import Callable, Sequence
@@ -11,6 +12,7 @@ from typing import (
 )
 
 import numpy as np
+import zarr
 from skimage import morphology
 
 if TYPE_CHECKING:
@@ -19,6 +21,22 @@ if TYPE_CHECKING:
 
 def always_false(*_):
     return False
+
+
+class SlowMemoryStore(zarr.storage.MemoryStore):
+    """Memory store that waits ``load_delay`` seconds on every read.
+
+    The wait is async, so concurrent chunk reads overlap like they would
+    against a remote store.
+    """
+
+    def __init__(self, load_delay, *args, **kwargs) -> None:
+        self.load_delay = load_delay
+        super().__init__(*args, **kwargs)
+
+    async def get(self, key, prototype=None, byte_range=None):
+        await asyncio.sleep(self.load_delay)
+        return await super().get(key, prototype, byte_range)
 
 
 class Skip:
