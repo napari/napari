@@ -10,6 +10,8 @@ from ...._qt.widgets.qt_highlight_preview import QtHighlightPreviewWidget
 from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 from ...._qt.widgets.qt_font_size import QtFontSizeWidget
 
+from napari._qt.qt_resources import QColoredSVGIcon
+
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
@@ -348,12 +350,22 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         return "All Files (*)"
 
     def _on_clicked(self, flag):
-        if self.path_widget.text():
-            start_dir = os.path.dirname(self.path_widget.text())
+ 
+        if self.schema.get("format") == "directory":
+            start_dir = self.path_widget.text() or os.path.expanduser("~")
+            path = QtWidgets.QFileDialog.getExistingDirectory(
+                self, "Select Directory", start_dir
+            )
         else:
-            start_dir = os.path.expanduser("~")
+            if self.path_widget.text():
+                start_dir = os.path.dirname(self.path_widget.text())
+            else:
+                start_dir = os.path.expanduser("~")
 
-        path, filter = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", start_dir, self.file_filter())
+            path, filter = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Select File", start_dir, self.file_filter()
+            )
+
         if not path:
             return
         self.path_widget.setText(path)
@@ -380,34 +392,45 @@ class ArrayControlsWidget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        style = self.style()
+        icon_color = self.palette().color(
+            QtGui.QPalette.ColorRole.ButtonText
+        ).name()
+
+        self.setStyleSheet(
+            "QPushButton:disabled { border: 0px; }"
+        )
 
         self.up_button = QtWidgets.QPushButton()
-        self.up_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_ArrowUp))
+        self.up_button.setIcon(
+            QColoredSVGIcon.from_resources('chevron_up').colored(
+                color=icon_color
+            )
+        )
         self.up_button.clicked.connect(lambda _: self.on_move_up.emit())
-
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
 
         self.delete_button = QtWidgets.QPushButton()
         self.delete_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+            QColoredSVGIcon.from_resources('delete').colored(
+                color=icon_color
+            )
         )
         self.delete_button.clicked.connect(lambda _: self.on_delete.emit())
 
         self.down_button = QtWidgets.QPushButton()
         self.down_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_ArrowDown)
+            QColoredSVGIcon.from_resources('chevron_down').colored(
+                color=icon_color
+            )
         )
         self.down_button.clicked.connect(lambda _: self.on_move_down.emit())
 
         group_layout = QtWidgets.QHBoxLayout()
+        group_layout.setContentsMargins(0,0,0,0)
         self.setLayout(group_layout)
         group_layout.addWidget(self.up_button)
         group_layout.addWidget(self.down_button)
         group_layout.addWidget(self.delete_button)
-        group_layout.setSpacing(0)
+        group_layout.setSpacing(4)
         group_layout.addStretch(0)
 
     def setDescription(self, description: str):
@@ -421,15 +444,18 @@ class ArrayRowWidget(QtWidgets.QWidget):
         super().__init__()
 
         layout = QtWidgets.QHBoxLayout()
+        # Add a 15px indentation to entries
+        # for contrast with other widgets
+        layout.setContentsMargins(15,0,0,0)
         layout.addWidget(widget)
         layout.addWidget(controls)
         self.setLayout(layout)
 
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
         self.widget = widget
+        if isinstance(self.widget, FilepathSchemaWidget):
+            widget_layout = self.widget.layout()
+            if widget_layout is not None:
+                widget_layout.setContentsMargins(0,0,0,0)
         self.controls = controls
 
     def setDescription(self, description: str):
@@ -461,29 +487,27 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
     def configure(self):
         layout = QtWidgets.QVBoxLayout()
-        style = self.style()
-
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
-        self.add_button = QtWidgets.QPushButton()
-        self.add_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_FileIcon)
-        )
+        layout.setContentsMargins(0,0,0,0)
+ 
+        self.add_button = QtWidgets.QPushButton('Add entry')
+        self.add_button.setStyleSheet("QPushButton { padding: 2px 4px; }")
         self.add_button.clicked.connect(lambda _: self.add_item())
 
         self.array_layout = QtWidgets.QVBoxLayout()
-        array_widget = QtWidgets.QWidget(self)
-        array_widget.setLayout(self.array_layout)
+        self.array_layout.setContentsMargins(0,0,0,0)
+        self.array_widget = QtWidgets.QWidget(self)
+        self.array_widget.setLayout(self.array_layout)
 
         self.on_changed.connect(self._on_updated)
 
-        layout.addWidget(self.add_button)
-        layout.addWidget(array_widget)
+        layout.addWidget(self.add_button, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self.array_widget)
         self.setLayout(layout)
 
     def _on_updated(self, state):
+
+        self.array_widget.setVisible(bool(self.rows))
+
         # Update add button
         disabled = self.next_item_schema is None
         self.add_button.setEnabled(not disabled)
@@ -806,6 +830,8 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
                 layout.addRow(widget)
             else:
                 layout.addRow(label, widget)
+                if isinstance(widget, ArraySchemaWidget):
+                    layout.setAlignment(label, QtCore.Qt.AlignmentFlag.AlignTop)
             widgets[name] = widget
             layout.addRow(self._new_error_label(name))
 

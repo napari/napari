@@ -41,6 +41,7 @@ class WidgetBuilder:
             "password": widgets.PasswordWidget,
             "filepath": widgets.FilepathSchemaWidget,
             "path": widgets.FilepathSchemaWidget,
+            "directory": widgets.FilepathSchemaWidget,
             "colour": widgets.ColorSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
         },
