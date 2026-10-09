@@ -1,6 +1,14 @@
+from __future__ import annotations
+
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from vispy.app import MouseEvent
+
+    from napari.layers import Labels
 
 
 def interpolate_coordinates(old_coord, new_coord, brush_size):
@@ -165,7 +173,9 @@ def first_nonzero_coordinate(data, start_point, end_point):
     return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
-def mouse_event_to_labels_coordinate(layer, event):
+def mouse_event_to_labels_coordinate(
+    layer: Labels, event: MouseEvent
+) -> np.ndarray | None:
     """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
 
     In 2D, this is just the event's position transformed by the layer's
