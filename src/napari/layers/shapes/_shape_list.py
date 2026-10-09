@@ -771,7 +771,7 @@ class ShapeList:
             )
         else:
             self._displayed = np.array([])
-        disp_indices: IndexArray = np.nonzero(self._displayed)[0]  # pyrefly: ignore [bad-assignment]
+        disp_indices: IndexArray = np.nonzero(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order
 
@@ -1266,7 +1266,7 @@ class ShapeList:
         vert_indices_to_del = np.concatenate(
             [np.arange(s.start, s.stop) for s in vert_slices]
         )
-        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)  # pyrefly: ignore [no-matching-overload]
+        self._vertices = np.delete(self._vertices, vert_indices_to_del, axis=0)
 
         vert_counts = np.diff(self._vertices_index)
         new_vert_counts = np.delete(vert_counts, indices)
@@ -1285,13 +1285,13 @@ class ShapeList:
         deleted_vertex_shift = np.zeros(len(self._mesh.vertices), dtype=int)
         deleted_vertex_shift[mesh_vert_indices_to_del] = 1
         deleted_vertex_shift = np.cumsum(deleted_vertex_shift)
-        self._mesh.vertices = np.delete(  # pyrefly: ignore [no-matching-overload]
+        self._mesh.vertices = np.delete(
             self._mesh.vertices, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_centers = np.delete(  # pyrefly: ignore [no-matching-overload]
+        self._mesh.vertices_centers = np.delete(
             self._mesh.vertices_centers, mesh_vert_indices_to_del, axis=0
         )
-        self._mesh.vertices_offsets = np.delete(  # pyrefly: ignore [no-matching-overload]
+        self._mesh.vertices_offsets = np.delete(
             self._mesh.vertices_offsets, mesh_vert_indices_to_del, axis=0
         )
 
@@ -1309,10 +1309,10 @@ class ShapeList:
             [np.arange(s.start, s.stop) for s in mesh_tri_slices]
         )
         self._mesh.triangles -= deleted_vertex_shift[self._mesh.triangles]
-        self._mesh.triangles = np.delete(  # pyrefly: ignore [no-matching-overload]
+        self._mesh.triangles = np.delete(
             self._mesh.triangles, mesh_tri_indices_to_del, axis=0
         )
-        self._mesh.triangles_colors = np.delete(  # pyrefly: ignore [no-matching-overload]
+        self._mesh.triangles_colors = np.delete(
             self._mesh.triangles_colors, mesh_tri_indices_to_del, axis=0
         )
 
@@ -1427,7 +1427,7 @@ class ShapeList:
             triangles_z_order = [
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
-            self._mesh.triangles_z_order = np.concatenate(triangles_z_order)  # pyrefly: ignore [bad-assignment]
+            self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
         self._update_displayed()
 
     def edit(
@@ -1858,17 +1858,22 @@ class ShapeList:
 
     @cached_property
     def _visible_shapes(self) -> list[tuple[int, Shape]]:
-        slice_key = self.slice_key
-        if len(slice_key):  # pyrefly: ignore [bad-argument-type]
-            return [
-                (i, s)
-                for i, s in enumerate(self.shapes)
-                if (
-                    np.all(s.slice_key[0] <= slice_key)
-                    and np.all(slice_key <= s.slice_key[1])
-                )
-            ]
-        return list(enumerate(self.shapes))
+        slice_key = np.asarray(self.slice_key)
+        if not len(slice_key) or not self.shapes:
+            return list(enumerate(self.shapes))
+        # This key is a real-valued data coordinate while a shape's is whole
+        # slices, so match `_update_displayed`'s half-slice tolerance where the
+        # shape does not span, and keep exact containment where it does.
+        lower, upper = self.slice_keys[:, 0], self.slice_keys[:, 1]
+        visible = np.all(
+            np.where(
+                lower == upper,
+                np.abs(slice_key - lower) < 0.5,
+                (lower <= slice_key) & (slice_key <= upper),
+            ),
+            axis=1,
+        )
+        return [(i, s) for i, s in enumerate(self.shapes) if visible[i]]
 
     @cached_property
     def _bounding_boxes(
