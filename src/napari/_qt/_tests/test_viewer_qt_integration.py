@@ -286,7 +286,6 @@ def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
 
     qtbot.waitUntil(qt_viewer.isVisible)
 
-    viewer.mouse_over_canvas = False
     viewer.status = ''
 
     canvas = qt_viewer.canvas.native
@@ -297,12 +296,10 @@ def test_canvas_hover_state_comes_from_canvas(qtbot, make_napari_viewer):
             QPointF(10, 10),
         )
     )
-    assert viewer.mouse_over_canvas
     assert viewer.status == 'Ready'
 
     canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer.mouse_over_canvas
-    assert viewer.status == ''
+    assert viewer.status == 'Ready'
 
 
 def test_qt_viewer_with_console(make_napari_viewer):

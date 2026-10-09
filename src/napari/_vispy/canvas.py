@@ -15,6 +15,7 @@ import numpy as np
 from OpenGL.error import GLError
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
+from vispy.util.event import Event as VispyEvent
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
@@ -64,33 +65,14 @@ class NapariSceneCanvas(SceneCanvas_):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.events.add(mouse_leave=VispyEvent)
 
-        orig_enterEvent = self.native.enterEvent
         orig_leaveEvent = self.native.leaveEvent
 
-        def _qtviewer(widget):
-            parent = widget.parentWidget()
-            while parent is not None:
-                if hasattr(parent, '_enter_canvas') and hasattr(
-                    parent, '_leave_canvas'
-                ):
-                    return parent
-                parent = parent.parentWidget()
-            return None
-
-        def enterEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._enter_canvas()
-            orig_enterEvent(event)
-
         def leaveEvent(self_, event):
-            qtviewer = _qtviewer(self_)
-            if qtviewer is not None:
-                qtviewer._leave_canvas()
+            self.events.mouse_leave()
             orig_leaveEvent(event)
 
-        self.native.enterEvent = MethodType(enterEvent, self.native)
         self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
     def _process_mouse_event(self, event: MouseEvent):
@@ -253,6 +235,7 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_press.connect(self._on_mouse_press)
         self._scene_canvas.events.mouse_release.connect(self._on_mouse_release)
         self._scene_canvas.events.mouse_wheel.connect(self._on_mouse_wheel)
+        self._scene_canvas.events.mouse_leave.connect(self._on_mouse_leave)
         self._scene_canvas.events.resize.connect(self._on_vispy_size_change)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
         self.viewer.cursor.events.style.connect(self._on_cursor)
@@ -563,6 +546,14 @@ class VispyCanvas:
             mouse_callbacks(layer, read_only_event)
 
         event.handled = napari_event.handled
+
+    def _on_mouse_leave(self, event=None) -> None:
+        """Called by qt whenever the mouse leaves the canvas, so we can do somethign about it."""
+        # TODO: should we actually just send a NapariMouseEvent with pos = None?
+        for vispy_overlays in self._viewer_overlay_to_visual.items():
+            for vispy_overlay in vispy_overlays:
+                if callback := getattr(vispy_overlay, '_on_mouse_leave', None):
+                    callback()
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas

@@ -690,7 +690,6 @@ def test_qt_viewer_canvas_is_nested_in_main_widget(
 def test_qt_viewer_canvas_hover_state_comes_from_canvas(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
-    viewer_model.mouse_over_canvas = False
     viewer_model.status = ''
 
     canvas = qt_viewer.canvas.native
@@ -701,11 +700,9 @@ def test_qt_viewer_canvas_hover_state_comes_from_canvas(
             QPointF(10, 10),
         )
     )
-    assert viewer_model.mouse_over_canvas
     assert viewer_model.status == 'Ready'
 
     canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer_model.mouse_over_canvas
     assert viewer_model.status == ''
 
 
