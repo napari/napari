@@ -18,6 +18,7 @@ def update_text(
     *,
     node: Text,
     layer: Points | Shapes,
+    default_font_size=9,
 ):
     """Update the vispy text node with a layer's text parameters.
 
@@ -67,7 +68,11 @@ def update_text(
     node.rotation = text_manager.rotation
     node.color = colors
 
-    node.font_size = text_manager._get_scaled_size(layer.scale_factor)
+    node.font_size = (
+        text_manager.size
+        if text_manager.size is not None
+        else default_font_size
+    )
 
 
 def _has_visible_text(layer: Points | Shapes) -> bool:

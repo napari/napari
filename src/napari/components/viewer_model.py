@@ -15,6 +15,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Union,
     cast,
@@ -197,6 +198,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
+    default_font_size: Annotated[float, Field(ge=1)] | None = None
     help: str = ''
     status: Union[str, Dict[str, str]] = 'Ready'
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
