@@ -1,4 +1,5 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -6,27 +7,36 @@ import numpy.typing as npt
 DEFAULT_PRECISION = 3
 
 
-def format_float(value, precision=None, format_mode='g'):
+def format_float(
+    value: Any, precision: int | None = None, format_mode: str = 'g'
+) -> str:
     """Nice float formatting into strings."""
     if precision is None:
         precision = DEFAULT_PRECISION
     return f'{value:0.{precision}{format_mode}}'
 
 
-def format_feature_value(value):
+def format_feature_value(value: Any) -> str:
     """Format a single feature value for display in the status bar."""
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
         return format_float(value)
     return str(value)
 
 
-def status_format(value, precision=None, format_mode='g'):
+def status_format(
+    value: Any, precision: int | None = None, format_mode: str = 'g'
+) -> str:
     """Return a "nice" string representation of a value.
 
     Parameters
     ----------
     value : Any
         The value to be printed.
+    precision : int, optional
+        The number of significant digits to use when formatting floats.
+    format_mode : str, optional
+        The format mode to use when formatting floats. See:
+        https://docs.python.org/3/library/string.html#format-specification-mini-language
 
     Returns
     -------
@@ -106,7 +116,9 @@ def generate_layer_coords_status(
     return ': '.join(generate_layer_status_strings(position, value))
 
 
-def generate_layer_status(name, position, value):
+def generate_layer_status(
+    name: str, position: Sequence[float] | None, value: Any
+) -> str:
     """Generate a status message based on the coordinates and value
 
     Parameters
