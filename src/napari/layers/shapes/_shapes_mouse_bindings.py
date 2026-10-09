@@ -267,9 +267,10 @@ def _add_line_rectangle_ellipse(
     layer._aspect_ratio = 1
     # Start drawing rectangle / ellipse / line
     layer.add(data, shape_type=shape_type, gui=True)
-    layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
     layer._moving_value = copy(layer._value)
+    layer._start_drawing()
+    layer.selected_data = {layer.nshapes - 1}
     layer.refresh()
     yield
 
@@ -322,6 +323,7 @@ def initiate_polygon_draw(
     layer.add(data, shape_type='path', gui=True)
     layer._value = (layer.nshapes - 1, 1)
     layer._moving_value = copy(layer._value)
+    layer._start_drawing()
     layer.selected_data = Selection({layer.nshapes - 1})
 
 
@@ -341,6 +343,8 @@ def add_path_polygon_lasso(
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
+    if layer._drawing_paused:
+        return
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Set last cursor position to initial position of the mouse when starting to draw the shape
@@ -414,7 +418,7 @@ def polygon_creating(layer: Shapes, event: MouseEvent) -> None:
     event : MouseEvent
         A proxy read only wrapper around a vispy mouse event.
     """
-    if layer._is_creating:
+    if layer._is_creating and not layer._drawing_paused:
         coordinates = layer.world_to_data(event.position)
         move_active_vertex_under_cursor(layer, coordinates)
 
@@ -445,6 +449,8 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
         A proxy read only wrapper around a vispy mouse event.
     """
     # on press
+    if layer._drawing_paused:
+        return
     coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Set last cursor position to initial position of the mouse when starting to draw the shape
@@ -915,7 +921,7 @@ def _move_active_element_under_cursor(
         Position of mouse cursor in data coordinates.
     """
     # If nothing selected return
-    if len(layer.selected_data) == 0:
+    if len(layer.selected_data) == 0 or layer._drawing_paused:
         return
 
     vertex = layer._moving_value[1]
