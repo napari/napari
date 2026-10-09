@@ -1,3 +1,5 @@
+from unittest.mock import Mock, PropertyMock
+
 import pytest
 
 from napari.components.grid import GridCanvas
