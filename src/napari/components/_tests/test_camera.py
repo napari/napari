@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari.components import Camera
+from napari.utils.camera_orientations import Handedness
 
 
 def test_camera():
@@ -121,6 +122,99 @@ def test_calculate_view_direction_nd():
     )
     assert len(view_direction) == 5
     assert np.allclose(view_direction[[0, 2, 4]], (-1, 0, 0))
+
+
+def test_calculate_view_direction_with_fov():
+    camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=1)
+
+    # in the center, nothing changes
+    for perspective in (0, 30, 60):
+        camera.perspective = perspective
+        view_direction = camera.calculate_nd_view_direction(
+            ndim=3,
+            dims_displayed=[0, 1, 2],
+            canvas_position=(300, 300),
+            canvas_size=(600, 600),
+        )
+        assert np.allclose(view_direction, camera.view_direction)
+
+    # canvas_position is given in (y, x), so (300, 450) is an offset of
+    # 150 px to the right of the canvas center
+    camera.perspective = 60
+    # the default view direction is (-1, 0, 0); moving right of the center
+    # tilts the view direction towards the right-hand direction (+y)
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=3,
+        dims_displayed=[0, 1, 2],
+        canvas_position=(300, 450),
+        canvas_size=(600, 600),
+    )
+    assert np.allclose(view_direction, (-0.96076892, 0.27735010, 0), atol=1e-5)
+
+    # moving below the canvas center tilts the view direction downwards,
+    # i.e. opposite to the up direction (+z for these angles)
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=3,
+        dims_displayed=[0, 1, 2],
+        canvas_position=(450, 300),
+        canvas_size=(600, 600),
+    )
+    assert np.allclose(
+        view_direction, (-0.96076892, 0, -0.27735010), atol=1e-5
+    )
+
+    # zoom should not change the view direction
+    camera.zoom = 2.5
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=3,
+        dims_displayed=[0, 1, 2],
+        canvas_position=(300, 450),
+        canvas_size=(600, 600),
+    )
+    assert np.allclose(view_direction, (-0.96076892, 0.27735010, 0), atol=1e-5)
+
+
+def test_calculate_view_direction_with_fov_nd():
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), perspective=60, zoom=1)
+    view_direction = camera.calculate_nd_view_direction(
+        ndim=4,
+        dims_displayed=[0, 2, 3],
+        canvas_position=(450, 300),
+        canvas_size=(600, 600),
+    )
+    assert len(view_direction) == 4
+    assert np.allclose(
+        view_direction[[0, 2, 3]], (-0.96076892, 0.27735010, 0), atol=1e-5
+    )
+
+
+def test_calculate_view_direction_with_fov_handedness():
+    kwargs = {
+        'ndim': 3,
+        'dims_displayed': [0, 1, 2],
+        'canvas_position': (300, 450),
+        'canvas_size': (600, 600),
+    }
+    right_handed = Camera(
+        center=(0, 0, 0), angles=(90, 0, 0), perspective=60, zoom=1
+    )
+    left_handed = Camera(
+        center=(0, 0, 0),
+        angles=(90, 0, 0),
+        perspective=60,
+        zoom=1,
+        orientation=('towards', 'down', 'left'),
+    )
+    assert right_handed.handedness == Handedness.RIGHT
+    assert left_handed.handedness == Handedness.LEFT
+
+    view_direction = right_handed.calculate_nd_view_direction(**kwargs)
+    assert np.allclose(view_direction, (-0.96076892, 0.27735010, 0), atol=1e-5)
+
+    view_direction = left_handed.calculate_nd_view_direction(**kwargs)
+    assert np.allclose(
+        view_direction, (-0.96076892, -0.27735010, 0), atol=1e-5
+    )
 
 
 @pytest.mark.parametrize(
