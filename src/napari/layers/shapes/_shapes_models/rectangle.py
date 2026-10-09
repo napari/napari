@@ -72,9 +72,6 @@ class Rectangle(Shape):
         )
         self._update_displayed_data()
 
-    def _slice_key_of(self, dims) -> np.ndarray:
-        return self._bounding_box[:, dims].astype(int)
-
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Add four boundary lines and then two triangles for each
