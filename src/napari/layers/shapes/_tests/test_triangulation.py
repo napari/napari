@@ -117,12 +117,75 @@ def test_generate_2D_edge_meshes(path, closed, bevel, expected):
             ),
             True,
         ),
+        (
+            np.array(
+                [[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'
+            ),
+            np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            True,
+        ),
+        (
+            np.array(
+                [[0, 3], [0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'
+            ),
+            np.array([[0, 3], [0, 2], [0, 1], [0, 1]], dtype='float32'),
+            False,
+        ),
+        (
+            np.ones((5, 2), dtype='float32'),
+            np.ones((1, 2), dtype='float32'),
+            True,
+        ),
     ],
 )
 @pytest.mark.usefixtures('_disable_jit')
-def test_remove_path_duplicates(data, expected, closed):
-    result = ac.remove_path_duplicates(data, closed=closed)
-    assert np.all(result == expected)
+@pytest.mark.parametrize('compiled', [False, True])
+def test_remove_path_duplicates(data, expected, closed, compiled):
+    remove_duplicates = (
+        ac.remove_path_duplicates
+        if compiled
+        else _accelerated_triangulate_python.remove_path_duplicates_py
+    )
+    result = remove_duplicates(data, closed=closed)
+    npt.assert_array_equal(result, expected)
+    assert result.dtype == data.dtype
+    npt.assert_array_equal(result, remove_duplicates(data, closed=closed))
+
+
+@pytest.mark.parametrize('ndim', [3, 7])
+@pytest.mark.parametrize('displayed', [(0, 1), (0, 2)])
+def test_planar_shapes_orthogonal_projection_preserves_vertices(
+    ndim, displayed
+):
+    from napari.components import Dims
+    from napari.layers import Shapes
+
+    # A valid XY rectangle becomes a line with repeated adjacent vertices
+    # when displayed edge-on. The native view must not invent a stray vertex.
+    coordinates = np.zeros((4, ndim), dtype='float32')
+    coordinates[:, -3:] = [[2, 3, 3], [2, 3, 5], [2, 5, 5], [2, 5, 3]]
+    original = coordinates.copy()
+    layer = Shapes(
+        [coordinates], shape_type='polygon', ndim=ndim, visible=False
+    )
+    axes = tuple(ndim - 3 + axis for axis in displayed)
+    order = tuple(axis for axis in range(ndim) if axis not in axes) + axes
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order), force=True)
+    layer.visible = True
+    # Exercise the native slice consumer explicitly: this model-only fixture
+    # has no Qt viewer to receive asynchronous reload events.
+    layer.set_view_slice()
+    shape = layer._data_view.shapes[0]
+    assert tuple(shape.dims_order) == order
+    npt.assert_array_equal(shape.data, original)
+    assert len(shape._face_triangles) == 0
+    assert np.isfinite(shape._edge_vertices).all()
+
+    # Returning to XY restores the original face and source member identity.
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2), force=True)
+    layer.set_view_slice()
+    npt.assert_array_equal(layer.data[0], original)
+    assert len(shape._face_triangles) > 0
 
 
 @pytest.mark.usefixtures('_disable_jit')

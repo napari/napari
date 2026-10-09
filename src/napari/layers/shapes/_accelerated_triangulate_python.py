@@ -16,22 +16,20 @@ from napari.layers.utils.layer_utils import segment_normal
 def remove_path_duplicates_py(
     data: npt.NDArray[np.float32], closed: bool
 ) -> npt.NDArray[np.float32]:
-    # We add the first data point at the end to get the same length bool
-    # array as the data, and also to work on closed shapes; the last value
-    # in the diff array compares the last and first vertex.
-    diff = np.diff(np.append(data, data[0:1, :], axis=0), axis=0)
-    dup = np.all(diff == 0, axis=1)
-    # if the shape is closed, check whether the first vertex is the same
-    # as the last vertex, and count it as a duplicate if so
-    if closed and dup[-1]:
-        dup[0] = True
-    # we allow repeated nodes at the end for the lasso tool, which
-    # for an instant needs both the last placed point and the point at the
-    # cursor to be the same; if the lasso implementation becomes cleaner,
-    # remove this hardcoding
-    dup[-2:] = False
-    indices = np.arange(data.shape[0])
-    return data[indices[~dup]]
+    """Keep vertex membership identical in Python and compiled consumers."""
+    if len(data) <= 2:
+        return data
+
+    retained = np.ones(len(data), dtype=np.bool_)
+    # The lasso tool needs its final cursor vertex, even when it coincides
+    # with the preceding point. Remove other consecutive duplicates, keeping
+    # the first vertex; remove an explicit closing vertex separately.
+    for index in range(len(data) - 2):
+        if np.all(data[index] == data[index + 1]):
+            retained[index + 1] = False
+    if closed and np.all(data[0] == data[-1]):
+        retained[-1] = False
+    return data[retained]
 
 
 def _mirror_point(x: np.ndarray, y: np.ndarray) -> np.ndarray:
