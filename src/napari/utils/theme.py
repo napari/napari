@@ -374,17 +374,6 @@ def register_theme(theme_id, theme, source):
     build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(theme_id):
-    """Remove existing theme.
-
-    Parameters
-    ----------
-    theme_id : str
-        id of the theme to be removed.
-    """
-    _themes.pop(theme_id, None)
-
-
 def available_themes() -> list[str]:
     """List available themes.
 

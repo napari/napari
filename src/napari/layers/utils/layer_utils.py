@@ -424,6 +424,10 @@ def get_current_properties(
 ) -> dict[str, Any]:
     """Get the current property values from the properties or choices.
 
+    .. deprecated:: 0.10.0
+        ``get_current_properties`` is no longer used by napari and will be
+        removed in 0.11.0.
+
     Parameters
     ----------
     properties : dict[str, np.ndarray]
@@ -439,6 +443,13 @@ def get_current_properties(
         A dictionary where the key is the property name and the value is the current
         value of that property.
     """
+    warnings.warn(
+        'napari.layers.utils.layer_utils.get_current_properties is deprecated '
+        'since 0.10.0 and will be removed in 0.11.0. It is no longer used by '
+        'napari and has no replacement.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
     current_properties = {}
     if num_data > 0:
         current_properties = {
