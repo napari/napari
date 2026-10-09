@@ -13,6 +13,7 @@ from napari._app_model import get_app_model
 from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
+    _zoom_to_selected_label,
     toggle_actions,
 )
 from napari._app_model.constants import MenuId
@@ -378,3 +379,85 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
+
+
+def test_zoom_to_selected_label(make_napari_viewer):
+    viewer = make_napari_viewer()
+    app = get_app_model()
+    data = np.zeros((10, 200, 300), dtype=np.uint8)
+    data[8, 50:60, 100:120] = 3
+    layer = viewer.add_labels(data, scale=(1, 2, 2), translate=(0, 10, 20))
+    fit_zoom = viewer.scene.camera.zoom
+    layer.selected_label = 3
+
+    app.commands.execute_command('napari.scene.zoom_to_selected_label')
+
+    assert viewer.dims.point[0] == 8
+    assert viewer.scene.camera.center[1:] == pytest.approx((119, 239))
+    assert viewer.scene.camera.zoom > fit_zoom
+
+
+def test_zoom_to_selected_label_enablement(make_napari_viewer):
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((10, 10)))
+    viewer.add_labels(np.zeros((10, 10), dtype=np.uint8))
+    action = viewer.window.view_menu.findAction(
+        'napari.scene.zoom_to_selected_label'
+    )
+    assert action.isEnabled()
+    viewer.layers.selection.active = viewer.layers[0]
+    viewer.window.view_menu.update_from_context(viewer.layers._ctx)
+    assert not action.isEnabled()
+
+
+def test_zoom_to_selected_label_absent_keeps_camera():
+    viewer = ViewerModel()
+    viewer.add_labels(np.zeros((20, 20), dtype=np.uint8))
+    center, zoom = viewer.scene.camera.center, viewer.scene.camera.zoom
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.center == center
+    assert viewer.scene.camera.zoom == zoom
+
+
+def test_zoom_to_selected_label_3d_display():
+    viewer = ViewerModel()
+    data = np.zeros((20, 20, 20), dtype=np.uint8)
+    data[2:4, 5:7, 10:12] = 1
+    viewer.add_labels(data)
+    viewer.dims.ndisplay = 3
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.center == pytest.approx((2.5, 5.5, 10.5))
+
+
+def test_zoom_to_selected_label_lower_dim_layer():
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((5, 20, 20)))
+    data = np.zeros((20, 20), dtype=np.uint8)
+    data[5:7, 10:12] = 1
+    viewer.add_labels(data)
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.center[1:] == pytest.approx((5.5, 10.5))
+
+
+def test_zoom_to_selected_label_tiny_label_min_size():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[50, 50] = 1
+    viewer.add_labels(data, scale=(2, 2))
+    _zoom_to_selected_label(viewer)
+    tiny_zoom = viewer.scene.camera.zoom
+    data[42:58, 42:58] = 1
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.zoom == pytest.approx(tiny_zoom)
+    assert viewer.scene.camera.center[1:] == pytest.approx((99, 99))
+
+
+def test_zoom_to_selected_label_rotated_layer():
+    viewer = ViewerModel()
+    data = np.zeros((100, 100), dtype=np.uint8)
+    data[40:50, 60:70] = 1
+    layer = viewer.add_labels(data, rotate=30, translate=(5, 5))
+    _zoom_to_selected_label(viewer)
+    assert viewer.scene.camera.center[1:] == pytest.approx(
+        layer.data_to_world((44.5, 64.5))
+    )

@@ -1725,6 +1725,64 @@ class Labels(ScalarFieldBase):
 
         return dist_sq <= radius**2  # pyrefly: ignore [bad-return]
 
+    def _locate_label(
+        self, label: int
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+        """Find where a label is in the data.
+
+        Returns None if the label is not in the data.
+
+        Returns
+        -------
+        min_vals, max_vals : np.ndarray
+            Bounding box of the label in data coordinates of the highest
+            resolution level, max exclusive.
+        point : np.ndarray
+            The bounding box center on the displayed axes, and a slice that
+            contains the label on the other axes, the current one if it does.
+        """
+        # ponytail: full scan per call, cache bboxes per label if it gets slow
+        levels = self.data if self.multiscale else [self.data]
+        for level in reversed(range(len(self.downsample_factors))):
+            mask = np.asarray(levels[level] == label)
+            if mask.any():
+                break
+        else:
+            return None
+
+        start = np.zeros(mask.ndim, dtype=int)
+        if level > 0:
+            factors = self.downsample_factors[level]
+            min_vals, max_vals = self._compute_mask_bbox(mask)
+            start = np.maximum(np.floor((min_vals - 1) * factors), 0)
+            stop = np.ceil((max_vals + 1) * factors)
+            window = tuple(
+                slice(int(a), int(b)) for a, b in zip(start, stop, strict=True)
+            )
+            start = start.astype(int)
+            mask = np.asarray(levels[0][window] == label)
+            if not mask.any():
+                return None
+
+        min_vals, max_vals = self._compute_mask_bbox(mask)
+        min_vals += start
+        max_vals += start
+        point = (min_vals + max_vals - 1) / 2
+
+        not_displayed = sorted(self._slice_input.not_displayed)
+        if not_displayed:
+            present = mask.any(axis=tuple(self._slice_input.displayed))
+            current = np.asarray(self._data_slice.point)[not_displayed]
+            index = np.floor(current + 0.5).astype(int) - start[not_displayed]
+            in_bounds = np.all((index >= 0) & (index < present.shape))
+            if not (in_bounds and present[tuple(index)]):
+                candidates = np.argwhere(present) + start[not_displayed]
+                distance = ((candidates - point[not_displayed]) ** 2).sum(1)
+                index = candidates[np.argmin(distance)] - start[not_displayed]
+            point[not_displayed] = index + start[not_displayed]
+
+        return min_vals, max_vals, point
+
     @staticmethod
     def _compute_mask_bbox(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Compute the bounding box of True values in a boolean mask.
