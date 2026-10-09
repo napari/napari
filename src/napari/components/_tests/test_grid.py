@@ -246,19 +246,15 @@ def test_iter_viewboxes_with_hidden_layers():
 
 def test_iter_viewboxes_scans_layers_linearly():
     """Test iter_viewboxes does not rescan all layers for every viewbox."""
-    reads = 0
 
-    class counting_layer:
-        @property
-        def visible(self):
-            nonlocal reads
-            reads += 1
-            return True
+    mock = Mock()
+    visible = PropertyMock(return_value=True)
+    type(mock).visible = visible
 
-    layers = [counting_layer() for _ in range(50)]
+    layers = [mock for _ in range(50)]
     list(GridCanvas(enabled=True).iter_viewboxes(layers))
     # a few passes over the layers are fine, a rescan per viewbox is not
-    assert reads < 10 * len(layers)
+    assert visible.call_count < 10 * len(layers)
 
 
 def test_grid_position_out_of_bounds():
