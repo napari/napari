@@ -1,3 +1,5 @@
+from unittest.mock import Mock, PropertyMock
+
 import pytest
 
 from napari.components.grid import GridCanvas
@@ -242,6 +244,19 @@ def test_iter_viewboxes_with_hidden_layers():
     assert len(viewboxes) == 2
     assert viewboxes[(0, 0)] == (0,)
     assert viewboxes[(0, 1)] == (2,)
+
+
+def test_iter_viewboxes_scans_layers_linearly():
+    """Test iter_viewboxes does not rescan all layers for every viewbox."""
+
+    mock = Mock()
+    visible = PropertyMock(return_value=True)
+    type(mock).visible = visible
+
+    layers = [mock for _ in range(50)]
+    list(GridCanvas(enabled=True).iter_viewboxes(layers))
+    # a few passes over the layers are fine, a rescan per viewbox is not
+    assert visible.call_count < 10 * len(layers)
 
 
 def test_grid_position_out_of_bounds():
