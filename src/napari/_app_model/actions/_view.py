@@ -9,6 +9,7 @@ from app_model.types import (
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import ViewerModel
+from napari.components._viewer_key_bindings import toggle_grid_mode
 from napari.settings import get_settings
 
 VIEW_SUBMENUS = [
@@ -152,10 +153,9 @@ def _get_current_synced_camera(viewer: ViewerModel) -> bool:
 
 
 VIEW_ACTIONS: list[Action] = [
-    ViewerModelToggleAction(
-        id='napari.canvas.toggle_grid',
-        title='Toggle Grid Canvas',
-        attribute_path='canvas.grid.enabled',
+    Action(
+        id='napari.canvas.toggle_grid_mode',
+        title='Toggle Grid Mode',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -163,6 +163,7 @@ VIEW_ACTIONS: list[Action] = [
                 'order': 1,
             }
         ],
+        callback=toggle_grid_mode,
         # keybinding declared via _viewer_key_bindings
     ),
     Action(

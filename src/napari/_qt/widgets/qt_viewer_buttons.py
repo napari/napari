@@ -292,7 +292,7 @@ class QtViewerButtons(QFrame):
             'home', action='napari:reset_view'
         )
         gvb = QtViewerPushButton(
-            'grid_view_button', action='napari:toggle_grid'
+            'grid_view_button', action='napari:toggle_grid_mode'
         )
         self.gridViewButton = gvb
         gvb.setCheckable(True)

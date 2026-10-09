@@ -168,7 +168,7 @@ def rotate_layers(viewer: ViewerModel) -> None:
 
 
 @register_viewer_action('Toggle grid mode')
-def toggle_grid(viewer: ViewerModel) -> None:
+def toggle_grid_mode(viewer: ViewerModel) -> None:
     if (
         1 < len(viewer.layers) <= abs(viewer.canvas.grid.stride)
         and not viewer.canvas.grid.enabled

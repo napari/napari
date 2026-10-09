@@ -20,7 +20,7 @@ _default_shortcuts: dict[str, list[KeyCombo | KeyCode]] = {
     'napari:roll_axes': [KeyMod.CtrlCmd | KeyCode.KeyE],
     'napari:transpose_axes': [KeyMod.CtrlCmd | KeyCode.KeyT],
     'napari:rotate_layers': [KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyT],
-    'napari:toggle_grid': [KeyMod.CtrlCmd | KeyCode.KeyG],
+    'napari:toggle_grid_mode': [KeyMod.CtrlCmd | KeyCode.KeyG],
     'napari:toggle_selected_visibility': [KeyCode.KeyV],
     'napari:toggle_unselected_visibility': [KeyMod.Shift | KeyCode.KeyV],
     'napari:select_layer_above': [KeyMod.CtrlCmd | KeyCode.UpArrow],
