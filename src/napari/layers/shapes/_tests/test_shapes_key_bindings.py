@@ -36,6 +36,14 @@ def test_lock_aspect_ratio_selected_box_zeros():
     _ = list(key_bindings.hold_to_lock_aspect_ratio(layer))
 
 
+def test_draw_shape_from_center():
+    layer = Shapes(20 * np.random.random((1, 4, 2)))
+    layer._moving_coordinates = (0, 0, 0)
+    layer._is_moving = True
+    _ = list(key_bindings.hold_to_draw_shape_from_center(layer))
+    assert not layer._draw_from_center
+
+
 def test_activate_modes():
     # Test a single four corner rectangle
     layer = Shapes(20 * np.random.random((1, 4, 2)))
