@@ -122,12 +122,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
-          # explicitly set persist-credentials: 'true' to push changes to bot repo
-          persist-credentials: true
+          persist-credentials: false
       - name: Synchronize bot repository
+        env:
+          BOT_REPO_TOKEN: ${{ secrets.GHA_TOKEN_BOT_REPO_WORKFLOW }}
         run: |
-          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git remote add napari-bot "https://x-access-token:${BOT_REPO_TOKEN}@github.com/napari-bot/napari.git"
           git fetch napari-bot
           git push --force --set-upstream napari-bot main
       - name: Report Failures
