@@ -34,7 +34,7 @@ import warnings
 from typing import Any, get_args, get_origin, get_type_hints
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Container, Iterator
     from types import ModuleType
 
 PYI_TEMPLATE = """
@@ -48,7 +48,9 @@ from typing import List, Union, Mapping, Sequence, Tuple, Dict, Set, Any, Option
 """
 
 
-def _guess_exports(module, exclude=()) -> list[str]:
+def _guess_exports(
+    module: ModuleType, exclude: Container[str] = ()
+) -> list[str]:
     """If __all__ wasn't provided, this function guesses what to stub."""
     return [
         k
@@ -57,7 +59,7 @@ def _guess_exports(module, exclude=()) -> list[str]:
     ]
 
 
-def _iter_imports(hint) -> Iterator[str]:
+def _iter_imports(hint: Any) -> Iterator[str]:
     """Get all imports necessary for `hint`"""
     # inspect.formatannotation strips "typing." from type annotations
     # so our signatures won't have it in there
@@ -74,7 +76,9 @@ def _iter_imports(hint) -> Iterator[str]:
         yield hint.__module__
 
 
-def generate_function_stub(func) -> tuple[set[str], str]:
+def generate_function_stub(
+    func: typing.Callable[..., Any],
+) -> tuple[set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
 
@@ -145,7 +149,7 @@ def generate_class_stubs(cls: type) -> tuple[set[str], str]:
     return imports, stub
 
 
-def generate_module_stub(module: str | ModuleType, save=True) -> str:
+def generate_module_stub(module: str | ModuleType, save: bool = True) -> str:
     """Generate a pyi stub for a module.
 
     By default saves to .pyi file with the same name as the module.
