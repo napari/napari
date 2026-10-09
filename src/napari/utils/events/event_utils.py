@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
 
-    from napari.utils.events.event import EmitterGroup
+    from napari.utils.events.event import EmitterGroup, Event
 
     class Emitter(Protocol):
         def connect(self, callback: Callable, /) -> object: ...
@@ -35,7 +35,7 @@ def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
 
 def connect_setattr(
     emitter: Emitter,
-    obj,
+    obj: object,
     attr: str,
     convert_fun: Callable[[Any], Any] | None = None,
 ) -> None:
@@ -47,7 +47,7 @@ def connect_setattr(
         # values to boolean ones when a `QCheckBox` value change is connected
         # to a layer attribute.
         # See napari/napari#8154
-        def _cb(*value):
+        def _cb(*value: Any) -> None:
             if (ob := ref()) is None:
                 emitter.disconnect(_cb)
                 return
@@ -56,7 +56,7 @@ def connect_setattr(
             setattr(ob, attr, value[0] if len(value) == 1 else value)
     else:
 
-        def _cb(*value):
+        def _cb(*value: Any) -> None:
             if (ob := ref()) is None:
                 emitter.disconnect(_cb)
                 return
@@ -74,10 +74,10 @@ def connect_setattr(
     # weakref.finalize(obj, emitter.disconnect, _cb)
 
 
-def connect_no_arg(emitter: Emitter, obj, attr: str):
+def connect_no_arg(emitter: Emitter, obj: object, attr: str) -> None:
     ref = weakref.ref(obj)
 
-    def _cb(*_value):
+    def _cb(*_value: Any) -> None:
         if (ob := ref()) is None:
             emitter.disconnect(_cb)
             return
@@ -88,11 +88,11 @@ def connect_no_arg(emitter: Emitter, obj, attr: str):
     # weakref.finalize(obj, emitter.disconnect, _cb)
 
 
-def connect_setattr_value(emitter: Emitter, obj, attr: str):
+def connect_setattr_value(emitter: Emitter, obj: object, attr: str) -> None:
     """To get value from Event"""
     ref = weakref.ref(obj)
 
-    def _cb(value):
+    def _cb(value: Event) -> None:
         if (ob := ref()) is None:
             emitter.disconnect(_cb)
             return
