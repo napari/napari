@@ -27,6 +27,7 @@ from napari.settings import get_settings
 from napari.utils import config, perf
 from napari.utils._logging import register_logger_to_napari_handler
 from napari.utils.logo import get_logo_path
+from napari.utils.misc import _check_for_updates
 from napari.utils.notifications import (
     notification_manager,
     show_console_notification,
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from IPython import InteractiveShell
 
 NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
+NAPARI_UPCOMING_VERSIONS = []
 
 
 def get_icon_path() -> Path:
@@ -290,6 +292,25 @@ def get_qapp(
         )
 
         app.focusChanged.connect(_focus_changed)
+
+        # check for naparu updates in a thread so it doesn't block the gui
+        # then update open windows if necessary
+        from napari.qt import create_worker
+
+        worker = create_worker(
+            lambda: _check_for_updates('napari'),
+        )
+
+        @worker.returned.connect
+        def update_viewer_status_bars(upcoming):
+            from napari._qt.qt_main_window import _QtMainWindow
+
+            global NAPARI_UPCOMING_VERSIONS
+            NAPARI_UPCOMING_VERSIONS = upcoming
+            for window in _QtMainWindow._instances:
+                window.statusBar().update_upcoming_versions_icon(upcoming)
+
+        worker.start()
 
     _app_ref = app  # prevent garbage collection
 
