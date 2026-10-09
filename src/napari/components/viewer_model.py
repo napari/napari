@@ -977,7 +977,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def canvas_to_world(
         self,
         canvas_position: tuple[int, int],
-        viewbox: tuple[int, int] | None = None,
+        viewbox: tuple[int, int] = (0, 0),
     ) -> np.ndarray:
         """Convert canvas pixel position to world coordinates.
 
@@ -1003,8 +1003,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         ndisplay = self.dims.ndisplay
         camera = self.scene.camera
 
-        if viewbox is None:
-            viewbox = (0, 0)
         viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
         viewbox_center = viewbox_size * viewbox + viewbox_size / 2
         world_center = np.array(camera.center)
@@ -1036,6 +1034,78 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         for i, d in enumerate(self.dims.displayed):
             position_world[d] = world_displayed[i]
         return np.array(position_world)
+
+    def world_to_canvas(
+        self,
+        world_positions: np.ndarray[tuple[int, int], np.dtype[np.floating]],
+        viewbox: tuple[int, int] = (0, 0),
+    ) -> np.ndarray:
+        """Convert world coordinates to canvas pixel position.
+
+        Inverse of canvas_to_world. Coordinates behind the camera return
+        NaN.
+
+        Parameters
+        ----------
+        world_position : array
+            Full nD world coordinates (non-displayed dims are ignored).
+        viewbox : tuple of int or None
+            (col, row) coordinates of the grid viewbox relative to which
+            to calculate the transformation. If None, use the first viewbox
+            or the whole canvas if the grid is disabled.
+
+        Returns
+        -------
+        canvas_position : np.ndarray
+            (y, x) position in canvas pixels (NaN if behind the camera).
+        """
+
+        world_positions = np.asarray(world_positions, dtype=float)
+
+        ndisplay = self.dims.ndisplay
+        camera = self.scene.camera
+
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        # TODO: account for thick slicing somehow?
+        world_displayed = world_positions[list(self.dims.displayed)]
+        camera_center = camera.center[-ndisplay:]
+
+        center = np.asarray(camera_center, dtype=float)
+        viewbox_center = viewbox_size * viewbox + (viewbox_size / 2)
+
+        if ndisplay == 2:
+            return (
+                world_displayed - center[-2:]
+            ) * camera.zoom + viewbox_center
+
+        # 3D: inverse of canvas_to_world, plus perspective divide
+        from scipy.spatial.transform import Rotation as R
+
+        rot_matrix = R.from_euler(
+            'xyz', np.asarray(camera.angles, dtype=float)
+        ).as_matrix()
+        offset = world_displayed - center
+        # row-vector form of R @ offset
+        cam3d = offset @ rot_matrix.T * camera.zoom
+        # cam3d[..., 0] is depth in pixels (R_depth * zoom); viewbox depth is 0
+        depth_world = (offset @ rot_matrix.T)[..., 0]
+        ortho_yx = cam3d[..., 1:] + viewbox_center
+
+        fov = camera.perspective
+        if fov == 0:
+            return ortho_yx
+
+        h = float(viewbox_size[0])
+        dist_world = (h / camera.zoom) / (
+            2 * np.tan(np.radians(max(float(fov), 0.01)) / 2)
+        )
+        denom = dist_world - depth_world
+        valid = denom > 0
+        factor = np.empty_like(denom)
+        factor[valid] = dist_world / denom[valid]
+        factor[~valid] = np.nan
+
+        return viewbox_center + (ortho_yx - viewbox_center) * factor[..., None]
 
     @property
     def experimental(self):
