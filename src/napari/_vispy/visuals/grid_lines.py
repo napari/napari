@@ -22,7 +22,7 @@ class GridLines3D(Node):
     ):
         super().__init__()
         self.font_info = font_info
-        self.font_size = 8
+        self.font_size = 9.0
 
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
@@ -116,7 +116,7 @@ class GridLines3D(Node):
             far_bounds.append(farthest_bound)
 
         # magic numbers, they work ok at a wide range of zooms
-        tick_offset = 15 / zoom
+        tick_offset = self.font_size * 2 / zoom
 
         # offset ticks for each axis so they are positioned nicely for readability,
         # putting them all on the outside of the volume (over the background)
@@ -217,9 +217,7 @@ class GridLines3D(Node):
             for i, val in enumerate(new_tick_values):
                 if i >= len(tick_visuals):
                     # more ticks than before, make a new one
-                    tick = Text(
-                        font_info=self.font_info, font_size=self.font_size
-                    )
+                    tick = Text(font_info=self.font_info)
                     tick.transform = STTransform()
                     tick_visuals.append(tick)
                 else:
@@ -232,6 +230,7 @@ class GridLines3D(Node):
                 tick.opacity = self._opacity
                 tick.parent = self.grids[axis]
                 tick.visible = True
+                tick.font_size = self.font_size
 
             for extra_tick in tick_visuals[len(new_tick_values) :]:
                 # disable all extra ones

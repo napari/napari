@@ -14,6 +14,8 @@ class GridLinesOverlay(SceneOverlay):
         Color of the grid lines, or None for automatic coloring.
     axis_labels : bool
         Whether to display axis labels.
+    font_size : float, optional
+        The font size (in points) of the text. Axis labels will be 50% bigger.
     tick_labels : bool
         Whether to display tick labels.
     n_ticks : int
@@ -31,4 +33,5 @@ class GridLinesOverlay(SceneOverlay):
     axis_labels: bool = True
     tick_labels: bool = True
     n_ticks: int = Field(default=5, ge=2)
+    font_size: float | None = None
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
