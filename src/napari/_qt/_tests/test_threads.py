@@ -39,7 +39,6 @@ def test_waiting_on_no_request(monkeypatch, qtbot):
         return value == (' » [empty]', '')
 
     model = ViewerModel()
-    model.mouse_over_canvas = True
     status_checker = StatusChecker(model)
     status_checker.start()
     with qtbot.waitSignal(
