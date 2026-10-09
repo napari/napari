@@ -156,7 +156,7 @@ class VispyLayerNameOverlay(_VispyLayerTextOverlay):
         if isinstance(self.layer, IntensityVisualizationMixin):
             self.layer.events.colormap.connect(self._on_color_change)
 
-    def _on_color_change(self):
+    def _on_color_change(self) -> None:
         # use the colormap's brightest color (e.g. green for a green channel),
         # unless it is gray: the contrasting color reads better
         if self.overlay.color is None and isinstance(
