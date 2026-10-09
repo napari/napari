@@ -273,7 +273,7 @@ def fast_dict_get(symbols: np.ndarray | list, d: dict) -> np.ndarray:
 
 
 def coerce_symbols(
-    symbol: str | Symbol | Sequence[str | Symbol],
+    symbol: str | Symbol | Sequence[str | Symbol] | np.ndarray,
 ) -> np.ndarray:
     """
     Parse an array of symbols and convert it to the correct strings.
@@ -283,7 +283,7 @@ def coerce_symbols(
 
     Parameters
     ----------
-    symbol : str or Symbol or Sequence of str or Symbol
+    symbol : str or Symbol or Sequence of str or Symbol or np.ndarray
         data to be convert to array of Symbols.
 
     Returns
