@@ -40,6 +40,12 @@ from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
+from napari.components.overlays import (
+    CanvasAxesOverlay,
+    ScaleBarOverlay,
+    SceneAxesOverlay,
+    TextOverlay,
+)
 from napari.components.scene import Scene
 from napari.components.tooltip import Tooltip
 from napari.errors import (
@@ -104,12 +110,6 @@ if TYPE_CHECKING:
         ExperimentalNamespace,
     )
     from napari.components.grid import GridCanvas
-    from napari.components.overlays import (
-        CanvasAxesOverlay,
-        ScaleBarOverlay,
-        SceneAxesOverlay,
-        TextOverlay,
-    )
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
 
@@ -307,7 +307,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
     # simple properties exposing overlays for backward compatibility and easy access
-    # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
+    # NOTE: the isinstance asserts are needed because the EventedDictNamespace does not
     #       know that specific elements match specific types
     @property
     @deprecated(
@@ -339,7 +339,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
         """
-        return self.scene.overlays.axes  # pyrefly: ignore [bad-return]
+        overlay = self.scene.overlays.axes
+        assert isinstance(overlay, SceneAxesOverlay)
+        return overlay
 
     @property
     @deprecated(
@@ -355,7 +357,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
         """
-        return self.canvas.overlays.axes  # pyrefly: ignore [bad-return]
+        overlay = self.canvas.overlays.axes
+        assert isinstance(overlay, CanvasAxesOverlay)
+        return overlay
 
     @property
     @deprecated(
@@ -371,7 +375,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
         """
-        return self.canvas.overlays.scale_bar  # pyrefly: ignore [bad-return]
+        overlay = self.canvas.overlays.scale_bar
+        assert isinstance(overlay, ScaleBarOverlay)
+        return overlay
 
     @property
     @deprecated(
@@ -387,7 +393,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
         """
-        return self.canvas.overlays.text  # pyrefly: ignore [bad-return]
+        overlay = self.canvas.overlays.text
+        assert isinstance(overlay, TextOverlay)
+        return overlay
 
     @property
     @deprecated(
@@ -1189,7 +1197,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         affine: npt.ArrayLike | Affine | Sequence[Affine] | None = None,
         attenuation: float | Sequence[float] = 0.05,
         auto_contrast: bool | Sequence[bool] = False,
-        axis_labels: Sequence[str] | None = None,
+        axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
         blending: str | Sequence[str] | None = None,
         cache: bool | Sequence[bool] = True,
         colormap: ValidColormapArg | None = None,
@@ -1368,7 +1376,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 colormap = ensure_colormap(colormap)
 
         # doing this here for IDE/console autocompletion in add_image function.
-        kwargs = {
+        kwargs: dict[str, Any] = {
             'rgb': rgb,
             'axis_labels': axis_labels,
             'colormap': colormap,
@@ -1426,7 +1434,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     raise TypeError(
                         f"Received sequence for argument '{k}', did you mean to specify a 'channel_axis'? "
                     )
-            layer = Image(data, **kwargs)  # pyrefly: ignore [bad-argument-type]
+            layer = Image(data, **kwargs)
             self.layers.append(layer)
 
             return layer
@@ -1940,22 +1948,24 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
     if not isinstance(data, tuple) and 0 < len(data) < 4:
         raise ValueError('LayerData must be a 1-, 2-, or 3-tuple')
 
-    _data = list(data)
-    if len(_data) > 1:
-        if not isinstance(_data[1], MutableMapping):
+    layer_data = data[0]
+    if len(data) > 1:
+        meta = data[1]
+        if not isinstance(meta, MutableMapping):
             raise ValueError(
                 'The second item in a LayerData tuple must be a dict or other MutableMapping.'
             )
     else:
-        _data.append({})
-    if len(_data) > 2:
-        if _data[2] not in layers.NAMES:
+        meta = {}
+    if len(data) > 2:
+        layer_type = data[2]
+        if layer_type not in layers.NAMES:
             raise ValueError(
                 f'The third item in a LayerData tuple must be one of: {layers.NAMES!r}.'
             )
     else:
-        _data.append(guess_labels(_data[0]))
-    return tuple(_data)  # pyrefly: ignore [bad-return]
+        layer_type = guess_labels(layer_data)
+    return layer_data, meta, layer_type
 
 
 def _unify_data_and_user_kwargs(
@@ -2090,4 +2100,4 @@ for _layer in (
     layers.Vectors,
 ):
     func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]
+    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore[missing-attribute]
