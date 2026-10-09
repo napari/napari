@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -68,11 +68,11 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
-    def _on_font_size_change(self):
+    def _on_font_size_change(self) -> None:
         # to be implemented by subclasses that need it
         pass
 
-    def set_default_font_size(self, font_size) -> None:
+    def set_default_font_size(self, font_size: int) -> None:
         self._default_font_size = font_size
         self._on_font_size_change()
 
@@ -107,7 +107,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
 
         super().__init__(**kwargs)
         self.x_size = 0.0
@@ -197,7 +197,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
@@ -205,7 +205,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
 
-    def __init__(self, *, layer: Layer, **kwargs) -> None:
+    def __init__(self, *, layer: Layer, **kwargs: Any) -> None:
         self.layer = layer
         super().__init__(
             **kwargs,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import bisect
 from decimal import Decimal
 from math import floor, log
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pint
@@ -24,7 +24,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: ScaleBarOverlay
     node: ScaleBar
 
-    def __init__(self, *, font_info: FontInfo, **kwargs) -> None:
+    def __init__(self, *, font_info: FontInfo, **kwargs: Any) -> None:
         self._target_length = 150.0
         self._current_length = 150.0
         self._scale = 1.0
@@ -56,7 +56,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
 
         self.reset()
 
-    def _on_unit_change(self):
+    def _on_unit_change(self) -> None:
         # NOTE: this is also called by VispyCanvas when layer units are updated
         #       so it doesn't need to be connected to events for that
         if self.viewer.layers.units is not None:
@@ -77,7 +77,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._unit = unit * 1  # convert unit to quantity
         self._on_size_or_zoom_change(force=True)
 
-    def _on_font_size_change(self):
+    def _on_font_size_change(self) -> None:
         self._on_rendering_change()
 
     def _calculate_best_length(
@@ -133,7 +133,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         new_quantity = new_value * new_quantity.units
         return new_length, new_quantity
 
-    def _on_size_or_zoom_change(self, *, force: bool = False):
+    def _on_size_or_zoom_change(self, *, force: bool = False) -> None:
         """Update length based on scale bar size and zoom."""
 
         # If scale has not changed, do not redraw
@@ -166,7 +166,7 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.text.text = f'{new_dim:g~#P}'
         self._on_rendering_change()
 
-    def _on_rendering_change(self):
+    def _on_rendering_change(self) -> None:
         """Change color and other rendering features of scale bar and box."""
         if not self.overlay.visible:
             return
@@ -195,11 +195,11 @@ class VispyScaleBarOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if size_changed:
             self._on_position_change()
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         # ensure that dpi is updated when the scale bar is visible
         self._on_size_or_zoom_change()
         return super()._on_visible_change()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_unit_change()

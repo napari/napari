@@ -830,7 +830,7 @@ class QtViewerButtons(QFrame):
 
 def _omit_viewer_args(constructor):
     @wraps(constructor)
-    def _func(*args, **kwargs):
+    def _func(*args, **kwargs: Any) -> Any:
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 'viewer argument is deprecated since 0.4.14 and should not be used',
@@ -876,7 +876,7 @@ class QtViewerPushButton(QPushButton):
         self,
         button_name: str,
         tooltip: str = '',
-        slot=None,
+        slot: Callable | None = None,
         action: str = '',
         extra_tooltip_text: str = '',
     ) -> None:
