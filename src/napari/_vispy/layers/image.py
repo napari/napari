@@ -184,7 +184,12 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None) -> None:
-        self.node.cmap = _napari_cmap_to_vispy(self.layer.colormap)
+        self.node.cmap = _napari_cmap_to_vispy(
+            self.layer.colormap,
+            decode_nan_sentinel=isinstance(
+                self.node, (ImageNode, TiledImageNode)
+            ),
+        )
 
     def _update_mip_minip_cutoff(self) -> None:
         # discard fragments beyond contrast limits, but only with translucent blending
