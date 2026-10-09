@@ -221,8 +221,8 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         if isinstance(self.node, VolumeNode):
             if self.node._texture.is_normalized:
                 cmin, cmax = self.layer.contrast_limits_range
-                self.node.threshold = (self.layer.iso_threshold - cmin) / (  # pyrefly: ignore [unsupported-operation]
-                    cmax - cmin  # pyrefly: ignore [unsupported-operation]
+                self.node.threshold = (self.layer.iso_threshold - cmin) / (
+                    cmax - cmin
                 )
             else:
                 self.node.threshold = self.layer.iso_threshold
