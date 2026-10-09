@@ -152,6 +152,11 @@ def angles_from_view_and_up_directions(
     # result in a bad matrix)
     up_raw = np.asarray(up_direction, dtype=float)
     up_ortho = up_raw - np.dot(up_raw, view) * view
+    if all(up_ortho == 0):
+        # can happen if one sets the view direction to the same or opposite
+        # value as the up direction. This is unsolvable, so as a workaround
+        # just nudge the view_direction randomly and use it as new up
+        up_ortho = view + (1, 0, 0)
     up = up_ortho / np.linalg.norm(up_ortho)
 
     # the rotation maps the home-view basis onto the given view/up basis
