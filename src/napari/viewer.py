@@ -312,4 +312,6 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()  # pyrefly: ignore [bad-return]
+        viewer = _QtMainWindow.current_viewer()
+        assert viewer is None or isinstance(viewer, Viewer)
+        return viewer
