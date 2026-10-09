@@ -889,6 +889,93 @@ def test_rotate_shape(create_known_shapes_layer):
     np.testing.assert_allclose(layer.data[1][2], original_data[0])
 
 
+def _drag(layer, start, end):
+    callbacks = {
+        'mouse_press': mouse_press_callbacks,
+        'mouse_move': mouse_move_callbacks,
+        'mouse_release': mouse_release_callbacks,
+    }
+    for event_type, position in (
+        ('mouse_press', start),
+        ('mouse_move', start),
+        ('mouse_move', end),
+        ('mouse_release', end),
+    ):
+        callbacks[event_type](
+            layer,
+            read_only_mouse_event(
+                type=event_type, is_dragging=True, position=tuple(position)
+            ),
+        )
+
+
+def test_resize_selection_by_dragging_corner(create_known_shapes_layer):
+    """Dragging a corner scales all selected shapes."""
+    layer = create_known_shapes_layer[0]
+    layer.mode = 'select'
+    layer.selected_data = {0, 1}
+    original_data = [data.copy() for data in layer.data]
+    fixed = layer._selected_box[Box.BOTTOM_RIGHT].copy()
+    corner = layer._selected_box[Box.TOP_LEFT].copy()
+
+    _drag(layer, corner, fixed + 2 * (corner - fixed))
+
+    for original, resized in zip(original_data, layer.data, strict=True):
+        np.testing.assert_allclose(resized, fixed + 2 * (original - fixed))
+    np.testing.assert_allclose(layer._selected_box[Box.BOTTOM_RIGHT], fixed)
+
+
+def test_resize_rotated_selection_by_dragging_corner(
+    create_known_shapes_layer,
+):
+    """A rotated selection is resized along the box axes, not the data axes."""
+    layer = create_known_shapes_layer[0]
+    layer.mode = 'select'
+    layer._data_view.rotate(1, 30)
+    layer.selected_data = {1}
+    original_data = layer.data[1].copy()
+    corner = layer._selected_box[Box.TOP_LEFT].copy()
+    new_corner = corner + [-3, -1]
+
+    _drag(layer, corner, new_corner)
+
+    resized = layer.data[1]
+    np.testing.assert_allclose(resized[0], new_corner, atol=1e-5)
+    np.testing.assert_allclose(resized[2], original_data[2], atol=1e-5)
+    # scaling along the data axes instead would shear this into a parallelogram
+    assert np.dot(
+        resized[1] - resized[0], resized[3] - resized[0]
+    ) == pytest.approx(0, abs=1e-4)
+
+
+def test_resize_display_rebuilds_do_not_scale_with_selection():
+    """Display rebuilds during a resize should be batched."""
+
+    def rebuild_count(selected_data):
+        layer = Shapes([[[1, 3], [8, 4]], [[10, 10], [15, 4]]])
+        layer.scale_factor = 0.001
+        layer.mode = 'select'
+        layer.selected_data = selected_data
+        fixed = layer._selected_box[Box.BOTTOM_RIGHT].copy()
+        corner = layer._selected_box[Box.TOP_LEFT].copy()
+
+        rebuilds = []
+        # proxy for full mesh rebuild, so count calls
+        original = layer._data_view._update_displayed_triangles_to_shape_index
+
+        def counting(displayed_indices):
+            rebuilds.append(displayed_indices)
+            return original(displayed_indices)
+
+        layer._data_view._update_displayed_triangles_to_shape_index = counting
+        _drag(layer, corner, fixed + 2 * (corner - fixed))
+        return len(rebuilds)
+
+    one_shape = rebuild_count({0})
+    assert one_shape > 0
+    assert rebuild_count({0, 1}) == one_shape
+
+
 def test_drag_vertex(create_known_shapes_layer):
     """Select and drag vertex."""
     layer, _n_shapes, _ = create_known_shapes_layer
