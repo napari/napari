@@ -1518,7 +1518,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple[int, ...] | None:
+    ) -> tuple[int | None, ...]:
         """Value of the data at a position.
 
         If the layer is not visible, return None.
