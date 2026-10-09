@@ -1076,6 +1076,19 @@ def test_polygons(shape):
     assert layer2.events.data.call_args_list[0][1]['vertex_indices'] == ((),)
 
 
+def test_add_reports_indices_of_every_added_shape():
+    square = np.array([[0, 0], [0, 10], [10, 10], [10, 0]], dtype=float)
+    layer = Shapes([square, square + 20], shape_type='polygon')
+    added = []
+    layer.events.data.connect(
+        lambda e: e.action == ActionType.ADDED and added.append(e.data_indices)
+    )
+
+    layer.add([square + 40, square + 60], shape_type='polygon')
+
+    assert added == [(-2, -1)]
+
+
 def test_add_polygons_raises_error():
     """Test input validation for add_polygons method"""
     layer = Shapes()
