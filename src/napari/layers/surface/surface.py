@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -766,7 +766,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         return intersection_value, intersection_index
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this layer.
 
         Returns

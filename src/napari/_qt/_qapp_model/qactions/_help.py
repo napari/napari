@@ -16,21 +16,23 @@ from napari._qt.widgets.qt_tips import TipsWidget
 from napari._qt.widgets.qt_viewer_tour import GuidedTour, build_viewer_tour
 
 
-def _show_about(window: Window):
+def _show_about(window: Window) -> None:
     QtAbout.showAbout(window._qt_window)
 
 
-def _show_logs(window: Window):
+def _show_logs(window: Window) -> None:
     window.add_dock_widget(
         LogWidget(), name='logger', area='bottom', tabify=True
     )
 
 
-def _show_tips(window: Window):
+def _show_tips(window: Window) -> None:
     window.add_dock_widget(TipsWidget(), name='Tips and Tricks', area='bottom')
 
 
-def _start_viewer_tour(window: Window, *, tour: GuidedTour | None = None):
+def _start_viewer_tour(
+    window: Window, *, tour: GuidedTour | None = None
+) -> None:
     """Start a guided tour on ``window``.
 
     Parameters
