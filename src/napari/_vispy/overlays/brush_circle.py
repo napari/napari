@@ -34,6 +34,7 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         )
 
         self._last_mouse_pos = None
+        self._outside = (10000, 10000)
 
         self.overlay.events.size.connect(self._on_size_change)
         self.node.events.canvas_change.connect(self._on_canvas_change)
@@ -47,7 +48,8 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
                 self._on_mouse_move
             )
 
-    def _on_mouse_leave(self) -> None: ...
+    def _on_mouse_leave(self) -> None:
+        self._set_position(self._outside)
 
     def _on_position_change(self, event: Event | None = None) -> None:
         self._set_position(self.overlay.position)
@@ -56,15 +58,9 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self._white_circle.radius = self.overlay.size / 2
         self._black_circle.radius = self._white_circle.radius - 1
 
-    def _on_visible_change(self) -> None:
-        if self._last_mouse_pos is not None:
-            self._set_position(self._last_mouse_pos)
-        self.node.visible = (
-            self.overlay.visible and self.viewer.mouse_over_canvas
-        )
-
     def _on_mouse_move(self, event: Event) -> None:
-        self._last_mouse_pos = event.pos
+        # TODO: this will be replaced by handling the event
+        #       in a label mouse callback (after the brush becomes a layer overlay)
         if self.overlay.visible:
             self.overlay.position = event.pos.tolist()
 
@@ -78,21 +74,9 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         if event.old is not None:
             event.old.events.mouse_move.disconnect(self._on_mouse_move)
 
-    def _on_mouse_over_canvas(self) -> None:
-        if self.viewer.mouse_over_canvas:
-            # Move the cursor outside the canvas when the mouse leaves it.
-            # It fixes the bug described in PR #5763:
-            # https://github.com/napari/napari/pull/5763#issuecomment-1523182141
-            self._set_position((-1000, -1000))
-            self.node.visible = self.overlay.visible
-        else:
-            if self.overlay.visible:
-                self.node.visible = self.overlay.position_is_frozen
-            else:
-                self.node.visible = False
-
     def reset(self) -> None:
         super().reset()
+        self._on_mouse_leave()
         self._on_size_change()
         self._last_mouse_pos = None
 
