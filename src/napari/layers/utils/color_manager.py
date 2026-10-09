@@ -121,8 +121,10 @@ class ColorManager(EventedModel):
 
     Attributes
     ----------
-    current_color : Optional[np.ndarray]
+    current_color : np.ndarray
         A (4,) color array for the color of the next items to be added.
+        If not provided, it is set to the last color in ``colors`` once
+        there is one, and is black until then.
     mode : ColorMode
         The mode for setting colors.
 
@@ -159,7 +161,9 @@ class ColorManager(EventedModel):
     """
 
     # fields
-    current_color: Array[float, (4,)] | None = None
+    current_color: Array[float, (4,)] = Field(
+        default_factory=lambda: np.array([0.0, 0.0, 0.0, 1.0])
+    )
     color_mode: ColorMode = ColorMode.DIRECT
     color_properties: ColorProperties | None = None
     continuous_colormap: Colormap = ensure_colormap('viridis')
@@ -207,14 +211,22 @@ class ColorManager(EventedModel):
 
         return np.empty((0, 4))
 
+    @model_validator(mode='before')
+    @classmethod
+    def _drop_empty_current_color(cls, data):
+        # An empty current_color means "not set", so leave it out and let
+        # _validate_colors pick it from the colors (or keep the default).
+        if isinstance(data, dict) and 'current_color' in data:
+            current_color = data['current_color']
+            if current_color is None or len(current_color) == 0:
+                data = {k: v for k, v in data.items() if k != 'current_color'}
+        return data
+
     @field_validator('current_color', mode='before')
     @classmethod
     def _coerce_current_color(cls, v):
-        if v is None:
-            return v
-        if len(v) == 0:
-            return None
-
+        if v is None or len(v) == 0:
+            raise ValueError('current_color cannot be None or empty')
         return transform_color(v)[0]
 
     @model_validator(mode='after')
@@ -230,7 +242,10 @@ class ColorManager(EventedModel):
 
             # set the current color to the last color/property value
             # if it wasn't already set
-            if self.current_color is None and len(self.colors) > 0:
+            if (
+                'current_color' not in self.model_fields_set
+                and len(self.colors) > 0
+            ):
                 self.current_color = self.colors[-1]
                 if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
                     property_values = self.color_properties
