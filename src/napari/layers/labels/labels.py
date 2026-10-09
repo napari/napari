@@ -1231,6 +1231,7 @@ class Labels(ScalarFieldBase):
         applied locally on a numpy array, so replay does not depend on any
         backend's advanced-indexing semantics.
         """
+        assert not isinstance(self.data, MultiScaleData)
         values = atom.old_values if undoing else atom.new_value
         if atom.mask is None:
             # The whole bounding box changed: assign directly.
@@ -1334,6 +1335,8 @@ class Labels(ScalarFieldBase):
         """
         from skimage.segmentation import flood
 
+        assert not isinstance(self.data, MultiScaleData)
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
@@ -1425,6 +1428,7 @@ class Labels(ScalarFieldBase):
         coordinates : sequence
             new cursor coordinates
         """
+        assert not isinstance(self.data, MultiScaleData)
         if coordinates is None:
             return
         interp_coord = interpolate_coordinates(
@@ -1852,6 +1856,7 @@ class Labels(ScalarFieldBase):
             self.data[slice_key]. Providing this avoids redundant reads when
             data is already available (e.g. in fill).
         """
+        assert not isinstance(self.data, MultiScaleData)
         # slice_key consists solely of slices, so the extracted region keeps
         # the full data dimensionality; give the painted-dims mask (and a
         # pre-loaded region, if any) matching length-1 axes.
@@ -2150,6 +2155,7 @@ class Labels(ScalarFieldBase):
         ----------
         .. [2] https://numpy.org/doc/stable/user/basics.indexing.html
         """
+        assert not isinstance(self.data, MultiScaleData)
         changed_indices = self.data[indices] != value
         indices = tuple(x[changed_indices] for x in indices)
 
