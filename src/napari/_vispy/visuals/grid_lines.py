@@ -72,6 +72,8 @@ class GridLines3D(Node):
         for ticks in self.tick_labels.values():
             for tick in ticks:
                 tick.opacity = opacity
+        for axis in self.axis_labels:
+            axis.opacity = opacity
 
     def set_extents(self, ranges: list[RangeTuple]) -> None:
         ndisplay = len(ranges)
