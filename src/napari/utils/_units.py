@@ -52,7 +52,7 @@ def _generate_ticks(
 ) -> np.ndarray:
     step = base * Decimal(10) ** exp
 
-    # inore typing because checkers are not happy with numpy and Decimal
+    # ignore typing because checkers are not happy with numpy and Decimal
     tick_min = np.ceil(min_value / step) * step  # pyrefly: ignore [no-matching-overload]
     tick_max = np.floor(max_value / step) * step  # pyrefly: ignore [no-matching-overload]
 
