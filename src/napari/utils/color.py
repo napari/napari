@@ -184,6 +184,10 @@ class ColorArray(np.ndarray):
         return transform_color(value).view(cls)
 
 
+# ITU-R BT.709 luma coefficients, shared by the luminance helpers below
+_BT709_COEFFICIENTS = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+
+
 @overload
 def rgb_to_luminance(rgb: ColorValue) -> float: ...
 
@@ -216,11 +220,70 @@ def rgb_to_luminance(
     .. versionadded: 0.10.0
     """
     if rgb.shape[-1] == 3:
-        return rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+        return rgb @ _BT709_COEFFICIENTS
     if rgb.shape[-1] == 4:
-        luminance = rgb[..., :3] @ np.array(
-            [0.2126, 0.7152, 0.0722], dtype=np.float32
-        )
+        luminance = rgb[..., :3] @ _BT709_COEFFICIENTS
         # scale by alpha
         return luminance * rgb[..., 3]
     raise ValueError('can only convert rgb or rgba')
+
+
+def _relative_luminance(rgb: ColorValue | np.ndarray) -> float:
+    """Relative luminance of an sRGB color, as defined by WCAG 2.
+
+    The sRGB channels are linearized (the 0.04045, 12.92 and 2.4 constants)
+    and weighted with the ITU-R BT.709 coefficients. See
+    https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+    """
+    rgb = np.asarray(rgb, dtype=float)[:3]
+    rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    return float(rgb @ _BT709_COEFFICIENTS)
+
+
+def _contrast_ratio(
+    color1: ColorValue | np.ndarray, color2: ColorValue | np.ndarray
+) -> float:
+    """WCAG 2 contrast ratio between two colors, from 1 to 21.
+
+    See https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
+    """
+    lighter, darker = sorted(
+        (_relative_luminance(color1), _relative_luminance(color2)),
+        reverse=True,
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _contrasting_color(bgcolor: ColorValue) -> ColorValue:
+    """Return a color that stands out against ``bgcolor``, keeping its alpha."""
+    opposite = 1 - bgcolor
+    # shift away from mid tones for better contrast
+    opposite = 0.5 + (opposite - 0.5) * 1.2
+    opposite = np.clip(opposite, 0, 1)
+    # don't change alpha
+    opposite[-1] = bgcolor[-1]
+    return opposite.view(ColorValue)
+
+
+def _readable_color(
+    foreground_color: ColorValue | np.ndarray,
+    background_color: ColorValue,
+    min_contrast: float = 4.5,
+) -> ColorValue:
+    """Adjust ``foreground_color`` so it is readable on ``background_color``.
+
+    The hue is kept: the color is blended toward black or white (whichever
+    contrasts more with the background) until it reaches ``min_contrast``.
+    The default 4.5 is the WCAG AA level for normal-size text, see
+    https://www.w3.org/TR/WCAG21/#contrast-minimum
+    """
+    color = np.array([*foreground_color[:3], 1.0])
+    target = max(
+        (np.array([0.0, 0.0, 0.0, 1.0]), np.array([1.0, 1.0, 1.0, 1.0])),
+        key=lambda c: _contrast_ratio(c, background_color),
+    )
+    for t in np.linspace(0, 1, 11):
+        mixed = (1 - t) * color + t * target
+        if _contrast_ratio(mixed, background_color) >= min_contrast:
+            break
+    return mixed.view(ColorValue)
