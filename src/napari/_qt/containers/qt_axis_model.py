@@ -75,7 +75,7 @@ class AxisModel:
 
 
 class AxisList(SelectableEventedList[AxisModel]):
-    def __init__(self, axes: Iterable[AxisModel]):
+    def __init__(self, axes: Iterable[AxisModel]) -> None:
         super().__init__(axes)
 
     @classmethod

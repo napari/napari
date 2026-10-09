@@ -640,6 +640,219 @@ missing-import = "ignore"
 # `pyrefly suppress --remove-unused=all` cleans them up.
 unused-ignore = "error"
 unused-type-ignore = "error"
+unannotated-return = "error"       # function without a return annotation
+implicit-any-parameter = "error"   # parameter without an annotation
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/conftest.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+# Files where missing annotations are allowed; all other checks still apply.
+# Remove a block once the file is fully annotated.
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/viewer_model.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/view_layers.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/window.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/viewer.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/transforms/transform_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/theme.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/notebook_display.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/misc.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/migrations.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/io.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/geometry.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/events/containers/_typed.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/colormaps/*.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/action_manager.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/_test_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/_register.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/utils/_proxies.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/_migrations.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/_fields.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/settings/_base.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/base/base.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/_scalar_field/scalar_field.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/vectors/vectors.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/tracks/tracks.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/surface/surface.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/labels/labels.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/layer_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/color_manager_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/color_manager.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/utils/_slice_input.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shapes_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shape_list.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/shapes/_shapes_models/*.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/labels/_labels_utils.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/labels/_labels_mouse_bindings.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/layers/base/_test_util_sample_layer.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/dims.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/components/_viewer_mouse_bindings.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/visuals/*.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/utils/*.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/labels_polygon.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/labels_brush_stroke.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/overlays/interaction_box.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/layers/*.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_vispy/filters/tracks.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/qt_resources/_svg.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/containers/qt_layer_list.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_app_model/context/_context.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/__main__.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_viewer_buttons.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "src/napari/_qt/widgets/qt_logger.py"
+errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [tool.coverage.report]
 exclude_lines = [
