@@ -27,6 +27,13 @@ from napari.utils.tips import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from qtpy.QtGui import (
+        QDragEnterEvent,
+        QDragLeaveEvent,
+        QDropEvent,
+        QPaintEvent,
+    )
+
     from napari.components.viewer_model import ViewerModel
 
 
@@ -224,7 +231,7 @@ class QtWelcomeWidget(QWidget):
         tip_html = urls_to_html(tip_text, self._viewer.theme)
         self._tip_label.setText(f'Did you know?<br>{tip_html}')
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         """Override Qt method.
 
         Paint using the stylesheet.
@@ -268,7 +275,7 @@ class QtWelcomeWidget(QWidget):
         if parent is not None:
             self.setGeometry(parent.rect())
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Override Qt method.
 
         Update the drag highlight and forward valid URL drags upstream.
@@ -287,7 +294,7 @@ class QtWelcomeWidget(QWidget):
         self.urls_drag_entered.emit()
         event.accept()
 
-    def dragLeaveEvent(self, event):
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """Override Qt method.
 
         Clear the drag highlight when a drag leaves the overlay.
@@ -299,7 +306,7 @@ class QtWelcomeWidget(QWidget):
         """
         self._set_drag_highlight(False)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """Override Qt method.
 
         Clear the drag highlight and forward the drop to the viewer.

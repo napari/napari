@@ -11,7 +11,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
 
 import magicgui as mgui
 import numpy as np
@@ -103,6 +103,9 @@ def no_op(layer: Layer, event: Event) -> None:
     None
 
     """
+
+
+LayerBound = TypeVar('LayerBound', bound='Layer')
 
 
 class PostInit(ABCMeta):
@@ -2395,7 +2398,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
 
         return save_layers(path, [self], plugin=plugin)
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this layer.
 
         Returns
@@ -2424,7 +2427,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         data: Any,
         meta: Mapping | None = None,
         layer_type: str | None = None,
-    ) -> Layer:
+    ) -> LayerBound:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a

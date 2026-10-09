@@ -39,7 +39,7 @@ class PlaneNormalButtons(QWidget):
         Button which orients a plane normal along the camera view direction.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
         layout = QHBoxLayout()
         self.setLayout(layout)

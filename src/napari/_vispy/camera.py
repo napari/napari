@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import numpy as np
 from vispy.scene import ArcballCamera, BaseCamera, PanZoomCamera
@@ -12,6 +12,12 @@ from napari.utils.camera_orientations import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from vispy.scene.widgets.viewbox import ViewBox
+    from vispy.util.event import Event as VispyEvent
+
+    from napari.components import Camera, Dims
     from napari.utils.camera_orientations import AxesOrientation3D
 
 
@@ -173,7 +179,7 @@ class VispyCamera:
         napari dims model.
     """
 
-    def __init__(self, view, camera, dims) -> None:
+    def __init__(self, view: ViewBox, camera: Camera, dims: Dims) -> None:
         self._view = view
         self._camera = camera
         self._dims = dims
@@ -201,7 +207,7 @@ class VispyCamera:
         self._camera.events.orientation.connect(self._on_orientation_change)
 
     @property
-    def angles(self):
+    def angles(self) -> EulerAngles:
         """3-tuple: Euler angles of camera in 3D viewing, in degrees.
         Note that angles might be different than the ones that might have generated the quaternion.
         """
@@ -214,7 +220,7 @@ class VispyCamera:
         return (0, 0, 0)
 
     @angles.setter
-    def angles(self, angles):
+    def angles(self, angles: Sequence[float]) -> None:
         if self.angles == tuple(angles):
             return
 
@@ -226,7 +232,7 @@ class VispyCamera:
             self._view.camera.set_state(_quaternion=quat)
 
     @property
-    def center(self):
+    def center(self) -> Vector3D:
         """tuple: Center point of camera view for 2D or 3D viewing."""
         if isinstance(self._view.camera, MouseToggledArcballCamera):
             center = tuple(self._view.camera.center)
@@ -234,17 +240,17 @@ class VispyCamera:
             # in 2D, we arbitrarily choose 0.0 as the center in z
             center = (*self._view.camera.center[:2], 0.0)
         # switch from VisPy xyz ordering to NumPy prc ordering
-        return center[::-1]
+        return center[::-1]  # pyrefly: ignore [bad-return]
 
     @center.setter
-    def center(self, center):
+    def center(self, center: Sequence[float]) -> None:
         if self.center == tuple(center):
             return
         self._view.camera.center = center[::-1]
         self._view.camera.view_changed()
 
     @property
-    def zoom(self):
+    def zoom(self) -> float:
         """float: Scale from canvas pixels to world pixels."""
         viewbox_size = np.array(self._view.rect.size)
         if isinstance(self._view.camera, MouseToggledArcballCamera):
@@ -265,7 +271,7 @@ class VispyCamera:
         return zoom
 
     @zoom.setter
-    def zoom(self, zoom):
+    def zoom(self, zoom: float) -> None:
         if self.zoom == zoom:
             return
         viewbox_size = np.array(self._view.rect.size)
@@ -278,12 +284,12 @@ class VispyCamera:
             self._view.camera.rect = tuple(corner) + tuple(scale)
 
     @property
-    def perspective(self):
+    def perspective(self) -> float:
         """Field of view of camera (only visible in 3D mode)."""
         return self._3D_camera.fov
 
     @perspective.setter
-    def perspective(self, perspective):
+    def perspective(self, perspective: float) -> None:
         if self.perspective == perspective:
             return
         self._3D_camera.fov = perspective
@@ -294,7 +300,7 @@ class VispyCamera:
         return self._view.camera.mouse_zoom
 
     @mouse_zoom.setter
-    def mouse_zoom(self, mouse_zoom: bool):
+    def mouse_zoom(self, mouse_zoom: bool) -> None:
         self._view.camera.mouse_zoom = mouse_zoom
 
     @property
@@ -302,10 +308,10 @@ class VispyCamera:
         return self._view.camera.mouse_pan
 
     @mouse_pan.setter
-    def mouse_pan(self, mouse_pan: bool):
+    def mouse_pan(self, mouse_pan: bool) -> None:
         self._view.camera.mouse_pan = mouse_pan
 
-    def _on_ndisplay_change(self):
+    def _on_ndisplay_change(self) -> None:
         # remove previous camera from children
         self._view.camera.parent = None
         if self._dims.ndisplay == 3:
@@ -320,17 +326,17 @@ class VispyCamera:
         self._on_orientation_change()
         self._on_perspective_change()
 
-    def _on_mouse_toggles_change(self):
+    def _on_mouse_toggles_change(self) -> None:
         self.mouse_pan = self._camera.mouse_pan
         self.mouse_zoom = self._camera.mouse_zoom
 
-    def _on_center_change(self):
+    def _on_center_change(self) -> None:
         self.center = self._camera.center[-self._dims.ndisplay :]
 
-    def _on_zoom_change(self):
+    def _on_zoom_change(self) -> None:
         self.zoom = self._camera.zoom
 
-    def _on_orientation_change(self):
+    def _on_orientation_change(self) -> None:
         self._2D_camera.flip = _get_vispy_flipped_axes(
             self._camera.orientation, ndisplay=2
         )
@@ -338,14 +344,14 @@ class VispyCamera:
             self._camera.orientation, ndisplay=3
         )
 
-    def _on_perspective_change(self):
+    def _on_perspective_change(self) -> None:
         self.perspective = self._camera.perspective
 
-    def _on_angles_change(self):
+    def _on_angles_change(self) -> None:
         with self._camera.events.angles.blocker():
             self.angles = self._camera.angles
 
-    def on_draw(self, _event):
+    def on_draw(self, _event: VispyEvent) -> None:
         """Called whenever the canvas is drawn.
 
         Update camera model angles, center, and zoom.
@@ -399,12 +405,12 @@ def add_mouse_pan_zoom_toggles(
     """
 
     class _vispy_camera_cls(vispy_camera_cls):
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: Any) -> None:
             super().__init__(**kwargs)
             self.mouse_pan = True
             self.mouse_zoom = True
 
-        def viewbox_mouse_event(self, event):
+        def viewbox_mouse_event(self, event: VispyEvent) -> None:
             if (
                 self.mouse_zoom
                 and event.type in ('mouse_wheel', 'gesture_zoom')
@@ -417,7 +423,7 @@ def add_mouse_pan_zoom_toggles(
             else:
                 event.handled = False
 
-        def viewbox_resize_event(self, event):
+        def viewbox_resize_event(self, event: VispyEvent) -> None:
             # due to the 2d/3d switching of cameras, sometimes we momentarily
             # try to update cameras that are not in the scenegraph;
             # in that case, we can just skip the update
@@ -425,7 +431,7 @@ def add_mouse_pan_zoom_toggles(
                 return
             super().viewbox_resize_event(event)
 
-        def viewbox_key_event(self, event):
+        def viewbox_key_event(self, event: VispyEvent) -> None:
             """ViewBox key event handler.
 
             Parameters
