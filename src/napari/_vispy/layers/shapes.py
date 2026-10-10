@@ -14,6 +14,7 @@ from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
+    from napari._vispy.visuals.text import Text
     from napari.layers import Shapes
 
 
@@ -43,7 +44,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
@@ -74,14 +75,14 @@ class VispyShapesLayer(VispyBaseLayer):
         self._update_text(update_node=False)
         self.node.update()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self) -> None:
         if len(self.layer.selected_data) > 1000:
             # Defer to next frame to avoid blocking UI
             self._on_highlight_change_debounc()
         else:
             self._on_highlight_change_impl()
 
-    def _on_highlight_change_impl(self):
+    def _on_highlight_change_impl(self) -> None:
         settings = get_settings()
         self.layer._highlight_width = (
             settings.appearance.highlight.highlight_thickness
@@ -137,7 +138,7 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
-    def _update_text(self, *, update_node=True):
+    def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
         Parameters
@@ -149,11 +150,11 @@ class VispyShapesLayer(VispyBaseLayer):
         if update_node:
             self.node.update()
 
-    def _get_text_node(self):
+    def _get_text_node(self) -> Text:
         """Function to get the text node from the Compound visual"""
         return self.node.text
 
-    def _on_text_change(self, event=None):
+    def _on_text_change(self, event=None) -> None:
         if event is not None:
             if event.type == 'blending':
                 self._on_blending_change(event)  # pyrefly: ignore [bad-argument-count]
@@ -162,7 +163,7 @@ class VispyShapesLayer(VispyBaseLayer):
                 return
         self._update_text()
 
-    def _on_blending_change(self):  # pyrefly: ignore [bad-override]
+    def _on_blending_change(self) -> None:  # pyrefly: ignore [bad-override]
         """Function to set the blending mode"""
         shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**shapes_blending_kwargs)
@@ -172,12 +173,12 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_highlight_change()
         self._on_blending_change()
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()

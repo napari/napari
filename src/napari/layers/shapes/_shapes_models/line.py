@@ -40,12 +40,12 @@ class Line(Shape):
         self.name = 'line'
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray:
         """(2, D) array: line vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:

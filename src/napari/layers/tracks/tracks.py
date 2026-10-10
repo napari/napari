@@ -669,7 +669,9 @@ class Tracks(Layer):
 class _TracksSlicingState(_LayerSlicingState):
     layer: Tracks
 
-    def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):
+    def __init__(
+        self, layer: Tracks, data: LayerDataType, cache: bool
+    ) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
         self._current_displayed_dims: Optional[list[int]] = None
 

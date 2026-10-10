@@ -61,6 +61,8 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
 
@@ -198,7 +200,7 @@ def layer(request):
 
 
 @pytest.fixture
-def layers():
+def layers() -> LayerList:
     """Fixture that supplies a layers list for testing.
 
     Returns
@@ -218,7 +220,7 @@ def layers():
 
 
 @pytest.fixture(autouse=True)
-def _skip_examples(request):
+def _skip_examples(request) -> None:
     """Skip examples test if ."""
     if request.node.get_closest_marker(
         'examples'
@@ -241,7 +243,7 @@ if os.getenv('_PYTEST_RAISE', '0') != '0':
 
 
 @pytest.fixture(autouse=True)
-def _fresh_settings(monkeypatch):
+def _fresh_settings(monkeypatch) -> None:
     """This fixture ensures that default settings are used for every test.
 
     and ensures that changes to settings in a test are reverted, and never
@@ -266,7 +268,7 @@ def _fresh_settings(monkeypatch):
     # here we just have save() return if called without a valid path
     NapariSettings.__original_save__ = NapariSettings.save
 
-    def _mock_save(self, path=None, **dict_kwargs):
+    def _mock_save(self, path=None, **dict_kwargs) -> None:
         if not (path or self.config_path):
             return
         NapariSettings.__original_save__(self, path, **dict_kwargs)
@@ -307,7 +309,7 @@ HistoryManager.enabled = False
 
 
 @pytest.fixture
-def napari_svg_name():
+def napari_svg_name() -> str:
     """the plugin name changes with npe2 to `napari-svg` from `svg`."""
     from importlib.metadata import version
 
@@ -397,10 +399,10 @@ def qt_viewer_(
     original_dock_console = viewer.__class__.dockConsole.fget
     original_dock_performance = viewer.__class__.dockPerformance.fget
 
-    def hide_widget(widget):
+    def hide_widget(widget) -> None:
         widget.hide()
 
-    def hide_and_clear_qt_viewer(viewer: QtViewer):
+    def hide_and_clear_qt_viewer(viewer: QtViewer) -> None:
         viewer._instances.clear()
         viewer.hide()
 
@@ -499,7 +501,7 @@ def qt_viewer(
 
 
 @pytest.fixture
-def mock_qt_method(monkeypatch):
+def mock_qt_method(monkeypatch) -> Callable[..., MagicMock]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -511,7 +513,7 @@ def mock_qt_method(monkeypatch):
     Currently, this fixture is only used in tests where that look not necessary.
     """
 
-    def _mock_fun(obj: str | object, method: str | None = None):
+    def _mock_fun(obj: str | object, method: str | None = None) -> MagicMock:
         mock = MagicMock()
 
         def _mocked_method(_self, *args, **kwargs):
@@ -527,7 +529,9 @@ def mock_qt_method(monkeypatch):
 
 
 @pytest.fixture
-def mock_qt_method_ctx(monkeypatch, qtbot):
+def mock_qt_method_ctx(
+    monkeypatch, qtbot
+) -> Callable[..., contextlib.AbstractContextManager[MagicMock]]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -568,7 +572,7 @@ def mock_qt_method_ctx(monkeypatch, qtbot):
 
 
 @pytest.fixture(autouse=True)
-def _clear_cached_action_injection():
+def _clear_cached_action_injection() -> None:
     """Automatically clear cached property `Action.injected`.
 
     Allows action manager actions to be injected using current provider/processors
@@ -583,8 +587,8 @@ def _clear_cached_action_injection():
 
 
 def _event_check(instance):
-    def _prepare_check(name, no_event_):
-        def check(instance, no_event=no_event_):
+    def _prepare_check(name, no_event_) -> Callable[..., None]:
+        def check(instance, no_event=no_event_) -> None:
             if name in no_event:
                 assert not hasattr(instance.events, name), (
                     f'event {name} defined'
@@ -606,7 +610,7 @@ def _event_check(instance):
             yield _prepare_check(name, no_event_set), instance, name
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc) -> None:
     """Generate separate test for each test toc check if all events are defined."""
     if 'event_define_check' in metafunc.fixturenames:
         res = []
@@ -620,7 +624,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
-def pytest_collection_modifyitems(session, config, items):
+def pytest_collection_modifyitems(session, config, items) -> None:
     test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
@@ -658,7 +662,7 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 @pytest.fixture(autouse=True)
-def _disable_notification_dismiss_timer(monkeypatch):
+def _disable_notification_dismiss_timer(monkeypatch) -> None:
     """
     This fixture disables starting timer for closing notification
     by setting the value of `NapariQtNotification.DISMISS_AFTER` to 0.
@@ -685,7 +689,7 @@ def _disable_notification_dismiss_timer(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _prevent_thread(request, monkeypatch):
+def _prevent_thread(request, monkeypatch) -> None:
     if 'allow_animation_thread' in request.keywords:
         return
     if 'qt_dims' in request.fixturenames or 'ref_view' in request.fixturenames:
@@ -712,7 +716,7 @@ def single_threaded_executor():
     executor.shutdown()
 
 
-def _get_calling_stack():  # pragma: no cover
+def _get_calling_stack() -> str:  # pragma: no cover
     stack = []
     for i in range(2, sys.getrecursionlimit()):
         try:
@@ -723,7 +727,7 @@ def _get_calling_stack():  # pragma: no cover
     return '\n'.join(stack)
 
 
-def _get_calling_place(depth=1):  # pragma: no cover
+def _get_calling_place(depth=1) -> str:  # pragma: no cover
     if not hasattr(sys, '_getframe'):
         return ''
     frame = sys._getframe(1 + depth)
@@ -747,7 +751,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     thread_dict = WeakKeyDictionary()
     base_constructor = QThread.__init__
 
-    def run_with_trace(self):  # pragma: no cover
+    def run_with_trace(self) -> None:  # pragma: no cover
         """
         QThread.run but adding execution to sys.settrace when measuring coverage.
 
@@ -760,7 +764,7 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
             sys.settrace(threading._trace_hook)  # pyrefly: ignore [missing-attribute]
         self._base_run()
 
-    def init_with_trace(self, *args, **kwargs):
+    def init_with_trace(self, *args, **kwargs) -> None:
         """Constructor for QThread adding tracing for coverage measurements.
 
         Functions running in QThreads don't get measured by coverage.py, see
@@ -776,12 +780,16 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
 
     if 'disable_qthread_start' in request.keywords:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
+        def start_with_save_reference(
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Dummy function to prevent thread starts."""
 
     else:
 
-        def start_with_save_reference(self, priority=QThread.InheritPriority):  # pyrefly: ignore [missing-attribute]
+        def start_with_save_reference(
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
@@ -843,12 +851,12 @@ def _dangling_qthread_pool(monkeypatch, request):
 
     if 'disable_qthread_pool_start' in request.keywords:
 
-        def my_start(self, runnable, priority=0):
+        def my_start(self, runnable, priority=0) -> None:
             """dummy function to prevent thread start"""
 
     else:
 
-        def my_start(self, runnable, priority=0):
+        def my_start(self, runnable, priority=0) -> None:
             if self not in threadpool_dict:
                 threadpool_dict[self] = []
             threadpool_dict[self].append(_get_calling_place())
@@ -900,13 +908,13 @@ def _dangling_qtimers(monkeypatch, request):
     if 'disable_qtimer_start' in request.keywords:
         from pytestqt.qt_compat import qt_api
 
-        def my_start(self, msec=None):
+        def my_start(self, msec=None) -> None:
             """dummy function to prevent timer start"""
 
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):
+            def start(self, time=None) -> None:
                 if time is not None:
                     base_start(self, time)
                 else:
@@ -917,7 +925,7 @@ def _dangling_qtimers(monkeypatch, request):
 
     else:
 
-        def my_start(self, msec=None):
+        def my_start(self, msec=None) -> None:
             calling_place = _get_calling_place()
             if 'superqt' in calling_place and 'throttler' in calling_place:
                 calling_place += f' - {_get_calling_place(2)}'
@@ -927,7 +935,7 @@ def _dangling_qtimers(monkeypatch, request):
             else:
                 base_start(self)
 
-        def single_shot(msec, reciver, method=None):
+        def single_shot(msec, reciver, method=None) -> None:
             t = QTimer()
             t.setSingleShot(True)
             if method is None:
@@ -940,7 +948,7 @@ def _dangling_qtimers(monkeypatch, request):
             single_shot_list.append((t, _get_calling_place(2)))
             base_start(t, msec)
 
-        def _single_shot(self, *args):
+        def _single_shot(self, *args) -> None:
             if isinstance(self, QTimer):
                 single_shot(*args)
             else:
@@ -987,16 +995,16 @@ def _dangling_qtimers(monkeypatch, request):
     )
 
 
-def _throttle_mock(self):
+def _throttle_mock(self) -> None:
     self.triggered.emit()
 
 
-def _flush_mock(self):
+def _flush_mock(self) -> None:
     """There are no waiting events."""
 
 
 @pytest.fixture
-def _disable_throttling(monkeypatch):
+def _disable_throttling(monkeypatch) -> None:
     """Disable qthrottler from superqt.
 
     This is sometimes necessary to avoid flaky failures in tests
@@ -1021,12 +1029,12 @@ def _dangling_qanimations(monkeypatch, request):
 
     if 'disable_qanimation_start' in request.keywords:
 
-        def my_start(self):
+        def my_start(self) -> None:
             """dummy function to prevent thread start"""
 
     else:
 
-        def my_start(self):
+        def my_start(self) -> None:
             animation_dkt[self] = _get_calling_place()
             base_start(self)
 
@@ -1085,7 +1093,7 @@ with contextlib.suppress(ImportError):
         .. [1] https://czaki.github.io/blog/2024/09/16/preventing-segfaults-in-test-suite-that-has-qt-tests/
         """
 
-        def addWidget(self, widget, *, before_close_func=None):
+        def addWidget(self, widget, *, before_close_func=None) -> None:
             if widget.objectName() == '':
                 # object does not have a name, so we can set it
                 widget.setObjectName('handled_widget')
@@ -1094,20 +1102,20 @@ with contextlib.suppress(ImportError):
                 # there is no custom teardown function,
                 # so we provide one that will set object name
 
-                def before_close_func_(w):
+                def before_close_func_(w) -> None:
                     w.setObjectName('handled_widget')
             else:
                 # user provided custom teardown function,
                 # so we need to wrap it to set object name
 
-                def before_close_func_(w):
+                def before_close_func_(w) -> None:
                     before_close_func(w)
                     w.setObjectName('handled_widget')
 
             super().addWidget(widget, before_close_func=before_close_func_)
 
     @pytest.fixture
-    def qtbot(qapp, request):  # pragma: no cover
+    def qtbot(qapp, request) -> QtBotWithOnCloseRenaming:  # pragma: no cover
         """Fixture to create a QtBotWithOnCloseRenaming instance for testing.
 
         Make sure to call addWidget for each top-level widget you create to
@@ -1119,7 +1127,7 @@ with contextlib.suppress(ImportError):
         return QtBotWithOnCloseRenaming(request)
 
     @pytest.fixture(scope='session')
-    def qapp_cls():
+    def qapp_cls() -> type[QApplication]:
         """The qapp fixture uses the qapp_cls fixture to select
         the class to use for create the QApplication instance.
 
@@ -1136,7 +1144,7 @@ with contextlib.suppress(ImportError):
         return QApplication
 
     @pytest.fixture(autouse=True)
-    def disable_get_log_level_value(monkeypatch):
+    def disable_get_log_level_value(monkeypatch) -> None:
         """Enforce to not set logging to logging.NOTSET,
         that crashes current tests
         """
@@ -1199,7 +1207,7 @@ def _find_dangling_widgets(request, qtbot):
 
 
 @pytest.fixture(autouse=True)
-def _fix_magic_name(monkeypatch, request):
+def _fix_magic_name(monkeypatch, request) -> None:
     """Fix napari.utils.naming.magic_name to handle test as as internal napari module."""
 
     from napari.utils import naming
@@ -1221,7 +1229,7 @@ def _reset_colormaps(monkeypatch):
     colormap_utils.AVAILABLE_COLORMAPS.update(prev)
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item) -> None:
     """Add Qt leak detection fixtures *only* in tests using the qapp fixture.
 
     Because we have headless test suite that does not include Qt, we cannot
@@ -1286,7 +1294,7 @@ class NapariTerminalReporter(CustomTerminalReporter):
 
 
 @pytest.hookimpl(trylast=True)
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     # Get the standard terminal reporter plugin and replace it with our
     standard_reporter = config.pluginmanager.getplugin('terminalreporter')
     custom_reporter = NapariTerminalReporter(config, sys.stdout)

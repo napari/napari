@@ -190,7 +190,9 @@ def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
     )
 
 
-def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
+def clamp_point_to_bounding_box(
+    point: np.ndarray, bounding_box: np.ndarray
+) -> np.ndarray:
     """Ensure that a point is inside of the bounding box. If the point has a
     coordinate outside of the bounding box, the value is clipped to the max
     extent of the bounding box.
@@ -657,7 +659,7 @@ def line_in_triangles_3d(
 
 def find_front_back_face(
     click_pos: np.ndarray, bounding_box: np.ndarray, view_dir: np.ndarray
-):
+) -> tuple[np.ndarray | None, np.ndarray | None]:
     """Find the faces of an axis aligned bounding box a
     click intersects with.
 
@@ -706,7 +708,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     line_direction: np.ndarray,
     bounding_box: np.ndarray,
     face_normal: np.ndarray,
-):
+) -> np.ndarray:
     """Find the intersection of a ray with the specified face of an
     axis-aligned bounding box.
 

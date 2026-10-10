@@ -104,7 +104,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._recalculate_units_scale()
         self._on_matrix_change()
 
-    def _recalculate_units_scale(self):
+    def _recalculate_units_scale(self) -> None:
         """Calculate the scale factor between the layer units and the world units.
 
         This is used to convert the layer's data coordinates to world coordinates.
@@ -134,7 +134,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         return self._master_transform.matrix[-1, :]
 
     @property
-    def scale(self):
+    def scale(self) -> np.ndarray:
         """sequence of float: Scale factors."""
         matrix = self._master_transform.matrix[:-1, :-1]
         _, upper_tri = np.linalg.qr(matrix)
@@ -149,7 +149,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         return self.node.order
 
     @order.setter
-    def order(self, order):
+    def order(self, order) -> None:
         self.node.order = order
         self._on_blending_change()
 
@@ -157,16 +157,16 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def _on_data_change(self):
         raise NotImplementedError
 
-    def _on_refresh_change(self):
+    def _on_refresh_change(self) -> None:
         self.node.update()
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.layer.visible
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, event=None) -> None:
         blending = self.layer.blending
         blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 
@@ -201,7 +201,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
-    def _on_matrix_change(self):
+    def _on_matrix_change(self) -> None:
         dims_displayed = self.layer._slice_input.displayed
         # If the layer's dimensionality changed (e.g., data swapped from 2D
         # to 3D), _world_to_layer_units_scale reflects the old ndim
@@ -303,7 +303,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         for child in self.node.children:
             child.transform.matrix = child_matrix
 
-    def _on_experimental_clipping_planes_change(self):
+    def _on_experimental_clipping_planes_change(self) -> None:
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'
         ):
@@ -316,10 +316,10 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self,
         view: Vector3 | None = None,
         up: Vector3 | None = None,
-    ):
+    ) -> None:
         return
 
-    def reset(self):
+    def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
@@ -327,7 +327,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self._on_experimental_clipping_planes_change()
         self._on_view_direction_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None) -> None:
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the
@@ -335,7 +335,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         VRAM or animating itself.
         """
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.events, self)
         self.node.transform = MatrixTransform()

@@ -18,7 +18,7 @@ def update_text(
     *,
     node: Text,
     layer: Points | Shapes,
-):
+) -> None:
     """Update the vispy text node with a layer's text parameters.
 
     Parameters
@@ -85,7 +85,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 @lru_cache(maxsize=128)
 def _get_qt_font_metrics(
     face: str, size: int, bold: bool = False, italic: bool = False
-):
+) -> QFontMetricsF:
     """Get cached Qt font metrics for the given font properties.
 
     Parameters
