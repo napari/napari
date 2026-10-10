@@ -352,7 +352,7 @@ class ScalarFieldBase(Layer, ABC):
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
-    def _slice_dtype(self):
+    def _slice_dtype(self) -> np.dtype:
         """Return the dtype of the slice view.
 
         Overridden in Labels subclass to properly handle the
@@ -370,7 +370,7 @@ class ScalarFieldBase(Layer, ABC):
         return self._slicing_state._slice
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
 
     @property
@@ -647,7 +647,7 @@ class ScalarFieldBase(Layer, ABC):
                 )
 
     @property
-    def plane(self):
+    def plane(self) -> SlicingPlane:
         return self._plane
 
     @plane.setter
@@ -687,7 +687,9 @@ class ScalarFieldBase(Layer, ABC):
     def _set_view_slice(self):
         raise NotImplementedError
 
-    def _get_value(self, position):
+    def _get_value(
+        self, position
+    ) -> np.ndarray | tuple[int, np.ndarray | None] | None:
         """Value of the data at a position in data coordinates.
 
         Parameters

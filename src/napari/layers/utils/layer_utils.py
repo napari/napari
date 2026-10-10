@@ -194,7 +194,7 @@ def register_layer_attr_action(
             ) from e
 
         @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args, **kwargs) -> Callable[[], None]:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
@@ -610,7 +610,7 @@ def compute_multiscale_level(
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
-):
+) -> tuple[int, np.ndarray]:
     """Computed desired level and corners of a multiscale view.
 
     The level of the multiscale should be the lowest resolution such that

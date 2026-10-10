@@ -173,7 +173,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._has_left = False
 
     @property
-    def _dims_displayed(self):
+    def _dims_displayed(self) -> list[int]:
         return self.layer._slice_input.displayed
 
     def reset(self) -> None:

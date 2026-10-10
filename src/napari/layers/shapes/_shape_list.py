@@ -691,7 +691,7 @@ class ShapeList:
         return [s.z_index for s in self.shapes]
 
     @property
-    def slice_key(self):
+    def slice_key(self) -> np.ndarray:
         """list: slice key for slicing n-dimensional shapes."""
         return self._slice_key
 
@@ -1996,7 +1996,7 @@ class ShapeList:
         triangle_indices: np.ndarray,
         ray_position: np.ndarray,
         ray_direction: np.ndarray,
-    ):
+    ) -> np.ndarray:
         """Find the intersection of a ray with specified triangles.
 
         Parameters
@@ -2026,7 +2026,9 @@ class ShapeList:
         )
         return intersection_points
 
-    def to_masks(self, mask_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_masks(
+        self, mask_shape=None, zoom_factor=1, offset=(0, 0)
+    ) -> np.ndarray:
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
@@ -2060,7 +2062,9 @@ class ShapeList:
 
         return masks
 
-    def to_labels(self, labels_shape=None, zoom_factor=1, offset=(0, 0)):
+    def to_labels(
+        self, labels_shape=None, zoom_factor=1, offset=(0, 0)
+    ) -> np.ndarray:
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -2099,7 +2103,7 @@ class ShapeList:
 
     def to_colors(
         self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
-    ):
+    ) -> np.ndarray:
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the

@@ -494,7 +494,7 @@ class Labels(ScalarFieldBase):
         if locked_data_level is not None:
             self.locked_data_level = locked_data_level
 
-    def _slice_dtype(self):
+    def _slice_dtype(self) -> np.dtype:
         """Calculate dtype of data view based on data dtype and current colormap"""
         return self.colormap._data_to_texture(
             np.zeros(0, dtype=normalize_dtype(self.dtype))
@@ -893,7 +893,7 @@ class Labels(ScalarFieldBase):
         # See https://github.com/python/mypy/issues/16426 for type ignore reason
         Layer.mode.fset(self, mode)  # pyrefly: ignore [not-callable]
 
-    def _mode_setter_helper(self, mode):  # pyrefly: ignore [bad-override-param-name]
+    def _mode_setter_helper(self, mode) -> StringEnum:  # pyrefly: ignore [bad-override-param-name]
         mode = super()._mode_setter_helper(mode)
         if mode == self._mode:
             return mode
@@ -1085,7 +1085,7 @@ class Labels(ScalarFieldBase):
 
         self.thumbnail = color_array
 
-    def get_color(self, label):
+    def get_color(self, label) -> np.ndarray | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None

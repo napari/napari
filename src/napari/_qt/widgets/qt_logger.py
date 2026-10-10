@@ -137,7 +137,7 @@ class LogWidget(QWidget):
         # self.log_text_box.moveCursor(self.log_text_box.textCursor().StartOfLine)
         # self.log_text_box.ensureCursorVisible()
 
-    def _scroll_pos(self):
+    def _scroll_pos(self) -> int | None:
         scrollbar = self.log_text_box.verticalScrollBar()
         curr = scrollbar.value()
         if curr == scrollbar.maximum():

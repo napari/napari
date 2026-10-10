@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
-from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
 
 
 @dataclass(eq=False)
@@ -45,7 +49,7 @@ class ColorCycle:
         )
 
     @classmethod
-    def validate_type(cls, val):
+    def validate_type(cls, val) -> ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
@@ -61,13 +65,13 @@ class ColorCycle:
             eq = False
         return eq
 
-    def __next__(self):
+    def __next__(self) -> np.ndarray:
         val = self.current_color()
         self.current_index += 1
         self.current_index %= len(self.values)
         return val
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
     def current_color(self) -> np.ndarray:

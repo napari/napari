@@ -5,6 +5,7 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    Self,
 )
 
 import numpy as np
@@ -149,7 +150,7 @@ class Dims(EventedModel):
         return ranges
 
     @model_validator(mode='after')
-    def _check_dims(self):
+    def _check_dims(self) -> Self:
         """Check the consistency of dimensionality for all attributes.
 
         Parameters
@@ -250,7 +251,7 @@ class Dims(EventedModel):
         )
 
     @property
-    def current_step(self):
+    def current_step(self) -> tuple[int, ...]:
         return tuple(
             round((point - rng.start) / (rng.step or 1))
             for point, rng in zip(self.point, self.range, strict=False)

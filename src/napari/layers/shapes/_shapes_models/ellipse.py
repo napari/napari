@@ -51,7 +51,7 @@ class Ellipse(Shape):
         self.name = 'ellipse'
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray:
         """(4, D) array: ellipse vertices."""
         return self._data
 

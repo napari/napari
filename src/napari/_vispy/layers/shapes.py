@@ -14,6 +14,7 @@ from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
+    from napari._vispy.visuals.text import Text
     from napari.layers import Shapes
 
 
@@ -149,7 +150,7 @@ class VispyShapesLayer(VispyBaseLayer):
         if update_node:
             self.node.update()
 
-    def _get_text_node(self):
+    def _get_text_node(self) -> Text:
         """Function to get the text node from the Compound visual"""
         return self.node.text
 

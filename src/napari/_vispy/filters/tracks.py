@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 from vispy.gloo import VertexBuffer
 from vispy.visuals.filters.base_filter import Filter
 
@@ -140,7 +141,7 @@ class TracksFilter(Filter):
         super()._attach(visual)
 
     @property
-    def vertex_time(self):
+    def vertex_time(self) -> npt.NDArray[np.floating]:
         return self._vertex_time
 
     @vertex_time.setter

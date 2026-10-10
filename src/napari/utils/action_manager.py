@@ -375,7 +375,7 @@ class ActionManager:
             if action and provider == action.keymapprovider
         }
 
-    def _get_active_shortcuts(self, active_keymap):
+    def _get_active_shortcuts(self, active_keymap) -> dict[str, str]:
         """
         Get active shortcuts for the given active keymap.
 

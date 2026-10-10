@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -156,7 +156,7 @@ class Shape(ABC):
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Self:
         if (
             TRIANGULATION_BACKEND
             in {
@@ -642,7 +642,7 @@ class Shape(ABC):
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
         return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
 
-    def _all_triangles(self):
+    def _all_triangles(self) -> np.ndarray:
         """Return all triangles for the shape
 
         Returns

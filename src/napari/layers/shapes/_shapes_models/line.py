@@ -40,7 +40,7 @@ class Line(Shape):
         self.name = 'line'
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray:
         """(2, D) array: line vertices."""
         return self._data
 

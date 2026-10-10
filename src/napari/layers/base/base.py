@@ -703,7 +703,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._slicing_state = self._get_layer_slicing_state(data, cache)
 
     @property
-    def _slice_input(self):
+    def _slice_input(self) -> _SliceInput:
         return self._slicing_state._slice_input
 
     def _post_init(self) -> None:
@@ -810,7 +810,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.mode(mode=str(mode_enum))
 
     @property
-    def projection_mode(self):
+    def projection_mode(self) -> StringEnum:
         """Mode of projection of the thick slice onto the viewed dimensions.
 
         The sliced data is described by an n-dimensional bounding box ("thick slice"),

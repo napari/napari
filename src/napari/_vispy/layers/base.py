@@ -134,7 +134,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         return self._master_transform.matrix[-1, :]
 
     @property
-    def scale(self):
+    def scale(self) -> np.ndarray:
         """sequence of float: Scale factors."""
         matrix = self._master_transform.matrix[:-1, :-1]
         _, upper_tri = np.linalg.qr(matrix)

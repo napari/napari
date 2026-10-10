@@ -40,7 +40,7 @@ class _ThickNDSlice(Generic[_T]):
         margin_left=None,
         margin_right=None,
         ndim=None,
-    ):
+    ) -> Self:
         """
         Make a full slice based on minimal input.
 
@@ -94,7 +94,7 @@ class _ThickNDSlice(Generic[_T]):
         margin_left=None,
         margin_right=None,
         ndim=None,
-    ):
+    ) -> Self:
         """Create a copy, but modifying the given fields."""
         return self.make_full(
             point=point or self.point,

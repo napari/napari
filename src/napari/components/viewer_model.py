@@ -97,6 +97,9 @@ if TYPE_CHECKING:
     from npe2.types import SampleDataCreator
 
     from napari.components.camera import Camera
+    from napari.components.experimental.commands import (
+        ExperimentalNamespace,
+    )
     from napari.components.grid import GridCanvas
     from napari.components.overlays import (
         CanvasAxesOverlay,
@@ -624,7 +627,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return extent, scene_size, corner
 
-    def _calculate_view_center(self, corner, scene_size):
+    def _calculate_view_center(
+        self, corner, scene_size
+    ) -> tuple[float, float] | tuple[float, float, float]:
         """Calculate the center of the view based on the scene size."""
 
         center_array = np.add(corner, np.divide(scene_size, 2))[
@@ -1038,7 +1043,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         return np.array(position_world)
 
     @property
-    def experimental(self):
+    def experimental(self) -> ExperimentalNamespace:
         """Experimental commands for IPython console.
 
         For example run "viewer.experimental.cmds.loader.help".
@@ -1629,7 +1634,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         kwargs: Dict[str, Any] | None = None,
         layer_type: LayerTypeName | None = None,
         stack: bool = False,
-    ):
+    ) -> list[Layer]:
         """Open paths if plugin choice is unambiguous, raising any errors.
 
         This function will open paths if there is no plugin choice to be made

@@ -321,7 +321,7 @@ def get_system_theme() -> str:
             return 'dark'
 
 
-def get_theme(theme_id: str):
+def get_theme(theme_id: str) -> Theme:
     """Get a copy of theme based on its id.
 
     If you get a copy of the theme, changes to the theme model will not be

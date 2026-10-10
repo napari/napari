@@ -1,4 +1,5 @@
 import typing
+from typing import Self
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -71,7 +72,7 @@ class Viewer(ViewerModel):
         )
         self._instances.add(self)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Self:
         """Overload __new__ to facilitate temporary monkey-patching.
 
         This method simplifies scenarios where temporary patching of `__new__`
@@ -178,7 +179,7 @@ class Viewer(ViewerModel):
         rois: list[np.ndarray],
         paths: 'str | Path | list[str | Path] | None' = None,
         scale: float = 1.0,
-    ):
+    ) -> list[np.ndarray]:
         """Export the given rectangular rois to specified file paths.
 
         Iteratively take a screenshot of each given roi. Note that 3D rois
@@ -223,7 +224,7 @@ class Viewer(ViewerModel):
         scale: float | None = None,
         canvas_only: bool = True,
         flash: bool = False,
-    ):
+    ) -> np.ndarray:
         """Take currently displayed screen and convert to an image array.
 
         Parameters

@@ -4,7 +4,7 @@ import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, Self
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -404,7 +404,7 @@ def deprecated_class_name(
     prealloc_signature = inspect.signature(new_class.__new__)
 
     class _OldClass(new_class):
-        def __new__(cls, *args, **kwargs):
+        def __new__(cls, *args, **kwargs) -> Self:
             warnings.warn(msg, FutureWarning, stacklevel=2)
             if super().__new__ is object.__new__:
                 return super().__new__(cls)

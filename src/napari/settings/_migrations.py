@@ -12,6 +12,8 @@ from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils.triangulation_backend import TriangulationBackend
 
 if TYPE_CHECKING:
+    from app_model.types import KeyBinding
+
     from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: list[Migrator] = []
@@ -121,7 +123,7 @@ def v040_050(model: NapariSettings) -> None:
     model.plugins.extension2reader = new_settings
 
 
-def _swap_ctrl_cmd(keybinding):
+def _swap_ctrl_cmd(keybinding) -> KeyBinding:
     """Swap the Control and Command/Super/Meta modifiers in a keybinding.
 
     See `v050_060` for motivation.

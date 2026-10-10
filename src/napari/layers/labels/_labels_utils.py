@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from napari.layers import Labels
 
 
-def interpolate_coordinates(old_coord, new_coord, brush_size):
+def interpolate_coordinates(old_coord, new_coord, brush_size) -> np.ndarray:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.
@@ -213,7 +213,9 @@ def mouse_event_to_labels_coordinate(
     return coordinates
 
 
-def get_contours(labels: np.ndarray, thickness: int, background_label: int):
+def get_contours(
+    labels: np.ndarray, thickness: int, background_label: int
+) -> np.ndarray:
     """Computes the contours of a 2D label image.
 
     Parameters

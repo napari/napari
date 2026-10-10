@@ -831,7 +831,7 @@ class _VectorsSlicingState(_LayerSlicingState):
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ):
+    ) -> _VectorSliceRequest:
         return _VectorSliceRequest(
             slice_input=slice_input,
             data=self.layer.data,

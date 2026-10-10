@@ -136,7 +136,7 @@ def scale_to_vector(scale, *, ndim):
     return scale_arr
 
 
-def rotate_to_matrix(rotate, *, ndim):
+def rotate_to_matrix(rotate, *, ndim) -> npt.NDArray[np.float64]:
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
@@ -217,7 +217,7 @@ def _cos_sin_degrees(angle_degrees):
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def shear_to_matrix(shear, *, ndim):
+def shear_to_matrix(shear, *, ndim) -> npt.NDArray[np.float64]:
     """Convert a shear input into an n-dimensional transform component.
 
     Parameters
@@ -241,7 +241,7 @@ def shear_to_matrix(shear, *, ndim):
     return full_shear_mat
 
 
-def _make_shear_mat(shear):
+def _make_shear_mat(shear) -> np.ndarray:
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
@@ -258,7 +258,7 @@ def _make_shear_mat(shear):
     return np.array(shear)
 
 
-def expand_upper_triangular(vector):
+def expand_upper_triangular(vector) -> npt.NDArray[np.float64]:
     """Expand a vector into an upper triangular matrix.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -376,7 +376,9 @@ def decompose_linear_matrix(
     return rotate, scale, shear
 
 
-def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
+def shear_matrix_from_angle(
+    angle, ndim=3, axes=(-1, 0)
+) -> npt.NDArray[np.float64]:
     """Create a shear matrix from an angle.
 
     Parameters

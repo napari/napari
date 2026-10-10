@@ -61,6 +61,8 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
 
@@ -198,7 +200,7 @@ def layer(request):
 
 
 @pytest.fixture
-def layers():
+def layers() -> LayerList:
     """Fixture that supplies a layers list for testing.
 
     Returns
@@ -499,7 +501,7 @@ def qt_viewer(
 
 
 @pytest.fixture
-def mock_qt_method(monkeypatch):
+def mock_qt_method(monkeypatch) -> Callable[..., MagicMock]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -511,7 +513,7 @@ def mock_qt_method(monkeypatch):
     Currently, this fixture is only used in tests where that look not necessary.
     """
 
-    def _mock_fun(obj: str | object, method: str | None = None):
+    def _mock_fun(obj: str | object, method: str | None = None) -> MagicMock:
         mock = MagicMock()
 
         def _mocked_method(_self, *args, **kwargs):
@@ -527,7 +529,9 @@ def mock_qt_method(monkeypatch):
 
 
 @pytest.fixture
-def mock_qt_method_ctx(monkeypatch, qtbot):
+def mock_qt_method_ctx(
+    monkeypatch, qtbot
+) -> Callable[..., contextlib.AbstractContextManager[MagicMock]]:
     """Since PySide6 6.10, the tests deterministically segfault when mocking
     methods of Qt objects using `unittest.mock.Mock` (or `MagicMock`) directly.
 
@@ -583,7 +587,7 @@ def _clear_cached_action_injection() -> None:
 
 
 def _event_check(instance):
-    def _prepare_check(name, no_event_):
+    def _prepare_check(name, no_event_) -> Callable[..., None]:
         def check(instance, no_event=no_event_) -> None:
             if name in no_event:
                 assert not hasattr(instance.events, name), (
@@ -1111,7 +1115,7 @@ with contextlib.suppress(ImportError):
             super().addWidget(widget, before_close_func=before_close_func_)
 
     @pytest.fixture
-    def qtbot(qapp, request):  # pragma: no cover
+    def qtbot(qapp, request) -> QtBotWithOnCloseRenaming:  # pragma: no cover
         """Fixture to create a QtBotWithOnCloseRenaming instance for testing.
 
         Make sure to call addWidget for each top-level widget you create to
@@ -1123,7 +1127,7 @@ with contextlib.suppress(ImportError):
         return QtBotWithOnCloseRenaming(request)
 
     @pytest.fixture(scope='session')
-    def qapp_cls():
+    def qapp_cls() -> type[QApplication]:
         """The qapp fixture uses the qapp_cls fixture to select
         the class to use for create the QApplication instance.
 

@@ -33,7 +33,7 @@ class MouseEvent:
     native: bool | None = None
 
 
-def read_only_mouse_event(*args, **kwargs):
+def read_only_mouse_event(*args, **kwargs) -> ReadOnlyWrapper:
     return ReadOnlyWrapper(
         MouseEvent(*args, **kwargs), exceptions=('handled',)
     )

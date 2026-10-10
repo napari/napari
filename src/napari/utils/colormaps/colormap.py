@@ -142,7 +142,7 @@ class Colormap(EventedModel):
     def __len__(self) -> int:
         return len(self.colors)
 
-    def map(self, values):
+    def map(self, values) -> np.ndarray:
         values = np.atleast_1d(values)
         if self.interpolation == ColormapInterpolationMode.LINEAR:
             # One color per control point
@@ -200,7 +200,7 @@ class _RebuildableCache(dict):
     attributes or which hook a copy routes through.
     """
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo) -> Self:
         return type(self)()
 
 
@@ -700,7 +700,7 @@ class DirectLabelColormap(LabelColormapBase):
         return dkt
 
     @cached_property
-    def _array_map(self):
+    def _array_map(self) -> np.ndarray:
         """Create an array to map labels to texture values of smaller dtype."""
 
         max_value = max(

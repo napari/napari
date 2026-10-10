@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Any, SupportsInt
+from typing import TYPE_CHECKING, Any, SupportsInt
 
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 
 from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
 
 class StrField(str):
@@ -58,7 +63,7 @@ class Logo(StrField):
     """
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         return available_logos()
 
     @classmethod
@@ -72,7 +77,7 @@ class Theme(StrField):
     """
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         return available_themes()
 
     @classmethod
@@ -117,7 +122,7 @@ class Version:
     )
 
     @classmethod
-    def parse(cls, version: bytes | str) -> 'Version':
+    def parse(cls, version: bytes | str) -> Version:
         """Convert string or bytes into Version object."""
         if isinstance(version, bytes):
             version = version.decode('UTF-8')
@@ -142,7 +147,7 @@ class Version:
             return NotImplemented
 
     @classmethod
-    def _from_obj(cls, other):
+    def _from_obj(cls, other) -> Version:
         if isinstance(other, str | bytes):
             other = Version.parse(other)
         elif isinstance(other, dict):
@@ -183,7 +188,7 @@ class Version:
         return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v) -> Version:
         return cls._from_obj(v)
 
     def _json_encode(self) -> str:

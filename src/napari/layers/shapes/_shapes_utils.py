@@ -144,7 +144,7 @@ def inside_boxes(boxes):
     return inside
 
 
-def triangles_intersect_box(triangles, corners):
+def triangles_intersect_box(triangles, corners) -> np.ndarray:
     """Determines which triangles intersect an axis aligned box.
 
     Parameters
@@ -1137,7 +1137,7 @@ def grid_points_in_poly(shape, vertices):
     return mask
 
 
-def points_in_poly(points, vertices):
+def points_in_poly(points, vertices) -> np.ndarray:
     """Tests points for being inside a polygon using the ray casting algorithm
 
     Parameters

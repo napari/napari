@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
 from pydantic import (
@@ -60,7 +60,7 @@ class ColorProperties:
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source, handler: GetCoreSchemaHandler
-    ):
+    ) -> core_schema.CoreSchema:
         def _json_encode(val: ColorProperties):
             return {
                 'name': val.name,
@@ -78,7 +78,7 @@ class ColorProperties:
         )
 
     @classmethod
-    def validate_type(cls, val):
+    def validate_type(cls, val) -> Self | None:
         if val is None:
             color_properties = val
         elif isinstance(val, dict):
@@ -175,12 +175,14 @@ class ColorManager(EventedModel):
     # validators
     @field_validator('continuous_colormap', mode='before')
     @classmethod
-    def _ensure_continuous_colormap(cls, v):
+    def _ensure_continuous_colormap(cls, v) -> Colormap:
         return ensure_colormap(v)
 
     @field_validator('categorical_colormap', mode='before')
     @classmethod
-    def _ensure_categorical_colormap(cls, categorical_colormap):
+    def _ensure_categorical_colormap(
+        cls, categorical_colormap
+    ) -> CategoricalColormap:
         if isinstance(categorical_colormap, CategoricalColormap):
             return categorical_colormap
         if (
@@ -201,7 +203,7 @@ class ColorManager(EventedModel):
 
     @field_validator('colors', mode='before')
     @classmethod
-    def _ensure_color_array(cls, v):
+    def _ensure_color_array(cls, v) -> np.ndarray:
         if len(v) > 0:
             return transform_color(v)
 
@@ -218,7 +220,7 @@ class ColorManager(EventedModel):
         return transform_color(v)[0]
 
     @model_validator(mode='after')
-    def _validate_colors(self):
+    def _validate_colors(self) -> Self:
         if self._is_validating:
             return self
         self._is_validating = True
@@ -527,7 +529,7 @@ class ColorManager(EventedModel):
         color_mode: ColorMode | str | None = None,
         current_color: np.ndarray | None = None,
         default_color_cycle: ColorType = None,
-    ):
+    ) -> Self:
         """Initialize a ColorManager object from layer kwargs. This is a convenience
         function to coerce possible inputs into ColorManager kwargs
 
