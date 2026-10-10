@@ -139,7 +139,7 @@ class Colormap(EventedModel):
 
         return v
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.colors)
 
     def map(self, values):
@@ -262,7 +262,7 @@ class LabelColormapBase(Colormap):
             self._cache_mapping[key] = self._map_without_cache(data)
         return self._cache_mapping.get(key)
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         """Mechanism to clean cached properties"""
         self._cache_mapping = _RebuildableCache()
         self._cache_other = _RebuildableCache()
@@ -394,7 +394,7 @@ class CyclicLabelColormap(LabelColormapBase):
 
         return np.reshape(mapped, original_shape + (4,))
 
-    def shuffle(self, seed: int):
+    def shuffle(self, seed: int) -> None:
         """Shuffle the colormap colors.
 
         Parameters
@@ -443,7 +443,7 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs['colors'] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Overwrite from base class because .color is a dummy array.
 
         This returns the number of colors in the colormap, including
@@ -589,7 +589,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return len({tuple(x) for x in self.color_dict.values()})
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         super()._clear_cache()
         if '_num_unique_colors' in self.__dict__:
             del self.__dict__['_num_unique_colors']

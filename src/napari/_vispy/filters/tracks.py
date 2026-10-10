@@ -103,7 +103,7 @@ class TracksFilter(Filter):
         return self._current_time
 
     @current_time.setter
-    def current_time(self, n: float):
+    def current_time(self, n: float) -> None:
         self._current_time = n
         if isinstance(n, slice):
             n = np.max(self._vertex_time)  # pyrefly: ignore [bad-assignment]
@@ -114,7 +114,7 @@ class TracksFilter(Filter):
         return self._use_fade
 
     @use_fade.setter
-    def use_fade(self, value: bool):
+    def use_fade(self, value: bool) -> None:
         self._use_fade = value
         self.vshader['use_fade'] = float(self._use_fade)
 
@@ -123,7 +123,7 @@ class TracksFilter(Filter):
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, tail_length: float):
+    def tail_length(self, tail_length: float) -> None:
         self._tail_length = tail_length
         self.vshader['tail_length'] = float(self._tail_length)
 
@@ -132,11 +132,11 @@ class TracksFilter(Filter):
         return self._head_length
 
     @head_length.setter
-    def head_length(self, head_length: float):
+    def head_length(self, head_length: float) -> None:
         self._head_length = head_length
         self.vshader['head_length'] = float(self._head_length)
 
-    def _attach(self, visual):
+    def _attach(self, visual) -> None:
         super()._attach(visual)
 
     @property
@@ -144,6 +144,6 @@ class TracksFilter(Filter):
         return self._vertex_time
 
     @vertex_time.setter
-    def vertex_time(self, v_time):
+    def vertex_time(self, v_time) -> None:
         self._vertex_time = np.array(v_time).reshape(-1, 1).astype(np.float32)
         self.vshader['a_vertex_time'] = VertexBuffer(self.vertex_time)

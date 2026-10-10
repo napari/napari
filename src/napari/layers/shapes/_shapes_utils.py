@@ -1265,7 +1265,7 @@ def get_shape_ndim(data):
     return ndim
 
 
-def number_of_shapes(data):
+def number_of_shapes(data) -> int:
     """Determine number of shapes in the data.
 
     Parameters
@@ -1293,7 +1293,7 @@ def number_of_shapes(data):
 
 def validate_num_vertices(
     data, shape_type, min_vertices=None, valid_vertices=None
-):
+) -> None:
     """Raises error if a shape in data has invalid number of vertices.
 
     Checks whether all shapes in data have a valid number of vertices

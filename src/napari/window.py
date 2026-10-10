@@ -19,7 +19,7 @@ except ImportError as e:
         def __init__(self, *args, **kwargs) -> None:
             pass
 
-        def close(self):
+        def close(self) -> None:
             pass
 
         def __getattr__(self, name):

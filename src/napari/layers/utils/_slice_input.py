@@ -30,7 +30,7 @@ class _ThickNDSlice(Generic[_T]):
     margin_right: tuple[_T, ...]
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return len(self.point)
 
     @classmethod

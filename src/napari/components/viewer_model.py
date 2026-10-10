@@ -393,10 +393,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """
         return self.canvas.grid
 
-    def _tooltip_visible_update(self, event):
+    def _tooltip_visible_update(self, event) -> None:
         self.tooltip.visible = event.value
 
-    def _update_camera_orientation(self):
+    def _update_camera_orientation(self) -> None:
         """Update camera orientation based on settings."""
         settings = get_settings()
 
@@ -406,7 +406,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             settings.application.horizontal_axis_orientation,
         )
 
-    def _update_synced_camera(self):
+    def _update_synced_camera(self) -> None:
         """Update camera synced mode based on settings."""
         settings = get_settings()
         self.scene.camera.synced = settings.application.synced_camera
@@ -421,7 +421,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return v
 
-    def json(self, **kwargs):
+    def json(self, **kwargs) -> str:
         """Serialize to json."""
         # Manually exclude the layer list and active layer which cannot be serialized at this point
         # and mouse and keybindings don't belong on model
@@ -441,10 +441,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         exclude = exclude.union(EXCLUDE_DICT)
         return super().model_dump(exclude=exclude, **kwargs)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
 
@@ -778,7 +778,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layers=[event.layer], dims=self.dims, force=True
         )
 
-    def _update_layers(self, *, layers=None):
+    def _update_layers(self, *, layers=None) -> None:
         """Updates the contained layers.
 
         Parameters
@@ -800,7 +800,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             position[ind] = self.dims.point[ind]
         self.cursor.position = tuple(position)
 
-    def _on_active_layer(self, event):
+    def _on_active_layer(self, event) -> None:
         """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
@@ -836,7 +836,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 updated_axis_labels[pos] = label
         return tuple(updated_axis_labels)
 
-    def _on_layers_change(self):
+    def _on_layers_change(self) -> None:
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -868,21 +868,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 list(self.cursor.position) + [0] * dim_diff
             )
 
-    def _update_mouse_pan(self, event):
+    def _update_mouse_pan(self, event) -> None:
         """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
             self.scene.camera.mouse_pan = event.mouse_pan
 
-    def _update_mouse_zoom(self, event):
+    def _update_mouse_zoom(self, event) -> None:
         """Set the viewer interactive mouse zoom"""
         if event.source is self.layers.selection.active:
             self.scene.camera.mouse_zoom = event.mouse_zoom
 
-    def _update_cursor(self, event):
+    def _update_cursor(self, event) -> None:
         """Set the viewer cursor with the `event.cursor` string."""
         self.cursor.style = event.cursor
 
-    def _update_cursor_size(self, event):
+    def _update_cursor_size(self, event) -> None:
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
 
@@ -966,7 +966,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         status_str = f'{coords} » {values}'
         return status_str, ''
 
-    def update_status_from_cursor(self):
+    def update_status_from_cursor(self) -> None:
         """Update the status and tooltip from the cursor position."""
         status = self._calc_status_from_cursor()
         if status is not None:
@@ -1049,7 +1049,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return ExperimentalNamespace(self.layers)
 
-    def _on_add_layer(self, event):
+    def _on_add_layer(self, event) -> None:
         """Connect new layer events.
 
         Parameters
@@ -1091,7 +1091,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.dims._go_to_center_step()
 
     @staticmethod
-    def _layer_help_from_mode(layer: Layer):
+    def _layer_help_from_mode(layer: Layer) -> None:
         """
         Update layer help text base on layer mode.
         """
@@ -1119,12 +1119,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         layer.help = ', '.join(help_li)
 
-    def _on_layer_mode_change(self, event):
+    def _on_layer_mode_change(self, event) -> None:
         self._layer_help_from_mode(event.source)
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
-    def _on_remove_layer(self, event):
+    def _on_remove_layer(self, event) -> None:
         """Disconnect old layer events.
 
         Parameters

@@ -109,7 +109,7 @@ class NotebookScreenshot:
                 alt_text = None
         return alt_text
 
-    def _repr_png_(self):
+    def _repr_png_(self) -> bytes:
         """PNG representation of the viewer object for IPython.
 
         Returns
@@ -128,7 +128,7 @@ class NotebookScreenshot:
             png = file_obj.read()
         return png
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
         _alt = html.escape(self.alt_text) if self.alt_text is not None else ''

@@ -39,7 +39,7 @@ def read_only_mouse_event(*args, **kwargs):
     )
 
 
-def validate_all_params_in_docstring(func):
+def validate_all_params_in_docstring(func) -> None:
     """
     Validate if all the parameters in the function signature are present in the docstring.
     """
@@ -60,7 +60,7 @@ def validate_all_params_in_docstring(func):
         # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
 
 
-def validate_kwargs_sorted(func):
+def validate_kwargs_sorted(func) -> None:
     """
     Validate if the keyword arguments in the function signature are sorted alphabetically.
     """
@@ -75,7 +75,9 @@ def validate_kwargs_sorted(func):
     )
 
 
-def validate_docstring_parent_class_consistency(klass, skip=('data', 'ndim')):
+def validate_docstring_parent_class_consistency(
+    klass, skip=('data', 'ndim')
+) -> None:
     """
     Validate if the docstrings of the class parameters and type information
     are consistent with the parent class.

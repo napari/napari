@@ -26,7 +26,7 @@ class Migrator(NamedTuple):
     run: MigratorF
 
 
-def do_migrations(model: NapariSettings):
+def do_migrations(model: NapariSettings) -> None:
     """Migrate (update) a NapariSettings model in place."""
     for migration in sorted(_MIGRATORS, key=lambda m: m.from_):
         if model.schema_version == migration.from_:
@@ -92,7 +92,7 @@ def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
 
 
 @migrator('0.3.0', '0.4.0')
-def v030_v040(model: NapariSettings):
+def v030_v040(model: NapariSettings) -> None:
     """Migrate from v0.3.0 to v0.4.0.
 
     Prior to v0.4.0, npe2 plugins were automatically added to disabled plugins.
@@ -106,7 +106,7 @@ def v030_v040(model: NapariSettings):
 
 
 @migrator('0.4.0', '0.5.0')
-def v040_050(model: NapariSettings):
+def v040_050(model: NapariSettings) -> None:
     """Migrate from v0.4.0 to v0.5.0
 
     Prior to 0.5.0 existing preferences may have reader extensions
@@ -138,7 +138,7 @@ def _swap_ctrl_cmd(keybinding):
 
 
 @migrator('0.5.0', '0.6.0')
-def v050_060(model: NapariSettings):
+def v050_060(model: NapariSettings) -> None:
     """Migrate from v0.5.0 to v0.6.0.
 
     In #5103 we went from using our own keybinding model to using app-model's.
@@ -176,7 +176,7 @@ def v050_060(model: NapariSettings):
 
 
 @migrator('0.6.0', '0.7.0')
-def v060_070(model: NapariSettings):
+def v060_070(model: NapariSettings) -> None:
     """Migrate from v0.6.0 to v0.7.0.
 
     In #7627 we updated the default value of the npe2 shim, which bumped the

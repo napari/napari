@@ -208,7 +208,7 @@ class Axes(Compound):
         dashed,
         arrows,
         text_offset=0.3,
-    ):
+    ) -> None:
         ndisplay = len(axes)
 
         # Determine colors of axes based on reverse position

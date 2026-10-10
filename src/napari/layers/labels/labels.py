@@ -500,14 +500,14 @@ class Labels(ScalarFieldBase):
             np.zeros(0, dtype=normalize_dtype(self.dtype))
         ).dtype
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         self._reset_history()
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
@@ -528,7 +528,7 @@ class Labels(ScalarFieldBase):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, rendering):
+    def rendering(self, rendering) -> None:
         self._rendering = LabelsRendering(rendering)
         self.events.rendering()
 
@@ -549,26 +549,28 @@ class Labels(ScalarFieldBase):
         return str(self._iso_gradient_mode)
 
     @iso_gradient_mode.setter
-    def iso_gradient_mode(self, value: IsoCategoricalGradientMode | str):
+    def iso_gradient_mode(
+        self, value: IsoCategoricalGradientMode | str
+    ) -> None:
         self._iso_gradient_mode = IsoCategoricalGradientMode(value)
         self.events.iso_gradient_mode()
 
     @property
-    def contiguous(self):
+    def contiguous(self) -> bool:
         """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
 
     @contiguous.setter
-    def contiguous(self, contiguous):
+    def contiguous(self, contiguous) -> None:
         self._contiguous = contiguous
         self.events.contiguous()
 
     @property
-    def n_edit_dimensions(self):
+    def n_edit_dimensions(self) -> int:
         return self._n_edit_dimensions
 
     @n_edit_dimensions.setter
-    def n_edit_dimensions(self, n_edit_dimensions):
+    def n_edit_dimensions(self, n_edit_dimensions) -> None:
         self._n_edit_dimensions = n_edit_dimensions
         self.events.n_edit_dimensions()
 
@@ -586,12 +588,12 @@ class Labels(ScalarFieldBase):
         self.refresh(extent=False)
 
     @property
-    def brush_size(self):
+    def brush_size(self) -> int:
         """float: Size of the paint in world coordinates."""
         return self._brush_size
 
     @brush_size.setter
-    def brush_size(self, brush_size):
+    def brush_size(self, brush_size) -> None:
         self._brush_size = int(brush_size)
         self.cursor_size = self._calculate_cursor_size()
         self.events.brush_size()
@@ -605,7 +607,7 @@ class Labels(ScalarFieldBase):
         )
         return abs(self.brush_size * min_scale)
 
-    def new_colormap(self, seed: int | None = None):
+    def new_colormap(self, seed: int | None = None) -> None:
         if seed is None:
             seed = int(np.random.default_rng().integers(2**32 - 1))
 
@@ -625,10 +627,10 @@ class Labels(ScalarFieldBase):
         return self._colormap
 
     @colormap.setter
-    def colormap(self, colormap: LabelColormapBase):
+    def colormap(self, colormap: LabelColormapBase) -> None:
         self._set_colormap(colormap)
 
-    def _set_colormap(self, colormap):
+    def _set_colormap(self, colormap) -> None:
         colormap = _normalize_label_colormap(colormap)
         if isinstance(colormap, CyclicLabelColormap):
             self._random_colormap = colormap
@@ -698,7 +700,7 @@ class Labels(ScalarFieldBase):
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: dict[str, Array]):
+    def properties(self, properties: dict[str, Array]) -> None:
         self.features = properties
 
     def _make_label_index(self) -> dict[int, int]:
@@ -813,12 +815,12 @@ class Labels(ScalarFieldBase):
             slice_coord[i] = resolved
 
     @property
-    def selected_label(self):
+    def selected_label(self) -> int:
         """int: Index of selected label."""
         return self._selected_label
 
     @selected_label.setter
-    def selected_label(self, selected_label):
+    def selected_label(self, selected_label) -> None:
         if selected_label == self.selected_label:
             return
         self._validate_label_in_range(selected_label)
@@ -845,12 +847,12 @@ class Labels(ScalarFieldBase):
             self.selected_label = self._prev_selected_label
 
     @property
-    def show_selected_label(self):
+    def show_selected_label(self) -> bool:
         """Whether to filter displayed labels to only the selected label or not"""
         return self._show_selected_label
 
     @show_selected_label.setter
-    def show_selected_label(self, show_selected):
+    def show_selected_label(self, show_selected) -> None:
         self._show_selected_label = show_selected
         self.colormap.use_selection = show_selected
         self.colormap.selection = self.selected_label
@@ -859,7 +861,7 @@ class Labels(ScalarFieldBase):
 
     # Only overriding to change the docstring
     @property
-    def mode(self):
+    def mode(self) -> str:
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
@@ -887,7 +889,7 @@ class Labels(ScalarFieldBase):
 
     # Only overriding to change the docstring of the setter above
     @mode.setter
-    def mode(self, mode):
+    def mode(self, mode) -> None:
         # See https://github.com/python/mypy/issues/16426 for type ignore reason
         Layer.mode.fset(self, mode)  # pyrefly: ignore [not-callable]
 
@@ -904,7 +906,7 @@ class Labels(ScalarFieldBase):
         return mode
 
     @property
-    def preserve_labels(self):
+    def preserve_labels(self) -> bool:
         """Defines if painting should preserve existing labels.
 
         Default to false to allow paint on existing labels. When
@@ -913,7 +915,7 @@ class Labels(ScalarFieldBase):
         return self._preserve_labels
 
     @preserve_labels.setter
-    def preserve_labels(self, preserve_labels: bool):
+    def preserve_labels(self, preserve_labels: bool) -> None:
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
 
@@ -1047,7 +1049,7 @@ class Labels(ScalarFieldBase):
 
         return self.colormap._data_to_texture(sliced_labels)
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update the thumbnail with current data and colormap.
 
         This is overridden from _ImageBase because we don't need to do things
@@ -1118,13 +1120,13 @@ class Labels(ScalarFieldBase):
         finally:
             self._block_history = prev
 
-    def _commit_staged_history(self):
+    def _commit_staged_history(self) -> None:
         """Save staged history to undo history and clear it."""
         if self._staged_history:
             self._append_to_undo_history(self._staged_history)
             self._staged_history = []
 
-    def _begin_stroke(self):
+    def _begin_stroke(self) -> None:
         """Start grouping edits that span multiple events into one undo item.
 
         Unlike `block_history`, a stroke spans discrete mouse events and so
@@ -1132,7 +1134,7 @@ class Labels(ScalarFieldBase):
         """
         self._block_history = True
 
-    def _commit_stroke(self):
+    def _commit_stroke(self) -> None:
         """Commit a stroke started with `_begin_stroke` as one undo item."""
         self._block_history = False
         self._commit_staged_history()
@@ -1149,7 +1151,7 @@ class Labels(ScalarFieldBase):
         self._block_history = False
         self.refresh()
 
-    def _append_to_undo_history(self, item):
+    def _append_to_undo_history(self, item) -> None:
         """Append item to history and emit paint event.
 
         Parameters
@@ -1160,7 +1162,7 @@ class Labels(ScalarFieldBase):
         self._undo_history.append(item)
         self.events.paint(value=item)
 
-    def _save_history(self, value):
+    def _save_history(self, value) -> None:
         """Save a history "atom" to the undo history.
 
         A history "atom" is a single change operation to the array. A history
@@ -1188,7 +1190,7 @@ class Labels(ScalarFieldBase):
         else:
             self._append_to_undo_history([value])
 
-    def _load_history(self, before, after, undoing=True):
+    def _load_history(self, before, after, undoing=True) -> None:
         """Load a history item and apply it to the array.
 
         Parameters
@@ -1411,7 +1413,7 @@ class Labels(ScalarFieldBase):
             return self.selected_label
         return self.colormap.background_value
 
-    def _draw(self, new_label, last_cursor_coord, coordinates):
+    def _draw(self, new_label, last_cursor_coord, coordinates) -> None:
         """Paint into coordinates, accounting for mode and cursor movement.
 
         The draw operation depends on the current mode of the layer.
@@ -2132,7 +2134,7 @@ class Labels(ScalarFieldBase):
         ).astype(int)
         return {dim: point[dim] for dim in slice_input.not_displayed}
 
-    def data_setitem(self, indices, value, refresh=True):
+    def data_setitem(self, indices, value, refresh=True) -> None:
         """Set `indices` in `data` to `value`, while writing to edit history.
 
         Parameters
@@ -2387,7 +2389,7 @@ class WrongSelectedLabelError(ValueError):
         lower_bound: float,
         upper_bound: float,
         message: str = '',
-    ):
+    ) -> None:
         self.dtype = dtype
         self.value = value
         self.lower_bound = lower_bound

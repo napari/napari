@@ -31,7 +31,7 @@ class StrField(str):
         return json_schema
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v) -> str:
         if not isinstance(v, str):
             raise TypeError('must be a string')
 
@@ -62,7 +62,7 @@ class Logo(StrField):
         return available_logos()
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v) -> bool:
         return v in cls._available_options()
 
 
@@ -76,7 +76,7 @@ class Theme(StrField):
         return available_themes()
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v) -> bool:
         return is_theme_available(v)
 
 
@@ -186,5 +186,5 @@ class Version:
     def validate(cls, v):
         return cls._from_obj(v)
 
-    def _json_encode(self):
+    def _json_encode(self) -> str:
         return str(self)

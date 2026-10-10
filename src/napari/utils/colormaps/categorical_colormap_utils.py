@@ -54,7 +54,7 @@ class ColorCycle:
 
         return _coerce_colorcycle_from_colors(val)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, ColorCycle):
             eq = np.array_equal(self.values, other.values)
         else:
@@ -120,7 +120,7 @@ def _coerce_colorcycle_from_colors(
     return ColorCycle(values=transformed_color_values)
 
 
-def compare_colormap_dicts(cmap_1, cmap_2):
+def compare_colormap_dicts(cmap_1, cmap_2) -> bool:
     if len(cmap_1) != len(cmap_2):
         return False
     for k, v in cmap_1.items():

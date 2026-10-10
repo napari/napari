@@ -49,7 +49,7 @@ class Rectangle(Shape):
         return self._data
 
     @data.setter
-    def data(self, data: ArrayLike):
+    def data(self, data: ArrayLike) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:

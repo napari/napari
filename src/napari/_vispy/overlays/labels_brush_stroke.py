@@ -40,7 +40,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
     layer: Labels
     overlay: LabelsBrushStrokeOverlay
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self._circle = Ellipse(
             center=(0, 0),
             radius=1.0,
@@ -66,12 +66,12 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
 
         self.reset()
 
-    def _on_enabled_change(self):
+    def _on_enabled_change(self) -> None:
         # abort a stroke if the tool is disabled mid-stroke (e.g. mode switch)
         if not self.overlay.enabled and self.overlay.active:
             self.overlay.abort(self.layer)
 
-    def _on_geometry_change(self, event=None):
+    def _on_geometry_change(self, event=None) -> None:
         if not self.overlay.active:
             self._circle.visible = False
             return
@@ -115,7 +115,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         # avoid interpolating a stray line across the panned gap
         self._last_coord = None
 
-    def _start_stroke(self, layer, event):
+    def _start_stroke(self, layer, event) -> None:
         coord = mouse_event_to_labels_coordinate(layer, event)
         if coord is None:
             return
@@ -128,7 +128,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._paint_to(layer, coord)
 
     @_only_when_overlay_enabled
-    def _on_mouse_move(self, layer, event):
+    def _on_mouse_move(self, layer, event) -> None:
         if not self.overlay.active:
             return
         coord = mouse_event_to_labels_coordinate(layer, event)
@@ -138,7 +138,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         if self._is_at_start(layer, coord):
             self._complete(layer)
 
-    def _paint_to(self, layer, coord):
+    def _paint_to(self, layer, coord) -> None:
         last = self._last_coord if self._last_coord is not None else coord
         layer._draw(layer.selected_label, last, coord)
         self._last_coord = coord
@@ -157,7 +157,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
             return False
         return dist <= radius
 
-    def _complete(self, layer):
+    def _complete(self, layer) -> None:
         # continue the stroke all the way back to the start point so the drawn
         # outline closes cleanly instead of leaving a notch where the cursor
         # re-entered the stop radius
@@ -167,7 +167,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         layer._commit_stroke()
         self.overlay.active = False  # hides the circle
 
-    def _reset_stroke_state(self):
+    def _reset_stroke_state(self) -> None:
         self._stroke_points = []
         self._last_coord = None
         self._has_left = False
@@ -176,11 +176,11 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
     def _dims_displayed(self):
         return self.layer._slice_input.displayed
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_geometry_change()
 
-    def close(self):
+    def close(self) -> None:
         self.layer.mouse_move_callbacks.remove(self._on_mouse_move)
         self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)
         super().close()

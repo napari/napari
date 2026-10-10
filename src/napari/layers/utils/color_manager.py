@@ -250,7 +250,7 @@ class ColorManager(EventedModel):
         n_colors: int,
         properties: dict[str, np.ndarray],
         current_properties: dict[str, np.ndarray],
-    ):
+    ) -> None:
         """Set a color property. This is convenience function
 
         Parameters
@@ -297,7 +297,7 @@ class ColorManager(EventedModel):
         self,
         properties: dict[str, np.ndarray],
         update_color_mapping: bool = False,
-    ):
+    ) -> None:
         """Calculate and update colors if using a cycle or color map
         Parameters
         ----------
@@ -335,7 +335,7 @@ class ColorManager(EventedModel):
         color: ColorType | None = None,
         n_colors: int = 1,
         update_clims: bool = False,
-    ):
+    ) -> None:
         """Add colors
         Parameters
         ----------
@@ -383,7 +383,7 @@ class ColorManager(EventedModel):
             if update_clims and self.color_mode == ColorMode.COLORMAP:
                 self.contrast_limits = None
 
-    def _remove(self, indices_to_remove: set | list | np.ndarray):
+    def _remove(self, indices_to_remove: set | list | np.ndarray) -> None:
         """Remove the indicated color elements
         Parameters
         ----------
@@ -411,7 +411,9 @@ class ColorManager(EventedModel):
                     current_value=current_value,
                 )
 
-    def _paste(self, colors: np.ndarray, properties: dict[str, np.ndarray]):
+    def _paste(
+        self, colors: np.ndarray, properties: dict[str, np.ndarray]
+    ) -> None:
         """Append colors to the ColorManager. Uses the color values if
         in direct mode and the properties in colormap or cycle mode.
 
@@ -453,7 +455,7 @@ class ColorManager(EventedModel):
 
     def _update_current_properties(
         self, current_properties: dict[str, np.ndarray]
-    ):
+    ) -> None:
         """This is updates the current_value of the color_properties when the
         layer current_properties is updated.
 
@@ -485,7 +487,7 @@ class ColorManager(EventedModel):
 
     def _update_current_color(
         self, current_color: np.ndarray, update_indices: list | None = None
-    ):
+    ) -> None:
         """Update the current color and update the colors if requested.
 
         This is a convenience method and is generally called by the layer.

@@ -102,7 +102,7 @@ class Viewer(ViewerModel):
     def window(self) -> 'Window':
         return self._window
 
-    def update_console(self, variables):
+    def update_console(self, variables) -> None:
         """Update console's namespace with desired variables.
 
         Parameters
@@ -259,11 +259,11 @@ class Viewer(ViewerModel):
             canvas_only=canvas_only,
         )
 
-    def show(self, *, block=False):
+    def show(self, *, block=False) -> None:
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
 
-    def close(self):
+    def close(self) -> None:
         """Close the viewer window."""
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()

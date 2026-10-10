@@ -66,7 +66,7 @@ class RenamedProperty(property):
         category: type[Warning] = FutureWarning,
         writable: bool = True,
         doc: str | None = None,
-    ):
+    ) -> None:
         parts = new_name.split('.')
         if any(not part.isidentifier() for part in parts):  # pragma: no cover
             raise ValueError(f'Invalid attribute path: {new_name!r}')
@@ -410,7 +410,7 @@ def deprecated_class_name(
                 return super().__new__(cls)
             return super().__new__(cls, *args, **kwargs)
 
-        def __init_subclass__(cls, **kwargs):
+        def __init_subclass__(cls, **kwargs) -> None:
             warnings.warn(msg, FutureWarning, stacklevel=2)
 
     _OldClass.__module__ = new_class.__module__

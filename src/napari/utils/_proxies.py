@@ -19,7 +19,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()) -> None:
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 

@@ -697,7 +697,7 @@ class ShapeList:
 
     @slice_key.setter
     @_batch_dec
-    def slice_key(self, slice_key):
+    def slice_key(self, slice_key) -> None:
         slice_key = list(slice_key)
         if not np.array_equal(self._slice_key, slice_key):
             self._slice_key = slice_key  # pyrefly: ignore [bad-assignment]
@@ -806,7 +806,7 @@ class ShapeList:
         edge_color=None,
         shape_index=None,
         z_refresh=True,
-    ):
+    ) -> None:
         """Adds a single Shape object (single add mode) or multiple Shapes (multiple shape mode, which is much faster)
 
         If shape is a single instance of subclass Shape then single add mode will be used, otherwise multiple add mode
@@ -861,7 +861,7 @@ class ShapeList:
         edge_color=None,
         shape_index=None,
         z_refresh=True,
-    ):
+    ) -> None:
         """Adds a single Shape object
 
         Parameters
@@ -977,7 +977,9 @@ class ShapeList:
             self._update_z_order()
         self._clear_cache()
 
-    def _extend_meshes(self, face_colors, edge_colors, arrays: MeshArrayDict):
+    def _extend_meshes(
+        self, face_colors, edge_colors, arrays: MeshArrayDict
+    ) -> None:
         """Assemble mesh properties from filled arrays.
 
         Parameters
@@ -1099,7 +1101,7 @@ class ShapeList:
         self._clear_cache()
 
     @_batch_dec
-    def remove_all(self):
+    def remove_all(self) -> None:
         """Removes all shapes"""
         self.shapes = []
         self._vertices = np.empty((0, self.ndisplay))  # pyrefly: ignore [bad-assignment]
@@ -1248,7 +1250,9 @@ class ShapeList:
         self.remove_multiple([index], renumber=renumber)
 
     @_batch_dec
-    def remove_multiple(self, indices: list[int], renumber: bool = True):
+    def remove_multiple(
+        self, indices: list[int], renumber: bool = True
+    ) -> None:
         """Removes multiple shapes located at indices.
 
         Parameters
@@ -1331,7 +1335,7 @@ class ShapeList:
         self._clear_cache()
 
     @_batch_dec
-    def _update_mesh_vertices(self, index, edge=False, face=False):
+    def _update_mesh_vertices(self, index, edge=False, face=False) -> None:
         """Updates the mesh vertex data and vertex data for a single shape
         located at index.
 
@@ -1414,7 +1418,7 @@ class ShapeList:
         self._clear_cache()
 
     @_batch_dec
-    def _update_z_order(self):
+    def _update_z_order(self) -> None:
         """Updates the z order of the triangles given the z_index list"""
         self._z_order = np.argsort(self._z_index, kind='stable')  # pyrefly: ignore [bad-assignment]
         if len(self._z_order) == 0:
@@ -1432,7 +1436,7 @@ class ShapeList:
 
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
-    ):
+    ) -> None:
         """Updates the data of a single shape located at index. If
         `new_type` is not None then converts the shape type to the new type
 
@@ -1477,7 +1481,7 @@ class ShapeList:
         self.update(index)
         self._update_z_order()
 
-    def update_edge_width(self, index, edge_width):
+    def update_edge_width(self, index, edge_width) -> None:
         """Updates the edge width of a single shape located at index.
 
         Parameters
@@ -1575,7 +1579,7 @@ class ShapeList:
         if update:
             self._update_displayed()
 
-    def update_dims_order(self, dims_order):
+    def update_dims_order(self, dims_order) -> None:
         """Updates dimensions order for all shapes.
 
         Parameters
@@ -1590,7 +1594,7 @@ class ShapeList:
                 self.update(index)
         self._update_z_order()
 
-    def update_z_index(self, index, z_index):
+    def update_z_index(self, index, z_index) -> None:
         """Updates the z order of a single shape located at index.
 
         Parameters
@@ -1605,7 +1609,7 @@ class ShapeList:
         self._z_index[index] = z_index
         self._update_z_order()
 
-    def shift(self, index, shift):
+    def shift(self, index, shift) -> None:
         """Performs a 2D shift on a single shape located at index
 
         Parameters
@@ -1618,7 +1622,7 @@ class ShapeList:
         self.shapes[index].shift(shift)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def scale(self, index, scale, center=None):
+    def scale(self, index, scale, center=None) -> None:
         """Performs a scaling on a single shape located at index
 
         Parameters
@@ -1634,7 +1638,7 @@ class ShapeList:
         self.update(index)
         self._update_z_order()
 
-    def rotate(self, index, angle, center=None):
+    def rotate(self, index, angle, center=None) -> None:
         """Performs a rotation on a single shape located at index
 
         Parameters
@@ -1649,7 +1653,7 @@ class ShapeList:
         self.shapes[index].rotate(angle, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def flip(self, index, axis, center=None):
+    def flip(self, index, axis, center=None) -> None:
         """Performs an vertical flip on a single shape located at index
 
         Parameters
@@ -1665,7 +1669,7 @@ class ShapeList:
         self.shapes[index].flip(axis, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
-    def transform(self, index, transform):
+    def transform(self, index, transform) -> None:
         """Performs a linear transform on a single shape located at index
 
         Parameters
@@ -2153,7 +2157,7 @@ class ShapeList:
 
         return colors
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         self.__dict__.pop('_bounding_boxes', None)
         self.__dict__.pop('_visible_shapes', None)
         self.__dict__.pop('_visible_shapes_indices', None)

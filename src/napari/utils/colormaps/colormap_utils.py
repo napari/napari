@@ -890,7 +890,7 @@ def _colormap_from_colors(
     )
 
 
-def display_name_to_name(display_name):
+def display_name_to_name(display_name) -> str:
     display_name_map = {
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
