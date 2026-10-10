@@ -31,6 +31,8 @@ if TYPE_CHECKING:
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
 
+_T = TypeVar('_T')
+
 
 def parse_version(v: str) -> packaging.version._BaseVersion:
     """Parse a version string and return a packaging.version.Version obj."""
@@ -93,11 +95,11 @@ def in_python_repl() -> bool:
 
 def ensure_iterable(
     arg: str | Enum | float | list | npt.NDArray | None,
-):
+) -> Iterable[Any]:
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list.
     """
-    if is_iterable(arg):
+    if isinstance(arg, collections.abc.Iterable) and is_iterable(arg):
         return arg
 
     return itertools.repeat(arg)
@@ -140,7 +142,7 @@ def ensure_sequence_of_iterables(
     length: int | None = None,
     repeat_empty: bool = False,
     allow_none: bool = False,
-):
+) -> Iterable[Any]:
     """Ensure that ``obj`` behaves like a (nested) sequence of iterables.
 
     If length is provided and the object is already a sequence of iterables,
@@ -202,13 +204,19 @@ def ensure_sequence_of_iterables(
     return itertools.repeat(obj)
 
 
-def formatdoc(obj):
+def formatdoc(obj: _T) -> _T:
     """Substitute globals and locals into an object's docstring."""
-    frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
+    doc = obj.__doc__
+    if doc is None:
+        return obj
+    current = inspect.currentframe()
+    frame = current.f_back if current is not None else None
+    del current
+    if frame is None:
+        # frame introspection is unavailable on some Python implementations
+        return obj
     try:
-        obj.__doc__ = obj.__doc__.format(
-            **{**frame.f_globals, **frame.f_locals}
-        )
+        obj.__doc__ = doc.format(**{**frame.f_globals, **frame.f_locals})
     finally:
         del frame
     return obj
@@ -382,17 +390,17 @@ def ensure_list_of_layer_data_tuple(val: list[tuple]) -> list[tuple]:
     raise TypeError('Not a valid list of layer data tuples!')
 
 
-def _quiet_array_equal(*a, **k) -> bool:
+def _quiet_array_equal(*a: Any, **k: Any) -> bool:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', 'elementwise comparison')
         return np.array_equal(*a, **k)
 
 
-def _pandas_dataframe_equal(df1, df2):
+def _pandas_dataframe_equal(df1: Any, df2: Any) -> bool:
     return df1.equals(df2)
 
 
-def _arraylike_short_names(obj) -> Iterator[str]:
+def _arraylike_short_names(obj: Any) -> Iterator[str]:
     """Yield all the short names of an array-like or its class."""
     type_ = type(obj) if not inspect.isclass(obj) else obj
     for base in type_.mro():
@@ -558,7 +566,7 @@ def _file_hash(
 
 def _combine_signatures(
     *objects: Callable,
-    return_annotation=inspect.Signature.empty,
+    return_annotation: Any = inspect.Signature.empty,
     exclude: Iterable[str] = (),
 ) -> inspect.Signature:
     """Create combined Signature from objects, excluding names in `exclude`.
