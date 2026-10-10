@@ -777,15 +777,15 @@ def _dangling_qthreads(monkeypatch, qtbot, request):
     if 'disable_qthread_start' in request.keywords:
 
         def start_with_save_reference(
-            self, priority=QThread.InheritPriority
-        ) -> None:  # pyrefly: ignore [missing-attribute]
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Dummy function to prevent thread starts."""
 
     else:
 
         def start_with_save_reference(
-            self, priority=QThread.InheritPriority
-        ) -> None:  # pyrefly: ignore [missing-attribute]
+            self, priority=QThread.Priority.InheritPriority
+        ) -> None:
             """Thread start function with logs to detect hanging threads.
 
             Saves a weak reference to the thread and detects hanging threads,
