@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import typing
-from collections.abc import Sequence
 from typing import Any, Self
 from weakref import WeakSet
 
 import magicgui as mgui
-import numpy as np
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -12,7 +12,10 @@ from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
     # helpful for IDE support
+    from collections.abc import Sequence
     from pathlib import Path
+
+    import numpy as np
 
     from napari._qt.qt_main_window import Window
 
@@ -37,8 +40,8 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # pyrefly: ignore[bad-assignment]
-    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _window: Window = None  # pyrefly: ignore[bad-assignment]
+    _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
 
     def __init__(
         self,
@@ -101,7 +104,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> Window:
         return self._window
 
     def update_console(
@@ -180,7 +183,7 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: 'str | Path | list[str | Path] | None' = None,
+        paths: str | Path | list[str | Path] | None = None,
         scale: float = 1.0,
     ) -> list[np.ndarray]:
         """Export the given rectangular rois to specified file paths.
