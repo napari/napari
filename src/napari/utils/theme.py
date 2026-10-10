@@ -4,6 +4,7 @@ import logging
 import re
 import sys
 from ast import literal_eval
+from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from typing import Any, Literal
 from warnings import warn
@@ -230,7 +231,7 @@ def opacity(color: str | Color, value: int = 255) -> str:
     return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
 
 
-def gradient(stops, horizontal: bool = True) -> str:
+def gradient(stops: Iterable[str], horizontal: bool = True) -> str:
 
     if horizontal:
         grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
@@ -243,32 +244,32 @@ def gradient(stops, horizontal: bool = True) -> str:
     return grad
 
 
-def template(css: str, **theme):
-    def _increase_match(matchobj):
+def template(css: str, **theme: Any) -> str:
+    def _increase_match(matchobj: re.Match[str]) -> str:
         font_size, to_add = matchobj.groups()
         return increase(theme[font_size], to_add)
 
-    def _decrease_match(matchobj):
+    def _decrease_match(matchobj: re.Match[str]) -> str:
         font_size, to_subtract = matchobj.groups()
         return decrease(theme[font_size], to_subtract)
 
-    def darken_match(matchobj):
+    def darken_match(matchobj: re.Match[str]) -> str:
         color, percentage = matchobj.groups()
         return darken(
             theme[color], float(percentage), theme_type=theme['type']
         )
 
-    def lighten_match(matchobj):
+    def lighten_match(matchobj: re.Match[str]) -> str:
         color, percentage = matchobj.groups()
         return lighten(
             theme[color], float(percentage), theme_type=theme['type']
         )
 
-    def opacity_match(matchobj):
+    def opacity_match(matchobj: re.Match[str]) -> str:
         color, value = matchobj.groups()
         return opacity(theme[color], int(value))
 
-    def gradient_match(matchobj):
+    def gradient_match(matchobj: re.Match[str]) -> str:
         horizontal = matchobj.groups()[1] == 'h'
         stops = [i.strip() for i in matchobj.groups()[1].split('-')]
         return gradient(stops, horizontal)
@@ -321,7 +322,7 @@ def get_system_theme() -> str:
             return 'dark'
 
 
-def get_theme(theme_id: str):
+def get_theme(theme_id: str) -> Theme:
     """Get a copy of theme based on its id.
 
     If you get a copy of the theme, changes to the theme model will not be
@@ -354,7 +355,9 @@ def get_theme(theme_id: str):
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
 
 
-def register_theme(theme_id, theme, source):
+def register_theme(
+    theme_id: str, theme: dict[str, Any] | Theme, source: str
+) -> None:
     """Register a new or updated theme.
 
     Parameters
@@ -374,7 +377,7 @@ def register_theme(theme_id, theme, source):
     build_theme_svgs(theme_id, source)
 
 
-def unregister_theme(theme_id):
+def unregister_theme(theme_id: str) -> None:
     """Remove existing theme.
 
     Parameters
@@ -396,7 +399,7 @@ def available_themes() -> list[str]:
     return [*_themes, 'system']
 
 
-def is_theme_available(theme_id):
+def is_theme_available(theme_id: str) -> bool:
     """Check if a theme is available.
 
     Parameters
@@ -423,7 +426,7 @@ def is_theme_available(theme_id):
     return theme_id in _themes
 
 
-def rebuild_theme_settings():
+def rebuild_theme_settings() -> None:
     """update theme information in settings.
 
     here we simply update the settings to reflect current list of available
@@ -480,7 +483,7 @@ register_theme('light', LIGHT, 'builtin')
 
 
 # this function here instead of plugins._npe2 to avoid circular import
-def _install_npe2_themes(themes=None):
+def _install_npe2_themes(themes: Mapping[str, Theme] | None = None) -> None:
     if themes is None:
         themes = _themes
     import npe2
