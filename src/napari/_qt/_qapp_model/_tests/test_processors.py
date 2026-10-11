@@ -1,3 +1,4 @@
+from concurrent.futures import Future
 from typing import Optional, Union
 from unittest.mock import MagicMock
 
@@ -6,6 +7,7 @@ import pytest
 from qtpy.QtWidgets import QWidget
 
 from napari._qt._qapp_model.injection._qprocessors import (
+    _FUTURES,
     _add_future_data,
     _add_layer_data_to_viewer,
     _add_layer_data_tuples_to_viewer,
@@ -15,6 +17,7 @@ from napari._qt._qapp_model.injection._qprocessors import (
 from napari.components import ViewerModel
 from napari.layers import Image
 from napari.types import ImageData, LabelsData
+from napari.utils.notifications import notification_manager
 
 
 def test_add_plugin_dock_widget(qtbot):
@@ -110,3 +113,33 @@ def test_add_future_data():
     _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
     assert future.add_done_callback.call_count == 2
+
+
+@pytest.mark.parametrize('outcome', ['result', 'cancelled', 'error'])
+def test_add_future_data_already_done(qtbot, monkeypatch, caplog, outcome):
+    """A finished future adds a layer, does nothing, or shows the error."""
+    receive_error = MagicMock()
+    monkeypatch.setattr(notification_manager, 'receive_error', receive_error)
+    viewer = ViewerModel()
+    future = Future()
+    error = ValueError('boom')
+    if outcome == 'result':
+        future.set_result(np.zeros((10, 10)))
+    elif outcome == 'cancelled':
+        future.cancel()
+    else:
+        future.set_exception(error)
+
+    _add_future_data(
+        future, Optional[ImageData], _from_tuple=False, viewer=viewer
+    )
+
+    assert len(viewer.layers) == (1 if outcome == 'result' else 0)
+    if outcome == 'error':
+        receive_error.assert_called_once_with(
+            ValueError, error, error.__traceback__
+        )
+    else:
+        receive_error.assert_not_called()
+    assert 'exception calling callback' not in caplog.text
+    assert future not in _FUTURES
