@@ -333,14 +333,21 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     view = viewer.window._qt_viewer
     assert not view.console.hasFocus(), 'console has focus before being shown'
 
-    view.toggle_console_visibility(None)
-
     def console_has_focus():
         assert view.console.hasFocus(), (
             'console does not have focus when shown'
         )
 
+    window = viewer.window._qt_window
+    phase = 'window activation'
     try:
+        # An exposed window may still belong to an inactive application.
+        window.raise_()
+        window.activateWindow()
+        qtbot.waitUntil(window.isActiveWindow, timeout=5000)
+
+        phase = 'console focus'
+        view.toggle_console_visibility(None)
         qtbot.waitUntil(console_has_focus)
     except QtTimeoutError as exc:
 
@@ -358,9 +365,9 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
                 'has_focus': widget.hasFocus(),
             }
 
-        window = viewer.window._qt_window
         diagnostics = [
             'Console focus timeout diagnostics:',
+            f'Timeout phase: {phase}',
             f'Application state: {QGuiApplication.applicationState()}',
             f'Platform: {QGuiApplication.platformName()}',
         ]

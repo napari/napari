@@ -91,7 +91,7 @@ jobs:
           QT_LOGGING_RULES: "qt.widgets.focus.debug=true;qt.qpa.window.debug=true"
 
       - name: Rerun console focus test in isolation
-        if: ${{ failure() && steps.prerelease_tests.outcome == 'failure' && startsWith(matrix.backend, 'pyqt6') }}
+        if: ${{ failure() && steps.prerelease_tests.outcome == 'failure' }}
         run: >-
           python -m tox -v --pre --skip-pkg-install --runner virtualenv
           -x 'testenv.pass_env+=QT_LOGGING_RULES'
