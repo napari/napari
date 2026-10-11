@@ -72,12 +72,15 @@ jobs:
           pip install setuptools tox tox-gh-actions tox-uv tox-min-req
 
       - name: Test with tox (with retry)
+        id: prerelease_tests
         uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
         with:
           attempt_limit: 3
           attempt_delay: 30000 # 30s
           retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          command: python -m tox -v --pre --recreate  --runner virtualenv
+          command: >-
+            python -m tox -v --pre --recreate --runner virtualenv
+            -x 'testenv.pass_env+=QT_LOGGING_RULES'
         env:
           BACKEND: ${{ matrix.backend }}
           PYTHON: ${{ matrix.python }}
@@ -85,6 +88,33 @@ jobs:
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
           PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
           PIP_ONLY_BINARY: "PyQt5,PyQt6"
+          QT_LOGGING_RULES: "qt.widgets.focus.debug=true;qt.qpa.window.debug=true"
+
+      - name: Rerun console focus test in isolation
+        if: ${{ failure() && steps.prerelease_tests.outcome == 'failure' && startsWith(matrix.backend, 'pyqt6') }}
+        run: >-
+          python -m tox -v --pre --skip-pkg-install --runner virtualenv
+          -x 'testenv.pass_env+=QT_LOGGING_RULES'
+          --
+          src/napari/_qt/_tests/test_viewer_qt_integration.py::test_qt_viewer_console_focus
+          -vv -s --json-report-file=console-focus-rerun.json
+        env:
+          BACKEND: ${{ matrix.backend }}
+          PYTHON: ${{ matrix.python }}
+          PYVISTA_OFF_SCREEN: True
+          PIP_CONSTRAINT: resources/constraints/version_denylist.txt
+          PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
+          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+          QT_LOGGING_RULES: "qt.widgets.focus.debug=true;qt.qpa.window.debug=true"
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test reports ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
+          path: |
+            report-*.json
+            console-focus-rerun.json
 
       - name: Upload leaked viewer graph
         if: failure()
