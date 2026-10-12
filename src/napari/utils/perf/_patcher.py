@@ -81,16 +81,15 @@ def _import_module(
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example:
-       napari.components.experimental.chunk._loader.ChunkLoader.load_chunk
+       napari.layers.base.base.Layer.refresh
     will import:
         napari (success)
-        napari.components (success)
-        napari.components.experimental (success)
-        napari.components.experimental.chunk (success)
-        napari.components.experimental.chunk._loader (success)
-        napari.components.experimental.chunk._loader.ChunkLoader (failure, not a module)
+        napari.layers (success)
+        napari.layers.base (success)
+        napari.layers.base.base (success)
+        napari.layers.base.base.Layer (failure, not a module)
 
-    The last one fails because ChunkLoader is a class not a module.
+    The last one fails because Layer is a class not a module.
 
     Parameters
     ----------

@@ -103,7 +103,7 @@ class ViewerStatusBar(QStatusBar):
         self,
         text: str = '',
         layer_base: str = '',
-        source_type=None,
+        source_type: str | None = None,
         plugin: str = '',
         coordinates: str = '',
     ) -> None:
@@ -125,7 +125,7 @@ class ViewerStatusBar(QStatusBar):
         self._coordinates.setVisible(bool(coordinates))
         self._coordinates.setText(coordinates)
 
-    def _toggle_activity_dock(self, visible: bool | None = None):
+    def _toggle_activity_dock(self, visible: bool | None = None) -> None:
         par = cast('_QtMainWindow', self.parent())
         if visible is None:
             visible = not par._activity_dialog.isVisible()
@@ -192,7 +192,7 @@ class StatusBarWidget(QWidget):
             else 0
         )
 
-    def do_layout(self):
+    def do_layout(self) -> None:
         width = self.width()
         height = self.height()
 
