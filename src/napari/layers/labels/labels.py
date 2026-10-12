@@ -1085,7 +1085,7 @@ class Labels(ScalarFieldBase):
 
         self.thumbnail = color_array
 
-    def get_color(self, label) -> np.ndarray | None:
+    def get_color(self, label) -> np.ndarray[tuple[Literal[4], np.dtype[np.float32]] | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None
