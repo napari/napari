@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -46,6 +46,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from napari.components import Dims
+
+    PixelValue: TypeAlias = (
+        np.number | np.bool_ | np.ndarray[tuple[int], np.dtype[np.number]]
+    )
 
 
 __all__ = ('ScalarFieldBase',)
@@ -689,7 +693,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _get_value(
         self, position
-    ) -> np.ndarray | tuple[int, np.ndarray | None] | None:
+    ) -> PixelValue | tuple[int, PixelValue | None] | None:
         """Value of the data at a position in data coordinates.
 
         Parameters

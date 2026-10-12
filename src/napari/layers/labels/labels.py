@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     NamedTuple,
     TypeAlias,
 )
@@ -1085,7 +1086,9 @@ class Labels(ScalarFieldBase):
 
         self.thumbnail = color_array
 
-    def get_color(self, label) -> np.ndarray[tuple[Literal[4], np.dtype[np.float32]] | None:
+    def get_color(
+        self, label
+    ) -> np.ndarray[tuple[Literal[4]], np.dtype[np.float32]] | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None
@@ -1254,7 +1257,7 @@ class Labels(ScalarFieldBase):
 
     def fill(
         self,
-        coord: Sequence[float],
+        coord: Sequence[float] | np.ndarray,
         new_label: int,
         refresh: bool = True,
     ) -> None:
@@ -1446,7 +1449,7 @@ class Labels(ScalarFieldBase):
 
     def paint(
         self,
-        coord: Sequence[float],
+        coord: Sequence[float] | np.ndarray,
         new_label: int,
         refresh: bool = True,
     ) -> None:

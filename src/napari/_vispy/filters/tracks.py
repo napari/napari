@@ -141,10 +141,12 @@ class TracksFilter(Filter):
         super()._attach(visual)
 
     @property
-    def vertex_time(self) -> npt.NDArray[np.floating]:
+    def vertex_time(
+        self,
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         return self._vertex_time
 
     @vertex_time.setter
-    def vertex_time(self, v_time) -> None:
+    def vertex_time(self, v_time: npt.ArrayLike | None) -> None:
         self._vertex_time = np.array(v_time).reshape(-1, 1).astype(np.float32)
         self.vshader['a_vertex_time'] = VertexBuffer(self.vertex_time)

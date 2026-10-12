@@ -691,16 +691,16 @@ class ShapeList:
         return [s.z_index for s in self.shapes]
 
     @property
-    def slice_key(self) -> np.ndarray:
+    def slice_key(self) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         """list: slice key for slicing n-dimensional shapes."""
         return self._slice_key
 
     @slice_key.setter
     @_batch_dec
-    def slice_key(self, slice_key) -> None:
-        slice_key = list(slice_key)
+    def slice_key(self, slice_key: npt.ArrayLike) -> None:
+        slice_key = np.asarray(slice_key, dtype=float)
         if not np.array_equal(self._slice_key, slice_key):
-            self._slice_key = slice_key  # pyrefly: ignore [bad-assignment]
+            self._slice_key = slice_key
             self._clear_cache()
             self._update_displayed()
 
@@ -1996,7 +1996,7 @@ class ShapeList:
         triangle_indices: np.ndarray,
         ray_position: np.ndarray,
         ray_direction: np.ndarray,
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.floating]]:
         """Find the intersection of a ray with specified triangles.
 
         Parameters
@@ -2028,7 +2028,7 @@ class ShapeList:
 
     def to_masks(
         self, mask_shape=None, zoom_factor=1, offset=(0, 0)
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int, int], np.dtype[np.bool_]]:
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
 
@@ -2064,7 +2064,7 @@ class ShapeList:
 
     def to_labels(
         self, labels_shape=None, zoom_factor=1, offset=(0, 0)
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
         corresponding to it, and 0 for background. For overlapping shapes
@@ -2103,7 +2103,7 @@ class ShapeList:
 
     def to_colors(
         self, colors_shape=None, zoom_factor=1, offset=(0, 0), max_shapes=None
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.float64]]:
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the

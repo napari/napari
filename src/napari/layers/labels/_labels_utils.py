@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -10,8 +10,13 @@ if TYPE_CHECKING:
 
     from napari.layers import Labels
 
+_ShapeT = TypeVar('_ShapeT', bound=tuple[int, ...])
+_DTypeT = TypeVar('_DTypeT', bound=np.dtype[Any])
 
-def interpolate_coordinates(old_coord, new_coord, brush_size) -> np.ndarray:
+
+def interpolate_coordinates(
+    old_coord, new_coord, brush_size
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.
@@ -214,8 +219,10 @@ def mouse_event_to_labels_coordinate(
 
 
 def get_contours(
-    labels: np.ndarray, thickness: int, background_label: int
-) -> np.ndarray:
+    labels: np.ndarray[_ShapeT, _DTypeT],
+    thickness: int,
+    background_label: int,
+) -> np.ndarray[_ShapeT, _DTypeT]:
     """Computes the contours of a 2D label image.
 
     Parameters

@@ -136,9 +136,7 @@ def scale_to_vector(scale, *, ndim):
     return scale_arr
 
 
-def rotate_to_matrix(
-    rotate, *, ndim
-) -> np.ndarray[tuple[int, int], np.float64]:
+def rotate_to_matrix(rotate, *, ndim):
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
@@ -219,7 +217,7 @@ def _cos_sin_degrees(angle_degrees):
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def shear_to_matrix(shear, *, ndim) -> npt.NDArray[np.float64]:
+def shear_to_matrix(shear, *, ndim):
     """Convert a shear input into an n-dimensional transform component.
 
     Parameters
@@ -243,7 +241,7 @@ def shear_to_matrix(shear, *, ndim) -> npt.NDArray[np.float64]:
     return full_shear_mat
 
 
-def _make_shear_mat(shear) -> np.ndarray:
+def _make_shear_mat(shear):
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
@@ -260,7 +258,7 @@ def _make_shear_mat(shear) -> np.ndarray:
     return np.array(shear)
 
 
-def expand_upper_triangular(vector) -> npt.NDArray[np.float64]:
+def expand_upper_triangular(vector):
     """Expand a vector into an upper triangular matrix.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -378,9 +376,7 @@ def decompose_linear_matrix(
     return rotate, scale, shear
 
 
-def shear_matrix_from_angle(
-    angle, ndim=3, axes=(-1, 0)
-) -> npt.NDArray[np.float64]:
+def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     """Create a shear matrix from an angle.
 
     Parameters
@@ -403,7 +399,7 @@ def shear_matrix_from_angle(
     return matrix
 
 
-def is_matrix_upper_triangular(matrix) -> bool:
+def is_matrix_upper_triangular(matrix):
     """Check if a matrix is upper triangular.
 
     Parameters
@@ -419,7 +415,7 @@ def is_matrix_upper_triangular(matrix) -> bool:
     return np.allclose(matrix, np.triu(matrix))
 
 
-def is_matrix_lower_triangular(matrix) -> bool:
+def is_matrix_lower_triangular(matrix):
     """Check if a matrix is lower triangular.
 
     Parameters
@@ -435,7 +431,7 @@ def is_matrix_lower_triangular(matrix) -> bool:
     return np.allclose(matrix, np.tril(matrix))
 
 
-def is_matrix_triangular(matrix) -> bool:
+def is_matrix_triangular(matrix):
     """Check if a matrix is triangular.
 
     Parameters

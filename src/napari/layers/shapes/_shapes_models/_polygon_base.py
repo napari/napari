@@ -62,7 +62,7 @@ class PolygonBase(Shape):
         self.data = data
 
     @property
-    def data(self) -> np.ndarray:
+    def data(self) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         """np.ndarray: NxD array of vertices."""
         return self._data
 

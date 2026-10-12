@@ -206,9 +206,7 @@ _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 _MINIMUM_SHADES_COUNT = 256
 
 
-def _all_rgb() -> np.ndarray[
-    tuple[Literal[256**3], Literal[3]], np.unsignedinteger
-]:
+def _all_rgb() -> np.ndarray[tuple[int, int], np.dtype[np.uint8]]:
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
     r, g, b = np.meshgrid(base, base, base, indexing='ij')
@@ -508,7 +506,7 @@ def label_colormap(
 
 
 @lru_cache
-def _primes(upto=2**16) -> np.ndarray[tuple[int], np.integer]:
+def _primes(upto=2**16) -> np.ndarray[tuple[int], np.dtype[np.int_]]:
     """Generate primes up to a given number.
 
     Parameters

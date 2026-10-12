@@ -642,13 +642,15 @@ class Shape(ABC):
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
         return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
 
-    def _all_triangles(self) -> np.ndarray:
+    def _all_triangles(
+        self,
+    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.float32]]:
         """Return all triangles for the shape
 
         Returns
         -------
         np.ndarray
-            Nx3 array of vertex indices that form the triangles for the shape
+            Nx3xD array of vertex coordinates that form the triangles for the shape
         """
         return np.vstack(
             [
