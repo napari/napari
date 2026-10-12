@@ -274,6 +274,10 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Aditi
+  family-names: Juneja
+  affiliation: Independent
+  alias: Schefflera-Arboricola
 - given-names: Hiroki
   family-names: Kawai
   affiliation: The University of Tokyo / LPIXEL Inc.
@@ -632,5 +636,9 @@ authors:
   affiliation: Institute of Science and Technology Austria
   orcid: https://orcid.org/0000-0001-8421-5508
   alias: Suyash-Naik
+- given-names: Leticia
+  family-names: Zaid
+  affiliation: Université Paris-Saclay
+  alias: lettyz3
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
