@@ -9,7 +9,6 @@ from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
-    Literal,
     NamedTuple,
     TypeVar,
 )
@@ -611,7 +610,7 @@ def compute_multiscale_level(
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
-) -> tuple[int, np.ndarray[tuple[Literal[2], int], np.dtype[np.int_]]]:
+) -> tuple[int, np.ndarray[tuple[int, int], np.dtype[np.int_]]]:
     """Computed desired level and corners of a multiscale view.
 
     The level of the multiscale should be the lowest resolution such that

@@ -1,9 +1,9 @@
-from typing import Literal, TypeAlias, overload
+from typing import TypeAlias, overload
 
 import numpy as np
 import numpy.typing as npt
 
-FaceNormal: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.int_]]
+FaceNormal: TypeAlias = np.ndarray[tuple[int], np.dtype[np.int_]]
 
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
@@ -727,7 +727,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     line_direction: np.ndarray,
     bounding_box: np.ndarray,
     face_normal: np.ndarray,
-) -> np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]:
+) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
     """Find the intersection of a ray with the specified face of an
     axis-aligned bounding box.
 

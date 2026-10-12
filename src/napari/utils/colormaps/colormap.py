@@ -50,12 +50,10 @@ _LabelValues1D: TypeAlias = (
 _LabelValues2D: TypeAlias = (
     np.ndarray[tuple[int, int], np.dtype[np.integer]] | Sequence[Sequence[int]]
 )
-_LabelColor: TypeAlias = np.ndarray[tuple[Literal[4]], np.dtype[np.float32]]
-_LabelColors1D: TypeAlias = np.ndarray[
-    tuple[int, Literal[4]], np.dtype[np.float32]
-]
+_LabelColor: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float32]]
+_LabelColors1D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float32]]
 _LabelColors2D: TypeAlias = np.ndarray[
-    tuple[int, int, Literal[4]], np.dtype[np.float32]
+    tuple[int, int, int], np.dtype[np.float32]
 ]
 _LabelColorsND: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float32]]
 
@@ -163,20 +161,20 @@ class Colormap(EventedModel):
     @overload
     def map(
         self, values: float | np.number
-    ) -> np.ndarray[tuple[Literal[1], Literal[4]], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]: ...
 
     @overload
     def map(
         self,
         values: np.ndarray[tuple[int], np.dtype[np.number]] | Sequence[float],
-    ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]: ...
 
     @overload
     def map(
         self,
         values: np.ndarray[tuple[int, int], np.dtype[np.number]]
         | Sequence[Sequence[float]],
-    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[int, int, int], np.dtype[np.floating]]: ...
 
     @overload
     def map(
@@ -319,25 +317,25 @@ class LabelColormapBase(Colormap):
         """Function that maps values to colors without selection or cache"""
         raise NotImplementedError
 
-    # Label colormaps only map integers, and map a scalar to a (4,) color
-    # instead of the (1, 4) array returned by `Colormap.map`.
-    @overload
-    def map(self, values: int | np.integer) -> _LabelColor: ...  # pyrefly: ignore[bad-override]
+    if TYPE_CHECKING:
+        # Label colormaps only map integers, and map a scalar to a (4,) color
+        # instead of the (1, 4) array returned by `Colormap.map`. Declared
+        # only for type checkers so runtime still inherits `Colormap.map`.
+        @overload
+        def map(self, values: int | np.integer) -> _LabelColor: ...  # pyrefly: ignore[bad-override]
 
-    @overload
-    def map(self, values: _LabelValues1D) -> _LabelColors1D: ...
+        @overload
+        def map(self, values: _LabelValues1D) -> _LabelColors1D: ...
 
-    @overload
-    def map(self, values: _LabelValues2D) -> _LabelColors2D: ...
+        @overload
+        def map(self, values: _LabelValues2D) -> _LabelColors2D: ...
 
-    @overload
-    def map(self, values: np.ndarray) -> _LabelColorsND: ...
+        @overload
+        def map(self, values: np.ndarray) -> _LabelColorsND: ...
 
-    def map(
-        self, values: np.ndarray | Sequence | np.integer | int
-    ) -> _LabelColor | _LabelColorsND:
-        """Map label values to colors. Implemented by subclasses."""
-        raise NotImplementedError
+        def map(
+            self, values: np.ndarray | Sequence | np.integer | int
+        ) -> _LabelColor | _LabelColorsND: ...
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate value with min dtype.
@@ -705,7 +703,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         if self.use_selection and apply_selection:
             return {self.selection: 1, None: 0}, {
-                0: np.array((0, 0, 0, 0)),
+                0: np.zeros(4, dtype=np.float32),
                 1: self.color_dict.get(
                     self.selection,
                     self.default_color,
@@ -826,7 +824,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     @property
     def default_color(self) -> np.ndarray:
-        return self.color_dict.get(None, np.array((0, 0, 0, 0)))
+        return self.color_dict.get(None, np.zeros(4, dtype=np.float32))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
 

@@ -1,5 +1,3 @@
-from typing import Literal
-
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -55,7 +53,7 @@ class Ellipse(Shape):
     @property
     def data(
         self,
-    ) -> np.ndarray[tuple[Literal[4], int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         """(4, D) array: ellipse vertices."""
         return self._data
 

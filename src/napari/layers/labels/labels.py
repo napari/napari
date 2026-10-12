@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Literal,
     NamedTuple,
     TypeAlias,
 )
@@ -590,7 +589,7 @@ class Labels(ScalarFieldBase):
 
     @property
     def brush_size(self) -> int:
-        """float: Size of the paint in world coordinates."""
+        """int: Size of the paint in world coordinates."""
         return self._brush_size
 
     @brush_size.setter
@@ -1088,7 +1087,7 @@ class Labels(ScalarFieldBase):
 
     def get_color(
         self, label
-    ) -> np.ndarray[tuple[Literal[4]], np.dtype[np.float32]] | None:
+    ) -> np.ndarray[tuple[int], np.dtype[np.float32]] | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None

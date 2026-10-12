@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 import numpy as np
 from pydantic import (
@@ -205,7 +205,7 @@ class ColorManager(EventedModel):
     @classmethod
     def _ensure_color_array(
         cls, v
-    ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]:
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
         if len(v) > 0:
             return transform_color(v)
 

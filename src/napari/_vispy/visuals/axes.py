@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh
 
@@ -13,7 +11,7 @@ from napari.utils.colormaps.standardize_color import transform_color
 
 def make_dashed_line(
     num_dashes, axis
-) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.float64]]:
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Make a dashed line.
 
     Parameters
@@ -26,7 +24,7 @@ def make_dashed_line(
     Returns
     -------
     np.ndarray
-        Dashed line, of shape (num_dashes, 3) with zeros in
+        Dashed line, of shape (2 * num_dashes, 3) with zeros in
         the non dashed axes and line segments in the dashed
         axis.
     """

@@ -640,11 +640,11 @@ class Shape(ABC):
     def _triangulate_edge_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
+        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore[missing-attribute]
 
     def _all_triangles(
         self,
-    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[int, int, int], np.dtype[np.float32]]:
         """Return all triangles for the shape
 
         Returns
