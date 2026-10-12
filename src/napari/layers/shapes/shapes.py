@@ -2760,7 +2760,15 @@ class Shapes(Layer):
                             'try reducing napari > Settings > '
                             'Experimental > RDP epsilon. ',
                         )
-                if len(vertices) <= 3:
+                # The last vertex follows the cursor and is not committed.
+                vertices = vertices[:-1]
+                # Polygons are closed implicitly, so one drawn back onto its
+                # first vertex would otherwise store a zero-length edge.
+                if len(vertices) > 1 and np.allclose(
+                    vertices[0], vertices[-1]
+                ):
+                    vertices = vertices[:-1]
+                if len(vertices) < 3:
                     self._data_view.remove(index)
                     # Clear selected data to prevent issues.
                     # See https://github.com/napari/napari/pull/6912#discussion_r1601169680
@@ -2768,7 +2776,7 @@ class Shapes(Layer):
                 else:
                     self._data_view.edit(
                         index,
-                        vertices[:-1],
+                        vertices,
                         new_type=shape_classes[ShapeType.POLYGON],
                     )
         # handles the case that
