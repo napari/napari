@@ -23,6 +23,8 @@ class CanvasAxesOverlay(CanvasOverlay):
         If axes have arrowheads or not.
     size : float
         Size taken up by the overlay in canvas pixels.
+    font_size : float, optional
+        The font size (in points) of the text.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -47,5 +49,6 @@ class CanvasAxesOverlay(CanvasOverlay):
     dashed: bool = False
     arrows: bool = True
     size: float = 100
+    font_size: float | None = None
     blending: Blending = Blending.TRANSLUCENT_NO_DEPTH
     position: CanvasPosition = CanvasPosition.BOTTOM_LEFT
