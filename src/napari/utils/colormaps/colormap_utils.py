@@ -508,7 +508,7 @@ def label_colormap(
 
 
 @lru_cache
-def _primes(upto=2**16) -> np.ndarray:
+def _primes(upto=2**16) -> np.ndarray[tuple[int], np.integer]:
     """Generate primes up to a given number.
 
     Parameters
