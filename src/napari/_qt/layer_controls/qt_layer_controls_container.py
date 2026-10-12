@@ -149,7 +149,7 @@ class QtLayerControlsContainer(QStackedWidget):
                 hist_widget._on_theme_change(event)
 
         if self.panel is not None:
-            for widget in self.panel.values():
+            for widget in self.panel._controls:
                 histogram_control = getattr(widget, '_histogram_control', None)
                 if histogram_control is None:
                     continue
@@ -159,7 +159,7 @@ class QtLayerControlsContainer(QStackedWidget):
                 if hist_widget is not None:
                     hist_widget._on_theme_change(event)
 
-    def _populate(self):
+    def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.
 
         Parameters

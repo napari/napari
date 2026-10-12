@@ -50,7 +50,7 @@ class QtFaceColorControl(QtWidgetControlsBase):
         )
         self.face_color_label = QtWrappedLabel('face color:')
         connect_setattr(
-            self.face_color_edit.color_changed,  # pyrefly: ignore [bad-argument-type]
+            self.face_color_edit.color_changed,
             self._layer,
             'current_face_color',
         )

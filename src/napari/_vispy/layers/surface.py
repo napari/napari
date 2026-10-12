@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -15,6 +15,8 @@ from napari.utils.colormaps.colormap_utils import _napari_cmap_to_vispy
 if TYPE_CHECKING:
     from napari.layers import Surface
 
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
+
 
 class VispySurfaceLayer(VispyBaseLayer):
     """Vispy view for the surface layer.
@@ -25,11 +27,12 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     layer: Surface
+    node: SurfaceVisual
 
     def __init__(self, layer, font_info: FontInfo, **kwargs) -> None:
         node = SurfaceVisual(font_info=font_info)
         self._texture_filter = None
-        self._light_direction = (1, 1, 1)
+        self._light_direction = np.array((1.0, 1.0, 1.0))
         self._meshdata = None
         super().__init__(layer, node, font_info=font_info, **kwargs)
 
@@ -160,10 +163,15 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self):
-        shading = None if self.layer.shading == 'none' else self.layer.shading
+        shading = (
+            None
+            if self.layer.shading == 'none'
+            or self.layer._slice_input.ndisplay == 2
+            else self.layer.shading
+        )
         if not self.node.mesh_data.is_empty():
             self.node.shading = shading
-            self._on_camera_move()
+            self._on_view_direction_change()
         self.node.update()
 
     def _on_wireframe_visible_change(self):
@@ -200,18 +208,13 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='vertex',
             )
 
-    def _on_camera_move(self, event=None):
-        if (
-            event is not None
-            and event.type == 'angles'
-            and self.layer._slice_input.ndisplay == 3
-        ):
-            camera = event.source
-            # take displayed up and view directions and flip zyx for vispy
-            up = np.array(camera.up_direction)[::-1]
-            view = np.array(camera.view_direction)[::-1]
+    def _on_view_direction_change(
+        self, view: Vector3 | None = None, up: Vector3 | None = None
+    ):
+        if view is not None and up is not None:
+            # TODO: this is not working well with axis flip, something is afoot
             # combine to get light behind the camera on the top right
-            self._light_direction = up - view - np.cross(up, view)
+            self._light_direction = up - view + np.cross(up, view)
         if (
             self.node.shading_filter is not None
             and self._meshdata._vertices is not None  # pyrefly: ignore [missing-attribute]
@@ -229,4 +232,3 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_wireframe_color_change()
         self._on_face_normals_change()
         self._on_vertex_normals_change()
-        self._on_camera_move()

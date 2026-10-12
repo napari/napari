@@ -184,6 +184,8 @@ class QtDimSliderWidget(QWidget):
         slider.setPageStep(1)
         slider.setValue(self.dims.current_step[self.axis])
 
+        slider.setToolTip('Right click to open the thick slicing controls.')
+
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 

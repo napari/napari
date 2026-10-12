@@ -295,7 +295,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         translate: Sequence[float] | None = None,
         units: Sequence[str | pint.Unit] | None = None,
         visible: bool = True,
-    ):
+    ) -> None:
         # Determine if rgb
         data_shape = data.shape if hasattr(data, 'shape') else data[0].shape
         if rgb and not guess_rgb(data_shape, min_side_len=0):
@@ -367,7 +367,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
             self.locked_data_level = locked_data_level
 
     @property
-    def rendering(self) -> str:  # pyrefly: ignore [bad-override]
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how

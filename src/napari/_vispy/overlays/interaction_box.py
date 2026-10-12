@@ -53,8 +53,8 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
             top_left, bot_right = self.overlay.bounds
             self.node.set_data(
                 # invert axes for vispy
-                top_left[::-1],  # pyrefly: ignore [bad-argument-type]
-                bot_right[::-1],  # pyrefly: ignore [bad-argument-type]
+                top_left[::-1],
+                bot_right[::-1],
                 handles=self.overlay.handles,
                 selected=self.overlay.selected_handle,
             )
@@ -74,7 +74,7 @@ class VispyTransformBoxOverlay(_VispyBoundingBoxOverlay):
 
         self.reset()
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             bounds = self.layer._display_bounding_box_augmented_data_level(
                 self.layer._slice_input.displayed

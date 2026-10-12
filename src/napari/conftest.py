@@ -906,7 +906,7 @@ def _dangling_qtimers(monkeypatch, request):
         _single_shot = my_start
 
         class OldTimer(QTimer):
-            def start(self, time=None):  # pyrefly: ignore [bad-override]
+            def start(self, time=None):
                 if time is not None:
                     base_start(self, time)
                 else:
