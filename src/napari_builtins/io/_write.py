@@ -1,6 +1,7 @@
 import csv
 import os
 import shutil
+import warnings
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any
 
@@ -95,6 +96,40 @@ def imsave_extensions() -> tuple[str, ...]:
     )
 
 
+def _select_multiscale_level(data: Any, meta: dict) -> Any:
+    """Return a single level of multiscale data, or the data unchanged.
+
+    The built-in writers cannot save multiscale (pyramidal) images, so only
+    one level is saved: the level locked with ``locked_data_level`` or, if
+    no level is locked, the highest resolution level (0), with a warning.
+
+    Parameters
+    ----------
+    data : array or list of array
+        Layer data.
+    meta : dict
+        Layer metadata.
+
+    Returns
+    -------
+    array
+        The data of a single level.
+    """
+    if not meta.get('multiscale', False):
+        return data
+    level = meta.get('locked_data_level')
+    if level is None:
+        level = 0
+        warnings.warn(
+            'The built-in writer cannot save multiscale images, so only '
+            'the highest resolution level (0) will be saved. Set '
+            '`locked_data_level` on the layer to save another level.',
+            UserWarning,
+            stacklevel=2,
+        )
+    return data[level]
+
+
 def napari_write_image(path: str, data: Any, meta: dict) -> str | None:
     """Our internal fallback image writer at the end of the plugin chain.
 
@@ -115,6 +150,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> str | None:
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+    data = _select_multiscale_level(data, meta)
     ext = os.path.splitext(path)[1]
     if not ext:
         path += '.tif'
@@ -147,8 +183,11 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> str | None:
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+    data = _select_multiscale_level(data, meta)
     dtype = data.dtype if data.dtype.itemsize >= 4 else np.uint32
-    return napari_write_image(path, np.asarray(data, dtype=dtype), meta)
+    return napari_write_image(
+        path, np.asarray(data, dtype=dtype), {**meta, 'multiscale': False}
+    )
 
 
 def napari_write_points(path: str, data: Any, meta: dict) -> str | None:
