@@ -136,7 +136,7 @@ def scale_to_vector(scale, *, ndim):
     return scale_arr
 
 
-def rotate_to_matrix(rotate, *, ndim) -> npt.NDArray[np.float64]:
+def rotate_to_matrix(rotate, *, ndim) -> np.ndarray[tuple[int, int], np.float64]:
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
