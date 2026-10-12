@@ -27,14 +27,14 @@ class LogWidget(QWidget):
     ) -> None:
         super().__init__(parent)
 
-        self.layout = QVBoxLayout()
+        layout = QVBoxLayout()
 
         # Description
         title_label = QLabel('logger')
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.layout.addWidget(title_label)
+        layout.addWidget(title_label)
 
         # level selection
         self.level_layout = QHBoxLayout()
@@ -45,7 +45,7 @@ class LogWidget(QWidget):
         )
         self.level_layout.addWidget(self.loglevel)
         self.level_layout.addStretch()
-        self.layout.addLayout(self.level_layout)
+        layout.addLayout(self.level_layout)
 
         # filtering
         self.filter_layout = QHBoxLayout()
@@ -59,15 +59,15 @@ class LogWidget(QWidget):
         self.text_filter = QLineEdit()
         self.text_filter.setPlaceholderText('text filter')
         self.filter_layout.addWidget(self.text_filter)
-        self.layout.addLayout(self.filter_layout)
+        layout.addLayout(self.filter_layout)
 
         # log text box
         self.log_text_box = QTextEdit()
         self.log_text_box.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.log_text_box.setLineWrapMode(QTextEdit.NoWrap)
-        font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        self.log_text_box.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
         self.log_text_box.setFont(font)
 
         # Add text copy button
@@ -78,9 +78,9 @@ class LogWidget(QWidget):
             self.infoCopyButton, 0, Qt.AlignmentFlag.AlignTop
         )
         self.info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.layout.addLayout(self.info_layout)
+        layout.addLayout(self.info_layout)
 
-        self.setLayout(self.layout)
+        self.setLayout(layout)
 
         self.loglevel.currentTextChanged.connect(self._on_loglevel_change)
         self.level_filter.currentTextChanged.connect(self._on_change)

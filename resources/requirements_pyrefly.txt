@@ -32,7 +32,7 @@ packaging==26.3
     # via
     #   build
     #   qtpy
-platformdirs==4.12.2
+platformdirs==4.12.3
     # via npe2
 psygnal==0.16.1
     # via
