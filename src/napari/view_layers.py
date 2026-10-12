@@ -16,11 +16,11 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     import numpy.typing as npt
-    import pint
 
     from napari.types import ArrayLike
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
+    from napari.utils.transforms._units import UnitsSequence
 
 __all__ = ['imshow']
 
@@ -120,9 +120,7 @@ def imshow(
     scale: npt.ArrayLike | None = ...,
     shear: npt.ArrayLike | None = ...,
     translate: npt.ArrayLike | None = ...,
-    units: Sequence[str | pint.Unit]
-    | Sequence[Sequence[str | pint.Unit]]
-    | None = ...,
+    units: UnitsSequence | Sequence[UnitsSequence] | None = ...,
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
@@ -165,9 +163,7 @@ def imshow(
     scale: npt.ArrayLike | None = ...,
     shear: npt.ArrayLike | None = ...,
     translate: npt.ArrayLike | None = ...,
-    units: Sequence[str | pint.Unit]
-    | Sequence[Sequence[str | pint.Unit]]
-    | None = ...,
+    units: UnitsSequence | Sequence[UnitsSequence] | None = ...,
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
@@ -209,9 +205,7 @@ def imshow(
     scale: npt.ArrayLike | None = None,
     shear: npt.ArrayLike | None = None,
     translate: npt.ArrayLike | None = None,
-    units: Sequence[str | pint.Unit]
-    | Sequence[Sequence[str | pint.Unit]]
-    | None = None,
+    units: UnitsSequence | Sequence[UnitsSequence] | None = None,
     visible: bool | Sequence[bool] = True,
     viewer: Viewer | None = None,
     title: str = 'napari',
