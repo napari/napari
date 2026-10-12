@@ -20,7 +20,7 @@ from napari._qt.qthreading import (
     register_threadworker_processors,
     wait_for_workers_to_quit,
 )
-from napari._qt.utils import _maybe_allow_interrupt
+from napari._qt.utils import _maybe_allow_interrupt, use_tabular_numerals
 from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
@@ -248,6 +248,8 @@ def get_qapp(
         # Intercept tooltip events in order to convert all text to rich text
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
+
+        use_tabular_numerals(app)
 
     if app.windowIcon().isNull():
         app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
