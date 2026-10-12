@@ -44,10 +44,10 @@ class ContextMapping(collections.abc.Mapping):
         self._evaluated_context_mapping[key] = value
         return value
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         return item in self._initial_context_mapping
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._initial_context_mapping)
 
     def __iter__(self):
@@ -69,10 +69,10 @@ class SettingsAwareContext(Context):
         self._settings = get_settings()
         self._settings.events.changed.connect(self._update_key)
 
-    def _update_key(self, event: Event):
+    def _update_key(self, event: Event) -> None:
         self.changed.emit({f'{self._PREFIX}{event.key}'})
 
-    def __del__(self):
+    def __del__(self) -> None:
         self._settings.events.changed.disconnect(self._update_key)
 
     def __missing__(self, key: str) -> Any:
@@ -101,7 +101,7 @@ class SettingsAwareContext(Context):
 
         return super().__setitem__(k, v)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         # settings mappings are always populated, so we can always return True
         return True
 
