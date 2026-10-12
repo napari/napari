@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -8,13 +9,15 @@ import numpy as np
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
-    ConfigDict,
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 
-from napari._pydantic_util import get_inner_type, get_outer_type
-from napari.utils.events._property_dependencies import property_dependencies
+from napari._pydantic_util import (
+    NapariConfigDict,
+    get_inner_type,
+    get_outer_type,
+)
 from napari.utils.events.event import (
     DependentEmitter,
     DependentWarningEmitter,
@@ -96,83 +99,48 @@ class EventedMetaclass(ModelMetaclass):
                         attr.fget.__annotations__['return']
                     )
 
-        cls.__properties_dependence__ = _get_properties_dependence(cls)
+        prop_dependence = {
+            k: set(v)
+            for k, v in cls.model_config.get(
+                'properties_dependence', {}
+            ).items()
+        }
+        cls.__properties_dependence__ = {
+            **getattr(cls, '__properties_dependence__', {}),
+            **prop_dependence,
+        }
 
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
 
-def _get_property_dependence_from_code(
-    cls: type['EventedModel'], prop: property, visited: set[str]
-) -> set[str]:
-    """Return set of attributes that are required to compute a property.
+def _update_dependents_from_property_code(
+    cls: type['EventedModel'],
+    prop_name: str,
+    prop: property,
+    deps: dict[str, set[str]],
+    visited=(),
+):
+    """Recursively find all the dependents of a property by inspecting the code object.
 
-    Dependencies will be guessed by inspecting the code of the property
-    in order to emit an event for a computed property when a model field
-    that it depends on changes (e.g: @property 'c' depends on model fields
-    'a' and 'b'). Alternatvely, dependencies may be declared excplicitly
-    in the Model Config.
-
-    Note: accessing a field with `getattr()` instead of dot notation won't
-    be automatically detected.
+    Update the given deps dictionary with the new findings.
     """
     if isinstance(prop, RenamedProperty):
-        return {prop.new_name}
-
-    deps = property_dependencies(prop).attributes
-    res = set()
-    for dep in deps:
-        if dep in visited:
-            continue
-        if '.' in dep:
-            res.add(dep)
-        if dep in cls.model_fields:
-            res.add(dep)
-        elif dep in cls.__properties__:
-            res.update(
-                _get_property_dependence_from_code(
-                    cls, cls.__properties__[dep], res | visited | {dep}
-                )
+        deps.setdefault(prop.new_name.split('.')[0], set()).add(prop_name)
+    for name in inspect.unwrap(prop.fget).__code__.co_names:
+        if name in cls.model_fields:
+            deps.setdefault(name, set()).add(prop_name)
+        elif name in cls.__properties__ and name not in visited:
+            # to avoid infinite recursion, we shouldn't re-check getter we've already seen
+            visited = visited + (name,)
+            # sub_prop is the new property, but we leave prop_name the same
+            sub_prop = cls.__properties__[name]
+            _update_dependents_from_property_code(
+                cls, prop_name, sub_prop, deps, visited
             )
-    return res
 
 
-def _event_dependency_path(cls: type['EventedModel'], path: str) -> str:
-    parts = path.split('.')
-    current = cls
-
-    for index, name in enumerate(parts[:-1]):
-        field = current.model_fields.get(name)
-        if field is None:
-            # Properties need separate resolution.
-            return path
-
-        field_type = get_inner_type(field.annotation)
-        if not (
-            isinstance(field_type, type)
-            and issubclass(field_type, EventedModel)
-        ):
-            return '.'.join(parts[: index + 1])
-
-        current = field_type
-
-    return path
-
-
-def _get_properties_dependence(
-    cls: type['EventedModel'],
-) -> dict[str, set[str]]:
-    """Return mapping of a field name -> set of attributes that are required to compute that field."""
-    deps: dict[str, set[str]] = {}
-    for prop_name, prop in cls.__properties__.items():
-        dep = _get_property_dependence_from_code(cls, prop, set())
-        if prop_name in dep:
-            dep.remove(prop_name)
-        deps[prop_name] = {_event_dependency_path(cls, x) for x in dep}
-    return deps
-
-
-def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
+def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -218,8 +186,9 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
 
     deps: dict[str, set[str]] = {}
 
-    if deps_ := cls.model_config.get('dependencies', {}):
-        for prop_name, fields in deps_.items():
+    _deps = cls.model_config.get('dependencies')
+    if _deps:
+        for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
                 raise ValueError(
                     'Fields with dependencies must be properties. '
@@ -232,22 +201,22 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
     else:
         # if dependencies haven't been explicitly defined, we can glean
         # them from the property.fget code object:
-        for prop_name, fields in cls.__properties_dependence__.items():
-            if prop_name not in cls.__properties__:
-                raise ValueError(  # pragma: no cover
-                    'Fields with dependencies must be properties. '
-                    f'{prop_name!r} is not.'
-                )
-            if isinstance(cls.__properties__[prop_name], RenamedProperty):
-                continue
-            for field in fields:
-                if '.' in field:
-                    continue
-                if field not in cls.model_fields:
-                    warnings.warn(
-                        f'Unrecognized field dependency: {field}'
-                    )  # pragma: no cover
-                deps.setdefault(field, set()).add(prop_name)
+        for prop_name, prop in cls.__properties__.items():
+            _update_dependents_from_property_code(cls, prop_name, prop, deps)
+        for dep_name in list(deps):
+            for prop_name in list(deps[dep_name]):
+                if isinstance(
+                    cls.__properties__.get(prop_name), RenamedProperty
+                ) or any(
+                    path.startswith(f'{dep_name}.')
+                    for path in cls.__properties_dependence__.get(
+                        prop_name, ()
+                    )
+                ):
+                    deps[dep_name].remove(prop_name)
+            if not deps[dep_name]:
+                del deps[dep_name]
+
     return deps
 
 
@@ -278,7 +247,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    model_config = ConfigDict(
+    model_config = NapariConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration

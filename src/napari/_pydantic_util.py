@@ -13,7 +13,7 @@ from typing import (  # noqa
 from pydantic import ConfigDict
 
 
-class NapariConfigDict(ConfigDict):
+class NapariConfigDict(ConfigDict, total=False):
     """Custom ConfigDict for napari models.
 
     add dependencies attribute to track field dependencies
@@ -21,6 +21,7 @@ class NapariConfigDict(ConfigDict):
 
     # FIXME: make it part of public api?
     dependencies: dict[str, Collection[str]] | None
+    properties_dependence: dict[str, Collection[str]]
 
 
 def iter_inner_types(type_: Any) -> Any:
