@@ -700,7 +700,7 @@ class DirectLabelColormap(LabelColormapBase):
         return dkt
 
     @cached_property
-    def _array_map(self) -> np.ndarray:
+    def _array_map(self) -> np.ndarray[tuple[int], np.integer]:
         """Create an array to map labels to texture values of smaller dtype."""
 
         max_value = max(
