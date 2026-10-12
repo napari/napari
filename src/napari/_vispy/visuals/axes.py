@@ -9,7 +9,7 @@ from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-def make_dashed_line(num_dashes, axis) -> np.ndarray:
+def make_dashed_line(num_dashes, axis) -> np.ndarray[tuple[int, Literal[3], np.dtype[np.float64]]:
     """Make a dashed line.
 
     Parameters
