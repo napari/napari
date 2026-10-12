@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
     import packaging.version
+    import pandas as pd
 
 
 ROOT_DIR = os_path.dirname(os_path.dirname(__file__))
@@ -396,7 +397,7 @@ def _quiet_array_equal(*a: Any, **k: Any) -> bool:
         return np.array_equal(*a, **k)
 
 
-def _pandas_dataframe_equal(df1: Any, df2: Any) -> bool:
+def _pandas_dataframe_equal(df1: pd.DataFrame, df2: pd.DataFrame) -> bool:
     return df1.equals(df2)
 
 
