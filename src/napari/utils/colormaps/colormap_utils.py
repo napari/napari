@@ -207,7 +207,7 @@ _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 _MINIMUM_SHADES_COUNT = 256
 
 
-def _all_rgb() -> npt.NDArray[np.unsignedinteger]:
+def _all_rgb() -> np.ndarray[tuple[Literal[256**3], Literal[3]], np.unsignedinteger]:
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
     r, g, b = np.meshgrid(base, base, base, indexing='ij')
