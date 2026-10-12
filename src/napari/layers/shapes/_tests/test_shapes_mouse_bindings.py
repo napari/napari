@@ -403,6 +403,47 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+def test_polygon_lasso_release_after_keyboard_finish(
+    create_known_shapes_layer,
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+    desired_shape = np.array([[20, 30], [10, 50], [60, 40]])
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+
+    for coord in desired_shape[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    key_bindings.finish_drawing_shape(layer)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_release_callbacks(layer, event)
+
+    assert len(layer.data) == n_shapes + 1
+    assert np.array_equal(desired_shape, layer.data[-1])
+    assert not layer._is_creating
+
+
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
     layer, n_shapes, _known_non_shape = create_known_shapes_layer
