@@ -2764,7 +2764,7 @@ class Shapes(Layer):
                 vertices = vertices[:-1]
                 # Polygons are closed implicitly, so one drawn back onto its
                 # first vertex would otherwise store a zero-length edge.
-                if len(vertices) > 1 and np.allclose(
+                if len(vertices) > 1 and np.array_equal(
                     vertices[0], vertices[-1]
                 ):
                     vertices = vertices[:-1]
