@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from numpy import testing as npt
-from pytestqt.exceptions import TimeoutError as QtTimeoutError
 from qtpy.QtCore import QEvent, QPointF, Qt, QUrl
 from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
@@ -339,58 +338,13 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
         )
 
     window = viewer.window._qt_window
-    phase = 'window activation'
-    try:
-        # An exposed window may still belong to an inactive application.
-        window.raise_()
-        window.activateWindow()
-        qtbot.waitUntil(window.isActiveWindow, timeout=5000)
+    # An exposed window may still belong to an inactive application.
+    window.raise_()
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow, timeout=5000)
 
-        phase = 'console focus'
-        view.toggle_console_visibility(None)
-        qtbot.waitUntil(console_has_focus)
-    except QtTimeoutError as exc:
-
-        def describe(widget):
-            if widget is None:
-                return None
-            return {
-                'class': widget.metaObject().className(),
-                'name': widget.objectName(),
-                'id': hex(id(widget)),
-                'visible': widget.isVisible(),
-                'enabled': widget.isEnabled(),
-                'active': widget.isActiveWindow(),
-                'focus_policy': widget.focusPolicy(),
-                'has_focus': widget.hasFocus(),
-            }
-
-        diagnostics = [
-            'Console focus timeout diagnostics:',
-            f'Timeout phase: {phase}',
-            f'Application state: {QGuiApplication.applicationState()}',
-            f'Platform: {QGuiApplication.platformName()}',
-        ]
-        for label, widget in {
-            'Active window': QApplication.activeWindow(),
-            'Focused widget': QApplication.focusWidget(),
-            'Modal widget': QApplication.activeModalWidget(),
-            'Popup widget': QApplication.activePopupWidget(),
-            'Viewer window': window,
-            'Console': view.console,
-            'Console dock': view.dockConsole,
-            'Dock focus proxy': view.dockConsole.focusProxy(),
-            'Console focus proxy': view.console.focusProxy(),
-            'Remembered window focus': window.focusWidget(),
-        }.items():
-            diagnostics.append(f'{label}: {describe(widget)}')
-        diagnostics.append(f'Dock floating: {view.dockConsole.isFloating()}')
-        diagnostics.append(
-            f'Top-level widgets: '
-            f'{[describe(widget) for widget in QApplication.topLevelWidgets()]}'
-        )
-        exc.add_note('\n'.join(diagnostics))
-        raise
+    view.toggle_console_visibility(None)
+    qtbot.waitUntil(console_has_focus)
 
 
 @skip_on_win_ci
