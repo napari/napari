@@ -11,6 +11,8 @@ from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from vispy.app import MouseEvent
+
     from napari.components.overlays import LabelsPolygonOverlay
     from napari.layers import Labels
 
@@ -203,7 +205,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 self.overlay.points = self.overlay.points[:-2] + [pos.tolist()]
 
     @_only_when_enabled
-    def _on_mouse_double_click(self, layer, event):
+    def _on_mouse_double_click(self, layer, event: MouseEvent) -> None:
         if event.button == 2:
             self._on_mouse_press(layer, event)
             return None
@@ -226,7 +228,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.add_polygon_to_labels(layer)
         return None
 
-    def _get_mouse_coordinates(self, event):
+    def _get_mouse_coordinates(self, event: MouseEvent) -> np.ndarray | None:
         pos = mouse_event_to_labels_coordinate(self.layer, event)
         if pos is None:
             return None
@@ -237,18 +239,18 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         return pos
 
     @property
-    def _dims_displayed(self):
+    def _dims_displayed(self) -> list[int]:
         return self.layer._slice_input.displayed
 
     @property
-    def _num_points(self):
+    def _num_points(self) -> int:
         return len(self.overlay.points)
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_points_change()
 
-    def close(self):
+    def close(self) -> None:
         self.layer.mouse_move_callbacks.remove(self._on_mouse_move)
         self.layer.mouse_drag_callbacks.remove(self._on_mouse_press)
         self.layer.mouse_double_click_callbacks.remove(
