@@ -224,7 +224,7 @@ class Viewer(ViewerModel):
         scale: float | None = None,
         canvas_only: bool = True,
         flash: bool = False,
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.uint8]:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
