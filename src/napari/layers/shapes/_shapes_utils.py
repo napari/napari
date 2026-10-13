@@ -1065,7 +1065,7 @@ def path_to_indices(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    lines = [line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    lines = [draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
     if not lines:
         return np.empty(0, np.intp), np.empty(0, np.intp)
     iis, jjs = zip(*lines, strict=True)
