@@ -1461,6 +1461,36 @@ def test_set_color_on_empty_layer(attribute):
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_set_color_on_empty_layer_updates_current_color(attribute):
+    """Test that setting a color on an empty layer updates the current color"""
+    layer = Points()
+    current_color_event = getattr(layer.events, f'current_{attribute}_color')
+    with current_color_event.blocker() as blocker:
+        setattr(layer, f'{attribute}_color', 'red')
+    assert blocker.count == 1
+    assert getattr(layer, f'current_{attribute}_color') == 'red'
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_set_empty_color_array_on_empty_layer(attribute):
+    """Test that an empty color array on an empty layer is accepted"""
+    layer = Points()
+    current_color = getattr(layer, f'current_{attribute}_color')
+    setattr(layer, f'{attribute}_color', np.empty((0, 4)))
+    assert len(getattr(layer, f'{attribute}_color')) == 0
+    assert getattr(layer, f'current_{attribute}_color') == current_color
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_set_invalid_color_on_empty_layer(attribute):
+    """Test that an invalid color on an empty layer warns and uses white"""
+    layer = Points()
+    with pytest.warns(UserWarning, match='illegal values'):
+        setattr(layer, f'{attribute}_color', 'notacolor')
+    assert getattr(layer, f'current_{attribute}_color') == 'white'
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
     """Test adding a point to an empty layer when border/face color is a color cycle
 
