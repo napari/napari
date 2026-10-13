@@ -1257,7 +1257,7 @@ class Labels(ScalarFieldBase):
 
     def fill(
         self,
-        coord: Sequence[float] | np.ndarray,
+        coord: Sequence[float] | np.ndarray[tuple[int],np.dtype[np.floating]]
         new_label: int,
         refresh: bool = True,
     ) -> None:
