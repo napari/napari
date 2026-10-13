@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import gc
-import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
@@ -231,7 +230,6 @@ class VispyCanvas:
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
-        self._update_grid_spacing()
         self._update_viewer_overlays()
 
         self._scene_canvas.events.ignore_callback_errors = False
@@ -469,7 +467,7 @@ class VispyCanvas:
 
         # loop through all viewboxes to check whether the click is inside
         for (grid_coords, layer_indices), viewbox in zip(
-            self.viewer.canvas.grid.iter_viewboxes(self.viewer.layers),
+            self.viewer.canvas.grid.iter_viewboxes(),
             self.grid_views,
             strict=False,
         ):
@@ -681,7 +679,6 @@ class VispyCanvas:
         if not np.allclose(
             self._last_viewbox_size, self._current_viewbox_size
         ):
-            self._update_grid_spacing()
             self._last_viewbox_size = self._current_viewbox_size
             self._needs_overlay_position_update = True
 
@@ -874,9 +871,7 @@ class VispyCanvas:
     def _reorder_layers(self) -> None:
         """When the list is reordered, propagate changes to draw order."""
         if self.viewer.canvas.grid.enabled:
-            for _, layer_indices in self.viewer.canvas.grid.iter_viewboxes(
-                self.viewer.layers
-            ):
+            for _, layer_indices in self.viewer.canvas.grid.iter_viewboxes():
                 if not layer_indices:
                     continue
                 layers = [self.viewer.layers[idx] for idx in layer_indices]
@@ -988,9 +983,7 @@ class VispyCanvas:
             )
 
             # delete redundant vispy overlays (always keep 1)
-            _, occupied_viewboxes = self.viewer.canvas.grid._viewbox_groups(
-                self.viewer.layers
-            )
+            _, occupied_viewboxes = self.viewer.canvas.grid._viewbox_groups()
             n_views_to_populate = (
                 len(occupied_viewboxes) or 1 if gridded else 1
             )
@@ -1000,7 +993,7 @@ class VispyCanvas:
             # create, or update parent if existing
             if gridded:
                 for ((row, col), layer_indices), vispy_overlay in zip_longest(
-                    self.viewer.canvas.grid.iter_viewboxes(self.viewer.layers),
+                    self.viewer.canvas.grid.iter_viewboxes(),
                     list(vispy_overlays),
                 ):
                     if not layer_indices:
@@ -1079,7 +1072,6 @@ class VispyCanvas:
                 if self.viewer.canvas.grid.enabled:
                     row, col = self.viewer.canvas.grid.position(
                         self.viewer.layers.index(layer),
-                        layers=self.viewer.layers,
                     )
                     if row == -1:
                         # layer is hidden/excluded from grid — detach any existing overlay
@@ -1143,7 +1135,7 @@ class VispyCanvas:
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
-            self.viewer.canvas.grid.iter_viewboxes(self.viewer.layers),
+            self.viewer.canvas.grid.iter_viewboxes(),
         ):
             if not layer_indices:
                 # last empty boxes of the grid
@@ -1338,9 +1330,7 @@ class VispyCanvas:
     def _init_or_update_grid(self) -> None:
         # grid are really not designed to be reset, so we have to replace it
         # when necessary (every time the grid shape changes)
-        if self.grid.grid_size == self.viewer.canvas.grid.actual_shape(
-            self.viewer.layers
-        ):
+        if self.grid.grid_size == self.viewer.canvas.grid.actual_shape:
             return
 
         for camera in self.grid_cameras:
@@ -1353,9 +1343,7 @@ class VispyCanvas:
 
         self.grid = self.central_widget.add_grid(border_width=0)
 
-        for (row, col), _ in self.viewer.canvas.grid.iter_viewboxes(
-            self.viewer.layers,
-        ):
+        for (row, col), _ in self.viewer.canvas.grid.iter_viewboxes():
             view = self.grid[row, col]
             # any border_color != None will add a padding of +1
             # see https://github.com/vispy/vispy/issues/1492
@@ -1377,7 +1365,6 @@ class VispyCanvas:
             if self.viewer.canvas.grid.enabled:
                 self._init_or_update_grid()
                 self._setup_layer_views_in_grid()
-                self._update_grid_spacing()
             else:
                 self._setup_single_view()
 
@@ -1396,9 +1383,7 @@ class VispyCanvas:
         for (
             row,
             col,
-        ), layer_indices in self.viewer.canvas.grid.iter_viewboxes(
-            self.viewer.layers,
-        ):
+        ), layer_indices in self.viewer.canvas.grid.iter_viewboxes():
             view = self.grid[row, col]
 
             for idx in layer_indices:
@@ -1423,38 +1408,6 @@ class VispyCanvas:
             return self.grid_views[0].rect.size
 
         return self.view.rect.size
-
-    def _update_grid_spacing(self):
-        """Update the grid spacing with a validated spacing value.
-
-        This method computes the raw spacing based on the current canvas size
-        and validates it against the maximum safe spacing. If the raw spacing
-        exceeds the maximum safe spacing, it is reduced to the maximum safe value
-        and a warning is issued to the user.
-        """
-        # TODO: this should be all handled on the grid model ideally, using validators
-        raw_spacing = self.viewer.canvas.grid._compute_canvas_spacing_raw(
-            self._scene_canvas.size,
-            layers=self.viewer.layers,
-        )
-        safe_spacing = self.viewer.canvas.grid._compute_canvas_spacing(
-            self._scene_canvas.size,
-            layers=self.viewer.layers,
-        )
-
-        if raw_spacing > safe_spacing:
-            warnings.warn(
-                f'Grid spacing of {raw_spacing:.1f} pixels is too large and has been '
-                f'reduced to {safe_spacing:.1f} pixels to prevent viewboxes from '
-                'becoming too small. Consider using a smaller spacing value or '
-                'increasing the canvas size.',
-                UserWarning,
-                stacklevel=2,
-            )
-            # this shouldn't cause an infinite loop cause now the spacing is fixed!
-            self.viewer.canvas.grid.spacing = safe_spacing
-
-        self.grid.spacing = safe_spacing
 
     def _pause_scene_graph_update(self):
         self._pause_scene_graph = True
