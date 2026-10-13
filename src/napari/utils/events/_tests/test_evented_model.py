@@ -1225,7 +1225,7 @@ def test_nested_dependency_child_replacement_emits_once():
 
     class Model(EventedModel):
         model_config = NapariConfigDict(
-            properties_dependence={'doubled': ['child.value']}
+            child_dependencies={'doubled': ['child.value']}
         )
         child: Child = Field(default_factory=Child)
 
@@ -1249,7 +1249,7 @@ def test_nested_dependency_property_deprecation():
 
     class Model(EventedModel):
         model_config = NapariConfigDict(
-            properties_dependence={'doubled': ['child.value']},
+            child_dependencies={'doubled': ['child.value']},
             **EventedModel.model_config,
         )
         child: Child = Field(default_factory=Child)
