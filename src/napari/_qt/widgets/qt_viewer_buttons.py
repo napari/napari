@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import warnings
 from enum import StrEnum
-from functools import wraps
+from functools import partial, wraps
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QEvent, Qt
+from qtpy.QtGui import QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
+    QComboBox,
     QDoubleSpinBox,
     QFrame,
     QGridLayout,
@@ -19,13 +21,19 @@ from qtpy.QtWidgets import (
 )
 from superqt import QEnumComboBox, QLabeledDoubleSlider
 
-from napari._app_model.actions._file import new_points, new_shapes
+from napari._app_model.actions._file import (
+    _new_annotation_layer,
+    new_points,
+    new_shapes,
+)
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.utils import set_widgets_enabled_with_opacity
 from napari._qt.widgets.qt_dims_sorter import QtDimsSorter
 from napari._qt.widgets.qt_spinbox import QtSpinBox
 from napari._qt.widgets.qt_tooltip import QtToolTipLabel
+from napari.components._layer_creation import new_layer_metadata
 from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
+from napari.layers import Labels, Points, Shapes
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
@@ -113,6 +121,21 @@ class QtLayerButtons(QFrame):
             not self._layers_present_and_none_selected()
         )
 
+        for button, layer_class, callback in (
+            (self.newPointsButton, Points, self._new_points),
+            (self.newShapesButton, Shapes, self._new_shapes),
+            (self.newLabelsButton, Labels, self.viewer._new_labels),
+        ):
+            button.setToolTip(
+                button.toolTip() + 'Right-click to choose dimensions.'
+            )
+            button.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            button.customContextMenuRequested.connect(
+                partial(
+                    self._show_new_layer_popup, button, layer_class, callback
+                )
+            )
+
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
@@ -128,6 +151,103 @@ class QtLayerButtons(QFrame):
         )
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
+
+    def _show_new_layer_popup(self, button, layer_class, callback, _position):
+        source = self.viewer.layers.selection.active
+        if source is not None:
+            ndim = source.ndim
+            axis_labels = source.axis_labels
+            reference = 'Match selected layer'
+        elif self.viewer.layers.selection:
+            ndim = len(
+                self.viewer.layers.get_extent(
+                    self.viewer.layers.selection
+                ).step
+            )
+            axis_labels = self.viewer.dims.axis_labels[-ndim:]
+            reference = 'Match selected extent'
+        else:
+            ndim = (
+                2 if layer_class is Labels else max(self.viewer.dims.ndim, 2)
+            )
+            axis_labels = self.viewer.dims.axis_labels[-ndim:]
+            reference = 'Default' if layer_class is Labels else 'Match viewer'
+
+        popup = QtPopup(button)
+        popup.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        layout = QGridLayout()
+        layout.addWidget(
+            QLabel(f'New {layer_class.__name__}', popup), 0, 0, 1, 3
+        )
+        selector = QComboBox(popup)
+        selector.setObjectName('new_layer_axes')
+        model = QStandardItemModel(selector)
+        selector.setModel(model)
+        for dimensions in [ndim, *range(ndim - 1, 1, -1)]:
+            axes = ', '.join(axis_labels[-dimensions:])
+            item = QStandardItem(f'{axes} ({dimensions}D)')
+            item.setData(dimensions, Qt.ItemDataRole.UserRole)
+            if source is not None and (
+                layer_class is not Labels
+                or isinstance(source, ScalarFieldBase)
+            ):
+                try:
+                    new_layer_metadata(source, dimensions)
+                except ValueError:
+                    item.setEnabled(False)
+                    item.setToolTip(
+                        'Cannot discard axes coupled by a transform.'
+                    )
+            model.appendRow(item)
+
+        note = QLabel(reference, popup)
+        note.setObjectName('new_layer_note')
+        note.setWordWrap(True)
+
+        def update_axes():
+            omitted = ndim - selector.currentData()
+            note.setText(
+                f'Shared across: {", ".join(axis_labels[:omitted])}'
+                if omitted
+                else reference
+            )
+
+        selector.currentIndexChanged.connect(update_axes)
+        create_button = QPushButton('Create', popup)
+        create_button.setObjectName('new_layer_create')
+
+        def create_layer():
+            dimensions = selector.currentData()
+            if dimensions == ndim:
+                callback()
+            else:
+                _new_annotation_layer(self.viewer, layer_class, dimensions)
+            popup.close()
+
+        create_button.clicked.connect(create_layer)
+        caption = QLabel('&Keep trailing axes:', popup)
+        caption.setBuddy(selector)
+        layout.addWidget(caption, 1, 0)
+        layout.addWidget(selector, 1, 1)
+        layout.addWidget(
+            help_tooltip(
+                parent=popup,
+                text='Uses the same reference and inheritance rules as left-click,\n'
+                'restricted to trailing axes in stored order, not display order.\n'
+                'For a single image, retained axes inherit scale, translation, units,\n'
+                'axis labels, and compatible rotation, shear, and affine transforms.\n'
+                'Annotations are shared across omitted leading axes.\n'
+                'Choices that couple retained and omitted axes are unavailable.',
+            ),
+            1,
+            2,
+        )
+        layout.addWidget(note, 2, 0, 1, 3)
+        layout.addWidget(
+            create_button, 3, 0, 1, 3, Qt.AlignmentFlag.AlignRight
+        )
+        popup.frame.setLayout(layout)
+        popup.show_above_mouse()
 
     def _new_points(self):
         new_points(self.viewer)

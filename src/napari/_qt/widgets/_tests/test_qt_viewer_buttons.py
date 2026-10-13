@@ -1,8 +1,10 @@
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QContextMenuEvent
+from qtpy.QtWidgets import QApplication, QComboBox, QLabel, QPushButton
 
 from napari._app_model._app import get_app_model
 from napari._qt.dialogs.qt_modal import QtPopup
@@ -403,3 +405,214 @@ def test_layer_buttons_checked_on_selection(qt_layer_buttons):
     assert layer_buttons.newLabelsButton.property('creation_state') == 'none'
     # layers present but none selected, labels button is disabled
     assert not layer_buttons.newLabelsButton.isEnabled()
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+def test_new_layer_left_click(qt_layer_buttons, qtbot, kind):
+    viewer, buttons = qt_layer_buttons
+    affine = np.eye(5)
+    affine[0, 1] = 0.5
+    source = viewer.add_image(
+        np.zeros((5, 10, 20, 30)),
+        scale=(7, 4, 2, 1),
+        translate=(11, 12, 13, 14),
+        axis_labels=('t', 'z', 'y', 'x'),
+        units=('s', 'um', 'um', 'um'),
+        affine=affine,
+    )
+    qtbot.mouseClick(
+        getattr(buttons, f'new{kind}Button'), Qt.MouseButton.LeftButton
+    )
+    layer = viewer.layers[-1]
+    assert layer.ndim == 4
+    np.testing.assert_array_equal(layer.scale, source.scale)
+    np.testing.assert_array_equal(layer.translate, source.translate)
+    np.testing.assert_array_equal(
+        layer.affine.affine_matrix, source.affine.affine_matrix
+    )
+    assert layer.axis_labels == source.axis_labels
+    assert layer.units == source.units
+    if kind == 'Labels':
+        assert layer.data.shape == (5, 10, 20, 30)
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+@pytest.mark.parametrize('ndim', [2, 3, 4])
+def test_new_layer_dimension_popup(qt_layer_buttons, qtbot, kind, ndim):
+    viewer, buttons = qt_layer_buttons
+    viewer.add_image(
+        np.zeros((5, 10, 20, 30)), axis_labels=('t', 'z', 'y', 'x')
+    )
+    button = getattr(buttons, f'new{kind}Button')
+    buttons.show()
+    qtbot.mouseClick(button, Qt.MouseButton.RightButton)
+    assert len(viewer.layers) == 1
+    # Offscreen Qt does not generate the native context-menu event.
+    if button.findChild(QtPopup) is None:
+        event = QContextMenuEvent(QContextMenuEvent.Reason.Mouse, QPoint(1, 1))
+        QApplication.sendEvent(button, event)
+    popup = button.findChild(QtPopup)
+    assert popup is not None
+    assert popup.isVisible()
+    assert popup.objectName() == 'QtModalPopup'
+    assert popup.frame.objectName() == 'QtPopupFrame'
+    selector = popup.findChild(QComboBox, 'new_layer_axes')
+    assert [selector.itemText(index) for index in range(selector.count())] == [
+        't, z, y, x (4D)',
+        'z, y, x (3D)',
+        'y, x (2D)',
+    ]
+    assert selector.currentData() == 4
+    assert 'Right-click' in button.toolTip()
+    tooltip = popup.findChild(QLabel, 'help_label').toolTip()
+    for metadata in ('scale', 'translation', 'units', 'axis labels', 'affine'):
+        assert metadata in tooltip
+    assert 'stored order, not display order' in tooltip
+    selector.setCurrentIndex(4 - ndim)
+    note = popup.findChild(QLabel, 'new_layer_note').text()
+    if ndim == 4:
+        assert note == 'Match selected layer'
+    else:
+        assert note == f'Shared across: {", ".join(("t", "z")[: 4 - ndim])}'
+    assert len(viewer.layers) == 1
+    qtbot.mouseClick(
+        popup.findChild(QPushButton, 'new_layer_create'),
+        Qt.MouseButton.LeftButton,
+    )
+    assert viewer.layers[-1].ndim == ndim
+    if kind == 'Labels':
+        assert viewer.layers[-1].data.shape == (5, 10, 20, 30)[-ndim:]
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+def test_dimension_popup_reference_changes(qt_layer_buttons, qtbot, kind):
+    viewer, buttons = qt_layer_buttons
+    button = getattr(buttons, f'new{kind}Button')
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChild(QtPopup)
+    selector = popup.findChild(QComboBox)
+    assert selector.count() == 1
+    assert selector.currentData() == 2
+    popup.close()
+    QApplication.sendPostedEvents(None, 0)
+    source = viewer.add_image(np.zeros((5, 10, 20, 30)))
+    other = viewer.add_image(np.zeros((20, 30)))
+    viewer.layers.selection = {source, other}
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChildren(QtPopup)[-1]
+    assert popup.findChild(QComboBox).count() == 3
+    assert (
+        popup.findChild(QLabel, 'new_layer_note').text()
+        == 'Match selected extent'
+    )
+    popup.close()
+    viewer.layers.selection.clear()
+    if kind == 'Labels':
+        assert not button.isEnabled()
+    else:
+        button.customContextMenuRequested.emit(QPoint())
+        popup = button.findChildren(QtPopup)[-1]
+        assert (
+            popup.findChild(QLabel, 'new_layer_note').text() == 'Match viewer'
+        )
+        selector = popup.findChild(QComboBox)
+        assert selector.currentData() == 4
+        selector.setCurrentIndex(1)
+        qtbot.mouseClick(
+            popup.findChild(QPushButton, 'new_layer_create'),
+            Qt.MouseButton.LeftButton,
+        )
+        assert viewer.layers[-1].ndim == 3
+        np.testing.assert_array_equal(viewer.layers[-1].scale, (1, 1, 1))
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+def test_dimension_popup_coupled_transform(qt_layer_buttons, qtbot, kind):
+    viewer, buttons = qt_layer_buttons
+    affine = np.eye(5)
+    affine[0, 1] = 0.5
+    viewer.add_image(np.zeros((5, 10, 20, 30)), affine=affine)
+    button = getattr(buttons, f'new{kind}Button')
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChild(QtPopup)
+    selector = popup.findChild(QComboBox)
+    model = selector.model()
+    assert model.item(0).isEnabled()
+    assert not model.item(1).isEnabled()
+    assert 'coupled' in model.item(1).toolTip()
+    # Both coupled axes are discarded for 2D, so this reduction is safe.
+    assert model.item(2).isEnabled()
+    qtbot.keyClick(selector, Qt.Key.Key_Down)
+    assert selector.currentData() == 2
+    popup.close()
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+@pytest.mark.parametrize('ndim', [2, 3, 4, 5, 6])
+def test_dimension_popup_higher_dimensions(
+    qt_layer_buttons, qtbot, kind, ndim
+):
+    viewer, buttons = qt_layer_buttons
+    shape = (2, 3, 4, 5, 6, 7)
+    axes = ('a', 'b', 'c', 'z', 'y', 'x')
+    viewer.add_image(np.zeros(shape), axis_labels=axes)
+    button = getattr(buttons, f'new{kind}Button')
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChild(QtPopup)
+    selector = popup.findChild(QComboBox)
+    assert [selector.itemData(index) for index in range(selector.count())] == [
+        6,
+        5,
+        4,
+        3,
+        2,
+    ]
+    selector.setCurrentIndex(6 - ndim)
+    assert selector.currentText() == f'{", ".join(axes[-ndim:])} ({ndim}D)'
+    qtbot.mouseClick(
+        popup.findChild(QPushButton, 'new_layer_create'),
+        Qt.MouseButton.LeftButton,
+    )
+    assert viewer.layers[-1].ndim == ndim
+    assert viewer.layers[-1].axis_labels == axes[-ndim:]
+    if kind == 'Labels':
+        assert viewer.layers[-1].data.shape == shape[-ndim:]
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+def test_dimension_popup_cancel(qt_layer_buttons, qtbot, kind):
+    viewer, buttons = qt_layer_buttons
+    viewer.add_image(np.zeros((5, 10, 20, 30)))
+    button = getattr(buttons, f'new{kind}Button')
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChild(QtPopup)
+    popup.findChild(QComboBox).setCurrentIndex(1)
+    qtbot.keyClick(popup, Qt.Key.Key_Escape)
+    assert len(viewer.layers) == 1
+
+
+@pytest.mark.parametrize('kind', ['Points', 'Shapes', 'Labels'])
+def test_dimension_popup_stored_axis_order(qt_layer_buttons, qtbot, kind):
+    viewer, buttons = qt_layer_buttons
+    viewer.add_image(
+        np.zeros((5, 10, 20, 30)), axis_labels=('t', 'z', 'y', 'x')
+    )
+    viewer.dims.order = (2, 0, 3, 1)
+    button = getattr(buttons, f'new{kind}Button')
+    button.customContextMenuRequested.emit(QPoint())
+    popup = button.findChild(QtPopup)
+    selector = popup.findChild(QComboBox)
+    assert selector.itemText(0) == 't, z, y, x (4D)'
+    selector.setCurrentIndex(1)
+    assert selector.currentText() == 'z, y, x (3D)'
+    assert (
+        popup.findChild(QLabel, 'new_layer_note').text() == 'Shared across: t'
+    )
+    qtbot.mouseClick(
+        popup.findChild(QPushButton, 'new_layer_create'),
+        Qt.MouseButton.LeftButton,
+    )
+    assert viewer.layers[-1].axis_labels == ('z', 'y', 'x')
+    assert viewer.dims.order == (2, 0, 3, 1)
+    if kind == 'Labels':
+        assert viewer.layers[-1].data.shape == (10, 20, 30)
