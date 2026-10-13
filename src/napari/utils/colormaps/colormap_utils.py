@@ -266,6 +266,17 @@ def convert_vispy_colormap(colormap, name='vispy') -> Colormap:
     )
 
 
+def _representative_color(
+    colormap: Colormap, value: float = 0.8
+) -> np.ndarray:
+    """Return a single (4,) RGBA color that stands for the whole colormap.
+
+    The default picks the almost highest end (``map([0.8])``), which avoids
+    invisibility on dark canvas with reversed colormaps like ``gray_r``.
+    """
+    return np.atleast_2d(colormap.map([value]))[0].astype(float)
+
+
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     """Convert a napari colormap to its equivalent vispy colormap."""
     cmap_args = colormap.model_dump()
@@ -722,7 +733,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     Parameters
     ----------
     colormap : ValidColormapArg
-        See ValidColormapArg for supported input types.
+        See ValidColormapArg for supported input types. If None, the default
+        ``gray`` colormap is returned.
 
     Returns
     -------
@@ -745,7 +757,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         or valid inputs to the Colormap constructor.
     """
     with AVAILABLE_COLORMAPS_LOCK:
-        if isinstance(colormap, str):
+        if colormap is None:
+            name = 'gray'
+        elif isinstance(colormap, str):
             # when black given as end color, want reversed grayscale colormap
             # from white to black, named gray_r
             if colormap.startswith('#000000') or colormap.lower() == 'black':
