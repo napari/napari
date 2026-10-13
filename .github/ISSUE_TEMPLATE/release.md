@@ -8,43 +8,47 @@ assignees: ''
 **Release**: [vX.Y.Z](https://github.com/napari/napari/milestones/?)
 **Stable Due Date**: 20YY-MM-DD
 
-## Priority PRs/Issues
-
-*Link to priority PRs/issues that should be completed prior to release.*
-
 ## Early management
 
 - [ ] Make a new Zulip thread in the [release channel](https://napari.zulipchat.com/#narrow/stream/215289-release)
-- [ ] Create milestone in `napari/napari` and `napari/docs` for the new release.
-  - [ ] Set date of milestone to the expected release date for rc0, at least 3 days before the actual release date. Given a typical release cycle, a week prior is recommended.
+- [ ] Create milestone in `napari/napari` and `napari/docs` for the new release and uppdate the links above to point to it.
+  - [ ] Set date of milestone to the expected release date (~21th).
     - *Note the Milestone date is on [Line Island Time (LINT)](https://www.timeanddate.com/time/zone/@4030926) where the village of napari is located.*
   - [ ] Add the Zulip release thread to the milestone description
 
 ## Triage the Milestone
 
 - [ ] Triage the milestone throughout the release cycle.
-  - [ ] Add PRs of interest to highlights. These help the manager keep track of important PRs that often require extra team attention.
+  - [ ] Add the highlight tag go PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, make sure _they_ do that instead.
   - [ ] Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
 
-## Create Pre-release
+## Create alpha release
 
-*You may wish to make an alpha release at any point in the release cycle. However, you must make at least an empty release file to attach to the tag and merge it to `napari/docs`, otherwise the release will fail.*
+This is just to test that everything works. It should happen before the first rc, and it has no bearing on feature/bugfix merging state.
 
-- [ ] Communicate in Zulip release thread that pre-release is approaching.
-- [ ] Create a draft of release notes and make PR to `napari/docs`.
-  - [ ] Merge release notes to `napari/docs`
-- [ ] Tag pre-release with release notes file and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
-- [ ] Announce release candidate on Zulip in Release (and General, for meso or larger releases) and [forum.image.sc](https://forum.image.sc/announcements)
+- [ ] Create a draft of the release notes in `napari/docs` by [following the guide](https://napari.org/stable/developers/coredev/release.html#step-2-generating-release-notes) and merge the PR. No highlights or custom text are needed at this point.
+- [ ] Create a tag in `napari/napari` with `a0` suffix (e.g: `v0.10.0a0`) with attached the release notes file and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Check for proper deployment (~1 hour after tagging)
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
   - [ ] [napari.org](https://napari.org/dev/)
 
+## Pre-release
+
+At around the 15th of the month, it's time to lock in the features and focus on bug fixing and finishing touches. Release the first release candidate by following the same steps as above, but first:
+
+- [ ] Communicate in Zulip release thread that pre-release is approaching.
+- [ ] Announce release candidate on Zulip in Release (and General, for meso or larger releases) and [forum.image.sc](https://forum.image.sc/announcements)
+- [ ] Add highlight text and screenshots to the draft release notes.
+- [ ] tag with the `rcX` suffix, where `X` starts from 0 and increases every time a new release candidate needs to be made to include bug fixes.
+
+After this point, only trivial PRs, maintenance and bugfixes should be merged.
+
 ## Stable Release Prep
 
-- [ ] Make a PR requesting any new contributors add their information to [CITATION.cff](https://github.com/napari/napari/blob/main/CITATION.cff) ([PR example](https://github.com/napari/napari/pull/8138)).
-- [ ] Triage remaining PRs and Issues. At this stage, bug fixes and remaining (testable) features are prioritized.
-- [ ] Make new PR to `napari/docs` with changes to release notes.
-- [ ] Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, triangulation libraries)
+Aim to release the full release around the 21st. The steps are again like the above, but this time:
+
+- [ ] Make new PR to `napari/docs` with full changes to release notes; ensure no `highlight` is left without its special mention.
+- [ ] Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, `npe2`, triangulation libraries)
 - [ ] Ensure [`conda-recipe/recipe.yaml`](https://github.com/napari/packaging/blob/main/conda-recipe/recipe.yaml) in `napari/packaging` is up-to-date (e.g. `run` dependencies match `pyproject.toml` requirements).
 - [ ] Ensure that [`constraints`](https://github.com/napari/napari/tree/main/resources/constraints) files are up to date. Usually initiated by `@napari-bot` within a day of changes to dependencies and otherwise regularly scheduled.
 
