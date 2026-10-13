@@ -30,7 +30,7 @@ jobs:
       matrix:
         platform: [windows-latest, macos-15, ubuntu-latest]
         python: [3.13, 3.14]
-        backend: [pyqt5, pyqt6, pyside6]
+        backend: [pyqt6, pyside6]
         include:
           - platform: ubuntu-latest
             python: 3.13

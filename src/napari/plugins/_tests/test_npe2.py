@@ -241,3 +241,24 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
     assert len(menus_items4) == 5
     assert 'my-plugin.hello_world' in app.commands
+
+
+def test_reader_and_writer_commands_not_in_palette(
+    mock_pm: 'TestPluginManager', mock_app_model
+):
+    from app_model.types import MenuItem
+
+    from napari._app_model import get_app_model
+    from napari.plugins import _initialize_plugins
+
+    app = get_app_model()
+    _initialize_plugins()
+    palette = {
+        item.command.id
+        for item in app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
+        if isinstance(item, MenuItem)
+    }
+    assert 'my-plugin.hello_world' in palette
+    for command in ('my-plugin.some_reader', 'my-plugin.my_writer'):
+        assert command in app.commands
+        assert command not in palette
