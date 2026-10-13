@@ -210,7 +210,7 @@ def sys_info(as_html: bool = False) -> str:
             API_VERSION = ''
 
         text += (
-            f'<b>Qt</b>: {QtCore.__version__}<br>'
+            f'<b>Qt</b>: {QtCore.qVersion()}<br>'
             f'<b>{API_NAME}</b>: {API_VERSION}<br>'
         )
 
@@ -299,7 +299,7 @@ def sys_info(as_html: bool = False) -> str:
         from napari.settings import get_settings
 
         _async_setting = str(get_settings().experimental.async_)
-        _autoswap_buffers = str(get_settings().experimental.autoswap_buffers)
+        _autoswap_buffers = str(get_settings().advanced.autoswap_buffers)
         _triangulation_backend = str(
             get_settings().experimental.triangulation_backend
         )
