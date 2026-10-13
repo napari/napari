@@ -17,11 +17,20 @@ class NapariConfigDict(ConfigDict, total=False):
     """Custom ConfigDict for napari models.
 
     add dependencies attribute to track field dependencies
+
+    Attributes
+    ----------
+    dependencies : dict[str, Collection[str]] or None, optional
+        Mapping from property names to the model fields they depend on.
+        A nonempty mapping overrides automatic field dependency discovery.
+    child_dependencies : dict[str, Collection[str]], optional
+        Mapping from property names to child attribute paths they depend
+        on, for example ``{'title': ['window.title']}``.
     """
 
     # FIXME: make it part of public api?
     dependencies: dict[str, Collection[str]] | None
-    properties_dependence: dict[str, Collection[str]]
+    child_dependencies: dict[str, Collection[str]]
 
 
 def iter_inner_types(type_: Any) -> Any:

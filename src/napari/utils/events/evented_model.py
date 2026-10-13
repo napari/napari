@@ -103,9 +103,7 @@ class EventedMetaclass(ModelMetaclass):
         # allows any collection of strings, but we convert it to a set here for consistency
         prop_dependence = {
             k: set(v)
-            for k, v in cls.model_config.get(
-                'properties_dependence', {}
-            ).items()
+            for k, v in cls.model_config.get('child_dependencies', {}).items()
         }
         cls.__properties_dependence__ = {
             **getattr(cls, '__properties_dependence__', {}),
@@ -609,6 +607,12 @@ def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
     ) is None or not hasattr(function, '__code__'):
         # access with getattr as compiled functions may not have a __code__ or __closure__ attribute
         return _DeprecatedParam(message=message)
+
+    # The closure object is a tuple of cell objects,
+    # which are the values of the free variables in the function.
+    # The names of the free variables are stored in the co_freevars attribute of the code object.
+    # The values of the free variables are stored in the cell_contents attribute of the cell objects.
+    # https://docs.python.org/3/reference/datamodel.html#function.__closure__
 
     for name, cell in zip(function.__code__.co_freevars, closure, strict=True):
         if name == 'category':
