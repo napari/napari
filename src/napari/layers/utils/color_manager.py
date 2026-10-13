@@ -281,6 +281,13 @@ class ColorManager(EventedModel):
             else:
                 self.color_mode = ColorMode.CYCLE
         else:
+            if n_colors == 0:
+                # there are no items to color yet, so the color applies to
+                # the next items to be added
+                self.color_mode = ColorMode.DIRECT
+                self.current_color = transform_color(color)[0]
+                self.colors = np.empty((0, 4))
+                return
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=color,

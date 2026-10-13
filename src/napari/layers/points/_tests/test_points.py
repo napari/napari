@@ -1446,6 +1446,21 @@ def test_color_cycle_dict(attribute):
 
 
 @pytest.mark.parametrize('attribute', ['border', 'face'])
+def test_set_color_on_empty_layer(attribute):
+    """Test that a color set on an empty layer is used for new points
+
+    See: https://github.com/napari/napari/issues/5791
+    """
+    layer = Points()
+    setattr(layer, f'{attribute}_color', 'red')
+
+    layer.add([[10, 10], [20, 20]])
+    layer.add([30, 30])
+    attribute_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(attribute_color, [[1, 0, 0, 1]] * 3)
+
+
+@pytest.mark.parametrize('attribute', ['border', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
     """Test adding a point to an empty layer when border/face color is a color cycle
 
