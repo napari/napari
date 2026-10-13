@@ -21,7 +21,6 @@ assignees: ''
 - Triage PRs and issues throughout the release cycle, prioritizing ones that were tagged with the current milestone.
 - Add the highlight tag to PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, ensure they take responsibility for the highlight info.
 - Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
-
 - Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, `npe2`, triangulation libraries)
 
 ## Create alpha release
