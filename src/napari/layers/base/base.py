@@ -71,7 +71,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
     from napari.components.dims import Dims
-    from napari.components.overlays import BoundingBoxOverlay, Overlay
+    from napari.components.overlays import LayerBoundingBoxOverlay, Overlay
     from napari.layers._source import Source
 
 from psygnal import Signal
@@ -645,7 +645,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.experimental_clipping_planes = experimental_clipping_planes  # pyrefly: ignore [bad-argument-type]
 
         # circular import
-        from napari.components.overlays.bounding_box import BoundingBoxOverlay
+        from napari.components.overlays.bounding_box import (
+            LayerBoundingBoxOverlay,
+        )
         from napari.components.overlays.interaction_box import (
             SelectionBoxOverlay,
             TransformBoxOverlay,
@@ -696,7 +698,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             {
                 'transform_box': TransformBoxOverlay(),
                 'selection_box': SelectionBoxOverlay(),
-                'bounding_box': BoundingBoxOverlay(),
+                'bounding_box': LayerBoundingBoxOverlay(),
                 'layer_name': LayerNameOverlay(),
             }
         )
@@ -1431,7 +1433,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             self._experimental_clipping_planes.append(plane)
 
     @property
-    def bounding_box(self) -> BoundingBoxOverlay:
+    def bounding_box(self) -> LayerBoundingBoxOverlay:
         return self._overlays['bounding_box']  # pyrefly: ignore [bad-return]
 
     @property
