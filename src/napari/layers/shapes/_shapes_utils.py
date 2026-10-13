@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, overload
 
 import numpy as np
 from skimage import draw, measure
-from skimage.draw import line
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
