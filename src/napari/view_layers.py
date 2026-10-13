@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from napari.types import ArrayLike
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
-    from napari.utils.transforms._units import UnitsSequence
+    from napari.utils.transforms._units import UnitsLike
 
 __all__ = ['imshow']
 
@@ -120,7 +120,7 @@ def imshow(
     scale: npt.ArrayLike | None = ...,
     shear: npt.ArrayLike | None = ...,
     translate: npt.ArrayLike | None = ...,
-    units: UnitsSequence | Sequence[UnitsSequence] | None = ...,
+    units: UnitsLike | Sequence[UnitsLike] = ...,
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
@@ -163,7 +163,7 @@ def imshow(
     scale: npt.ArrayLike | None = ...,
     shear: npt.ArrayLike | None = ...,
     translate: npt.ArrayLike | None = ...,
-    units: UnitsSequence | Sequence[UnitsSequence] | None = ...,
+    units: UnitsLike | Sequence[UnitsLike] = ...,
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
@@ -205,7 +205,7 @@ def imshow(
     scale: npt.ArrayLike | None = None,
     shear: npt.ArrayLike | None = None,
     translate: npt.ArrayLike | None = None,
-    units: UnitsSequence | Sequence[UnitsSequence] | None = None,
+    units: UnitsLike | Sequence[UnitsLike] = None,
     visible: bool | Sequence[bool] = True,
     viewer: Viewer | None = None,
     title: str = 'napari',

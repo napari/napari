@@ -10,14 +10,12 @@ from typing import (
 import pint
 
 UnitsLike = Union[None, str, pint.Unit, Sequence[str | pint.Unit]]
-UnitsSequence = Sequence[str | pint.Unit]
 UnitsInfo = Union[None, pint.Unit, tuple[pint.Unit, ...]]
 
 
 __all__ = (
     'UnitsInfo',
     'UnitsLike',
-    'UnitsSequence',
     'get_units_from_name',
 )
 
