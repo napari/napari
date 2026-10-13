@@ -1,10 +1,71 @@
 from __future__ import annotations
 
+import itertools
+import warnings
 from collections.abc import Sequence
+from typing import overload
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
+
+
+def validate_multiscale_data(
+    data: Sequence[LayerDataProtocol],
+) -> list[LayerDataProtocol]:
+    """Validate that `data` is a well-formed sequence of multiscale levels.
+
+    Checks that `data` is non-empty, that every level implements
+    :class:`LayerDataProtocol`, that all levels have the same number of
+    dimensions, and that level sizes are non-increasing (equal-size levels
+    are allowed, e.g. as produced by projecting a multiscale image along
+    an axis where different levels aren't downsampled).
+
+    Parameters
+    ----------
+    data : Sequence[LayerDataProtocol]
+        Levels of multiscale data, from larger to smaller.
+
+    Returns
+    -------
+    list[LayerDataProtocol]
+        `data` coerced to a list.
+
+    Raises
+    ------
+    ValueError
+        If `data` is empty.
+    TypeError
+        If any item in `data` does not implement `LayerDataProtocol`
+        (raised by :func:`assert_protocol`).
+    ValueError
+        If the items in `data` do not all have the same `ndim`.
+    ValueError
+        If the `size` of the items in `data` is not non-increasing.
+    """
+    data = list(data)
+    if not data:
+        raise ValueError('Multiscale data must be a (non-empty) sequence')
+    sizes = []
+    ndims = []
+    for d in data:
+        assert_protocol(d, protocol=LayerDataProtocol)
+        sizes.append(d.size)
+        ndims.append(d.ndim)
+
+    if any(n != ndims[0] for n in ndims):
+        raise ValueError(
+            f'Input data should be a sequence of array-like objects with '
+            f'the same number of dimensions. Got ndims: {ndims}'
+        )
+
+    non_increasing = all(s1 >= s2 for s1, s2 in itertools.pairwise(sizes))
+    if not non_increasing:
+        raise ValueError(
+            f'Input data should be a sequence of array-like objects of non-increasing size. Got arrays in incorrect order, sizes: {sizes}'
+        )
+    return data
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -12,15 +73,13 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     """Wrapper for multiscale data, to provide consistent API.
 
     :class:`LayerDataProtocol` is the subset of the python Array API that we
-    expect array-likes to provide.  Multiscale data is just a sequence of
-    array-likes (providing, e.g. `shape`, `dtype`, `__getitem__`).
+    expect array-likes to provide. Multiscale data is just a sequence of these
+    array-likes.
 
     Parameters
     ----------
     data : Sequence[LayerDataProtocol]
         Levels of multiscale data, from larger to smaller.
-    max_size : Sequence[int], optional
-        Maximum size of a displayed tile in pixels, by default`data[-1].shape`
 
     Raises
     ------
@@ -34,58 +93,95 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         self,
         data: Sequence[LayerDataProtocol],
     ) -> None:
-        self._data: list[LayerDataProtocol] = list(data)
-        if not self._data:
-            raise ValueError('Multiscale data must be a (non-empty) sequence')
-        for d in self._data:
-            assert_protocol(d)
+
+        self._data: list[LayerDataProtocol] = validate_multiscale_data(data)
 
     @property
     def size(self) -> int:
-        """Return size of the first scale.."""
+        """Size of the first scale."""
         return self._data[0].size
 
     @property
     def ndim(self) -> int:
-        """Return ndim of the first scale.."""
+        """ndim of the first scale."""
         return self._data[0].ndim
 
     @property
-    def dtype(self) -> np.dtype:
-        """Return dtype of the first scale.."""
+    def nlevels(self) -> int:
+        """Number of multiscale levels."""
+        return len(self._data)
+
+    @property
+    def levels(self) -> list[LayerDataProtocol]:
+        """List of all resolution levels, from largest to smallest.
+
+        A new list is returned each time; mutating it does not affect
+        this `MultiScaleData` instance.
+        """
+        return list(self._data)
+
+    @property
+    def dtype(self) -> npt.DTypeLike:
+        """dtype of the first scale.."""
         return self._data[0].dtype
 
     @property
     def shape(self) -> tuple[int, ...]:
-        """Shape of multiscale is just the biggest shape."""
+        """Shape of the first scale."""
         return self._data[0].shape
 
     @property
     def shapes(self) -> tuple[tuple[int, ...], ...]:
-        """Tuple shapes for all scales."""
+        """Tuple of shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    def __getitem__(self, key: int | tuple[slice, ...]) -> LayerDataProtocol:
-        """Multiscale indexing."""
-        return self._data[key]
+    def get_level(self, i: int) -> LayerDataProtocol:
+        """Get the array-like data at resolution level `i`.
+
+        Parameters
+        ----------
+        i : int
+            Resolution level of data to return.
+
+        Returns
+        -------
+        LayerDataProtocol
+            The array-like data at resolution level `i`.
+
+        Raises
+        ------
+        ValueError
+            If `i` is out of bounds of the resolution levels.
+        """
+        if i >= self.nlevels:
+            raise ValueError(
+                f'Level {i} out of bounds for {self.nlevels} multiscale levels'
+            )
+        return self._data[i]
+
+    @overload
+    def __getitem__(self, i: int) -> LayerDataProtocol: ...
+    @overload
+    def __getitem__(self, i: slice) -> Sequence[LayerDataProtocol]: ...
+    def __getitem__(
+        self, i: int | slice
+    ) -> LayerDataProtocol | Sequence[LayerDataProtocol]:
+        """Get individual multiscale levels."""
+        return self._data[i]
+
+    def __array__(self) -> npt.NDArray:
+        """Get numpy array of the lowest resolution level."""
+        warnings.warn(
+            'MultiScaleData.__array__ gives you the lowest resolution, while MultiScaleData.shape gives you the high resolution shape. Use MultiScaleData.get_level() to get a specific resolution level'
+        )
+        return np.asarray(self._data[-1])
 
     def __len__(self) -> int:
-        return len(self._data)
+        """Number of multiscale levels."""
+        return self.nlevels
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return self._data == other
-
-    def __add__(self, other) -> bool:
-        return self._data + other
-
-    def __mul__(self, other) -> bool:
-        return self._data * other
-
-    def __rmul__(self, other) -> bool:
-        return other * self._data
-
-    def __array__(self) -> np.ndarray:
-        return np.asarray(self._data[-1])
 
     def __repr__(self) -> str:
         return (

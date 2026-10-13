@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -42,14 +41,17 @@ def guess_rgb(shape: tuple[int, ...], min_side_len: int = 30) -> bool:
 
 
 def guess_multiscale(
-    data: MultiScaleData | list | tuple,
-) -> tuple[bool, LayerDataProtocol | Sequence[LayerDataProtocol]]:
+    data: MultiScaleData | Sequence[LayerDataProtocol] | LayerDataProtocol,
+) -> tuple[bool, LayerDataProtocol | MultiScaleData]:
     """Guess whether the passed data is multiscale, process it accordingly.
 
-    If shape of arrays along first axis is strictly decreasing, the data is
-    multiscale. If it is the same shape everywhere, it is not. Various
-    ambiguous conditions in between will result in a ValueError being raised,
-    or in an "unwrapping" of data, if data contains only one element.
+    If `data` is already a single array-like with more than one dimension,
+    it is not multiscale. If `data` is a sequence containing a single
+    element, that element is unwrapped and treated as non-multiscale data.
+    Otherwise, `data` is assumed to be a sequence of multiscale levels and
+    is validated as such (see :func:`validate_multiscale_data`): levels
+    must all have the same number of dimensions and non-increasing size,
+    or a ValueError is raised.
 
     Parameters
     ----------
@@ -61,37 +63,30 @@ def guess_multiscale(
     multiscale : bool
         True if the data is thought to be multiscale, False otherwise.
     data : list or array
-        The input data, perhaps with the leading axis removed.
+        The input data, perhaps unwrapped if it contained a single element.
+
+    Raises
+    ------
+    ValueError
+        If `data` is a sequence of more than one array-like whose levels
+        are not non-increasing in size, or do not all have the same
+        number of dimensions.
+    TypeError
+        If any item in `data` does not implement `LayerDataProtocol`.
     """
-    # If the data has ndim and is not one-dimensional then cannot be multiscale
-    # If data is a zarr array, this check ensure that subsets of it are not
-    # instantiated. (`for d in data` instantiates `d` as a NumPy array if
-    # `data` is a zarr array.)
     if isinstance(data, MultiScaleData):
         return True, data
 
-    if hasattr(data, 'ndim') and data.ndim > 1:
-        return False, data
+    if isinstance(data, LayerDataProtocol):
+        # 1D array-likes cannot be scalar layer data, must be treated as
+        # a candidate sequence of multiscale levels
+        if data.ndim > 1:
+            return False, data
+        data = list(data)  # pyrefly: ignore [bad-argument-type]
 
-    if isinstance(data, list | tuple) and len(data) == 1:
+    if len(data) == 1:
         # pyramid with only one level, unwrap
         return False, data[0]
-
-    sizes = [d.size for d in data]
-    if len(sizes) <= 1:
-        return False, data
-
-    consistent = all(s1 > s2 for s1, s2 in itertools.pairwise(sizes))
-    if all(s == sizes[0] for s in sizes):
-        # note: the individual array case should be caught by the first
-        # code line in this function, hasattr(ndim) and ndim > 1.
-        raise ValueError(
-            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {sizes[0]}'
-        )
-    if not consistent:
-        raise ValueError(
-            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
-        )
 
     return True, MultiScaleData(data)
 

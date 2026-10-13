@@ -154,9 +154,12 @@ class LockableData:
         return self.data.shape
 
     @property
+    def size(self) -> int:
+        return self.data.size
+
+    @property
     def ndim(self) -> int:
-        # LayerDataProtocol does not have ndim, but this should be equivalent.
-        return len(self.data.shape)
+        return self.data.ndim
 
     def __getitem__(
         self, key: Index | tuple[Index, ...] | LayerDataProtocol

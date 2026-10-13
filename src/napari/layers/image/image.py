@@ -466,7 +466,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         return self._histogram
 
     @ScalarFieldBase.data.setter
-    def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+    def data(
+        self,
+        data: LayerDataProtocol | Sequence[LayerDataProtocol] | MultiScaleData,
+    ) -> None:
         ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         if self.auto_contrast:
             self.reset_contrast_limits()
