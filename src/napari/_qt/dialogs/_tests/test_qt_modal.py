@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock
 
 import pytest
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMainWindow, QPushButton, QWidget
+from qtpy.QtCore import QRect, Qt
+from qtpy.QtGui import QCursor, QGuiApplication
+from qtpy.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget
 
 from napari._qt.dialogs.qt_modal import QtPopup
 
@@ -13,6 +14,36 @@ class TestQtPopup:
         qtbot.addWidget(popup)
         popup.show_above_mouse()
         popup.close()
+
+    @pytest.mark.parametrize('origin', [(0, 0), (-800, 0)])
+    @pytest.mark.parametrize(
+        'corner', ['topLeft', 'topRight', 'bottomLeft', 'bottomRight']
+    )
+    def test_show_above_stays_on_screen(
+        self, qtbot, monkeypatch, origin, corner
+    ):
+        screen_geometry = QRect(*origin, 800, 600)
+        cursor_position = getattr(screen_geometry, corner)()
+        monkeypatch.setattr(
+            QCursor, 'pos', staticmethod(lambda: cursor_position)
+        )
+        screen = MagicMock()
+        screen.geometry.return_value = screen_geometry
+        monkeypatch.setattr(
+            QGuiApplication, 'screenAt', staticmethod(lambda position: screen)
+        )
+        popup = QtPopup(None)
+        qtbot.addWidget(popup)
+        layout = QVBoxLayout()
+        layout.addWidget(
+            QPushButton('Create an annotation layer with selected axes')
+        )
+        popup.frame.setLayout(layout)
+        show = MagicMock()
+        monkeypatch.setattr(popup, 'show', show)
+        popup.show_above_mouse()
+        assert screen_geometry.contains(popup.geometry())
+        show.assert_called_once_with()
 
     def test_show_right(self, qtbot):
         popup = QtPopup(None)

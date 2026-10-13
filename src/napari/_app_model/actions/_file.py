@@ -1,3 +1,5 @@
+from typing import cast
+
 from app_model.types import (
     Action,
     SubmenuItem,
@@ -5,7 +7,8 @@ from app_model.types import (
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari.components import LayerList, ViewerModel
-from napari.layers import Layer, Points, Shapes
+from napari.components._layer_creation import new_layer_metadata
+from napari.layers import Labels, Points, Shapes
 
 FILE_SUBMENUS = [
     (
@@ -90,25 +93,6 @@ def add_new_shapes(viewer: 'ViewerModel') -> None:
         )
 
 
-def _create_single_layer(
-    source_layer: Layer,
-    layer_class: type[Points] | type[Shapes],
-    layer_name: str,
-) -> Points | Shapes:
-    """Create a single Points or Shapes layer from the given source layer."""
-    return layer_class(
-        name=layer_name,
-        ndim=source_layer.ndim,
-        scale=source_layer.scale,
-        translate=source_layer.translate,
-        rotate=source_layer.rotate,
-        shear=source_layer.shear,
-        units=source_layer.units,
-        axis_labels=source_layer.axis_labels,
-        affine=source_layer.affine.affine_matrix,
-    )
-
-
 def get_layer_name(base_name: str, existing_names: set[str]) -> str:
     """Generate a unique layer name based on the base name and existing names."""
     if base_name not in existing_names:
@@ -124,7 +108,9 @@ def new_labels(viewer: ViewerModel) -> None:
 
 
 def _new_layer_from_active(
-    layer_list: LayerList, layer_class: type[Points] | type[Shapes]
+    layer_list: LayerList,
+    layer_class: type[Points] | type[Shapes],
+    ndim: int | None = None,
 ) -> Points | Shapes:
     """Create a new layer from the given layer list."""
     if layer_list.selection.active is None:
@@ -134,7 +120,11 @@ def _new_layer_from_active(
         f'{source_layer.name} - {layer_class.__name__}',
         existing_names={layer.name for layer in layer_list},
     )
-    return _create_single_layer(source_layer, layer_class, new_layer_name)
+    return layer_class(
+        name=new_layer_name,
+        ndim=source_layer.ndim if ndim is None else ndim,
+        **new_layer_metadata(source_layer, ndim),
+    )
 
 
 def new_points(viewer: ViewerModel) -> None:
@@ -149,6 +139,35 @@ def new_shapes(viewer: ViewerModel) -> None:
         viewer.add_layer(_new_layer_from_active(viewer.layers, Shapes))
     else:
         add_new_shapes(viewer)
+
+
+def _new_annotation_layer(
+    viewer: ViewerModel,
+    layer_class: type[Points] | type[Shapes] | type[Labels],
+    ndim: int,
+) -> None:
+    """Create an annotation layer using the requested trailing dimensions."""
+    if layer_class is Labels:
+        viewer._new_labels(ndim=ndim)
+        return
+    annotation_class = cast('type[Points | Shapes]', layer_class)
+    if viewer.layers.selection.active is not None:
+        viewer.add_layer(
+            _new_layer_from_active(viewer.layers, annotation_class, ndim)
+        )
+    else:
+        scale = (1,) * ndim
+        if viewer.layers.selection:
+            extent = viewer.layers.get_extent(viewer.layers.selection)
+            scale = extent.step[-ndim:]
+        units = viewer.layers.extent.units
+        viewer.add_layer(
+            annotation_class(
+                ndim=ndim,
+                scale=scale,
+                units=units[-ndim:] if units is not None else None,
+            )
+        )
 
 
 FILE_ACTIONS: list[Action] = [

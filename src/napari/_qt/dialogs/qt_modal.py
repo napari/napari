@@ -48,7 +48,7 @@ class QtPopup(QDialog):
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
         pos -= QPoint(szhint.width() // 2, szhint.height() + 14)
-        self.move(pos)
+        self.move_to((pos.x(), pos.y(), szhint.width(), szhint.height()))
         self.show()
 
     def show_right_of_mouse(self, *args):

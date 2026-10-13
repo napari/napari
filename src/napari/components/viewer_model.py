@@ -29,6 +29,7 @@ from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import deprecated
 
 from napari import layers
+from napari.components._layer_creation import new_layer_metadata
 from napari.components._layer_slicer import _LayerSlicer
 from napari.components._viewer_mouse_bindings import (
     dims_scroll,
@@ -719,25 +720,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         return np.array([displayed_height, displayed_width])
 
-    def _new_labels(self) -> None:
+    def _new_labels(self, *, ndim: int | None = None) -> None:
         """Create new labels layer filling full world coordinates space."""
         if isinstance(
             base_layer := self.layers.selection.active, ScalarFieldBase
         ):
+            metadata = new_layer_metadata(base_layer, ndim)
+            if ndim is None:
+                metadata['affine'] = base_layer.affine
+            shape = base_layer.data.shape[
+                : base_layer.ndim
+            ]  # exclude RGB channels
+            if ndim is not None:
+                shape = shape[-ndim:]
             layer = Labels(
                 data=np.zeros(
-                    base_layer.data.shape[
-                        : base_layer.ndim
-                    ],  # use :base_layer.ndim to cut channels from rgb images
-                    dtype=get_settings().application.new_labels_dtype,
+                    shape, dtype=get_settings().application.new_labels_dtype
                 ),
-                scale=base_layer.scale,
-                translate=base_layer.translate,
-                rotate=base_layer.rotate,
-                shear=base_layer.shear,
-                units=base_layer.units,
-                axis_labels=base_layer.axis_labels,
-                affine=base_layer.affine,
+                **metadata,
                 name=base_layer.name + ' - Labels',
             )
         elif self.layers.selection:
@@ -753,9 +753,16 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 for s, sc in zip(scene_size, scale, strict=False)
             ]
             dtype_str = get_settings().application.new_labels_dtype
+            if ndim is not None:
+                shape = shape[-ndim:]
+                corner = corner[-ndim:]
+                scale = scale[-ndim:]
+                units = units[-ndim:] if units is not None else None
             empty_labels = np.zeros(shape, dtype=dtype_str)
             active = self.layers.selection.active
             axis_labels = active.axis_labels if active is not None else None
+            if axis_labels is not None and ndim is not None:
+                axis_labels = axis_labels[-ndim:]
             layer = Labels(
                 data=empty_labels,
                 translate=np.array(corner),
