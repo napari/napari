@@ -3,9 +3,11 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-from vispy.scene.visuals import Compound, Image
+from vispy.scene.visuals import Compound
 from vispy.visuals import BaseVisual
 from vispy.visuals.transforms.linear import STTransform
+
+from napari._vispy.visuals.image import Image
 
 # attributes that are passed from the tiled node to the child image nodes.
 PASS_THROUGH_ATTRIBUTES = {
