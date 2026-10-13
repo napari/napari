@@ -12,15 +12,17 @@ assignees: ''
 
 - [ ] Make a new Zulip thread in the [release channel](https://napari.zulipchat.com/#narrow/stream/215289-release)
 - [ ] Create milestone in `napari/napari` and `napari/docs` for the new release and uppdate the links above to point to it.
-  - [ ] Set date of milestone to the expected release date (~21th).
-    - *Note the Milestone date is on [Line Island Time (LINT)](https://www.timeanddate.com/time/zone/@4030926) where the village of napari is located.*
-  - [ ] Add the Zulip release thread to the milestone description
+- [ ] Set date of milestone to the expected release date (~21th).
+- *Note the Milestone date is on [Line Island Time (LINT)](https://www.timeanddate.com/time/zone/@4030926) where the village of napari is located.*
+- [ ] Add the Zulip release thread to the milestone description
 
-## Triage the Milestone
+## Triage PRs and issues
 
-- [ ] Triage the milestone throughout the release cycle.
-  - [ ] Add the highlight tag to PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, ensure they take responsibility for the highlight info.
-  - [ ] Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
+- Triage PRs and issues throughout the release cycle, prioritizing ones that were tagged with the current milestone.
+- Add the highlight tag to PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, ensure they take responsibility for the highlight info.
+- Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
+
+- Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, `npe2`, triangulation libraries)
 
 ## Create alpha release
 
@@ -32,23 +34,22 @@ This is just to test that everything works. It should happen before the first rc
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
   - [ ] [napari.org](https://napari.org/dev/)
 
-## Pre-release
+## Create the first Release Candidate
 
-At around the 15th of the month, it's time to lock in the features and focus on bug fixing and finishing touches. Release the first release candidate by following the same steps as above, but first:
+At around the 15th of the month, it's time to lock in the features and focus on bug fixing and finishing touches. After the first rc, only trivial PRs, maintenance, and bugfixes should be merged.
+
+Release the first release candidate by following the same steps as above, but first:
 
 - [ ] Communicate in Zulip release thread that pre-release is approaching.
 - [ ] Announce release candidate on Zulip in Release (and General, for meso or larger releases) and [forum.image.sc](https://forum.image.sc/announcements)
 - [ ] Add highlight text and screenshots to the draft release notes.
 - [ ] tag with the `rcX` suffix, where `X` starts from 0 and increases every time a new release candidate needs to be made to include bug fixes.
 
-After this point, only trivial PRs, maintenance and bugfixes should be merged.
-
 ## Stable Release Prep
 
 Aim to release the full release around the 21st. The steps are again like the above, but this time:
 
 - [ ] Make new PR to `napari/docs` with full changes to release notes; ensure all `highlight`s are included in the release notes text.
-- [ ] Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, `npe2`, triangulation libraries)
 - [ ] Ensure [`conda-recipe/recipe.yaml`](https://github.com/napari/packaging/blob/main/conda-recipe/recipe.yaml) in `napari/packaging` is up-to-date (e.g. `run` dependencies match `pyproject.toml` requirements).
 - [ ] Ensure that [`constraints`](https://github.com/napari/napari/tree/main/resources/constraints) files are up to date. Usually initiated by `@napari-bot` within a day of changes to dependencies and otherwise regularly scheduled.
 
