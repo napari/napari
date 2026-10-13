@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -42,7 +44,7 @@ class Line(Shape):
     @property
     def data(
         self,
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float32]]:
         """(2, D) array: line vertices."""
         return self._data
 

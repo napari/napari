@@ -1996,7 +1996,7 @@ class ShapeList:
         triangle_indices: np.ndarray,
         ray_position: np.ndarray,
         ray_direction: np.ndarray,
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
+    ) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.floating]]:
         """Find the intersection of a ray with specified triangles.
 
         Parameters

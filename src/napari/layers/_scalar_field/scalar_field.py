@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, TypeAlias, cast
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -48,7 +48,9 @@ if TYPE_CHECKING:
     from napari.components import Dims
 
     PixelValue: TypeAlias = (
-        np.number | np.bool_ | np.ndarray[tuple[int], np.dtype[np.number]]
+        np.number
+        | np.bool_
+        | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
     )
 
 

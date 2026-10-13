@@ -6,6 +6,7 @@ from functools import lru_cache
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
+    Literal,
     NamedTuple,
     Protocol,
     TypeVar,
@@ -206,11 +207,11 @@ _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 _MINIMUM_SHADES_COUNT = 256
 
 
-def _all_rgb() -> np.ndarray[tuple[int, int], np.dtype[np.uint8]]:
+def _all_rgb() -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.uint8]]:
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
     r, g, b = np.meshgrid(base, base, base, indexing='ij')
-    return np.stack((r, g, b), axis=-1).reshape((-1, 3))
+    return np.stack((r, g, b), axis=-1).reshape((-1, 3))  # pyrefly: ignore[bad-return]
 
 
 # The following values were precomputed and stored as constants

@@ -50,10 +50,12 @@ _LabelValues1D: TypeAlias = (
 _LabelValues2D: TypeAlias = (
     np.ndarray[tuple[int, int], np.dtype[np.integer]] | Sequence[Sequence[int]]
 )
-_LabelColor: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float32]]
-_LabelColors1D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float32]]
+_LabelColor: TypeAlias = np.ndarray[tuple[Literal[4]], np.dtype[np.float32]]
+_LabelColors1D: TypeAlias = np.ndarray[
+    tuple[int, Literal[4]], np.dtype[np.float32]
+]
 _LabelColors2D: TypeAlias = np.ndarray[
-    tuple[int, int, int], np.dtype[np.float32]
+    tuple[int, int, Literal[4]], np.dtype[np.float32]
 ]
 _LabelColorsND: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float32]]
 
@@ -161,20 +163,20 @@ class Colormap(EventedModel):
     @overload
     def map(
         self, values: float | np.number
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[Literal[1], Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(
         self,
         values: np.ndarray[tuple[int], np.dtype[np.number]] | Sequence[float],
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(
         self,
         values: np.ndarray[tuple[int, int], np.dtype[np.number]]
         | Sequence[Sequence[float]],
-    ) -> np.ndarray[tuple[int, int, int], np.dtype[np.floating]]: ...
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(

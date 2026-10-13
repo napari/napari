@@ -644,7 +644,7 @@ class Shape(ABC):
 
     def _all_triangles(
         self,
-    ) -> np.ndarray[tuple[int, int, int], np.dtype[np.float32]]:
+    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.float32]]:
         """Return all triangles for the shape
 
         Returns

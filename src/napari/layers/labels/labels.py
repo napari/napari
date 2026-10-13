@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     NamedTuple,
     TypeAlias,
 )
@@ -1087,7 +1088,7 @@ class Labels(ScalarFieldBase):
 
     def get_color(
         self, label
-    ) -> np.ndarray[tuple[int], np.dtype[np.float32]] | None:
+    ) -> np.ndarray[tuple[Literal[4]], np.dtype[np.float32]] | None:
         """Return the color corresponding to a specific label."""
         if label == self.colormap.background_value:
             col = None
