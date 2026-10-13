@@ -28,7 +28,6 @@ from napari.components.overlays.text import (
 from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
-    'BoundingBoxOverlay',
     'BrushCircleOverlay',
     'CanvasAxesOverlay',
     'CanvasOverlay',

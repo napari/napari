@@ -87,7 +87,7 @@ class VispyLayerBoundingBoxOverlay(
 
         self.reset()
 
-    def _get_bounds(self):
+    def _get_bounds(self) -> tuple[tuple[float, float], ...]:
         displayed = list(self.layer._slice_input.displayed)
 
         if self.layer.multiscale:
@@ -114,7 +114,9 @@ class VispyLayerBoundingBoxOverlay(
             scale = np.asarray(tile2data.scale)[displayed]
             return bounds / scale[:, np.newaxis] - 0.5
 
-        return self.layer._display_bounding_box_augmented_data_level(displayed)
+        return tuple(
+            self.layer._display_bounding_box_augmented_data_level(displayed)
+        )
 
 
 class VispyViewerBoundingBoxOverlay(
@@ -127,6 +129,6 @@ class VispyViewerBoundingBoxOverlay(
 
         self.reset()
 
-    def _get_bounds(self):
+    def _get_bounds(self) -> tuple[tuple[float, float], ...]:
         extent = self.viewer.layers._extent_world_augmented
-        return extent[:, list(self.viewer.dims.displayed)].T
+        return tuple(extent[:, list(self.viewer.dims.displayed)].T)
