@@ -19,7 +19,7 @@ assignees: ''
 ## Triage the Milestone
 
 - [ ] Triage the milestone throughout the release cycle.
-  - [ ] Add the highlight tag go PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, make sure _they_ do that instead.
+  - [ ] Add the highlight tag to PRs that should be highlighted. When you do, make sure to add in a comment the text for the highlight and a screenshot where applicable. If someone else added the tag, ensure they take responsibility for the highlight info.
   - [ ] Move PRs and issues that won't make it in the current release to the next milestone, or remove the milestone altogether. Add a note to PRs (and issues) from community members describing the actions the release manager is taking and provide actionable comments.
 
 ## Create alpha release
@@ -27,7 +27,7 @@ assignees: ''
 This is just to test that everything works. It should happen before the first rc, and it has no bearing on feature/bugfix merging state.
 
 - [ ] Create a draft of the release notes in `napari/docs` by [following the guide](https://napari.org/stable/developers/coredev/release.html#step-2-generating-release-notes) and merge the PR. No highlights or custom text are needed at this point.
-- [ ] Create a tag in `napari/napari` with `a0` suffix (e.g: `v0.10.0a0`) with attached the release notes file and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
+- [ ] Create a tag in `napari/napari` with `a0` suffix (e.g: `v0.10.0a0`) with the release notes file attached to the tag and push to `napari/napari`. [See docs for details.](https://napari.org/dev/developers/coredev/release.html#tagging-the-new-release-candidate)
 - [ ] Check for proper deployment (~1 hour after tagging)
   - [ ] [PyPI](https://pypi.org/project/napari/#history)
   - [ ] [napari.org](https://napari.org/dev/)
@@ -47,7 +47,7 @@ After this point, only trivial PRs, maintenance and bugfixes should be merged.
 
 Aim to release the full release around the 21st. The steps are again like the above, but this time:
 
-- [ ] Make new PR to `napari/docs` with full changes to release notes; ensure no `highlight` is left without its special mention.
+- [ ] Make new PR to `napari/docs` with full changes to release notes; ensure all `highlight`s are included in the release notes text.
 - [ ] Ensure releases are cut from other napari repos if needed. (e.g. `napari-plugin-manager`, `npe2`, triangulation libraries)
 - [ ] Ensure [`conda-recipe/recipe.yaml`](https://github.com/napari/packaging/blob/main/conda-recipe/recipe.yaml) in `napari/packaging` is up-to-date (e.g. `run` dependencies match `pyproject.toml` requirements).
 - [ ] Ensure that [`constraints`](https://github.com/napari/napari/tree/main/resources/constraints) files are up to date. Usually initiated by `@napari-bot` within a day of changes to dependencies and otherwise regularly scheduled.
