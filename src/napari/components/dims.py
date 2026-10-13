@@ -15,6 +15,10 @@ from napari.utils.events import EventedModel
 from napari.utils.misc import argsort, reorder_after_dim_reduction
 
 
+class AxisLockedError(RuntimeError):
+    """Raised when attempting to set ``point`` on a locked axis."""
+
+
 class RangeTuple(NamedTuple):
     start: float
     stop: float
@@ -92,6 +96,11 @@ class Dims(EventedModel):
         ``displayed`` dimensions.
     rollable :  tuple of bool
         Tuple of axis roll state. If True the axis is rollable.
+    axis_locked : tuple of bool
+        Tuple of per-axis lock state. Where True, attempting to move the
+        ``point`` for that axis raises ``AxisLockedError``.
+
+        .. versionadded:: 0.10.0
     """
 
     # fields
@@ -101,6 +110,7 @@ class Dims(EventedModel):
     order: tuple[int, ...] = ()
     axis_labels: tuple[str, ...] = ()
     rollable: tuple[bool, ...] = ()
+    axis_locked: tuple[bool, ...] = ()
 
     range: tuple[RangeTuple, ...] = ()
     margin_left: tuple[float, ...] = ()
@@ -114,6 +124,7 @@ class Dims(EventedModel):
     _play_ready: bool = True  # False if currently awaiting a draw event
     _scroll_progress: int = 0
     _validating: bool = False
+    _point_before_check: tuple[float, ...] = ()
 
     # validators
     # check fields is false to allow private fields to work
@@ -121,6 +132,7 @@ class Dims(EventedModel):
         'order',
         'axis_labels',
         'rollable',
+        'axis_locked',
         'point',
         'margin_left',
         'margin_right',
@@ -159,6 +171,7 @@ class Dims(EventedModel):
         """
         if self._validating:
             return self
+        self._refuse_locked_axes()
         with self.events.blocker_all(), self._validating_ctx():
             ndim = self.ndim
 
@@ -214,6 +227,7 @@ class Dims(EventedModel):
         with self._validating_ctx():
             # Check the rollable axes tuple has same number of elements as ndim
             self.rollable = ensure_len(self.rollable, ndim, True)
+            self.axis_locked = ensure_len(self.axis_locked, ndim, False)
 
         # If the last used slider is no longer visible, use the first.
         last_used = self.last_used
@@ -227,6 +241,33 @@ class Dims(EventedModel):
             self.last_used = not_displayed[0]
 
         return self
+
+    def _refuse_locked_axes(self) -> None:
+        """Raise if setting ``point`` would move it on a locked axis.
+
+        Axes are added and removed at the front, so aligning both points on
+        their trailing axes compares each surviving axis with itself.
+        """
+        previous = self._point_before_check
+        axis_locked = ensure_len(self.axis_locked, self.ndim, False)
+        if not previous or not any(axis_locked):
+            return
+        previous = ensure_len(previous, self.ndim, 0.0)
+        requested = ensure_len(self.point, self.ndim, 0.0)
+        moved = [
+            axis
+            for axis, (new, prev, locked) in enumerate(
+                zip(requested, previous, axis_locked, strict=True)
+            )
+            if locked and new != prev
+        ]
+        if moved:
+            with self._validating_ctx():
+                self.point = previous
+            raise AxisLockedError(
+                f'Cannot move the point on locked axis {moved[0]}. '
+                'Unlock it with Dims.unlock_axis first.'
+            )
 
     @staticmethod
     def _nsteps_from_range(dims_range) -> tuple[float, ...]:
@@ -393,6 +434,31 @@ class Dims(EventedModel):
             value_world.append(rng.start + val * rng.step)
         self.set_point(axis, value_world)
 
+    def lock_axis(self, axis: int) -> None:
+        """Hold the point on ``axis`` where it is."""
+        self._set_axis_locked(axis, True)
+
+    def unlock_axis(self, axis: int) -> None:
+        """Let the point move on ``axis`` again."""
+        self._set_axis_locked(axis, False)
+
+    def is_axis_locked(self, axis: int) -> bool:
+        """Whether the point is held on ``axis``."""
+        return self.axis_locked[ensure_axis_in_bounds(axis, self.ndim)]
+
+    def lock_all_axes(self) -> None:
+        """Hold the point on every axis."""
+        self.axis_locked = (True,) * self.ndim
+
+    def unlock_all_axes(self) -> None:
+        """Let the point move on every axis again."""
+        self.axis_locked = (False,) * self.ndim
+
+    def _set_axis_locked(self, axis: int, locked: bool) -> None:
+        axis_locked = list(self.axis_locked)
+        axis_locked[ensure_axis_in_bounds(axis, self.ndim)] = locked
+        self.axis_locked = tuple(axis_locked)
+
     def set_axis_label(
         self,
         axis: int | Sequence[int],
@@ -417,10 +483,12 @@ class Dims(EventedModel):
 
     def reset(self):
         """Reset dims values to initial states."""
-        # Don't reset axis labels
+        # Don't reset axis labels or axis locks
         # TODO: could be optimized with self.update, but need to fix
         #       event firing in EventedModel first
         self.range = ((0, 2, 1),) * self.ndim  # pyrefly: ignore [bad-assignment]
+        # reset moves locked axes too; the locks themselves are kept
+        self._point_before_check = ()
         self.point = (0,) * self.ndim
         self.order = tuple(range(self.ndim))
         self.margin_left = (0,) * self.ndim
@@ -492,7 +560,13 @@ class Dims(EventedModel):
         self.order = order  # pyrefly: ignore [bad-assignment]
 
     def _go_to_center_step(self):
-        self.current_step = [int((ns - 1) / 2) for ns in self.nsteps]
+        free = [
+            axis for axis in range(self.ndim) if not self.axis_locked[axis]
+        ]
+        if free:
+            self.set_current_step(
+                free, [int((self.nsteps[axis] - 1) / 2) for axis in free]
+            )
 
     def _sanitize_input(
         self, axis, value, value_is_sequence=False
@@ -529,6 +603,9 @@ class Dims(EventedModel):
             yield
         finally:
             self._validating = prev
+            if not prev:
+                # the reference point for _refuse_locked_axes
+                self._point_before_check = self.point
 
 
 def ensure_len(value: tuple, length: int, pad_width: Any) -> tuple:
