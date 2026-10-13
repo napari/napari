@@ -340,7 +340,10 @@ class _QtMainWindow(QMainWindow):
 
     def eventFilter(self, source, event):
         # catch enter/leave events for the canvas and update status accordingly
-        if source is self._qt_viewer.canvas._scene_canvas.native:
+        if (
+            hasattr(self, '_qt_viewer')
+            and source is self._qt_viewer.canvas._scene_canvas.native
+        ):
             if event.type() == QEvent.Type.Leave:
                 # Lock the status to "ready" until we come back in.
                 # We have to shortcut it with an instance attribute because
