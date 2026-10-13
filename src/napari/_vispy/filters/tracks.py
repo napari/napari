@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 import numpy.typing as npt
 from vispy.gloo import VertexBuffer
@@ -143,8 +145,8 @@ class TracksFilter(Filter):
     @property
     def vertex_time(
         self,
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
-        return self._vertex_time
+    ) -> np.ndarray[tuple[int, Literal[1]], np.dtype[np.float32]]:
+        return self._vertex_time  # pyrefly: ignore[bad-return]
 
     @vertex_time.setter
     def vertex_time(self, v_time: npt.ArrayLike | None) -> None:
