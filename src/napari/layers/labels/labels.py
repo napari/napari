@@ -68,6 +68,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
+from napari.utils.notifications import show_info, show_warning
 from napari.utils.status_messages import format_feature_value
 
 if TYPE_CHECKING:
@@ -145,6 +146,10 @@ class Labels(ScalarFieldBase):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
+    categories : dict[int, str | None] or None
+        Predefines list of categories (named labels) available for annotation.
+        When set, the layer controls and shortcuts will adapt and assume that only this
+        limited set of named labels can be used for annotation.
     colormap : CyclicLabelColormap or DirectLabelColormap or None
         Colormap to use for the labels. If None, a random colormap will be
         used.
@@ -245,6 +250,10 @@ class Labels(ScalarFieldBase):
     num_colors : int
         Number of unique colors to use in colormap. DEPRECATED: set
         ``colormap`` directly, using `napari.utils.colormaps.label_colormap`.
+    categories : dict[int, str | None] or None
+        Predefines list of categories (named labels) available for annotation.
+        When set, the layer controls and shortcuts will adapt and assume that only this
+        limited set of named labels can be used for annotation.
     features : Dataframe-like
         Features table where each row corresponds to a label and each column
         is a feature. The first row corresponds to the background label.
@@ -367,6 +376,7 @@ class Labels(ScalarFieldBase):
         axis_labels=None,
         blending='translucent',
         cache=True,
+        categories=None,
         colormap=None,
         depiction='volume',
         experimental_clipping_planes=None,
@@ -442,6 +452,7 @@ class Labels(ScalarFieldBase):
             labels_update=Event,
             n_edit_dimensions=Event,
             paint=Event,
+            categories=Event,
             preserve_labels=Event,
             properties=Event,
             selected_label=Event,
@@ -462,6 +473,10 @@ class Labels(ScalarFieldBase):
             }
         )
 
+        self._selected_label = 1
+        self._categories: dict[int, str | None] | None = None
+        self.categories = categories
+
         self._feature_table = _FeatureTable.from_layer(
             features=features, properties=properties
         )
@@ -473,7 +488,6 @@ class Labels(ScalarFieldBase):
 
         self._iso_gradient_mode = IsoCategoricalGradientMode(iso_gradient_mode)
 
-        self._selected_label = 1
         self.colormap.selection = self._selected_label
         self.colormap.use_selection = self._show_selected_label
         self._prev_selected_label = None
@@ -505,6 +519,25 @@ class Labels(ScalarFieldBase):
         # Trigger generation of view slice and thumbnail
         self.refresh()
         self._reset_editable()
+
+    @property
+    def categories(self) -> dict[int, str | None] | None:
+        return self._categories
+
+    @categories.setter
+    def categories(self, categories: dict[int, str | None] | None) -> None:
+        if categories is not None:
+            categories = categories.copy()
+            if categories.get(self.colormap.background_value, None) is None:
+                categories[self.colormap.background_value] = 'background'
+
+            categories = {k: categories[k] for k in sorted(categories)}
+
+        self._categories = categories
+        self.events.categories()
+
+        if categories and self.selected_label not in categories:
+            self.selected_label = next(iter(categories))
 
     @property
     def rendering(self):
@@ -781,6 +814,7 @@ class Labels(ScalarFieldBase):
                 'data': self.data,
                 'features': self.features,
                 'colormap': self.colormap,
+                'categories': self.categories,
             }
         )
         return state
@@ -821,6 +855,14 @@ class Labels(ScalarFieldBase):
     def selected_label(self, selected_label):
         if selected_label == self.selected_label:
             return
+
+        if self.categories and selected_label not in self.categories:
+            show_warning(
+                f'"{selected_label}" is not part of the defined categories; '
+                'to select it, first add it to the categories dictionary.'
+            )
+            return
+
         self._validate_label_in_range(selected_label)
         # when setting the label to the background, store the previous
         # otherwise, clear it
@@ -843,6 +885,23 @@ class Labels(ScalarFieldBase):
             self.selected_label = self.colormap.background_value
         else:
             self.selected_label = self._prev_selected_label
+
+    def next_unused(self) -> int:
+        if not isinstance(self.data, np.ndarray):
+            show_info(
+                'Finding the next unused label on non-numpy arrays is not supported'
+            )
+            return self.selected_label
+
+        next_unused = int(np.max(self.data)) + 1
+        while next_unused in (self.categories or []):
+            next_unused += 1
+        if self.selected_label == next_unused:
+            show_info(
+                'Current selected label is not yet used. You will need to use it first '
+                'to be able to set the current select label to the next one available'
+            )
+        return next_unused
 
     @property
     def show_selected_label(self):
@@ -2324,6 +2383,12 @@ class Labels(ScalarFieldBase):
 
         return f'{value}\n' + '\n'.join(properties)
 
+    def get_label_name(self, label: int) -> str | None:
+        """Return the corresponding label name if it is specified."""
+        if self.categories is not None:
+            return self.categories.get(label, None)
+        return None
+
     def _get_properties(
         self,
         position,
@@ -2332,8 +2397,7 @@ class Labels(ScalarFieldBase):
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> list:
-        if len(self._label_index) == 0 or self.features.shape[1] == 0:
-            return []
+        properties: list[str] = []
 
         value = self.get_value(
             position,
@@ -2343,11 +2407,17 @@ class Labels(ScalarFieldBase):
         )
         # if the cursor is not outside the image or on the background
         if value is None:
-            return []
+            return properties
 
         label_value: int = typing.cast(
             int, value[1] if self.multiscale else value
         )
+        if (label_name := self.get_label_name(label_value)) is not None:
+            properties.append(f'{label_name}')
+
+        if len(self._label_index) == 0 or self.features.shape[1] == 0:
+            return properties
+
         if label_value not in self._label_index:
             return ['[No Properties]']
 
