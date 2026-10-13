@@ -99,6 +99,8 @@ class EventedMetaclass(ModelMetaclass):
                         attr.fget.__annotations__['return']
                     )
 
+        # to allow simpler configurtion, the `properties_dependence` config
+        # allows any collection of strings, but we convert it to a set here for consistency
         prop_dependence = {
             k: set(v)
             for k, v in cls.model_config.get(
@@ -213,6 +215,11 @@ def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
                         prop_name, ()
                     )
                 ):
+                    # The RenamedProperty will be handled by RenamedWarningEmitter, so no need to
+                    # add it to the dependencies.
+                    # if The `path.startswith(f'{dep_name}.')` is satisfied in
+                    # The second condition it means that this relation will be handled
+                    # DependentEmitter or DependentWarningEmitter, so no need to add it to the dependencies.
                     deps[dep_name].remove(prop_name)
             if not deps[dep_name]:
                 del deps[dep_name]
