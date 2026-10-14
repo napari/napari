@@ -11,8 +11,7 @@ def test_digits_not_clipped_with_tabular_numerals(qapp):
     # napari enables tabular numerals on the app font. QPainter draws digits
     # with it, so they must also be measured with it or they get clipped.
     app_font = QFont(qapp.font())
-    if not use_tabular_numerals(qapp):
-        pytest.skip('tabular numerals need Qt >= 6.7')
+    use_tabular_numerals(qapp)
     try:
         font = QtTextureFont(
             {'face': 'OpenSans', 'size': 12, 'bold': False, 'italic': False},
@@ -30,8 +29,7 @@ def test_text_measured_like_glyphs_with_tabular_numerals(qapp):
     # text boxes are sized from these metrics, so they must use the same
     # (tabular) digits as the glyphs or digit-heavy text overflows its box
     app_font = QFont(qapp.font())
-    if not use_tabular_numerals(qapp):
-        pytest.skip('tabular numerals need Qt >= 6.7')
+    use_tabular_numerals(qapp)
     _get_qt_font_metrics.cache_clear()
     try:
         font = QtTextureFont(

@@ -1,5 +1,3 @@
-from warnings import warn
-
 try:
     from qtpy import API_NAME, QtCore
 except Exception as e:
@@ -71,11 +69,10 @@ except Exception as e:
                 f"""
                 No Qt bindings could be found for napari=={version('napari')}.
 
-                napari requires either PyQt5, PyQt6 (default) or PySide6 to be installed in the environment.
+                napari requires either PyQt6 (default) or PySide6 to be installed in the environment.
 
                 With pip, you can install either with:
                     $ pip install -U 'napari[all]'  # default choice
-                    $ pip install -U 'napari[pyqt5]'
                     $ pip install -U 'napari[pyqt6]'
                     $ pip install -U 'napari[pyside6]'
 
@@ -90,20 +87,41 @@ except Exception as e:
     raise
 
 
-# When QT is not the specific version, we raise a warning:
-if tuple(int(x) for x in QtCore.__version__.split('.')[:3]) < (5, 12, 3):
-    import importlib.metadata
-
-    try:
-        dist_info_version = importlib.metadata.version(API_NAME)
-        if dist_info_version != QtCore.__version__:
-            warn_message = f"\n\nIMPORTANT:\nYou are using QT version {QtCore.__version__}, but version {dist_info_version} was also found in your environment.\nThis usually happens when you 'conda install' something that also depends on PyQt\n*after* you have pip installed napari (such as jupyter notebook).\nYou will likely run into problems and should create a fresh environment.\nIf you want to install conda packages into the same environment as napari,\nplease add conda-forge to your channels: https://conda-forge.org\n"
-    except ModuleNotFoundError:
-        warn_message = f'\n\nnapari was tested with QT library `>=5.12.3`.\nThe version installed is {QtCore.__version__}. Please report any issues with\nthis specific QT version at https://github.com/Napari/napari/issues.'
-    warn(message=warn_message, stacklevel=1)  # pyrefly: ignore [unbound-name]
+MIN_QT_VERSION = (6, 7)
 
 
-from napari._qt.qt_event_loop import get_qapp, quit_app, run
-from napari._qt.qt_main_window import Window
+def _check_qt_version(qt_version: str, api_name: str) -> None:
+    """Raise ImportError if the Qt version used by qtpy is not supported."""
+    if tuple(int(x) for x in qt_version.split('.')[:2]) >= MIN_QT_VERSION:
+        return
+
+    min_version = '.'.join(map(str, MIN_QT_VERSION))
+    qt5_hint = (
+        (
+            'If PyQt6 or PySide6 is also installed, select it with the QT_API '
+            'environment variable (for example QT_API=pyqt6) '
+            f'or uninstall {api_name}.\n\n'
+        )
+        if qt_version.startswith('5.')
+        else ''
+    )
+    raise ImportError(
+        f'napari requires Qt >= {min_version}, but {api_name} with '
+        f'Qt {qt_version} was imported.\n\n'
+        f'{qt5_hint}'
+        'With pip, you can update with:\n'
+        "    $ pip install -U 'napari[pyqt6]'\n"
+        "    $ pip install -U 'napari[pyside6]'\n"
+        'With conda, you can update with:\n'
+        f'    $ conda install -c conda-forge "pyqt6>={min_version}"\n'
+        f'    $ conda install -c conda-forge "pyside6>={min_version}"'
+    )
+
+
+_check_qt_version(QtCore.__version__, API_NAME)
+
+
+from napari._qt.qt_event_loop import get_qapp, quit_app, run  # noqa: E402
+from napari._qt.qt_main_window import Window  # noqa: E402
 
 __all__ = ['Window', 'get_qapp', 'quit_app', 'run']
