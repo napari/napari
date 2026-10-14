@@ -211,11 +211,8 @@ def rename_argument(
         version when new argument was added
     """
 
-    def _wrapper(func):
-        if not hasattr(func, '_rename_argument'):
-            func._rename_argument = []
-
-        func._rename_argument.append(
+    def _wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+        func.__dict__.setdefault('_rename_argument', []).append(
             _RenamedAttribute(
                 from_name=from_name,
                 to_name=to_name,
@@ -225,7 +222,7 @@ def rename_argument(
         )
 
         @wraps(func)
-        def _update_from_dict(*args, **kwargs):
+        def _update_from_dict(*args: Any, **kwargs: Any) -> Any:
             if from_name in kwargs:
                 if to_name in kwargs:
                     raise ValueError(
@@ -245,11 +242,13 @@ def rename_argument(
     return _wrapper
 
 
-def _add_deprecated_property(func):
+def _add_deprecated_property(
+    func: Callable[..., Callable[[type], type]],
+) -> Callable[..., Callable[[type], type]]:
     """To be used as a decorator for add_deprecated_property to support legacy positional arguments."""
 
     @wraps(func)
-    def _func(*args, **kwargs):
+    def _func(*args: Any, **kwargs: Any) -> Any:
         if args or 'obj' in kwargs:
             if args:
                 warnings.warn(
@@ -359,13 +358,13 @@ def deprecated_constructor_arg_by_attr(name: str) -> Callable:
         decorated function
     """
 
-    def wrapper(func):
-        if not hasattr(func, '_deprecated_constructor_args'):
-            func._deprecated_constructor_args = []
-        func._deprecated_constructor_args.append(name)
+    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+        func.__dict__.setdefault('_deprecated_constructor_args', []).append(
+            name
+        )
 
         @wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: Any, **kwargs: Any) -> Any:
             value = _UNSET
             if name in kwargs:
                 value = kwargs.pop(name)
@@ -404,19 +403,19 @@ def deprecated_class_name(
     prealloc_signature = inspect.signature(new_class.__new__)
 
     class _OldClass(new_class):
-        def __new__(cls, *args, **kwargs) -> Self:
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:
             warnings.warn(msg, FutureWarning, stacklevel=2)
             if super().__new__ is object.__new__:
                 return super().__new__(cls)
             return super().__new__(cls, *args, **kwargs)
 
-        def __init_subclass__(cls, **kwargs) -> None:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
             warnings.warn(msg, FutureWarning, stacklevel=2)
 
     _OldClass.__module__ = new_class.__module__
     _OldClass.__name__ = previous_name
     _OldClass.__qualname__ = previous_name
-    _OldClass.__new__.__signature__ = prealloc_signature  # pyrefly: ignore [missing-attribute]
+    _OldClass.__new__.__signature__ = prealloc_signature  # pyrefly: ignore[missing-attribute]
 
     return _OldClass
 
@@ -441,7 +440,7 @@ class _DeprecatingDict(UserDict[str, Any]):
     # Maps from a deprecated key to its renamed key and deprecation information.
     _renamed: dict[str, _RenamedAttribute]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._renamed = {}
         super().__init__(*args, **kwargs)
 
@@ -449,9 +448,9 @@ class _DeprecatingDict(UserDict[str, Any]):
         key = self._maybe_rename_key(key)
         return self.data.__getitem__(key)
 
-    def __setitem__(self, key: str, value: Any) -> None:  # pyrefly: ignore [bad-override-param-name]
+    def __setitem__(self, key: str, item: Any) -> None:
         key = self._maybe_rename_key(key)
-        return self.data.__setitem__(key, value)
+        return self.data.__setitem__(key, item)
 
     def __delitem__(self, key: str) -> None:
         key = self._maybe_rename_key(key)
