@@ -554,9 +554,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         name: str | None = None,
         opacity: float = 1.0,
         projection_mode: str = 'none',
-        rotate: float | Sequence[float] | npt.NDArray | None = None,
+        rotate: float
+        | Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
         scale: Sequence[float] | npt.NDArray | None = None,
-        shear: Sequence[float] | npt.NDArray | None = None,
+        shear: Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
         translate: Sequence[float] | npt.NDArray | None = None,
         units: Sequence[str | pint.Unit | None] | None = None,
         visible: bool = True,
