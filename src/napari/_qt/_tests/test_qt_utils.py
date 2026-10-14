@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor, QFont
-from qtpy.QtWidgets import QColorDialog, QLabel, QMainWindow
+from qtpy.QtGui import QColor, QFont, QGuiApplication
+from qtpy.QtWidgets import QApplication, QColorDialog, QLabel, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
@@ -224,3 +224,23 @@ def test_use_tabular_numerals(qtbot: QtBot) -> None:
 
     assert label.font().isFeatureSet(QFont.Tag('tnum'))
     assert label.font().family() == family
+
+
+@pytest.mark.skipif(
+    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
+)
+def test_use_tabular_numerals_keeps_class_fonts(qapp) -> None:
+    class_name = 'QMdiSubWindowTitleBar'
+    saved_class_font = QApplication.font(class_name)
+    saved_app_font = QFont(qapp.font())
+    QApplication.setFont(QFont('Courier', 21), class_name)
+    try:
+        use_tabular_numerals(qapp)
+
+        class_font = QApplication.font(class_name)
+        assert class_font.family() == 'Courier'
+        assert class_font.pointSize() == 21
+        assert class_font.featureValue(QFont.Tag('tnum')) == 1
+    finally:
+        QGuiApplication.setFont(saved_app_font)
+        QApplication.setFont(saved_class_font, class_name)

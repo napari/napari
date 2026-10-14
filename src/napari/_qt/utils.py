@@ -25,11 +25,13 @@ from qtpy.QtGui import (
     QCursor,
     QDrag,
     QFont,
+    QGuiApplication,
     QImage,
     QPainter,
     QPixmap,
 )
 from qtpy.QtWidgets import (
+    QApplication,
     QColorDialog,
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
@@ -50,7 +52,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QGuiApplication
 
 
 class ColorMode(StringEnum):
@@ -422,6 +423,34 @@ def in_qt_main_thread() -> bool:
     return QCoreApplication.instance().thread() == QThread.currentThread()
 
 
+# Widget classes Qt may give a platform font of their own
+# (QApplicationPrivate::initializeWidgetFontHash).
+_QT_CLASS_FONTS = (
+    'QMenu',
+    'QMenuBar',
+    'QMenuItem',
+    'QMessageBox',
+    'QLabel',
+    'QTipLabel',
+    'QTitleBar',
+    'QStatusBar',
+    'QMdiSubWindowTitleBar',
+    'QDockWidgetTitle',
+    'QPushButton',
+    'QCheckBox',
+    'QRadioButton',
+    'QToolButton',
+    'QAbstractItemView',
+    'QListView',
+    'QHeaderView',
+    'QListBox',
+    'QComboMenuItem',
+    'QComboLineEdit',
+    'QSmallFont',
+    'QMiniFont',
+)
+
+
 def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
     """Render digits in `obj` using tabular numerals, if the font supports it.
 
@@ -430,8 +459,8 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
 
     `obj` may be any object with ``font()``/``setFont()``, so this can be
     applied to a single widget or to the ``QApplication``. When applied to the
-    application, the feature is inherited by every widget and survives theme
-    and font size changes. However, an application-level stylesheet would
+    application, every widget inherits it, including those with a per-class
+    font, and it survives theme and font size changes. However, an application-level stylesheet would
     discard it.
 
     Important: if the actual font does not support tabular numerals, this
@@ -450,7 +479,20 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
 
     font = QFont(obj.font())
     font.setFeature(tag('tnum'), 1)
-    obj.setFont(font)
+    if isinstance(obj, QGuiApplication):
+        # QApplication.setFont also clears the per-class fonts, e.g. the
+        # platform's smaller tooltip and header fonts on macOS.
+        QGuiApplication.setFont(font)
+        if isinstance(obj, QApplication):
+            # Widgets with a per-class font use it as-is, without the
+            # app font's features.
+            for class_name in _QT_CLASS_FONTS:
+                class_font = QApplication.font(class_name)
+                if class_font != font:
+                    class_font.setFeature(tag('tnum'), 1)
+                    QApplication.setFont(class_font, class_name)
+    else:
+        obj.setFont(font)
     return True
 
 
