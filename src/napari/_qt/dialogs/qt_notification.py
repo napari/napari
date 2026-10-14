@@ -183,13 +183,13 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        notifications = self._instances
         with suppress(ValueError):
             # if show is not called, the element is not in list
-            self._instances.remove(self)
+            notifications.remove(self)
         if self.parent() is not None:
-            notifications = self._instances
-            if len(notifications) > 1 and notifications[-1] == self:
-                notifications[-2].timer_start()
+            if notifications and not notifications[-1].underMouse():
+                notifications[-1].timer_start()
             self.parent().setFocus()
         super().close()
 
