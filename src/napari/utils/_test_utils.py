@@ -3,7 +3,9 @@ File with things that are useful for testing, but not to be fixtures
 """
 
 import inspect
+from collections.abc import Callable, Collection
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 from docstring_parser import parse
@@ -33,13 +35,13 @@ class MouseEvent:
     native: bool | None = None
 
 
-def read_only_mouse_event(*args, **kwargs) -> ReadOnlyWrapper:
+def read_only_mouse_event(*args: Any, **kwargs: Any) -> ReadOnlyWrapper:
     return ReadOnlyWrapper(
         MouseEvent(*args, **kwargs), exceptions=('handled',)
     )
 
 
-def validate_all_params_in_docstring(func) -> None:
+def validate_all_params_in_docstring(func: Callable[..., Any]) -> None:
     """
     Validate if all the parameters in the function signature are present in the docstring.
     """
@@ -60,7 +62,7 @@ def validate_all_params_in_docstring(func) -> None:
         # assert sig.annotation == doc.type_name, f"Type of parameter {sig.name} in signature and docstring do not match"
 
 
-def validate_kwargs_sorted(func) -> None:
+def validate_kwargs_sorted(func: Callable[..., Any]) -> None:
     """
     Validate if the keyword arguments in the function signature are sorted alphabetically.
     """
@@ -76,7 +78,7 @@ def validate_kwargs_sorted(func) -> None:
 
 
 def validate_docstring_parent_class_consistency(
-    klass, skip=('data', 'ndim')
+    klass: type, skip: Collection[str] = ('data', 'ndim')
 ) -> None:
     """
     Validate if the docstrings of the class parameters and type information
