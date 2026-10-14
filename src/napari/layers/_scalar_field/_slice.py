@@ -70,8 +70,10 @@ class _ScalarFieldSliceResponse:
     image : _ScalarFieldView
         The sliced image data.
     thumbnail: _ScalarFieldView
-        The thumbnail image data. This may come from a different resolution to the sliced image
-        data for multi-scale images. Otherwise, it's the same instance as data.
+        The thumbnail image data, covering the full displayed extent. Shares
+        the ``image`` instance when the image is uncropped, which is always
+        the case for single-scale images. Otherwise, it comes from the
+        thumbnail level of a multiscale image.
     tile_to_data: Affine
         The affine transform from the sliced data to the full data at the highest resolution.
         For single-scale images, this will be the identity matrix.
@@ -190,10 +192,11 @@ class _ScalarFieldSliceRequest:
     ----------
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    data_at_data_level : Any
-        The pre-selected data source accounting for the current data level.
-    data_at_thumbnail_level : Any
-        The pre-selected data source for the thumbnail.
+    data : Any
+        The original data source, including all levels for multiscale data.
+    level_materializer : callable or None
+        The cached materializer for 2D multiscale data, bound to the
+        original data. Used during execution, not request construction.
     dtype : DTypeLike
         The dtype of the layer's data.
     data_slice : _ThickNDSlice
@@ -205,8 +208,8 @@ class _ScalarFieldSliceRequest:
     """
 
     slice_input: _SliceInput
-    data_at_data_level: Any = field(repr=False)
-    data_at_thumbnail_level: Any = field(repr=False)
+    data: Any = field(repr=False)
+    level_materializer: Callable[[int], np.ndarray] | None = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -235,11 +238,19 @@ class _ScalarFieldSliceRequest:
                 else self._call_single_scale()
             )
 
+    def _thumbnail_source(self) -> Any:
+        """Return the multiscale thumbnail source.
+
+        - For 2D multiscale, it's the cached numpy array.
+        - For nD multiscale, it's a reference to the thumbnail data level.
+        """
+        if self.level_materializer is not None:
+            return self.level_materializer(self.thumbnail_level)
+        return self.data[self.thumbnail_level]
+
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
-        data = self._project_thick_slice(
-            self.data_at_data_level, self.data_slice
-        )
+        data = self._project_thick_slice(self.data, self.data_slice)
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
         # `Layer.multiscale` is mutable so we need to pass back the identity
@@ -262,7 +273,11 @@ class _ScalarFieldSliceRequest:
         for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[self.data_level][d]
 
-        data = self.data_at_data_level
+        data = (
+            self._thumbnail_source()
+            if self.data_level == self.thumbnail_level
+            else self.data[self.data_level]
+        )
 
         translate = np.zeros(self.slice_input.ndim)
         disp_slice = [slice(None) for _ in data.shape]
@@ -292,12 +307,18 @@ class _ScalarFieldSliceRequest:
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
 
-        thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
-        thumbnail_data = self._project_thick_slice(
-            self.data_at_thumbnail_level, thumbnail_data_slice
-        )
-        thumbnail_data = np.transpose(thumbnail_data, order)
-        thumbnail = _ScalarFieldView.from_view(thumbnail_data)
+        # The thumbnail only needs the full extent, not a particular level.
+        if self._tile_covers_level():
+            thumbnail = image
+        else:
+            thumbnail_data_slice = self._thick_slice_at_level(
+                self.thumbnail_level
+            )
+            thumbnail_data = self._project_thick_slice(
+                self._thumbnail_source(), thumbnail_data_slice
+            )
+            thumbnail_data = np.transpose(thumbnail_data, order)
+            thumbnail = _ScalarFieldView.from_view(thumbnail_data)
 
         return _ScalarFieldSliceResponse(
             image=image,
@@ -305,6 +326,17 @@ class _ScalarFieldSliceRequest:
             tile_to_data=tile_to_data,
             slice_input=self.slice_input,
             request_id=self.id,
+        )
+
+    def _tile_covers_level(self) -> bool:
+        """Whether the image tile spans the full extent of its data level."""
+        if self.slice_input.ndisplay == 3:
+            return True  # volume display ignores corner bounds
+        shape = self.level_shapes[self.data_level]
+        return all(
+            self.corner_pixels[0, d] == 0
+            and self.corner_pixels[1, d] == shape[d] - 1
+            for d in self.slice_input.displayed
         )
 
     def _thick_slice_at_level(self, level: int) -> _ThickNDSlice:
