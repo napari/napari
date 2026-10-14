@@ -199,8 +199,12 @@ class _QtMainWindow(QMainWindow):
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
+        # if active layer changes, update the status as appropriate
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
+        )
+        viewer.layers.selection.events.active.connect(
+            self.status_thread.trigger_status_update
         )
 
         self._command_palette = QCommandPalette(self)

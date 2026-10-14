@@ -817,9 +817,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
-            # TODO: how to do this once we remove persistend cursor position??
-            #       do we even care? We could do an extra connection higher up in qt...
-            self.update_status_from_cursor()
 
     def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
         """Combine layerlist axis labels onto the current dims labels.
