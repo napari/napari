@@ -94,7 +94,7 @@ body:
         - Triangulation backend: Fastest available
 
         Settings path:
-        - /Users/grzegorzbokota/Library/Application Support/napari/napari_d9bae8b035af45bf75f8c1a8b73363c8350f81c2/settings.yaml
+        - /Users/.../napari/napari_d9bae8b035af45bf75f8c1a8b73363c8350f81c2/settings.yaml
 
         Launch command:
         - /Users/grzegorzbokota/Documents/Projekty/napari/src/napari/__main__.py
