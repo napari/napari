@@ -137,7 +137,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         (for optimization). Editable models must return a value containing
         `Qt.ItemIsEditable`.
 
-        See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+        See Qt.ItemFlag https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         """
         if not index.isValid() or index.model() is not self:
             # we allow drops outside the items

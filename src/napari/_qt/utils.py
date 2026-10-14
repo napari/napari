@@ -128,8 +128,8 @@ def QImg2array(
         upper-left corner of the rendered region.
     """
     # Fix when  image is provided in wrong format (ex. test on Azure pipelines)
-    if img.format() != QImage.Format_ARGB32:
-        img = img.convertToFormat(QImage.Format_ARGB32)
+    if img.format() != QImage.Format.Format_ARGB32:
+        img = img.convertToFormat(QImage.Format.Format_ARGB32)
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 
@@ -212,7 +212,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)
-    ...         drag.exec_(supportedActions, Qt.MoveAction)
+    ...         drag.exec_(supportedActions, Qt.DropAction.MoveAction)
 
     """
     drag = QDrag(list_widget)

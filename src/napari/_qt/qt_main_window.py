@@ -590,13 +590,13 @@ class _QtMainWindow(QMainWindow):
                 extra_info='\n'.join(task_status),
                 display_checkbox=False,
             ).exec_()
-            != QDialog.Accepted
+            != QDialog.DialogCode.Accepted
         ) or (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
             and ConfirmCloseDialog(self, close_app=False).exec_()
-            != QDialog.Accepted
+            != QDialog.DialogCode.Accepted
         ):
             event.ignore()
             return

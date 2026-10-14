@@ -427,7 +427,7 @@ def test_screenshot_dialog(
         mock.patch('napari._qt._qt_viewer.QMessageBox') as mocker2,
     ):
         mocker.getSaveFileName.return_value = mock_return
-        mocker2.warning.return_value = QMessageBox.Yes
+        mocker2.warning.return_value = QMessageBox.StandardButton.Yes
         qt_viewer._screenshot_dialog()
 
     # Assert behaviour is correct
