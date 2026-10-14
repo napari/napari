@@ -473,7 +473,7 @@ class _QtMainWindow(QMainWindow):
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec_()
+            or ConfirmCloseDialog(self, quit_app).exec()
             == QDialog.DialogCode.Accepted
         ):
             self._quit_app = quit_app
@@ -589,14 +589,14 @@ class _QtMainWindow(QMainWindow):
                 close_app=False,
                 extra_info='\n'.join(task_status),
                 display_checkbox=False,
-            ).exec_()
-            != QDialog.Accepted
+            ).exec()
+            != QDialog.DialogCode.Accepted
         ) or (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
-            and ConfirmCloseDialog(self, close_app=False).exec_()
-            != QDialog.Accepted
+            and ConfirmCloseDialog(self, close_app=False).exec()
+            != QDialog.DialogCode.Accepted
         ):
             event.ignore()
             return
@@ -1881,7 +1881,7 @@ class Window:
         dial = ScreenshotDialog(
             self.screenshot, self._qt_viewer, hist[0], hist
         )
-        if dial.exec_():
+        if dial.exec():
             update_save_history(dial.selectedFiles()[0])
 
 
