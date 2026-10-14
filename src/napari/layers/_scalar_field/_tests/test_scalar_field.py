@@ -43,22 +43,14 @@ def test_single_scale_no_prematerialization():
     assert layer._level_materializer is None
 
 
-def test_multiscale_slice_request_receives_preselected_sources():
-    """Slice requests should receive the preselected sources."""
+def test_multiscale_slice_request_captures_data_and_materializer():
+    """Slice requests capture the original data and existing materializer."""
     data = [np.random.random((64, 64)), np.random.random((32, 32))]
     layer = Image(data, multiscale=True)
-    dims = Dims(
-        ndim=2,
-        ndisplay=2,
-        range=tuple((0, s - 1, 1) for s in data[0].shape),
-    )
-    request = layer._slicing_state._make_slice_request(dims)
-    assert layer.data_level == layer._thumbnail_level
-    # slice request should re-use thumbnail source when possible
-    assert request.data_at_data_level is request.data_at_thumbnail_level
-    np.testing.assert_array_equal(
-        request.data_at_thumbnail_level, data[layer._thumbnail_level]
-    )
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+    assert request.data is layer.data
+    assert request.level_materializer is layer._level_materializer
+    assert request.data_level == request.thumbnail_level
 
 
 def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
@@ -66,16 +58,10 @@ def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
     data = [np.random.random((64, 64)), np.random.random((32, 32))]
     layer = Image(data, multiscale=True)
     layer.data_level = 0
-    dims = Dims(
-        ndim=2,
-        ndisplay=2,
-        range=tuple((0, s - 1, 1) for s in data[0].shape),
-    )
-    request = layer._slicing_state._make_slice_request(dims)
-    assert request.data_at_data_level is data[0]
-    np.testing.assert_array_equal(
-        request.data_at_thumbnail_level, data[layer._thumbnail_level]
-    )
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+    assert request.data is layer.data
+    assert request.data[request.data_level] is data[0]
+    assert request._thumbnail_source() is data[-1]
 
 
 class _RecordingArray:
