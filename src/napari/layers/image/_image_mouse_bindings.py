@@ -80,7 +80,7 @@ def move_plane_along_normal(
             layer._display_bounding_box_augmented(event.dims_displayed),
         )
 
-        layer.plane.position = clamped_plane_position  # pyrefly: ignore [bad-assignment]
+        layer.plane.position = clamped_plane_position
         yield None
 
     # Re-enable volume_layer interactivity after the drag
