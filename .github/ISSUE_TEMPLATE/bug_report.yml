@@ -54,7 +54,7 @@ body:
 
 
       placeholder: |
-        napari: 0.10.0a1.dev7+gf3ef55e32
+        napari: 0.10.0
         Platform: macOS-26.6.2-arm64-arm-64bit-Mach-O
         System: MacOS 26.6.2
         Python: 3.14.6 (main, Jul 23 2026, 23:15:57) [Clang 17.0.0 (clang-1700.3.19.1)]
