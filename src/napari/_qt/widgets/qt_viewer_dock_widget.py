@@ -166,9 +166,13 @@ class QtViewerDockWidget(QDockWidget):
         if value not in dock_area_to_str:
             return
         settings = get_settings()
-        settings.application.plugin_widget_positions[self.name] = (
-            dock_area_to_str[value]
-        )
+        positions = settings.application.plugin_widget_positions
+        area = dock_area_to_str[value]
+        # Only persist positions the user chose; the initial placement must
+        # not be stored, or later changes to the default would be ignored.
+        if self.name not in positions and area == self.area:
+            return
+        positions[self.name] = area
         settings._maybe_save()
 
     @property
