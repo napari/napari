@@ -789,7 +789,7 @@ def expand_corners_to_chunk_boundaries(
 
 
 def coerce_affine(
-    affine: npt.ArrayLike | Affine,
+    affine: npt.ArrayLike | Affine | None,
     *,
     ndim: int,
     name: str | None = None,
