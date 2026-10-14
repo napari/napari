@@ -217,3 +217,35 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
 
     with pytest.raises(TypeError):
         viewer.window.dock_widgets['widget name (sample_plugin)'] = 1
+
+
+@pytest.mark.parametrize(
+    ('saved_area', 'requested_area', 'expected_area'),
+    [
+        # never moved by the user, no area passed: plugin's declared default
+        (None, None, 'bottom'),
+        # user moved it to the left in an earlier session: their choice wins
+        ('left', None, 'left'),
+        # area passed in code (`add_plugin_dock_widget(..., area=...)`) wins
+        ('left', 'top', 'top'),
+    ],
+    ids=['plugin-default', 'saved-beats-default', 'explicit-beats-saved'],
+)
+def test_add_plugin_dock_widget_area(
+    make_napari_viewer, monkeypatch, saved_area, requested_area, expected_area
+):
+    """Plugin dock widgets open in the area with the highest precedence."""
+    from napari.settings import get_settings
+
+    # a plugin widget whose manifest declares `default_dock_area: bottom`
+    mock = MagicMock(return_value=(QWidget, 'widget name', 'bottom'))
+    monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
+    if saved_area is not None:
+        positions = get_settings().application.plugin_widget_positions
+        positions['widget name (sample_plugin)'] = saved_area
+    viewer = make_napari_viewer()
+
+    docked, _ = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', area=requested_area
+    )
+    assert docked.area == expected_area
