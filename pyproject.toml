@@ -686,10 +686,6 @@ matches = "src/napari/utils/io.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/geometry.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/events/containers/_typed.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
