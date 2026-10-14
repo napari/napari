@@ -62,6 +62,9 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
         self._layer: Image | Labels = layer
 
         self.level_combobox = QComboBox(parent)
+        self.level_combobox.setToolTip(
+            'Extract a locked data level using the layer list contextual menu.'
+        )
         self.level_label = QtWrappedLabel('resolution:')
 
         # Only set up and show widgets if layer is multiscale
@@ -134,12 +137,14 @@ class QtMultiscaleLevelControl(QtWidgetControlsBase):
             else:
                 self.level_combobox.setCurrentIndex(0)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """Return the label/widget pairs for this control.
 
         Returns
         -------
-        list[tuple[QtWrappedLabel, QWidget]]
+        list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]
             Single-element list containing the resolution label and combobox.
         """
         return [(self.level_label, self.level_combobox)]

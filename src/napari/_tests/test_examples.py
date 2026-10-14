@@ -3,9 +3,7 @@ import runpy
 import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
-import skimage.data
 from pooch import core
 from qtpy import API_NAME
 
@@ -69,12 +67,6 @@ def _example_monkeypatch(monkeypatch):
     monkeypatch.setattr(Window, 'show', lambda *a: None)
     # prevent running the event loop
     monkeypatch.setattr(napari, 'run', lambda *a, **k: None)
-    # Prevent downloading example data because this sometimes fails.
-    monkeypatch.setattr(
-        skimage.data,
-        'cells3d',
-        lambda: np.zeros((60, 2, 256, 256), dtype=np.uint16),
-    )
 
     # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):

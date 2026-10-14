@@ -55,7 +55,5 @@ class QtSurfaceControls(QtBaseImageControls):
             self._gamma_slider_control,
             self._colormap_control,
         ):
-            for label, widget in control.get_widget_controls():
-                set_widgets_enabled_with_opacity(
-                    self, (label, widget), enabled
-                )
+            for widgets in control.get_widget_controls():
+                set_widgets_enabled_with_opacity(self, widgets, enabled)

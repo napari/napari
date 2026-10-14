@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 _SCRIPT_NAMESPACES: dict[str, dict[str, Any]] = {}
 
 
-def imsave(filename: str, data: np.ndarray):
+def imsave(filename: str, data: np.ndarray) -> None:
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -68,7 +68,7 @@ def imsave(filename: str, data: np.ndarray):
         iio.imwrite(filename, data)  # for all other file extensions
 
 
-def imsave_png(filename, data):
+def imsave_png(filename, data) -> None:
     """Save .png image to file
 
     PNG images created in napari have a digital watermark.
@@ -98,7 +98,7 @@ def imsave_png(filename, data):
     )
 
 
-def imsave_tiff(filename, data):
+def imsave_tiff(filename, data) -> None:
     """Save .tiff image to file
 
     Parameters
@@ -193,7 +193,7 @@ def _patched_viewer_new():
     _saved_new = Viewer.__new__
     _saved_init = Viewer.__init__
 
-    def patched_init(self, *args, **kwargs):
+    def patched_init(self, *args, **kwargs) -> None:
         Viewer.__init__ = _saved_init
 
     def patched_new(cls, *args, **kwargs):
@@ -204,14 +204,14 @@ def _patched_viewer_new():
         if not kwargs and not args:
             viewer = current_viewer()
             if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay  # type: ignore
+                viewer.dims.ndisplay = ndisplay  # pyrefly: ignore [missing-attribute]
             if viewer is not None:
                 Viewer.__new__ = _saved_new
                 return viewer
         Viewer.__init__ = _saved_init
         return _saved_new(cls)
 
-    Viewer.__new__ = patched_new
+    Viewer.__new__ = patched_new  # pyrefly: ignore [bad-assignment]
     Viewer.__init__ = patched_init
     try:
         yield

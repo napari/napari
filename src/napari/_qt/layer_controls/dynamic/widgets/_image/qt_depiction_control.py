@@ -206,7 +206,9 @@ class QtDepictionControl(QtWidgetControlsBase):
         self.plane_thickness_slider.setVisible(visible)
         self.plane_thickness_label.setVisible(visible)
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (self.depiction_label, self.depiction_combobox),
             (self.plane_normal_label, self.plane_normal_buttons),

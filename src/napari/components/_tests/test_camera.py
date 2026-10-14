@@ -29,17 +29,31 @@ def test_camera():
 
 def test_calculate_view_direction_3d():
     """Check that view direction is calculated properly from camera angles."""
-    # simple case
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), zoom=1)
+    assert np.allclose(camera.view_direction, (-1, 0, 0))
+    assert np.allclose(camera.up_direction, (0, -1, 0))
+
     camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=1)
     assert np.allclose(camera.view_direction, (-1, 0, 0))
+    assert np.allclose(camera.up_direction, (0, 0, 1))
+
+    camera = Camera(center=(0, 0, 0), angles=(0, 90, 0), zoom=1)
+    assert np.allclose(camera.view_direction, (0, 0, -1))
+    assert np.allclose(camera.up_direction, (0, -1, 0))
+
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 90), zoom=1)
+    assert np.allclose(camera.view_direction, (0, 1, 0))
+    assert np.allclose(camera.up_direction, (-1, 0, 0))
 
     # shouldn't change with zoom
-    camera = Camera(center=(0, 0, 0), angles=(90, 0, 0), zoom=10)
+    camera = Camera(center=(0, 0, 0), angles=(0, 0, 0), zoom=10)
     assert np.allclose(camera.view_direction, (-1, 0, 0))
+    assert np.allclose(camera.up_direction, (0, -1, 0))
 
     # shouldn't change with center
-    camera = Camera(center=(15, 15, 15), angles=(90, 0, 0), zoom=1)
+    camera = Camera(center=(15, 15, 15), angles=(0, 0, 0), zoom=1)
     assert np.allclose(camera.view_direction, (-1, 0, 0))
+    assert np.allclose(camera.up_direction, (0, -1, 0))
 
 
 def test_calculate_up_direction_3d():
@@ -80,7 +94,7 @@ def test_set_view_direction_3d():
     camera.set_view_direction(view_direction=view_direction)
     assert np.allclose(camera.view_direction, view_direction)
     assert np.allclose(
-        _normalize_angle(camera.angles), (180, -71.6, -147.7), atol=0.1
+        _normalize_angle(camera.angles), (180.0, -71.6, -147.7), atol=0.1
     )
 
 

@@ -3,7 +3,12 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from qtpy.QtCore import QItemSelection, QModelIndex, Qt
+from qtpy.QtCore import (
+    QItemSelection,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+)
 
 from napari._qt.containers._base_item_model import (
     ItemRole,
@@ -58,7 +63,7 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
     _root: SelectableEventedList[ItemType]
 
     def model(self) -> _BaseEventedItemModel[ItemType]:
-        return super().model()  # type: ignore[return-value]
+        return super().model()  # pyrefly: ignore [bad-return]
 
     def keyPressEvent(self, e: QKeyEvent | None) -> None:
         """Delete items with delete key."""
@@ -70,7 +75,9 @@ class _BaseEventedItemView(_ViewBase, Generic[ItemType]):
         return super().keyPressEvent(e)
 
     def currentChanged(
-        self, current: QModelIndex, previous: QModelIndex
+        self,
+        current: QModelIndex | QPersistentModelIndex,
+        previous: QModelIndex | QPersistentModelIndex,
     ) -> None:
         """The Qt current item has changed. Update the python model."""
         self._root.selection._current = current.data(ItemRole)

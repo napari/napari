@@ -12,7 +12,7 @@ class Cursor(EventedModel):
     position : tuple of float
         Position of the cursor in world coordinates. If the cursor is outside of,
         the canvas, then the last known position is stored instead.
-    viewbox : tuple[int, int] or None
+    viewbox : tuple[int, int]
         Position of the cursor in the grid.
     scaled : bool
         Flag to indicate whether cursor size should be scaled to zoom.
@@ -38,7 +38,7 @@ class Cursor(EventedModel):
 
     # fields
     position: tuple[float, ...] = (1.0, 1.0)
-    viewbox: tuple[int, int] | None = None
+    viewbox: tuple[int, int] = (0, 0)
     scaled: bool = True
     size: float = 1.0
     style: CursorStyle = CursorStyle.STANDARD

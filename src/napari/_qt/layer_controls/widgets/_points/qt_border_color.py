@@ -63,5 +63,7 @@ class QtBorderColorControl(QtWidgetControlsBase):
 
         self.border_color_edit_label = QtWrappedLabel('border color:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.border_color_edit_label, self.border_color_edit)]

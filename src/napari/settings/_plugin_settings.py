@@ -12,7 +12,7 @@ from napari.settings._base import (
 )
 
 
-class PluginPreferences(EventedConfigFileSettings):
+class PluginSettings(EventedConfigFileSettings):
     model_config = SettingsConfigDict(
         env_prefix='napari_',
         nested_model_default_partial_update=True,

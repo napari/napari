@@ -170,6 +170,30 @@ def test_grid_mode(qt_viewer):
         np.testing.assert_allclose(camera.angles, angles)
         assert camera.zoom == zoom
 
+    # ensure adding/deleting/hiding layer does not cause any crashes
+    # due to the overlay visual reuse shenanigans that happen
+    # on grid shape changes. Also check grid shapes respond correctly.
+    viewer.canvas.grid.enabled = True
+    viewer.canvas.grid.stride = 2
+    l1 = viewer.add_image(np.ones((10, 10, 10)))
+    l2 = viewer.add_image(np.ones((10, 10, 10)))
+    l3 = viewer.add_image(np.ones((10, 10, 10)))
+    l1.colorbar.visible = True
+    l2.colorbar.visible = True
+    l3.colorbar.visible = True
+    viewer.canvas.overlays.scale_bar.visible = True
+    viewer.canvas.overlays.scale_bar.gridded = True
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 2
+
+    l2.visible = False
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 2
+
+    viewer.layers.pop()
+    canvas.on_draw(None)
+    assert len(canvas.grid_views) == 1
+
 
 def test_tiling_canvas_overlays(qt_viewer):
     viewer = qt_viewer.viewer

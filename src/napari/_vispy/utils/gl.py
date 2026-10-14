@@ -76,7 +76,7 @@ def get_max_texture_sizes() -> tuple[int, int]:
     if not max_size_3d:
         max_size_3d = None
 
-    return max_size_2d, max_size_3d
+    return max_size_2d, max_size_3d  # pyrefly: ignore [bad-return]
 
 
 def fix_data_dtype(data: npt.NDArray) -> npt.NDArray:

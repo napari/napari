@@ -19,7 +19,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()) -> None:
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
@@ -57,7 +57,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
         warnings.warn(
             f"Private attribute access ('{typ}.{name}') in this context "
             '(e.g. inside a plugin widget or dock widget) is deprecated '
-            'and will be unavailable in version 0.9.0',
+            'and will be unavailable no earlier than 0.10.0',
             category=FutureWarning,
             stacklevel=3,
         )
@@ -161,7 +161,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
-    def __call__(self, *args, **kwargs):  # type: ignore [no-untyped-def]
+    def __call__(self, *args, **kwargs):
         # if a PublicOnlyProxy is callable, then when we call it we:
         # - unwrap the arguments, to avoid performance issues detailed in
         #   PublicOnlyProxy.__setattr__,

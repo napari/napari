@@ -113,7 +113,9 @@ class QtHistogramControl(QtWidgetControlsBase):
         self.histogram_widget = self.histogram_content.histogram_widget
         self.settings_widget = self.histogram_content.settings_widget
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         """Return empty list; histogram is dynamically shown/hidden."""
         return []
 
