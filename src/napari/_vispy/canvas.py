@@ -555,8 +555,7 @@ class VispyCanvas:
         #       And/Or maybe make vispy_overlays into a mousemapprovider?
         for vispy_overlays in self._viewer_overlay_to_visual.values():
             for vispy_overlay in vispy_overlays:
-                if callback := getattr(vispy_overlay, '_on_mouse_leave', None):
-                    callback()
+                vispy_overlay._on_mouse_leave()
 
     def _on_mouse_double_click(self, event: MouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
