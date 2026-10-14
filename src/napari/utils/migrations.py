@@ -4,10 +4,13 @@ import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, NamedTuple, ParamSpec, Self, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+_P = ParamSpec('_P')
+_R = TypeVar('_R')
 
 _UNSET = object()
 
@@ -194,7 +197,7 @@ class _RenamedAttribute(NamedTuple):
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ''
-) -> Callable:
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -211,7 +214,7 @@ def rename_argument(
         version when new argument was added
     """
 
-    def _wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+    def _wrapper(func: Callable[_P, _R]) -> Callable[_P, _R]:
         func.__dict__.setdefault('_rename_argument', []).append(
             _RenamedAttribute(
                 from_name=from_name,
@@ -222,7 +225,7 @@ def rename_argument(
         )
 
         @wraps(func)
-        def _update_from_dict(*args: Any, **kwargs: Any) -> Any:
+        def _update_from_dict(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             if from_name in kwargs:
                 if to_name in kwargs:
                     raise ValueError(
@@ -233,7 +236,6 @@ def rename_argument(
                     category=FutureWarning,
                     stacklevel=2,
                 )
-                kwargs = kwargs.copy()
                 kwargs[to_name] = kwargs.pop(from_name)
             return func(*args, **kwargs)
 
@@ -243,9 +245,11 @@ def rename_argument(
 
 
 def _add_deprecated_property(
-    func: Callable[..., Callable[[type], type]],
-) -> Callable[..., Callable[[type], type]]:
+    func: Callable[_P, Callable[[type], type]],
+) -> Callable[_P, Callable[[type], type]]:
     """To be used as a decorator for add_deprecated_property to support legacy positional arguments."""
+    # legacy calls are rebuilt as kwargs that cannot match `_P` statically
+    legacy_func: Callable[..., Callable[[type], type]] = func
 
     @wraps(func)
     def _func(*args: Any, **kwargs: Any) -> Any:
@@ -279,8 +283,8 @@ def _add_deprecated_property(
             )
             for name, value in zip(legacy_names, args, strict=False):
                 kwargs[name] = value
-            return func(**kwargs)(obj)
-        return func(**kwargs)
+            return legacy_func(**kwargs)(obj)
+        return legacy_func(**kwargs)
 
     return _func
 
