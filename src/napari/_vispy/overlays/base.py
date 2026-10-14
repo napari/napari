@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
 from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari.utils.color import ColorValue
+from napari.utils.color import (
+    ColorValue,
+    _contrasting_color,
+    _readable_color,
+)
 from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
@@ -154,22 +158,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_fgcolor(self) -> ColorValue:
+    def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.viewer.canvas.background_color
-        else:
-            bgcolor = self.overlay.box_color
-        return self._contrasting_color(bgcolor)
+            return self.viewer.canvas.background_color
+        return self.overlay.box_color
 
-    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
-        opposite = 1 - bgcolor
-        # shift away from mid tones for better contrast
-        opposite = 0.5 + (opposite - 0.5) * 1.2
-        opposite = np.clip(opposite, 0, 1)
-        # don't change alpha
-        opposite[-1] = bgcolor[-1]
-        # numpy keeps the ColorValue subclass at runtime, but its stubs don't
-        return cast(ColorValue, opposite)
+    def _get_fgcolor(self) -> ColorValue:
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
