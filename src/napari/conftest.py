@@ -349,11 +349,11 @@ if parse_version(version('npe2')) < parse_version('0.9.1'):
 else:
 
     @pytest.fixture
-    def mock_pm(npe2pm_wp: TestPluginManager):
+    def mock_pm(npe2pm_w_plugin: TestPluginManager):
         from napari.plugins import _initialize_plugins
 
         _initialize_plugins.cache_clear()
-        return npe2pm_wp
+        return npe2pm_w_plugin
 
 
 @pytest.fixture(autouse=True)
