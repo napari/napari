@@ -30,7 +30,9 @@ from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
+
+    import numpy.typing as npt
 
 
 def transform_color(colors: Any) -> np.ndarray:
@@ -147,14 +149,14 @@ def _handle_list_like(colors: Sequence) -> np.ndarray | None:
     return None
 
 
-def _handle_generator(colors) -> np.ndarray | None:
+def _handle_generator(colors: Iterable[Any]) -> np.ndarray | None:
     """Generators are converted to lists since we need to know their
     length to instantiate a proper array.
     """
     return _handle_list_like(list(colors))
 
 
-def handle_nested_colors(colors) -> ColorArray:
+def handle_nested_colors(colors: Sequence | np.ndarray) -> ColorArray:
     """In case of an array-like container holding colors, unpack it."""
     colors_as_rbga = np.ones((len(colors), 4), dtype=np.float32)
     for idx, color in enumerate(colors):
@@ -291,7 +293,7 @@ def _handle_str_list_like(colors: Sequence | np.ndarray) -> np.ndarray:
     return color_array
 
 
-def _handle_none(color) -> np.ndarray:
+def _handle_none(color: None) -> np.ndarray:
     """Converts color given as None to black.
 
     Parameters
@@ -345,7 +347,7 @@ _color_switch: dict[Any, Callable] = {
 }
 
 
-def _create_hex_to_name_dict():
+def _create_hex_to_name_dict() -> dict[str, str]:
     """Create a dictionary mapping hexadecimal RGB colors into their
     'official' name.
 
@@ -359,7 +361,7 @@ def _create_hex_to_name_dict():
     return hex_to_name
 
 
-def get_color_namelist():
+def get_color_namelist() -> list[str]:
     """Gets all the color names supported by napari.
 
     Returns
@@ -373,7 +375,7 @@ def get_color_namelist():
 hex_to_name = _create_hex_to_name_dict()
 
 
-def _check_color_dim(val):
+def _check_color_dim(val: npt.ArrayLike) -> np.ndarray:
     """Ensures input is Nx4.
 
     Parameters
@@ -418,11 +420,11 @@ def rgb_to_hex(rgbs: Sequence) -> np.ndarray:
         An array of the hex representation of the input colors
 
     """
-    rgbs = _check_color_dim(rgbs)
+    rgba = _check_color_dim(rgbs)
     return np.array(
         [
             f'#{"%02x" * 4}' % tuple((255 * rgb).astype(np.uint8))
-            for rgb in rgbs
+            for rgb in rgba
         ],
         '|U9',
     )

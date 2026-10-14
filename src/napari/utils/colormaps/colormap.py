@@ -24,7 +24,7 @@ from pydantic import (
     field_validator,
 )
 
-from napari.utils.color import ColorArray, ColorValue
+from napari.utils.color import ColorArray, ColorArrayParam, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
@@ -113,7 +113,10 @@ class Colormap(EventedModel):
     low_color: ColorValue | None = None
 
     def __init__(
-        self, colors, display_name: str | None = None, **data
+        self,
+        colors: ColorArrayParam,
+        display_name: str | None = None,
+        **data: Any,
     ) -> None:
         if display_name is None:
             display_name = data.get('name', 'custom')
@@ -124,7 +127,9 @@ class Colormap(EventedModel):
     # controls validator must be called even if None for correct initialization
     @field_validator('controls', mode='after')
     @classmethod
-    def _check_controls(cls, v, info):
+    def _check_controls(
+        cls, v: np.ndarray, info: ValidationInfo
+    ) -> np.ndarray:
         # If no control points provided generate defaults
         if v is None or len(v) == 0:
             n_controls = len(info.data['colors']) + int(
@@ -217,7 +222,7 @@ class Colormap(EventedModel):
         return cols
 
     @property
-    def colorbar(self):
+    def colorbar(self) -> npt.NDArray[np.uint8]:
         return make_colorbar(self)
 
     def same_colors(self, other: 'Colormap') -> bool:
@@ -243,7 +248,7 @@ class _RebuildableCache(dict):
     attributes or which hook a copy routes through.
     """
 
-    def __deepcopy__(self, memo) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         return type(self)()
 
 
@@ -383,7 +388,7 @@ class CyclicLabelColormap(LabelColormapBase):
 
     @field_validator('colors', mode='after')
     @classmethod
-    def _validate_color(cls, v):
+    def _validate_color(cls, v: ColorArray) -> ColorArray:
         if len(v) > 2**16:
             raise ValueError(
                 'Only up to 2**16=65535 colors are supported for LabelColormap'
@@ -417,7 +422,7 @@ class CyclicLabelColormap(LabelColormapBase):
         """Map input values to values for send to GPU."""
         return _cast_labels_data_to_texture_dtype_auto(values, self)
 
-    def _map_without_cache(self, values) -> np.ndarray:
+    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         texture_dtype_values = _accel_cmap.zero_preserving_modulo_numpy(
             values,
             len(self.colors) - 1,
@@ -515,7 +520,7 @@ class DirectLabelColormap(LabelColormapBase):
     use_selection: bool = False
     selection: int = 0
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if 'colors' not in kwargs and not args:
             kwargs['colors'] = np.zeros(3)
         super().__init__(*args, **kwargs)
@@ -530,7 +535,9 @@ class DirectLabelColormap(LabelColormapBase):
 
     @field_validator('color_dict', mode='before')
     @classmethod
-    def _validate_color_dict(cls, v: MutableMapping, values: ValidationInfo):
+    def _validate_color_dict(
+        cls, v: MutableMapping, values: ValidationInfo
+    ) -> dict[int | None, np.ndarray]:
         """Ensure colors are RGBA arrays, not strings.
 
         Parameters
@@ -645,7 +652,9 @@ class DirectLabelColormap(LabelColormapBase):
         cast = _accel_cmap.labels_raw_to_texture_direct(values, cmap)
         return self._map_precast(cast, apply_selection=False)
 
-    def _map_precast(self, values, apply_selection) -> np.ndarray:
+    def _map_precast(
+        self, values: np.ndarray, apply_selection: bool
+    ) -> np.ndarray:
         """Map values to colors.
 
         Parameters
@@ -690,7 +699,7 @@ class DirectLabelColormap(LabelColormapBase):
             del self.__dict__['_array_map']
 
     def _values_mapping_to_minimum_values_set(
-        self, apply_selection=True
+        self, apply_selection: bool = True
     ) -> tuple[dict[int | None, int], dict[int, np.ndarray]]:
         """Create mapping from original values to minimum values set.
         To use minimum possible dtype for labels.
@@ -1028,7 +1037,11 @@ def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
 
 
 def _normalize_label_colormap(
-    any_colormap_like,
+    any_colormap_like: CyclicLabelColormap
+    | DirectLabelColormap
+    | Sequence
+    | MutableMapping
+    | np.ndarray,
 ) -> CyclicLabelColormap | DirectLabelColormap:
     """Convenience function to convert color containers to LabelColormaps.
 
