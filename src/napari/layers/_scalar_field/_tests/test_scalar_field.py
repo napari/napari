@@ -1,3 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import current_thread, main_thread
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -5,11 +8,17 @@ import xarray as xr
 from napari.components import Dims
 from napari.layers import Image, Labels
 from napari.layers._scalar_field.scalar_field import ScalarFieldBase
+from napari.settings import get_settings
 from napari.utils._test_utils import (
     validate_all_params_in_docstring,
     validate_docstring_parent_class_consistency,
     validate_kwargs_sorted,
 )
+
+
+@pytest.fixture
+def _enable_async(_fresh_settings, monkeypatch):
+    monkeypatch.setattr(get_settings().experimental, 'async_', True)
 
 
 def test_docstring():
@@ -43,6 +52,18 @@ def test_single_scale_no_prematerialization():
     assert layer._level_materializer is None
 
 
+def test_single_scale_request_keeps_data_after_replacement():
+    data = np.zeros((32, 32))
+    layer = Image(data)
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+
+    layer.data = np.ones_like(data)
+
+    response = request()
+    np.testing.assert_array_equal(response.image.raw, data)
+    assert response.thumbnail is response.image
+
+
 def test_multiscale_slice_request_captures_data_and_materializer():
     """Slice requests capture the original data and existing materializer."""
     data = [np.random.random((64, 64)), np.random.random((32, 32))]
@@ -65,11 +86,12 @@ def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
 
 
 class _RecordingArray:
-    """Eager array-like that records every index it is asked for."""
+    """Eager array-like that records indices and array-conversion threads."""
 
     def __init__(self, array):
         self._array = array
         self.keys = []
+        self.materialization_threads = []
         # LayerDataProtocol requires these as concrete attributes
         self.shape, self.dtype = array.shape, array.dtype
         self.ndim, self.size = array.ndim, array.size
@@ -77,6 +99,11 @@ class _RecordingArray:
     def __getitem__(self, key):
         self.keys.append(key)
         return self._array[key]
+
+    def __array__(self, dtype=None, copy=None):
+        self.materialization_threads.append(current_thread())
+        array = np.asarray(self._array, dtype=dtype)
+        return array.copy() if copy else array
 
 
 def test_multiscale_slice_reads_only_the_visible_tile():
@@ -113,6 +140,144 @@ def test_multiscale_slice_reads_only_the_visible_tile():
     assert levels[0].keys == [
         (slice(1, 2), slice(2, 3), slice(8, 16, 1), slice(8, 16, 1))
     ]
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_thumbnail_materialization_deferred_to_slice_execution():
+    data = [
+        _RecordingArray(np.zeros((64, 64), dtype=np.uint8)),
+        _RecordingArray(np.ones((32, 32), dtype=np.uint8)),
+    ]
+    layer = Image(data, multiscale=True)
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+
+    assert not data[-1].materialization_threads
+    assert not data[-1].keys
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        response = executor.submit(request).result(timeout=5)
+        next_request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+        executor.submit(next_request).result(timeout=5)
+
+    assert len(data[-1].materialization_threads) == 1
+    assert data[-1].materialization_threads[0] is not main_thread()
+    assert not data[0].materialization_threads
+    assert not data[0].keys
+    np.testing.assert_array_equal(response.image.raw, data[-1]._array)
+
+
+@pytest.mark.usefixtures('_enable_async')
+def test_nd_thumbnail_source_stays_lazy():
+    data = [
+        _RecordingArray(np.zeros((3, 64, 64), dtype=np.uint8)),
+        _RecordingArray(np.ones((3, 32, 32), dtype=np.uint8)),
+    ]
+    layer = Image(data, multiscale=True)
+    request = layer._slicing_state._make_slice_request(Dims(ndim=3))
+
+    assert request._thumbnail_source() is data[-1]
+    for level in data:
+        assert not level.materialization_threads
+        assert not level.keys
+
+
+@pytest.mark.usefixtures('_enable_async')
+@pytest.mark.parametrize(
+    ('shape', 'rgb', 'ndisplay', 'order'),
+    [
+        ((32, 40), False, 2, (0, 1)),
+        ((3, 32, 40), False, 2, (0, 1, 2)),
+        ((2, 3, 32, 40), False, 2, (0, 1, 2, 3)),
+        ((32, 40, 3), True, 2, (0, 1)),
+        ((3, 32, 40), False, 3, (0, 1, 2)),
+        ((3, 32, 40), False, 2, (2, 0, 1)),
+    ],
+)
+@pytest.mark.parametrize('projection_mode', ['none', 'mean', 'max'])
+@pytest.mark.parametrize('data_level', [0, 1])
+def test_full_extent_image_reused_as_thumbnail(
+    shape, rgb, ndisplay, order, projection_mode, data_level
+):
+    fine_shape = tuple(2 * s for s in shape)
+    if rgb:
+        fine_shape = fine_shape[:-1] + (shape[-1],)
+    data = [
+        _RecordingArray(np.full(fine_shape, 2, dtype=np.uint8)),
+        _RecordingArray(np.ones(shape, dtype=np.uint8)),
+    ]
+    layer = Image(
+        data, multiscale=True, rgb=rgb, projection_mode=projection_mode
+    )
+    # Locking selects the level in 3D display too.
+    layer._locked_data_level = data_level
+    dims = Dims(ndim=len(order), ndisplay=ndisplay, order=order)
+    displayed = list(dims.displayed)
+    layer.corner_pixels = np.zeros((2, layer.ndim), dtype=int)
+    # 3D bounds intentionally remain zero: volume display ignores them.
+    if ndisplay == 2:
+        layer.corner_pixels[1, displayed] = (
+            layer.level_shapes[data_level, displayed] - 1
+        )
+    response = layer._slicing_state._make_slice_request(dims)()
+
+    level_shape = data[data_level].shape
+    expected_shape = tuple(level_shape[d] for d in displayed)
+    if rgb:
+        expected_shape += (shape[-1],)
+    assert response.thumbnail is response.image
+    assert response.image.raw.shape == expected_shape
+    assert np.all(response.image.raw == 2 - data_level)
+    source, other = data[data_level], data[1 - data_level]
+    assert len(source.keys) + len(source.materialization_threads) == 1
+    assert not other.keys
+    assert not other.materialization_threads
+
+
+@pytest.mark.parametrize('ndim', [2, 3])
+@pytest.mark.parametrize('data_level', [0, 1])
+def test_cropped_multiscale_image_keeps_full_thumbnail(ndim, data_level):
+    prefix = (3,) if ndim == 3 else ()
+    data = [
+        np.arange(np.prod(prefix + (64, 64)), dtype=np.uint16).reshape(
+            prefix + (64, 64)
+        ),
+        np.arange(np.prod(prefix + (32, 32)), dtype=np.uint16).reshape(
+            prefix + (32, 32)
+        ),
+    ]
+    layer = Image(data, multiscale=True)
+    layer._data_level = data_level
+    layer.corner_pixels = np.zeros((2, ndim), dtype=int)
+    layer.corner_pixels[0, -2:] = 4
+    layer.corner_pixels[1, -2:] = 11
+    dims = Dims(ndim=ndim, point=(1, 0, 0) if ndim == 3 else (0, 0))
+    response = layer._slicing_state._make_slice_request(dims)()
+    expected_image = data[data_level][1] if ndim == 3 else data[data_level]
+    expected_thumbnail = data[-1][1] if ndim == 3 else data[-1]
+
+    assert response.thumbnail is not response.image
+    np.testing.assert_array_equal(
+        response.image.raw, expected_image[4:12, 4:12]
+    )
+    np.testing.assert_array_equal(response.thumbnail.raw, expected_thumbnail)
+
+
+@pytest.mark.parametrize('ndim', [2, 3])
+def test_thumbnail_source_keeps_request_data_after_replacement(ndim):
+    prefix = (3,) if ndim == 3 else ()
+    data1 = [np.zeros(prefix + (64, 64)), np.ones(prefix + (32, 32))]
+    data2 = [np.zeros(prefix + (64, 64)), np.full(prefix + (32, 32), 2)]
+    layer = Image(data1, multiscale=True)
+    dims = Dims(ndim=ndim)
+    old_request = layer._slicing_state._make_slice_request(dims)
+
+    layer.data = data2
+    new_request = layer._slicing_state._make_slice_request(dims)
+
+    expected_old = data1[-1][0] if ndim == 3 else data1[-1]
+    expected_new = data2[-1][0] if ndim == 3 else data2[-1]
+    np.testing.assert_array_equal(old_request().image.raw, expected_old)
+    np.testing.assert_array_equal(new_request().image.raw, expected_new)
 
 
 def test_thumbnail_level_data_refreshed_on_data_replacement():
