@@ -1139,8 +1139,8 @@ class Window:
         )
         return dock_widget, wdg
 
+    @staticmethod
     def _resolve_dock_area(
-        self,
         name: str,
         area: str | None = None,
         default_area: str | None = None,
