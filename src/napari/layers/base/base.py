@@ -558,7 +558,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         scale: Sequence[float] | npt.NDArray | None = None,
         shear: Sequence[float] | npt.NDArray | None = None,
         translate: Sequence[float] | npt.NDArray | None = None,
-        units: Sequence[str | pint.Unit] | None = None,
+        units: Sequence[str | pint.Unit | None] | None = None,
         visible: bool = True,
         locked: bool | LayerLock = False,
     ) -> None:
