@@ -19,7 +19,7 @@ env:
 jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
-    timeout-minutes: 60
+    timeout-minutes: 80
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: read
