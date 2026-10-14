@@ -8,6 +8,8 @@ from qtpy.QtCore import Qt
 
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
+from napari.settings import get_settings
+from napari.settings._constants import PlaybackUnit
 
 
 def test_creating_view(qtbot):
@@ -431,6 +433,69 @@ def test_play_popup_stays_open_on_enter(qtbot, qt_dims):
     focused = button.popup.focusWidget() or button.popup
     qtbot.keyClick(focused, Qt.Key.Key_Enter)
     assert button.popup.isVisible()
+
+
+def test_playback_cycle_time_unit(qt_dims):
+    qt_dims.dims.ndim = 3
+    qt_dims.dims.set_range(0, (0, 19, 1))  # 20 steps on the sliding axis
+    slider = qt_dims.slider_widgets[0]
+    button = slider.play_button
+
+    slider.fps = 10
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 10
+
+    # Switching units re-expresses the same speed: 20 steps / 10 fps = 2 s.
+    button.set_playback_unit(PlaybackUnit.SECONDS_PER_CYCLE)
+    assert button.uses_cycle_time
+    assert button.fpsspin.value() == 2
+    assert slider.fps == 10
+
+    # Editing the value in cycle mode sets fps = nsteps / seconds.
+    button.fpsspin.setValue(4)
+    button.fpsspin.editingFinished.emit()
+    assert slider.fps == 5
+
+    # A longer axis holds the cycle time and re-derives fps.
+    qt_dims.dims.set_range(0, (0, 39, 1))  # 40 steps
+    assert button.fpsspin.value() == 4
+    assert slider.fps == 10
+
+    button.reverse_check.setChecked(True)
+    assert slider.fps == -10
+    assert button.fpsspin.value() == 4
+
+    button.set_playback_unit(PlaybackUnit.FRAMES_PER_SECOND)
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 10
+    assert slider.fps == -10
+
+
+def test_playback_cycle_time_default_setting(qtbot):
+    settings = get_settings()
+    settings.application.playback_unit = PlaybackUnit.SECONDS_PER_CYCLE
+
+    dims = Dims(ndim=3)
+    dims.set_range(0, (0, 19, 1))  # 20 steps on the sliding axis
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+    slider = view.slider_widgets[0]
+    button = slider.play_button
+
+    # The default 2 s per cycle over 20 steps starts the popup at 10 fps.
+    assert button.uses_cycle_time
+    assert button.fpsspin.value() == 2
+    assert slider.fps == 10
+
+    # Changing the default duration flows into open cycle mode popups.
+    settings.application.playback_cycle_seconds = 4
+    assert button.fpsspin.value() == 4
+    assert slider.fps == 5
+
+    settings.application.playback_unit = PlaybackUnit.FRAMES_PER_SECOND
+    assert not button.uses_cycle_time
+    assert button.fpsspin.value() == 5
+    assert slider.fps == 5
 
 
 def test_loop_mode_model_update_emits_once(qtbot):
