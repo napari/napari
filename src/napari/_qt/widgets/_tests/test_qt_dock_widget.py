@@ -245,6 +245,28 @@ def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
     )
 
 
+def test_dock_area_saved_only_when_moved(make_napari_viewer):
+    """Only areas the user chose are saved, so a widget that was never moved
+    keeps following its default (e.g. a plugin's `default_dock_area`)."""
+    from napari.settings import get_settings
+
+    positions = get_settings().application.plugin_widget_positions
+    viewer = make_napari_viewer()
+    dw = viewer.window.add_dock_widget(QPushButton(), name='test')
+    qt_window = viewer.window._qt_window
+
+    # opening the widget does not save its area
+    assert 'test' not in positions
+
+    # moving the widget to another area, like a user dragging it, saves it
+    qt_window.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dw)
+    assert positions['test'] == 'left'
+
+    # moving it back to where it opened is a choice too, and is saved
+    qt_window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dw)
+    assert positions['test'] == 'right'
+
+
 def test_combine_widgets_error():
     """Check error raised when combining widgets with invalid types."""
     with pytest.raises(
