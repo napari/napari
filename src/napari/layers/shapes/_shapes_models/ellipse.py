@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -51,12 +53,14 @@ class Ellipse(Shape):
         self.name = 'ellipse'
 
     @property
-    def data(self):
+    def data(
+        self,
+    ) -> np.ndarray[tuple[Literal[4], int], np.dtype[np.float32]]:
         """(4, D) array: ellipse vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -95,7 +99,7 @@ class Ellipse(Shape):
 
         self.slice_key = self._slice_key_of(self.dims_not_displayed)
 
-    def transform(self, transform):
+    def transform(self, transform) -> None:
         """Performs a linear transform on the shape
 
         Parameters
