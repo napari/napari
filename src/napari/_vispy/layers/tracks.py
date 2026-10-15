@@ -40,7 +40,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         """Update the display."""
 
         # update the shaders
@@ -62,7 +62,7 @@ class VispyTracksLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_appearance_change(self):
+    def _on_appearance_change(self) -> None:
         """Change the appearance of the data."""
 
         # update shader properties related to appearance
@@ -93,7 +93,7 @@ class VispyTracksLayer(VispyBaseLayer):
             width=self.layer.tail_width,
         )
 
-    def _on_tracks_change(self):
+    def _on_tracks_change(self) -> None:
         """Update the shader when the track data changes."""
 
         self.node.tracks_filter.use_fade = self.layer.use_fade
@@ -114,7 +114,7 @@ class VispyTracksLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_graph_change(self):
+    def _on_graph_change(self) -> None:
         """Update the shader when the graph data changes."""
 
         # if the user clears a graph after it has been created, vispy offers
@@ -141,7 +141,7 @@ class VispyTracksLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_appearance_change()
         self._on_tracks_change()

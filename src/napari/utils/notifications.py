@@ -8,7 +8,7 @@ import warnings
 from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self, TextIO
 
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
@@ -47,7 +47,7 @@ class NotificationSeverity(StringEnum):
     DEBUG = auto()
     NONE = auto()
 
-    def as_icon(self):
+    def as_icon(self) -> str:
         return {
             self.ERROR: 'ⓧ',
             self.WARNING: '⚠️',
@@ -56,22 +56,24 @@ class NotificationSeverity(StringEnum):
             self.NONE: '',
         }[self]
 
-    def __lt__(self, other):
+    def __lt__(self, other: NotificationSeverity | str) -> bool:
         return name2num[str(self)] < name2num[str(other)]
 
-    def __le__(self, other):
+    def __le__(self, other: NotificationSeverity | str) -> bool:
         return name2num[str(self)] <= name2num[str(other)]
 
-    def __gt__(self, other):
+    def __gt__(self, other: NotificationSeverity | str) -> bool:
         return name2num[str(self)] > name2num[str(other)]
 
-    def __ge__(self, other):
+    def __ge__(self, other: NotificationSeverity | str) -> bool:
         return name2num[str(self)] >= name2num[str(other)]
 
-    def __eq__(self, other):
-        return str(self) == str(other)
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, (NotificationSeverity, str)) and str(
+            self
+        ) == str(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.value)
 
 
@@ -100,7 +102,7 @@ class Notification(Event):
         message: str,
         severity: str | NotificationSeverity = NotificationSeverity.WARNING,
         actions: ActionSequence = (),
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self.severity = NotificationSeverity(severity)
         super().__init__(type_name=str(self.severity).lower(), **kwargs)
@@ -111,22 +113,22 @@ class Notification(Event):
         self.date = datetime.now()
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self._message
 
     @message.setter
-    def message(self, value):
+    def message(self, value: str) -> None:
         self._message = value
 
     @classmethod
-    def from_exception(cls, exc: BaseException, **kwargs) -> Notification:
+    def from_exception(cls, exc: BaseException, **kwargs: Any) -> Notification:
         return ErrorNotification(exc, **kwargs)
 
     @classmethod
-    def from_warning(cls, warning: Warning, **kwargs) -> Notification:
+    def from_warning(cls, warning: Warning, **kwargs: Any) -> Notification:
         return WarningNotification(warning, **kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{str(self.severity).upper()}: {self.message}'
 
 
@@ -137,13 +139,15 @@ class ErrorNotification(Notification):
 
     exception: BaseException
 
-    def __init__(self, exception: BaseException, *args, **kwargs) -> None:
+    def __init__(
+        self, exception: BaseException, *args: Any, **kwargs: Any
+    ) -> None:
         msg = getattr(exception, 'message', str(exception))
         actions = getattr(exception, 'actions', ())
         super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
-    def as_html(self):
+    def as_html(self) -> str:
         from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
@@ -154,7 +158,7 @@ class ErrorNotification(Notification):
         )
         return fmt(exc_info, as_html=True)  # pyrefly: ignore [bad-argument-count, bad-argument-type, unexpected-keyword]
 
-    def as_text(self):
+    def as_text(self) -> str:
         from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
@@ -165,7 +169,7 @@ class ErrorNotification(Notification):
         )
         return fmt(exc_info, as_html=False, color='NoColor')  # pyrefly: ignore [bad-argument-count, bad-argument-type, unexpected-keyword]
 
-    def __str__(self):
+    def __str__(self) -> str:
         from napari.utils._tracebacks import get_tb_formatter
 
         fmt = get_tb_formatter()
@@ -185,7 +189,12 @@ class WarningNotification(Notification):
     warning: Warning
 
     def __init__(
-        self, warning: Warning, filename=None, lineno=None, *args, **kwargs
+        self,
+        warning: Warning,
+        filename: str | None = None,
+        lineno: int | None = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         msg = getattr(warning, 'message', str(warning))
         actions = getattr(warning, 'actions', ())
@@ -194,7 +203,7 @@ class WarningNotification(Notification):
         self.filename = filename
         self.lineno = lineno
 
-    def __str__(self):
+    def __str__(self) -> str:
         category = type(self.warning).__name__
         return f'{self.filename}:{self.lineno}: {category}: {self.warning}!'
 
@@ -238,14 +247,19 @@ class NotificationManager:
         self._originals_thread_except_hooks: list[Callable] = []
         self._seen_warnings: set[tuple[str, type, str, int]] = set()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.install_hooks()
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self.restore_hooks()
 
-    def install_hooks(self):
+    def install_hooks(self) -> None:
         """
         Install a `sys.excepthook`, a `showwarning` hook and a
         threading.excepthook to display any message in the UI,
@@ -261,7 +275,7 @@ class NotificationManager:
         sys.excepthook = self.receive_error
         warnings.showwarning = self.receive_warning  # pyrefly: ignore [bad-assignment]
 
-    def restore_hooks(self):
+    def restore_hooks(self) -> None:
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
@@ -270,7 +284,7 @@ class NotificationManager:
         sys.excepthook = self._originals_except_hooks.pop()
         warnings.showwarning = self._original_showwarnings_hooks.pop()
 
-    def dispatch(self, notification: Notification):
+    def dispatch(self, notification: Notification) -> None:
         self.records.append(notification)
         self.notification_ready(notification)
 
@@ -282,7 +296,7 @@ class NotificationManager:
             TracebackType | None,
             threading.Thread | None,
         ],
-    ):
+    ) -> None:
         self.receive_error(*args)
 
     def receive_error(
@@ -291,7 +305,7 @@ class NotificationManager:
         value: BaseException,
         traceback: TracebackType | None = None,
         thread: threading.Thread | None = None,
-    ):
+    ) -> None:
         if isinstance(value, KeyboardInterrupt):
             sys.exit('Closed by KeyboardInterrupt')
 
@@ -309,9 +323,9 @@ class NotificationManager:
         category: type[Warning],
         filename: str,
         lineno: int,
-        file=None,
-        line=None,
-    ):
+        file: TextIO | None = None,
+        line: str | None = None,
+    ) -> None:
         msg = message if isinstance(message, str) else message.args[0]
         if (msg, category, filename, lineno) in self._seen_warnings:
             return
@@ -322,14 +336,14 @@ class NotificationManager:
             )
         )
 
-    def receive_info(self, message: str):
+    def receive_info(self, message: str) -> None:
         self.dispatch(Notification(message, 'INFO'))
 
 
 notification_manager = NotificationManager()
 
 
-def show_debug(message: str):
+def show_debug(message: str) -> None:
     """
     Show a debug message in the notification manager.
     """
@@ -338,7 +352,7 @@ def show_debug(message: str):
     )
 
 
-def show_info(message: str):
+def show_info(message: str) -> None:
     """
     Show an info message in the notification manager.
     """
@@ -347,7 +361,7 @@ def show_info(message: str):
     )
 
 
-def show_warning(message: str):
+def show_warning(message: str) -> None:
     """
     Show a warning in the notification manager.
     """
@@ -356,7 +370,7 @@ def show_warning(message: str):
     )
 
 
-def show_error(message: str):
+def show_error(message: str) -> None:
     """
     Show an error in the notification manager.
     """
@@ -365,7 +379,7 @@ def show_error(message: str):
     )
 
 
-def show_console_notification(notification: Notification):
+def show_console_notification(notification: Notification) -> None:
     """
     Show a notification in the console.
     """
