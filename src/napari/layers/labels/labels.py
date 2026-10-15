@@ -337,7 +337,7 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: draw_polygon,
     }
 
-    _double_click_modes: ClassVar[  # pyrefly: ignore [bad-override]
+    _double_click_modes: ClassVar[
         dict[StringEnum, Callable[[Labels, Event], None]]
     ] = {
         Mode.PAN_ZOOM: no_op,

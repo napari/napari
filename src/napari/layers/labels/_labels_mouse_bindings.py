@@ -81,7 +81,7 @@ def draw(layer: Labels, event: NapariMouseEvent):
 
 
 def _maybe_add_polygon_point(
-    polygon: LabelsPolygonOverlay, pos: tuple[float, float]
+    polygon: LabelsPolygonOverlay, pos: tuple[float, ...]
 ) -> None:
     # Add a new point only if it differs from the previous one
     if (
@@ -104,7 +104,8 @@ def draw_polygon(layer: Labels, event: NapariMouseEvent):
     polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
     if event.button == 1:
         pos = mouse_event_to_labels_coordinate(layer, event)
-        _maybe_add_polygon_point(polygon, tuple(pos))
+        if pos is not None:
+            _maybe_add_polygon_point(polygon, tuple(pos))
 
     elif event.button == 2 and polygon.points:
         polygon.points = polygon.points[:-1]
@@ -147,7 +148,10 @@ def update_polygon(layer: Labels, event: NapariMouseEvent):
     if polygon.points:
         pos = mouse_event_to_labels_coordinate(layer, event)
         # only add if we moved, to avoid degenerate
-        if np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0:
+        if (
+            pos is not None
+            and np.linalg.norm(np.asarray(pos) - polygon.points[-1]) > 0
+        ):
             polygon.floating_point = tuple(pos)
 
 
