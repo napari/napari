@@ -81,12 +81,12 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         ]
         return ranges, axis_labels_with_units
 
-    def _on_unit_change(self):
+    def _on_unit_change(self) -> None:
         # NOTE: this is also called by VispyCanvas when layer units are updated
         #       so it doesn't need to be connected to events for that
         self._on_axis_labels_change()
 
-    def _on_font_size_change(self):
+    def _on_font_size_change(self) -> None:
         # called by vispy canvas when global fonts are updated
         font_size = (
             self.overlay.font_size
