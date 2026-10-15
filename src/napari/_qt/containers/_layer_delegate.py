@@ -233,11 +233,7 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            pnt = (
-                event.globalPosition().toPoint()
-                if hasattr(event, 'globalPosition')
-                else event.globalPos()
-            )
+            pnt = event.globalPosition().toPoint()
 
             self.show_context_menu(index, model, pnt, option.widget)
 
