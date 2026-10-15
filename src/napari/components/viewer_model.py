@@ -891,7 +891,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self._layer_slicer._force_sync = not event.value
 
     def _calc_status_from_cursor(
-        self, view_direction: np.ndarray | None = None
+        self,
+        canvas_position: tuple[int, int],
+        view_direction: np.ndarray | None = None,
     ) -> tuple[str | Dict, str] | None:
         """Calculate coordinates and status info from cursor position.
 
@@ -900,17 +902,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         - restrict info to only selected layers, if any
         - if only one is shown, show more detailed info
         """
-        if not self.mouse_over_canvas:
-            return None
-
         if view_direction is None:
-            # TODO: this will actually replace mouse_over_canvas in #9417
-            if self.cursor.canvas_position is None:
-                return None
             viewbox_size = self.canvas.viewbox_size(self.layers)
-            viewbox_position = tuple(
-                np.array(self.cursor.canvas_position) % viewbox_size
-            )
+            viewbox_position = tuple(np.array(canvas_position) % viewbox_size)
             view_direction = self.scene.camera.calculate_nd_view_direction(
                 ndim=self.dims.ndim,
                 dims_displayed=self.dims.displayed,
