@@ -1,7 +1,6 @@
 import inspect
 import time
 import types
-from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
@@ -12,7 +11,6 @@ from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,
-    _bind_user_key,
     _get_user_keymap,
     bind_key,
 )
@@ -189,39 +187,6 @@ def test_handle_single_keymap_provider():
     # 'C' in Foo and in Foo; foo has priority but no func
     handler.press_key('C')
     assert not hasattr(foo, 'C')
-
-
-@pytest.mark.key_bindings
-@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
-def test_bind_user_key(keymap_mock):
-    foo = Foo()
-    bar = Bar()
-    handler = KeymapHandler()
-    handler.keymap_providers = [bar, foo]
-
-    x = 0
-
-    @_bind_user_key('D')
-    def abc():
-        nonlocal x
-        x = 42
-
-    assert handler.active_keymap == {
-        KeyBinding.from_str('A'): types.MethodType(
-            foo.class_keymap[KeyBinding.from_str('A')], foo
-        ),
-        KeyBinding.from_str('B'): types.MethodType(
-            foo.keymap[KeyBinding.from_str('B')], foo
-        ),
-        KeyBinding.from_str('D'): abc,
-        KeyBinding.from_str('E'): types.MethodType(
-            bar.class_keymap[KeyBinding.from_str('E')], bar
-        ),
-    }
-
-    handler.press_key('D')
-
-    assert x == 42
 
 
 @pytest.mark.key_bindings

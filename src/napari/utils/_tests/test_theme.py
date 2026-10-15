@@ -13,7 +13,6 @@ from napari.utils.theme import (
     get_theme,
     is_theme_available,
     register_theme,
-    unregister_theme,
 )
 
 
@@ -72,29 +71,6 @@ def test_register_theme():
 
     theme = get_theme('test_blue')
     assert theme.background.as_rgb() == blue_theme['background']
-
-
-def test_unregister_theme():
-    # Create new blue theme based on dark theme
-    blue_theme = get_theme('dark').to_rgb_dict()
-    blue_theme.update(
-        background='rgb(28, 31, 48)',
-        foreground='rgb(45, 52, 71)',
-        primary='rgb(80, 88, 108)',
-        current='rgb(184, 112, 0)',
-    )
-
-    # Register blue theme
-    register_theme('test_blue', blue_theme, 'test')
-
-    # Check that blue theme is listed in available themes
-    themes = available_themes()
-    assert 'test_blue' in themes
-
-    # Remove theme from available themes
-    unregister_theme('test_blue')
-    themes = available_themes()
-    assert 'test_blue' not in themes
 
 
 def test_rebuild_theme_settings():

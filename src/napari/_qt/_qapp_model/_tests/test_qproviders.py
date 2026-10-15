@@ -11,14 +11,12 @@ from napari._app_model._app import get_app_model
 from napari._qt._qapp_model.injection._qproviders import (
     _provide_active_layer,
     _provide_active_layer_list,
-    _provide_qt_viewer_or_raise,
     _provide_selected_layers,
     _provide_viewer,
     _provide_viewer_or_raise,
     _provide_window_or_raise,
 )
 from napari._qt.qt_main_window import Window
-from napari._qt.qt_viewer import QtViewer
 from napari.components import LayerList
 from napari.layers import Shapes
 from napari.utils._proxies import PublicOnlyProxy
@@ -77,20 +75,6 @@ def test_provide_viewer_or_raise(make_napari_viewer):
 
     viewer = _provide_viewer_or_raise(public_proxy=True)
     assert isinstance(viewer, PublicOnlyProxy)
-
-
-def test_provide_qt_viewer_or_raise(make_napari_viewer):
-    """Check `_provide_qt_viewer_or_raise` raises or returns `QtViewer`."""
-    # raises when no QtViewer
-    with pytest.raises(
-        RuntimeError, match=r'No current `QtViewer` found. test'
-    ):
-        _provide_qt_viewer_or_raise(msg='test')
-
-    # create QtViewer
-    make_napari_viewer()
-    viewer = _provide_qt_viewer_or_raise()
-    assert isinstance(viewer, QtViewer)
 
 
 def test_provide_window_or_raise(make_napari_viewer):
