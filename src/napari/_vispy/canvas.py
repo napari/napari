@@ -1,13 +1,13 @@
 """VispyCanvas class."""
 
 from __future__ import annotations
-from types import MethodType
 
 import contextlib
 import gc
 import warnings
 from functools import partial
 from itertools import zip_longest
+from types import MethodType
 from typing import TYPE_CHECKING, Any, cast
 from weakref import WeakSet
 
@@ -15,6 +15,7 @@ import numpy as np
 from OpenGL.error import GLError
 from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
+from vispy.util.event import Event as VispyEvent
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
@@ -41,7 +42,6 @@ from napari.utils.interactions import (
     mouse_wheel_callbacks,
 )
 from napari.utils.notifications import show_warning
-from vispy.util.event import Event as VispyEvent
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -566,9 +566,7 @@ class VispyCanvas:
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(
-                event.pos
-            ),
+            view_direction=self._calculate_view_direction(event.pos),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),

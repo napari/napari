@@ -1,8 +1,5 @@
-from typing_extensions import deprecated
 from pydantic import Field
-from typing import Any
-import warnings
-import numpy as np
+from typing_extensions import deprecated
 
 from napari.utils.events import EventedModel
 
@@ -24,16 +21,33 @@ class Cursor(EventedModel):
     """
 
     # fields
-    position: tuple[float, ...] = Field((1.0, 1.0), deprecated=deprecated(
-        'Cursor.position is deprecated; use Event.position from a mouse callback instead.'))
-    viewbox: tuple[int, int] = Field((0, 0), deprecated=deprecated(
-        'Cursor.position is deprecated; use Event.viewbox from a mouse callback instead.'))
-    scaled: bool = Field(True, deprecated=deprecated(
-        'Cursor.scaled is deprecated and no longer has an effect; use Labels.brush_size_is_canvas_pixels instead.'))
-    size: float = Field(1.0, deprecated=deprecated(
-        'Cursor.size is deprecated and no longer has an effect; use Labels.brush_size instead.'))
-    style: str = Field(CursorStyle, deprecated=deprecated(
-        'Cursor.style is deprecated and no longer has an effect; use Viewer.window.override_cursor_style instead'))
-
-
-
+    position: tuple[float, ...] = Field(
+        (1.0, 1.0),
+        deprecated=deprecated(
+            'Cursor.position is deprecated; use Event.position from a mouse callback instead.'
+        ),
+    )
+    viewbox: tuple[int, int] = Field(
+        (0, 0),
+        deprecated=deprecated(
+            'Cursor.position is deprecated; use Event.viewbox from a mouse callback instead.'
+        ),
+    )
+    scaled: bool = Field(
+        True,
+        deprecated=deprecated(
+            'Cursor.scaled is deprecated and no longer has an effect; use Labels.brush_size_is_canvas_pixels instead.'
+        ),
+    )
+    size: float = Field(
+        1.0,
+        deprecated=deprecated(
+            'Cursor.size is deprecated and no longer has an effect; use Labels.brush_size instead.'
+        ),
+    )
+    style: str = Field(
+        CursorStyle,
+        deprecated=deprecated(
+            'Cursor.style is deprecated and no longer has an effect; use Viewer.window.override_cursor_style instead'
+        ),
+    )
