@@ -14,6 +14,7 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari.layers import (
     Image,
     Labels,
@@ -26,6 +27,8 @@ from napari.layers import (
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from napari._qt.layer_controls.qt_layer_controls_base import (
         QtLayerControls,
     )
@@ -131,7 +134,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _iter_histogram_widgets(self):
+    def _iter_histogram_widgets(self) -> Generator[QtHistogramWidget]:
         """Yield lazily-created histogram widgets across all controls."""
         for widget in self.widgets.values():
             clim = getattr(widget, '_contrast_limits_control', None)

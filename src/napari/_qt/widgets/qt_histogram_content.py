@@ -9,9 +9,14 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.qt import create_worker
-from napari.utils.events import disconnect_events
+from napari.utils.events import Event, disconnect_events
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    import numpy as np
+    from qtpy.QtCore import QEvent
+
     from napari._qt.qthreading import FunctionWorker, GeneratorWorker
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
 
@@ -83,10 +88,12 @@ class QtHistogramContentWidget(QWidget):
 
         self._constructed = True
 
-    def _yield_from_histogram(self):
+    def _yield_from_histogram(
+        self,
+    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
         yield from self.layer.histogram._compute_async_no_events(self.layer)
 
-    def _schedule_histogram_compute(self, event=None) -> None:
+    def _schedule_histogram_compute(self, event: Event | None = None) -> None:
         """Run the async histogram compute."""
         self._ensure_histogram_content()
         self._abort_histogram_worker()
@@ -97,10 +104,10 @@ class QtHistogramContentWidget(QWidget):
         worker.finished.connect(self._on_histogram_done)
         worker.start()
 
-    def _on_histogram_yield(self, event=None) -> None:
+    def _on_histogram_yield(self, event: QEvent | None = None) -> None:
         self.layer.histogram.events.updated()
 
-    def _on_histogram_done(self, event=None) -> None:
+    def _on_histogram_done(self, event: QEvent | None = None) -> None:
         """Emit ``completed`` on the main thread once the worker finishes."""
         self.layer.histogram.events.completed()
         self._abort_histogram_worker()
