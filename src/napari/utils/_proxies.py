@@ -21,7 +21,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy, Generic[_T]):
 
     __wrapped__: _T
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()) -> None:
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 

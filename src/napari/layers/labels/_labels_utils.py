@@ -1,9 +1,22 @@
+from __future__ import annotations
+
 from functools import lru_cache
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
+if TYPE_CHECKING:
+    from vispy.app import MouseEvent
 
-def interpolate_coordinates(old_coord, new_coord, brush_size):
+    from napari.layers import Labels
+
+_ShapeT = TypeVar('_ShapeT', bound=tuple[int, ...])
+_DTypeT = TypeVar('_DTypeT', bound=np.dtype[Any])
+
+
+def interpolate_coordinates(
+    old_coord, new_coord, brush_size
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.
@@ -165,7 +178,9 @@ def first_nonzero_coordinate(data, start_point, end_point):
     return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
-def mouse_event_to_labels_coordinate(layer, event):
+def mouse_event_to_labels_coordinate(
+    layer: Labels, event: MouseEvent
+) -> np.ndarray | None:
     """Return the data coordinate of a Labels layer mouse event in 2D or 3D.
 
     In 2D, this is just the event's position transformed by the layer's
@@ -203,7 +218,11 @@ def mouse_event_to_labels_coordinate(layer, event):
     return coordinates
 
 
-def get_contours(labels: np.ndarray, thickness: int, background_label: int):
+def get_contours(
+    labels: np.ndarray[_ShapeT, _DTypeT],
+    thickness: int,
+    background_label: int,
+) -> np.ndarray[_ShapeT, _DTypeT]:
     """Computes the contours of a 2D label image.
 
     Parameters
