@@ -25,6 +25,18 @@ def _run_callbacks_and_maybe_store_generators(
     callback_type: Literal['move', 'drag', 'wheel'],
     ignore: Collection[Callable] = (),
 ) -> None:
+    """Run callbacks for the first time and store generators if any.
+
+    When exected on a MousemapProvider, its callbacks of the given callback_type will
+    be executed. If any of these callbacks return a generator, this generator is
+    stored on the object itself inside the relative persistent generator dictionary
+    for later yields (e.g: various steps of a mouse_move).
+
+    The event object is similarly stored for later use in its wrapped form (see
+    _vispy/canvas.py for how NapariMouseEvent is handled). The wrapped object is
+    then sneakily replaced by _step_active_generators with the new event, so the
+    next yield operates on the new event values.
+    """
     callbacks = getattr(obj, f'mouse_{callback_type}_callbacks')
     gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
     for func in callbacks:
@@ -56,6 +68,14 @@ def _step_active_generators(
     event: ReadOnlyWrapper[NapariMouseEvent],
     callback_type: Literal['move', 'drag', 'wheel'],
 ) -> list[Callable]:
+    """Step all active generators of type callback_type on the given MousemapProvider.
+
+    Replaces the wrapped event with the new value, so the next yield operates on the new
+    event, then calls next() on the generator.
+
+    Returns a list of completed generators to be used by the caller to avoid recreating
+    a just-completed generator from the same event.
+    """
     gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
     completed = []
     for func, gen in tuple(gen_dict.items()):
