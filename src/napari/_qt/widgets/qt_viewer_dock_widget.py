@@ -31,6 +31,10 @@ _sentinel = object()
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
 
+# Floor the dock keeps on itself; the contained widget's minimum is added on
+# top of this by the layout (see ``event``).
+_MIN_DOCK_SIZE = 50
+
 dock_area_to_str = {
     Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
     Qt.DockWidgetArea.RightDockWidgetArea: 'right',
@@ -121,8 +125,7 @@ class QtViewerDockWidget(QDockWidget):
         else:
             allowed_areas = Qt.DockWidgetArea.AllDockWidgetAreas
         self.setAllowedAreas(allowed_areas)
-        self.setMinimumHeight(50)
-        self.setMinimumWidth(50)
+        self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
         # FIXME:
         self.setObjectName(object_name or name)
 
@@ -239,6 +242,13 @@ class QtViewerDockWidget(QDockWidget):
     def setFeatures(self, features):
         super().setFeatures(features)
         self._features = self.features()
+
+    def event(self, event):
+        if event.type() == QEvent.Type.LayoutRequest:
+            # Reset the explicit floor first so it is recomputed from
+            # the content to avoid issue where minimum can only ever grow.
+            self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
+        return super().event(event)
 
     def keyPressEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
@@ -446,16 +456,30 @@ class QtCustomTitleBar(QLabel):
 
         self.setLayout(layout)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self._update_font_metrics()
+
+    def _update_font_metrics(self) -> None:
+        """Resize the title bar to fit the current font."""
+        if not hasattr(self, 'title'):
+            return
         # set minimum heights to ensure enough space for the title text
         font_height = QFontMetrics(self.font()).height()
         self.setMinimumHeight(font_height + 10)
         self.title.setMinimumHeight(font_height)
 
+    def changeEvent(self, event):
+        """Keep the title bar height in sync with font size changes."""
+        if event.type() == QEvent.Type.FontChange:
+            self._update_font_metrics()
+        super().changeEvent(event)
+
     def sizeHint(self):
         # this seems to be the correct way to set the height of the titlebar
+        # responsive to font size
         szh = super().sizeHint()
+        size = QFontMetrics(self.font()).height() + 10
         if self.vertical:
-            szh.setWidth(20)
+            szh.setWidth(size)
         else:
-            szh.setHeight(20)
+            szh.setHeight(size)
         return szh

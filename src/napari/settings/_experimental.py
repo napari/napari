@@ -46,13 +46,6 @@ class ExperimentalSettings(EventedSettings):
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
-    autoswap_buffers: bool = Field(
-        False,
-        title='Enable autoswapping rendering buffers.',
-        description='Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.',
-        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
-        json_schema_extra={'requires_restart': True},
-    )
 
     rdp_epsilon: float = Field(
         0.5,
@@ -66,9 +59,9 @@ class ExperimentalSettings(EventedSettings):
         10,
         title='Minimum distance threshold of shapes lasso and path tool',
         description='Value determines how many screen pixels one has to move before another vertex can be added to the polygon'
-        'or path.',
-        gt=0,
-        lt=50,
+        ' or path.',
+        ge=1,
+        le=50,
     )
 
     completion_radius: int = Field(
