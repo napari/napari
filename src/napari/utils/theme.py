@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict, Unpack
 
 import npe2
 from pydantic import ValidationError, field_validator
@@ -367,29 +367,49 @@ def get_theme(theme_id: str):
     return theme
 
 
-def invert_theme(theme, **kwargs):
+class _ThemeKwargs(TypedDict):
+    id: str
+    type: Literal['dark', 'light']
+    label: str
+    background: Color
+    foreground: Color
+    primary: Color
+    secondary: Color
+    highlight: Color
+    text: Color
+    icon: Color
+    warning: Color
+    error: Color
+    current: Color
+    syntax_style: Color
+    console: Color
+    canvas: Color
+    font_size: str
+
+
+def invert_theme(theme, **kwargs: Unpack[_ThemeKwargs]):
     new_type = 'dark' if theme.type == 'light' else 'light'
-    inverted_kwargs = {
+    inverted_kwargs: _ThemeKwargs = {
         'id': theme.id,
         'type': new_type,
         'label': f'{theme.label} - {new_type.capitalize()}',
-        'background': _invert_luminance(theme.background),
-        'foreground': _invert_luminance(theme.foreground),
-        'primary': _invert_luminance(theme.primary),
-        'secondary': _invert_luminance(theme.secondary),
-        'highlight': _invert_luminance(theme.highlight),
-        'text': _invert_luminance(theme.text),
-        'icon': _invert_luminance(theme.icon),
-        'warning': _invert_luminance(theme.warning),
-        'error': _invert_luminance(theme.error),
-        'current': _invert_luminance(theme.current),
+        'background': Color(_invert_luminance(theme.background)),
+        'foreground': Color(_invert_luminance(theme.foreground)),
+        'primary': Color(_invert_luminance(theme.primary)),
+        'secondary': Color(_invert_luminance(theme.secondary)),
+        'highlight': Color(_invert_luminance(theme.highlight)),
+        'text': Color(_invert_luminance(theme.text)),
+        'icon': Color(_invert_luminance(theme.icon)),
+        'warning': Color(_invert_luminance(theme.warning)),
+        'error': Color(_invert_luminance(theme.error)),
+        'current': Color(_invert_luminance(theme.current)),
         'syntax_style': theme.syntax_style,
-        'console': _invert_luminance(theme.console),
-        'canvas': _invert_luminance(theme.canvas),
+        'console': Color(_invert_luminance(theme.console)),
+        'canvas': Color(_invert_luminance(theme.canvas)),
         'font_size': theme.font_size,
-    } | kwargs
-
-    return Theme(**inverted_kwargs)
+    }
+    merged_kwargs = inverted_kwargs | kwargs
+    return Theme(**merged_kwargs)
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
@@ -546,7 +566,7 @@ def _install_npe2_themes(themes=None):
             else:
                 register_theme(theme, manifest.name)
                 # register inverted theme if not already existing
-                inverted = invert_theme(theme)
+                inverted = invert_theme(**theme_dict)
                 if inverted.full_id not in set(themes) | {
                     f'{t.id}-{t.type}'
                     for t in manifest.contributions.themes or ()
