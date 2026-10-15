@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -117,8 +117,6 @@ class Shape(ABC):
         Tx3 array of vertex indices that form the triangles for the shape edge
     _filled : bool
         Flag if array is filled or not.
-    _use_face_vertices : bool
-        Flag to use face vertices for mask generation.
     """
 
     slice_key: np.ndarray[tuple[Literal[2], int], np.dtype[np.int64]]
@@ -151,7 +149,6 @@ class Shape(ABC):
 
         self._closed = False
         self._filled = True
-        self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
@@ -159,7 +156,7 @@ class Shape(ABC):
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Self:
         if (
             TRIANGULATION_BACKEND
             in {
@@ -214,7 +211,7 @@ class Shape(ABC):
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay) -> None:
         if self.ndisplay == ndisplay:
             return
         self._ndisplay = ndisplay
@@ -226,7 +223,7 @@ class Shape(ABC):
         return self._dims_order
 
     @dims_order.setter
-    def dims_order(self, dims_order):
+    def dims_order(self, dims_order) -> None:
         if self.dims_order == dims_order:
             return
         self._dims_order = dims_order
@@ -262,7 +259,7 @@ class Shape(ABC):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width):
+    def edge_width(self, edge_width) -> None:
         self._edge_width = edge_width
 
     @property
@@ -273,7 +270,7 @@ class Shape(ABC):
         return self._z_index
 
     @z_index.setter
-    def z_index(self, z_index):
+    def z_index(self, z_index) -> None:
         self._z_index = z_index
 
     @property
@@ -321,7 +318,7 @@ class Shape(ABC):
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
-    ):
+    ) -> None:
         if face:
             face_triangles, face_vertices = (
                 bermuda.triangulate_polygons_face_3d([data])  # pyrefly: ignore [missing-attribute]
@@ -643,15 +640,17 @@ class Shape(ABC):
     def _triangulate_edge_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
+        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore[missing-attribute]
 
-    def _all_triangles(self):
+    def _all_triangles(
+        self,
+    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.floating]]:
         """Return all triangles for the shape
 
         Returns
         -------
         np.ndarray
-            Nx3 array of vertex indices that form the triangles for the shape
+            Nx3xD array of vertex coordinates that form the triangles for the shape
         """
         return np.vstack(
             [
@@ -711,7 +710,7 @@ class Shape(ABC):
         )
         self._clean_cache()
 
-    def scale(self, scale, center=None):
+    def scale(self, scale, center=None) -> None:
         """Performs a scaling on the shape
 
         Parameters
@@ -733,7 +732,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def rotate(self, angle, center=None):
+    def rotate(self, angle, center=None) -> None:
         """Performs a rotation on the shape
 
         Parameters
@@ -755,7 +754,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def flip(self, axis, center=None):
+    def flip(self, axis, center=None) -> None:
         """Performs a flip on the shape, either horizontal or vertical.
 
         Parameters
@@ -791,7 +790,7 @@ class Shape(ABC):
         ----------
         mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
-            the displayed vertices.
+            the vertices in the 2D display plane.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -804,8 +803,11 @@ class Shape(ABC):
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
+        plane = self.dims_order[-2:]
         if mask_shape is None:
-            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+            mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
 
@@ -814,19 +816,13 @@ class Shape(ABC):
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
             embedded = True
-            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+            shape_plane = [mask_shape[d] for d in plane]
         else:
             raise ValueError(
                 f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        if self._use_face_vertices:
-            data = self._face_vertices
-        else:
-            data = self.data_displayed
-
-        data = data[:, -len(shape_plane) :]
-
+        data = self._vertices_for_mask(plane)
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
@@ -836,24 +832,38 @@ class Shape(ABC):
         # and embed as a slice.
         if embedded:
             mask = np.zeros(mask_shape, dtype=bool)
-            slice_key: list[int | slice] = [0] * len(mask_shape)
-            for i in range(len(mask_shape)):
-                if i in self.dims_displayed:
-                    slice_key[i] = slice(None)
-                elif self.slice_key is not None:
-                    slice_key[i] = slice(
-                        self.slice_key[0, i], self.slice_key[1, i] + 1
-                    )
-                else:
-                    raise RuntimeError(
-                        'Internal error: self.slice_key is None'
-                    )
-            displayed_order = argsort(self.dims_displayed)
-            mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
+            # `others` are the remaining dims. The 2D mask is repeated over
+            # the range the shape's bounding box covers in each of them,
+            # which is a single slice for a shape drawn in a 2D view.
+            others = self.dims_order[:-2]
+            others_key = self._slice_key_of(others)
+            slice_key: list[int | slice] = [slice(None)] * len(mask_shape)
+            for col, dim in enumerate(others):
+                slice_key[dim] = slice(
+                    others_key[0, col], others_key[1, col] + 1
+                )
+            # mask_p has its axes in `plane` order: put them in data order
+            # and add a length one axis for each dim in `others`, so it
+            # broadcasts over the slices chosen above.
+            plane_in_data_order = argsort(plane)
+            mask[tuple(slice_key)] = np.expand_dims(
+                mask_p.transpose(plane_in_data_order), tuple(others)
+            )
         else:
             mask = mask_p
 
         return mask
+
+    def _slice_key_of(self, dims) -> np.ndarray:
+        """First and last integer index of the bounding box along dims.
+
+        Returns a (2, len(dims)) array with one column per dim.
+        """
+        return np.rint(self._bounding_box[:, dims]).astype(int)
+
+    def _vertices_for_mask(self, plane) -> np.ndarray:
+        """Return the vertices used to draw the mask in plane."""
+        return self.data[:, plane]
 
     def _clean_cache(self) -> None:
         if 'dims_displayed' in self.__dict__:
