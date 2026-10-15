@@ -223,7 +223,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     # the saved area is looked up by the widget's full name
     positions = get_settings().application.plugin_widget_positions
     positions['moved widget (sample_plugin)'] = 'left'
-    mock.return_value = (InnerWidget, 'moved widget', 'bottom')
+    mock.return_value = (InnerWidget, 'moved widget', 'bottom', False)
     docked, _ = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'moved widget'
     )
