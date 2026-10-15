@@ -73,7 +73,7 @@ jobs:
         include:
           - python: "3.11"
             platform: ubuntu-latest
-            backend: pyqt5
+            backend: pyqt6
             coverage: no_cov
             min_req: ""
           - python: "3.14"
@@ -98,23 +98,20 @@ jobs:
       matrix:
         platform: [ ubuntu-latest ]
         python: [ "3.14" ]
-        backend: [ "pyqt5,pyqt6" ]
+        backend: [ "pyqt6" ]
         coverage: [ cov ]
         include:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
-          - python: "3.11"
-            platform: windows-latest
-            backend: pyqt5
-            coverage: no_cov
           - python: "3.14"
             platform: windows-latest
             backend: pyqt6
             coverage: cov
+          # test with no numba and on macOS intel
           - python: "3.14"
             platform: macos-15-intel
-            backend: pyqt5_no_numba
-            coverage: no_cov
+            backend: pyqt6_no_numba
+            coverage: cov
             timeout-minutes: 60
           - python: "3.14"
             platform: macos-15
@@ -124,7 +121,7 @@ jobs:
           # minimum specified requirements
           - python: "3.11"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             MIN_REQ: 1
             coverage: cov
           # [all] extras
@@ -144,11 +141,6 @@ jobs:
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
-          # test with no numba
-          - python: "3.14"
-            platform: ubuntu-latest
-            backend: pyqt6_no_numba
-            coverage: cov
           # pyside6 test
           - python: "3.14"
             platform: ubuntu-latest
