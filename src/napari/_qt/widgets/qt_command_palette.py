@@ -34,7 +34,7 @@ class QCommandPalette(QtW.QWidget):
 
     hidden = Signal()
 
-    def __init__(self, parent: QtW.QWidget | None = None):
+    def __init__(self, parent: QtW.QWidget | None = None) -> None:
         super().__init__(parent)
 
         self._line = QCommandLineEdit()
@@ -202,7 +202,7 @@ def colored(text: str, color: str) -> str:
 class QCommandMatchModel(QtCore.QAbstractListModel):
     """A list model for the command palette."""
 
-    def __init__(self, parent: QtW.QWidget | None = None):
+    def __init__(self, parent: QtW.QWidget | None = None) -> None:
         super().__init__(parent)
         self._commands: list[CommandRule] = []
         self._max_matches = 80
@@ -231,7 +231,7 @@ class QCommandMatchModel(QtCore.QAbstractListModel):
 class QCommandLabel(QtW.QLabel):
     """The label widget to display a command in the palette."""
 
-    def __init__(self, cmd: CommandRule | None = None):
+    def __init__(self, cmd: CommandRule | None = None) -> None:
         super().__init__()
         self._command: CommandRule | None = None
         self._command_text: str = ''

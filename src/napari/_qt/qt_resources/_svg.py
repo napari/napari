@@ -2,6 +2,8 @@
 A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 """
 
+from __future__ import annotations
+
 from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
 from qtpy.QtGui import QIcon, QIconEngine, QImage, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
@@ -56,7 +58,7 @@ class QColoredSVGIcon(QIcon):
         opacity: float = 1.0,
         theme: str | None = None,
         theme_key: str = 'icon',
-    ) -> 'QColoredSVGIcon':
+    ) -> QColoredSVGIcon:
         """Return a new colorized QIcon instance.
 
         Parameters
@@ -87,7 +89,7 @@ class QColoredSVGIcon(QIcon):
     @staticmethod
     def from_resources(
         icon_name: str,
-    ) -> 'QColoredSVGIcon':
+    ) -> QColoredSVGIcon:
         """Get an icon from napari SVG resources.
 
         Parameters
@@ -138,11 +140,11 @@ class SVGBufferIconEngine(QIconEngine):
         renderer = QSvgRenderer(self.data)
         renderer.render(painter, QRectF(rect))
 
-    def clone(self):
+    def clone(self) -> SVGBufferIconEngine:
         """Required to subclass abstract QIconEngine."""
         return SVGBufferIconEngine(self.data)
 
-    def pixmap(self, size, mode, state):
+    def pixmap(self, size, mode, state) -> QPixmap:
         """Return the icon as a pixmap with requested size, mode, and state."""
         img = QImage(size, QImage.Format.Format_ARGB32)
         img.fill(Qt.GlobalColor.transparent)

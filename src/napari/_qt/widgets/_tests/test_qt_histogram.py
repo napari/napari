@@ -512,6 +512,11 @@ def test_qt_histogram_mode_switch_uses_async_for_chunked_data(qtbot):
     assert len(layer.histogram.counts) == 256
     assert layer.histogram.counts.sum() > 0
 
+    qtbot.waitUntil(
+        lambda: widget._compute_worker is None,
+        timeout=30000,
+    )  # ensure that thread worker is ended
+
     widget.cleanup()
 
 

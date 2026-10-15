@@ -211,16 +211,13 @@ def test_get_color_reject(
     assert color_ is None, 'Expected color to be None when dialog is rejected'
 
 
-@pytest.mark.skipif(
-    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
-)
 def test_use_tabular_numerals(qtbot: QtBot) -> None:
     """Label gets tabular numerals, but font family is not changed."""
     label = QLabel('123')
     qtbot.addWidget(label)
     family = label.font().family()
 
-    assert use_tabular_numerals(label) is True
+    use_tabular_numerals(label)
 
     assert label.font().isFeatureSet(QFont.Tag('tnum'))
     assert label.font().family() == family

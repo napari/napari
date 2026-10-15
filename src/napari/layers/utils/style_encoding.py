@@ -225,7 +225,7 @@ class _DerivedStyleEncoding(
     fallback: StyleValue
     _cached: StyleArray
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._cached = _empty_array_like(self.fallback)
 
@@ -276,10 +276,12 @@ def _get_style_values(
     encoding: StyleEncoding[StyleValue, StyleArray],
     indices: IndicesType,
     value_ndim: int = 0,
-):
+) -> StyleValue | StyleArray:
     """Returns a scalar style value or indexes non-scalar style values."""
     values = encoding._values
-    return values if values.ndim == value_ndim else values[indices]
+    if values.ndim == value_ndim:
+        return values
+    return cast(StyleArray | StyleValue, values[indices])
 
 
 def _empty_array_like(value: StyleValue) -> StyleArray:
