@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -8,7 +8,11 @@ from vispy.visuals.transforms import MatrixTransform, STTransform
 
 from napari._vispy.utils.gl import BLENDING_MODES
 from napari.settings import get_settings
-from napari.utils.color import ColorValue
+from napari.utils.color import (
+    ColorValue,
+    _contrasting_color,
+    _readable_color,
+)
 from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
@@ -69,11 +73,11 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
-    def _on_font_size_change(self):
+    def _on_font_size_change(self) -> None:
         # to be implemented by subclasses that need it
         pass
 
-    def set_default_font_size(self, font_size) -> None:
+    def set_default_font_size(self, font_size: int) -> None:
         self._default_font_size = font_size
         self._on_font_size_change()
 
@@ -106,7 +110,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     overlay: CanvasOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
 
         super().__init__(**kwargs)
         self.x_size = 0.0
@@ -153,22 +157,14 @@ class VispyCanvasOverlay(VispyBaseOverlay):
         self.box.order = self.node.order - 1
         self.box.transform = self.node.transform
 
-    def _get_fgcolor(self) -> ColorValue:
+    def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            bgcolor = self.viewer.canvas.background_color
-        else:
-            bgcolor = self.overlay.box_color
-        return self._contrasting_color(bgcolor)
+            return self.viewer.canvas.background_color
+        return self.overlay.box_color
 
-    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
-        opposite = 1 - bgcolor
-        # shift away from mid tones for better contrast
-        opposite = 0.5 + (opposite - 0.5) * 1.2
-        opposite = np.clip(opposite, 0, 1)
-        # don't change alpha
-        opposite[-1] = bgcolor[-1]
-        # numpy keeps the ColorValue subclass at runtime, but its stubs don't
-        return cast(ColorValue, opposite)
+    def _get_fgcolor(self) -> ColorValue:
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])
@@ -196,7 +192,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 
     overlay: SceneOverlay
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.node.transform = MatrixTransform()
 
@@ -204,7 +200,7 @@ class VispySceneOverlay(VispyBaseOverlay):
 class LayerOverlayMixin(VispyBaseOverlay):
     layer: Layer
 
-    def __init__(self, *, layer: Layer, **kwargs) -> None:
+    def __init__(self, *, layer: Layer, **kwargs: Any) -> None:
         self.layer = layer
         super().__init__(
             **kwargs,
