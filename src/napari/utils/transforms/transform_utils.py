@@ -1,8 +1,12 @@
+from collections.abc import Sequence
+
 import numpy as np
 import numpy.typing as npt
 
 
-def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
+def compose_linear_matrix(
+    rotate: npt.ArrayLike, scale: npt.ArrayLike, shear: npt.ArrayLike
+) -> npt.NDArray:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
@@ -40,8 +44,13 @@ def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
 
 
 def infer_ndim(
-    *, scale=None, translate=None, rotate=None, shear=None, linear_matrix=None
-):
+    *,
+    scale: Sequence[float] | npt.NDArray | None = None,
+    translate: Sequence[float] | npt.NDArray | None = None,
+    rotate: npt.ArrayLike | None = None,
+    shear: npt.ArrayLike | None = None,
+    linear_matrix: npt.ArrayLike | None = None,
+) -> int:
     """Infer the dimensionality of a transformation from its input components.
 
     This is most useful when the dimensions of the inputs do not match, either
@@ -88,7 +97,9 @@ def infer_ndim(
     return ndim
 
 
-def translate_to_vector(translate, *, ndim):
+def translate_to_vector(
+    translate: Sequence[float] | npt.NDArray | None, *, ndim: int
+) -> npt.NDArray:
     """Convert a translate input into an n-dimensional transform component.
 
     Parameters
@@ -112,7 +123,9 @@ def translate_to_vector(translate, *, ndim):
     return translate_arr
 
 
-def scale_to_vector(scale, *, ndim):
+def scale_to_vector(
+    scale: Sequence[float] | npt.NDArray | None, *, ndim: int
+) -> npt.NDArray:
     """Convert a scale input into an n-dimensional transform component.
 
     Parameters
@@ -136,7 +149,9 @@ def scale_to_vector(scale, *, ndim):
     return scale_arr
 
 
-def rotate_to_matrix(rotate, *, ndim):
+def rotate_to_matrix(
+    rotate: npt.ArrayLike | None, *, ndim: int
+) -> npt.NDArray:
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
@@ -163,21 +178,24 @@ def rotate_to_matrix(rotate, *, ndim):
     return full_rotate_mat
 
 
-def _make_rotate_mat(rotate):
+def _make_rotate_mat(rotate: npt.ArrayLike) -> npt.NDArray:
+    rotate_arr = np.array(rotate)
     if np.isscalar(rotate):
-        return _make_2d_rotation(rotate)
-    if np.array(rotate).ndim == 1 and len(rotate) == 3:
-        return _make_3d_rotation(*rotate)
-    return np.array(rotate)
+        return _make_2d_rotation(rotate_arr.item())
+    if rotate_arr.ndim == 1 and len(rotate_arr) == 3:
+        return _make_3d_rotation(*rotate_arr)
+    return rotate_arr
 
 
-def _make_2d_rotation(theta_degrees):
+def _make_2d_rotation(theta_degrees: float) -> npt.NDArray:
     """Makes a 2D rotation matrix from an angle in degrees."""
     cos_theta, sin_theta = _cos_sin_degrees(theta_degrees)
     return np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
 
 
-def _make_3d_rotation(alpha_degrees, beta_degrees, gamma_degrees):
+def _make_3d_rotation(
+    alpha_degrees: float, beta_degrees: float, gamma_degrees: float
+) -> npt.NDArray:
     """Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
 
     For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
@@ -212,12 +230,12 @@ def _make_3d_rotation(alpha_degrees, beta_degrees, gamma_degrees):
     return R_alpha @ R_beta @ R_gamma
 
 
-def _cos_sin_degrees(angle_degrees):
+def _cos_sin_degrees(angle_degrees: float) -> tuple[float, float]:
     angle_radians = np.deg2rad(angle_degrees)
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def shear_to_matrix(shear, *, ndim):
+def shear_to_matrix(shear: npt.ArrayLike | None, *, ndim: int) -> npt.NDArray:
     """Convert a shear input into an n-dimensional transform component.
 
     Parameters
@@ -241,24 +259,27 @@ def shear_to_matrix(shear, *, ndim):
     return full_shear_mat
 
 
-def _make_shear_mat(shear):
+def _make_shear_mat(shear: npt.ArrayLike) -> npt.NDArray:
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
         raise ValueError(
             'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.'
         )
-    if np.array(shear).ndim == 1:
-        return expand_upper_triangular(shear)
+    shear_arr = np.array(shear)
+    if shear_arr.ndim == 1:
+        return expand_upper_triangular(shear_arr)
 
-    if not is_matrix_triangular(shear):
+    if not is_matrix_triangular(shear_arr):
         raise ValueError(
             f'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.'
         )
-    return np.array(shear)
+    return shear_arr
 
 
-def expand_upper_triangular(vector):
+def expand_upper_triangular(
+    vector: Sequence[float] | npt.NDArray,
+) -> npt.NDArray:
     """Expand a vector into an upper triangular matrix.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -287,7 +308,7 @@ def expand_upper_triangular(vector):
     return upper_tri
 
 
-def embed_in_identity_matrix(matrix, ndim):
+def embed_in_identity_matrix(matrix: npt.NDArray, ndim: int) -> npt.NDArray:
     """Embed an MxM matrix bottom right of larger NxN identity matrix.
 
     Parameters
@@ -314,7 +335,7 @@ def embed_in_identity_matrix(matrix, ndim):
 
 
 def decompose_linear_matrix(
-    matrix, upper_triangular=True
+    matrix: npt.NDArray, upper_triangular: bool = True
 ) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
@@ -376,7 +397,9 @@ def decompose_linear_matrix(
     return rotate, scale, shear
 
 
-def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
+def shear_matrix_from_angle(
+    angle: float, ndim: int = 3, axes: tuple[int, int] = (-1, 0)
+) -> npt.NDArray:
     """Create a shear matrix from an angle.
 
     Parameters
@@ -399,7 +422,7 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     return matrix
 
 
-def is_matrix_upper_triangular(matrix):
+def is_matrix_upper_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is upper triangular.
 
     Parameters
@@ -415,7 +438,7 @@ def is_matrix_upper_triangular(matrix):
     return np.allclose(matrix, np.triu(matrix))
 
 
-def is_matrix_lower_triangular(matrix):
+def is_matrix_lower_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is lower triangular.
 
     Parameters
@@ -431,7 +454,7 @@ def is_matrix_lower_triangular(matrix):
     return np.allclose(matrix, np.tril(matrix))
 
 
-def is_matrix_triangular(matrix):
+def is_matrix_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is triangular.
 
     Parameters
@@ -449,7 +472,7 @@ def is_matrix_triangular(matrix):
     )
 
 
-def is_diagonal(matrix, tol: float = 1e-8) -> bool:
+def is_diagonal(matrix: npt.NDArray, tol: float = 1e-8) -> bool:
     """Determine whether a matrix is diagonal up to some tolerance.
 
     Parameters
