@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -12,7 +12,10 @@ BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = ('Alt',)
 
 if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
-    from napari.components.overlays import LabelsPolygonOverlay
+    from napari.components.overlays import (
+        LabelsBrushStrokeOverlay,
+        LabelsPolygonOverlay,
+    )
     from napari.layers import Labels
 
 
@@ -50,7 +53,9 @@ def draw(layer: Labels, event: NapariMouseEvent):
     # In PAINT mode the right button (and any click during an active stroke) is
     # reserved for the encircle-and-fill brush stroke handled by the
     # brush_stroke overlay.
-    brush_stroke = layer._overlays['brush_stroke']
+    brush_stroke = cast(
+        'LabelsBrushStrokeOverlay', layer._overlays['brush_stroke']
+    )
     if brush_stroke.active or (brush_stroke.enabled and event.button == 2):
         return
 
@@ -96,10 +101,10 @@ def draw_polygon(layer: Labels, event: NapariMouseEvent):
     if len(event.dims_displayed) != 2:
         return
 
-    polygon = layer._overlays['polygon']
+    polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
     if event.button == 1:
         pos = mouse_event_to_labels_coordinate(layer, event)
-        _maybe_add_polygon_point(polygon, pos)
+        _maybe_add_polygon_point(polygon, tuple(pos))
 
     elif event.button == 2 and polygon.points:
         polygon.points = polygon.points[:-1]
@@ -114,9 +119,9 @@ def complete_polygon(layer: Labels, event: NapariMouseEvent) -> None:
         draw_polygon(layer, event)
     elif event.button == 1:
         pos = mouse_event_to_labels_coordinate(layer, event)
-        polygon = layer._overlays['polygon']
+        polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
 
-        first_point_dist = np.linalg.norm(pos - polygon.points[0])
+        first_point_dist = np.linalg.norm(np.array(pos) - polygon.points[0])
         completion_radius = get_settings().experimental.completion_radius
         if completion_radius > 0 and first_point_dist > completion_radius:
             # fall back to single click
@@ -138,7 +143,7 @@ def update_polygon(layer: Labels, event: NapariMouseEvent):
     if len(event.dims_displayed) != 2:
         return
 
-    polygon = layer._overlays['polygon']
+    polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
     if polygon.points:
         pos = mouse_event_to_labels_coordinate(layer, event)
         # only add if we moved, to avoid degenerate
