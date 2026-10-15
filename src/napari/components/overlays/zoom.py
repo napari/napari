@@ -41,7 +41,7 @@ class ZoomOverlay(CanvasOverlay):
     )
     gridded: bool = True
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     @field_validator('position', 'zoom_area', mode='before')

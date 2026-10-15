@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class IntensityLayerWrapper:
-    def __init__(self, layer: Image | Surface):
+    def __init__(self, layer: Image | Surface) -> None:
         self.layer = layer
 
     @property
@@ -46,7 +46,7 @@ class IntensityLayerWrapper:
 
 
 class ColorManagerWrapper:
-    def __init__(self, color_manager: ColorManager):
+    def __init__(self, color_manager: ColorManager) -> None:
         self.color_manager = color_manager
 
     @property
