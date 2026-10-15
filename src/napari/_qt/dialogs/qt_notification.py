@@ -146,17 +146,17 @@ class NapariQtNotification(QDialog):
         super().show()
         self._instances.append(self)
         self.slide_in()
-        if self.parent() is not None and not self.parent().isActiveWindow():
-            return
-        if self.parent() is not None:
-            notifications = self._instances
-            for notification in notifications:
-                notification.timer_stop()
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close_with_fade)
-            self.timer.start()
+        parent = self.parent()
+        if parent is None or parent.isActiveWindow():
+            if parent is not None:
+                for notification in self._instances:
+                    notification.timer_stop()
+            if self.DISMISS_AFTER > 0:
+                self.timer.start()
 
     def enterEvent(self, event):
         """On hover, stop the self-destruct timer"""
