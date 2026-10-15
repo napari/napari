@@ -1032,6 +1032,9 @@ def test_paths_roundtrip():
         pytest.param([[0, 0], [10, 0], [5, 8]], id='triangle'),
         pytest.param([[0, 0], [10, 0], [10, 10], [0, 10]], id='square'),
         pytest.param(
+            [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], id='square-closed'
+        ),
+        pytest.param(
             [[0, 0], [8, 2], [12, 9], [6, 14], [-1, 8]], id='convex-irregular'
         ),
         pytest.param(
