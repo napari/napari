@@ -27,7 +27,7 @@ def _run_callbacks_and_maybe_store_generators(
 ) -> None:
     """Run callbacks for the first time and store generators if any.
 
-    When exected on a MousemapProvider, its callbacks of the given callback_type will
+    When exectued on a MousemapProvider, its callbacks of the given callback_type will
     be executed. If any of these callbacks return a generator, this generator is
     stored on the object itself inside the relative persistent generator dictionary
     for later yields (e.g: various steps of a mouse_move).
@@ -134,7 +134,7 @@ def mouse_double_click_callbacks(
 ) -> None:
     """Run mouse double_click callbacks on either layer or viewer object.
 
-    Note that unlike other callbacks, these can't be generators:
+    double_click callbacks must be regular functions, not generators:
 
     .. code-block:: python
 
@@ -167,7 +167,7 @@ def mouse_press_callbacks(
     """Run mouse press callbacks on either layer or viewer object.
 
     Drag callbacks go through this machinery too on setup (since the first
-    step of a drack is a press).
+    step of a drag is a press).
 
     Note that drag callbacks should have the following form:
 
