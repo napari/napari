@@ -1096,12 +1096,12 @@ class Window:
         widget_class, widget_name, default_area, default_tabify = (
             _npe2.get_widget_contribution(plugin_name, widget_name)
         )
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         area = self._resolve_dock_area(
-            name=widget_name, area=area, default_area=default_area
+            name=full_name, area=area, default_area=default_area
         )
         tabify = tabify if tabify is not None else default_tabify
 
-        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
             return dock_widget, dock_widget.inner_widget()
@@ -1119,8 +1119,8 @@ class Window:
         )
         return dock_widget, wdg
 
+    @staticmethod
     def _resolve_dock_area(
-        self,
         name: str,
         area: str | None = None,
         default_area: str | None = None,
