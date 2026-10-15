@@ -144,7 +144,9 @@ def inside_boxes(boxes):
     return inside
 
 
-def triangles_intersect_box(triangles, corners):
+def triangles_intersect_box(
+    triangles, corners
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Determines which triangles intersect an axis aligned box.
 
     Parameters
@@ -1137,7 +1139,9 @@ def grid_points_in_poly(shape, vertices):
     return mask
 
 
-def points_in_poly(points, vertices):
+def points_in_poly(
+    points, vertices
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Tests points for being inside a polygon using the ray casting algorithm
 
     Parameters
@@ -1265,7 +1269,7 @@ def get_shape_ndim(data):
     return ndim
 
 
-def number_of_shapes(data):
+def number_of_shapes(data) -> int:
     """Determine number of shapes in the data.
 
     Parameters
@@ -1293,7 +1297,7 @@ def number_of_shapes(data):
 
 def validate_num_vertices(
     data, shape_type, min_vertices=None, valid_vertices=None
-):
+) -> None:
     """Raises error if a shape in data has invalid number of vertices.
 
     Checks whether all shapes in data have a valid number of vertices

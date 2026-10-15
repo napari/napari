@@ -6,7 +6,6 @@ import sys
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy import PYQT5
 from qtpy.QtCore import QDir, QRectF, QSize, Qt
 from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
@@ -207,20 +206,6 @@ def get_qapp(
             )
 
     else:
-        # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated. Also, this
-        # attributes need to be applied only to Qt5 bindings (PyQt5)
-        # since the High DPI scaling attributes are deactivated by default while on Qt6
-        # they are deprecated and activated by default. For more info see:
-        # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
-        if PYQT5:
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
-            )
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
-            )
-
         argv = sys.argv.copy()
         if sys.platform == 'darwin' and not argv[0].endswith('napari'):
             # Make sure the app name in the Application menu is `napari`

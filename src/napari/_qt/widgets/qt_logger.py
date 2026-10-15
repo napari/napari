@@ -97,11 +97,11 @@ class LogWidget(QWidget):
         self._on_change()
         self._jump_to_pos()
 
-    def _on_loglevel_change(self, event=None):
+    def _on_loglevel_change(self, event=None) -> None:
         level = napari_logging._get_log_level_value(event)
         logging.getLogger().setLevel(level)
 
-    def _on_new_message(self, event=None):
+    def _on_new_message(self, event=None) -> None:
         self._prev_pos = self._scroll_pos()
 
         logs = napari_logging._LOG_STREAM.get_filtered_logs_html(
@@ -112,7 +112,7 @@ class LogWidget(QWidget):
         if logs:
             self.log_text_box.append(logs[0])
 
-    def _on_change(self, event=None):
+    def _on_change(self, event=None) -> None:
         self._prev_pos = self._scroll_pos()
 
         logs = napari_logging._LOG_STREAM.get_filtered_logs_html(
@@ -124,7 +124,7 @@ class LogWidget(QWidget):
             # we ensure each line is separate (allows better selection)
             self.log_text_box.append(log)
 
-    def _jump_to_pos(self, event=None):
+    def _jump_to_pos(self, event=None) -> None:
         # maintains position when updating the contents of the text
         # for some reason using scrollbar.setValue() doesn't keep up,
         # cursor's better
@@ -138,7 +138,7 @@ class LogWidget(QWidget):
         # self.log_text_box.moveCursor(self.log_text_box.textCursor().StartOfLine)
         # self.log_text_box.ensureCursorVisible()
 
-    def _scroll_pos(self):
+    def _scroll_pos(self) -> int | None:
         scrollbar = self.log_text_box.verticalScrollBar()
         curr = scrollbar.value()
         if curr == scrollbar.maximum():
