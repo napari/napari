@@ -32,6 +32,7 @@ Notes for using the plugin-related fixtures here:
 from __future__ import annotations
 
 import contextlib
+import gc
 import os
 import sys
 import threading
@@ -670,6 +671,28 @@ def pytest_collection_modifyitems(session, config, items) -> None:
                 index = i
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtestloop(session):
+    """Freeze objects created by imports and collection before running tests.
+
+    Each full ``gc.collect()`` (for example, the one done when a layer is
+    removed from the canvas) has to traverse every object tracked by the
+    garbage collector. Imports and test collection create over a million
+    objects that live for the whole session, so moving them to the permanent
+    generation makes these collections about twice as fast.
+
+    Frozen objects are skipped by ``gc.get_objects`` and ``gc.get_referrers``,
+    so this is done only for napari's own test suite and not in the
+    ``napari.utils._testsupport`` plugin used by plugin developers.
+    """
+    gc.collect()
+    gc.freeze()
+    try:
+        return (yield)
+    finally:
+        gc.unfreeze()
 
 
 @pytest.fixture(autouse=True)
