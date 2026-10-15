@@ -18,7 +18,7 @@ def _pan_zoom_enabled(viewer: Viewer) -> bool:
     return active_layer is None or active_layer.mode == 'pan_zoom'
 
 
-def dims_scroll(viewer, event):
+def dims_scroll(viewer, event) -> None:
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:
         return
@@ -36,7 +36,7 @@ def dims_scroll(viewer, event):
             viewer.dims._scroll_progress -= 1
 
 
-def layers_scroll(viewer, event):
+def layers_scroll(viewer, event) -> None:
     """Scroll through the layer list."""
     if 'Alt' not in event.modifiers:
         return
@@ -92,7 +92,7 @@ def update_cursor_model(viewer: Viewer, event: NapariMouseEvent) -> None:
     # otherwise, it stays the same, with arbitrary depth
 
 
-def double_click_to_zoom(viewer, event):
+def double_click_to_zoom(viewer, event) -> None:
     """Zoom in on double click by zoom_factor; zoom out with Alt.
 
     Note: only active when there is no selected layer or the active

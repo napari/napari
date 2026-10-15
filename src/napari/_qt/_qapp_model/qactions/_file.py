@@ -21,27 +21,27 @@ from napari._qt.qt_viewer import QtViewer
 
 
 # File actions
-def _open_files_with_plugin(qt_viewer: QtViewer):
+def _open_files_with_plugin(qt_viewer: QtViewer) -> None:
     qt_viewer._open_files_dialog(choose_plugin=True)
 
 
-def _open_files_as_stack_with_plugin(qt_viewer: QtViewer):
+def _open_files_as_stack_with_plugin(qt_viewer: QtViewer) -> None:
     qt_viewer._open_files_dialog_as_stack_dialog(choose_plugin=True)
 
 
-def _open_folder_with_plugin(qt_viewer: QtViewer):
+def _open_folder_with_plugin(qt_viewer: QtViewer) -> None:
     qt_viewer._open_folder_dialog(choose_plugin=True)
 
 
-def _save_selected_layers(qt_viewer: QtViewer):
+def _save_selected_layers(qt_viewer: QtViewer) -> None:
     qt_viewer._save_layers_dialog(selected=True)
 
 
-def _restart(window: Window):
+def _restart(window: Window) -> None:
     window._qt_window.restart()
 
 
-def _close_window(window: Window):
+def _close_window(window: Window) -> None:
     active_window = QApplication.activeWindow()
     if active_window is None:
         return
@@ -51,7 +51,7 @@ def _close_window(window: Window):
         window._qt_window.close(quit_app=False, confirm_need=True)
 
 
-def _close_app(window: Window):
+def _close_app(window: Window) -> None:
     window._qt_window.close(quit_app=True, confirm_need=True)
 
 
