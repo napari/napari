@@ -47,7 +47,7 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
             tooltip=tooltip,
         )
         connect_setattr(
-            self.edge_color_edit.color_changed,  # pyrefly: ignore [bad-argument-type]
+            self.edge_color_edit.color_changed,
             self._layer,
             'current_edge_color',
         )

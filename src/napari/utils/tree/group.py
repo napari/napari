@@ -73,7 +73,7 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         return new
 
     def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # pyrefly: ignore [bad-override]
-        return super().__getitem__(key)  # pyrefly: ignore [bad-return]
+        return super().__getitem__(key)
 
     def __delitem__(self, key: MaybeNestedIndex) -> None:
         """Remove item at ``key``, and unparent."""
