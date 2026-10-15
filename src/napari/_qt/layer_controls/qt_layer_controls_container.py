@@ -163,7 +163,7 @@ class QtLayerControlsContainer(QStackedWidget):
         for hist_widget in self._iter_histogram_widgets():
             hist_widget._on_theme_change(event)
 
-    def _populate(self):
+    def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.
 
         Parameters
