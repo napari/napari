@@ -46,13 +46,6 @@ class ExperimentalSettings(EventedSettings):
         validation_alias=AliasChoices('async_', 'async', 'napari_async'),
         json_schema_extra={'requires_restart': False},
     )
-    autoswap_buffers: bool = Field(
-        False,
-        title='Enable autoswapping rendering buffers.',
-        description='Autoswapping rendering buffers improves quality by reducing tearing artifacts, while sacrificing some performance.',
-        validation_alias=AliasChoices('autoswap_buffers', 'napari_autoswap'),
-        json_schema_extra={'requires_restart': True},
-    )
 
     rdp_epsilon: float = Field(
         0.5,

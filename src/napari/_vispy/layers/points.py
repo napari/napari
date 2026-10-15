@@ -49,7 +49,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switched for vispy's x / y ordering
@@ -99,7 +99,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.reset()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self) -> None:
         settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
@@ -170,7 +170,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # _on_font_size_change as well to connect to the settings
         self._update_text()
 
-    def _update_text(self, *, update_node=True):
+    def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
         Parameters
@@ -186,7 +186,7 @@ class VispyPointsLayer(VispyBaseLayer):
         if update_node:
             self.node.update()
 
-    def _on_text_change(self, event=None):
+    def _on_text_change(self, event=None) -> None:
         if event is not None:
             if event.type == 'blending':
                 self._on_blending_change(event)
@@ -195,7 +195,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 return
         self._update_text()
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, event=None) -> None:
         """Function to set the blending mode"""
         super()._on_blending_change()
 
@@ -208,14 +208,14 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
-    def _on_antialiasing_change(self):
+    def _on_antialiasing_change(self) -> None:
         self.node.antialias = self.layer.antialiasing
 
-    def _on_shading_change(self):
+    def _on_shading_change(self) -> None:
         shading = self.layer.shading
         self.node.spherical = shading == 'spherical'
 
-    def _on_canvas_size_limits_change(self):
+    def _on_canvas_size_limits_change(self) -> None:
         if len(self.layer.data) == 0:
             canvas_limits = 0, 0
         else:
@@ -231,7 +231,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._update_text(update_node=False)
         self._on_highlight_change()
@@ -239,7 +239,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_shading_change()
         self._on_canvas_size_limits_change()
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()

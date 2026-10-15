@@ -327,7 +327,7 @@ class VispyCanvas:
         )
         self.destroyed.connect(self._disconnect_events)
         get_settings().appearance.events.font_size.connect(
-            self._update_overlay_font_sizes
+            self._update_font_sizes
         )
 
     @property
