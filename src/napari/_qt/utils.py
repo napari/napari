@@ -422,7 +422,7 @@ def in_qt_main_thread() -> bool:
     return QCoreApplication.instance().thread() == QThread.currentThread()
 
 
-def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
+def use_tabular_numerals(obj: QWidget | QGuiApplication) -> None:
     """Render digits in `obj` using tabular numerals, if the font supports it.
 
     This enables the OpenType `tnum` ("tabular numerals") feature, which uses
@@ -436,22 +436,10 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> bool:
 
     Important: if the actual font does not support tabular numerals, this
     will have no effect, because Qt will silently ignore it.
-
-    Returns
-    -------
-    bool
-        True if the feature was requested. False on Qt < 6.7, where
-        ``QFont.setFeature`` does not exist.
     """
-    # QFont.setFeature and QFont.Tag are Qt 6.7+; napari still supports PyQt5.
-    tag = getattr(QFont, 'Tag', None)
-    if tag is None or not hasattr(QFont, 'setFeature'):
-        return False
-
     font = QFont(obj.font())
-    font.setFeature(tag('tnum'), 1)
+    font.setFeature(QFont.Tag('tnum'), 1)
     obj.setFont(font)
-    return True
 
 
 def get_color(

@@ -17,6 +17,7 @@ from napari._app_model.actions._view import VIEW_ACTIONS, VIEW_SUBMENUS
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from types import ModuleType
 
 APP_NAME = 'napari'
 
@@ -47,7 +48,7 @@ class NapariApplication(Application):
 
     injection_store: NapariStore
 
-    def __init__(self, app_name=APP_NAME) -> None:
+    def __init__(self, app_name: str = APP_NAME) -> None:
         # raise_synchronous_exceptions means that commands triggered via
         # ``execute_command`` will immediately raise exceptions. Normally,
         # `execute_command` returns a Future object (which by definition does not
@@ -71,7 +72,11 @@ class NapariApplication(Application):
         )
 
     @contextmanager
-    def register_with_namespace(self, name: str, obj: object):
+    def register_with_namespace(
+        self, name: str, obj: object
+    ) -> Generator[None, None, None]:
+        """Register an object with the injection store and add it to the namespace."""
+
         def provider() -> object:
             return obj
 
@@ -108,7 +113,7 @@ def _napari_names() -> dict[str, object]:
     import napari
     from napari import components, layers, viewer
 
-    def _public_types(module):
+    def _public_types(module: ModuleType) -> dict[str, type]:
         return {
             name: val
             for name, val in vars(module).items()
