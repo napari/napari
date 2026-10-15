@@ -106,7 +106,7 @@ class VispyCanvasOverlay(VispyBaseOverlay):
     Vispy overlay backend for overlays that live in canvas space.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.node.transform = STTransform()
 
