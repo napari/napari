@@ -22,11 +22,11 @@ def test_add_plugin_dock_widget(qtbot):
     viewer = MagicMock()
     qtbot.addWidget(widget)
     with pytest.raises(RuntimeError, match='No current `Viewer` found'):
-        _add_plugin_dock_widget(widget, 'widget', 'right', False)
-    _add_plugin_dock_widget(widget, 'widget', 'right', False, viewer)
+        _add_plugin_dock_widget((widget, 'widget', 'right', False))
+    _add_plugin_dock_widget((widget, 'widget', 'right', False), viewer)
     resolve_area_method = viewer.window._resolve_dock_area
     viewer.window.add_dock_widget.assert_called_with(
-        widget, name='widget', area=resolve_area_method()
+        widget, name='widget', area=resolve_area_method(), tabify=False
     )
 
 
