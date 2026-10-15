@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from napari.layers.labels._labels_constants import Mode
@@ -5,6 +9,11 @@ from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
 
 BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = ('Alt',)
+
+if TYPE_CHECKING:
+    from napari._vispy.mouse_event import NapariMouseEvent
+    from napari.components.overlays import LabelsPolygonOverlay
+    from napari.layers import Labels
 
 
 def change_brush_size_on_mouse_move_modifiers(value: tuple[str]) -> None:
@@ -14,7 +23,7 @@ def change_brush_size_on_mouse_move_modifiers(value: tuple[str]) -> None:
     BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = value
 
 
-def draw(layer, event):
+def draw(layer: Labels, event: NapariMouseEvent):
     """Draw with the currently selected label to a coordinate.
 
     This method have different behavior when draw is called
@@ -66,7 +75,9 @@ def draw(layer, event):
             yield
 
 
-def _maybe_add_polygon_point(polygon, pos):
+def _maybe_add_polygon_point(
+    polygon: LabelsPolygonOverlay, pos: tuple[float, float]
+) -> None:
     # Add a new point only if it differs from the previous one
     if (
         not polygon.points
@@ -81,7 +92,7 @@ def _maybe_add_polygon_point(polygon, pos):
         # pos[self._dims_displayed] += 0.5
 
 
-def draw_polygon(layer, event):
+def draw_polygon(layer: Labels, event: NapariMouseEvent):
     if len(event.dims_displayed) != 2:
         return
 
@@ -94,7 +105,7 @@ def draw_polygon(layer, event):
         polygon.points = polygon.points[:-1]
 
 
-def complete_polygon(layer, event):
+def complete_polygon(layer: Labels, event: NapariMouseEvent) -> None:
     if len(event.dims_displayed) != 2:
         return
 
@@ -123,7 +134,7 @@ def complete_polygon(layer, event):
         polygon.floating_point = None
 
 
-def update_polygon(layer, event):
+def update_polygon(layer: Labels, event: NapariMouseEvent):
     if len(event.dims_displayed) != 2:
         return
 
@@ -135,7 +146,7 @@ def update_polygon(layer, event):
             polygon.floating_point = tuple(pos)
 
 
-def pick(layer, event):
+def pick(layer: Labels, event: NapariMouseEvent):
     """Change the selected label to the same as the region clicked."""
     # on press
     layer.selected_label = (
@@ -164,12 +175,12 @@ class BrushSizeOnMouseMove:
 
     """
 
-    def __init__(self, min_brush_size: int = 1):
+    def __init__(self, min_brush_size: int = 1) -> None:
         self.min_brush_size = min_brush_size
         self.init_pos = None
         self.init_brush_size = None
 
-    def __call__(self, layer, event):
+    def __call__(self, layer, event) -> None:
         if all(
             modifier in event.modifiers
             for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
@@ -193,7 +204,7 @@ class BrushSizeOnMouseMove:
             if layer.cursor == 'circle_frozen':
                 layer.cursor = 'circle'
 
-    def _on_modifiers_change(self):
+    def _on_modifiers_change(self) -> None:
         modifiers_setting = (
             get_settings().application.brush_size_on_mouse_move_modifiers
         )

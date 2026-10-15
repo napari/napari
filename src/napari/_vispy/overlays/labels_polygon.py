@@ -9,6 +9,8 @@ from napari._vispy.overlays.base import LayerOverlayMixin, VispySceneOverlay
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from vispy.app import MouseEvent
+
     from napari.components.overlays import LabelsPolygonOverlay
     from napari.layers import Labels
 
@@ -17,7 +19,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     layer: Labels
     overlay: LabelsPolygonOverlay
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -68,13 +70,15 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.reset()
         self._update_color()
 
-    def _on_completion_radius_change(self, event=None):
+    def _on_completion_radius_change(
+        self, event: MouseEvent | None = None
+    ) -> None:
         completion_radius = get_settings().experimental.completion_radius
         self._show_circle = completion_radius > 0
         if completion_radius > 0:
             self._circle.radius = completion_radius
 
-    def _on_points_change(self):
+    def _on_points_change(self) -> None:
         points = list(self.overlay.points)
         if points:
             # Create full-dimensional points for transformation
@@ -117,7 +121,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             **self._nodes_kwargs,
         )
 
-    def _set_color(self, color):
+    def _set_color(self, color) -> None:
         border_color = tuple(color[:3]) + (1,)  # always opaque
         polygon_color = color
 
@@ -130,7 +134,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._polygon.border_color = border_color
         self._line.set_data(color=border_color)
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         layer = self.layer
         if layer._selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
@@ -139,11 +143,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
                 layer._selected_color.tolist()[:3] + [layer.opacity]  # pyrefly: ignore [missing-attribute]
             )
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_points_change()
 
-    def close(self):
+    def close(self) -> None:
         get_settings().experimental.events.completion_radius.disconnect(
             self._on_completion_radius_change
         )
