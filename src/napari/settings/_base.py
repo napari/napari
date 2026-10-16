@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import contextlib
-import json
 import logging
 import os
 from collections.abc import Mapping
-from enum import StrEnum
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -29,13 +27,12 @@ from pydantic_settings import (
 from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._yaml import PydanticYamlMixin
 from napari.utils.events import EmitterGroup, EventedModel
-from napari.utils.misc import StringEnum, deep_update
+from napari.utils.misc import deep_update
 
 _logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from typing import Any, Union
 
     from pydantic.fields import FieldInfo
@@ -51,28 +48,6 @@ if TYPE_CHECKING:
     DictStrAny = dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
     JSONable = str | list | dict | int | float | bool | None
-
-Dict = dict  # rename, because EventedSettings has method dict
-
-
-def _json_encode(
-    dkt: dict[type, Callable[[Any], JSONable]],
-) -> Callable[[Any], JSONable]:
-    def json_encode(value: Any) -> JSONable:
-        if type(value) in dkt:
-            return dkt[type(value)](value)
-        if isinstance(value, (StrEnum, StringEnum)):
-            return value.value
-        if isinstance(value, Path):
-            return str(value)
-        if isinstance(value, set):
-            return [str(x) for x in value]
-
-        raise TypeError(
-            f'Object of type {type(value)} is not JSON serializable'
-        )
-
-    return json_encode
 
 
 class EventedSettings(BaseSettings, EventedModel):
@@ -134,7 +109,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
         """
         raise NotImplementedError
 
-    def __call__(self) -> Dict[str, Any]:
+    def __call__(self) -> dict[str, Any]:
         sources: list[str | Path] = list(
             getattr(self.settings_cls.model_config, 'sources', [])
         )
@@ -286,14 +261,14 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     """
 
     config_path: Path | _NotSetType | None = Field(default=None, exclude=True)
-    env_settings: Dict = Field(
+    env_settings: dict = Field(
         default_factory=dict, exclude=True, repr=False, frozen=True
     )
     _save_on_change: bool = PrivateAttr(True)
     # this dict stores the data that came specifically from the config file.
     # it's populated in `config_file_settings_source` and
     # used in `_remove_env_settings`
-    config_file_settings: Dict = Field(
+    config_file_settings: dict = Field(
         default_factory=dict, exclude=True, repr=False, frozen=True
     )
 
@@ -335,7 +310,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         serialize_as_any: bool = False,
         exclude_env: bool = False,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Return dict representation of the model.
 
         May optionally specify which fields to include or exclude.
@@ -394,15 +369,12 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         path.parent.mkdir(exist_ok=True, parents=True)
         self._dump(str(path), self._save_dict(**dict_kwargs))
 
-    def _dump(self, path: str, data: Dict) -> None:
+    def _dump(self, path: str, data: dict) -> None:
         """Encode and dump `data` to `path` using a path-appropriate encoder."""
         if str(path).endswith(('.yaml', '.yml')):
             data_ = self._yaml_dump(data)
         elif str(path).endswith('.json'):
-            data_ = json.dumps(
-                data,
-                default=_json_encode(self.model_config['json_encoders']),  # pyrefly: ignore [bad-argument-type]
-            )
+            data_ = self.model_dump_json()
         else:
             raise NotImplementedError(
                 f'Can only currently dump to `.json` or `.yaml`, not {path!r}'
