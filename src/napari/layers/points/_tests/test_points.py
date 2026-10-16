@@ -14,6 +14,7 @@ from napari._tests.utils import (
     assert_layer_state_equal,
     check_layer_world_data_extent,
 )
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers.base._base_constants import ActionType
@@ -2730,3 +2731,21 @@ def test_points_layer_display_correct_slice_on_scale(viewer_model):
     request = pts._slicing_state._make_slice_request(viewer_model.dims)
     response = request()
     np.testing.assert_equal(response.indices, [0])
+
+
+def test_locate_selection_none_selected():
+    assert Points(np.zeros((3, 2)))._locate_selection() is None
+
+
+@pytest.mark.parametrize(('current', 'expected'), [(0, 6), (2, 2)])
+def test_locate_selection_points(current, expected):
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((10, 100, 100)))
+    layer = viewer.add_points(
+        [[2, 10, 10], [6, 80, 60], [9, 90, 70], [2, 50, 50]], size=4
+    )
+    viewer.dims.set_point(0, current)
+    layer.selected_data = {1, 2, 3}
+    extent, point = layer._locate_selection()
+    np.testing.assert_array_equal(extent, [[0, 48, 48], [11, 92, 72]])
+    np.testing.assert_array_equal(point, [expected, 70, 60])

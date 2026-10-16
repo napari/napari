@@ -865,6 +865,21 @@ class Points(Layer):
         extent[1] += max_point_size / 2
         return extent
 
+    def _locate_selection(self) -> tuple[np.ndarray, np.ndarray] | None:
+        if not self.selected_data:
+            return None
+        index = list(self.selected_data)
+        coords = self.data[index]
+        radius = self.size[index, None] / 2
+        extent = np.stack([(coords - radius).min(0), (coords + radius).max(0)])
+        point = extent.mean(0)
+        not_displayed = sorted(self._slice_input.not_displayed)
+        if not_displayed:
+            point[not_displayed] = self._pick_slice(
+                coords[:, not_displayed], point[not_displayed]
+            )
+        return extent, point
+
     @property
     def out_of_slice_display(self) -> bool:
         """bool: renders points slightly out of slice."""

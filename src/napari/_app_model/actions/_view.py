@@ -8,8 +8,11 @@ from app_model.types import (
 
 from napari._app_model.actions._toggle_action import ViewerModelToggleAction
 from napari._app_model.constants import MenuGroup, MenuId
+from napari._app_model.context import LayerListSelectionContextKeys as LLSCK
 from napari.components import ViewerModel
+from napari.layers import Labels
 from napari.settings import get_settings
+from napari.utils.notifications import show_info
 
 VIEW_SUBMENUS = [
     (
@@ -125,6 +128,23 @@ def _fit_to_view(viewer: ViewerModel) -> None:
     viewer.fit_to_view()
 
 
+_ACTIVE_LAYER_HAS_SELECTION = (
+    (LLSCK.active_layer_type == 'labels')
+    | (LLSCK.active_layer_type == 'points')
+    | (LLSCK.active_layer_type == 'shapes')
+)
+
+
+def _zoom_to_selection(viewer: ViewerModel) -> None:
+    layer = viewer.layers.selection.active
+    if layer is None or viewer._zoom_to_selection(layer):
+        return
+    if isinstance(layer, Labels):
+        show_info(f'Label {layer.selected_label} is not in layer {layer.name}')
+    else:
+        show_info(f'Nothing is selected in layer {layer.name}')
+
+
 def _zoom_in(viewer: ViewerModel) -> None:
     viewer.scene.camera.zoom *= 1.5
 
@@ -164,6 +184,24 @@ VIEW_ACTIONS: list[Action] = [
         ],
         callback=_fit_to_view,
         keybindings=[StandardKeyBinding.OriginalSize],
+    ),
+    Action(
+        id='napari.scene.zoom_to_selection',
+        title='Zoom to Selection',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            },
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.LAYERLIST_CONTEXT.ZOOM,
+                'when': _ACTIVE_LAYER_HAS_SELECTION,
+            },
+        ],
+        callback=_zoom_to_selection,
+        enablement=_ACTIVE_LAYER_HAS_SELECTION,
     ),
     Action(
         id='napari.scene.zoom_in',

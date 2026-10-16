@@ -119,6 +119,16 @@ def test_selected_color_checkbox(make_labels_controls):
     assert layer.show_selected_label
 
 
+def test_zoom_to_selected_checkbox(make_labels_controls):
+    layer, qtctrl = make_labels_controls()
+    checkbox = qtctrl._display_selected_label_checkbox_control.zoom_checkbox
+    assert not checkbox.isChecked()
+    checkbox.setChecked(True)
+    assert layer.zoom_to_selected_label
+    layer.zoom_to_selected_label = False
+    assert not checkbox.isChecked()
+
+
 def test_contiguous_labels_checkbox(make_labels_controls):
     """Tests that the 'contiguous' checkbox sets the 'contiguous' property properly."""
     layer, qtctrl = make_labels_controls()
