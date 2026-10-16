@@ -25,6 +25,7 @@ from qtpy.QtGui import (
     QCursor,
     QDrag,
     QFont,
+    QFontDatabase,
     QImage,
     QPainter,
     QPixmap,
@@ -439,6 +440,18 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> None:
     """
     font = QFont(obj.font())
     font.setFeature(QFont.Tag('tnum'), 1)
+    obj.setFont(font)
+
+
+def use_fixed_pitch_font(obj: QWidget | QGuiApplication) -> None:
+    """Render `obj` in the platform's default fixed-pitch font.
+
+    Only the family is set, so the size still follows the application font.
+    """
+    font = QFont(obj.font())
+    font.setFamilies(
+        [QFontDatabase.systemFont(QFontDatabase.FixedFont).family()]
+    )
     obj.setFont(font)
 
 
