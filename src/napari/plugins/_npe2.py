@@ -4,6 +4,7 @@ import os
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     cast,
 )
 
@@ -12,7 +13,7 @@ from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Generator, Iterator, Sequence
 
     from app_model import Action
     from npe2.manifest import PluginManifest
@@ -124,12 +125,12 @@ def get_widget_contribution(
     return None
 
 
-def populate_qmenu(menu: QMenu, menu_key: str):
+def populate_qmenu(menu: QMenu, menu_key: str) -> None:
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
 
-    def _wrap(cmd_):
-        def _wrapped(*args):
+    def _wrap(cmd_: contributions.CommandContribution) -> Callable[..., None]:
+        def _wrapped(*args: Any) -> None:
             cmd_.exec(args=args)
 
         return _wrapped
@@ -169,7 +170,7 @@ def file_extensions_string_for_layers(
     layer_types = [layer._type_string for layer in layers]
     writers = list(pm.iter_compatible_writers(layer_types))
 
-    def _items():
+    def _items() -> Generator[tuple[str, list[str]], None, None]:
         """Lookup the command name and its supported extensions."""
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
@@ -183,7 +184,7 @@ def file_extensions_string_for_layers(
     # extension strings are in the format:
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
-    def _fmt_exts(es):
+    def _fmt_exts(es: list[str]) -> str:
         return ' '.join(f'*{e}' for e in es if e) if es else '*.*'
 
     return (
@@ -281,12 +282,12 @@ def get_sample_data(
     return None, avail
 
 
-def index_npe1_adapters():
+def index_npe1_adapters() -> None:
     """Tell npe2 to import and index any discovered npe1 plugins."""
     pm.index_npe1_adapters()
 
 
-def on_plugin_enablement_change(enabled: set[str], disabled: set[str]):
+def on_plugin_enablement_change(enabled: set[str], disabled: set[str]) -> None:
     """Callback when any npe2 plugins are enabled or disabled.
 
     'Disabled' means the plugin remains installed, but it cannot be activated,
@@ -309,7 +310,7 @@ def on_plugin_enablement_change(enabled: set[str], disabled: set[str]):
             _safe_register_qt_actions(pm.get_manifest(plugin_name))
 
 
-def on_plugins_registered(manifests: set[PluginManifest]):
+def on_plugins_registered(manifests: set[PluginManifest]) -> None:
     """Callback when any npe2 plugins are registered.
 
     'Registered' means that a manifest has been provided or discovered.
@@ -385,8 +386,16 @@ def _npe2_manifest_to_actions(
     }
     # Filter widgets as are registered via `_safe_register_qt_actions`
     widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
+    # Readers and writers need a path and data, which the palette can't give
+    io_ids = {
+        contrib.command
+        for contrib in [
+            *(mf.contributions.readers or ()),
+            *(mf.contributions.writers or ()),
+        ]
+    }
 
-    # We want to register all `Actions` so they appear in the command palette
+    # Register the other commands as `Actions`, most of them in the palette
     actions: list[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
@@ -401,6 +410,7 @@ def _npe2_manifest_to_actions(
                     callback=cmd.python_name or '',
                     menus=menu_cmds.get(cmd.id),
                     keybindings=[],
+                    palette=cmd.id not in io_ids,
                 )
             )
 
