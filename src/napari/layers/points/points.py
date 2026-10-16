@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numbers
-import typing
 import warnings
 from copy import copy, deepcopy
 from typing import (
@@ -1658,7 +1657,7 @@ class Points(Layer):
         # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))
 
-    def _get_value_(
+    def get_value(
         self,
         position: npt.ArrayLike,
         *,
@@ -1666,15 +1665,15 @@ class Points(Layer):
         dims_displayed: list[int] | None = None,
         world: bool = False,
     ) -> int | None:
-        """Workaround for inconsistency in real return type of get_value"""
-        return typing.cast(
-            int,
-            self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            ),
+        """Index of the point at a position, or None if there is none.
+
+        See :meth:`napari.layers.Layer.get_value` for the parameters.
+        """
+        return super().get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
         )
 
     def _get_value(self, position) -> int | None:
