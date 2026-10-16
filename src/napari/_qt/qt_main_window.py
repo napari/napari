@@ -1456,8 +1456,6 @@ class Window:
             if str(widget.layout) == 'vertical'
             else 'bottom',
         )
-        if allowed_areas is None:
-            allowed_areas = [area]
         if shortcut is not _sentinel:
             return self.add_dock_widget(
                 widget,
