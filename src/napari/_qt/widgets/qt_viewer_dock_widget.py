@@ -202,9 +202,9 @@ class QtViewerDockWidget(QDockWidget):
         (like a textedit or listwidget or something).
         """
         exempt_policies = {
-            QSizePolicy.Expanding,
-            QSizePolicy.MinimumExpanding,
-            QSizePolicy.Ignored,
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.MinimumExpanding,
+            QSizePolicy.Policy.Ignored,
         }
         if widget.sizePolicy().verticalPolicy() in exempt_policies:
             return
