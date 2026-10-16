@@ -146,7 +146,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
         (for optimization). Editable models must return a value containing
         `Qt.ItemIsEditable`.
 
-        See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+        See Qt.ItemFlag https://doc.qt.io/qt-6/qt.html#ItemFlag-enum
 
         Parameters
         ----------
