@@ -1,3 +1,4 @@
+import gzip
 from typing import TYPE_CHECKING
 
 import imageio.v3 as iio
@@ -104,9 +105,11 @@ def test_read_python_source_uses_python_source_encoding(
     assert _read_python_source(script_path) == script
 
 
-def test_read_obj(tmp_path):
-    obj_path = tmp_path / 'test.obj'
-    with open(obj_path, 'w') as f:
+@pytest.mark.parametrize('compressed', [False, True])
+def test_read_obj(tmp_path, compressed):
+    obj_path = tmp_path / ('test.obj.gz' if compressed else 'test.obj')
+    opener = gzip.open if compressed else open
+    with opener(obj_path, 'wt', encoding='utf-8') as f:
         f.write("""
         # this should be ignored
         v 0 0 1
@@ -122,6 +125,9 @@ def test_read_obj(tmp_path):
     assert len(layer_data) == 1
     assert isinstance(layer_data[0], tuple)
     assert layer_data[0][2] == 'surface'
+    vertices, faces = layer_data[0][0]
+    assert np.array_equal(vertices, [[0, 0, 1], [1, 0, 2], [0, 2, 3]])
+    assert faces.shape == (3, 3)
 
 
 @pytest.mark.parametrize(
