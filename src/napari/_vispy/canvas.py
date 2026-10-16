@@ -325,9 +325,6 @@ class VispyCanvas:
             self._update_font_sizes
         )
         self.destroyed.connect(self._disconnect_events)
-        get_settings().appearance.events.font_size.connect(
-            self._update_font_sizes
-        )
 
     @property
     def events(self):
@@ -353,6 +350,7 @@ class VispyCanvas:
         self._scene_canvas.bgcolor = self.viewer.canvas.background_color
 
     def _disconnect_events(self) -> None:
+        disconnect_events(get_settings().appearance.events, self)
         disconnect_events(self.viewer.events, self)
         disconnect_events(self.viewer.canvas.events, self)
         disconnect_events(self.viewer.canvas.overlays.events, self)
@@ -780,6 +778,7 @@ class VispyCanvas:
         # also make sure we communicate update the view direction of the new layer
         # (needed e.g for lighting by mesh)
         self._on_view_direction_change()
+        self._update_font_sizes()
         self._update_scenegraph()
 
     def _on_view_direction_change(self) -> None:

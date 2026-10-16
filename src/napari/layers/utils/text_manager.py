@@ -1,9 +1,9 @@
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Annotated, Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
-from pydantic import Field, field_validator
+from pydantic import PositiveFloat, field_validator
 
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
@@ -87,7 +87,7 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: Annotated[float, Field(ge=1)] | None = None
+    size: PositiveFloat | None = None
     scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
