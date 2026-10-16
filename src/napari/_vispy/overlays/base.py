@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from vispy.scene.visuals import Rectangle
@@ -9,6 +9,8 @@ from vispy.visuals.transforms import MatrixTransform, STTransform
 from napari._vispy.utils.gl import BLENDING_MODES
 from napari.utils.color import (
     ColorValue,
+    _contrasting_color,
+    _readable_color,
 )
 from napari.utils.events import disconnect_events
 
@@ -74,17 +76,8 @@ class VispyBaseOverlay:
         return self.viewer.canvas.background_color
 
     def _get_fgcolor(self) -> ColorValue:
-        return self._contrasting_color(self._get_bgcolor())
-
-    def _contrasting_color(self, bgcolor: ColorValue) -> ColorValue:
-        opposite = 1 - bgcolor
-        # shift away from mid tones for better contrast
-        opposite = 0.5 + (opposite - 0.5) * 1.2
-        opposite = np.clip(opposite, 0, 1)
-        # don't change alpha
-        opposite[-1] = bgcolor[-1]
-        # numpy keeps the ColorValue subclass at runtime, but its stubs don't
-        return cast(ColorValue, opposite)
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
     def _on_font_size_change(self) -> None:
         # to be implemented by subclasses that need it
