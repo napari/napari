@@ -38,9 +38,9 @@ def pref(qtbot):
     # check settings default values and change them for later checks
     settings = get_settings()
     # change theme setting (default `dark`)
-    assert settings.appearance.theme == 'dark'
-    dlg._settings.appearance.theme = 'light'
-    assert get_settings().appearance.theme == 'light'
+    assert settings.appearance.theme == 'napari-dark'
+    dlg._settings.appearance.theme = 'napari-light'
+    assert get_settings().appearance.theme == 'napari-light'
     # change highlight setting related value (default thickness `1`)
     assert get_settings().appearance.highlight.highlight_thickness == 1
     dlg._settings.appearance.highlight.highlight_thickness = 5
@@ -170,8 +170,8 @@ def test_font_size_widget(qtbot, pref):
     assert get_settings().appearance.font_size == new_font_size
 
     # verify that a theme change preserves the font size value
-    assert get_settings().appearance.theme == 'light'
-    get_settings().appearance.theme = 'dark'
+    assert get_settings().appearance.theme == 'napari-light'
+    get_settings().appearance.theme = 'napari-dark'
     assert get_settings().appearance.font_size == new_font_size
     assert font_size_widget.state == new_font_size
 
@@ -272,32 +272,32 @@ def test_highlight_widget(qtbot, pref):
 def test_preferences_dialog_accept(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.accept()
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'napari-light'
 
 
 def test_preferences_dialog_ok(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref._button_ok.click()
-    assert get_settings().appearance.theme == 'light'
+    assert get_settings().appearance.theme == 'napari-light'
 
 
 def test_preferences_dialog_close(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref.close()
-    assert get_settings().appearance.theme == 'dark'
+    assert get_settings().appearance.theme == 'napari-dark'
 
 
 def test_preferences_dialog_escape(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         qtbot.keyPress(pref, Qt.Key_Escape)
-    assert get_settings().appearance.theme == 'dark'
+    assert get_settings().appearance.theme == 'napari-dark'
 
 
 @pytest.mark.key_bindings
 def test_preferences_dialog_cancel(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
         pref._button_cancel.click()
-    assert get_settings().appearance.theme == 'dark'
+    assert get_settings().appearance.theme == 'napari-dark'
     assert get_settings().shortcuts.shortcuts[
         'napari:toggle_selected_visibility'
     ] == [KeyBinding.from_str('V')]
@@ -313,8 +313,8 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
         pref._stack.widget(3).widget().widget.widgets['shortcuts']
     )
 
-    assert get_settings().appearance.theme == 'light'
-    assert theme_widget.state == 'light'
+    assert get_settings().appearance.theme == 'napari-light'
+    assert theme_widget.state == 'napari-light'
     assert get_settings().appearance.highlight.highlight_thickness == 5
     assert highlight_widget.state['highlight_thickness'] == 5
     assert get_settings().shortcuts.shortcuts[
@@ -334,8 +334,8 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     )
     pref._restore_default_dialog()
 
-    assert get_settings().appearance.theme == 'dark'
-    assert theme_widget.state == 'dark'
+    assert get_settings().appearance.theme == 'napari-dark'
+    assert theme_widget.state == 'napari-dark'
     assert get_settings().appearance.highlight.highlight_thickness == 1
     assert highlight_widget.state['highlight_thickness'] == 1
     assert get_settings().shortcuts.shortcuts[
