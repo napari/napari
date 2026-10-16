@@ -192,8 +192,7 @@ class QtLayerControlsContainer(QStackedWidget):
             self.panel = None
 
         selection = self.viewer.layers.selection
-        settings = get_settings()
-        always_dynamic = settings.experimental.dynamic_layer_controls
+        always_dynamic = get_settings().experimental.dynamic_layer_controls
         if not selection:
             self.setCurrentWidget(self.empty_widget)
         elif selection.active is not None and not always_dynamic:
@@ -208,9 +207,6 @@ class QtLayerControlsContainer(QStackedWidget):
             self.panel.ndisplay = self.viewer.dims.ndisplay
             self.addWidget(self.panel)
             self.setCurrentWidget(self.panel)
-        self._on_viewer_theme_changed(
-            theme=get_theme(settings.appearance.theme)
-        )
 
     def _add(self, event: Event) -> None:
         """Add the controls target layer to the list of control widgets.
