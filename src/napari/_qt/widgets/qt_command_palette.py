@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter, deque
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -27,6 +28,13 @@ _COMMON_ALIASES = {
     'preferences': 'settings',
 }
 _NULL_INDEX = QtCore.QModelIndex()
+
+
+_HISTORY: deque[CommandRule] = deque(maxlen=1000)
+
+
+def _get_sorted_history_scores() -> dict[CommandRule, float]:
+    return dict(sorted(Counter(_HISTORY).items(), key=lambda x: x[1]))
 
 
 class QCommandPalette(QtW.QWidget):
@@ -398,11 +406,19 @@ class QCommandList(QtW.QListView):
 
     def iter_top_hits(self, input_text: str) -> Iterator[CommandRule]:
         """Iterate over the top hits for the input text"""
+        sorted_history_scores = _get_sorted_history_scores()
         if not input_text:
+            yield from [
+                c
+                for c in sorted_history_scores
+                if _enabled(c, self._app_model_context)
+            ]
+
             yield from [
                 c
                 for c in self.all_commands
                 if _enabled(c, self._app_model_context)
+                and c not in sorted_history_scores
             ]
 
         # mapping of titles (or their aliasees) to commands. Must be a list of tuples
@@ -445,6 +461,11 @@ class QCommandList(QtW.QListView):
         for command in strict_matches:
             if _enabled(command, self._app_model_context):
                 strict_matches[command] += 100
+
+        # boost scores of recent commands
+        for command, score in sorted_history_scores.items():
+            if command in strict_matches:
+                strict_matches[command] += 51 + min(score, 50)
 
         for command, _ in sorted(
             strict_matches.items(), key=lambda x: x[1], reverse=True
@@ -609,4 +630,6 @@ def _iter_highlight_slices(
 
 def _exec_action(action: CommandRule) -> Any:
     app = get_app_model()
-    return app.commands.execute_command(action.id).result()
+    result = app.commands.execute_command(action.id).result()
+    _HISTORY.append(action)
+    return result
