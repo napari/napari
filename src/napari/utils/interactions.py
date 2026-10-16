@@ -84,7 +84,11 @@ def _step_active_generators(
         obj._persisted_mouse_event[gen].__wrapped__ = event.__wrapped__
         try:
             next(gen)
-        except StopIteration:
+        except Exception as e:  # noqa: BLE001
+            if not isinstance(e, StopIteration):
+                warnings.warn(
+                    f'mouse callback defined at {func.__module__}.{func.__name__} failed with the following error:\n{e}'
+                )
             # done, delete the generator and stored event
             del gen_dict[func]
             del obj._persisted_mouse_event[gen]
