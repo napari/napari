@@ -1069,8 +1069,7 @@ def path_to_indices(
 
     if len(mask_shape) == 2:
         lines = [
-            draw.line(*v1, *v2)
-            for v1, v2 in itertools.pairwise(vertices)
+            draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)
         ]
     else:
         lines = [
