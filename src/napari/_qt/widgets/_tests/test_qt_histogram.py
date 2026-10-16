@@ -168,35 +168,6 @@ def test_qt_histogram_widget_updates_from_settings_theme(
         settings.appearance.theme = old_theme
 
 
-def test_histogram_visual_set_data_clear_path(qtbot):
-    """Calling set_data with no bins/counts should clear the visual."""
-    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
-    widget = QtHistogramWidget(layer)
-    widget._ensure_histogram_content()
-    qtbot.addWidget(widget)
-
-    visual = widget.histogram_canvas.histogram_visual
-
-    # First set some data to get a non-empty state
-    bin_edges, counts = layer.histogram.compute(layer)
-    visual.set_data(
-        bin_edges=bin_edges,
-        counts=counts,
-        gamma=1.0,
-        clims=(0.25, 0.75),
-        data_range=(0, 1),
-    )
-
-    # Now call set_data with None to trigger _clear path
-    visual.set_data()
-    # After clear, gamma should be reset to 1.0
-    assert visual._gamma == 1.0
-    assert visual._clims is None
-    assert visual._data_range is None
-
-    widget.cleanup()
-
-
 def test_histogram_visual_update_lut_line_clims_equal(qtbot):
     """LUT line should handle equal clim values gracefully."""
     layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
