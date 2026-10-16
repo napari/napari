@@ -76,6 +76,10 @@ class VispyBaseOverlay:
         # to be implemented by subclasses that need it
         pass
 
+    def _on_mouse_leave(self) -> None:
+        # to be implemented by subclasses that need it
+        pass
+
     def set_default_font_size(self, font_size: int) -> None:
         self._default_font_size = font_size
         self._on_font_size_change()
