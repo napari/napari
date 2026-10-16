@@ -26,7 +26,7 @@ Along the way, this example also demonstrates non-uniform layer
 multiscale image to its finest level, `DirectLabelColormap`, and
 ``iso_categorical`` rendering for labels.
 
-.. tags:: visualization-nD, visualization-advanced
+.. tags:: visualization-nD, visualization-advanced, dev
 """
 
 from __future__ import annotations
@@ -401,6 +401,8 @@ viewer.scene.overlays.axes.visible = True
 for layer in viewer.layers:
     if hasattr(layer, 'colorbar'):
         layer.colorbar.visible = True
+    if hasattr(layer, 'face_colorbar'):
+        layer.face_colorbar.visible = True
 
 viewer.scene.camera.angles = (-25, -10, 145)
 viewer.fit_to_view()
