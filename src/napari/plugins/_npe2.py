@@ -120,7 +120,7 @@ def get_widget_contribution(
                 return (
                     contrib.get_callable(),
                     contrib.display_name,
-                    getattr(contrib, 'default_dock_area', 'right'),
+                    contrib.default_dock_area,
                 )
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
