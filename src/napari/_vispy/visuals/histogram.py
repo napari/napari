@@ -29,9 +29,9 @@ class HistogramVisual(Compound):
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
         self._bin_edges = None
         self._counts = None
-        self._gamma = 1
-        self._clims = (0, 1)
-        self._data_range = (0, 1)
+        self._gamma = 1.0
+        self._clims: tuple[float, float] | None = None
+        self._data_range: tuple[float, float] | None = None
 
         # Create sub-visuals
         self._bars = Mesh()
@@ -65,15 +65,15 @@ class HistogramVisual(Compound):
 
         Parameters
         ----------
-        bin_edges : np.ndarray, optional
+        bin_edges : np.ndarray
             Bin edges from histogram computation.
-        counts : np.ndarray, optional
+        counts : np.ndarray
             Count values for each bin.
-        gamma : float, optional
+        gamma : float
             Gamma correction value for gamma curve overlay.
-        clims : tuple[float, float], optional
+        clims : tuple[float, float]
             Contrast limits (min, max) for drawing indicator lines.
-        data_range : tuple[float, float], optional
+        data_range : tuple[float, float]
             Full data range (min, max) for normalizing positions.
         """
         self._bin_edges = bin_edges
@@ -81,11 +81,6 @@ class HistogramVisual(Compound):
         self._gamma = gamma
         self._clims = clims
         self._data_range = data_range
-        if len(bin_edges) == 0 or len(counts) == 0:
-            self._bin_edges = None
-            self._counts = None
-            self._set_empty_data()
-            return
 
         self._update_bars()
         self._update_axes()
@@ -176,6 +171,8 @@ class HistogramVisual(Compound):
         4. Top-right clim
         5. Bottom-right clim (vertical line from 1 to 0)
         """
+        if self._clims is None or self._data_range is None:
+            return
         clim_min, clim_max = self._clims
         data_min, data_max = self._data_range
         range_size = data_max - data_min

@@ -81,6 +81,8 @@ class QtHistogramCanvasWidget(QWidget):
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
 
+        self._on_theme_change(self.theme)
+
     def update_colormap(self, colormap: Colormap):
         rgba = _representative_color(colormap)
         rgba[3] = max(float(rgba[3]), 0.8)
