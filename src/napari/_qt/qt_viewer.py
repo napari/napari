@@ -1008,6 +1008,8 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(old_size)
         size_arr = (size_arr * scale).astype(np.int64)
+
+        camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
         canvas.font_info.scale = scale
         try:
