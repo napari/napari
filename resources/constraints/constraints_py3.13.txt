@@ -200,7 +200,7 @@ networkx==3.7
     # via
     #   scikit-image
     #   torch
-npe2==0.9.0
+npe2==0.10.0
     # via
     #   napari (pyproject.toml)
     #   napari-plugin-manager
