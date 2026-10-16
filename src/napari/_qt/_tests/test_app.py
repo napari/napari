@@ -14,6 +14,7 @@ from napari._qt.qt_event_loop import (
     run,
     set_app_id,
 )
+from napari._qt.utils import _tnum_tag
 
 
 @pytest.mark.skipif(os.name != 'nt', reason='Windows specific')
@@ -94,10 +95,13 @@ def test_no_wayland_warning(
     )
 
 
+@pytest.mark.skipif(
+    _tnum_tag() is None, reason='PySide6 < 6.8.3 lacks QFont.Tag(str)'
+)
 def test_status_bar_requests_tabular_numerals_with_preexisting_app(
     make_napari_viewer, qapp, qtbot
 ):
-    tag = QFont.Tag('tnum')
+    tag = _tnum_tag()
     app_font = QFont(qapp.font())
     host_label = QLabel('host')
     qtbot.addWidget(host_label)
