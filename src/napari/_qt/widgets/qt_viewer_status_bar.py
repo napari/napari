@@ -26,7 +26,7 @@ _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
 class UpcomingUpdatesIcon(QLabel):
     def __init__(self, upcoming_releases):
         super().__init__()
-        self.setText('🚀')
+        self.setObjectName('refresh_label')
         self.setToolTip(
             f'New napari versions available!\n'
             f'You are currently running napari {__version__}, but napari {upcoming_releases[-1]} is out,\n'
