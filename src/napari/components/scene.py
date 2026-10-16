@@ -6,6 +6,7 @@ from napari.components.camera import Camera
 from napari.components.overlays import (
     SceneAxesOverlay,
     SceneOverlay,
+    ViewerBoundingBoxOverlay,
 )
 from napari.utils.events import EventedDictNamespace, EventedModel
 
@@ -34,6 +35,7 @@ class Scene(EventedModel):
         default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
+                'bounding_box': ViewerBoundingBoxOverlay(),
             }
         ),
         frozen=True,
