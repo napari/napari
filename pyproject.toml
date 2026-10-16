@@ -698,22 +698,6 @@ matches = "src/napari/utils/_register.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/_proxies.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_migrations.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_fields.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_base.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/layers/base/base.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
