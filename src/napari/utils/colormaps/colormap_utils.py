@@ -6,6 +6,7 @@ from functools import lru_cache
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
+    Literal,
     NamedTuple,
     Protocol,
     TypeVar,
@@ -206,11 +207,11 @@ _MAX_VISPY_SUPPORTED_VALUE = _FLOAT32_MAX / 8
 _MINIMUM_SHADES_COUNT = 256
 
 
-def _all_rgb():
+def _all_rgb() -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.uint8]]:
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)
     r, g, b = np.meshgrid(base, base, base, indexing='ij')
-    return np.stack((r, g, b), axis=-1).reshape((-1, 3))
+    return np.stack((r, g, b), axis=-1).reshape((-1, 3))  # pyrefly: ignore[bad-return]
 
 
 # The following values were precomputed and stored as constants
@@ -234,7 +235,7 @@ LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
 
 
-def convert_vispy_colormap(colormap, name='vispy'):
+def convert_vispy_colormap(colormap, name='vispy') -> Colormap:
     """Convert a vispy colormap object to a napari colormap.
 
     Parameters
@@ -263,6 +264,17 @@ def convert_vispy_colormap(colormap, name='vispy'):
         high_color=getattr(colormap.high_color, 'rgba', None),
         low_color=getattr(colormap.low_color, 'rgba', None),
     )
+
+
+def _representative_color(
+    colormap: Colormap, value: float = 0.8
+) -> np.ndarray:
+    """Return a single (4,) RGBA color that stands for the whole colormap.
+
+    The default picks the almost highest end (``map([0.8])``), which avoids
+    invisibility on dark canvas with reversed colormaps like ``gray_r``.
+    """
+    return np.atleast_2d(colormap.map([value]))[0].astype(float)
 
 
 def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
@@ -506,7 +518,7 @@ def label_colormap(
 
 
 @lru_cache
-def _primes(upto=2**16):
+def _primes(upto=2**16) -> np.ndarray[tuple[int], np.dtype[np.int_]]:
     """Generate primes up to a given number.
 
     Parameters
@@ -592,7 +604,7 @@ def shuffle_and_extend_colormap(
     return new_colormap
 
 
-def direct_colormap(color_dict=None):
+def direct_colormap(color_dict=None) -> DirectLabelColormap:
     """Make a direct colormap from a dictionary mapping labels to colors.
 
     Parameters
@@ -721,7 +733,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     Parameters
     ----------
     colormap : ValidColormapArg
-        See ValidColormapArg for supported input types.
+        See ValidColormapArg for supported input types. If None, the default
+        ``gray`` colormap is returned.
 
     Returns
     -------
@@ -744,7 +757,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         or valid inputs to the Colormap constructor.
     """
     with AVAILABLE_COLORMAPS_LOCK:
-        if isinstance(colormap, str):
+        if colormap is None:
+            name = 'gray'
+        elif isinstance(colormap, str):
             # when black given as end color, want reversed grayscale colormap
             # from white to black, named gray_r
             if colormap.startswith('#000000') or colormap.lower() == 'black':
@@ -890,7 +905,7 @@ def _colormap_from_colors(
     )
 
 
-def display_name_to_name(display_name):
+def display_name_to_name(display_name) -> str:
     display_name_map = {
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
@@ -911,7 +926,9 @@ class CoercedContrastLimits(NamedTuple):
         return (data + self.offset / self.scale) * self.scale
 
 
-def _coerce_contrast_limits(contrast_limits: tuple[float, float]):
+def _coerce_contrast_limits(
+    contrast_limits: tuple[float, float],
+) -> CoercedContrastLimits:
     """Coerce contrast limits to be in the float32 range."""
     if np.abs(contrast_limits).max() > _MAX_VISPY_SUPPORTED_VALUE:
         return scale_down(contrast_limits)
@@ -928,7 +945,7 @@ def _coerce_contrast_limits(contrast_limits: tuple[float, float]):
     return CoercedContrastLimits(contrast_limits, 0, 1)
 
 
-def scale_down(contrast_limits: tuple[float, float]):
+def scale_down(contrast_limits: tuple[float, float]) -> CoercedContrastLimits:
     """Scale down contrast limits to be in the float32 range."""
     scale: float = min(
         1.0,
@@ -943,7 +960,7 @@ def scale_down(contrast_limits: tuple[float, float]):
     return CoercedContrastLimits(ctrl_lim, offset, scale)
 
 
-def scale_up(contrast_limits: tuple[float, float]):
+def scale_up(contrast_limits: tuple[float, float]) -> CoercedContrastLimits:
     """Scale up contrast limits to be in the float32 precision."""
     scale = 1000 / (contrast_limits[1] - contrast_limits[0])
     shift = -contrast_limits[0] * scale
@@ -953,7 +970,7 @@ def scale_up(contrast_limits: tuple[float, float]):
 
 # label_colormap uses _color_random which has an expensive skimage.color import
 # PEP562 implementation to delay this until it is actually accessed
-def __getattr__(name):
+def __getattr__(name) -> dict[str, CyclicLabelColormap]:
     if name == 'AVAILABLE_LABELS_COLORMAPS':
         return {
             'lodisc-50': label_colormap(50),
@@ -961,5 +978,5 @@ def __getattr__(name):
     raise AttributeError(f'module {__name__} has no attribute {name}')
 
 
-def __dir__():
+def __dir__() -> list[str]:
     return sorted(set(globals()) | {'AVAILABLE_LABELS_COLORMAPS'})
