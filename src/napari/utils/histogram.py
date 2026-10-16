@@ -354,7 +354,7 @@ def _compute_chunked_progressive(
     """
     n = min(max_samples, data.size)
     chunk_sizes = _chunk_sizes(data)
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(0)
     n_chunks = len(chunk_sizes)
     n_selected = min(n_chunks, max(1, n // max(1, min(chunk_sizes))))
     probs = np.asarray(chunk_sizes) / sum(chunk_sizes)
