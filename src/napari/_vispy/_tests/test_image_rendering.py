@@ -18,7 +18,7 @@ def test_image_rendering(make_napari_viewer):
     layer = viewer.add_image(data)
     vispy_layer = viewer.window._qt_viewer.layer_to_visual[layer]
 
-    assert layer.rendering == 'mip'
+    assert layer.rendering == 'attenuated_mip'
 
     assert layer.interpolation2d == 'nearest'
     assert layer.interpolation3d == 'linear'

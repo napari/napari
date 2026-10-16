@@ -484,7 +484,7 @@ def test_rendering():
     np.random.seed(0)
     data = np.random.random((20, 10, 15))
     layer = Image(data)
-    assert layer.rendering == 'mip'
+    assert layer.rendering == 'attenuated_mip'
 
     # Change rendering property
     layer.rendering = 'translucent'
@@ -525,7 +525,7 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.05
+    assert layer.attenuation == 0.005
 
     # Change attenuation property
     attenuation = 0.07
