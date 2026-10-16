@@ -21,7 +21,14 @@ from qtpy.QtGui import (
     QGuiApplication,
     QImage,
 )
-from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QDialog,
+    QFileDialog,
+    QInputDialog,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 from superqt import ensure_main_thread
 
 from napari._app_model import get_app_model
@@ -1096,6 +1103,25 @@ class QtViewer(QSplitter):
         if folder not in {'', None}:
             self._qt_open([folder], stack=False, choose_plugin=choose_plugin)
             update_open_history(folder)
+
+    def _open_url_dialog(self, choose_plugin: bool = False) -> None:
+        """Open a Path/URL/URI from the menubar."""
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle('Open Path/URL/URI...')
+        dlg.setLabelText('Path/URL/URI:')
+        dlg.setInputMode(QInputDialog.InputMode.TextInput)
+        # wide enough for URLs, which are often long
+        dlg.resize(600, dlg.sizeHint().height())
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        url = dlg.textValue().strip()
+        if not url:
+            return
+        self._open_from_list_of_urls_data(
+            [QUrl.fromUserInput(url)],
+            stack=False,
+            choose_plugin=choose_plugin,
+        )
 
     def _qt_open(
         self,
