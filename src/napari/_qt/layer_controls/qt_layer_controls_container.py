@@ -14,7 +14,6 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
-from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari.layers import (
     Image,
     Labels,
@@ -25,6 +24,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.settings import get_settings
+from napari.utils.theme import Theme, get_theme
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from napari._qt.layer_controls.qt_layer_controls_base import (
         QtLayerControls,
     )
+    from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
     from napari.components import ViewerModel
     from napari.layers.base import Layer
     from napari.utils.events import Event
@@ -134,7 +135,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _iter_histogram_widgets(self) -> Generator[QtHistogramWidget]:
+    def _iter_histogram_widgets(self) -> Generator[QtHistogramCanvasWidget]:
         """Yield lazily-created histogram widgets across all controls."""
         for widget in self.widgets.values():
             clim = getattr(widget, '_contrast_limits_control', None)
@@ -154,17 +155,19 @@ class QtLayerControlsContainer(QStackedWidget):
                     if hist_widget is not None:
                         yield hist_widget
 
-    def _on_viewer_theme_changed(self, event: Event | None = None) -> None:
-        """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).
+    def _on_viewer_theme_changed(
+        self, event: Event | None = None, theme: Theme | None = None
+    ) -> None:
+        """Update widgets that respond to theme in a way that qss cannot handle.
 
-        The ``toggle_theme`` keybinding sets ``viewer.theme`` directly
-        without updating ``settings.appearance.theme``, so widgets that
-        listen only to settings events miss the change. This bridges
-        the gap by forwarding ``event.value`` (the new theme) to any
-        histogram widgets that have been lazily created.
+        Currently, only updates histogram colors.
         """
+        if event is None:
+            assert theme is not None
+        elif theme is None:
+            theme = get_theme(event.value)
         for hist_widget in self._iter_histogram_widgets():
-            hist_widget._on_theme_change(event)
+            hist_widget._on_theme_change(theme)
 
     def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.
@@ -181,7 +184,8 @@ class QtLayerControlsContainer(QStackedWidget):
             self.panel = None
 
         selection = self.viewer.layers.selection
-        always_dynamic = get_settings().experimental.dynamic_layer_controls
+        settings = get_settings()
+        always_dynamic = settings.experimental.dynamic_layer_controls
         if not selection:
             self.setCurrentWidget(self.empty_widget)
         elif selection.active is not None and not always_dynamic:
@@ -196,6 +200,9 @@ class QtLayerControlsContainer(QStackedWidget):
             self.panel.ndisplay = self.viewer.dims.ndisplay
             self.addWidget(self.panel)
             self.setCurrentWidget(self.panel)
+        self._on_viewer_theme_changed(
+            theme=get_theme(settings.appearance.theme)
+        )
 
     def _add(self, event: Event) -> None:
         """Add the controls target layer to the list of control widgets.

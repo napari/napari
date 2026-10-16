@@ -34,24 +34,23 @@ class Histogram(EventedModel):
     def compute_async(
         self, layer: IntensityVisualizationMixin
     ) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        """Yield ``(bin_edges, counts)`` for ``layer`` using the model settings.
+        """Yield (bin_edges, counts) for layer using the model settings.
 
         This is a generator that can be used to update a representation asyncronously.
-        At each step, it writes the updated data into layer.metadata['_computed_histogram'].
 
         Do not use in a separate thread (use _compute_async_no_events instead).
         """
         for bin_edges, counts in self._compute_async_no_events(layer):
-            self.events.updated()
+            self.events.updated(bin_edges=bin_edges, counts=counts)
             yield bin_edges, counts
-        self.events.completed()
+        self.events.completed(bin_edges=bin_edges, counts=counts)
 
     def compute(
         self, layer: IntensityVisualizationMixin
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Compute the full histogram for ``layer`` synchronously.
+        """Compute the full histogram for layer synchronously.
 
-        Emits ``updated`` (once per chunk) and ``completed`` on the calling
+        Emits updated (once per chunk) and completed on the calling
         thread, so listeners (e.g. Qt controls) update accordingly.
         """
         bin_edges, counts = _make_empty().values()
@@ -66,15 +65,10 @@ class Histogram(EventedModel):
 
         Responsibility to fire events in the main thread lies on the caller.
         """
-        for bin_edges, counts in compute_histogram(
+        yield from compute_histogram(
             layer,
             bin_count=self.bins,
             max_samples=self.max_samples,
             mode=self.mode,
             log_scale=self.log_scale,
-        ):
-            layer.metadata['_computed_histogram'] = {
-                'bin_edges': bin_edges,
-                'counts': counts,
-            }
-            yield bin_edges, counts
+        )

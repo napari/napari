@@ -8,7 +8,6 @@ import pytest
 from napari.layers import Image
 from napari.utils.histogram import (
     _MAX_MATERIALIZE_ELEMENTS,
-    _get_computed,
 )
 
 _DEFAULT_MAX_SAMPLES = 1_000_000
@@ -49,20 +48,6 @@ class TestCompute:
         assert len(counts) == model.bins
         assert len(bin_edges) == model.bins + 1
 
-    def test_compute_writes_metadata(self):
-        layer = _image(np.random.rand(20, 20))
-        model = layer.histogram
-        model.compute(layer)
-        computed = _get_computed(layer)
-        assert len(computed['counts']) == model.bins
-        assert len(computed['bin_edges']) == model.bins + 1
-
-    def test_get_computed_default_empty(self):
-        layer = _image(np.random.rand(10, 10))
-        computed = _get_computed(layer)
-        assert len(computed['bin_edges']) == 2
-        assert len(computed['counts']) == 1
-
     def test_compute_emits_events(self):
         layer = _image(np.random.rand(20, 20))
         model = layer.histogram
@@ -73,20 +58,6 @@ class TestCompute:
         assert 'updated' in events
         assert 'completed' in events
 
-    def test_compute_async_writes_metadata_and_emits(self):
-        layer = _image(np.random.rand(20, 20))
-        model = layer.histogram
-        fired = []
-        model.events.updated.connect(lambda: fired.append('u'))
-        model.events.completed.connect(lambda: fired.append('c'))
-        results = list(model.compute_async(layer))
-        assert len(results) == 1
-        bin_edges, counts = results[0]
-        assert np.array_equal(_get_computed(layer)['bin_edges'], bin_edges)
-        assert np.array_equal(_get_computed(layer)['counts'], counts)
-        assert 'u' in fired
-        assert 'c' in fired
-
     def test_compute_async_no_events_does_not_emit(self):
         layer = _image(np.random.rand(20, 20))
         model = layer.histogram
@@ -96,8 +67,6 @@ class TestCompute:
         list(model._compute_async_no_events(layer))
         # No events fire from the no-events variant...
         assert fired == []
-        # ...but it still writes the result into metadata.
-        assert 'counts' in layer.metadata['_computed_histogram']
 
 
 class TestDataTypes:

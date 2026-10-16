@@ -1,33 +1,30 @@
-"""Qt widget for displaying histogram using vispy visualization."""
+"""Reusable histogram content widget for histogram hosts."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QVBoxLayout, QWidget
-from vispy.scene import SceneCanvas
 
-from napari._vispy.visuals.histogram import HistogramVisual
+from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
+from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
+from napari.qt import create_worker
 from napari.settings import get_settings
-from napari.utils.colormaps.colormap_utils import _representative_color
-from napari.utils.events.event_utils import disconnect_events
-from napari.utils.histogram import _get_computed
+from napari.utils.events import disconnect_events
+from napari.utils.histogram import _make_empty
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from pydantic_extra_types.color import Color
+    from collections.abc import Generator
 
+    import numpy as np
+
+    from napari._qt.qthreading import FunctionWorker, GeneratorWorker
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
-    from napari.utils.events import Event
-
-# Default histogram canvas dimensions
-_DEFAULT_CANVAS_WIDTH = 300
-_DEFAULT_CANVAS_HEIGHT = 150
-_DEFAULT_CANVAS_MIN_HEIGHT = 100
 
 
 class QtHistogramWidget(QWidget):
-    """Qt widget embedding a vispy histogram visualization.
+    """Shared histogram visualization and settings content.
 
     Parameters
     ----------
@@ -38,12 +35,10 @@ class QtHistogramWidget(QWidget):
 
     Attributes
     ----------
-    canvas : SceneCanvas
-        Vispy canvas containing the histogram visual.
-    view : ViewBox
-        Vispy view for the histogram.
-    histogram_visual : HistogramVisual
-        The vispy visual that renders the histogram.
+    histogram_widget : QtHistogramWidget
+        The histogram visualization widget.
+    settings_widget : QtHistogramSettingsWidget
+        Widget for mode and log scale controls.
     """
 
     def __init__(
@@ -52,150 +47,124 @@ class QtHistogramWidget(QWidget):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-
         self.layer = layer
-        self._histogram = layer.histogram
-        self._appearance = get_settings().appearance
-        self._updating = False
-        self._cleaned_up: bool = False
+        self.bin_edges, self.counts = _make_empty().values()
+        self._constructed = False
+        self._histogram_worker: GeneratorWorker | FunctionWorker | None = None
 
-        theme = get_theme(self._appearance.theme)
+        for ev in (
+            self.layer.histogram.events.bins,
+            self.layer.histogram.events.max_samples,
+            self.layer.histogram.events.mode,
+            self.layer.histogram.events.log_scale,
+            self.layer.events.data,
+            self.layer.events.contrast_limits_range,
+            self.layer.events.set_data,
+        ):
+            ev.connect(self._schedule_histogram_compute)
 
-        # Create vispy canvas
-        self.canvas = SceneCanvas(
-            size=(_DEFAULT_CANVAS_WIDTH, _DEFAULT_CANVAS_HEIGHT),
-            bgcolor=theme.canvas.as_hex(),
-            keys=None,
-        )
-        self.canvas.native.setParent(self)
-        self.canvas.native.setMinimumHeight(_DEFAULT_CANVAS_MIN_HEIGHT)
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.contrast_limits.connect(self.update_histogram)
+        self.layer.events.gamma.connect(self.update_histogram)
 
-        from vispy.scene import ViewBox
+        self.destroyed.connect(self._abort_histogram_worker)
 
-        self.view = ViewBox(parent=self.canvas.scene)
-        self.canvas.central_widget.add_widget(self.view)
+    def _ensure_histogram_content(self) -> None:
+        """Lazily create the histogram content widget (vispy canvas).
 
-        self.histogram_visual = HistogramVisual()
-        self.histogram_visual.parent = self.view.scene
-
-        self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # pyrefly: ignore [missing-attribute]
-        # Disable viewbox interaction to prevent accidental pan/zoom
-        self.view.interactive = False
-
-        # Layout
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(self.canvas.native)
-        self.setLayout(main_layout)
-
-        # Re-render on compute progress/completion and on layer visual changes.
-        self._histogram.events.updated.connect(self._update_histogram)
-        self._histogram.events.completed.connect(self._update_histogram)
-
-        # Connect to layer events that affect visualization
-        layer.events.gamma.connect(self._update_histogram)
-        layer.events.contrast_limits.connect(self._update_histogram)
-        layer.events.colormap.connect(self._on_colormap_change)
-        self._appearance.events.theme.connect(self._on_theme_change)
-
-        # Initial update
-        self._apply_visual_style()
-        self._update_histogram()
-
-    def _on_colormap_change(self, event: Event | None = None) -> None:
-        """Update histogram colors when the layer colormap changes."""
-        self._apply_visual_style()
-        self._update_histogram()
-
-    def _on_theme_change(self, event: Event | None = None) -> None:
-        """Update canvas and plot styling when the application theme changes.
-
-        Uses ``event.value`` (the new theme) when available, falling back
-        to ``settings.appearance.theme``.  This handles both the settings
-        path (``settings.appearance.events.theme``) and the viewer path
-        (``viewer.events.theme`` from ``toggle_theme`` keybinding, where
-        settings are intentionally not updated).
+        Sometimes necessary because opengl requires a preexisting context.
         """
-        theme_name = (
-            event.value if event is not None else self._appearance.theme
-        )
-        self._apply_visual_style(theme_name=theme_name)
-        self.canvas.update()
-
-    def _theme_rgba(
-        self, color: Color, alpha: float = 1.0
-    ) -> tuple[float, float, float, float]:
-        """Convert a napari theme color to a vispy RGBA tuple."""
-        # color is returned as a 4-tuple even when alpha=False,
-        # so to satisfy pyrefly we need to explicity build a 3-tuple
-        rgb = color.as_rgb_tuple(alpha=False)
-        red, green, blue = rgb[0], rgb[1], rgb[2]
-        return (red / 255, green / 255, blue / 255, alpha)
-
-    def _layer_bar_color(self) -> tuple[float, float, float, float]:
-        """Use the colormap's representative color for histogram bars."""
-        rgba = _representative_color(self.layer.colormap)
-        alpha = max(float(rgba[3]), 0.8)
-        return (float(rgba[0]), float(rgba[1]), float(rgba[2]), alpha)
-
-    def _apply_visual_style(self, theme_name: str | None = None) -> None:
-        """Apply theme-aware and layer-aware styling to the histogram plot.
-
-        Parameters
-        ----------
-        theme_name : str, optional
-            Theme name to apply. If not provided, reads from
-            ``settings.appearance.theme``.
-        """
-        if theme_name is None:
-            theme_name = self._appearance.theme
-        theme = get_theme(theme_name)
-        self.canvas.bgcolor = theme.canvas.as_hex()
-        self.histogram_visual.set_style(
-            bar_color=self._layer_bar_color(),
-            lut_color=self._theme_rgba(theme.highlight, 0.95),
-            axes_color=self._theme_rgba(theme.text, 0.7),
-        )
-
-    def _update_histogram(self, event: Event | None = None) -> None:
-        """Update the histogram visual with current data.
-
-        Accepts an optional event argument so it can be connected directly
-        to psygnal events without a wrapper.
-        """
-        if self._updating:
+        if self._constructed:
             return
 
-        self._updating = True
-        try:
-            computed = _get_computed(self.layer)
-            bin_edges = computed['bin_edges']
-            counts = computed['counts']
+        layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
+        self.setLayout(layout)
+        self.histogram_canvas = QtHistogramCanvasWidget(
+            parent=self,
+        )
+        layout.addWidget(self.histogram_canvas)
+        self.histogram_canvas.update_colormap(self.layer.colormap)
+        theme = get_theme(get_settings().appearance.theme)
+        self.histogram_canvas._on_theme_change(theme=theme)
 
-            gamma = self.layer.gamma
-            clims = self.layer.contrast_limits
-            clims_range = self.layer.contrast_limits_range
+        self.settings_widget = QtHistogramSettingsWidget(
+            self.layer.histogram,
+            parent=self,
+        )
+        layout.addWidget(self.settings_widget)
 
-            self.histogram_visual.set_data(
-                bin_edges=bin_edges,
-                counts=counts,
-                gamma=gamma,
-                clims=clims,  # pyrefly: ignore [bad-argument-type]
-                data_range=clims_range,  # pyrefly: ignore [bad-argument-type]
+        self._constructed = True
+
+    def _yield_from_histogram(
+        self,
+    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        yield from self.layer.histogram._compute_async_no_events(self.layer)
+
+    def _schedule_histogram_compute(self) -> None:
+        """Run the async histogram compute."""
+        self._ensure_histogram_content()
+        self._abort_histogram_worker()
+        worker = create_worker(self._yield_from_histogram)  # pyrefly: ignore [bad-argument-type]
+        self._histogram_worker = worker
+
+        worker.yielded.connect(self._on_histogram_yield)
+        worker.finished.connect(self._on_histogram_done)
+        worker.start()
+
+    def _on_histogram_yield(self, args) -> None:
+        """Emit ``yielded`` on the main thread once the worker finishes."""
+        self.bin_edges, self.counts = args
+        self.layer.histogram.events.updated(
+            bin_edges=self.bin_edges, counts=self.counts
+        )
+        self.update_histogram()
+
+    def _on_histogram_done(self) -> None:
+        """Emit ``completed`` on the main thread once the worker finishes."""
+        self.layer.histogram.events.completed(
+            bin_edges=self.bin_edges, counts=self.counts
+        )
+        self.update_histogram()
+        self._abort_histogram_worker()
+
+    def _abort_histogram_worker(self) -> None:
+        """Stop any in-flight compute worker."""
+        worker = self._histogram_worker
+        self._histogram_worker = None
+        if worker is None:
+            return
+        worker.yielded.disconnect()
+        worker.finished.disconnect()
+        # progress bar should be stopped if present
+        pbar = getattr(worker, 'pbar', None)
+        if pbar is not None:
+            pbar.close()
+        worker.quit()
+
+    def _on_colormap_change(self):
+        if self._constructed:
+            self.histogram_canvas.update_colormap(self.layer.colormap)
+
+    def update_histogram(self):
+        if self._constructed:
+            self.histogram_canvas.histogram_visual.set_data(
+                bin_edges=self.bin_edges,
+                counts=self.counts,
+                gamma=self.layer.gamma,
+                clims=self.layer.contrast_limits,
+                data_range=self.layer.contrast_limits_range,
             )
-            self.canvas.update()
-        finally:
-            self._updating = False
+            self.histogram_canvas.canvas.update()
+
+    def disconnect_widget_controls(self) -> None:
+        disconnect_events(self.layer.histogram.events, self)
+        disconnect_events(self.layer.events, self)
 
     def cleanup(self) -> None:
-        """Disconnect event handlers and clean up resources."""
-        self._cleaned_up = True
-
-        # Disconnect events so this view stops reacting to compute updates.
-        disconnect_events(self._histogram.events, self)
-        disconnect_events(self.layer.events, self)
-        disconnect_events(self._appearance.events, self)
-
-        self.histogram_visual.destroy()
-        self.canvas.close()
+        """Disconnect event handlers and clean up child widgets."""
+        if self._constructed:
+            self._abort_histogram_worker()
+            self.settings_widget.cleanup()
+            self.histogram_canvas.cleanup()

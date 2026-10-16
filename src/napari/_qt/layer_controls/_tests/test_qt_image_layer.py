@@ -157,11 +157,11 @@ def test_histogram_button_right_click_opens_popup(qtbot):
 
     popup = qtctrl._contrast_limits_control.clim_popup
     assert popup is not None
-    assert popup.histogram_content is not None
+    assert popup.histogram is not None
     # Histogram content is lazy-created on demand; call _ensure first
-    popup.histogram_content._ensure_histogram_content()
-    assert popup.histogram_content.histogram_widget is not None
-    assert popup.histogram_content.settings_widget is not None
+    popup.histogram._ensure_histogram_content()
+    assert popup.histogram.histogram_canvas is not None
+    assert popup.histogram.settings_widget is not None
 
     popup.close()
 
@@ -182,10 +182,8 @@ def test_histogram_widget_responds_to_viewer_theme_toggle(
         np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8)
     )
     controls = viewer.window._qt_viewer.controls.widgets[layer]
-    controls._contrast_limits_control.histogram_content._ensure_histogram_content()
-    widget = (
-        controls._contrast_limits_control.histogram_content.histogram_widget
-    )
+    controls._contrast_limits_control.histogram._ensure_histogram_content()
+    widget = controls._contrast_limits_control.histogram.histogram_canvas
     assert widget is not None
 
     controls._contrast_limits_control._enable_histogram(True)
@@ -247,24 +245,24 @@ def test_histogram_popup_and_inline_coexistence(qtbot, make_napari_viewer):
 
     # 1. Enable inline histogram via left-click
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert not control.histogram_content.isHidden()
+    assert not control.histogram.isHidden()
     assert button.isChecked()
 
     # 2. Open popup via right-click (while inline is showing)
     qtbot.mouseClick(button, Qt.MouseButton.RightButton)
     popup = controls._contrast_limits_control.clim_popup
     assert popup is not None
-    assert popup.histogram_content is not None
+    assert popup.histogram is not None
 
     # The popup's histogram should have its own content widget instance
-    assert popup.histogram_content is not control.histogram_content
+    assert popup.histogram is not control.histogram
 
     # 3. Close popup — inline histogram should still be enabled
     popup.close()
     assert button.isChecked()
-    assert not control.histogram_content.isHidden()
+    assert not control.histogram.isHidden()
 
     # 4. Toggle inline off
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    assert control.histogram_content.isHidden()
+    assert control.histogram.isHidden()
     assert not button.isChecked()

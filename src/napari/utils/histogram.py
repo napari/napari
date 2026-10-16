@@ -73,11 +73,6 @@ def _make_empty() -> dict[str, np.ndarray]:
     }
 
 
-def _get_computed(layer: Any) -> dict[str, np.ndarray]:
-    """Return the last computed histogram for *layer* (defaults if none)."""
-    return layer.metadata.get('_computed_histogram', _make_empty())
-
-
 def _calc_histogram(
     data: np.ndarray,
     layer: Any,

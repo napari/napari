@@ -28,7 +28,7 @@ from napari._qt.utils import (
     qt_signals_blocked,
     set_widgets_enabled_with_opacity,
 )
-from napari._qt.widgets.qt_histogram_content import QtHistogramContentWidget
+from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
@@ -194,8 +194,8 @@ class QContrastLimitsPopup(QtPopup):
             # _schedule_histogram_compute() to avoid a PySide6 segfault when creating
             # native GL widgets during __init__.
             layer = self._layers[0]
-            self.histogram_content = QtHistogramContentWidget(layer)
-            self._layout.addWidget(self.histogram_content)
+            self.histogram = QtHistogramWidget(layer)
+            self._layout.addWidget(self.histogram)
             self.histogram_button = QtModePushButton(
                 layer,
                 'histogram',
@@ -263,16 +263,16 @@ class QContrastLimitsPopup(QtPopup):
         # is linked to the main controls and uses the outputs from that,
         # saved in layer.metadata
         if enabled:
-            self.histogram_content._ensure_histogram_content()
-            self.histogram_content.show()
+            self.histogram._ensure_histogram_content()
+            self.histogram.show()
             # process events to ensure the size hint is up to date
             QApplication.processEvents()
-            h = self.histogram_content.sizeHint().height()
+            h = self.histogram.sizeHint().height()
             self.setFixedHeight(
                 self._base_height() + h + self._layout.spacing()
             )
         else:
-            self.histogram_content.hide()
+            self.histogram.hide()
             self.setFixedHeight(self._base_height())
 
 
@@ -413,8 +413,8 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         if len(self._layers) == 1:
             layer = self._layers[0]
 
-            self.histogram_content = QtHistogramContentWidget(layer)
-            self.histogram_content.setProperty('foreground', 'true')
+            self.histogram = QtHistogramWidget(layer)
+            self.histogram.setProperty('foreground', 'true')
 
             self._enable_histogram(layer.histogram.enabled)
             layer.histogram.events.enabled.connect(
@@ -499,11 +499,11 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         """Handle left-click on histogram button to toggle histogram widget."""
         self._layers[0].histogram.enabled = enabled
         if enabled:
-            self.histogram_content._schedule_histogram_compute()
-            self.histogram_content.show()
+            self.histogram._schedule_histogram_compute()
+            self.histogram.show()
         else:
-            self.histogram_content.hide()
-            self.histogram_content._abort_histogram_worker()
+            self.histogram.hide()
+            self.histogram._abort_histogram_worker()
 
     def get_widget_controls(
         self,
@@ -513,5 +513,5 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
             (self.contrast_limits_slider_label, self._clim_row),
         ]
         if len(self._layers) == 1:
-            controls.append((self.histogram_content,))
+            controls.append((self.histogram,))
         return controls
