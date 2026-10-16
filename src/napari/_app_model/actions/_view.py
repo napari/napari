@@ -24,6 +24,10 @@ VIEW_SUBMENUS = [
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title='Scale Bar'),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_GRIDLINES, title='Grid Lines'),
+    ),
 ]
 
 
@@ -107,6 +111,23 @@ toggle_actions = {
             'napari.canvas.toggle_scale_bar_ticks',
             'Toggle Scale Bar Ticks',
             'canvas.overlays.scale_bar.ticks',
+        ),
+    ],
+    MenuId.VIEW_GRIDLINES: [
+        (
+            'napari.scene.toggle_grid_lines',
+            'Toggle Grid Lines',
+            'scene.overlays.grid_lines.visible',
+        ),
+        (
+            'napari.scene.toggle_grid_lines_axis_labels',
+            'Toggle Grid Lines Axis Labels',
+            'scene.overlays.grid_lines.axis_labels',
+        ),
+        (
+            'napari.scene.toggle_grid_lines_tick_labels',
+            'Toggle Grid Lines Tick Labels',
+            'scene.overlays.grid_lines.tick_labels',
         ),
     ],
 }
