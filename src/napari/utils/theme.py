@@ -5,7 +5,7 @@ import re
 import sys
 from ast import literal_eval
 from contextlib import suppress
-from typing import Any, Literal, TypedDict, Unpack
+from typing import Any, Literal
 
 import npe2
 from pydantic import ValidationError, field_validator
@@ -367,29 +367,9 @@ def get_theme(theme_id: str):
     return theme
 
 
-class _ThemeKwargs(TypedDict):
-    id: str
-    type: Literal['dark', 'light']
-    label: str
-    background: Color
-    foreground: Color
-    primary: Color
-    secondary: Color
-    highlight: Color
-    text: Color
-    icon: Color
-    warning: Color
-    error: Color
-    current: Color
-    syntax_style: Color
-    console: Color
-    canvas: Color
-    font_size: str
-
-
-def invert_theme(theme, **kwargs: Unpack[_ThemeKwargs]):
+def invert_theme(theme, **kwargs: Any):
     new_type = 'dark' if theme.type == 'light' else 'light'
-    inverted_kwargs: _ThemeKwargs = {
+    inverted_kwargs: dict[str, Any] = {
         'id': theme.id,
         'type': new_type,
         'label': f'{theme.label} - {new_type.capitalize()}',
@@ -407,9 +387,8 @@ def invert_theme(theme, **kwargs: Unpack[_ThemeKwargs]):
         'console': Color(_invert_luminance(theme.console)),
         'canvas': Color(_invert_luminance(theme.canvas)),
         'font_size': theme.font_size,
-    }
-    merged_kwargs = inverted_kwargs | kwargs
-    return Theme(**merged_kwargs)
+    } | kwargs
+    return Theme(**inverted_kwargs)
 
 
 _themes: EventedDict[str, Theme] = EventedDict(basetype=Theme)
@@ -566,7 +545,7 @@ def _install_npe2_themes(themes=None):
             else:
                 register_theme(theme, manifest.name)
                 # register inverted theme if not already existing
-                inverted = invert_theme(**theme_dict)
+                inverted = invert_theme(theme)
                 if inverted.full_id not in set(themes) | {
                     f'{t.id}-{t.type}'
                     for t in manifest.contributions.themes or ()
