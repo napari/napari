@@ -57,7 +57,7 @@ pygments==2.21.0
     #   superqt
 pyproject-hooks==1.3.3
     # via build
-pyrefly==1.3.2
+pyrefly==1.4.0
     # via -r resources/requirements_pyrefly.in
 pyside6-essentials==6.12.0
     # via -r resources/requirements_pyrefly.in

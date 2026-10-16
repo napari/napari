@@ -115,10 +115,11 @@ class Viewer(ViewerModel):
             give (list/tuple/str) then the variable values looked up in the
             callers frame.
         """
-        if self.window._qt_viewer._console is None:
+        console = self.window._qt_viewer._console
+        if console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
-        self.window._qt_viewer.console.push(variables)
+        console.push(variables)
 
     def export_figure(
         self,
