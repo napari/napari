@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from napari._qt.layer_controls.qt_layer_controls_base import (
         QtLayerControls,
     )
-    from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
+    from napari._qt.widgets.qt_histogram import QtHistogramWidget
     from napari.components import ViewerModel
     from napari.layers.base import Layer
     from napari.utils.events import Event
@@ -135,25 +135,21 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _iter_histogram_widgets(self) -> Generator[QtHistogramCanvasWidget]:
+    def _iter_histogram_widgets(self) -> Generator[QtHistogramWidget]:
         """Yield lazily-created histogram widgets across all controls."""
         for widget in self.widgets.values():
             clim = getattr(widget, '_contrast_limits_control', None)
             if clim is None:
                 continue
-            content = getattr(clim, 'histogram_content', None)
-            if content is not None:
-                hist_widget = getattr(content, 'histogram_widget', None)
-                if hist_widget is not None:
-                    yield hist_widget
+            hist_widget = getattr(clim, 'histogram', None)
+            if hist_widget is not None:
+                yield hist_widget
 
         if self.panel is not None:
             for control in getattr(self.panel, '_controls', []):
-                content = getattr(control, 'histogram_content', None)
-                if content is not None:
-                    hist_widget = getattr(content, 'histogram_widget', None)
-                    if hist_widget is not None:
-                        yield hist_widget
+                hist_widget = getattr(control, 'histogram', None)
+                if hist_widget is not None:
+                    yield hist_widget
 
     def _on_viewer_theme_changed(
         self, event: Event | None = None, theme: Theme | None = None
@@ -167,7 +163,7 @@ class QtLayerControlsContainer(QStackedWidget):
         elif theme is None:
             theme = get_theme(event.value)
         for hist_widget in self._iter_histogram_widgets():
-            hist_widget._on_theme_change(theme)
+            hist_widget._on_theme_change(theme=theme)
 
     def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.

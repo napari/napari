@@ -105,7 +105,7 @@ def test_qt_histogram_widget_updates_theme(qtbot):
 
         qtbot.waitUntil(
             lambda: np.allclose(
-                widget.canvas.bgcolor.rgba[:3],
+                widget.histogram_canvas.canvas.bgcolor.rgba[:3],
                 np.array(light_theme.canvas.as_rgb_tuple()) / 255,
             )
         )
@@ -138,8 +138,10 @@ def test_qt_histogram_widget_updates_from_settings_theme(
     )
     controls = viewer.window._qt_viewer.controls.widgets[layer]
     controls._contrast_limits_control.histogram._ensure_histogram_content()
-    widget = controls._contrast_limits_control.histogram.histogram_widget
+    widget = controls._contrast_limits_control.histogram
     assert widget is not None
+    canvas_widget = widget.histogram_canvas
+    assert canvas_widget is not None
 
     qtbot.addWidget(widget)
     layer.histogram.compute(layer)
@@ -150,12 +152,12 @@ def test_qt_histogram_widget_updates_from_settings_theme(
 
         qtbot.waitUntil(
             lambda: np.allclose(
-                widget.canvas.bgcolor.rgba[:3],
+                canvas_widget.canvas.bgcolor.rgba[:3],
                 np.array(light_theme.canvas.as_rgb_tuple()) / 255,
             )
         )
 
-        assert widget.histogram_canvas.histogram_visual._lut_color == (
+        assert canvas_widget.histogram_visual._lut_color == (
             *(
                 np.array(light_theme.highlight.as_rgb_tuple(), dtype=float)
                 / 255
