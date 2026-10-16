@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import Counter
 from importlib.metadata import PackageNotFoundError, distribution
 from unittest.mock import patch
 
@@ -185,3 +186,11 @@ def test_060_to_070_migration():
     )
     assert settings_060_plain == settings_070_plain_expected
     assert settings_060_compiled == settings_070_compiled_expected
+
+
+def test_one_migrator_per_version():
+    # each version should have only one migrator, e.g. no 0.2 -> 0.4
+    # next to 0.2 -> 0.3 -> 0.4
+    starts = Counter(str(m.from_) for m in _migrations._MIGRATORS)
+    repeated = [version for version, count in starts.items() if count > 1]
+    assert not repeated, f'Several migrators start from {repeated}'
