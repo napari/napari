@@ -627,8 +627,9 @@ def triangulate_ellipse(
     vertices = vertices + center
 
     triangles = (
-        np.arange(num_segments) + np.array([[0], [1], [2]])
-    ).T * np.array([0, 1, 1])
+        np.arange(num_segments, dtype=np.int32)
+        + np.array([[0], [1], [2]], dtype=np.int32)
+    ).T * np.array([0, 1, 1], dtype=np.int32)
     triangles[-1, 2] = 1
 
     return vertices, triangles

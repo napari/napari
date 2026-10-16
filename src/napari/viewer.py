@@ -118,7 +118,7 @@ class Viewer(ViewerModel):
         if self.window._qt_viewer._console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
-        self.window._qt_viewer.console.push(variables)
+        self.window._qt_viewer.console.push(variables)  # pyrefly: ignore [missing-attribute]
 
     def export_figure(
         self,
