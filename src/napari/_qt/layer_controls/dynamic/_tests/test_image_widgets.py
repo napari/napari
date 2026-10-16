@@ -183,8 +183,8 @@ class TestQtImageRenderControl:
         control = QtImageRenderControl([img])
         qt_wrap.add_control(control)
 
-        assert img.rendering == 'mip'
-        assert control.render_combobox.currentText() == 'mip'
+        assert img.rendering == 'attenuated_mip'
+        assert control.render_combobox.currentText() == 'attenuated_mip'
 
         img.rendering = 'translucent'
         assert control.render_combobox.currentText() == 'translucent'

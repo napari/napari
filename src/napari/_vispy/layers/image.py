@@ -153,6 +153,9 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.events.empty_space_attenuation.connect(
+            self._on_empty_space_attenuation_change
+        )
         self.layer.events.set_data.connect(self._on_axis_order_change)
 
     def _on_axis_order_change(self, event=None) -> None:
@@ -173,6 +176,7 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
     def _on_rendering_change(self) -> None:
         super()._on_rendering_change()
         self._on_attenuation_change()
+        self._on_empty_space_attenuation_change()
         self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None) -> None:
@@ -222,6 +226,12 @@ class VispyImageLayer(VispyScalarFieldBaseLayer):
     def _on_attenuation_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
+
+    def _on_empty_space_attenuation_change(self) -> None:
+        if isinstance(self.node, VolumeNode):
+            self.node.empty_space_attenuation = (
+                self.layer.empty_space_attenuation
+            )
 
     def reset(self, event=None) -> None:
         super().reset()

@@ -232,7 +232,7 @@ class ScalarFieldBase(Layer, ABC):
         opacity=1.0,
         plane=None,
         projection_mode='none',
-        rendering='mip',
+        rendering='attenuated_mip',
         rotate=None,
         scale=None,
         shear=None,
@@ -308,6 +308,7 @@ class ScalarFieldBase(Layer, ABC):
             attenuation=Event,
             custom_interpolation_kernel_2d=Event,
             depiction=Event,
+            empty_space_attenuation=Event,
             locked_data_level=Event,
             interpolation=WarningEmitter(
                 "'layer.events.interpolation' is deprecated please use `interpolation2d` and `interpolation3d`",
