@@ -18,8 +18,10 @@ from napari.layers.shapes._tests.conftest import (
     ten_four_corner,  # noqa: F401
 )  # import to not put this data in top level conftest.py
 from napari.settings import get_settings
+from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from napari.utils.events.event import WarningEmitter
+from napari.utils.interactions import mouse_move_callbacks
 
 
 def test_viewer_model():
@@ -650,6 +652,58 @@ def test_cursor_ndim_matches_layer():
     im.data = np.random.random((10, 10))
     assert viewer.dims.ndim == 2
     assert len(viewer.cursor.position) == 2
+
+
+def test_update_cursor_position_from_hits_3d():
+    """Cursor snaps to the closest layer hit in 3D, else mouse position."""
+    viewer = ViewerModel()
+    viewer._layer_slicer._force_sync = True
+    data = np.zeros((20, 20, 20))
+    data[5:15, 5:15, 5:15] = 1
+    viewer.add_image(data)
+    viewer.dims.ndisplay = 3
+    viewer._update_layers()
+
+    # put the mouse ray through the center of the volume
+    size = np.array(viewer.canvas.size)
+    viewer.cursor.canvas_position = (int(size[0] / 2), int(size[1] / 2))
+    viewer.cursor._view_direction = np.asarray(
+        viewer.scene.camera.view_direction
+    )
+
+    expected_hit = viewer.get_layer_values()[0][2]
+    mouse_position = tuple(np.asarray(viewer.scene.camera.center) + 7)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        position=mouse_position,
+        view_direction=list(viewer.scene.camera.view_direction),
+        dims_displayed=[0, 1, 2],
+    )
+
+    mouse_move_callbacks(viewer, event)
+    assert np.allclose(viewer.cursor.position, expected_hit)
+    assert not np.allclose(viewer.cursor.position, mouse_position)
+
+    # a ray that does not hit any layer falls back to the mouse position
+    viewer.cursor.canvas_position = (0, 0)
+    mouse_move_callbacks(viewer, event)
+    assert np.allclose(viewer.cursor.position, mouse_position)
+
+
+def test_update_cursor_position_from_hits_2d():
+    """In 2D the cursor position should work the same."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((20, 20)))
+
+    mouse_position = (4.5, 7.5)
+    event = read_only_mouse_event(
+        type='mouse_move',
+        position=mouse_position,
+        dims_displayed=[0, 1],
+    )
+
+    mouse_move_callbacks(viewer, event)
+    assert np.allclose(viewer.cursor.position, mouse_position)
 
 
 def test_sliced_world_extent():
