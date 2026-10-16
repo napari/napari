@@ -20,6 +20,7 @@ from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     import numpy as np
+    from qtpy.QtGui import QShowEvent
 
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
     from napari.utils.events import Event
@@ -138,6 +139,7 @@ class QtHistogramWidget(QWidget):
         self.layer = layer
         self.bin_edges, self.counts = _make_empty().values()
         self._constructed = False
+        self._constructing_content = False
         self._mirror = mirror
         self._histogram_worker: _HistogramWorker | None = None
         self._appearance = get_settings().appearance
@@ -174,27 +176,37 @@ class QtHistogramWidget(QWidget):
         """Lazily create the histogram content widget (vispy canvas).
 
         Sometimes necessary because opengl requires a preexisting context.
+        Also, reparenting the native canvas widget can double re-trigger showEvent
+        on an already-visible widget, so guard against that.
         """
-        if self._constructed:
+        if self._constructed or self._constructing_content:
             return
+        self._constructing_content = True
+        try:
+            layout = QVBoxLayout()
+            layout.setContentsMargins(4, 4, 4, 4)
+            layout.setSpacing(4)
+            self.setLayout(layout)
+            self.histogram_canvas = QtHistogramCanvasWidget(
+                parent=self,
+            )
+            layout.addWidget(self.histogram_canvas)
+            self.histogram_canvas.update_colormap(self.layer.colormap)
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
-        self.setLayout(layout)
-        self.histogram_canvas = QtHistogramCanvasWidget(
-            parent=self,
-        )
-        layout.addWidget(self.histogram_canvas)
-        self.histogram_canvas.update_colormap(self.layer.colormap)
+            self.settings_widget = QtHistogramSettingsWidget(
+                self.layer.histogram,
+                parent=self,
+            )
+            layout.addWidget(self.settings_widget)
 
-        self.settings_widget = QtHistogramSettingsWidget(
-            self.layer.histogram,
-            parent=self,
-        )
-        layout.addWidget(self.settings_widget)
+            self._constructed = True
+        finally:
+            self._constructing_content = False
 
-        self._constructed = True
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._ensure_histogram_content()
+        self.update_histogram()
 
     def _ensure_histogram_worker(self) -> _HistogramWorker:
         worker = self._histogram_worker
@@ -206,7 +218,8 @@ class QtHistogramWidget(QWidget):
         return worker
 
     def _schedule_histogram_compute(self) -> None:
-        self._ensure_histogram_content()
+        if self.isVisible():
+            self._ensure_histogram_content()
         self._ensure_histogram_worker().request()
 
     def _on_mirrored_histogram(self, event: Event) -> None:
