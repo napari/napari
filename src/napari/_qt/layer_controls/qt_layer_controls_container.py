@@ -132,7 +132,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _on_is_thick_change(self):
+    def _on_is_thick_change(self) -> None:
         is_thick = self.viewer.dims.is_thick
         for panel in self.widgets.values():
             if panel is not self.empty_widget:
