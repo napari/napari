@@ -11,7 +11,7 @@ from napari.utils.events import EmitterGroup
 from napari.utils.interactions import Shortcut
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
     from concurrent.futures import Future
     from typing import Protocol
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QAbstractButton
 
     from napari.utils.events import Event
-    from napari.utils.key_bindings import KeymapProvider
+    from napari.utils.key_bindings import Keymap, KeymapProvider
 
     class SignalInstance(Protocol):
         def connect(self, callback: Callable, /) -> object: ...
@@ -90,10 +90,10 @@ class ActionManager:
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shortcut_changed=None)
 
-    def _debug(self, val) -> None:
+    def _debug(self, val: bool) -> None:
         self._tooltip_include_action_name = val
 
-    def _validate_action_name(self, name) -> None:
+    def _validate_action_name(self, name: str) -> None:
         if len(name.split(':')) != 2:
             raise ValueError(
                 f'Action names need to be in the form `package:name`, got {name!r}'
@@ -189,7 +189,7 @@ class ActionManager:
         self,
         name: str,
         button: Button | QAbstractButton,
-        extra_tooltip_text='',
+        extra_tooltip_text: str = '',
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
@@ -310,7 +310,9 @@ class ActionManager:
         self._emit_shortcut_change(name)
         return shortcuts
 
-    def _emit_shortcut_change(self, name: str, shortcut='') -> None:
+    def _emit_shortcut_change(
+        self, name: str, shortcut: KeyBinding | str = ''
+    ) -> None:
         tt = self._build_tooltip(name) if name in self._actions else ''
         self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
@@ -326,7 +328,9 @@ class ActionManager:
         ttip += f'[{name}]' if self._tooltip_include_action_name else ''
         return ttip
 
-    def _get_layer_shortcuts(self, layers) -> dict:
+    def _get_layer_shortcuts(
+        self, layers: Iterable[type[KeymapProvider]]
+    ) -> dict:
         """
         Get shortcuts filtered by the given layers.
 
@@ -354,7 +358,7 @@ class ActionManager:
 
         return layer_shortcuts
 
-    def _get_provider_actions(self, provider) -> dict:
+    def _get_provider_actions(self, provider: type[KeymapProvider]) -> dict:
         """
         Get actions filtered by the given provider.
 
@@ -375,7 +379,7 @@ class ActionManager:
             if action and provider == action.keymapprovider
         }
 
-    def _get_active_shortcuts(self, active_keymap) -> dict[str, str]:
+    def _get_active_shortcuts(self, active_keymap: Keymap) -> dict[str, str]:
         """
         Get active shortcuts for the given active keymap.
 
@@ -389,7 +393,11 @@ class ActionManager:
         dict
             Dictionary of shortcuts to descriptions.
         """
-        active_func_names = [i[1].__name__ for i in active_keymap.items()]
+        active_func_names = [
+            func.__name__
+            for func in active_keymap.values()
+            if func is not Ellipsis
+        ]
         active_shortcuts = {}
         for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
@@ -399,7 +407,7 @@ class ActionManager:
 
         return active_shortcuts
 
-    def _get_repeatable_shortcuts(self, active_keymap) -> list:
+    def _get_repeatable_shortcuts(self, active_keymap: Keymap) -> list:
         """
         Get active, repeatable shortcuts for the given active keymap.
 
@@ -413,7 +421,11 @@ class ActionManager:
         list
             List of shortcuts that are repeatable.
         """
-        active_func_names = {i[1].__name__ for i in active_keymap.items()}
+        active_func_names = {
+            func.__name__
+            for func in active_keymap.values()
+            if func is not Ellipsis
+        }
         active_repeatable_shortcuts = []
         for name, shortcuts in self._shortcuts.items():
             action = self._actions.get(name, None)
