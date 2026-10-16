@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -155,7 +155,7 @@ class Shape(ABC):
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Self:
         if (
             TRIANGULATION_BACKEND
             in {
@@ -210,7 +210,7 @@ class Shape(ABC):
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay) -> None:
         if self.ndisplay == ndisplay:
             return
         self._ndisplay = ndisplay
@@ -222,7 +222,7 @@ class Shape(ABC):
         return self._dims_order
 
     @dims_order.setter
-    def dims_order(self, dims_order):
+    def dims_order(self, dims_order) -> None:
         if self.dims_order == dims_order:
             return
         self._dims_order = dims_order
@@ -258,7 +258,7 @@ class Shape(ABC):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width):
+    def edge_width(self, edge_width) -> None:
         self._edge_width = edge_width
 
     @property
@@ -269,7 +269,7 @@ class Shape(ABC):
         return self._z_index
 
     @z_index.setter
-    def z_index(self, z_index):
+    def z_index(self, z_index) -> None:
         self._z_index = z_index
 
     @property
@@ -317,7 +317,7 @@ class Shape(ABC):
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
-    ):
+    ) -> None:
         if face:
             face_triangles, face_vertices = (
                 bermuda.triangulate_polygons_face_3d([data])  # pyrefly: ignore [missing-attribute]
@@ -639,15 +639,17 @@ class Shape(ABC):
     def _triangulate_edge_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
+        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore[missing-attribute]
 
-    def _all_triangles(self):
+    def _all_triangles(
+        self,
+    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.floating]]:
         """Return all triangles for the shape
 
         Returns
         -------
         np.ndarray
-            Nx3 array of vertex indices that form the triangles for the shape
+            Nx3xD array of vertex coordinates that form the triangles for the shape
         """
         return np.vstack(
             [
@@ -707,7 +709,7 @@ class Shape(ABC):
         )
         self._clean_cache()
 
-    def scale(self, scale, center=None):
+    def scale(self, scale, center=None) -> None:
         """Performs a scaling on the shape
 
         Parameters
@@ -729,7 +731,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def rotate(self, angle, center=None):
+    def rotate(self, angle, center=None) -> None:
         """Performs a rotation on the shape
 
         Parameters
@@ -751,7 +753,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def flip(self, axis, center=None):
+    def flip(self, axis, center=None) -> None:
         """Performs a flip on the shape, either horizontal or vertical.
 
         Parameters

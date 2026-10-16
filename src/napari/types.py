@@ -123,7 +123,7 @@ _LayerData = Union[
 LayerDataTuple = NewType('LayerDataTuple', tuple)
 
 
-def _register_types_with_magicgui():
+def _register_types_with_magicgui() -> None:
     """Register ``napari.types`` objects with magicgui."""
     from concurrent.futures import Future
 
