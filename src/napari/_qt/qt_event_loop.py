@@ -299,7 +299,7 @@ def quit_app():
     # otherwise, something else created the QApp before us (such as
     # %gui qt IPython magic).  If we quit the app in this case, then
     # *later* attempts to instantiate a napari viewer won't work until
-    # the event loop is restarted with app.exec_().  So rather than
+    # the event loop is restarted with app.exec().  So rather than
     # quit just close all the windows (and clear our app icon).
     else:
         QApplication.setWindowIcon(QIcon())
@@ -379,9 +379,9 @@ def run(
         shown in the console that launched the event loop.
     max_loop_level : int, optional
         The maximum allowable "loop level" for the execution thread.  Every
-        time `QApplication.exec_()` is called, Qt enters the event loop,
+        time `QApplication.exec()` is called, Qt enters the event loop,
         increments app.thread().loopLevel(), and waits until exit() is called.
-        This function will prevent calling `exec_()` if the application already
+        This function will prevent calling `exec()` if the application already
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is here to
@@ -429,4 +429,4 @@ def run(
         _maybe_allow_interrupt(app),
         register_logger_to_napari_handler(''),
     ):
-        app.exec_()
+        app.exec()

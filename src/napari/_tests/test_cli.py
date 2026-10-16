@@ -90,7 +90,7 @@ def test_cli_runscript(monkeypatch, tmp_path, make_napari_viewer):
         m.setattr(sys, 'argv', ['napari', str(script)])
         m.setattr(__main__, 'Viewer', mock.Mock(return_value=v))
         m.setattr(
-            'qtpy.QtWidgets.QApplication.exec_', lambda *_: None
+            'qtpy.QtWidgets.QApplication.exec', lambda *_: None
         )  # revent event loop if run this test standalone
         __main__._run()
 
