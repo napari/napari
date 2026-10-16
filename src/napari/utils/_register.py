@@ -38,20 +38,21 @@ def create_func(
         # While the original class may have Attributes in its docstring, the
         # generated function should not have an Attributes section.
         # See https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
-        doc = getdoc(cls) or ''
-        start = doc.find('\n\nParameters\n----------\n')
-        end = doc.find('\n\nAttributes\n----------\n')
-        if end == -1:
-            end = None
-        if start > 0:
-            doc = doc[start:end]
+        doc = getdoc(cls)
+        if doc is not None:
+            start = doc.find('\n\nParameters\n----------\n')
+            end = doc.find('\n\nAttributes\n----------\n')
+            if end == -1:
+                end = None
+            if start > 0:
+                doc = doc[start:end]
 
-        n = 'n' if cls_name[0].lower() in 'aeiou' else ''
-        doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc
-        doc += '\n\nReturns\n-------\n'
-        doc += f'layer : :class:`napari.layers.{cls_name}`'
-        doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
-        doc = doc.expandtabs(4)
+            n = 'n' if cls_name[0].lower() in 'aeiou' else ''
+            doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc
+            doc += '\n\nReturns\n-------\n'
+            doc += f'layer : :class:`napari.layers.{cls_name}`'
+            doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
+            doc = doc.expandtabs(4)
 
     sig = signature(cls)
     additional_parameters = []
