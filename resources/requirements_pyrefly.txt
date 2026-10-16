@@ -24,7 +24,7 @@ markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-npe2==0.9.0
+npe2==0.10.0
     # via -r resources/requirements_pyrefly.in
 numpy==2.5.4
     # via -r resources/requirements_pyrefly.in
@@ -32,7 +32,7 @@ packaging==26.3
     # via
     #   build
     #   qtpy
-platformdirs==4.13.0
+platformdirs==4.13.3
     # via npe2
 psygnal==0.16.1
     # via
@@ -57,7 +57,7 @@ pygments==2.21.0
     #   superqt
 pyproject-hooks==1.3.3
     # via build
-pyrefly==1.3.2
+pyrefly==1.4.0
     # via -r resources/requirements_pyrefly.in
 pyside6-essentials==6.12.0
     # via -r resources/requirements_pyrefly.in
@@ -78,7 +78,7 @@ shellingham==1.5.4
     # via typer
 shiboken6==6.12.0
     # via pyside6-essentials
-superqt==0.8.2
+superqt==0.9.0
     # via magicgui
 tomli-w==1.2.0
     # via npe2
