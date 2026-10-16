@@ -399,6 +399,7 @@ viewer.canvas.overlays.scale_bar.visible = True
 viewer.scene.overlays.axes.visible = True
 
 for layer in viewer.layers:
+    layer.name_overlay.visible = True
     if hasattr(layer, 'colorbar'):
         layer.colorbar.visible = True
     if hasattr(layer, 'face_colorbar'):
