@@ -9,7 +9,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import checked_to_bool, qt_signals_blocked
-from napari.utils.events import disconnect_events
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -69,8 +68,3 @@ class QtTextVisibilityControl(QtWidgetControlsBase):
         self,
     ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.text_disp_label, self.text_disp_checkbox)]
-
-    def disconnect_widget_controls(self) -> None:
-        for layer in self._layers:
-            disconnect_events(layer.text.events, self)
-        super().disconnect_widget_controls()

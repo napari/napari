@@ -28,6 +28,7 @@ from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
 from napari.utils.events.event import Event
+from napari.utils.events.event_utils import _disconnect_all_events
 from napari.utils.interactions import (
     mouse_double_click_callbacks,
     mouse_move_callbacks,
@@ -350,15 +351,7 @@ class VispyCanvas:
         self._scene_canvas.bgcolor = self.viewer.canvas.background_color
 
     def _disconnect_events(self) -> None:
-        disconnect_events(self.viewer.events, self)
-        disconnect_events(self.viewer.canvas.events, self)
-        disconnect_events(self.viewer.canvas.overlays.events, self)
-        disconnect_events(self.viewer.canvas.overlay_tiling.events, self)
-        disconnect_events(self.viewer.scene.overlays.events, self)
-        disconnect_events(self.viewer.scene.camera.events, self)
-        disconnect_events(self.viewer.scene.camera.events, self)
-        disconnect_events(self.viewer.layers.events, self)
-        disconnect_events(self.viewer.cursor.events, self)
+        _disconnect_all_events(self.viewer, self)
         disconnect_events(self._scene_canvas.events, self)
 
     @property
@@ -825,17 +818,12 @@ class VispyCanvas:
         None
         """
         layer = event.value
-        disconnect_events(layer.events, self)
-        disconnect_events(layer.events, self._overlay_callbacks[layer])
-        disconnect_events(
-            layer._overlays.events, self._overlay_callbacks[layer]
-        )
-
-        layer.events.units.disconnect(self._deferred_world_units_update)
+        _disconnect_all_events(layer, self)
+        _disconnect_all_events(layer, self._overlay_callbacks[layer])
         del self._overlay_callbacks[layer]
 
         vispy_layer = self.layer_to_visual.pop(layer)
-        disconnect_events(self.viewer.scene.camera.events, vispy_layer)
+        _disconnect_all_events(self.viewer.scene.camera, vispy_layer)
         vispy_layer.close()
         del vispy_layer
 
@@ -918,15 +906,6 @@ class VispyCanvas:
             self._update_viewer_overlays, unique=True
         )
 
-    def _disconnect_canvas_overlay_events(self, overlay: Overlay) -> None:
-        overlay.events.position.disconnect(
-            self._update_overlay_canvas_positions
-        )
-        overlay.events.visible.disconnect(
-            self._update_overlay_canvas_positions
-        )
-        overlay.events.gridded.disconnect(self._update_viewer_overlays)
-
     def _create_or_update_vispy_overlay(
         self,
         overlay: Overlay,
@@ -956,7 +935,7 @@ class VispyCanvas:
         # delete outdated overlays
         for overlay in set(self._viewer_overlay_to_visual) - set(all_overlays):
             if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+                _disconnect_all_events(overlay, self)
             vispy_overlays = self._viewer_overlay_to_visual.pop(overlay)
             for vispy_overlay in vispy_overlays:
                 vispy_overlay.close()
@@ -1052,7 +1031,7 @@ class VispyCanvas:
 
         for overlay in to_remove:
             if isinstance(overlay, CanvasOverlay):
-                self._disconnect_canvas_overlay_events(overlay)
+                _disconnect_all_events(overlay, self)
             if vispy_overlay := overlay_to_visual.pop(overlay, None):
                 vispy_overlay.close()
 
