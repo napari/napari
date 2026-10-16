@@ -286,7 +286,7 @@ class ColorManager(EventedModel):
                 # the next items to be added
                 self.color_mode = ColorMode.DIRECT
                 self.colors = np.empty((0, 4))
-                if np.size(color) > 0:
+                if np.asarray(color).size > 0:
                     self.current_color = transform_color_with_defaults(
                         num_entries=1,
                         colors=color,
