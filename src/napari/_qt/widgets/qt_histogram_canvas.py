@@ -83,7 +83,7 @@ class QtHistogramCanvasWidget(QWidget):
 
         self._on_theme_change(self.theme)
 
-    def update_colormap(self, colormap: Colormap):
+    def update_colormap(self, colormap: Colormap) -> None:
         rgba = _representative_color(colormap)
         rgba[3] = max(float(rgba[3]), 0.8)
         self.histogram_visual.set_style(tuple(rgba))
@@ -98,9 +98,11 @@ class QtHistogramCanvasWidget(QWidget):
         self.canvas.update()
 
     @staticmethod
-    def _color_to_rgba(color: Color, alpha: float):
-        rgb = [v / 255 for v in color.as_rgb_tuple()[:3]]
-        return (*rgb, alpha)
+    def _color_to_rgba(
+        color: Color, alpha: float
+    ) -> tuple[float, float, float, float]:
+        rgb = color.as_rgb_tuple()
+        return (rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, alpha)
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up resources."""

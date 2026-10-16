@@ -227,14 +227,16 @@ class QtHistogramWidget(QWidget):
         self.counts = event.counts
         self.update_histogram()
 
-    def _on_histogram_yield(self, args) -> None:
+    def _on_histogram_yield(self, args: tuple[np.ndarray, np.ndarray]) -> None:
         self.bin_edges, self.counts = args
         self.layer.histogram.events.updated(
             bin_edges=self.bin_edges, counts=self.counts
         )
         self.update_histogram()
 
-    def _on_histogram_done(self, args=None) -> None:
+    def _on_histogram_done(
+        self, args: tuple[np.ndarray, np.ndarray] | None = None
+    ) -> None:
         if args is not None:
             self.bin_edges, self.counts = args
         self.layer.histogram.events.completed(
@@ -256,7 +258,7 @@ class QtHistogramWidget(QWidget):
             worker.finished.disconnect()
         worker.stop()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self) -> None:
         if self._constructed:
             self.histogram_canvas.update_colormap(self.layer.colormap)
 
@@ -265,14 +267,14 @@ class QtHistogramWidget(QWidget):
             return
         self.histogram_canvas._on_theme_change(get_theme(event.value))
 
-    def update_histogram(self):
+    def update_histogram(self) -> None:
         if self._constructed:
             self.histogram_canvas.histogram_visual.set_data(
                 bin_edges=self.bin_edges,
                 counts=self.counts,
                 gamma=self.layer.gamma,
-                clims=self.layer.contrast_limits,
-                data_range=self.layer.contrast_limits_range,
+                clims=self.layer.contrast_limits,  # pyrefly: ignore [bad-argument-type]
+                data_range=self.layer.contrast_limits_range,  # pyrefly: ignore [bad-argument-type]
             )
             self.histogram_canvas.canvas.update()
 
