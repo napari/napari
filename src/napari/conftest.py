@@ -326,7 +326,7 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
-if parse_version(version('npe2')) < parse_version('0.9.1'):
+if parse_version(version('npe2')) < parse_version('0.10.0'):
 
     @pytest.fixture
     def manifest_path() -> str:
