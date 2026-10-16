@@ -678,10 +678,6 @@ matches = "src/napari/utils/events/containers/_typed.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/colormaps/*.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/action_manager.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
