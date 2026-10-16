@@ -29,7 +29,7 @@ class ContextMapping(collections.abc.Mapping):
     `ContextMapping` object.
     """
 
-    def __init__(self, initial_values: collections.abc.Mapping | None):
+    def __init__(self, initial_values: collections.abc.Mapping | None) -> None:
         self._initial_context_mapping = initial_values or {}
         self._evaluated_context_mapping: dict[str, Any] = {}
 
