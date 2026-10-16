@@ -100,6 +100,10 @@ class VispyBaseOverlay:
         disconnect_events(self.viewer.events, self)
         disconnect_events(self.viewer.canvas.events, self)
         disconnect_events(self.viewer.dims.events, self)
+        disconnect_events(self.viewer.scene.events, self)
+        disconnect_events(self.viewer.scene.camera.events, self)
+        disconnect_events(self.viewer.canvas.grid.events, self)
+        disconnect_events(self.viewer.cursor.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 
