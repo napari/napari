@@ -891,7 +891,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self._layer_slicer._force_sync = not event.value
 
     def _calc_status_from_cursor(
-        self,
+        self, view_direction: np.ndarray | None = None
     ) -> tuple[str | Dict, str] | None:
         """Calculate coordinates and status info from cursor position.
 
@@ -903,12 +903,29 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if not self.mouse_over_canvas:
             return None
 
+        if view_direction is None:
+            # TODO: this will actually replace mouse_over_canvas in #9417
+            if self.cursor.canvas_position is None:
+                return None
+            viewbox_size = self.canvas.viewbox_size(self.layers)
+            viewbox_position = tuple(
+                np.array(self.cursor.canvas_position) % viewbox_size
+            )
+            view_direction = self.scene.camera.calculate_nd_view_direction(
+                ndim=self.dims.ndim,
+                dims_displayed=self.dims.displayed,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
+            )
+
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
         layers_in_viewbox = [
             self.layers[idx]
             for idx in sorted(
-                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
+                self.canvas.grid.contents_at(
+                    self.cursor.viewbox or (0, 0), self.layers
+                ),
                 reverse=self.canvas.grid.stride > 0,
             )
         ]
@@ -925,7 +942,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             if self.tooltip.visible:
                 tooltip_text = valid_layers[0]._get_tooltip_text(
                     np.asarray(self.cursor.position),
-                    view_direction=self.cursor._view_direction,
+                    view_direction=view_direction,
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -934,7 +951,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
             status = valid_layers[0].get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -950,7 +967,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         for layer in valid_layers:
             status = layer.get_status(
                 self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -966,9 +983,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         status_str = f'{coords} » {values}'
         return status_str, ''
 
-    def update_status_from_cursor(self):
+    def update_status_from_cursor(
+        self, view_direction: np.ndarray | None = None
+    ):
         """Update the status and tooltip from the cursor position."""
-        status = self._calc_status_from_cursor()
+        status = self._calc_status_from_cursor(view_direction)
         if status is not None:
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:
@@ -978,7 +997,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self,
         canvas_position: tuple[int, int],
         viewbox: tuple[int, int] | None = None,
-    ) -> np.ndarray:
+    ) -> tuple[float, ...]:
         """Convert canvas pixel position to world coordinates.
 
         The position is calculated on a plane parallel to the screen and passing
@@ -1035,7 +1054,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         position_world = list(self.dims.point)
         for i, d in enumerate(self.dims.displayed):
             position_world[d] = world_displayed[i]
-        return np.array(position_world)
+        return tuple(position_world)
 
     @property
     def experimental(self):
