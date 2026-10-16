@@ -86,7 +86,7 @@ def compute_nice_ticks(
             ticks = _generate_ticks(Decimal(base), exp, minv, maxv)
 
             # get number of ticks closer to target_ticks
-            if best_ticks is None or abs(len(ticks) - target_ticks) <= abs(
+            if abs(len(ticks) - target_ticks) <= abs(
                 len(best_ticks) - target_ticks
             ):
                 best_ticks = ticks
