@@ -71,6 +71,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
+        self._is_thick: bool = False
         self._EDIT_BUTTONS: tuple = ()
         self._MODE_BUTTONS: dict = {}
 
@@ -248,6 +249,16 @@ class QtLayerControls(QFrame):
         to 2D or 3D visualization only like the transform mode button.
         """
         self._set_transform_tool_state()
+
+    @property
+    def is_thick(self) -> bool:
+        return self._is_thick
+
+    @is_thick.setter
+    def is_thick(self, is_thick: bool) -> None:
+        self._is_thick = is_thick
+        if hasattr(self, '_projection_mode_control'):
+            self._projection_mode_control._change_is_thick(is_thick)
 
     def _set_transform_tool_state(self):
         """
