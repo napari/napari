@@ -18,7 +18,7 @@ time, and spatial coordinates before visualization.
 import pandas as pd
 
 import napari
-from napari.layers.tracks._track_utils import prepare_tracks_data
+from napari.layers.tracks import prepare_tracks_data
 
 df = pd.DataFrame(
     {
