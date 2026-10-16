@@ -341,33 +341,45 @@ def test_add_layer_data_to_viewer_optional(make_napari_viewer):
 def test_magicgui_add_future_data(
     qtbot, make_napari_viewer, LayerType, data, ndim
 ):
-    """Test that annotating with Future[] works."""
+    """Future[] results from a background thread are added on the main thread."""
+    import threading
     from concurrent.futures import Future
-    from functools import partial
-
-    from qtpy.QtCore import QTimer
 
     viewer = make_napari_viewer()
     dtype = getattr(types, f'{LayerType.__name__}Data')
+    release = threading.Event()
 
     @magicgui
     # where `dtype` is something like napari.types.ImageData
     def add_data() -> Future[dtype]:  # type: ignore
         future = Future()
-        # simulate something that isn't immediately ready when function returns
-        QTimer.singleShot(10, partial(future.set_result, data))
+
+        # finish the future from a background thread, but only after
+        # napari has added its callback (the test sets `release`)
+        def _finish():
+            release.wait(timeout=5)
+            future.set_result(data)
+
+        threading.Thread(target=_finish).start()
         return future
 
     viewer.window.add_dock_widget(add_data)
+
+    inserted_on = []
+    viewer.layers.events.inserted.connect(
+        lambda e: inserted_on.append(threading.current_thread())
+    )
 
     def _assert_stuff():
         assert len(viewer.layers) == 1
         assert isinstance(viewer.layers[0], LayerType)
         assert viewer.layers[0].source.widget == add_data
+        assert inserted_on == [threading.main_thread()]
 
     assert len(viewer.layers) == 0
-    with qtbot.waitSignal(viewer.layers.events.inserted):
+    with qtbot.waitSignal(viewer.layers.events.inserted, timeout=5000):
         add_data()
+        release.set()
     _assert_stuff()
 
 
