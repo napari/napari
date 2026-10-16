@@ -151,6 +151,25 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         self.attenuation_label = QtWrappedLabel('attenuation:')
 
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        sld.setMinimum(0)
+        sld.setMaximum(0.2)
+        sld.setSingleStep(0.001)
+        sld.setDecimals(3)
+        sld.setValue(self._layer.empty_space_attenuation)
+        connect_setattr(
+            sld.valueChanged, self._layer, 'empty_space_attenuation'
+        )
+        self._callbacks.append(
+            attr_to_settr(
+                self._layer, 'empty_space_attenuation', sld, 'setValue'
+            )
+        )
+        self.empty_space_attenuation_slider = sld
+
+        self.empty_space_attenuation_label = QtWrappedLabel('empty space:')
+
     def change_rendering(self, text):
         """Change rendering mode for image display.
 
@@ -197,6 +216,8 @@ class QtImageRenderControl(QtWidgetControlsBase):
         self.iso_threshold_label.hide()
         self.attenuation_slider.hide()
         self.attenuation_label.hide()
+        self.empty_space_attenuation_slider.hide()
+        self.empty_space_attenuation_label.hide()
         self.render_combobox.hide()
         self.render_label.hide()
 
@@ -214,6 +235,8 @@ class QtImageRenderControl(QtWidgetControlsBase):
         attenuation_visible = rendering == ImageRendering.ATTENUATED_MIP
         self.attenuation_slider.setVisible(attenuation_visible)
         self.attenuation_label.setVisible(attenuation_visible)
+        self.empty_space_attenuation_slider.setVisible(attenuation_visible)
+        self.empty_space_attenuation_label.setVisible(attenuation_visible)
 
     def _on_attenuation_slider_moved(self, value: float) -> None:
         """Receive attenuation value from log slider and set it on the layer."""
@@ -231,4 +254,8 @@ class QtImageRenderControl(QtWidgetControlsBase):
             (self.render_label, self.render_combobox),
             (self.iso_threshold_label, self.iso_threshold_slider),
             (self.attenuation_label, self.attenuation_slider),
+            (
+                self.empty_space_attenuation_label,
+                self.empty_space_attenuation_slider,
+            ),
         ]
