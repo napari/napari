@@ -89,6 +89,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.layer.experimental_clipping_planes.events.connect(
             self._on_experimental_clipping_planes_change
         )
+        self.font_info.events.connect(self._on_font_change)
 
     @property
     def world_units(self) -> tuple[pint.Unit, ...]:
@@ -319,6 +320,10 @@ class VispyBaseLayer(ABC, Generic[_L]):
     ) -> None:
         return
 
+    def _on_font_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
@@ -338,5 +343,6 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.events, self)
+        disconnect_events(self.font_info.events, self)
         self.node.transform = MatrixTransform()
         self.node.parent = None

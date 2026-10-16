@@ -45,7 +45,6 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
-        self.layer.events.scale_factor.connect(self._update_text)
 
         self._on_data_change()
 
@@ -166,6 +165,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
+    def _on_font_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
@@ -174,7 +178,12 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self.node.text, layer=self.layer)
+        update_text(
+            node=self.node.text,
+            layer=self.layer,
+            default_font_size=self.font_info.default_size,
+        )
+        self.node.text.face = self.font_info.face
         if update_node:
             self.node.update()
 

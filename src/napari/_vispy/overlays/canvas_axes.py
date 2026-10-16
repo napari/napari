@@ -51,7 +51,7 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.labels.connect(self._on_labels_text_change)
         self.overlay.events.arrows.connect(self._on_data_change)
         self.overlay.events.size.connect(self._on_size_change)
-        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.font_size.connect(self._on_font_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
@@ -106,12 +106,12 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.axes.text.text = axis_labels
         self.node.axes.text.visible = self.overlay.labels
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_info_change(self) -> None:
         self.node.axes.text.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
-            else self._default_font_size
-        )
+            else self.font_info.default_size
+        ) * self.font_info.scale
 
     def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""

@@ -35,7 +35,6 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.scale_factor.connect(self._update_text)
 
         # TODO: move to overlays
         self.node.highlight_vertices.symbol = 'square'
@@ -138,6 +137,11 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
+    def _on_font_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
@@ -146,7 +150,12 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self._get_text_node(), layer=self.layer)
+        update_text(
+            node=self._get_text_node(),
+            layer=self.layer,
+            default_font_size=self.font_info.default_size,
+        )
+        self.node.text.face = self.font_info.face
         if update_node:
             self.node.update()
 
