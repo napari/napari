@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from napari.layers import Layer
 from napari.layers.base import _LayerSlicingState
@@ -94,8 +95,8 @@ class SampleLayer(Layer):
     def _update_thumbnail(self) -> None:
         pass
 
-    def _get_value(self, position: tuple[int, ...]) -> np.ndarray:
-        return self.data[position]
+    def _get_value(self, position: npt.ArrayLike) -> np.ndarray:
+        return self.data[tuple(np.asarray(position, dtype=int))]
 
     def _post_init(self) -> None:
         self.a = 1
