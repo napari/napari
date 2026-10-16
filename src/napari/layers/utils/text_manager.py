@@ -1,9 +1,9 @@
 import warnings
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Annotated, Any, Union
 
 import numpy as np
-from pydantic import PositiveFloat, field_validator
+from pydantic import Field, field_validator
 
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
@@ -63,8 +63,8 @@ class TextManager(EventedModel):
         The encoded string values.
     visible : bool
         True if the text should be displayed, False otherwise.
-    size : float
-        Font size of the text, which must be positive. Default value is 12.
+    size : float, optional
+        Font size of the text, which must be positive.
     scaling : bool
         True if the text should be scaled with the zoom level, False otherwise.
         Default value is False.
@@ -87,7 +87,7 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveFloat = 12
+    size: Annotated[float, Field(ge=1)] | None = None
     scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
@@ -125,12 +125,6 @@ class TextManager(EventedModel):
             self.string = value
         else:
             super().__setattr__(key, value)
-
-    def _get_scaled_size(self, scale_factor: float | None = None) -> float:
-        """Calculate the scaled text size based on zoom level."""
-        if not self.scaling or scale_factor is None:
-            return self.size
-        return self.size / scale_factor
 
     def refresh(self, features: Any) -> None:
         """Refresh all encoded values using new layer features.
