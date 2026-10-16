@@ -7,11 +7,13 @@ import collections.abc
 import contextlib
 import inspect
 import itertools
+import json
 import os
 import re
 import sys
 import warnings
 from enum import Enum, StrEnum
+from importlib.metadata import version
 from os import fspath, path as os_path
 from pathlib import Path
 from typing import (
@@ -19,9 +21,11 @@ from typing import (
     Any,
     TypeVar,
 )
+from urllib.error import HTTPError, URLError
 
 import numpy as np
 import numpy.typing as npt
+from packaging.version import Version
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -717,3 +721,33 @@ def human_readable_size(size_bytes: float) -> str:
             return f'{size_bytes:.1f} {unit}'
         size_bytes /= 1000
     return f'{size_bytes:.1f} PB'
+
+
+def _check_for_updates(package_name) -> list[Version]:
+    from urllib.request import urlopen
+
+    current = Version(version(package_name))
+
+    # TODO: shoudl do differently for conda installs?
+    try:
+        with urlopen(
+            f'https://pypi.org/pypi/{package_name}/json',
+            timeout=5,
+        ) as response:
+            data = json.load(response)
+    except (HTTPError, URLError):
+        # something went wrong with checking for updates, just fail
+        # gracefully since it's not a vital feature
+        return []
+
+    releases = data['releases']
+
+    return sorted(
+        v
+        for vstring, files in releases.items()
+        if files
+        and (v := Version(vstring)) > current
+        and any(not f.get('yanked', False) for f in files)
+        and not v.is_prerelease
+        and not v.is_devrelease
+    )
