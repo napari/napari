@@ -1,10 +1,12 @@
 """Status bar widget on the viewer MainWindow"""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, cast
 from webbrowser import open as web_open
 
 from qtpy.QtCore import QEvent, Qt
-from qtpy.QtGui import QFontMetrics, QResizeEvent
+from qtpy.QtGui import QFontMetrics, QMouseEvent, QResizeEvent
 from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
@@ -15,6 +17,11 @@ from napari._qt.utils import use_tabular_numerals
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from distutils.version import Version
+
+    from qtpy.QtGui import QMouseEvent
+
     from napari._qt.qt_main_window import _QtMainWindow
 
 _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
@@ -24,7 +31,7 @@ _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
 
 
 class UpcomingUpdatesIcon(QLabel):
-    def __init__(self, upcoming_releases):
+    def __init__(self, upcoming_releases: Sequence[Version]) -> None:
         super().__init__()
         self.setObjectName('refresh_label')
         self.setToolTip(
@@ -38,10 +45,12 @@ class UpcomingUpdatesIcon(QLabel):
         )
         self.upcoming_releases = upcoming_releases
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
+    def mousePressEvent(self, ev: QMouseEvent | None) -> None:
+        if ev is None:
+            return
+        if ev.button() == Qt.MouseButton.LeftButton:
             web_open('https://napari.org/stable/release/index.html')
-        if event.button() == Qt.MouseButton.RightButton:
+        if ev.button() == Qt.MouseButton.RightButton:
             for release in self.upcoming_releases:
                 web_open(
                     f'https://napari.org/stable/release/release_{str(release).replace(".", "_")}.html'
@@ -49,7 +58,7 @@ class UpcomingUpdatesIcon(QLabel):
 
 
 class ViewerStatusBar(QStatusBar):
-    def __init__(self, parent: '_QtMainWindow') -> None:
+    def __init__(self, parent: _QtMainWindow) -> None:
         super().__init__(parent=parent)
 
         self._status = QLabel('Ready')
@@ -126,7 +135,9 @@ class ViewerStatusBar(QStatusBar):
 
             label.setVisible(getattr(exp_settings, setting_id))
 
-    def update_upcoming_versions_icon(self, upcoming=None):
+    def update_upcoming_versions_icon(
+        self, upcoming: Sequence[Version] | None = None
+    ) -> None:
         if upcoming is None:
             # use the predetermined values
             upcoming = NAPARI_UPCOMING_VERSIONS
