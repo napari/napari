@@ -39,7 +39,7 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.dashed.connect(self._on_data_change)
         self.overlay.events.labels.connect(self._on_labels_visible_change)
         self.overlay.events.arrows.connect(self._on_data_change)
-        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.font_size.connect(self._on_font_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.scene.camera.events.zoom.connect(self._on_zoom_change)
@@ -80,12 +80,13 @@ class VispySceneAxesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         axis_labels = [self.viewer.dims.axis_labels[a] for a in axes]
         self.node.text.text = axis_labels
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_change(self) -> None:
         self.node.text.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
-            else self._default_font_size
-        )
+            else self.font_info.default_size
+        ) * self.font_info.scale
+        self.node.text.face = self.font_info.face
 
     def _on_zoom_change(self) -> None:
         scale = 1 / self.viewer.scene.camera.zoom
