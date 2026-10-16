@@ -477,6 +477,10 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     desired_shape = [[20, 30], [10, 50], [60, 40], [80, 20]]
     # Add shape at location where non exists
     layer.mode = f'add_{shape_type}'
+    added = []
+    layer.events.data.connect(
+        lambda e: e.action == ActionType.ADDED and added.append(e.data_indices)
+    )
 
     for coord in desired_shape:
         # Simulate move, click, and release
@@ -517,6 +521,42 @@ def test_add_complex_shape(shape_type, create_known_shapes_layer):
     # Ensure it's selected, accounting for zero-indexing
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {n_shapes}
+    assert added == [(-1,)]
+
+
+def test_finish_polygon_with_data_rewriting_listener(
+    create_known_shapes_layer,
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+    layer.mode = 'add_polygon'
+
+    for coord in [[20, 30], [10, 50], [60, 40], [80, 20]]:
+        for kind, callbacks in (
+            ('mouse_move', mouse_move_callbacks),
+            ('mouse_press', mouse_press_callbacks),
+            ('mouse_release', mouse_release_callbacks),
+        ):
+            callbacks(
+                layer,
+                read_only_mouse_event(
+                    type=kind,
+                    position=coord,
+                    pos=np.array(coord, dtype=float),
+                ),
+            )
+
+    def rewrite_data(event):
+        if event.action == ActionType.ADDED:
+            layer.data = list(layer.data)
+
+    layer.events.data.connect(rewrite_data)
+
+    mouse_double_click_callbacks(
+        layer, read_only_mouse_event(type='mouse_double_click', position=coord)
+    )
+
+    assert len(layer.data) == n_shapes + 1
+    assert not layer._is_creating
 
 
 @pytest.mark.parametrize(
@@ -533,6 +573,10 @@ def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     # Add shape at location where non exists
     shape_type, shape_vertices = shape_type_vertices
     layer.mode = f'add_{shape_type}'
+    added = []
+    layer.events.data.connect(
+        lambda e: e.action == ActionType.ADDED and added.append(e.data_indices)
+    )
 
     for coord in shape_vertices:
         # Simulate move, click, and release
@@ -573,6 +617,7 @@ def test_add_invalid_shape(shape_type_vertices, create_known_shapes_layer):
     assert len(layer.selected_data) == 0
     assert len(layer.data) == n_shapes
     assert layer._last_cursor_position is None
+    assert added == [()]
 
 
 def test_vertex_insert(create_known_shapes_layer):
