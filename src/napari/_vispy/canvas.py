@@ -326,10 +326,10 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
-        self.destroyed.connect(self._disconnect_events)
         get_settings().appearance.events.font_size.connect(
             self._update_font_sizes
         )
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -365,6 +365,7 @@ class VispyCanvas:
         disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
+        disconnect_events(get_settings().appearance.events, self)
 
     @property
     def central_widget(self) -> Widget:
@@ -782,6 +783,7 @@ class VispyCanvas:
         # also make sure we communicate update the view direction of the new layer
         # (needed e.g for lighting by mesh)
         self._on_view_direction_change()
+        self._update_font_sizes()
         self._update_scenegraph()
 
     def _on_view_direction_change(self) -> None:
