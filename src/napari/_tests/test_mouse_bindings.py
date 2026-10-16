@@ -9,7 +9,7 @@ from napari._tests.utils import skip_on_win_ci
 from napari.layers import Image
 from napari.layers.base._base_constants import InteractionBoxHandle
 from napari.layers.base._base_mouse_bindings import (
-    highlight_box_handles,
+    highlight_transform_box_handles,
     transform_with_box,
 )
 
@@ -285,7 +285,7 @@ def test_highlight_box_handles(position, dims_displayed, nearby_handle):
     event = Mock(
         position=position, dims_displayed=dims_displayed, modifiers=[None]
     )
-    highlight_box_handles(
+    highlight_transform_box_handles(
         layer,
         event,
     )
