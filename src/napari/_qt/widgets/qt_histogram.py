@@ -218,6 +218,8 @@ class QtHistogramWidget(QWidget):
         return worker
 
     def _schedule_histogram_compute(self) -> None:
+        if not self.layer.histogram.enabled:
+            return
         if self.isVisible():
             self._ensure_histogram_content()
         self._ensure_histogram_worker().request()

@@ -196,9 +196,8 @@ class TestQtContrastLimitsControl:
             nonlocal completed
             completed = True
 
-        control.histogram._ensure_histogram_content()
-        control.histogram._schedule_histogram_compute()
         layer.histogram.events.completed.connect(complete)
+        layer.histogram.enabled = True
 
         qtbot.waitUntil(lambda: completed, timeout=10000)
         assert len(control.histogram.bin_edges) == 257
@@ -235,7 +234,7 @@ class TestQtContrastLimitsControl:
         qt_wrap.add_control(control)
 
         control.histogram._ensure_histogram_content()
-        control.histogram._schedule_histogram_compute()
+        layer.histogram.enabled = True
         QThreadPool.globalInstance().waitForDone(2000)
         control.disconnect_widget_controls()
         # should not hang or error after the worker is aborted
