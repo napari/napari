@@ -1723,6 +1723,15 @@ class Shapes(Layer):
         if mode == self._mode:
             return
 
+        is_creating = self._is_creating
+        if is_creating:
+            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
+            # so we need to block thumbnail update from here
+            # TODO: this is not great... ideally we should no longer need this blocking system
+            #       but maybe follow up PR
+            with self.block_thumbnail_update():
+                self._finish_drawing()
+
         self._mode = mode
         self.events.mode(mode=mode)
 
@@ -1737,14 +1746,7 @@ class Shapes(Layer):
         if mode not in non_draw_modes:
             self.selected_data.clear()
 
-        if self._is_creating:
-            # Shapes._finish_drawing() calls Shapes.refresh() via Shapes._update_dims()
-            # so we need to block thumbnail update from here
-            # TODO: this is not great... ideally we should no longer need this blocking system
-            #       but maybe follow up PR
-            with self.block_thumbnail_update():
-                self._finish_drawing()
-        else:
+        if not is_creating:
             self.refresh(data_displayed=False, extent=False, thumbnail=False)
 
     def _reset_editable(self) -> None:
@@ -2731,7 +2733,7 @@ class Shapes(Layer):
         self._value = (None, None)
         self._moving_value = (None, None)
         self._last_cursor_position = None
-        if self._is_creating is True:
+        if self._is_creating is True and index is not None:
             if self._mode in {Mode.ADD_PATH, Mode.ADD_POLYLINE}:
                 vertices = self._data_view.shapes[index].data
                 if len(vertices) <= 2:
@@ -2851,6 +2853,16 @@ class Shapes(Layer):
             self._data_view.remove_multiple(to_remove)
 
             self._value = (None, None)
+
+            moving_index = self._moving_value[0]
+            if moving_index is not None:
+                if moving_index in indices:
+                    moving_index = None
+                else:
+                    moving_index -= int(
+                        np.searchsorted(to_remove[::-1], moving_index)
+                    )
+                self._moving_value = (moving_index, self._moving_value[1])
 
             if len(self.data) == 0 and self.selected_data:
                 self.selected_data.clear()

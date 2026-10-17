@@ -362,3 +362,8 @@ def test_increment_name_with_number_suffix():
     """
     assert increment_name('test (1)', {'test (1)'}) == 'test (2)'
     assert increment_name('test (1)', {'test (1)', 'test (2)'}) == 'test (3)'
+
+
+def test_ensure_colormap_none_is_gray():
+    """None means "no colormap specified", so the default gray is used."""
+    assert ensure_colormap(None).name == 'gray'
