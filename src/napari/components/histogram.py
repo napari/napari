@@ -40,6 +40,8 @@ class Histogram(EventedModel):
 
         Do not use in a separate thread (use _compute_async_no_events instead).
         """
+        # the generator may yield nothing (e.g. first chunk fails to load)
+        bin_edges, counts = _make_empty().values()
         for bin_edges, counts in self._compute_async_no_events(layer):
             self.events.updated(bin_edges=bin_edges, counts=counts)
             yield bin_edges, counts

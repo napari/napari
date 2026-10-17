@@ -264,3 +264,15 @@ class TestMaterializationGuard:
         with pytest.warns(UserWarning, match='Skipping full-data histogram'):
             result = _get_full_data(FakeLayer())
         assert result is None
+
+
+def test_compute_with_empty_generator(monkeypatch):
+    """A generator yielding nothing (failed first chunk) is not an error."""
+    monkeypatch.setattr(
+        'napari.components.histogram.compute_histogram',
+        lambda *a, **k: iter(()),
+    )
+    layer = _image(np.random.rand(10, 10))
+    bin_edges, counts = layer.histogram.compute(layer)
+    assert len(bin_edges) == 2
+    assert len(counts) == 1
