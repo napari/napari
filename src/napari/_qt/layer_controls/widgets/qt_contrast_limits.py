@@ -27,8 +27,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import qt_signals_blocked
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
-from napari.layers import Layer
-from napari.layers.intensity_mixin import IntensityVisualizationMixin
+from napari.layers import Image, Surface
 from napari.utils._dtype import normalize_dtype
 from napari.utils.events.event_utils import connect_no_arg, connect_setattr
 
@@ -89,7 +88,7 @@ class QContrastLimitsPopup(QtPopup):
 
     def __init__(
         self,
-        layer: IntensityVisualizationMixin,
+        layer: Image | Surface,
         parent: Optional[QWidget] = None,
         contrast_control: Optional[QtContrastLimitsControl] = None,
     ) -> None:
@@ -266,7 +265,7 @@ class QContrastLimitsPopup(QtPopup):
 class AutoScaleButtons(QWidget):
     def __init__(
         self,
-        layer: IntensityVisualizationMixin,
+        layer: Image | Surface,
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent=parent)
@@ -315,11 +314,9 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         Label for the constrast limits chooser widget.
     """
 
-    _layer: IntensityVisualizationMixin & Layer
+    _layer: Image | Surface
 
-    def __init__(
-        self, parent: QWidget, layer: IntensityVisualizationMixin
-    ) -> None:
+    def __init__(self, parent: QWidget, layer: Image | Surface) -> None:
         super().__init__(parent, layer)
         # Setup layer
         self._layer.events.contrast_limits.connect(
