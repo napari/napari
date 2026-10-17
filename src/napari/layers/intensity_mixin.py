@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from napari.components.histogram import Histogram
 from napari.layers import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
@@ -13,6 +12,7 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
+    from napari.components.histogram import Histogram
     from napari.layers._scalar_field.scalar_field import ScalarFieldBase
     from napari.layers.surface import Surface
 
@@ -59,10 +59,13 @@ class IntensityVisualizationMixin(Layer):
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
+        # imported lazily: napari.components imports napari.layers
+        from napari.components.histogram import Histogram
+
         self._histogram = Histogram()
 
     @property
-    def histogram(self) -> Histogram:
+    def histogram(self) -> 'Histogram':
         """Histogram model for this layer (settings only)."""
         return self._histogram
 
