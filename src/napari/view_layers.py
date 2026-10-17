@@ -55,10 +55,8 @@ def _make_viewer_then(
         if k in _viewer_params
         if k != 'axis_labels'
     }
-    if 'axis_labels' in kwargs:
-        vkwargs['axis_labels'] = (
-            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
-        )
+    if (axis_labels := kwargs.get('axis_labels')) is not None:
+        vkwargs['axis_labels'] = axis_labels
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
         k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
