@@ -220,6 +220,14 @@ class QContrastLimitsPopup(QtPopup):
             return
         super().keyPressEvent(event)
 
+    def closeEvent(self, event):
+        """Disconnect from the layer so closed popups stop receiving events."""
+        self._layer.histogram.events.enabled.disconnect(
+            self._on_histogram_enabled_change
+        )
+        self.histogram.cleanup()
+        super().closeEvent(event)
+
     def _base_height(self) -> int:
         """Popup height without the histogram widget."""
         outer = self.layout().contentsMargins()
