@@ -109,40 +109,6 @@ def _fan_triangulation(
     return vertices, triangles  # pyrefly: ignore [bad-return]
 
 
-def inside_boxes(boxes):
-    """Checks which boxes contain the origin. Boxes need not be axis aligned
-
-    Parameters
-    ----------
-    boxes : (N, 8, 2) array
-        Array of N boxes that should be checked
-
-    Returns
-    -------
-    inside : (N,) array of bool
-        True if corresponding box contains the origin.
-    """
-
-    AB = boxes[:, 0] - boxes[:, 6]
-    AM = boxes[:, 0]
-    BC = boxes[:, 6] - boxes[:, 4]
-    BM = boxes[:, 6]
-
-    ABAM = np.multiply(AB, AM).sum(1)
-    ABAB = np.multiply(AB, AB).sum(1)
-    BCBM = np.multiply(BC, BM).sum(1)
-    BCBC = np.multiply(BC, BC).sum(1)
-
-    c1 = ABAM >= 0
-    c2 = ABAM <= ABAB
-    c3 = BCBM >= 0
-    c4 = BCBM <= BCBC
-
-    inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
-
-    return inside
-
-
 def triangles_intersect_box(
     triangles, corners
 ) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
