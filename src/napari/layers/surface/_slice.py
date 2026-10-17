@@ -73,9 +73,10 @@ class _SurfaceSliceRequest:
             return self._empty_response()
 
         not_disp = list(self.slice_input.not_displayed)
+        disp = list(self.slice_input.displayed)
         if not not_disp:
             return _SurfaceSliceResponse(
-                vertices=self.data[0],
+                vertices=self.data[0][:, disp],
                 faces=self.data[1],
                 values=self.data[2] if len(self.data) == 3 else None,
                 vertex_colors=self.vertex_colors,
@@ -101,7 +102,6 @@ class _SurfaceSliceRequest:
         high[too_thin_slice] += 0.5
 
         vert_orig = self.data[0]
-        disp = list(self.slice_input.displayed)
         # the presence of vertex_values can add extra dimensions to the layer
         # which are not present in the data itself. We need to adjust for this
         # by offsetting the dim number by the amount of extra dims

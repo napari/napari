@@ -139,6 +139,20 @@ def test_random_3D_surface():
     assert layer._view_vertex_values.ndim == 1
 
 
+@pytest.mark.parametrize('order', [(0, 1, 2), (2, 1, 0), (1, 0, 2)])
+def test_3D_surface_follows_dims_order(order):
+    """Test view vertices follow the dims order when all axes are displayed."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    layer = Surface((vertices, faces))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
+    np.testing.assert_array_equal(
+        layer._view_vertices, vertices[:, list(order)]
+    )
+
+
 def test_random_4D_surface():
     """Test instantiating Surface layer with random 4D data."""
     np.random.seed(0)
