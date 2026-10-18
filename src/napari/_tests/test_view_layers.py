@@ -178,8 +178,16 @@ def test_imshow_honors_xarray_metadata(qtbot):
         np.zeros((3, 10, 15)),
         dims=['z', 'y', 'x'],
         coords={
-            'z': ('z', np.arange(3) * scale[0] + translate[0], {'units': 'microns'}),
-            'y': ('y', np.arange(10) * scale[1] + translate[1], {'units': 'mm'}),
+            'z': (
+                'z',
+                np.arange(3) * scale[0] + translate[0],
+                {'units': 'microns'},
+            ),
+            'y': (
+                'y',
+                np.arange(10) * scale[1] + translate[1],
+                {'units': 'mm'},
+            ),
             'x': ('x', np.arange(15) * scale[2] + translate[2]),
         },
     )
