@@ -537,15 +537,15 @@ def test_attenuation():
     assert layer.attenuation == attenuation
 
 
-def test_empty_space_attenuation():
-    """Test setting empty_space_attenuation."""
+def test_base_attenuation():
+    """Test setting base_attenuation."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.empty_space_attenuation == 0
+    assert layer.base_attenuation == 0
 
-    layer.empty_space_attenuation = 0.1
-    assert layer.empty_space_attenuation == 0.1
+    layer.base_attenuation = 0.1
+    assert layer.base_attenuation == 0.1
 
 
 def test_metadata():

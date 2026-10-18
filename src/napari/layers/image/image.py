@@ -339,7 +339,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.interpolation2d = interpolation2d
         self.interpolation3d = interpolation3d
         self._attenuation = attenuation
-        self._empty_space_attenuation = 0.0
+        self._base_attenuation = 0.0
 
         # Set contrast limits, colormaps and plane parameters
         if contrast_limits is None:
@@ -447,14 +447,14 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.events.attenuation()
 
     @property
-    def empty_space_attenuation(self) -> float:
-        """float: empty space attenuation rate for attenuated_mip rendering."""
-        return self._empty_space_attenuation
+    def base_attenuation(self) -> float:
+        """float: base attenuation rate for attenuated_mip rendering."""
+        return self._base_attenuation
 
-    @empty_space_attenuation.setter
-    def empty_space_attenuation(self, value: float) -> None:
-        self._empty_space_attenuation = value
-        self.events.empty_space_attenuation()
+    @base_attenuation.setter
+    def base_attenuation(self, value: float) -> None:
+        self._base_attenuation = value
+        self.events.base_attenuation()
 
     @property
     def histogram(self) -> HistogramModel:
