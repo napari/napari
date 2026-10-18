@@ -57,7 +57,7 @@ jobs:
         exclude: [{platform: ubuntu-latest, python: "3.14"}] # testing_extra cover this case
         include:
           - python: "3.11"
-            platform: macos-15
+            platform: macos-latest
             backend: pyqt6
           # test with minimum specified requirements
           - python: "3.11"
