@@ -77,10 +77,9 @@ class QtImageRenderControl(QtWidgetControlsBase):
 
         self.iso_threshold_label = QtWrappedLabel('iso threshold:')
 
-        sld = QLabeledMappedSlider(
-            Qt.Orientation.Horizontal, parent=parent, mapping='power'
-        )
+        sld = QLabeledMappedSlider(Qt.Orientation.Horizontal, parent=parent)
         sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        sld.setMapping('power')
         sld.setRange(0, 0.5)
         sld.setDecimals(3)
         sld.setValue(self._layer.attenuation)
