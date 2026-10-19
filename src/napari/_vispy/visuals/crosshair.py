@@ -10,8 +10,7 @@ from vispy.visuals import Visual
 if TYPE_CHECKING:
     from vispy.visuals.visual import VisualView
 
-_VERTEX_SHADER = """#version 330
-
+_VERTEX_SHADER = """
 // this shader has no vertices; instead, it uses indices to distinguish
 // between which case we're in (i.e: which axis and which extremity).
 // `axis` will be 0, 1 or 2, and `side` either -1 or 1. Those are used to
@@ -20,12 +19,12 @@ _VERTEX_SHADER = """#version 330
 
 in float a_idx;  // int attributes not working, so we use a float
 
-out vec2 v_center;
+varying vec2 v_center;
 
 void main()
 {
     int axis = int(a_idx) / 2;
-    float side = (int(a_idx) % 2 == 0) ? -1.0 : 1.0;
+    float side = (int(mod(a_idx, 2)) == 0) ? -1.0 : 1.0;
 
     vec3 direction =
         axis == 0 ? vec3(side, 0, 0) :
@@ -58,8 +57,8 @@ void main()
 }
 """
 
-_FRAGMENT_SHADER = """#version 330
-in vec2 v_center;
+_FRAGMENT_SHADER = """
+varying vec2 v_center;
 
 void main() {
     // gl_FragCoord is in physical pixels; $canvas_size is logical pixels
