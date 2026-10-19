@@ -14,7 +14,7 @@ from napari._qt.utils import (
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
-    from napari.layers.base.base import Image, Points, Vectors
+    from napari.layers import Image, Points, Vectors
 
 
 class QtProjectionModeControl(QtWidgetControlsBase):
