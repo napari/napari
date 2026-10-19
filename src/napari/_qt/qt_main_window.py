@@ -1080,11 +1080,14 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
-        area : str
+        tabify : bool or None, optional
+            Flag to tabify dock widget or not. If `None` (default), use the
+            plugin manifest's `tabify` value for this widget.
+        area : str or None, optional
             Side of the main window to which the new dock widget will be added.
             Must be in {'left', 'right', 'top', 'bottom'}
-        tabify : bool or None
-            Flag to tabify dock widget or not.
+            If `None` (default), use the plugin manifest's `default_area`
+            value for this widget.
 
         Returns
         -------
