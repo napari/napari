@@ -120,7 +120,7 @@ class SVGBufferIconEngine(QIconEngine):
 
     This ``QIconEngine`` takes in SVG data as a raw xml string or bytes.
 
-    see: https://doc.qt.io/qt-5/qiconengine.html
+    see: https://doc.qt.io/qt-6/qiconengine.html
     """
 
     def __init__(self, xml: str | bytes | QByteArray) -> None:
