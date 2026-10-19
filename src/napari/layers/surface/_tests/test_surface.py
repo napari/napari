@@ -206,6 +206,21 @@ def test_random_3D_timeseries_surface():
     assert len(layer._view_vertices) == 0
 
 
+def test_2D_timeseries_surface_in_3D():
+    """Test 2D surface with a values axis shows no data in 3D view."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((22, 10))
+    layer = Surface((vertices, faces, values))
+    assert layer.ndim == 3
+
+    # all axes are displayed, so the values axis is too
+    with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    assert len(layer._view_vertices) == 0
+
+
 def test_random_3D_multitimeseries_surface():
     """Test instantiating Surface layer with random 3D multitimeseries data."""
     np.random.seed(0)

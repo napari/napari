@@ -74,11 +74,18 @@ class _SurfaceSliceRequest:
 
         not_disp = list(self.slice_input.not_displayed)
         disp = list(self.slice_input.displayed)
-        if not not_disp:
+        vert_orig = self.data[0]
+        # if all dimensions are displayed and these dimensions are only the vertex
+        # dimensions, we can return the original data reordered by the current display
+        # order. This is a common case for 3D surfaces.
+        disp_only_vert_dims = len(disp) == vert_orig.shape[1] and all(
+            d < vert_orig.shape[1] for d in disp
+        )
+        if not not_disp and disp_only_vert_dims:
             return _SurfaceSliceResponse(
                 vertices=self.data[0][:, disp],
                 faces=self.data[1],
-                values=self.data[2] if len(self.data) == 3 else None,
+                values=self.data[2],
                 vertex_colors=self.vertex_colors,
                 texcoords=self.texcoords,
                 slice_input=self.slice_input,
@@ -101,7 +108,6 @@ class _SurfaceSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
-        vert_orig = self.data[0]
         # the presence of vertex_values can add extra dimensions to the layer
         # which are not present in the data itself. We need to adjust for this
         # by offsetting the dim number by the amount of extra dims
