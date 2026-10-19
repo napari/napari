@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import tempfile
 import typing
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, overload
 
 import numpy as np
 from skimage import draw, measure
@@ -21,6 +21,7 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
     TriangleArray,
+    TriangleDtype,
 )
 
 if TYPE_CHECKING:
@@ -631,8 +632,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
-    triangles = cast('TriangleArray', triangles)
-    return vertices, triangles
+    return vertices, triangles.astype(TriangleDtype)
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
