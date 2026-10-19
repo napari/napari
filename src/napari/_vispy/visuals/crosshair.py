@@ -31,10 +31,15 @@ void main()
         axis == 1 ? vec3(0, side, 0) :
                     vec3(0, 0, side);
 
-    // axis vector on screen (non-normalized)
-    vec2 axis_dir = $visual_to_render(vec4(direction, 0)).xy;
+    vec4 center = $visual_to_render(vec4($center, 1));
+    vec4 dir_clip = $visual_to_render(vec4(direction, 0));
 
-    if (length(axis_dir) < 1e-5)
+    // direction of the axis on screen at the center, i.e. the derivative of
+    // the perspective-divided position along the axis. Using only
+    // dir_clip.xy would be wrong under perspective projection.
+    vec2 axis_dir = dir_clip.xy * center.w - center.xy * dir_clip.w;
+
+    if (length(axis_dir) < 1e-5 * abs(center.w))
     {
         // very small, so we're basically looking straight down this axis; we drop
         // it by putting it outside of the clip range (cannot discard in vertex)
@@ -43,7 +48,6 @@ void main()
     }
 
     // pass the center position in ndc coordinates to the fragment shader
-    vec4 center = $visual_to_render(vec4($center, 1));
     vec2 center_ndc = (center.xy / center.w);
     v_center = center_ndc;
 
