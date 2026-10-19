@@ -340,7 +340,7 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     viewer.layers.selection.active = layer
     layer.mode = 'select'
     assert layer._value is None
-    viewer.mouse_over_canvas = True
+    viewer.cursor._canvas_position = (1, 1)
     viewer.cursor.position = tuple(layer.data[1])
     viewer._calc_status_from_cursor()
     assert layer._value == 1
