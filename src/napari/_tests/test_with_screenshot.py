@@ -484,6 +484,48 @@ def test_screenshot_has_no_border(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_screenshot_scale_keeps_view(make_napari_viewer):
+    """Scaling a screenshot should keep the same field of view."""
+    viewer = make_napari_viewer(show=True)
+
+    # four quadrants with a distinct colour each, so we can tell which part of
+    # the image is visible regardless of the scale factor
+    data = np.zeros((60, 80, 4), dtype=np.uint8)
+    data[:30, :40] = [255, 0, 0, 255]  # top-left, red
+    data[:30, 40:] = [0, 255, 0, 255]  # top-right, green
+    data[30:, :40] = [0, 0, 255, 255]  # bottom-left, blue
+    data[30:, 40:] = [255, 255, 0, 255]  # bottom-right, yellow
+    viewer.add_image(data, rgb=True)
+
+    # make the image fill the canvas exactly
+    viewer.window._qt_viewer.canvas.size = data.shape[:2]
+    viewer.scene.camera.zoom = 1
+
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
+    assert screenshot.shape == data.shape
+
+    # scaling the screenshot should keep the same field of view, but at double
+    # the resolution
+    scaled = viewer.screenshot(canvas_only=True, flash=False, scale=2)
+    assert scaled.shape == (data.shape[0] * 2, data.shape[1] * 2, 4)
+
+    # the same four quadrants should be visible at the same relative positions
+    # in both screenshots
+    for relative_position, expected in [
+        ((0.2, 0.2), [255, 0, 0, 255]),
+        ((0.2, 0.8), [0, 255, 0, 255]),
+        ((0.8, 0.2), [0, 0, 255, 255]),
+        ((0.8, 0.8), [255, 255, 0, 255]),
+    ]:
+        for image in (screenshot, scaled):
+            position = tuple(
+                (np.array(image.shape[:2]) * relative_position).astype(int)
+            )
+            np.testing.assert_array_equal(image[position], expected)
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_blending_modes_with_canvas(make_napari_viewer):
     shape = (60, 80)
     viewer = make_napari_viewer(show=True)
