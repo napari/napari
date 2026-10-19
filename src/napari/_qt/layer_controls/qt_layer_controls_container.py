@@ -14,6 +14,7 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
 from napari.layers import (
     Image,
     Labels,
@@ -24,15 +25,12 @@ from napari.layers import (
     Vectors,
 )
 from napari.settings import get_settings
-from napari.utils.theme import Theme, get_theme
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from napari._qt.layer_controls.qt_layer_controls_base import (
         QtLayerControls,
     )
-    from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
     from napari.components import ViewerModel
     from napari.layers.base import Layer
     from napari.utils.events import Event
@@ -135,46 +133,13 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _iter_histogram_canvases(
-        self,
-    ) -> Generator[QtHistogramCanvasWidget]:
-        """Yield lazily-created histogram canvases across all controls."""
-        for widget in self.widgets.values():
-            clim = getattr(widget, '_contrast_limits_control', None)
-            hist = (
-                getattr(clim, 'histogram', None) if clim is not None else None
-            )
-            canvas = (
-                getattr(hist, 'histogram_canvas', None)
-                if hist is not None
-                else None
-            )
-            if canvas is not None:
-                yield canvas
-
-        if self.panel is not None:
-            for control in getattr(self.panel, '_controls', []):
-                hist = getattr(control, 'histogram', None)
-                canvas = (
-                    getattr(hist, 'histogram_canvas', None)
-                    if hist is not None
-                    else None
-                )
-                if canvas is not None:
-                    yield canvas
-
-    def _on_viewer_theme_changed(
-        self, event: Event | None = None, theme: Theme | None = None
-    ) -> None:
+    def _on_viewer_theme_changed(self, event: Event) -> None:
         """Update widgets that respond to theme in a way that qss cannot handle.
 
         Currently, only updates histogram colors.
         """
-        if event is None:
-            assert theme is not None
-        elif theme is None:
-            theme = get_theme(event.value)
-        for canvas in self._iter_histogram_canvases():
+        theme = get_theme(event.value)
+        for canvas in self.findChildren(QtHistogramCanvasWidget):
             canvas._on_theme_change(theme)
 
     def _populate(self) -> None:
