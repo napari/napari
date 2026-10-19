@@ -6,6 +6,7 @@ import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
 from napari._vispy.visuals.crosshair import Crosshair
+from napari.utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from napari.components.overlays import CrosshairOverlay
@@ -26,20 +27,34 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.gap.connect(self._on_gap_change)
 
         self.viewer.cursor.events.position.connect(self._on_position_change)
+        self.viewer.dims.events.ndisplay.connect(self._on_position_change)
+        self.viewer.dims.events.order.connect(self._on_position_change)
+        self.viewer.dims.events.ndim.connect(self._on_position_change)
 
         self.reset()
 
     def _on_position_change(self) -> None:
+        position = np.asarray(self.viewer.cursor.position, dtype=float)
+        if position.size != self.viewer.dims.ndim:
+            # cursor position is only updated on mouse move, so it can
+            # temporarily be out of sync with the dims
+            return
         displayed = list(self.viewer.dims.displayed[::-1])
+        position = position[displayed]
         if len(displayed) == 2:
-            displayed = displayed + [0]
-        self.node.position = np.array(self.viewer.cursor.position)[displayed]
+            position = np.append(position, 0)
+        self.node.position = position
 
     def _on_color_change(self) -> None:
         self.node.color = self.overlay.color
 
     def _on_gap_change(self) -> None:
         self.node.gap = self.overlay.gap
+
+    def close(self) -> None:
+        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self.viewer.dims.events, self)
+        super().close()
 
     def reset(self) -> None:
         super().reset()
