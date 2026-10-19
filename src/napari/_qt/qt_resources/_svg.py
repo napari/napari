@@ -2,6 +2,8 @@
 A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 """
 
+from __future__ import annotations
+
 from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
 from qtpy.QtGui import QIcon, QIconEngine, QImage, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
@@ -56,7 +58,7 @@ class QColoredSVGIcon(QIcon):
         opacity: float = 1.0,
         theme: str | None = None,
         theme_key: str = 'icon',
-    ) -> 'QColoredSVGIcon':
+    ) -> QColoredSVGIcon:
         """Return a new colorized QIcon instance.
 
         Parameters
@@ -87,7 +89,7 @@ class QColoredSVGIcon(QIcon):
     @staticmethod
     def from_resources(
         icon_name: str,
-    ) -> 'QColoredSVGIcon':
+    ) -> QColoredSVGIcon:
         """Get an icon from napari SVG resources.
 
         Parameters
@@ -118,29 +120,37 @@ class SVGBufferIconEngine(QIconEngine):
 
     This ``QIconEngine`` takes in SVG data as a raw xml string or bytes.
 
-    see: https://doc.qt.io/qt-5/qiconengine.html
+    see: https://doc.qt.io/qt-6/qiconengine.html
     """
 
-    def __init__(self, xml: str | bytes) -> None:
+    def __init__(self, xml: str | bytes | QByteArray) -> None:
         if isinstance(xml, str):
             xml = xml.encode('utf-8')
         self.data = QByteArray(xml)
         super().__init__()
 
-    def paint(self, painter: QPainter, rect, mode, state):
+    def paint(
+        self,
+        painter: QPainter,
+        rect: QRect,
+        mode: QIcon.Mode,
+        state: QIcon.State,
+    ) -> None:
         """Paint the icon int ``rect`` using ``painter``."""
         renderer = QSvgRenderer(self.data)
         renderer.render(painter, QRectF(rect))
 
-    def clone(self):
+    def clone(self) -> SVGBufferIconEngine:
         """Required to subclass abstract QIconEngine."""
         return SVGBufferIconEngine(self.data)
 
-    def pixmap(self, size, mode, state):
+    def pixmap(self, size, mode, state) -> QPixmap:
         """Return the icon as a pixmap with requested size, mode, and state."""
-        img = QImage(size, QImage.Format_ARGB32)
-        img.fill(Qt.transparent)
-        pixmap = QPixmap.fromImage(img, Qt.NoFormatConversion)
+        img = QImage(size, QImage.Format.Format_ARGB32)
+        img.fill(Qt.GlobalColor.transparent)
+        pixmap = QPixmap.fromImage(
+            img, Qt.ImageConversionFlag.NoFormatConversion
+        )
         painter = QPainter(pixmap)
         self.paint(painter, QRect(QPoint(0, 0), size), mode, state)
         return pixmap

@@ -29,6 +29,7 @@ from napari.components.camera import _SYNCED_CAMERA_DESCRIPTION
 from napari.layers._scalar_field import ScalarFieldBase
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
+    AxisOrientation,
     DepthAxisOrientation,
     DepthAxisOrientationStr,
     HorizontalAxisOrientation,
@@ -128,10 +129,10 @@ class QtLayerButtons(QFrame):
         self.viewer.layers.events.removed.connect(self._on_selection_changed)
         self._on_selection_changed()
 
-    def _new_points(self):
+    def _new_points(self) -> None:
         new_points(self.viewer)
 
-    def _new_shapes(self):
+    def _new_shapes(self) -> None:
         new_shapes(self.viewer)
 
     def _on_selection_changed(self, event=None) -> None:
@@ -210,7 +211,7 @@ def enum_combobox(
     parent: QtPopup,
     enum_class: EnumMeta,
     current_enum: Enum,
-    callback: Callable[[], Any] | Callable[[Enum], Any] | Callable[[str], Any],
+    callback: Callable[..., Any],
 ) -> QEnumComboBox:
     """Create an enum combobox widget."""
     combo = QEnumComboBox(parent, enum_class=enum_class)
@@ -312,7 +313,7 @@ class QtViewerButtons(QFrame):
         ndb.customContextMenuRequested.connect(self.open_ndisplay_camera_popup)
 
         @self.viewer.dims.events.ndisplay.connect
-        def _set_ndisplay_mode_checkstate(event):
+        def _set_ndisplay_mode_checkstate(event) -> None:
             ndb.setChecked(event.value == 3)
 
         layout = QHBoxLayout()
@@ -326,13 +327,13 @@ class QtViewerButtons(QFrame):
         layout.addStretch(0)
         self.setLayout(layout)
 
-    def eventFilter(self, qobject, event):
+    def eventFilter(self, qobject, event) -> bool:
         """Have Alt/Option key rotate layers with the transpose button."""
         modifiers = QApplication.keyboardModifiers()
         if (
-            modifiers == Qt.AltModifier
+            modifiers == Qt.KeyboardModifier.AltModifier
             and qobject == self.transposeDimsButton
-            and event.type() == QEvent.MouseButtonPress
+            and event.type() == QEvent.Type.MouseButtonPress
         ):
             action_manager.trigger('napari:rotate_layers')
             return True
@@ -594,11 +595,7 @@ class QtViewerButtons(QFrame):
 
     def _update_orientation(
         self,
-        orientation_type: type[
-            DepthAxisOrientation
-            | VerticalAxisOrientation
-            | HorizontalAxisOrientation
-        ],
+        orientation_type: AxisOrientation,
         orientation_value: (
             DepthAxisOrientationStr
             | VerticalAxisOrientationStr
@@ -609,20 +606,19 @@ class QtViewerButtons(QFrame):
 
         Parameters
         ----------
-        orientation_type : type[DepthAxisOrientation | VerticalAxisOrientation | HorizontalAxisOrientation]
+        orientation_type : AxisOrientation
             The orientation type (which implies the position/axis) to update.
         value : DepthAxisOrientationStr | VerticalAxisOrientationStr | HorizontalAxisOrientationStr
             New orientation value for the updated axis.
         """
-        axes = (
-            DepthAxisOrientation,
-            VerticalAxisOrientation,
-            HorizontalAxisOrientation,
-        )
-        axis_to_update = axes.index(orientation_type)
-        new_orientation = list(self.viewer.scene.camera.orientation)
-        new_orientation[axis_to_update] = orientation_type(orientation_value)
-        self.viewer.scene.camera.orientation = tuple(new_orientation)
+        depth, vertical, horizontal = self.viewer.scene.camera.orientation
+        if orientation_type is DepthAxisOrientation:
+            depth = DepthAxisOrientation(orientation_value)
+        elif orientation_type is VerticalAxisOrientation:
+            vertical = VerticalAxisOrientation(orientation_value)
+        else:
+            horizontal = HorizontalAxisOrientation(orientation_value)
+        self.viewer.scene.camera.orientation = (depth, vertical, horizontal)
 
     def _update_camera_angles(self, idx: int, value: float) -> None:
         """Update the camera angles.
@@ -637,7 +633,7 @@ class QtViewerButtons(QFrame):
 
         angles = list(self.viewer.scene.camera.angles)
         angles[idx] = value
-        self.viewer.scene.camera.angles = tuple(angles)
+        self.viewer.scene.camera.angles = (angles[0], angles[1], angles[2])
 
     def _update_zoom(self, value: float) -> None:
         """Update the camera zoom.
@@ -661,7 +657,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.scene.camera.perspective = value
 
-    def _open_roll_popup(self):
+    def _open_roll_popup(self) -> None:
         """Open a grid popup to manually order the dimensions"""
         pop = QtPopup(self)
 
@@ -677,10 +673,10 @@ class QtViewerButtons(QFrame):
         # show popup
         pop.show_above_mouse()
 
-    def _update_grid_button(self, event):
+    def _update_grid_button(self, event) -> None:
         self.gridViewButton.setChecked(event.value)
 
-    def _open_grid_popup(self):
+    def _open_grid_popup(self) -> None:
         """Open grid options pop up widget."""
 
         # widgets
@@ -782,7 +778,7 @@ class QtViewerButtons(QFrame):
         popup.frame.setLayout(grid_layout)
         popup.show_above_mouse()
 
-    def _update_grid_width(self, value):
+    def _update_grid_width(self, value) -> None:
         """Update the width value in grid shape.
 
         Parameters
@@ -796,7 +792,7 @@ class QtViewerButtons(QFrame):
             value,
         )
 
-    def _update_grid_stride(self, value):
+    def _update_grid_stride(self, value) -> None:
         """Update stride in grid settings.
 
         Parameters
@@ -807,7 +803,7 @@ class QtViewerButtons(QFrame):
 
         self.viewer.canvas.grid.stride = value
 
-    def _update_grid_height(self, value):
+    def _update_grid_height(self, value) -> None:
         """Update height value in grid shape.
 
         Parameters
@@ -834,7 +830,7 @@ class QtViewerButtons(QFrame):
 
 def _omit_viewer_args(constructor):
     @wraps(constructor)
-    def _func(*args, **kwargs):
+    def _func(*args, **kwargs: Any) -> Any:
         if len(args) > 1 and not isinstance(args[1], str):
             warnings.warn(
                 'viewer argument is deprecated since 0.4.14 and should not be used',
@@ -880,7 +876,7 @@ class QtViewerPushButton(QPushButton):
         self,
         button_name: str,
         tooltip: str = '',
-        slot=None,
+        slot: Callable | None = None,
         action: str = '',
         extra_tooltip_text: str = '',
     ) -> None:

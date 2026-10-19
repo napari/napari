@@ -449,7 +449,7 @@ class Tracks(Layer):
     @graph.setter
     def graph(self, graph: dict[int, int | list[int]]) -> None:
         """Set the track graph."""
-        # Ignored type, because mypy can't handle different signatures
+        # Ignored type, because pyrefly can't handle different signatures
         # on getters and setters; see https://github.com/python/mypy/issues/3004
         self._manager.graph = graph
         self._manager.build_graph()
@@ -669,7 +669,9 @@ class Tracks(Layer):
 class _TracksSlicingState(_LayerSlicingState):
     layer: Tracks
 
-    def __init__(self, layer: Tracks, data: LayerDataType, cache: bool):
+    def __init__(
+        self, layer: Tracks, data: LayerDataType, cache: bool
+    ) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
         self._current_displayed_dims: Optional[list[int]] = None
 

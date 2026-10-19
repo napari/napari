@@ -1,6 +1,7 @@
 import gc
 import logging
 import os
+import shutil
 import sys
 import warnings
 from contextlib import suppress
@@ -60,14 +61,28 @@ def fail_obj_graph(Klass):  # pragma: no cover
 
         leaked_objects_count = len(Klass._instances)
 
+        graphviz_available = (
+            shutil.which('dot') is not None
+            or shutil.which('dot.exe') is not None
+        )
+
         gc.collect()
-        file_path = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+        if graphviz_available:
+            file_path = Path(
+                f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
+            ).absolute()
+            objgraph.show_backrefs(
+                list(Klass._instances),
+                max_depth=20,
+                filename=str(file_path),
+            )
+        file_path_dot = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
         ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
-            filename=str(file_path),
+            filename=str(file_path_dot),
         )
 
         Klass._instances.clear()
@@ -214,15 +229,6 @@ def plugin_settings(npe2pm, tmp_path, monkeypatch):
         napari_settings._clear_plugin_settings_cache
     )
     napari_settings._clear_plugin_settings_cache()
-
-
-@pytest.fixture(autouse=True)
-def _disable_qt_warnings(monkeypatch):
-    try:
-        from napari._qt import qt_main_window
-    except ImportError:
-        return
-    monkeypatch.setattr(qt_main_window, 'SHOW_QT_WARNING', False)
 
 
 @pytest.fixture

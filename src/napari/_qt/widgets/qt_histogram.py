@@ -4,17 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
 from napari._qt.qthreading import GeneratorWorker, create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
+from napari.utils.colormaps.colormap_utils import _representative_color
 from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    import numpy as np
     from pydantic_extra_types.color import Color
 
     from napari.layers import Image
@@ -80,7 +81,7 @@ class QtHistogramWidget(QWidget):
         self.histogram_visual.parent = self.view.scene
 
         self.view.camera = 'panzoom'
-        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)
+        self.view.camera.set_range(x=(0, 1), y=(0, 1), margin=0.01)  # pyrefly: ignore [missing-attribute]
         # Disable viewbox interaction to prevent accidental pan/zoom
         self.view.interactive = False
 
@@ -154,7 +155,7 @@ class QtHistogramWidget(QWidget):
         worker = cast(
             GeneratorWorker,
             create_worker(
-                self._histogram.compute,  # type: ignore[arg-type]
+                self._histogram.compute,  # pyrefly: ignore [bad-argument-type]
                 _progress={'desc': 'Computing histogram'},
             ),
         )
@@ -212,18 +213,14 @@ class QtHistogramWidget(QWidget):
     ) -> tuple[float, float, float, float]:
         """Convert a napari theme color to a vispy RGBA tuple."""
         # color is returned as a 4-tuple even when alpha=False,
-        # so to satisfy mypy we need to explicity build a 3-tuple
+        # so to satisfy pyrefly we need to explicity build a 3-tuple
         rgb = color.as_rgb_tuple(alpha=False)
         red, green, blue = rgb[0], rgb[1], rgb[2]
         return (red / 255, green / 255, blue / 255, alpha)
 
     def _layer_bar_color(self) -> tuple[float, float, float, float]:
-        """Use end of colormap for histogram bars.
-
-        Picking the almost highest end (``map([0.8])``) avoids invisibility on
-        dark canvas with reversed colormaps like ``gray_r``.
-        """
-        rgba = np.atleast_2d(self.layer.colormap.map([0.8]))[0].astype(float)
+        """Use the colormap's representative color for histogram bars."""
+        rgba = _representative_color(self.layer.colormap)
         alpha = max(float(rgba[3]), 0.8)
         return (float(rgba[0]), float(rgba[1]), float(rgba[2]), alpha)
 
@@ -279,8 +276,8 @@ class QtHistogramWidget(QWidget):
                 bin_edges=bin_edges,
                 counts=counts,
                 gamma=gamma,
-                clims=clims,
-                data_range=clims_range,
+                clims=clims,  # pyrefly: ignore [bad-argument-type]
+                data_range=clims_range,  # pyrefly: ignore [bad-argument-type]
             )
             self.canvas.update()
         finally:

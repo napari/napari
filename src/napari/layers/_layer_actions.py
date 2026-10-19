@@ -12,13 +12,15 @@ import numpy as np
 import numpy.typing as npt
 
 from napari import layers
-from napari.layers import Image, Labels, Layer
+from napari.layers import Image, Labels, Layer, Points
 from napari.layers._source import layer_source
 from napari.layers.utils import stack_utils
 from napari.layers.utils._link_layers import get_linked_layers
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from napari.components import LayerList
     from napari.types import ArrayLike
 
@@ -49,7 +51,7 @@ def _split_stack(ll: LayerList, axis: int = 0) -> None:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
     ll.extend(images)
-    ll.selection = set(images)  # type: ignore
+    ll.selection = set(images)
 
 
 def _split_rgb(ll: LayerList) -> None:
@@ -270,6 +272,108 @@ def _project(ll: LayerList, axis: int = 0, mode: str = 'max') -> None:
     )
 
     ll.append(new)
+
+
+def _project_points(ll: LayerList, axis: int = 0) -> None:
+    """Project a points layer by dropping its first axis.
+
+    No reduction is applied: every point is kept and its coordinate along
+    ``axis`` is removed, so a 3D layer becomes 2D. Per-point state (size,
+    colors, symbol, features) is preserved. See napari/napari#9195.
+    """
+    layer = ll.selection.active
+    if not layer:
+        return
+    if not isinstance(layer, Points):
+        raise NotImplementedError(
+            'Dropping the first axis is only implemented for points'
+        )
+
+    kept_axes = [ax for ax in range(layer.ndim) if ax != axis]
+    new_data = np.asarray(layer.data)[:, kept_axes]
+
+    # Point count is unchanged, so per-point state round-trips as-is. Drop the
+    # transform keys (re-derived below via `set_slice`) and `ndim` (inferred
+    # from new_data, which now has one fewer column).
+    _, meta, _ = layer.as_layer_data_tuple()
+    for key in (
+        'scale',
+        'translate',
+        'rotate',
+        'shear',
+        'affine',
+        'axis_labels',
+        'units',
+        'ndim',
+    ):
+        meta.pop(key, None)
+    meta['name'] = f'{layer.name} projected'
+
+    new = Layer.create(new_data, meta, layer._type_string)
+    # keep the original transforms, dropping the projected axis
+    new._transforms = layer._transforms.set_slice(kept_axes)
+
+    ll.append(new)
+
+
+def _extract_multiscale_level(
+    layers: Collection[Image | Labels], level: int | None = None
+) -> list[Layer]:
+    new_layers: list[Layer] = []
+    for layer in layers:
+        extracting_data_level = layer.data_level if level is None else level
+
+        layer_state = layer._get_state()
+        layer_state.pop('data', None)
+        layer_state['name'] = f'{layer.name}-level({extracting_data_level})'
+        layer_state['multiscale'] = False
+
+        downsample_factor = np.asarray(
+            layer.downsample_factors[extracting_data_level]
+        )
+        layer_scale = np.asarray(layer_state['scale'])
+
+        layer_state['scale'] = (layer_scale * downsample_factor).tolist()
+        layer_state['translate'] = (
+            np.asarray(layer_state['translate'])
+            + (downsample_factor - 1) / 2 * layer_scale
+        ).tolist()
+
+        layer_state.pop('locked_data_level', None)
+
+        with layer_source(parent=layer):
+            new_layers.append(
+                Layer.create(
+                    layer.data[extracting_data_level],
+                    layer_state,
+                    layer._type_string,
+                )
+            )
+
+    return new_layers
+
+
+def _extract_multiscale_level_from_selection(
+    ll: LayerList, level: int | None = None
+) -> None:
+    if not ll.selection or not all(
+        isinstance(layer, (Image, Labels)) and layer.multiscale
+        for layer in ll.selection
+    ):
+        show_warning(
+            'Only multiscale Image and Labels layers can extract data levels'
+        )
+        return
+
+    layers = tuple(
+        layer for layer in ll.selection if isinstance(layer, (Image, Labels))
+    )
+
+    adding_layers = _extract_multiscale_level(layers, level)
+    for layer, new_layer in zip(layers, adding_layers, strict=True):
+        ll.insert(ll.index(layer) + 1, new_layer)
+
+    return
 
 
 def _toggle_bounding_box(ll: LayerList) -> None:

@@ -6,7 +6,6 @@ import sys
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy import PYQT5
 from qtpy.QtCore import QDir, QRectF, QSize, Qt
 from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
@@ -20,7 +19,7 @@ from napari._qt.qthreading import (
     register_threadworker_processors,
     wait_for_workers_to_quit,
 )
-from napari._qt.utils import _maybe_allow_interrupt
+from napari._qt.utils import _maybe_allow_interrupt, use_tabular_numerals
 from napari._wayland_fix import _nvidia_driver_loaded
 from napari.resources._icons import _theme_path
 from napari.settings import get_settings
@@ -207,20 +206,6 @@ def get_qapp(
             )
 
     else:
-        # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated. Also, this
-        # attributes need to be applied only to Qt5 bindings (PyQt5)
-        # since the High DPI scaling attributes are deactivated by default while on Qt6
-        # they are deprecated and activated by default. For more info see:
-        # https://doc.qt.io/qtforpython-6/gettingstarted/porting_from2.html#class-function-deprecations
-        if PYQT5:
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_EnableHighDpiScaling
-            )
-            QApplication.setAttribute(
-                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps
-            )
-
         argv = sys.argv.copy()
         if sys.platform == 'darwin' and not argv[0].endswith('napari'):
             # Make sure the app name in the Application menu is `napari`
@@ -248,6 +233,8 @@ def get_qapp(
         # Intercept tooltip events in order to convert all text to rich text
         # to allow for text wrapping of tooltips
         app.installEventFilter(QtToolTipEventFilter())
+
+        use_tabular_numerals(app)
 
     if app.windowIcon().isNull():
         app.setWindowIcon(_svg_path_to_icon(kwargs['icon']))
@@ -341,7 +328,7 @@ def _ipython_has_eventloop() -> bool:
     if not ipy_module:
         return False
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return False
 
@@ -366,7 +353,7 @@ def _try_enable_ipython_gui(gui='qt'):
     if not ipy_module:
         return
 
-    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    shell: InteractiveShell = ipy_module.get_ipython()
     if not shell:
         return
     if shell.active_eventloop != gui:

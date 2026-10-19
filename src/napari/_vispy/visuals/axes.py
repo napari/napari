@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Mesh
 
@@ -9,7 +11,9 @@ from napari.layers.shapes._shapes_utils import triangulate_ellipse
 from napari.utils.colormaps.standardize_color import transform_color
 
 
-def make_dashed_line(num_dashes, axis):
+def make_dashed_line(
+    num_dashes, axis
+) -> np.ndarray[tuple[int, Literal[3]], np.dtype[np.float64]]:
     """Make a dashed line.
 
     Parameters
@@ -22,7 +26,7 @@ def make_dashed_line(num_dashes, axis):
     Returns
     -------
     np.ndarray
-        Dashed line, of shape (num_dashes, 3) with zeros in
+        Dashed line, of shape (2 * num_dashes, 3) with zeros in
         the non dashed axes and line segments in the dashed
         axis.
     """
@@ -51,7 +55,7 @@ def make_arrow_head(num_segments, axis):
         Vertices and faces of the arrowhead.
     """
     corners = np.array([[-1, -1], [-1, 1], [1, 1], [1, -1]]) * 0.1
-    vertices, faces = triangulate_ellipse(corners, num_segments)  # type: ignore[arg-type]
+    vertices, faces = triangulate_ellipse(corners, num_segments)  # pyrefly: ignore [bad-argument-type]
     full_vertices = np.zeros((num_segments + 1, 3))
     inds = list(range(3))
     inds.pop(axis)
@@ -208,7 +212,7 @@ class Axes(Compound):
         dashed,
         arrows,
         text_offset=0.3,
-    ):
+    ) -> None:
         ndisplay = len(axes)
 
         # Determine colors of axes based on reverse position

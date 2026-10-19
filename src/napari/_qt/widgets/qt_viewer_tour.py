@@ -242,11 +242,7 @@ class GuidedTour(QObject):
         self._window = None
         self.deleteLater()
 
-    def eventFilter(
-        self, watched: QObject | None, event: QEvent | None
-    ) -> bool:
-        if event is None:
-            return super().eventFilter(watched, event)
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if watched is self._window and event.type() == QEvent.Type.Resize:
             self._show_step(self._current)
         elif event.type() == QEvent.Type.KeyPress:

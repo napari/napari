@@ -10,6 +10,7 @@ import warnings
 from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
+from types import ModuleType
 from typing import Any
 
 from napari import Viewer
@@ -38,7 +39,7 @@ class PluginInfoAction(argparse.Action):
         cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
-            format='table',
+            format='table',  # pyrefly: ignore [bad-argument-type]
         )
         sys.exit()
 
@@ -312,7 +313,7 @@ def _build_viewer() -> Viewer:
                 for name, (
                     _pname,
                     wnames_collection,
-                ) in _npe2.widget_iterator():
+                ) in _npe2.widget_iterator():  # pyrefly: ignore [unbound-name]
                     if name == 'dock' and pname == _pname:
                         wnames = wnames_collection
                         break
@@ -351,7 +352,7 @@ def _run() -> None:
     run(gui_exceptions=True)
 
 
-def _run_plugin_module(mod, plugin_name):
+def _run_plugin_module(mod: ModuleType, plugin_name: str) -> None:
     """Register `mod` as a plugin, find/create viewer, and run napari."""
     from napari import Viewer, run
 

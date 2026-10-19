@@ -14,11 +14,9 @@
 	"settings": {
 		"python.defaultInterpreterPath": "/opt/conda/bin/python",
 		"python.linting.enabled": true,
-		"python.linting.mypyEnabled": true,
 		"python.linting.flake8Enabled": true,
 		"python.formatting.blackPath": "/opt/conda/bin/black",
 		"python.linting.flake8Path": "/opt/conda/bin/flake8",
-		"python.linting.mypyPath": "/opt/conda/bin/mypy",
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.

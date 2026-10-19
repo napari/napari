@@ -103,5 +103,5 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
 
     prev = shape.TRIANGULATION_BACKEND
 
-    shape.TRIANGULATION_BACKEND = backend
+    shape.TRIANGULATION_BACKEND = backend  # pyrefly: ignore [bad-assignment]
     return prev

@@ -128,7 +128,7 @@ def get_plugin_list() -> str:
 
         pm = PluginManager.instance()
         pm.discover(include_npe1=True)
-        pm.index_npe1_adapters()  # type: ignore[no-untyped-call]
+        pm.index_npe1_adapters()
         fields = [
             'name',
             'package_metadata.version',
@@ -204,13 +204,13 @@ def sys_info(as_html: bool = False) -> str:
 
         if API_NAME == 'PySide6':
             API_VERSION = PYSIDE_VERSION
-        elif API_NAME in {'PyQt5', 'PyQt6'}:
+        elif API_NAME == 'PyQt6':
             API_VERSION = PYQT_VERSION
         else:
             API_VERSION = ''
 
         text += (
-            f'<b>Qt</b>: {QtCore.__version__}<br>'
+            f'<b>Qt</b>: {QtCore.qVersion()}<br>'
             f'<b>{API_NAME}</b>: {API_VERSION}<br>'
         )
 
@@ -299,7 +299,7 @@ def sys_info(as_html: bool = False) -> str:
         from napari.settings import get_settings
 
         _async_setting = str(get_settings().experimental.async_)
-        _autoswap_buffers = str(get_settings().experimental.autoswap_buffers)
+        _autoswap_buffers = str(get_settings().advanced.autoswap_buffers)
         _triangulation_backend = str(
             get_settings().experimental.triangulation_backend
         )

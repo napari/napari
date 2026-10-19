@@ -22,6 +22,14 @@ from napari.layers import _layer_actions
 if TYPE_CHECKING:
     from app_model.types import MenuRuleDict
 
+# Projections need a layer with more than 2 dimensions.
+_ACTIVE_IMAGE_ND = (LLSCK.active_layer_type == 'image') & (
+    LLSCK.active_layer_ndim > 2
+)
+_ACTIVE_POINTS_ND = (LLSCK.active_layer_type == 'points') & (
+    LLSCK.active_layer_ndim > 2
+)
+
 # Layer submenus
 LAYERLIST_CONTEXT_SUBMENUS = [
     (
@@ -41,7 +49,7 @@ LAYERLIST_CONTEXT_SUBMENUS = [
             title='Projections',
             group=MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
             order=None,
-            enablement=LLSCK.active_layer_is_image_3d,
+            enablement=(_ACTIVE_IMAGE_ND | _ACTIVE_POINTS_ND),
         ),
     ),
     (
@@ -95,8 +103,7 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
         callback=_layer_actions._split_stack,
         menus=[{**LAYERCTX_SPLITMERGE, 'when': ~LLSCK.active_layer_is_rgb}],
         enablement=(
-            LLSCK.active_layer_is_image_3d
-            & ~LLSCK.any_selected_layers_deletion_locked
+            _ACTIVE_IMAGE_ND & ~LLSCK.any_selected_layers_deletion_locked
         ),
     ),
     Action(
@@ -303,6 +310,18 @@ LAYERLIST_CONTEXT_ACTIONS: list[Action] = [
             get_current=_layer_actions._are_name_overlays_visible
         ),
     ),
+    Action(
+        id='napari.layer.extract_multiscale_level',
+        title='New layer from selected multiscale level',
+        callback=_layer_actions._extract_multiscale_level_from_selection,
+        menus=[
+            {
+                'id': MenuId.LAYERLIST_CONTEXT,
+                'group': MenuGroup.LAYERLIST_CONTEXT.SPLIT_MERGE,
+                'when': LLSCK.single_selected_multiscale_layer_locked_data_level,
+            }
+        ],
+    ),
 ]
 
 for _dtype in (
@@ -334,7 +353,23 @@ for mode in ('max', 'min', 'std', 'sum', 'mean', 'median'):
             id=f'napari.layer.project_{mode}',
             title=f'{mode} projection',
             callback=partial(_layer_actions._project, mode=mode),
-            enablement=LLSCK.active_layer_is_image_3d,
-            menus=[{'id': MenuId.LAYERS_CONTEXT_PROJECT}],
+            enablement=_ACTIVE_IMAGE_ND,
+            menus=[
+                {'id': MenuId.LAYERS_CONTEXT_PROJECT, 'when': _ACTIVE_IMAGE_ND}
+            ],
         )
     )
+
+# Points have no reduction mode: a single entry in the same Projections submenu
+# that drops the leading axis.
+LAYERLIST_CONTEXT_ACTIONS.append(
+    Action(
+        id='napari.layer.project_points_single_plane',
+        title='Drop first axis',
+        callback=_layer_actions._project_points,
+        enablement=_ACTIVE_POINTS_ND,
+        menus=[
+            {'id': MenuId.LAYERS_CONTEXT_PROJECT, 'when': _ACTIVE_POINTS_ND}
+        ],
+    )
+)

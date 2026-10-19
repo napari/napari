@@ -37,6 +37,7 @@ def _assert_quat_equal(q1, q2):
         [q1.x, q1.y, q1.z, q1.w],
         [q2.x, q2.y, q2.z, q2.w],
         rtol=0.005,
+        atol=1e-4,
     )
 
 

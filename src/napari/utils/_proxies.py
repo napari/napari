@@ -19,7 +19,7 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     Disable item and attribute setting with the exception of  ``__wrapped__``.
     """
 
-    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()):
+    def __init__(self, wrapped: Any, exceptions: tuple[str, ...] = ()) -> None:
         super().__init__(wrapped)
         self._self_exceptions = exceptions
 
@@ -161,7 +161,7 @@ class PublicOnlyProxy(wrapt.ObjectProxy, Generic[_T]):
 
 
 class CallablePublicOnlyProxy(PublicOnlyProxy[Callable]):
-    def __call__(self, *args, **kwargs):  # type: ignore [no-untyped-def]
+    def __call__(self, *args: Any, **kwargs: Any) -> PublicOnlyProxy | Any:
         # if a PublicOnlyProxy is callable, then when we call it we:
         # - unwrap the arguments, to avoid performance issues detailed in
         #   PublicOnlyProxy.__setattr__,

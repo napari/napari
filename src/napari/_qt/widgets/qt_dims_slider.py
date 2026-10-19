@@ -184,6 +184,8 @@ class QtDimSliderWidget(QWidget):
         slider.setPageStep(1)
         slider.setValue(self.dims.current_step[self.axis])
 
+        slider.setToolTip('Right click to open the thick slicing controls.')
+
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._on_value_changed)
 
@@ -503,9 +505,7 @@ class QtPlayButton(QPushButton):
         fpsspin.setObjectName('fpsSpinBox')
         fpsspin.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fpsspin.setValue(self.fps)
-        if hasattr(fpsspin, 'setStepType'):
-            # this was introduced in Qt 5.12.  Totally optional, just nice.
-            fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        fpsspin.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         form_layout.insertRow(

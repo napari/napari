@@ -33,7 +33,7 @@ __all__ = [
     'QtFaceColorControl',
     'QtGammaSliderControl',
     'QtHistogramControl',
-    'QtInterpolationComboBoxControl',
+    'QtInterpolationComboBoxControl',  # pyrefly: ignore [bad-dunder-all]
     'QtMultiscaleLevelControl',
     'QtOpacityBlendingControls',
     'QtProjectionModeControl',
