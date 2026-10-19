@@ -438,6 +438,11 @@ authors:
   family-names: Reksoatmodjo
   affiliation: Translucence Biosystems
   alias: Modjular
+- given-names: Kai
+  family-names: Riedmiller
+  affiliation: University Heidelberg
+  orcid: https://orcid.org/0000-0003-1738-754X
+  alias: KRiedmiller
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
