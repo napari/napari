@@ -8,9 +8,7 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
 from napari._vispy.visuals.histogram import HistogramVisual
-from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import _representative_color
-from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from pydantic_extra_types.color import Color
@@ -50,13 +48,9 @@ class QtHistogramCanvasWidget(QWidget):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-
-        self.theme = get_theme(get_settings().appearance.theme)
-
         # Create vispy canvas
         self.canvas = SceneCanvas(
             size=(_DEFAULT_CANVAS_WIDTH, _DEFAULT_CANVAS_HEIGHT),
-            bgcolor=self.theme.canvas.as_hex(),
             keys=None,
         )
         self.canvas.native.setParent(self)
@@ -80,8 +74,6 @@ class QtHistogramCanvasWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(self.canvas.native)
         self.setLayout(main_layout)
-
-        self._on_theme_change(self.theme)
 
     def update_colormap(self, colormap: Colormap) -> None:
         rgba = _representative_color(colormap)

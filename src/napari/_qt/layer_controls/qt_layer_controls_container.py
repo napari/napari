@@ -14,7 +14,7 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
-from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
+from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari.layers import (
     Image,
     Labels,
@@ -116,7 +116,8 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.changed.connect(self._populate)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
-        viewer.events.theme.connect(self._on_viewer_theme_changed)
+        get_settings().appearance.events.theme.connect(self._on_theme_changed)
+        viewer.events.theme.connect(self._on_theme_changed)
 
     def _on_ndisplay_changed(self, event: Event) -> None:
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -133,14 +134,14 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _on_viewer_theme_changed(self, event: Event) -> None:
+    def _on_theme_changed(self, event: Event) -> None:
         """Update widgets that respond to theme in a way that qss cannot handle.
 
         Currently, only updates histogram colors.
         """
         theme = get_theme(event.value)
-        for canvas in self.findChildren(QtHistogramCanvasWidget):
-            canvas._on_theme_change(theme)
+        for hist in self.findChildren(QtHistogramWidget):
+            hist._on_theme_change(theme)
 
     def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.

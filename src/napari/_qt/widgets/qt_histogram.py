@@ -16,7 +16,7 @@ from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 from napari.utils.histogram import _make_empty
-from napari.utils.theme import get_theme
+from napari.utils.theme import Theme, get_theme
 
 if TYPE_CHECKING:
     import numpy as np
@@ -142,7 +142,7 @@ class QtHistogramWidget(QWidget):
         self._constructing_content = False
         self._mirror = mirror
         self._histogram_worker: _HistogramWorker | None = None
-        self._appearance = get_settings().appearance
+        self.theme = get_theme(get_settings().appearance.theme)
 
         if mirror:
             self.layer.histogram.events.updated.connect(
@@ -166,10 +166,6 @@ class QtHistogramWidget(QWidget):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(self.update_histogram)
         self.layer.events.gamma.connect(self.update_histogram)
-        self._appearance.events.theme.connect(
-            self._on_appearance_theme_changed
-        )
-
         self.destroyed.connect(self._stop_histogram_worker)
 
     def _ensure_histogram_content(self) -> None:
@@ -190,6 +186,7 @@ class QtHistogramWidget(QWidget):
             self.histogram_canvas = QtHistogramCanvasWidget(
                 parent=self,
             )
+            self.histogram_canvas._on_theme_change(self.theme)
             layout.addWidget(self.histogram_canvas)
             self.histogram_canvas.update_colormap(self.layer.colormap)
 
@@ -262,10 +259,10 @@ class QtHistogramWidget(QWidget):
         if self._constructed:
             self.histogram_canvas.update_colormap(self.layer.colormap)
 
-    def _on_appearance_theme_changed(self, event: Event) -> None:
-        if not self._constructed:
-            return
-        self.histogram_canvas._on_theme_change(get_theme(event.value))
+    def _on_theme_change(self, theme: Theme) -> None:
+        self.theme = theme
+        if self._constructed:
+            self.histogram_canvas._on_theme_change(theme)
 
     def update_histogram(self) -> None:
         if self._constructed:
@@ -281,14 +278,12 @@ class QtHistogramWidget(QWidget):
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self.layer.histogram.events, self)
         disconnect_events(self.layer.events, self)
-        disconnect_events(self._appearance.events, self)
         self._stop_histogram_worker()
 
     def cleanup(self) -> None:
         """Disconnect event handlers and clean up child widgets."""
         disconnect_events(self.layer.histogram.events, self)
         disconnect_events(self.layer.events, self)
-        disconnect_events(self._appearance.events, self)
         self._stop_histogram_worker()
         if self._constructed:
             self.settings_widget.cleanup()

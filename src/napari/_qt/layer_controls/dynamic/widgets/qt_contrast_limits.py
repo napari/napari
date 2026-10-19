@@ -266,6 +266,7 @@ class QContrastLimitsPopup(QtPopup):
                     self.histogram.bin_edges = main_hist.bin_edges
                     self.histogram.counts = main_hist.counts
                     self.histogram.update_histogram()
+                    self.histogram._on_theme_change(main_hist.theme)
             self.histogram.show()
             # process events to ensure the size hint is up to date
             QApplication.processEvents()
