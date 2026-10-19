@@ -62,10 +62,13 @@ class IntensityVisualizationMixin(Layer):
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
+        # imported lazily: napari.components imports napari.layers
+        from napari.components.histogram import Histogram
+
         self._histogram = Histogram()
 
     @property
-    def histogram(self) -> Histogram:
+    def histogram(self) -> 'Histogram':
         """Histogram model for this layer (settings only)."""
         return self._histogram
 
