@@ -18,7 +18,7 @@ limit_numpy1x_threads_on_macos_arm()
 _fix_wayland_opengl()
 
 
-def _check_installation_path():  # pragma: no cover
+def _check_installation_path() -> None:  # pragma: no cover
     """Check for installation path conflicts.
 
     Check if napari is present in site-packages. If napari is installed in editable mode,

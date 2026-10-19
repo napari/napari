@@ -49,7 +49,7 @@ def score_specificity(pattern: str) -> tuple[bool, int, list[MatchFlag]]:
     score: list[MatchFlag] = []
     ends_with_star = False
 
-    def add(match_flag):
+    def add(match_flag: MatchFlag) -> None:
         score[-1] |= match_flag
 
     # built-in fnmatch does not allow you to escape meta-characters
@@ -130,7 +130,7 @@ def normalized_name(name: str) -> str:
     return re.sub(r'[-_.]+', '-', name).lower()
 
 
-def get_filename_patterns_for_reader(plugin_name: str):
+def get_filename_patterns_for_reader(plugin_name: str) -> set[str]:
     """Return recognized filename patterns, if any, for a given plugin.
 
     Where a plugin provides multiple readers it will return a set of

@@ -198,24 +198,14 @@ def _mouse_move_to(widget, pos):
     for testing the event-filter-based menubar toggle behavior.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    if QT_VERSION.startswith('5'):
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            pos,
-            global_pos,
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    else:
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            QPointF(pos),
-            QPointF(global_pos),
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
+    event = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(pos),
+        QPointF(global_pos),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
 
     QApplication.sendEvent(widget, event)
 
@@ -378,3 +368,18 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
+
+
+def test_toggle_grid_mode():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.canvas.grid.enabled is False
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is True
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is False
