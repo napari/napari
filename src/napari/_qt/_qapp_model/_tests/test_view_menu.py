@@ -368,3 +368,18 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
+
+
+def test_toggle_grid_mode():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.canvas.grid.enabled is False
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is True
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is False
