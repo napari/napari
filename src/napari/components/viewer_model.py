@@ -905,13 +905,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox = [
-            self.layers[idx]
-            for idx in sorted(
-                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
-                reverse=self.canvas.grid.stride > 0,
-            )
-        ]
+        layers_in_viewbox: list[Layer] = []
+        if self.cursor.viewbox is not None:
+            layers_in_viewbox = [
+                self.layers[idx]
+                for idx in sorted(
+                    self.canvas.grid.contents_at(
+                        self.cursor.viewbox, self.layers
+                    ),
+                    reverse=self.canvas.grid.stride > 0,
+                )
+            ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
@@ -998,8 +1002,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         world_position : np.ndarray
             Canvas position (on the canvas plane) converted to world coordinates.
         """
-        from scipy.spatial.transform import Rotation as R
-
         ndisplay = self.dims.ndisplay
         camera = self.scene.camera
 
@@ -1014,6 +1016,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 np.array(canvas_position) - viewbox_center
             ) / camera.zoom + world_center[-2:]
         else:
+            # this import is expensive so it is deferred to here
+            # where it is actually needed
+            from scipy.spatial.transform import Rotation as R
+
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
             # consistency (zyx actually describes a different rotation order)
