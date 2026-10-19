@@ -23,7 +23,7 @@ class Scene(EventedModel):
         The camera object modeling the position and view.
     overlays : EventedDictNamespace
         A dictionary/namespace containing scene overlays. By default, it exposes
-        publicly 'axes'.
+        publicly 'axes' and 'crosshair'.
     """
 
     camera: Camera = Field(default_factory=Camera, frozen=True)
