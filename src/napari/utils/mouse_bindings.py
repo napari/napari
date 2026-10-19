@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Generator
-from typing import Any, Never
+from typing import TYPE_CHECKING, Any, Never
 
 from pydantic import BaseModel, Field, PrivateAttr
 
-from napari._vispy.mouse_event import NapariMouseEvent
-from napari.utils._proxies import ReadOnlyWrapper
+if TYPE_CHECKING:
+    from napari._vispy.mouse_event import NapariMouseEvent
+    from napari.utils._proxies import ReadOnlyWrapper
 
 
 class MousemapProvider:
