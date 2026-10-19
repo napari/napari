@@ -526,31 +526,40 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        self.viewer.cursor._viewbox = grid_coords
+        # flip to napari-land
+        canvas_pos = tuple(event.pos[::-1])
+        self.viewer.cursor._canvas_position = canvas_pos
+        self.viewer.cursor.events.viewbox()
+        self.viewer.cursor.events.canvas_position()
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
+            self.viewer.cursor._view_direction = None
             return
 
-        canvas_position = tuple(event.pos[::-1])
+        self.viewer.cursor.position = self.viewer.canvas_to_world(
+            canvas_pos, grid_coords
+        )
+        # TODO: this will be cleaned up by followup PRs, as it shouldn't be
+        #       calculated via vispy, and it probably shouldn't live on the cursor
+        self.viewer.cursor._view_direction = self._calculate_view_direction(
+            event.pos
+        )
 
         napari_event = NapariMouseEvent(
             event=event,
-            view_direction=self._calculate_view_direction(event.pos),
+            view_direction=self.viewer.cursor._view_direction,
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
                 self.viewer.dims.ndim, self.viewer.dims.displayed
             ),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self.viewer.canvas_to_world(canvas_position, grid_coords),
+            position=self.viewer.cursor.position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
-
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
