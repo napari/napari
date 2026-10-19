@@ -95,7 +95,7 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
         return  # ignore focus changes between two widgets
     if old is None and new is None:
         return  # this should not happen
-    if not isinstance(old, QWidget):
+    if old is not None and not isinstance(old, QWidget):
         return  # ignore event happened during teardown of test
     if old is None:
         start_timer = True
@@ -112,7 +112,9 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
     if not notifications:
         return
     if start_timer:
-        notifications[-1].timer_start()
+        top = notifications[-1]
+        if not top.underMouse():
+            top.timer_start()
     else:
         for notification in notifications:
             notification.timer_stop()
