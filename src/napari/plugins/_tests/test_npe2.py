@@ -117,7 +117,7 @@ def test_write_pathlib(mock_pm: 'TestPluginManager'):
 
 def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
     # calling with plugin alone
-    (_, display_name) = _npe2.get_widget_contribution(PLUGIN_NAME)
+    (_, display_name, _) = _npe2.get_widget_contribution(PLUGIN_NAME)
     mock_pm.commands.get.assert_called_once_with('my-plugin.some_widget')
     assert display_name == 'My Widget'
 
@@ -129,10 +129,10 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
         in str(e.value)
     )
 
-    # calling with a non-existent plugin just returns None
-    mock_pm.commands.get.reset_mock()
-    assert not _npe2.get_widget_contribution('not-a-thing')
-    mock_pm.commands.get.assert_not_called()
+    # calling with a non-existent plugin raises
+    with pytest.raises(KeyError) as e:
+        _npe2.get_widget_contribution('not-a-thing')
+    assert "Plugin 'not-a-thing' not found" in str(e.value)
 
 
 def test_get_widget_contribution_no_widgets(tmp_plugin: DynamicPlugin):

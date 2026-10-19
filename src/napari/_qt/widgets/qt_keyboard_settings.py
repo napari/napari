@@ -566,7 +566,7 @@ class ShortcutEditor(QWidget):
             text=message,
         )
         self._warn_dialog.move(global_point)
-        self._warn_dialog.exec_()
+        self._warn_dialog.exec()
 
     def value(self):
         """Return the actions and shortcuts currently assigned in action manager.
