@@ -1847,8 +1847,8 @@ class MouseEvent:
     view_direction: list[int]
 
 
-def test_get_value_ray_3d():
-    """Test using _get_value_ray to interrogate labels in 3D"""
+def test_iter_values_along_ray_3d():
+    """Test using _iter_values_along_ray to interrogate labels in 3D"""
     # make a mock mouse event
     mouse_event = MouseEvent(
         pos=[25, 25],
@@ -1864,34 +1864,41 @@ def test_get_value_ray_3d():
     # set the dims to the slice with labels
     labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(1, 0, 0, 0)))
 
-    value = labels._get_value_ray(
-        start_point=np.array([1, 0, 5, 5]),
-        end_point=np.array([1, 20, 5, 5]),
-        dims_displayed=mouse_event.dims_displayed,
+    value, pos = next(
+        labels._iter_values_along_ray(
+            start_point=np.array([1, 0, 5, 5]),
+            end_point=np.array([1, 20, 5, 5]),
+            dims_displayed=mouse_event.dims_displayed,
+        )
     )
     assert value == 1
+    npt.assert_array_equal(pos, [1, 0, 5, 5])
 
     # check with a ray that only goes through background
-    value = labels._get_value_ray(
-        start_point=np.array([1, 0, 15, 15]),
-        end_point=np.array([1, 20, 15, 15]),
-        dims_displayed=mouse_event.dims_displayed,
-    )
-    assert value is None
+    with pytest.raises(StopIteration):
+        next(
+            labels._iter_values_along_ray(
+                start_point=np.array([1, 0, 15, 15]),
+                end_point=np.array([1, 20, 15, 15]),
+                dims_displayed=mouse_event.dims_displayed,
+            )
+        )
 
     # set the dims to a slice without labels
     labels._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
 
-    value = labels._get_value_ray(
-        start_point=np.array([0, 0, 5, 5]),
-        end_point=np.array([0, 20, 5, 5]),
-        dims_displayed=mouse_event.dims_displayed,
-    )
-    assert value is None
+    with pytest.raises(StopIteration):
+        next(
+            labels._iter_values_along_ray(
+                start_point=np.array([0, 0, 5, 5]),
+                end_point=np.array([0, 20, 5, 5]),
+                dims_displayed=mouse_event.dims_displayed,
+            )
+        )
 
 
-def test_get_value_ray_3d_rolled():
-    """Test using _get_value_ray to interrogate labels in 3D
+def test_iter_values_along_ray_3d_rolled():
+    """Test using _iter_values_along_ray to interrogate labels in 3D
     with the dimensions rolled.
     """
     # make a mock mouse event
@@ -1912,16 +1919,19 @@ def test_get_value_ray_3d_rolled():
     )
     labels.set_view_slice()
 
-    value = labels._get_value_ray(
-        start_point=np.array([0, 5, 5, 1]),
-        end_point=np.array([20, 5, 5, 1]),
-        dims_displayed=mouse_event.dims_displayed,
+    value, pos = next(
+        labels._iter_values_along_ray(
+            start_point=np.array([0, 5, 5, 1]),
+            end_point=np.array([20, 5, 5, 1]),
+            dims_displayed=mouse_event.dims_displayed,
+        )
     )
     assert value == 1
+    npt.assert_array_equal(pos, [0, 5, 5, 1])
 
 
-def test_get_value_ray_3d_transposed():
-    """Test using _get_value_ray to interrogate labels in 3D
+def test_iter_values_along_ray_3d_transposed():
+    """Test using _iter_values_along_ray to interrogate labels in 3D
     with the dimensions transposed.
     """
     # make a mock mouse event
@@ -1942,39 +1952,15 @@ def test_get_value_ray_3d_transposed():
     )
     labels.set_view_slice()
 
-    value = labels._get_value_ray(
-        start_point=np.array([1, 0, 5, 5]),
-        end_point=np.array([1, 20, 5, 5]),
-        dims_displayed=mouse_event.dims_displayed,
+    value, pos = next(
+        labels._iter_values_along_ray(
+            start_point=np.array([1, 0, 5, 5]),
+            end_point=np.array([1, 20, 5, 5]),
+            dims_displayed=mouse_event.dims_displayed,
+        )
     )
     assert value == 1
-
-
-def test_get_value_ray_2d():
-    """_get_value_ray currently only returns None in 2D
-    (i.e., it shouldn't be used for 2D).
-    """
-    # make a mock mouse event
-    mouse_event = MouseEvent(
-        pos=[25, 25],
-        position=[5, 5],
-        dims_point=[1, 10, 0, 0],
-        dims_displayed=[2, 3],
-        view_direction=[1, 0, 0],
-    )
-    data = np.zeros((5, 20, 20, 20), dtype=int)
-    data[1, 0:10, 0:10, 0:10] = 1
-    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
-
-    # set the dims to the slice with labels, but 2D
-    labels._slice_dims(Dims(ndim=4, ndisplay=2, point=(1, 10, 0, 0)))
-
-    value = labels._get_value_ray(
-        start_point=np.empty([]),
-        end_point=np.empty([]),
-        dims_displayed=mouse_event.dims_displayed,
-    )
-    assert value is None
+    npt.assert_array_equal(pos, [1, 0, 5, 5])
 
 
 def test_cursor_ray_3d():
