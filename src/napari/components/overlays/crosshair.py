@@ -1,3 +1,5 @@
+from pydantic import PositiveInt
+
 from napari.components.overlays.base import SceneOverlay
 from napari.utils.color import ColorValue
 
@@ -24,5 +26,5 @@ class CrosshairOverlay(SceneOverlay):
     """
 
     color: ColorValue = ColorValue('red')
-    gap: int = 20
+    gap: PositiveInt = 20
     opacity: float = 0.7
