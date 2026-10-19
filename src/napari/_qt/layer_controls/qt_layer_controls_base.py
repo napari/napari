@@ -257,8 +257,11 @@ class QtLayerControls(QFrame):
     @is_thick.setter
     def is_thick(self, is_thick: bool) -> None:
         self._is_thick = is_thick
+        self._on_is_thick_change()
+
+    def _on_is_thick_change(self):
         if hasattr(self, '_projection_mode_control'):
-            self._projection_mode_control._change_is_thick(is_thick)
+            self._projection_mode_control._change_is_thick(self._is_thick)
 
     def _set_transform_tool_state(self):
         """
