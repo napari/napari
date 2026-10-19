@@ -82,6 +82,8 @@ class Dims(EventedModel):
         the ``range``.
     thickness : tuple of floats
         Thickness of the slice (sum of both margins) for each dimension in world coordinates.
+    is_thick : bool
+        Whether the currently non-displayed dimensions have non-zero margins.
     displayed : tuple of int
         List of dimensions that are displayed. These are calculated from the
         ``order`` and ``ndisplay``.
