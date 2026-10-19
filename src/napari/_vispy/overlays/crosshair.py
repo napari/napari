@@ -57,12 +57,13 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         # position of each displayed axis, counted from the end
         ndim = self.viewer.dims.ndim
         displayed = self.viewer.dims.displayed[::-1]
-        colors = [
-            AXES_COLORS[(ndim - 1 - a) % len(AXES_COLORS)] for a in displayed
-        ]
+        colors = np.array(
+            [AXES_COLORS[(ndim - 1 - a) % len(AXES_COLORS)] for a in displayed]
+        )
         if len(colors) == 2:
-            colors.append(self.overlay.color)  # z axis is unused in 2D
-        self.node.color = np.array(colors)
+            # z axis is unused in 2D
+            colors = np.vstack([colors, np.asarray(self.overlay.color)])
+        self.node.color = colors
 
     def _on_gap_change(self) -> None:
         self.node.gap = self.overlay.gap
