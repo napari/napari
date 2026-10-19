@@ -17,7 +17,7 @@ _VERTEX_SHADER = """
 // output the segment extremities far past the screen so the lines look
 // infinite. The central gap is then discarded in the fragment shader.
 
-in float a_idx;  // int attributes not working, so we use a float
+attribute float a_idx;  // int attributes not working, so we use a float
 
 varying vec2 v_center;
 
