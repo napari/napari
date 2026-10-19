@@ -1012,6 +1012,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 np.array(canvas_position) - viewbox_center
             ) / camera.zoom + world_center[-2:]
         else:
+            # this import is expensive so it is deferred to here
+            # where it is actually needed
             from scipy.spatial.transform import Rotation as R
 
             # note that while we call napari axes "zyx", in terms of angles to
