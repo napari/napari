@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from napari.components.histogram import Histogram
 from napari.layers import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
@@ -13,6 +14,7 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
+    from napari.components.histogram import Histogram
     from napari.layers._scalar_field.scalar_field import ScalarFieldBase
     from napari.layers.surface import Surface
 
@@ -54,7 +56,8 @@ class IntensityVisualizationMixin(Layer):
         self._auto_contrast_source = 'slice'
         self._auto_contrast = False
 
-        # circular import
+        # circular imports
+        from napari.components.histogram import Histogram
         from napari.components.overlays import ColorBarOverlay
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
@@ -66,7 +69,7 @@ class IntensityVisualizationMixin(Layer):
         """Histogram model for this layer (settings only)."""
         return self._histogram
 
-    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
+    def reset_contrast_limits(self: ScalarFieldBase | Surface, mode=None):
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
