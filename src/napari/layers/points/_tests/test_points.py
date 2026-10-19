@@ -1877,7 +1877,7 @@ def test_view_data():
     assert np.array_equal(layer._view_data, coords)
 
 
-def test_view_size():
+def test_view_size_with_thick_slicing():
     """Test out of slice point rendering and slicing with no points."""
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [4, 3, 3]])
     sizes = np.array([5, 5, 3, 3])
@@ -1889,19 +1889,58 @@ def test_view_size():
     layer._slice_dims(Dims(ndim=3, point=(1, 0, 0)))
     assert np.array_equal(layer._view_size, sizes[[2]])
 
+    # changing to linear does not affect if we're exactly on the point
+    # and have no margins
     layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
-    assert len(layer._view_size) == 1
+    assert np.array_equal(layer._view_size, sizes[[2]])
+
+    # slicing with margin affects sizes and which points are visible.
+    # however, points of size 0 are discarded.
     layer._slice_dims(
         Dims(
             ndim=3,
             point=(1, 0, 0),
-            margin_left=(1, 1, 1),
-            margin_right=(1, 1, 1),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
         )
     )
-    assert len(layer._view_size) == 3
+    assert np.array_equal(layer._view_size, sizes[[2]])
+
+    # halfway points should be rendered half size
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+            margin_right=(2, 0, 0),
+        )
+    )
+    assert np.array_equal(
+        layer._view_size, sizes[[0, 1, 2]] * np.array((0.5, 0.5, 1))
+    )
+
+    # spherical includes all point that intersect the slice, resizing them
+    # based on the intersection. Disregards margins.
+    layer.projection_mode = PointsProjectionMode.RESCALE_SPHERICAL
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(1, 0, 0),
+            margin_left=(2, 0, 0),
+            margin_right=(2, 0, 0),
+        )
+    )
+    # hardcoded results as regression test
+    np.testing.assert_array_almost_equal(
+        layer._view_size, [4.58257569, 4.58257569, 3]
+    )
+
+    # and with spherical_thick it includes the margins
+    layer.projection_mode = PointsProjectionMode.RESCALE_SPHERICAL_THICK
+    np.testing.assert_array_almost_equal(layer._view_size, [5, 5, 3, 2.236068])
 
     # test a slice with no points
+    layer.projection_mode = PointsProjectionMode.ALL
     layer._slice_dims(Dims(ndim=3, point=(2, 0, 0)))
     assert np.array_equal(layer._view_size, [])
 
@@ -2657,23 +2696,6 @@ def test_data_setter_events():
         'data_indices': tuple(i for i in range(len(layer.data))),
         'vertex_indices': ((),),
     }
-
-
-def test_thick_slice():
-    data = np.array([[0, 0, 0], [10, 10, 10]])
-    layer = Points(data)
-
-    # only first point shown
-    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0)))
-    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
-
-    layer.projection_mode = 'all'
-    np.testing.assert_array_equal(layer._view_data, data[:1, -2:])
-
-    # if margin is thick enough and projection is `all`,
-    # it will take in the other point
-    layer._slice_dims(Dims(ndim=3, point=(0, 0, 0), margin_right=(10, 0, 0)))
-    np.testing.assert_array_equal(layer._view_data, data[:, -2:])
 
 
 @pytest.mark.parametrize(
