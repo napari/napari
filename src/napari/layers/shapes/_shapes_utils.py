@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import tempfile
 import typing
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, cast, overload
 
 import numpy as np
 from skimage import draw, measure
@@ -631,6 +631,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
+    triangles = cast('TriangleArray', triangles)
     return vertices, triangles
 
 
