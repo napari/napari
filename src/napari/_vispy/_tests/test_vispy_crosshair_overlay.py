@@ -52,3 +52,19 @@ def test_crosshair_follows_model(crosshair_overlay):
     assert node.gap == 20
     overlay.gap = 35
     assert node.gap == 35
+
+
+def test_crosshair_updates_on_dims_change(crosshair_overlay):
+    """Test the crosshair is not stale after the displayed dims change"""
+    viewer, _, vispy_overlay = crosshair_overlay
+    viewer.add_image(np.zeros((10, 20, 30)))
+    viewer.cursor.position = (1.0, 2.0, 3.0)
+
+    # 2D: the last two axes are displayed, in vispy (x, y) order, z is 0
+    np.testing.assert_allclose(vispy_overlay.node.position, [3, 2, 0])
+
+    viewer.dims.ndisplay = 3
+    np.testing.assert_allclose(vispy_overlay.node.position, [3, 2, 1])
+
+    viewer.dims.order = (1, 0, 2)
+    np.testing.assert_allclose(vispy_overlay.node.position, [3, 1, 2])
