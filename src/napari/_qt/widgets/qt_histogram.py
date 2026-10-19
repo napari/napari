@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import numpy as np
     from qtpy.QtGui import QShowEvent
 
-    from napari.layers.intensity_mixin import IntensityVisualizationMixin
+    from napari.layers import Image, Surface
     from napari.utils.events import Event
 
 
@@ -33,7 +33,7 @@ class _HistogramWorker(QObject):
     yielded = Signal(object)
     finished = Signal(object)
 
-    def __init__(self, layer: IntensityVisualizationMixin) -> None:
+    def __init__(self, layer: Image | Surface) -> None:
         super().__init__()
         self._layer_ref = weakref.ref(layer)
         self._request_event = threading.Event()
@@ -131,7 +131,7 @@ class QtHistogramWidget(QWidget):
 
     def __init__(
         self,
-        layer: IntensityVisualizationMixin,
+        layer: Image | Surface,
         parent: QWidget | None = None,
         mirror: bool = False,
     ) -> None:
@@ -215,6 +215,8 @@ class QtHistogramWidget(QWidget):
         return worker
 
     def _schedule_histogram_compute(self) -> None:
+        if not self.layer.histogram.enabled:
+            return
         if self.isVisible():
             self._ensure_histogram_content()
         self._ensure_histogram_worker().request()
