@@ -92,20 +92,20 @@ def test_mark_conflicts(shortcut_editor_widget, qtbot, mock_qt_method_ctx):
 
     # Check conflicts detection using `KeyBindingLike` params
     # (`KeyBinding`, `str` and `int` representations of a shortcut)
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         assert not widget._mark_conflicts(v_keybinding, 1)
         assert mock.called
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         assert not widget._mark_conflicts(str(v_keybinding), 1)
         assert mock.called
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         assert not widget._mark_conflicts(int(v_keybinding), 1)
         assert mock.called
 
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         assert not widget._mark_conflicts(u_keybinding, 1)
         assert mock.called
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         assert not widget._mark_conflicts(str(u_keybinding), 1)
         assert mock.called
 
@@ -183,7 +183,7 @@ def test_keybinding_with_modifiers(
     key_symbols,
     mock_qt_method,
 ):
-    mock = mock_qt_method(WarnPopup, 'exec_')
+    mock = mock_qt_method(WarnPopup, 'exec')
     widget = shortcut_editor_widget()
     # 12 is the row for 'napari:toggle_selected_visibility'
     shortcut = widget._table.item(12, widget._shortcut_col).text()
@@ -253,7 +253,7 @@ def test_keybinding_with_only_modifiers(
     qtbot.waitUntil(lambda: widget._table.focusWidget() is not None)
     editor = widget._table.focusWidget()
 
-    with mock_qt_method_ctx(WarnPopup, 'exec_') as mock:
+    with mock_qt_method_ctx(WarnPopup, 'exec') as mock:
         qtbot.keyPress(editor, Qt.Key.Key_Enter, modifier=modifiers)
         widget._table.commitData(editor)
         widget._table.closeEditor(
