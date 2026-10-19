@@ -11,7 +11,10 @@ class CrosshairOverlay(SceneOverlay):
     Attributes
     ----------
     color : ColorValue
-        Color of the crosshair lines.
+        Color of the crosshair lines. Only used if `colored` is False.
+    colored : bool
+        If True, each line is colored like the matching axis of the  axes
+        overlay, and `color` is ignored.
     gap : int
         Diameter of the gap in the center of the crosshair, in canvas pixels.
     visible : bool
@@ -26,5 +29,6 @@ class CrosshairOverlay(SceneOverlay):
     """
 
     color: ColorValue = ColorValue('red')
+    colored: bool = True
     gap: PositiveInt = 20
     opacity: float = 0.7
