@@ -404,6 +404,61 @@ def test_polygon_lasso_tablet(create_known_shapes_layer):
     assert layer.selected_data == {n_shapes}
 
 
+@pytest.mark.parametrize(
+    ('desired_shape', 'expected_vertices'),
+    [
+        (
+            [[20, 20], [20, 50], [60, 50], [20, 20]],
+            [[20, 20], [20, 50], [60, 50]],
+        ),
+        ([[20, 20], [20, 50], [20, 20]], None),
+        (
+            [[1e6, 1e6], [1e6 + 20, 1e6], [1e6, 1e6 + 5]],
+            [[1e6, 1e6], [1e6 + 20, 1e6], [1e6, 1e6 + 5]],
+        ),
+    ],
+)
+def test_polygon_lasso_drops_repeated_first_vertex(
+    create_known_shapes_layer, desired_shape, expected_vertices
+):
+    layer, n_shapes, _known_non_shape = create_known_shapes_layer
+    desired_shape = np.array(desired_shape)
+
+    get_settings().experimental.rdp_epsilon = 0
+    layer.mode = 'add_polygon_lasso'
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        is_dragging=True,
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_press_callbacks(layer, event)
+
+    for coord in desired_shape[1:]:
+        event = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=coord,
+            pos=coord,
+        )
+        mouse_move_callbacks(layer, event)
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        is_dragging=True,
+        position=desired_shape[-1],
+        pos=desired_shape[-1],
+    )
+    mouse_release_callbacks(layer, event)
+
+    if expected_vertices is None:
+        assert len(layer.data) == n_shapes
+    else:
+        assert len(layer.data) == n_shapes + 1
+        assert np.array_equal(layer.data[-1], expected_vertices)
+
+
 def test_polygon_lasso_mouse(create_known_shapes_layer):
     """Draw polygon with mouse. Events in sequence are mouse press, release, move, press, release"""
     layer, n_shapes, _known_non_shape = create_known_shapes_layer
