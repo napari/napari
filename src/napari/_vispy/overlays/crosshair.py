@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
+from napari._vispy.visuals.axes import AXES_COLORS
 from napari._vispy.visuals.crosshair import Crosshair
 from napari.utils.events import disconnect_events
 
@@ -24,6 +25,9 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
             **kwargs,
         )
         self.overlay.events.color.connect(self._on_color_change)
+        self.overlay.events.colored.connect(self._on_color_change)
+        self.viewer.dims.events.order.connect(self._on_color_change)
+        self.viewer.dims.events.ndisplay.connect(self._on_color_change)
         self.overlay.events.gap.connect(self._on_gap_change)
 
         self.viewer.cursor.events.position.connect(self._on_position_change)
@@ -46,7 +50,19 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.position = position
 
     def _on_color_change(self) -> None:
-        self.node.color = self.overlay.color
+        if not self.overlay.colored:
+            self.node.color = self.overlay.color
+            return
+        # mapped like axes overlays: the color depends on the
+        # position of each displayed axis, counted from the end
+        ndim = self.viewer.dims.ndim
+        displayed = self.viewer.dims.displayed[::-1]
+        colors = [
+            AXES_COLORS[(ndim - 1 - a) % len(AXES_COLORS)] for a in displayed
+        ]
+        if len(colors) == 2:
+            colors.append(self.overlay.color)  # z axis is unused in 2D
+        self.node.color = np.array(colors)
 
     def _on_gap_change(self) -> None:
         self.node.gap = self.overlay.gap
