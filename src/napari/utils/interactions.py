@@ -86,8 +86,9 @@ def _step_active_generators(
             next(gen)
         except Exception as e:  # noqa: BLE001
             if not isinstance(e, StopIteration):
+                name = getattr(func, '__qualname__', repr(func))
                 warnings.warn(
-                    f'mouse callback defined at {func.__module__}.{func.__name__} failed with the following error:\n{e}'
+                    f'mouse callback {name} failed with the following error:\n{e}'
                 )
             # done, delete the generator and stored event
             del gen_dict[func]
