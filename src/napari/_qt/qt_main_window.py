@@ -1103,7 +1103,7 @@ class Window:
         area = self._resolve_dock_area(
             name=full_name, area=area, default_area=default_area
         )
-        tabify = tabify if tabify is not None else default_tabify
+        tabify = self._resolve_tabify(tabify, default_tabify)
 
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
@@ -1121,6 +1121,15 @@ class Window:
             area=area,
         )
         return dock_widget, wdg
+
+    @staticmethod
+    def _resolve_tabify(tabify: bool | None, default_tabify: bool) -> bool:
+        """Return whether a dock widget should be tabified.
+
+        An explicitly requested `tabify` wins, then `default_tabify` (e.g. a
+        plugin's manifest `tabify`).
+        """
+        return default_tabify if tabify is None else tabify
 
     @staticmethod
     def _resolve_dock_area(

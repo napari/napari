@@ -253,3 +253,20 @@ def test_resolve_dock_area(
         positions['test'] = saved_area
     area = Window._resolve_dock_area('test', requested_area, default_area)
     assert area == expected_area
+
+
+@pytest.mark.parametrize(
+    ('requested_tabify', 'default_tabify', 'expected_tabify'),
+    [
+        # no tabify passed: the widget's default (e.g. a plugin's `tabify`)
+        (None, True, True),
+        (None, False, False),
+        # tabify passed in code wins over the default
+        (False, True, False),
+        (True, False, True),
+    ],
+    ids=['default-true', 'default-false', 'explicit-false', 'explicit-true'],
+)
+def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
+    tabify = Window._resolve_tabify(requested_tabify, default_tabify)
+    assert tabify is expected_tabify
