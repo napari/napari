@@ -53,9 +53,20 @@ void main()
 
     float extent = 5.0;  // should be enough to always go out of screen
 
-    // position of this vertex (the extremity), far past the screen edge
-    // in the direction of the axis, starting from the center
-    vec2 pos = center_ndc + normalize(axis_dir) * extent;
+    vec2 pos;
+    if (dir_clip.w > 1e-6)
+    {
+        // under perspective, the end of the axis that moves away from the
+        // camera does not go to infinity on screen: it converges to the
+        // vanishing point, and nothing must be drawn past it
+        pos = dir_clip.xy / dir_clip.w;
+    }
+    else
+    {
+        // position of this vertex (the extremity), far past the screen edge
+        // in the direction of the axis, starting from the center
+        pos = center_ndc + normalize(axis_dir) * extent;
+    }
 
     gl_Position = vec4(pos, center.z / center.w, 1.0);
 }
