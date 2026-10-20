@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import sys
+import traceback
 import warnings
 from typing import TYPE_CHECKING, Literal
 
@@ -88,7 +89,9 @@ def _step_active_generators(
             if not isinstance(e, StopIteration):
                 name = getattr(func, '__qualname__', repr(func))
                 warnings.warn(
-                    f'mouse callback {name} failed with the following error:\n{e}'
+                    f'mouse callback {name} failed with the following error:\n'
+                    f'{traceback.format_exc()}',
+                    stacklevel=1,  # no good stack level
                 )
             # done, delete the generator and stored event
             del gen_dict[func]
