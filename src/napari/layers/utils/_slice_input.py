@@ -205,6 +205,12 @@ class _SliceInput:
         # but properly rescaled based on the transform, so we remove the translation
         # to bring them back around zero.
         data_slice[1:] -= slice_world_to_data.translate
+        # a negative scale flips the axis: the margins become negative and
+        # swap sides (the left margin in world is the right margin in data)
+        flipped = (data_slice[1] < 0) | (data_slice[2] < 0)
+        left = data_slice[1].copy()
+        data_slice[1, flipped] = -data_slice[2, flipped]
+        data_slice[2, flipped] = -left[flipped]
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 

@@ -960,6 +960,40 @@ def test_thick_slice():
     )
 
 
+def test_thick_slice_negative_scale():
+    data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
+    layer = Image(data, scale=(-1, 1, 1), projection_mode='mean')
+    world_range = ((-4, 0, 1), (0, 4, 1), (0, 4, 1))
+
+    # world point -1.5 is data point 1.5, the same slices as with a positive scale
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=world_range,
+            point=(-1.5, 0, 0),
+            margin_left=(1, 0, 0),
+            margin_right=(1, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[0:2], axis=0)
+    )
+
+    # the axis is flipped, so the left margin in world is a right margin in data
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=world_range,
+            point=(-1.5, 0, 0),
+            margin_left=(2, 0, 0),
+            margin_right=(0, 0, 0),
+        )
+    )
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, np.mean(data[2:4], axis=0)
+    )
+
+
 def test_thick_slice_maintains_contrast_limits():
     data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
     layer = Image(data.astype(np.uint8))
