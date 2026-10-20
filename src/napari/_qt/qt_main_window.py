@@ -1067,7 +1067,7 @@ class Window:
         self,
         plugin_name: str,
         widget_name: str | None = None,
-        tabify: bool = False,
+        tabify: bool | None = None,
         area: str | None = None,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
@@ -1080,11 +1080,14 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
-        area : str
+        tabify : bool or None, optional
+            Flag to tabify dock widget or not. If `None` (default), use the
+            plugin manifest's `tabify` value for this widget.
+        area : str or None, optional
             Side of the main window to which the new dock widget will be added.
             Must be in {'left', 'right', 'top', 'bottom'}
-        tabify : bool
-            Flag to tabify dock widget or not.
+            If `None` (default), use the plugin manifest's `default_area`
+            value for this widget.
 
         Returns
         -------
@@ -1093,13 +1096,14 @@ class Window:
             instance).
         """
 
-        widget_class, widget_name, default_area = (
+        widget_class, widget_name, default_area, default_tabify = (
             _npe2.get_widget_contribution(plugin_name, widget_name)
         )
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         area = self._resolve_dock_area(
             name=full_name, area=area, default_area=default_area
         )
+        tabify = self._resolve_tabify(tabify, default_tabify)
 
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
@@ -1117,6 +1121,15 @@ class Window:
             area=area,
         )
         return dock_widget, wdg
+
+    @staticmethod
+    def _resolve_tabify(tabify: bool | None, default_tabify: bool) -> bool:
+        """Return whether a dock widget should be tabified.
+
+        An explicitly requested `tabify` wins, then `default_tabify` (e.g. a
+        plugin's manifest `tabify`).
+        """
+        return default_tabify if tabify is None else tabify
 
     @staticmethod
     def _resolve_dock_area(

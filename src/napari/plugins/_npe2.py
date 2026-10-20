@@ -109,7 +109,7 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: str | None = None
-) -> tuple[WidgetCreator, str, str]:
+) -> tuple[WidgetCreator, str, str, bool]:
     widgets_seen = set()
     if plugin_name not in pm.instance():
         msg = f'Plugin {plugin_name!r} not found.'
@@ -121,6 +121,7 @@ def get_widget_contribution(
                     contrib.get_callable(),
                     contrib.display_name,
                     contrib.default_dock_area,
+                    contrib.tabify,
                 )
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
