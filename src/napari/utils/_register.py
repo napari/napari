@@ -19,6 +19,8 @@ def create_func(cls, name=None, doc=None):
     Creates a function (such as `add_<layer>`) to add a layer to the viewer
 
     The functionality is inherited from the corresponding `<layer>` class.
+    If the cls name is prefixed with an underscore, the generated function
+    will also be prefixed with an underscore. _PrivateClass --> _add_private_class
     """
     cls_name = cls.__name__
 
