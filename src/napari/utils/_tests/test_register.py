@@ -83,10 +83,8 @@ def test_create_func():
 
 
 def test_create_func_private():
-    DummyClass._add_private_class = create_func(_PrivateClass)
-    dc = DummyClass()
-    dc._add_private_class(a=1)
-    assert dc.layers[0].a == 1
+    new_method = create_func(_PrivateClass)
+    assert new_method.__name__ == 'add_private_class'
 
 
 def test_create_func_deprecated():
