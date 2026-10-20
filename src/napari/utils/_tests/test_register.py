@@ -22,6 +22,12 @@ class SimpleClass:
     def __init__(self, a):
         self.a = a
 
+class _PrivateClass:
+    """Private class to test create_func"""
+
+    def __init__(self, a):
+        self.a = a
+
 
 class SimpleClassDeprecated:
     """Simple class to test create_func"""
@@ -72,6 +78,13 @@ def test_create_func():
     DummyClass.add_simple_class = create_func(SimpleClass)
     dc = DummyClass()
     dc.add_simple_class(a=1)
+    assert dc.layers[0].a == 1
+
+
+def test_create_func_private():
+    DummyClass._add_private_class = create_func(_PrivateClass)
+    dc = DummyClass()
+    dc._add_private_class(a=1)
     assert dc.layers[0].a == 1
 
 
