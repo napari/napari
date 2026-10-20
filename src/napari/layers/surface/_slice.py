@@ -75,13 +75,22 @@ class _SurfaceSliceRequest:
         not_disp = list(self.slice_input.not_displayed)
         disp = list(self.slice_input.displayed)
         vert_orig = self.data[0]
-        # if all dimensions are displayed and these dimensions are only the vertex
-        # dimensions, we can return the original data reordered by the current display
-        # order. This is a common case for 3D surfaces.
-        disp_only_vert_dims = len(disp) == vert_orig.shape[1] and all(
-            d < vert_orig.shape[1] for d in disp
-        )
-        if not not_disp and disp_only_vert_dims:
+
+        # the presence of vertex_values can add extra dimensions to the layer
+        # which are not present in the data itself. We need to adjust for this
+        # by offsetting the dim number by the amount of extra dims
+        values_orig = self.data[2]
+        extra_dims = values_orig.ndim - 1
+        if any(d < extra_dims for d in disp):
+            warnings.warn(
+                'All extra dimensions corresponding to vertex values must be non-displayed dimensions. '
+                'Data cannot be shown.',
+                UserWarning,
+                stacklevel=2,
+            )
+            return self._empty_response()
+
+        if not not_disp:
             return _SurfaceSliceResponse(
                 vertices=self.data[0][:, disp],
                 faces=self.data[1],
@@ -107,20 +116,6 @@ class _SurfaceSliceRequest:
         too_thin_slice = np.isclose(high, low)
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
-
-        # the presence of vertex_values can add extra dimensions to the layer
-        # which are not present in the data itself. We need to adjust for this
-        # by offsetting the dim number by the amount of extra dims
-        values_orig = self.data[2]
-        extra_dims = values_orig.ndim - 1
-        if any(d < extra_dims for d in disp):
-            warnings.warn(
-                'All extra dimensions corresponding to vertex values must be non-displayed dimensions. '
-                'Data cannot be shown.',
-                UserWarning,
-                stacklevel=2,
-            )
-            return self._empty_response()
 
         disp_for_vert = [d - extra_dims for d in disp if d >= extra_dims]
         not_disp_for_vert = [
