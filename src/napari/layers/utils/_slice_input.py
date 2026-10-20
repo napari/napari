@@ -206,9 +206,7 @@ class _SliceInput:
         # to bring them back around zero.
         data_slice[1:] -= slice_world_to_data.translate
         # Reflections swap the margins and negate them.
-        left, right = data_slice[1:].copy()
-        data_slice[1] = np.maximum(left, -right)
-        data_slice[2] = np.maximum(right, -left)
+        data_slice[1:] = np.maximum(data_slice[1:], -data_slice[[2, 1]])
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 
