@@ -66,6 +66,7 @@ def create_func(cls, name=None, doc=None):
             *list(sig.parameters.values()),
             *additional_parameters,
         ],
+        # use the name, the full class path may not exist when exec runs
         return_annotation=cls_name,
     )
 
