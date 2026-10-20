@@ -13,7 +13,7 @@ from napari.utils.key_bindings import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection
+    from collections.abc import Callable, Collection, Generator
 
     from napari._vispy.mouse_event import NapariMouseEvent
     from napari.utils._proxies import ReadOnlyWrapper
@@ -64,6 +64,22 @@ def _run_callbacks_and_maybe_store_generators(
                 obj._persisted_mouse_event[gen] = event
 
 
+def _forget_generator(
+    obj: MousemapProvider, gen_dict: dict, func: Callable, gen: Generator
+) -> None:
+    del gen_dict[func]
+    del obj._persisted_mouse_event[gen]
+
+
+def _warn_callback_failed(func: Callable) -> None:
+    name = getattr(func, '__qualname__', repr(func))
+    warnings.warn(
+        f'mouse callback {name} failed with the following error:\n'
+        f'{traceback.format_exc()}',
+        stacklevel=2,
+    )
+
+
 def _step_active_generators(
     obj: MousemapProvider,
     event: ReadOnlyWrapper[NapariMouseEvent],
@@ -82,23 +98,45 @@ def _step_active_generators(
     for func, gen in tuple(gen_dict.items()):
         # update the wrapper with the current event
         # (see _run_callbacks_and_maybe_store_generators for an explanation)
-        obj._persisted_mouse_event[gen].__wrapped__ = event.__wrapped__
+        # plain events (e.g. from plugin tests) are used as they are
+        obj._persisted_mouse_event[gen].__wrapped__ = getattr(
+            event, '__wrapped__', event
+        )
         try:
             next(gen)
-        except Exception as e:  # noqa: BLE001
-            if not isinstance(e, StopIteration):
-                name = getattr(func, '__qualname__', repr(func))
-                warnings.warn(
-                    f'mouse callback {name} failed with the following error:\n'
-                    f'{traceback.format_exc()}',
-                    stacklevel=1,  # no good stack level
-                )
+        except StopIteration:
             # done, delete the generator and stored event
-            del gen_dict[func]
-            del obj._persisted_mouse_event[gen]
+            _forget_generator(obj, gen_dict, func, gen)
             # we communicate back to the caller which generators were just completed
             completed.append(func)
+        except Exception:  # noqa: BLE001
+            # forget the dead generator so it cannot block later events
+            _forget_generator(obj, gen_dict, func, gen)
+            completed.append(func)
+            _warn_callback_failed(func)
+        except BaseException:
+            _forget_generator(obj, gen_dict, func, gen)
+            raise
     return completed
+
+
+def _discard_active_generators(
+    obj: MousemapProvider,
+    callback_type: Literal['move', 'drag', 'wheel'],
+) -> None:
+    """Close and forget all active generators of type `callback_type`.
+
+    Code after a generator's loop does not run, so step it with an ending
+    event first.
+    """
+    gen_dict = getattr(obj, f'_mouse_{callback_type}_gen')
+    for func, gen in tuple(gen_dict.items()):
+        # forget first, in case `close()` raises
+        _forget_generator(obj, gen_dict, func, gen)
+        try:
+            gen.close()
+        except Exception:  # noqa: BLE001
+            _warn_callback_failed(func)
 
 
 def mouse_wheel_callbacks(
@@ -278,11 +316,11 @@ def mouse_release_callbacks(
     event : Event
         Mouse event
     """
-    _step_active_generators(obj, event, 'drag')
-    # ensure these are deleted regardless of conclusion
-    for func, gen in tuple(obj._mouse_drag_gen.items()):
-        del obj._mouse_drag_gen[func]
-        del obj._persisted_mouse_event[gen]
+    try:
+        _step_active_generators(obj, event, 'drag')
+    finally:
+        # drags end on release, finished or not
+        _discard_active_generators(obj, 'drag')
 
 
 KEY_SYMBOLS = {
