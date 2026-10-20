@@ -206,6 +206,23 @@ def test_random_3D_timeseries_surface():
     assert len(layer._view_vertices) == 0
 
 
+def test_rollling_random_3D_timeseries_surface_in_2D():
+    """Test instantiating Surface layer with random 3D timeseries data."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((5, 22, 10))
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    ndim = layer.ndim
+    assert ndim == 5
+
+    # hide the extra dims (0, 1) and the last vertex axis (4), display (2, 3)
+    # equivalent to rolling after first displaying (0, 1, 2, 3, 4)
+    order = (4, 0, 1, 2, 3)
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order))
+
+
 def test_2D_timeseries_surface_in_3D():
     """Test 2D surface with a values axis shows no data in 3D view."""
     np.random.seed(0)

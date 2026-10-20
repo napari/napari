@@ -123,12 +123,8 @@ class _SurfaceSliceRequest:
         ]
 
         # actually do the slicing (for vertices)
-        low_vert = low[range(extra_dims, vert_orig.shape[1])][
-            not_disp_for_vert
-        ]
-        high_vert = high[range(extra_dims, vert_orig.shape[1])][
-            not_disp_for_vert
-        ]
+        low_vert = low[extra_dims:][not_disp_for_vert]
+        high_vert = high[extra_dims:][not_disp_for_vert]
 
         vertices_not_disp = vert_orig[:, not_disp_for_vert]
         inside_slice = np.all(
