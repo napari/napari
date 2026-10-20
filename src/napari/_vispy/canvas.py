@@ -807,10 +807,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
-        for vispy_scale_bar_overlay in self._viewer_overlay_to_visual.get(
-            self.viewer.canvas.overlays.scale_bar, []
-        ):
-            vispy_scale_bar_overlay._on_unit_change()
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                if hasattr(vispy_overlay, '_on_unit_change'):
+                    vispy_overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
