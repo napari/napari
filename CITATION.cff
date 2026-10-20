@@ -390,6 +390,10 @@ authors:
   affiliation: Kavli Institute for Systems Neuroscience at NTNU, Trondheim, Norway
   orcid: https://orcid.org/0000-0002-7670-4827
   alias: horsto
+- given-names: Jayme
+  family-names: Paiva
+  affiliation: Pontifícia Universidade Católica do Rio de Janeiro (PUC-Rio)
+  alias: Lyinno
 - given-names: David
   family-names: Palecek
   affiliation: Algarve Centre of Marine Sciences (CCMAR)
@@ -658,5 +662,9 @@ authors:
   affiliation: Institut Pasteur de Montevideo; Universidad de la República, Uruguay
   orcid: https://orcid.org/0009-0001-2778-6694
   alias: bruno-pannunzio
+- given-names: Aleksandra
+  family-names: Tarskaia
+  affiliation: Independent
+  alias: i-ymka
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
