@@ -200,16 +200,15 @@ class _SliceInput:
         slice_world_to_data = world_to_data.set_slice(self.not_displayed)
         world_slice_not_disp = self.world_slice[self.not_displayed].as_array()
 
-        # Transform interval endpoints so reflections swap left/right margins.
-        world_slice_not_disp[1] = (
-            world_slice_not_disp[0] - world_slice_not_disp[1]
-        )
-        world_slice_not_disp[2] += world_slice_not_disp[0]
         data_slice = slice_world_to_data(world_slice_not_disp)
-        lower = np.minimum(data_slice[1], data_slice[2])
-        upper = np.maximum(data_slice[1], data_slice[2])
-        data_slice[1] = data_slice[0] - lower
-        data_slice[2] = upper - data_slice[0]
+        # the margins (data_slice[1:]) should be relative to the origin,
+        # but properly rescaled based on the transform, so we remove the translation
+        # to bring them back around zero.
+        data_slice[1:] -= slice_world_to_data.translate
+        # Reflections swap the margins and negate them.
+        left, right = data_slice[1:].copy()
+        data_slice[1] = np.maximum(left, -right)
+        data_slice[2] = np.maximum(right, -left)
 
         full_data_slice = np.full((3, self.ndim), np.nan)
 
