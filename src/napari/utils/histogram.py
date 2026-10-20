@@ -10,14 +10,12 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
+from napari.types import ArrayLike
 from napari.utils._dask_utils import _is_dask_data
 
 if TYPE_CHECKING:
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
-if TYPE_CHECKING:
-    from typing_extensions import TypeIs
 
-    from napari.layers import Surface
 
 logger = logging.getLogger('napari.components.histogram')
 
@@ -27,11 +25,6 @@ logger = logging.getLogger('napari.components.histogram')
 # computation and warn instead of silently pulling the full array into
 # memory.  ~50M float64 elements ≈ 400 MB.
 _MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
-
-
-def _is_surface(layer: IntensityVisualizationMixin) -> TypeIs[Surface]:
-    """Return True if *layer* is a Surface layer."""
-    return type(layer).__name__ == 'Surface'
 
 
 def compute_histogram(
@@ -168,6 +161,7 @@ def _calc_histogram(
 
     hist_counts = np.log10(counts + 1) if log_scale else counts
 
+    # Convert to float32 for consistency and to reduce memory usage.
     return bin_edges.astype(np.float32), hist_counts.astype(np.float32)
 
 
@@ -218,7 +212,9 @@ def _get_data(
     return _get_full_data(layer)
 
 
-def _get_displayed_data(layer: Any) -> np.ndarray | None:
+def _get_displayed_data(
+    layer: IntensityVisualizationMixin,
+) -> np.ndarray | None:
     """Get data from currently displayed slice.
 
     In 'canvas' mode, the histogram is computed from the visible data
@@ -234,22 +230,45 @@ def _get_displayed_data(layer: Any) -> np.ndarray | None:
     return None
 
 
-def _get_slice_raw_data(layer: Any) -> np.ndarray | None:
-    """Get the currently sliced raw image data if available."""
-    if type(layer).__name__ == 'Surface':
+def _get_slice_raw_data(
+    layer: IntensityVisualizationMixin,
+) -> np.ndarray | None:
+    """Get the currently sliced raw data if available.
+
+    Parameters
+    ----------
+    layer : Image | Surface
+        The layer from which to retrieve the currently sliced raw image data.
+        Currently supports Image and Surface layers.
+
+    Returns
+    -------
+    np.ndarray | None
+        Currently sliced data as a numpy array if available, otherwise None.
+    """
+    # avoid circular import
+    from napari.layers import Image, Surface
+
+    if isinstance(layer, Surface):
+        # TODO: ugly, will need to be handled differently
         data = layer._slicing_state._view_vertex_values
         return np.asarray(data) if data is not None else None
 
-    layer_slice = layer._slice
-    if layer_slice is None:
-        return None
-    raw = layer_slice.image.raw
-    return np.asarray(raw) if raw is not None else None
+    if isinstance(layer, Image):
+        layer_slice = layer._slice
+        return np.asarray(layer_slice.image.raw)
+
+    raise ValueError(
+        f'layer can only be a Surface or Image, got {layer.__class__.__name__}'
+    )
 
 
-def _get_full_data(layer: Any) -> np.ndarray | None:
+def _get_full_data(layer: IntensityVisualizationMixin) -> ArrayLike | None:
     """Get full volume data, using coarsest level for multiscale."""
-    if type(layer).__name__ == 'Surface':
+    # avoid circular import
+    from napari.layers import Image, Surface
+
+    if isinstance(layer, Surface):
         # Surface layers contain vertex values in the third element of the tuple.
         # Check if the surface has vortex values, if yes return them, otherwise return None.
         if len(layer.data) == 2:
@@ -257,41 +276,46 @@ def _get_full_data(layer: Any) -> np.ndarray | None:
         data = layer.data[2]
         return np.asarray(data)
 
-    data = layer.data
+    if isinstance(layer, Image):
+        data = layer.data
 
-    # Unpack multiscale to the coarsest level.
-    if isinstance(data, Sequence) and not isinstance(
-        data, (np.ndarray, str, bytes)
-    ):
-        data = data[-1]
+        # Unpack multiscale to the coarsest level.
+        if isinstance(data, Sequence) and not isinstance(
+            data, (np.ndarray, str, bytes)
+        ):
+            data = data[-1]
 
-    if isinstance(data, np.ndarray):
-        return data
+        if isinstance(data, np.ndarray):
+            return data
 
-    # Chunked arrays (dask, zarr, h5py with chunks) are returned
-    # as-is for the progressive sampler in _compute_chunked_progressive.
-    if _has_chunks(data):
-        return data
+        # Chunked arrays (dask, zarr, h5py with chunks) are returned
+        # as-is for the progressive sampler in _compute_chunked_progressive.
+        if _has_chunks(data):
+            return data
 
-    # Last resort: cast to numpy.  Guard against accidentally
-    # materializing a very large object (contiguous h5py) by
-    # checking the estimated memory footprint first.
-    data_size = data.size if hasattr(data, 'size') else 0
-    if data_size > _MAX_MATERIALIZE_ELEMENTS:
-        dtype_size = (
-            np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-        )
-        est_mb = (data_size * dtype_size) / (1024 * 1024)
-        warnings.warn(
-            f'Skipping full-data histogram: materializing '
-            f'{data_size:,} elements (~{est_mb:.0f} MB) would '
-            f'exceed the safety limit of '
-            f'{_MAX_MATERIALIZE_ELEMENTS:,} elements. '
-            f'Use canvas mode or increase max_samples.',
-            stacklevel=2,
-        )
-        return None
-    return np.asarray(data)
+        # Last resort: cast to numpy.  Guard against accidentally
+        # materializing a very large object (contiguous h5py) by
+        # checking the estimated memory footprint first.
+        data_size = data.size if hasattr(data, 'size') else 0
+        if data_size > _MAX_MATERIALIZE_ELEMENTS:
+            dtype_size = (
+                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
+            )
+            est_mb = (data_size * dtype_size) / (1024 * 1024)
+            warnings.warn(
+                f'Skipping full-data histogram: materializing '
+                f'{data_size:,} elements (~{est_mb:.0f} MB) would '
+                f'exceed the safety limit of '
+                f'{_MAX_MATERIALIZE_ELEMENTS:,} elements. '
+                f'Use canvas mode or increase max_samples.',
+                stacklevel=2,
+            )
+            return None
+        return np.asarray(data)
+
+    raise ValueError(
+        f'layer can only be a Surface or Image, got {layer.__class__.__name__}'
+    )
 
 
 def _has_chunks(data: Any) -> bool:
@@ -379,7 +403,7 @@ def _sample_data(data: np.ndarray, max_samples: int) -> np.ndarray:
 
 def _compute_chunked_progressive(
     data: Any,
-    contrast_limits_range: tuple[float | None, float | None],
+    contrast_limits_range: tuple[float, float],
     bin_count: int,
     max_samples: int,
     log_scale: bool,
@@ -387,6 +411,24 @@ def _compute_chunked_progressive(
     """Generator that yields ``(bin_edges, counts)`` after each chunk.
 
     Provides incremental histogram snapshots as each chunk is loaded.
+
+    Parameters
+    ----------
+    data : Any
+        The chunked data array (dask or zarr).
+    contrast_limits_range : tuple[float, float]
+        The contrast limits range for histogram computation.
+    bin_count : int
+        Number of bins for the histogram.
+    max_samples : int
+        Maximum number of samples to use for histogram computation.
+    log_scale : bool
+        Whether to use a logarithmic scale for the histogram.
+
+    Yields
+    ------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing the bin edges and counts for the histogram after each chunk is processed.
     """
     n = min(max_samples, data.size)
     chunk_sizes = _chunk_sizes(data)
@@ -397,9 +439,6 @@ def _compute_chunked_progressive(
     order = rng.choice(n_chunks, size=n_selected, p=probs, replace=False)
 
     range_min, range_max = contrast_limits_range
-    if range_min is None or range_max is None:
-        range_min = 0.0
-        range_max = 1.0
 
     running_counts = np.zeros(bin_count, dtype=np.float64)
     for ci in order:
