@@ -1009,7 +1009,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if viewbox is None:
             viewbox = (0, 0)
         viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
-        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        spacing = (
+            self.canvas.grid._compute_canvas_spacing(
+                self.canvas.size, self.layers
+            )
+            if self.canvas.grid.enabled
+            else 0
+        )
+        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
         world_center = np.array(camera.center)
 
         if ndisplay == 2:
