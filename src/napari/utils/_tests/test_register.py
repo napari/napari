@@ -22,6 +22,7 @@ class SimpleClass:
     def __init__(self, a):
         self.a = a
 
+
 class _PrivateClass:
     """Private class to test create_func"""
 
