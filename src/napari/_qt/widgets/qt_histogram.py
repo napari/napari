@@ -272,8 +272,8 @@ class QtHistogramWidget(QWidget):
                 bin_edges=self.bin_edges,
                 counts=self.counts,
                 gamma=self.layer.gamma,
-                clims=self.layer.contrast_limits,  # pyrefly: ignore [bad-argument-type]
-                data_range=self.layer.contrast_limits_range,  # pyrefly: ignore [bad-argument-type]
+                clims=self.layer.contrast_limits,
+                data_range=self.layer.contrast_limits_range,
             )
             self.histogram_canvas.canvas.update()
 
