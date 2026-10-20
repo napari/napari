@@ -84,7 +84,7 @@ def test_create_func():
 
 def test_create_func_private():
     new_method = create_func(_PrivateClass)
-    assert new_method.__name__ == 'add_private_class'
+    assert new_method.__name__ == '_add_private_class'
 
 
 def test_create_func_deprecated():
