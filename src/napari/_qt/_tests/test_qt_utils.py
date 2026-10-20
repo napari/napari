@@ -166,15 +166,15 @@ def test_get_color(
 ) -> None:
     """Test the get_color utility function."""
 
-    def _mock_exec_(self):
-        """Mock exec_ method to always return Accepted."""
+    def _mock_exec(self):
+        """Mock exec method to always return Accepted."""
         qtbot.addWidget(self)
         return QColorDialog.DialogCode.Accepted
 
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
-    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
+    monkeypatch.setattr(QColorDialog, 'exec', _mock_exec)
 
     color_ = get_color(color, mode)
     _assert_eq(color_, expected, f'Expected color to be {expected}')
@@ -198,15 +198,15 @@ def test_get_color_reject(
 ) -> None:
     """Test the get_color utility function."""
 
-    def _mock_exec_(self):
-        """Mock exec_ method to always return Accepted."""
+    def _mock_exec(self):
+        """Mock exec method to always return Accepted."""
         qtbot.addWidget(self)
         return QColorDialog.DialogCode.Rejected
 
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
-    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
+    monkeypatch.setattr(QColorDialog, 'exec', _mock_exec)
 
     color_ = get_color(color, mode)
     assert color_ is None, 'Expected color to be None when dialog is rejected'
