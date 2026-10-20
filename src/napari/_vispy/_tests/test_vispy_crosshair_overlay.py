@@ -46,10 +46,9 @@ def test_crosshair_follows_model(crosshair_overlay):
     overlay.visible = True
     assert node.visible
 
-    overlay.colored = False
-    np.testing.assert_allclose(node.color, [1, 0, 0, 1])
     overlay.color = 'blue'
-    np.testing.assert_allclose(node.color, [0, 0, 1, 1])
+    # both displayed lines are blue, z is unused in 2D
+    np.testing.assert_allclose(node.color[:2], [[0, 0, 1, 1]] * 2)
 
     assert node.gap == 20
     overlay.gap = 35
@@ -72,10 +71,10 @@ def test_crosshair_updates_on_dims_change(crosshair_overlay):
     np.testing.assert_allclose(vispy_overlay.node.position, [3, 1, 2])
 
 
-def test_crosshair_colored(crosshair_overlay):
+def test_crosshair_default_axes_colors(crosshair_overlay):
     """Test each line takes the color of the matching canvas axes line"""
     viewer, overlay, vispy_overlay = crosshair_overlay
-    assert overlay.colored
+    assert overlay.color is None
     viewer.add_image(np.zeros((10, 20, 30)))
     viewer.dims.ndisplay = 3
     cyan, magenta, yellow = AXES_COLORS[:3]
@@ -90,7 +89,20 @@ def test_crosshair_colored(crosshair_overlay):
     )
 
     viewer.dims.ndisplay = 2
-    overlay.color = 'blue'  # has no effect when colored is True
     # only the two displayed axes (0 and 2 here) are colored, z is unused
-
     np.testing.assert_allclose(vispy_overlay.node.color[:2], [cyan, yellow])
+
+
+def test_crosshair_three_colors(crosshair_overlay):
+    """Test three colors follow the displayed axes, in napari order"""
+    viewer, overlay, vispy_overlay = crosshair_overlay
+    viewer.add_image(np.zeros((10, 20, 30)))
+    viewer.dims.ndisplay = 3
+    red, green, blue = [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]
+    overlay.color = ('red', 'lime', 'blue')
+    # vispy order is x, y, z, i.e. the reverse of the napari axes
+    np.testing.assert_allclose(vispy_overlay.node.color, [blue, green, red])
+
+    # in 2D, only the last two colors are used
+    viewer.dims.ndisplay = 2
+    np.testing.assert_allclose(vispy_overlay.node.color[:2], [blue, green])
