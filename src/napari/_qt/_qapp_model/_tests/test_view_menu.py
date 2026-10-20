@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import sys
 
@@ -15,7 +17,6 @@ from napari._app_model.actions._view import (
     _toggle_canvas_ndim,
     toggle_actions,
 )
-from napari._app_model.constants import MenuId
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
 
@@ -47,9 +48,11 @@ def check_view_menu_visibility(viewer, qtbot):
 
 @pytest.mark.parametrize(
     ('action_id', 'action_title', 'attribute_path'),
-    toggle_actions[MenuId.VIEW_SCALEBAR],
+    functools.reduce(operator.iadd, toggle_actions.values(), []),
 )
-def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
+def test_toggle_axes_scale_bar_grid_lines_attr(
+    action_id, action_title, attribute_path
+):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
 
@@ -64,6 +67,9 @@ def test_toggle_axes_scale_bar_attr(action_id, action_title, attribute_path):
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `grid_lines` attributes:
+        * `visible`
+        * `labels`
     """
     app = get_app_model()
     viewer = ViewerModel()
