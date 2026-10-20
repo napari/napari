@@ -8,9 +8,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import (
-    qt_signals_blocked,
-)
+from napari._qt.utils import qt_signals_blocked
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
