@@ -6,11 +6,18 @@ import logging
 import math
 import warnings
 from collections.abc import Generator, Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
 from napari.utils._dask_utils import _is_dask_data
+
+if TYPE_CHECKING:
+    from napari.layers.intensity_mixin import IntensityVisualizationMixin
+if TYPE_CHECKING:
+    from typing_extensions import TypeIs
+
+    from napari.layers import Surface
 
 logger = logging.getLogger('napari.components.histogram')
 
@@ -22,19 +29,51 @@ logger = logging.getLogger('napari.components.histogram')
 _MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
 
 
+def _is_surface(layer: IntensityVisualizationMixin) -> TypeIs[Surface]:
+    """Return True if *layer* is a Surface layer."""
+    return type(layer).__name__ == 'Surface'
+
+
 def compute_histogram(
-    layer: Any,
+    layer: IntensityVisualizationMixin,
     *,
     bin_count: int,
     max_samples: int,
     mode: Literal['canvas', 'full'],
     log_scale: bool,
-) -> Generator[tuple[np.ndarray, np.ndarray], None, None]:
+) -> Generator[
+    tuple[
+        np.ndarray[tuple[int], np.dtype[np.float32]],
+        np.ndarray[tuple[int], np.dtype[np.float32]],
+    ],
+    None,
+    None,
+]:
     """Yield ``(bin_edges, counts)`` for histogram computation.
 
     For chunked full-mode data, yields intermediate results after each
     chunk for progressive display. For non-chunked data, yields the final
-    result once. Returns .
+    result once.
+
+    Parameters
+    ----------
+    layer : IntensityVisualizationMixin
+        The napari layer for which to compute the histogram (must be
+        an intensity visualisation layer such as Image or Surface).
+    bin_count : int
+        Number of bins for the histogram.
+    max_samples : int
+        Maximum number of samples to use for histogram computation.
+    mode : Literal['canvas', 'full']
+        Whether to compute the histogram from the currently displayed
+        slice ('canvas') or the full data ('full').
+    log_scale : bool
+        Whether to use a logarithmic scale for the histogram.
+
+    Yields
+    ------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing the bin edges and counts for the histogram.
     """
     data = _get_data(layer, mode)
 
@@ -75,10 +114,13 @@ def _make_empty() -> dict[str, np.ndarray]:
 
 def _calc_histogram(
     data: np.ndarray,
-    layer: Any,
+    layer: IntensityVisualizationMixin,
     bin_count: int,
     log_scale: bool,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+    np.ndarray[tuple[int], np.dtype[np.float32]],
+]:
     """Compute bin edges and counts from data.
 
     Separates the pure numpy histogram computation from data fetching
@@ -88,10 +130,12 @@ def _calc_histogram(
     ----------
     data : np.ndarray
         Preprocessed 1D data array.
-    range_min : float
-        Minimum value for histogram range.
-    range_max : float
-        Maximum value for histogram range.
+    layer : IntensityVisualizationMixin
+        The napari layer for which to compute the histogram.
+    bin_count : int
+        Number of bins for the histogram.
+    log_scale : bool
+        Whether to use a logarithmic scale for the histogram.
 
     Returns
     -------
@@ -99,9 +143,6 @@ def _calc_histogram(
         (bin_edges, counts) — bin edges as float32, counts as float32.
     """
     range_min, range_max = layer.contrast_limits_range
-    if range_min is None or range_max is None:
-        range_min = float(np.nanmin(data))
-        range_max = float(np.nanmax(data))
 
     # Handle edge case where min == max (constant data).
     # For integer types, ±0.5 places bin edges at half-integer
@@ -122,12 +163,12 @@ def _calc_histogram(
         range=(float(range_min), float(range_max)),
     )
 
-    if log_scale:
-        hist_counts = np.log10(counts + 1).astype(np.float32)
-    else:
-        hist_counts = counts.astype(np.float32)
+    assert bin_edges.ndim == 1
+    assert counts.ndim == 1
 
-    return bin_edges, hist_counts
+    hist_counts = np.log10(counts + 1) if log_scale else counts
+
+    return bin_edges.astype(np.float32), hist_counts.astype(np.float32)
 
 
 def _rgb_to_luminance(data: np.ndarray) -> np.ndarray:
