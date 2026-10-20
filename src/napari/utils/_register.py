@@ -23,12 +23,17 @@ def create_func(cls, name=None, doc=None):
     cls_name = cls.__name__
 
     if name is None:
-        name = camel_to_snake(cls_name)
+        is_private = cls_name.startswith('_')
+        name = camel_to_snake(cls_name.lstrip('_'))
+    else:
+        is_private = name.startswith('_')
+        name = name.lstrip('_')
 
     if 'layer' in name:
         raise ValueError(f"name {name} should not include 'layer'")
 
-    name = 'add_' + name
+    prefix = '_add_' if is_private else 'add_'
+    name = prefix + name
 
     if doc is None:
         # While the original class may have Attributes in its docstring, the
