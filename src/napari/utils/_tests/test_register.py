@@ -103,4 +103,4 @@ def test_create_func_class_outside_napari_namespace():
         """Class not reachable from the napari namespace"""
 
     OutsideClass.__module__ = '__main__'  # mimics a user script
-    add_outside_class_func = create_func(OutsideClass)
+    create_func(OutsideClass)
