@@ -282,7 +282,7 @@ class QColorButton(QtWidgets.QPushButton):
         if self._color:
             dlg.setCurrentColor(QtGui.QColor(self._color))
 
-        if dlg.exec_():
+        if dlg.exec():
             self.setColor(dlg.currentColor().name())
 
     def mousePressEvent(self, event):
