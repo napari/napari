@@ -611,3 +611,67 @@ def test_plugin_settings_str(tmp_path, monkeypatch, test_settings_2):
 
     prefs.display_name = 'renamed'
     assert 'renamed' in str(prefs)
+
+
+@pytest.mark.parametrize(
+    'backend', ['bermuda', 'partsegcore', 'triangle', 'numba']
+)
+def test_unavailable_triangulation_backend(
+    test_settings, monkeypatch, backend
+):
+    from napari.layers.shapes import _accelerated_triangulate_dispatch
+    from napari.layers.shapes._shapes_models import shape
+    from napari.utils.triangulation_backend import (
+        TriangulationBackend,
+        get_backend,
+    )
+
+    test_settings.experimental._connect_events()
+
+    if backend == 'bermuda':
+        monkeypatch.setattr(shape, 'bermuda', None)
+    elif backend == 'partsegcore':
+        monkeypatch.setattr(shape, 'partsegcore_triangulate', None)
+    elif backend == 'triangle':
+        monkeypatch.delitem(sys.modules, 'triangle', raising=False)
+    else:
+        monkeypatch.setattr(
+            _accelerated_triangulate_dispatch,
+            '_accelerated_triangulate_numba',
+            None,
+        )
+
+    test_settings.experimental.triangulation_backend = (
+        TriangulationBackend.pure_python
+    )
+    with pytest.warns(UserWarning, match='not available'):
+        test_settings.experimental.triangulation_backend = (
+            TriangulationBackend[backend]
+        )
+
+    assert test_settings.experimental.triangulation_backend == (
+        TriangulationBackend.fastest_available
+    )
+    assert get_backend() == TriangulationBackend.fastest_available
+
+
+def test_unavailable_triangulation_backend_on_startup(
+    test_settings, monkeypatch
+):
+    from napari.layers.shapes._shapes_models import shape
+    from napari.utils.triangulation_backend import (
+        TriangulationBackend,
+        get_backend,
+    )
+
+    monkeypatch.setattr(shape, 'partsegcore_triangulate', None)
+    test_settings.experimental.triangulation_backend = (
+        TriangulationBackend.partsegcore
+    )
+    with pytest.warns(UserWarning, match='not available'):
+        test_settings.experimental._connect_events()
+
+    assert test_settings.experimental.triangulation_backend == (
+        TriangulationBackend.fastest_available
+    )
+    assert get_backend() == TriangulationBackend.fastest_available
