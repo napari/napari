@@ -196,8 +196,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     class InnerWidget(BaseClass):
         pass
 
-    # the plugin's manifest declares `default_dock_area: bottom`
-    mock = MagicMock(return_value=(InnerWidget, 'widget name', 'bottom'))
+    mock = MagicMock(return_value=(InnerWidget, 'widget name', 'bottom', True))
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
     assert list(viewer.window.dock_widgets.keys()) == []
@@ -224,7 +223,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     # the saved area is looked up by the widget's full name
     positions = get_settings().application.plugin_widget_positions
     positions['moved widget (sample_plugin)'] = 'left'
-    mock.return_value = (InnerWidget, 'moved widget', 'bottom')
+    mock.return_value = (InnerWidget, 'moved widget', 'bottom', False)
     docked, _ = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'moved widget'
     )
@@ -254,3 +253,20 @@ def test_resolve_dock_area(
         positions['test'] = saved_area
     area = Window._resolve_dock_area('test', requested_area, default_area)
     assert area == expected_area
+
+
+@pytest.mark.parametrize(
+    ('requested_tabify', 'default_tabify', 'expected_tabify'),
+    [
+        # no tabify passed: the widget's default (e.g. a plugin's `tabify`)
+        (None, True, True),
+        (None, False, False),
+        # tabify passed in code wins over the default
+        (False, True, False),
+        (True, False, True),
+    ],
+    ids=['default-true', 'default-false', 'explicit-false', 'explicit-true'],
+)
+def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
+    tabify = Window._resolve_tabify(requested_tabify, default_tabify)
+    assert tabify is expected_tabify

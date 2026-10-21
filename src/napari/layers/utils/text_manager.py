@@ -63,8 +63,8 @@ class TextManager(EventedModel):
         The encoded string values.
     visible : bool
         True if the text should be displayed, False otherwise.
-    size : float
-        Font size of the text, which must be positive. Default value is 12.
+    size : float, optional
+        Font size of the text, which must be positive.
     scaling : bool
         True if the text should be scaled with the zoom level, False otherwise.
         Default value is False.
@@ -87,7 +87,7 @@ class TextManager(EventedModel):
     string: StringEncoding = ConstantStringEncoding(constant='')
     color: ColorEncoding = ConstantColorEncoding(constant='cyan')
     visible: bool = True
-    size: PositiveFloat = 12
+    size: PositiveFloat | None = None
     scaling: bool = False  # scaling changes with zoom level, consistent with other vispy visuals, see: https://github.com/vispy/vispy/blob/af2439895a13f187d840a476bd73ed480f2978f2/vispy/visuals/markers.py#L526
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
