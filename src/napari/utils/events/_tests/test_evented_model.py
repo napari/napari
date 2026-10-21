@@ -985,7 +985,7 @@ def test_renamed_property():
 
 
 def test_renamed_property_assignment_emits_once():
-    """Assigning through an alias should only emit the one event."""
+    """Assigning through an alias should emit both old and new event only once."""
 
     class Model(EventedModel):
         value: int = 1

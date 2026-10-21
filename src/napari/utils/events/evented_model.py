@@ -616,6 +616,7 @@ def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
 
     for name, cell in zip(function.__code__.co_freevars, closure, strict=True):
         if name == 'category':
+            # infer warning category by inspecting code
             category = cell.cell_contents
             return _DeprecatedParam(message=message, category=category)
     return _DeprecatedParam(message=message)
