@@ -116,7 +116,7 @@ def view_and_up_directions_from_angles(
     return tuple(rot_matrix @ base_view), tuple(rot_matrix @ base_up)
 
 
-def _nudge_vector(v: np.ndarray):
+def _nudge_vector(v: np.ndarray) -> np.ndarray:
     """Nudge a vector, to guarantee it's not parallel to the input."""
     # choose the coordinate axis least aligned with v
     axis = np.zeros_like(v)
