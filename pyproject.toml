@@ -52,7 +52,7 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-resources>=1.0.1",
     "napari-svg>=0.1.8",
-    "npe2>=0.9.0",
+    "npe2>=0.10.0",
     "numpy>=1.25",
     "pandas>=1.5.0",
     "Pillow>=10.0",
@@ -654,10 +654,6 @@ matches = "src/napari/view_layers.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/window.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/viewer.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
@@ -666,23 +662,11 @@ matches = "src/napari/utils/transforms/transform_utils.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/theme.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/notebook_display.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/misc.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/migrations.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/io.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
@@ -707,22 +691,6 @@ errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/_register.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/_proxies.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_migrations.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_fields.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_base.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]

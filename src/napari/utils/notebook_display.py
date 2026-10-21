@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import base64
 import html
 from io import BytesIO
+from typing import TYPE_CHECKING
 from warnings import warn
 
 try:
@@ -13,6 +16,11 @@ except ImportError:
     lxml_unavailable = True
 
 from napari.utils.io import imsave_png
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    from napari.viewer import Viewer
 
 __all__ = ['NotebookScreenshot', 'nbscreenshot']
 
@@ -56,10 +64,10 @@ class NotebookScreenshot:
 
     def __init__(
         self,
-        viewer,
+        viewer: Viewer,
         *,
-        canvas_only=False,
-        alt_text=None,
+        canvas_only: bool = False,
+        alt_text: str | None = None,
     ) -> None:
         """Initialize screenshot object.
 
@@ -79,10 +87,10 @@ class NotebookScreenshot:
         """
         self.viewer = viewer
         self.canvas_only = canvas_only
-        self.image = None
+        self.image: np.ndarray | None = None
         self.alt_text = self._clean_alt_text(alt_text)
 
-    def _clean_alt_text(self, alt_text):
+    def _clean_alt_text(self, alt_text: str | None) -> str | None:
         """Clean user input to prevent script injection."""
         if alt_text is not None:
             if lxml_unavailable:
@@ -109,7 +117,7 @@ class NotebookScreenshot:
                 alt_text = None
         return alt_text
 
-    def _repr_png_(self):
+    def _repr_png_(self) -> bytes:
         """PNG representation of the viewer object for IPython.
 
         Returns
@@ -128,7 +136,7 @@ class NotebookScreenshot:
             png = file_obj.read()
         return png
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         png = self._repr_png_()
         url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
         _alt = html.escape(self.alt_text) if self.alt_text is not None else ''
@@ -136,10 +144,10 @@ class NotebookScreenshot:
 
 
 def nbscreenshot(
-    viewer,
+    viewer: Viewer,
     *,
-    canvas_only=False,
-    alt_text=None,
+    canvas_only: bool = False,
+    alt_text: str | None = None,
 ) -> NotebookScreenshot:
     """Display a napari screenshot in a Jupyter notebook.
 

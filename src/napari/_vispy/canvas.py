@@ -321,10 +321,10 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
-        self.destroyed.connect(self._disconnect_events)
         get_settings().appearance.events.font_size.connect(
-            self._update_overlay_font_sizes
+            self._update_font_sizes
         )
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -360,6 +360,7 @@ class VispyCanvas:
         disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
+        disconnect_events(get_settings().appearance.events, self)
 
     @property
     def central_widget(self) -> Widget:
@@ -777,6 +778,7 @@ class VispyCanvas:
         # also make sure we communicate update the view direction of the new layer
         # (needed e.g for lighting by mesh)
         self._on_view_direction_change()
+        self._update_font_sizes()
         self._update_scenegraph()
 
     def _on_view_direction_change(self) -> None:
@@ -807,10 +809,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
-        for vispy_scale_bar_overlay in self._viewer_overlay_to_visual.get(
-            self.viewer.canvas.overlays.scale_bar, []
-        ):
-            vispy_scale_bar_overlay._on_unit_change()
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                if hasattr(vispy_overlay, '_on_unit_change'):
+                    vispy_overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -1265,7 +1267,7 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _update_overlay_font_sizes(self, *, font_size: float | None = None):
+    def _update_font_sizes(self, *, font_size: float | None = None):
         if font_size is None:
             font_size = get_settings().appearance.font_size
         for vispy_overlays in self._viewer_overlay_to_visual.values():
@@ -1274,6 +1276,8 @@ class VispyCanvas:
         for overlay_to_visual in self._layer_overlay_to_visual.values():
             for vispy_overlay in overlay_to_visual.values():
                 vispy_overlay.set_default_font_size(font_size)
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
