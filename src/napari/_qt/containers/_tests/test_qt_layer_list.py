@@ -163,7 +163,7 @@ def test_contextual_menu_updates_selection_ctx_keys(monkeypatch, qtbot):
     assert layer_list._selection_ctx_keys.selected_empty_shapes_layer
 
     monkeypatch.setattr(
-        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+        'app_model.backends.qt.QModelMenu.exec', lambda self, x: x
     )
 
     app = get_app_model()
@@ -198,7 +198,7 @@ def _lock_blocks_action(qtbot, monkeypatch, layers_factory, action_id):
     index = layer_to_model_index(view, 0)
 
     monkeypatch.setattr(
-        'app_model.backends.qt.QModelMenu.exec_', lambda self, x: x
+        'app_model.backends.qt.QModelMenu.exec', lambda self, x: x
     )
     app = get_app_model()
 
