@@ -153,6 +153,11 @@ class VispyShapesLayer(VispyBaseLayer):
         )
         self.node.highlight_lines.visible = has_box
 
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
@@ -162,7 +167,11 @@ class VispyShapesLayer(VispyBaseLayer):
             If true, update the node after setting the properties
         """
         text_node = self._get_text_node()
-        update_text(node=text_node, layer=self.layer)
+        update_text(
+            node=text_node,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
         text_node.visible = _has_visible_text(self.layer)
         if update_node:
             self.node.update()
