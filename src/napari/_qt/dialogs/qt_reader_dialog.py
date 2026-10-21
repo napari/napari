@@ -136,7 +136,7 @@ class QtReaderDialog(QDialog):
         display_name = ''
         persist_choice = False
 
-        dialog_result = self.exec_()
+        dialog_result = self.exec()
         # user pressed cancel
         if dialog_result:
             # grab the selected radio button text
