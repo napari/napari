@@ -30,7 +30,7 @@ General rendering flow:
        and ``drawControl``.  These can be overridden for very fine control.
 6. It is hard to use stylesheets with custom ``QStyles``... but it's possible
    to style sub-controls in ``QAbstractItemView`` (such as ``QTreeView``):
-   https://doc.qt.io/qt-5/stylesheet-reference.html#list-of-sub-controls
+   https://doc.qt.io/qt-6/stylesheet-reference.html#list-of-sub-controls
 
 """
 
@@ -67,10 +67,10 @@ class LayerDelegate(QStyledItemDelegate):
     """A QItemDelegate specialized for painting Layer objects.
 
     In Qt's `Model/View architecture
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_. A *delegate* is an
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_. A *delegate* is an
     object that controls the visual rendering (and editing widgets) of an item
     in a view. For more, see:
-    https://doc.qt.io/qt-5/model-view-programming.html#delegate-classes
+    https://doc.qt.io/qt-6/model-view-programming.html#delegate-classes
 
     This class provides the logic required to paint a Layer item in the
     :class:`napari._qt.containers.QtLayerList`.  The `QStyledItemDelegate`
@@ -233,11 +233,7 @@ class LayerDelegate(QStyledItemDelegate):
             event.type() == QMouseEvent.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            pnt = (
-                event.globalPosition().toPoint()
-                if hasattr(event, 'globalPosition')
-                else event.globalPos()
-            )
+            pnt = event.globalPosition().toPoint()
 
             self.show_context_menu(index, model, pnt, option.widget)
 
@@ -350,4 +346,4 @@ class LayerDelegate(QStyledItemDelegate):
         layer_list: LayerList = model.sourceModel()._root
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
-        self._context_menu.exec_(pos)
+        self._context_menu.exec(pos)

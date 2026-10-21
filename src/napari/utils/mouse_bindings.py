@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -23,7 +24,7 @@ class MousemapProvider:
     mouse_drag_callbacks: list[Callable]
     mouse_double_click_callbacks: list[Callable]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
