@@ -1,5 +1,6 @@
 import numpy as np
 
+from napari._qt.histogram_cache import set_cached_histogram
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.layers import Image
@@ -86,6 +87,41 @@ def test_qt_histogram_widget_shows_computed(qtbot):
     assert len(counts) == 256
     # The visual was fed data (no crash) and the canvas is alive.
     assert widget.histogram_canvas.histogram_visual is not None
+    widget.cleanup()
+
+
+def test_qt_histogram_widget_uses_cached_histogram(qtbot):
+    """A cached histogram is displayed without starting a computation."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    layer.histogram.enabled = True
+    edges = np.linspace(0, 1, 5)
+    counts = np.ones(4)
+    set_cached_histogram(layer, edges, counts)
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+    widget._schedule_histogram_compute()
+
+    np.testing.assert_allclose(widget.bin_edges, edges)
+    np.testing.assert_allclose(widget.counts, counts)
+    assert widget._histogram_worker is None
+
+    widget.cleanup()
+
+
+def test_qt_histogram_widget_initializes_from_cache(qtbot):
+    """A widget created for a layer with a cached histogram shows it."""
+    layer = Image(np.linspace(0, 1, 64, dtype=np.float32).reshape(8, 8))
+    edges = np.linspace(0, 1, 5)
+    counts = np.ones(4)
+    set_cached_histogram(layer, edges, counts)
+
+    widget = QtHistogramWidget(layer)
+    qtbot.addWidget(widget)
+
+    np.testing.assert_allclose(widget.bin_edges, edges)
+    np.testing.assert_allclose(widget.counts, counts)
+
     widget.cleanup()
 
 

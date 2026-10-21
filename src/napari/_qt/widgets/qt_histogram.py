@@ -8,6 +8,7 @@ import threading
 import weakref
 from typing import TYPE_CHECKING
 
+import numpy as np
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
@@ -15,11 +16,15 @@ from napari._qt.widgets.qt_histogram_canvas import QtHistogramCanvasWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
-from napari.utils.histogram import _make_empty
+from napari.utils.histogram import (
+    _make_empty,
+    get_cached_histogram,
+    histogram_fingerprint,
+    set_cached_histogram,
+)
 from napari.utils.theme import Theme, get_theme
 
 if TYPE_CHECKING:
-    import numpy as np
     from qtpy.QtGui import QShowEvent
 
     from napari.layers import Image, Surface
@@ -90,6 +95,19 @@ class _HistogramWorker(QObject):
         layer = self._layer_ref()
         if layer is None:
             return None
+
+        fingerprint = histogram_fingerprint(layer)
+
+        cached = get_cached_histogram(layer, fingerprint=fingerprint)
+        if cached is not None:
+            bin_edges = np.array(cached[0])
+            counts = np.array(cached[1])
+            with self._gen_lock:
+                if generation != self._generation or self._terminate:
+                    return None
+            self.yielded.emit((bin_edges, counts))
+            return (bin_edges, counts)
+
         try:
             gen = layer.histogram._compute_async_no_events(layer)
         except Exception:
@@ -108,6 +126,12 @@ class _HistogramWorker(QObject):
         except Exception:
             logger.warning('Histogram compute failed', exc_info=True)
             return None
+
+        if last is not None:
+            set_cached_histogram(
+                layer, last[0], last[1], fingerprint=fingerprint
+            )
+
         return last
 
 
@@ -143,6 +167,11 @@ class QtHistogramWidget(QWidget):
         self._mirror = mirror
         self._histogram_worker: _HistogramWorker | None = None
         self.theme = get_theme(get_settings().appearance.theme)
+
+        cached = get_cached_histogram(self.layer)
+        if cached is not None:
+            self.bin_edges = np.array(cached[0])
+            self.counts = np.array(cached[1])
 
         if mirror:
             self.layer.histogram.events.updated.connect(
@@ -217,9 +246,27 @@ class QtHistogramWidget(QWidget):
     def _schedule_histogram_compute(self) -> None:
         if not self.layer.histogram.enabled:
             return
+        cached = get_cached_histogram(self.layer)
+        if cached is not None:
+            self._apply_histogram(cached)
+            return
         if self.isVisible():
             self._ensure_histogram_content()
         self._ensure_histogram_worker().request()
+
+    def _apply_histogram(self, values: tuple[np.ndarray, np.ndarray]) -> None:
+        """Display the given histogram and notify listeners about it."""
+        self.bin_edges = np.array(values[0])
+        self.counts = np.array(values[1])
+        self.layer.histogram.events.updated(
+            bin_edges=self.bin_edges, counts=self.counts
+        )
+        self.layer.histogram.events.completed(
+            bin_edges=self.bin_edges, counts=self.counts
+        )
+        if self.isVisible():
+            self._ensure_histogram_content()
+        self.update_histogram()
 
     def _on_mirrored_histogram(self, event: Event) -> None:
         self.bin_edges = event.bin_edges

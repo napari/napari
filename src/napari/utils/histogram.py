@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import itertools
 import logging
 import math
+import threading
 import warnings
+import weakref
 from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -12,6 +15,9 @@ import numpy as np
 
 from napari.types import ArrayLike
 from napari.utils._dask_utils import _is_dask_data
+
+if TYPE_CHECKING:
+    from napari.layers import Image, Surface
 
 if TYPE_CHECKING:
     from napari.layers.intensity_mixin import IntensityVisualizationMixin
@@ -25,6 +31,17 @@ logger = logging.getLogger('napari.components.histogram')
 # computation and warn instead of silently pulling the full array into
 # memory.  ~50M float64 elements ≈ 400 MB.
 _MAX_MATERIALIZE_ELEMENTS: int = 50_000_000
+
+VALUES_KEY = '_histogram_values'
+FINGERPRINT_KEY = '_histogram_fingerprint'
+
+# thread-safe caching machinery
+_lock = threading.RLock()
+# maps id(obj) to (token, weakref to obj) so that a token stays valid for as
+# long as the object it identifies is alive
+_token_counter = itertools.count(1)
+_tokens: dict[int, tuple[int, weakref.ref]] = {}
+_MAX_TOKENS = 1024
 
 
 def compute_histogram(
@@ -203,119 +220,82 @@ def _sample_rgb_and_luminance(
     return luminance[valid]
 
 
-def _get_data(
-    layer: Any, mode: Literal['canvas', 'full']
-) -> np.ndarray | None:
-    """Get data from layer based on current mode."""
-    if mode == 'canvas':
-        return _get_displayed_data(layer)
-    return _get_full_data(layer)
-
-
-def _get_displayed_data(
-    layer: IntensityVisualizationMixin,
-) -> np.ndarray | None:
-    """Get data from currently displayed slice.
-
-    In 'canvas' mode, the histogram is computed from the visible data
-    that has already been sliced for rendering. This uses the layer's
-    ``_slice.image.raw`` which contains the data being displayed.
-
-    Returns None if the slice is not yet available (e.g. during initial
-    loading).
-    """
-    raw = _get_slice_raw_data(layer)
-    if raw is not None and raw.size > 0:
-        return raw
-    return None
-
-
-def _get_slice_raw_data(
-    layer: IntensityVisualizationMixin,
-) -> np.ndarray | None:
-    """Get the currently sliced raw data if available.
-
-    Parameters
-    ----------
-    layer : Image | Surface
-        The layer from which to retrieve the currently sliced raw image data.
-        Currently supports Image and Surface layers.
-
-    Returns
-    -------
-    np.ndarray | None
-        Currently sliced data as a numpy array if available, otherwise None.
-    """
-    # avoid circular import
+def _canvas_source(layer: IntensityVisualizationMixin) -> Any | None:
+    """Return the object the canvas-mode histogram is computed from."""
     from napari.layers import Image, Surface
 
+    if not hasattr(layer, '_slicing_state'):
+        # layer not yet fully initialized
+        return None
     if isinstance(layer, Surface):
-        # TODO: ugly, will need to be handled differently
-        data = layer._slicing_state._view_vertex_values
-        return np.asarray(data) if data is not None else None
-
+        return layer._slicing_state._view_vertex_values
     if isinstance(layer, Image):
-        layer_slice = layer._slice
-        return np.asarray(layer_slice.image.raw)
+        return layer._slicing_state._slice.image.raw
 
-    raise ValueError(
-        f'layer can only be a Surface or Image, got {layer.__class__.__name__}'
+    raise NotImplementedError(
+        f'_canvas_source not implemented for layer type {layer.__class__.__name__}'
     )
 
 
-def _get_full_data(layer: IntensityVisualizationMixin) -> ArrayLike | None:
-    """Get full volume data, using coarsest level for multiscale."""
-    # avoid circular import
+def _full_source(layer: IntensityVisualizationMixin) -> Any | None:
+    """Return the object the full-mode histogram is computed from."""
     from napari.layers import Image, Surface
 
     if isinstance(layer, Surface):
-        # Surface layers contain vertex values in the third element of the tuple.
-        # Check if the surface has vortex values, if yes return them, otherwise return None.
-        if len(layer.data) == 2:
-            return None
-        data = layer.data[2]
-        return np.asarray(data)
-
+        # surface layers hold the vertex values in the third element
+        return layer.data[2] if len(layer.data) == 3 else None
     if isinstance(layer, Image):
         data = layer.data
-
-        # Unpack multiscale to the coarsest level.
         if isinstance(data, Sequence) and not isinstance(
             data, (np.ndarray, str, bytes)
         ):
+            # multiscale data: the coarsest level is used
             data = data[-1]
+        return data
 
-        if isinstance(data, np.ndarray):
-            return data
-
-        # Chunked arrays (dask, zarr, h5py with chunks) are returned
-        # as-is for the progressive sampler in _compute_chunked_progressive.
-        if _has_chunks(data):
-            return data
-
-        # Last resort: cast to numpy.  Guard against accidentally
-        # materializing a very large object (contiguous h5py) by
-        # checking the estimated memory footprint first.
-        data_size = data.size if hasattr(data, 'size') else 0
-        if data_size > _MAX_MATERIALIZE_ELEMENTS:
-            dtype_size = (
-                np.dtype(data.dtype).itemsize if hasattr(data, 'dtype') else 8
-            )
-            est_mb = (data_size * dtype_size) / (1024 * 1024)
-            warnings.warn(
-                f'Skipping full-data histogram: materializing '
-                f'{data_size:,} elements (~{est_mb:.0f} MB) would '
-                f'exceed the safety limit of '
-                f'{_MAX_MATERIALIZE_ELEMENTS:,} elements. '
-                f'Use canvas mode or increase max_samples.',
-                stacklevel=2,
-            )
-            return None
-        return np.asarray(data)
-
-    raise ValueError(
-        f'layer can only be a Surface or Image, got {layer.__class__.__name__}'
+    raise NotImplementedError(
+        f'_full_source not implemented for layer type {layer.__class__.__name__}'
     )
+
+
+def _get_data(layer: Any, mode: Literal['canvas', 'full']) -> ArrayLike | None:
+    """Get data from layer based on current mode."""
+    source_data = (
+        _canvas_source(layer) if mode == 'canvas' else _full_source(layer)
+    )
+    data = _to_array(source_data)
+    return data if data is not None and data.size > 0 else None
+
+
+def _to_array(source: Any) -> ArrayLike | None:
+    """Convert (if needed) the source to a usable array, respecting lazy/chuncked data."""
+    if isinstance(source, np.ndarray):
+        return source
+
+    # Chunked arrays (dask, zarr, h5py with chunks) are returned
+    # as-is for the progressive sampler in _compute_chunked_progressive.
+    if _has_chunks(source):
+        return source
+
+    # Last resort: cast to numpy.  Guard against accidentally
+    # materializing a very large object (contiguous h5py) by
+    # checking the estimated memory footprint first.
+    data_size = source.size if hasattr(source, 'size') else 0
+    if data_size > _MAX_MATERIALIZE_ELEMENTS:
+        dtype_size = (
+            np.dtype(source.dtype).itemsize if hasattr(source, 'dtype') else 8
+        )
+        est_mb = (data_size * dtype_size) / (1024 * 1024)
+        warnings.warn(
+            f'Skipping full-data histogram: materializing '
+            f'{data_size:,} elements (~{est_mb:.0f} MB) would '
+            f'exceed the safety limit of '
+            f'{_MAX_MATERIALIZE_ELEMENTS:,} elements. '
+            f'Use canvas mode or increase max_samples.',
+            stacklevel=2,
+        )
+        return None
+    return np.asarray(source)
 
 
 def _has_chunks(data: Any) -> bool:
@@ -468,3 +448,196 @@ def _compute_chunked_progressive(
             counts = running_counts.astype(np.float32)
 
         yield bins_arr, counts
+
+
+## CACHING
+
+
+def _object_token(obj: Any) -> int | None:
+    """Return a token identifying *obj* for as long as the object is alive."""
+    if obj is None:
+        return None
+    key = id(obj)
+    entry = _tokens.get(key)
+    if entry is not None:
+        token, ref = entry
+        if ref() is obj:
+            return token
+    try:
+        ref = weakref.ref(obj)
+    except TypeError:
+        # object cannot be weak referenced, fall back to its address
+        return -key
+    if len(_tokens) > _MAX_TOKENS:
+        _prune_tokens()
+    token = next(_token_counter)
+    _tokens[key] = (token, ref)
+    return token
+
+
+def _prune_tokens() -> None:
+    """Drop tokens of objects that are no longer alive."""
+    for key in [k for k, (_token, ref) in _tokens.items() if ref() is None]:
+        del _tokens[key]
+
+
+def histogram_fingerprint(
+    layer: Image | Surface, mode: Literal['canvas', 'full'] | None = None
+) -> dict[str, Any] | None:
+    """Compute the histogram fingerprint, uniquely identifying a computable histogram.
+
+    Parameters
+    ----------
+    layer : Image | Surface
+        The layer the histogram is computed for.
+    mode : {'canvas', 'full'}, optional
+        The computation mode. Defaults to the mode of the layer histogram
+        model.
+
+    Returns
+    -------
+    dict
+        Dictionary of plain values describing the inputs of the computation.
+        Two states are equal if and only if the same histogram would be
+        computed for them.
+    """
+    try:
+        with _lock:
+            model = layer.histogram
+            mode = model.mode if mode is None else mode
+            source = (
+                _canvas_source(layer)
+                if mode == 'canvas'
+                else _full_source(layer)
+            )
+            return {
+                'mode': mode,
+                'bins': int(model.bins),
+                'max_samples': int(model.max_samples),
+                'log_scale': bool(model.log_scale),
+                'rgb': bool(getattr(layer, 'rgb', False)),
+                'contrast_limits_range': (
+                    float(layer.contrast_limits_range[0]),
+                    float(layer.contrast_limits_range[1]),
+                ),
+                'source': _object_token(source),
+            }
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        # can happen if the layer is not yet sliced and we try to compute
+        # the histogram
+        return None
+
+
+def get_cached_histogram(
+    layer: Image | Surface,
+    mode: Literal['canvas', 'full'] | None = None,
+    fingerprint: dict[str, Any] | None = None,
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """Return the cached histogram of *layer* if it is still up to date.
+
+    Parameters
+    ----------
+    layer : Image | Surface
+        The layer to look up.
+    mode : {'canvas', 'full'}, optional
+        The computation mode. Defaults to the mode of the layer histogram
+        model.
+    fingerprint : dict, optional
+        The fingerprint to compare against. Defaults to the current fingerprint of the
+        layer.
+
+    Returns
+    -------
+    tuple of (numpy.ndarray, numpy.ndarray) or None
+        The cached ``bin_edges`` and ``counts``, or None if there is no
+        up-to-date cached histogram.
+    """
+    with _lock:
+        values = layer.metadata.get(VALUES_KEY)
+        fingerprints = layer.metadata.get(FINGERPRINT_KEY)
+        if not isinstance(values, dict) or not isinstance(fingerprints, dict):
+            return None
+        mode = layer.histogram.mode if mode is None else mode
+        entry = values.get(mode)
+        cached_fingerprint = fingerprints.get(mode)
+        if not isinstance(entry, dict) or not isinstance(
+            cached_fingerprint, dict
+        ):
+            return None
+        if fingerprint is None:
+            fingerprint = histogram_fingerprint(layer, mode)
+            if fingerprint is None:
+                return None
+        if cached_fingerprint != fingerprint:
+            return None
+        bin_edges = entry.get('bin_edges')
+        counts = entry.get('counts')
+        if bin_edges is None or counts is None:
+            return None
+        return bin_edges, counts
+
+
+def set_cached_histogram(
+    layer: Image | Surface,
+    bin_edges: np.ndarray,
+    counts: np.ndarray,
+    fingerprint: dict[str, Any] | None = None,
+) -> None:
+    """Store computed histogram values and the fingerprint they were computed for.
+
+    Parameters
+    ----------
+    layer : Image | Surface
+        The layer the histogram was computed for.
+    bin_edges : numpy.ndarray
+        The bin edges of the histogram.
+    counts : numpy.ndarray
+        The counts of the histogram.
+    fingerprint : dict, optional
+        The fingerprint the values were computed for. Defaults to the current fingerprint
+        of the layer.
+    """
+    with _lock:
+        if fingerprint is None:
+            fingerprint = histogram_fingerprint(layer)
+            if fingerprint is None:
+                return
+        mode = fingerprint['mode']
+        values = layer.metadata.get(VALUES_KEY)
+        if not isinstance(values, dict):
+            values = {}
+            layer.metadata[VALUES_KEY] = values
+        fingerprints = layer.metadata.get(FINGERPRINT_KEY)
+        if not isinstance(fingerprints, dict):
+            fingerprints = {}
+            layer.metadata[FINGERPRINT_KEY] = fingerprints
+        values[mode] = {
+            'bin_edges': np.array(bin_edges),
+            'counts': np.array(counts),
+        }
+        fingerprints[mode] = dict(fingerprint)
+
+
+def clear_cached_histogram(
+    layer: Image | Surface, mode: Literal['canvas', 'full'] | None = None
+) -> None:
+    """Remove the cached histogram values of *layer*.
+
+    Parameters
+    ----------
+    layer : Image | Surface
+        The layer to clear the cache for.
+    mode : {'canvas', 'full'}, optional
+        The computation mode to clear. Defaults to clearing all modes.
+    """
+    with _lock:
+        if mode is None:
+            layer.metadata.pop(VALUES_KEY, None)
+            layer.metadata.pop(FINGERPRINT_KEY, None)
+            return
+        values = layer.metadata.get(VALUES_KEY)
+        if isinstance(values, dict):
+            values.pop(mode, None)
+        fingerprints = layer.metadata.get(FINGERPRINT_KEY)
+        if isinstance(fingerprints, dict):
+            fingerprints.pop(mode, None)
