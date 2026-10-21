@@ -471,39 +471,6 @@ def dataframe_to_properties(
     return {col: np.asarray(dataframe[col]) for col in dataframe}
 
 
-def validate_properties(
-    properties: dict[str, Array] | pd.DataFrame | None,
-    expected_len: int | None = None,
-) -> dict[str, np.ndarray]:
-    """Validate the type and size of properties and coerce values to numpy arrays.
-    Parameters
-    ----------
-    properties : dict[str, Array] or DataFrame
-        The property values.
-    expected_len : int
-        The expected length of each property value array.
-    Returns
-    -------
-    Dict[str, np.ndarray]
-        The property values.
-    """
-    if properties is None or len(properties) == 0:
-        return {}
-
-    if not isinstance(properties, dict):
-        properties = dataframe_to_properties(properties)
-
-    lens = [len(v) for v in properties.values()]
-    if expected_len is None:
-        expected_len = lens[0]
-    if any(v != expected_len for v in lens):
-        raise ValueError(
-            'the number of items must be equal for all properties'
-        )
-
-    return {k: np.asarray(v) for k, v in properties.items()}
-
-
 def _validate_property_choices(property_choices):
     if property_choices is None:
         property_choices = {}

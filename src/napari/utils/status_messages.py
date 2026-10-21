@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
@@ -108,46 +108,3 @@ def generate_layer_status_strings(
             val_str = f'{status_format(value)}'
 
     return pos_str, val_str
-
-
-def generate_layer_coords_status(
-    position: npt.ArrayLike | None, value: tuple | None
-) -> str:
-    return ': '.join(generate_layer_status_strings(position, value))
-
-
-def generate_layer_status(
-    name: str, position: Sequence[float] | None, value: Any
-) -> str:
-    """Generate a status message based on the coordinates and value
-
-    Parameters
-    ----------
-    name : str
-        Name of the layer.
-    position : tuple or list
-        List of coordinates, say of the cursor.
-    value : Any
-        The value to be printed.
-
-    Returns
-    -------
-    msg : string
-        String containing a message that can be used as a status update.
-    """
-    if position is not None:
-        full_coord = map(str, np.round(position).astype(int))
-        msg = f'{name} [{" ".join(full_coord)}]'
-    else:
-        msg = f'{name}'
-
-    if value is not None:
-        if isinstance(value, tuple) and value != (None, None):
-            # it's a multiscale -> value = (data_level, value)
-            msg += f': {status_format(value[0])}'
-            if value[1] is not None:
-                msg += f', {status_format(value[1])}'
-        else:
-            # it's either a grayscale or rgb image (scalar or list)
-            msg += f': {status_format(value)}'
-    return msg
