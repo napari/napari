@@ -114,9 +114,6 @@ def _step_active_generators(
             _forget_generator(obj, gen_dict, func, gen)
             completed.append(func)
             _warn_callback_failed(func)
-        except BaseException:
-            _forget_generator(obj, gen_dict, func, gen)
-            raise
     return completed
 
 
