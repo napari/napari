@@ -8,6 +8,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
 )
 from napari._qt.utils import attr_to_settr
 from napari._qt.widgets.qt_color_swatch import QColorSwatchEdit
+from napari.layers.utils.layer_utils import _unique_element
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -48,8 +49,11 @@ class QtFaceColorControl(QtWidgetControlsBase):
     ) -> None:
         super().__init__(layers, parent)
         # Setup widgets
+        color = _unique_element(
+            [layer.current_face_color for layer in self._layers]
+        )
         self.face_color_edit = QColorSwatchEdit(
-            initial_color=self._layers[0].current_face_color,
+            initial_color=color,
             tooltip=tooltip,
         )
         self.face_color_label = QtWrappedLabel('face color:')
