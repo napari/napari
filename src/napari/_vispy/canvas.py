@@ -537,6 +537,7 @@ class VispyCanvas:
 
         if (
             event.type == 'mouse_press'
+            and event.last_event is not None
             and event.last_event.type != 'mouse_release'
             and event.buttons == event.last_event.buttons
         ):
