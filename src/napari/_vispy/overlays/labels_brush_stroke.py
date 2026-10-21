@@ -155,7 +155,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
             if dist > radius:
                 self._has_left = True
             return False
-        return dist <= radius
+        return bool(dist <= radius)
 
     def _complete(self, layer) -> None:
         # continue the stroke all the way back to the start point so the drawn
