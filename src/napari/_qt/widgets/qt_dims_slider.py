@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QWidget,
 )
-from superqt import QElidingLineEdit
+from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_modal import QtPopup
 from napari._qt.utils import qt_signals_blocked
@@ -145,21 +145,16 @@ class QtDimSliderWidget(QWidget):
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)
 
-    def _create_axis_label_widget(self) -> QElidingLineEdit:
+    def _create_axis_label_widget(self) -> QElidingLabel:
         """Create the axis label widget which accompanies its slider."""
-        label = QElidingLineEdit(self)
-        label.setObjectName('axis_label')  # needed for _update_label
+        label = QElidingLabel(self)
+        label.setObjectName('axis_label')
         fm = label.fontMetrics()
         label.setEllipsesWidth(int(fm.averageCharWidth() * 3))
         label.setText(self.dims.axis_labels[self.axis])
-        label.home(False)
-        label.setToolTip('Edit to change axis label')
-        label.setAcceptDrops(False)
-        label.setEnabled(True)
+        label.setToolTip(f'Axis label for dimension {self.axis}')
         label.setAlignment(Qt.AlignmentFlag.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
-        label.textEdited.connect(self._update_label)
-        label.editingFinished.connect(self._clear_label_focus)
         return label
 
     def _on_value_changed(self, value: int) -> None:
@@ -238,19 +233,10 @@ class QtDimSliderWidget(QWidget):
         self.__class__.fps.fset(self, fps)
 
     def _pull_label(self):
-        """Updates the label LineEdit from the dims model."""
+        """Updates the label widget from the dims model."""
         label = self.dims.axis_labels[self.axis]
-        with qt_signals_blocked(self.axis_label):
-            self.axis_label.setText(label)
-
-    def _update_label(self):
-        """Update dimension slider label."""
-        self.dims.set_axis_label(self.axis, self.axis_label.text())
-
-    def _clear_label_focus(self) -> None:
-        """Clear focus from the dimension slider label."""
-        self.axis_label.clearFocus()
-        self.qt_dims.setFocus()
+        self.axis_label.setText(label)
+        self.qt_dims._resize_axis_labels()
 
     def _update_range(self) -> None:
         """Updates range for slider."""
