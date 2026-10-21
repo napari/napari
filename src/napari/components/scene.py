@@ -4,6 +4,7 @@ from pydantic import Field
 
 from napari.components.camera import Camera
 from napari.components.overlays import (
+    CrosshairOverlay,
     GridLinesOverlay,
     SceneAxesOverlay,
     SceneOverlay,
@@ -23,7 +24,7 @@ class Scene(EventedModel):
         The camera object modeling the position and view.
     overlays : EventedDictNamespace
         A dictionary/namespace containing scene overlays. By default, it exposes
-        publicly 'axes'.
+        publicly 'axes' and 'crosshair'.
     """
 
     camera: Camera = Field(default_factory=Camera, frozen=True)
@@ -35,6 +36,7 @@ class Scene(EventedModel):
         default_factory=lambda: EventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
+                'crosshair': CrosshairOverlay(),
                 'grid_lines': GridLinesOverlay(),
             }
         ),
