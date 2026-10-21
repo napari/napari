@@ -703,6 +703,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
+        self._slicing_state.loaded_data.connect(self.events.loaded)
 
     @property
     def _slice_input(self) -> _SliceInput:
