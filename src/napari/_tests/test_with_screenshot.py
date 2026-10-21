@@ -540,13 +540,23 @@ def test_screenshot_scale_keeps_view(make_napari_viewer):
     viewer.window._qt_viewer.canvas.size = data.shape[:2]
     viewer.scene.camera.zoom = 1
 
+    px_scale = viewer.window._qt_viewer.canvas._scene_canvas.pixel_scale
+
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
-    assert screenshot.shape == data.shape
+    assert screenshot.shape == (
+        data.shape[0] * px_scale,
+        data.shape[1] * px_scale,
+        4,
+    )
 
     # scaling the screenshot should keep the same field of view, but at double
     # the resolution
     scaled = viewer.screenshot(canvas_only=True, flash=False, scale=2)
-    assert scaled.shape == (data.shape[0] * 2, data.shape[1] * 2, 4)
+    assert scaled.shape == (
+        data.shape[0] * 2 * px_scale,
+        data.shape[1] * 2 * px_scale,
+        4,
+    )
 
     # the same four quadrants should be visible at the same relative positions
     # in both screenshots
@@ -558,7 +568,9 @@ def test_screenshot_scale_keeps_view(make_napari_viewer):
     ]:
         for image in (screenshot, scaled):
             position = tuple(
-                (np.array(image.shape[:2]) * relative_position).astype(int)
+                (
+                    np.array(image.shape[:2]) * relative_position * px_scale
+                ).astype(int)
             )
             np.testing.assert_array_equal(image[position], expected)
 
