@@ -445,6 +445,45 @@ def test_axes_visible(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
+def test_crosshair_drawn_at_cursor(make_napari_viewer):
+    """Test the crosshair is drawn around the cursor position."""
+    viewer = make_napari_viewer(show=True)
+    viewer.add_image(np.zeros((100, 100)))
+    viewer.cursor.position = (50.0, 50.0)
+
+    crosshair = viewer.scene.overlays.crosshair
+    crosshair.visible = True
+    crosshair.gap = 40
+
+    def red_pixels():
+        """Mask of the (default red) crosshair pixels in the canvas."""
+        screenshot = viewer.screenshot(canvas_only=True, flash=False)
+        return (
+            (screenshot[..., 0] > 100)
+            & (screenshot[..., 1] < 100)
+            & (screenshot[..., 2] < 100)
+        )
+
+    red = red_pixels()
+    assert red.any()
+
+    # the crosshair is made of a horizontal and a vertical line
+    row = int(np.argmax(red.sum(axis=1)))
+    col = int(np.argmax(red.sum(axis=0)))
+
+    # the centre of the crosshair is empty, the gap is as wide as requested
+    assert not red[row, col]
+    assert red[row, col - crosshair.gap]
+    assert red[row, col + crosshair.gap]
+
+    # moving the cursor moves the crosshair
+    viewer.cursor.position = (25.0, 75.0)
+    moved = red_pixels()
+    assert int(np.argmax(moved.sum(axis=0))) != col
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
