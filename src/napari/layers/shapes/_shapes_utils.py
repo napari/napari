@@ -1067,6 +1067,8 @@ def path_to_indices(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
+    # draw.line_nd breaks ties differently than draw.line, so in 2D it picks
+    # other pixels for some lines, and it is several times slower.
     if len(mask_shape) == 2:
         lines = [
             draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)
