@@ -116,6 +116,20 @@ def view_and_up_directions_from_angles(
     return tuple(rot_matrix @ base_view), tuple(rot_matrix @ base_up)
 
 
+def _nudge_vector(v: np.ndarray):
+    """Nudge a vector, to guarantee it's not parallel to the input."""
+    # choose the coordinate axis least aligned with v
+    axis = np.zeros_like(v)
+    axis[np.argmin(np.abs(v))] = 1.0
+
+    # go perpendicular to that
+    u = np.cross(v, axis)
+    u /= np.linalg.norm(u)
+
+    new = v + (1e6 * u)
+    return new / np.linalg.norm(new)
+
+
 def angles_from_view_and_up_directions(
     view_direction: Vector3D,
     up_direction: Vector3D,
@@ -155,8 +169,8 @@ def angles_from_view_and_up_directions(
     if all(up_ortho == 0):
         # can happen if one sets the view direction to the same or opposite
         # value as the up direction. This is unsolvable, so as a workaround
-        # just nudge the view_direction randomly and use it as new up
-        up_raw = np.asarray(view + (1, 0, 0), dtype=float)
+        # just nudge the view_direction arbitrarily and use it as new up
+        up_raw = _nudge_vector(view)
         up_ortho = up_raw - np.dot(up_raw, view) * view
     up = up_ortho / np.linalg.norm(up_ortho)
 
