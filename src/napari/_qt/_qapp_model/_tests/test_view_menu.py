@@ -389,3 +389,16 @@ def test_toggle_grid_mode():
         assert viewer.canvas.grid.enabled is True
         app.commands.execute_command('napari.canvas.toggle_grid_mode')
         assert viewer.canvas.grid.enabled is False
+
+
+def test_toggle_crosshair():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.scene.overlays.crosshair.visible is False
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is True
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is False
