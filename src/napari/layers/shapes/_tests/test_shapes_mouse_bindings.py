@@ -334,6 +334,13 @@ def test_polyline_mouse(create_known_shapes_layer):
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] == 'path'
 
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_release_callbacks(layer, event)
+
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
             type='mouse_move',
@@ -460,6 +467,13 @@ def test_polygon_lasso_mouse(create_known_shapes_layer):
     )
     mouse_press_callbacks(layer, event)
     assert layer.shape_type[-1] != 'polygon'
+
+    event = read_only_mouse_event(
+        type='mouse_release',
+        position=desired_shape[0],
+        pos=desired_shape[0],
+    )
+    mouse_release_callbacks(layer, event)
 
     for coord in desired_shape[1:]:
         event = read_only_mouse_event(
