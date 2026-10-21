@@ -1,7 +1,13 @@
-from collections.abc import Callable
-from typing import Any
+from __future__ import annotations
+
+from collections.abc import Callable, Generator
+from typing import TYPE_CHECKING, Any, Never
 
 from pydantic import BaseModel, Field, PrivateAttr
+
+if TYPE_CHECKING:
+    from napari._vispy.mouse_event import NapariMouseEvent
+    from napari.utils._proxies import ReadOnlyWrapper
 
 
 class MousemapProvider:
@@ -27,18 +33,20 @@ class MousemapProvider:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
-        self.mouse_move_callbacks = []
+        self.mouse_move_callbacks: list[Callable] = []
         # Hold callbacks for when mouse is pressed, dragged, and released
-        self.mouse_drag_callbacks = []
+        self.mouse_drag_callbacks: list[Callable] = []
         # hold callbacks for when mouse is double clicked
-        self.mouse_double_click_callbacks = []
+        self.mouse_double_click_callbacks: list[Callable] = []
         # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = []
+        self.mouse_wheel_callbacks: list[Callable] = []
 
-        self._persisted_mouse_event: dict = {}
-        self._mouse_drag_gen = {}
-        self._mouse_move_gen = {}
-        self._mouse_wheel_gen = {}
+        self._persisted_mouse_event: dict[
+            Generator[object, Never, object], ReadOnlyWrapper[NapariMouseEvent]
+        ] = {}
+        self._mouse_drag_gen: dict[Callable, Generator] = {}
+        self._mouse_move_gen: dict[Callable, Generator] = {}
+        self._mouse_wheel_gen: dict[Callable, Generator] = {}
 
 
 class MousemapProviderPydantic(BaseModel):
