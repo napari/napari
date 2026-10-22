@@ -303,6 +303,7 @@ def test_notification_close_restarts_timer_below(qt_viewer_, monkeypatch):
 
     second.close()
 
-    assert NapariQtNotification._instances == {first}
+    assert len(NapariQtNotification._instances) == 1
+    assert NapariQtNotification._instances[0]() == first
     assert restarted == [first]
     first.close()
