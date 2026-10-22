@@ -2,6 +2,7 @@ import re
 from typing import Any
 
 import gdown
+from pooch import get_logger
 from pooch.downloaders import (
     DOIDownloader,
     FTPDownloader,
@@ -56,9 +57,14 @@ class SkimageMirrorDownloader(HTTPDownloader):
         mirror_url = skimage_mirror_url(url)
         if mirror_url is None:
             raise ValueError(f'No scikit-image mirror configured for {url}')
-        return super().__call__(
+
+        get_logger().info('Redirecting %s to %s', url, mirror_url)
+        res =  super().__call__(
             mirror_url, output_file, pooch, check_only=check_only
         )
+        get_logger().info('Finished mirror download: %s', mirror_url)
+        return res
+
 
 class BackupDownloader(HTTPDownloader):
     def __call__(self, url: str, output_file: str, pooch:Any, check_only:bool=False) -> bool | None:
