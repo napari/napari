@@ -1,5 +1,6 @@
 import threading
 import warnings
+import weakref
 from concurrent.futures import Future
 from dataclasses import dataclass
 from unittest.mock import MagicMock
@@ -293,13 +294,15 @@ def test_notification_close_restarts_timer_below(qt_viewer_, monkeypatch):
     second = NapariQtNotification.from_notification(
         Notification('second'), canvas
     )
-    NapariQtNotification._instances.extend([first, second])
+    NapariQtNotification._instances.extend(
+        [weakref.ref(first), weakref.ref(second)]
+    )
 
     restarted = []
     monkeypatch.setattr(first, 'timer_start', lambda: restarted.append(first))
 
     second.close()
 
-    assert NapariQtNotification._instances == [first]
+    assert NapariQtNotification._instances == {first}
     assert restarted == [first]
     first.close()
