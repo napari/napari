@@ -540,21 +540,24 @@ def test_screenshot_scale_keeps_view(make_napari_viewer):
     viewer.window._qt_viewer.canvas.size = data.shape[:2]
     viewer.scene.camera.zoom = 1
 
-    px_scale = viewer.window._qt_viewer.canvas._scene_canvas.pixel_scale
+    device_px_ratio = viewer.window._qt_viewer.canvas._scene_canvas.pixel_scale
 
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert screenshot.shape == (
-        data.shape[0] * px_scale,
-        data.shape[1] * px_scale,
+        data.shape[0] * device_px_ratio,
+        data.shape[1] * device_px_ratio,
         4,
     )
 
     # scaling the screenshot should keep the same field of view, but at double
     # the resolution
-    scaled = viewer.screenshot(canvas_only=True, flash=False, scale=2)
+    scale_factor = 2
+    scaled = viewer.screenshot(
+        canvas_only=True, flash=False, scale=scale_factor
+    )
     assert scaled.shape == (
-        data.shape[0] * 2 * px_scale,
-        data.shape[1] * 2 * px_scale,
+        data.shape[0] * device_px_ratio * scale_factor,
+        data.shape[1] * device_px_ratio * scale_factor,
         4,
     )
 
