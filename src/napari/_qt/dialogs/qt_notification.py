@@ -191,12 +191,13 @@ class NapariQtNotification(QDialog):
                 del self._instances[i]
                 break
         parent = self.parent()
-        if isinstance(parent, QWidget) and self._instances:
-            last = self._instances[-1]
-            if (
-                notification := last()
-            ) is not None and not notification.underMouse():
-                notification.timer_start()
+        if isinstance(parent, QWidget):
+            for ref in self._instances[::-1]:
+                if (
+                    notification := ref()
+                ) is not None and not notification.underMouse():
+                    notification.timer_start()
+                    break
             parent.setFocus()
         super().close()
 
