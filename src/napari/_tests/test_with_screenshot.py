@@ -568,9 +568,7 @@ def test_screenshot_scale_keeps_view(make_napari_viewer):
     ]:
         for image in (screenshot, scaled):
             position = tuple(
-                (
-                    np.array(image.shape[:2]) * relative_position
-                ).astype(int)
+                (np.array(image.shape[:2]) * relative_position).astype(int)
             )
             np.testing.assert_array_equal(image[position], expected)
 
