@@ -530,7 +530,3 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
     getattr(obj.events, name).connect(callback)
 
     return callback
-
-
-def checked_to_bool(value: Qt.CheckState) -> bool:
-    return Qt.CheckState(value) == Qt.CheckState.Checked
