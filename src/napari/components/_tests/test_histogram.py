@@ -248,21 +248,18 @@ class TestChunked:
 
 
 class TestMaterializationGuard:
-    """Tests for the _get_full_data materialization guard."""
+    """Tests for the _to_array materialization guard."""
 
     def test_large_non_chunked_data_skipped_with_warning(self):
-        from napari.utils.histogram import _get_full_data
+        from napari.utils.histogram import _to_array
 
         class Big:
             size = _MAX_MATERIALIZE_ELEMENTS + 1
             shape = (10_000, 5_001)
             dtype = np.dtype(np.float32)
 
-        class FakeLayer:
-            data = Big()
-
         with pytest.warns(UserWarning, match='Skipping full-data histogram'):
-            result = _get_full_data(FakeLayer())
+            result = _to_array(Big())
         assert result is None
 
 

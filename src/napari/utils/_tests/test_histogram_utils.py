@@ -6,7 +6,7 @@ import pytest
 from napari.components.histogram import Histogram
 from napari.layers import Image
 from napari.utils.histogram import (
-    STATE_KEY,
+    FINGERPRINT_KEY,
     VALUES_KEY,
     clear_cached_histogram,
     get_cached_histogram,
@@ -42,9 +42,9 @@ def test_cache_is_stored_in_layer_metadata(layer, values):
     set_cached_histogram(layer, edges, counts)
 
     assert VALUES_KEY in layer.metadata
-    assert STATE_KEY in layer.metadata
+    assert FINGERPRINT_KEY in layer.metadata
     assert 'canvas' in layer.metadata[VALUES_KEY]
-    assert 'canvas' in layer.metadata[STATE_KEY]
+    assert 'canvas' in layer.metadata[FINGERPRINT_KEY]
 
 
 def test_state_marker_describes_the_computation(layer, values):
@@ -52,7 +52,7 @@ def test_state_marker_describes_the_computation(layer, values):
     set_cached_histogram(layer, edges, counts)
 
     mode = layer.histogram.mode
-    state = layer.metadata[STATE_KEY][mode]
+    state = layer.metadata[FINGERPRINT_KEY][mode]
     assert state == histogram_fingerprint(layer, mode)
     assert state['mode'] == mode
     assert state['bins'] == layer.histogram.bins
@@ -65,7 +65,7 @@ def test_state_marker_reports_staleness(layer, values):
     set_cached_histogram(layer, edges, counts)
 
     mode = layer.histogram.mode
-    state = layer.metadata[STATE_KEY][mode]
+    state = layer.metadata[FINGERPRINT_KEY][mode]
     assert state == histogram_fingerprint(layer, mode)
 
     layer.contrast_limits_range = (0.0, 0.5)
@@ -143,7 +143,7 @@ def test_clear_cached_histogram(layer, values):
     clear_cached_histogram(layer)
     assert get_cached_histogram(layer) is None
     assert VALUES_KEY not in layer.metadata
-    assert STATE_KEY not in layer.metadata
+    assert FINGERPRINT_KEY not in layer.metadata
 
 
 def test_cache_access_is_threadsafe(layer, values):

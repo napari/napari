@@ -1,10 +1,10 @@
 import numpy as np
 
-from napari._qt.histogram_cache import set_cached_histogram
 from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari._qt.widgets.qt_histogram_settings import QtHistogramSettingsWidget
 from napari.layers import Image
 from napari.settings import get_settings
+from napari.utils.histogram import set_cached_histogram
 from napari.utils.theme import get_theme
 
 
