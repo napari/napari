@@ -187,8 +187,7 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.stop()
         self.geom_anim.stop()
         for i, ref in enumerate(self._instances):
-            notification = ref()
-            if notification is self:
+            if (notification := ref()) is self:
                 del self._instances[i]
                 break
         parent = self.parent()
@@ -196,7 +195,7 @@ class NapariQtNotification(QDialog):
             last = self._instances[-1]
             if (
                 notification := last()
-            ) is not None and notification.underMouse():
+            ) is not None and not notification.underMouse():
                 notification.timer_start()
             parent.setFocus()
         super().close()
