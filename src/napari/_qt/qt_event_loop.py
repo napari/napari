@@ -112,9 +112,10 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
     if not notifications:
         return
     if start_timer:
-        top_ref = notifications[-1]
-        if (top := top_ref()) is not None and not top.underMouse():
-            top.timer_start()
+        for ref in notifications[::-1]:
+            if (top := ref()) is not None and not top.underMouse():
+                top.timer_start()
+                break
     else:
         for ref in notifications:
             if (notification := ref()) is not None:
