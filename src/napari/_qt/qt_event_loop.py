@@ -95,7 +95,7 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
         return  # ignore focus changes between two widgets
     if old is None and new is None:
         return  # this should not happen
-    if not isinstance(old, QWidget):
+    if old is not None and not isinstance(old, QWidget):
         return  # ignore event happened during teardown of test
     if old is None:
         start_timer = True
@@ -112,7 +112,9 @@ def _focus_changed(old: QWidget | None, new: QWidget | None):
     if not notifications:
         return
     if start_timer:
-        notifications[-1].timer_start()
+        top = notifications[-1]
+        if not top.underMouse():
+            top.timer_start()
     else:
         for notification in notifications:
             notification.timer_stop()
@@ -299,7 +301,7 @@ def quit_app():
     # otherwise, something else created the QApp before us (such as
     # %gui qt IPython magic).  If we quit the app in this case, then
     # *later* attempts to instantiate a napari viewer won't work until
-    # the event loop is restarted with app.exec_().  So rather than
+    # the event loop is restarted with app.exec().  So rather than
     # quit just close all the windows (and clear our app icon).
     else:
         QApplication.setWindowIcon(QIcon())
@@ -379,9 +381,9 @@ def run(
         shown in the console that launched the event loop.
     max_loop_level : int, optional
         The maximum allowable "loop level" for the execution thread.  Every
-        time `QApplication.exec_()` is called, Qt enters the event loop,
+        time `QApplication.exec()` is called, Qt enters the event loop,
         increments app.thread().loopLevel(), and waits until exit() is called.
-        This function will prevent calling `exec_()` if the application already
+        This function will prevent calling `exec()` if the application already
         has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is here to
@@ -429,4 +431,4 @@ def run(
         _maybe_allow_interrupt(app),
         register_logger_to_napari_handler(''),
     ):
-        app.exec_()
+        app.exec()

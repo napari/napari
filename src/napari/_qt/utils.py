@@ -212,7 +212,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)
-    ...         drag.exec_(supportedActions, Qt.DropAction.MoveAction)
+    ...         drag.exec(supportedActions, Qt.DropAction.MoveAction)
 
     """
     drag = QDrag(list_widget)
@@ -474,7 +474,7 @@ def get_color(
 
     dlg = QColorDialog(color, parent=parent)
     new_color: str | np.ndarray | QColor | None = None
-    if dlg.exec_():
+    if dlg.exec():
         new_color = dlg.currentColor()
         if mode == ColorMode.HEX:
             new_color = new_color.name()
@@ -530,7 +530,3 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
     getattr(obj.events, name).connect(callback)
 
     return callback
-
-
-def checked_to_bool(value: Qt.CheckState) -> bool:
-    return Qt.CheckState(value) == Qt.CheckState.Checked
