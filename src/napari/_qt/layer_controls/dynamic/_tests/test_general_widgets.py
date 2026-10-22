@@ -212,7 +212,7 @@ class TestQContrastLimitsPopup:
         assert widget.slider.maximum() == 25
 
         widget._reset()
-        assert image.contrast_limits == [0, 255]
+        assert image.contrast_limits == (0, 255)
         assert widget.slider.maximum() == 255
 
 

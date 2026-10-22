@@ -51,6 +51,29 @@ if TYPE_CHECKING:
 
     from magicgui.widgets import Widget
     from qtpy.QtGui import QGuiApplication
+    from superqt import QDoubleRangeSlider
+
+
+def set_range_slider_value(
+    slider: QDoubleRangeSlider, value: tuple[float, float]
+) -> None:
+    """Set the value of a superqt double range slider.
+
+    QDoubleRangeSlider.setValue stores the value as given,
+    while the internal handle positions are always stored as a list.
+    Passing a tuple therefore leaves the two out of
+    sync, which makes the slider emit a spurious valueChanged signal
+    every time its range is updated.  Passing a list keeps them in sync.
+    This should be fixed in superqt.
+
+    Parameters
+    ----------
+    slider : QDoubleRangeSlider
+        The slider to update.
+    value : tuple of float
+        The (min, max) value to set.
+    """
+    slider.setValue(list(value))
 
 
 class ColorMode(StringEnum):
