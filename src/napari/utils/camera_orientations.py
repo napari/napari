@@ -122,11 +122,9 @@ def _nudge_vector(v: np.ndarray) -> np.ndarray:
     axis = np.zeros_like(v)
     axis[np.argmin(np.abs(v))] = 1.0
 
-    # go perpendicular to that
-    u = np.cross(v, axis)
-    u /= np.linalg.norm(u)
-
-    new = v + (1e6 * u)
+    # this least-aligned vector is guaranteed to be non-parallel for nonzero
+    # vectors. Use it to nudge theinput slightly sideways (and renormalize)
+    new = v + (1e6 * axis)
     return new / np.linalg.norm(new)
 
 
