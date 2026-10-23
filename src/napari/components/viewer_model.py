@@ -1045,6 +1045,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 + world_center
             )
 
+        if ndisplay == 3 and self.dims.ndim == 2:
+            # special case of 2d data and 3d view, we need to drop the extra dim
+            world_displayed = world_displayed[-2:]
+
         # embed it in the world point
         position_world = list(self.dims.point)
         for i, d in enumerate(self.dims.displayed):
