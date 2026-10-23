@@ -454,9 +454,10 @@ def test_crosshair_drawn_at_cursor(make_napari_viewer):
     crosshair = viewer.scene.overlays.crosshair
     crosshair.visible = True
     crosshair.gap = 40
+    crosshair.color = 'red'
 
     def red_pixels():
-        """Mask of the (default red) crosshair pixels in the canvas."""
+        """Mask of the red crosshair pixels in the canvas."""
         screenshot = viewer.screenshot(canvas_only=True, flash=False)
         return (
             (screenshot[..., 0] > 100)
