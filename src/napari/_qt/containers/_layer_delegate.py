@@ -126,7 +126,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def paint(
         self,
-        painter: QPainter | None,
+        painter: QPainter,
         option: QStyleOptionViewItem,
         index: ModelIndex,
     ) -> None:
@@ -134,8 +134,6 @@ class LayerDelegate(QStyledItemDelegate):
         # Guard against stale indices (e.g. layer was removed while
         # an async paint event was queued).
         if not index.isValid():
-            return
-        if painter is None:
             return
         # update the icon based on layer type
         option.textElideMode = Qt.TextElideMode.ElideMiddle  # pyrefly: ignore[bad-assignment]
@@ -167,7 +165,8 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        bg = option.palette.color(QPalette.ColorRole.Window).red()  # pyrefly: ignore[missing-attribute]
+        palette = cast(QPalette, option.palette)
+        bg = palette.color(QPalette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore[bad-assignment]
         option.decorationSize = QSize(18, 18)  # pyrefly: ignore[bad-assignment]
         option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore[bad-assignment]
@@ -184,7 +183,7 @@ class LayerDelegate(QStyledItemDelegate):
         loaded = index.data(LoadedRole)
         if not loaded:
             self._load_movie.start()
-            load_rect = option.rect.translated(4, 8)  # pyrefly: ignore[missing-attribute]
+            load_rect = cast(QRect, option.rect).translated(4, 8)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             load_rect.setWidth(h)
             load_rect.setHeight(h)
@@ -211,7 +210,7 @@ class LayerDelegate(QStyledItemDelegate):
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = option.rect.translated(-2, 2)  # pyrefly: ignore[missing-attribute]
+            thumb_rect = cast(QRect, option.rect).translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)
             thumb_rect.setHeight(h)
@@ -231,7 +230,8 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
-        bg = option.palette.color(QPalette.ColorRole.Window).red()  # pyrefly: ignore[missing-attribute]
+        palette = cast(QPalette, option.palette)
+        bg = palette.color(QPalette.ColorRole.Window).red()
         colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
         lock_rect = self._lock_icon_rect(option, index)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
@@ -241,7 +241,7 @@ class LayerDelegate(QStyledItemDelegate):
     ) -> QRect:
         """Return the QRect for the lock icon."""
 
-        rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
+        rect = cast(QRect, option.rect)
         icon_size = 16
         type_icon_reserved = 28
         x = rect.right() - type_icon_reserved - icon_size - 2
@@ -276,9 +276,10 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
-        widget: QWidget = option.widget  # pyrefly: ignore[bad-assignment]
+        widget = cast('QWidget', option.widget)
         if (
             event.type() == QMouseEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = event.globalPosition().toPoint()
@@ -288,11 +289,11 @@ class LayerDelegate(QStyledItemDelegate):
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
-        if event.type() == QMouseEvent.Type.MouseButtonDblClick:
+        if event.type() == QMouseEvent.Type.MouseButtonDblClick and isinstance(
+            event, QMouseEvent
+        ):
             self.initStyleOption(option, index)
             style = widget.style()
-            if style is None:
-                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
@@ -314,14 +315,14 @@ class LayerDelegate(QStyledItemDelegate):
 
         # catch alt-click on the vis checkbox and hide *other* layer visibility
         # on second alt-click, restore the visibility state of the layers
-        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
+        if (
+            event.type() == QMouseEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             self.initStyleOption(option, index)
             style = widget.style()
-            if style is None:
-                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
@@ -331,13 +332,13 @@ class LayerDelegate(QStyledItemDelegate):
                 return self._show_on_alt_click_hide_others(model, index)
 
         # on regular click of visibility icon, clear alt-click state
-        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
-            event.button() == Qt.MouseButton.LeftButton
+        if (
+            event.type() == QMouseEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
             style = widget.style()
-            if style is None:
-                return super().editorEvent(event, model, option, index)
             check_rect = style.subElementRect(
                 style.SubElement.SE_ItemViewItemCheckIndicator,
                 option,
