@@ -25,8 +25,8 @@ class QtStar(QFrame):
 
     def __init__(
         self,
-        parent: QWidget = None,
-        value: int | None = None,
+        parent: QWidget | None = None,
+        value: int = 1,
     ) -> None:
         super().__init__(parent)
         self._value = value
@@ -59,7 +59,7 @@ class QtStar(QFrame):
         """
         return self._value
 
-    def setValue(self, value: int, color: QColor = None):
+    def setValue(self, value: int, color: QColor | None = None):
         """Set line width value of star widget.
 
         Parameters
@@ -139,7 +139,7 @@ class QtTriangle(QFrame):
 
     def __init__(
         self,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
         value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
@@ -266,13 +266,13 @@ class QtTriangle(QFrame):
 
         self._value = min(self._value, value)
 
-    def drawLine(self, qp, value: int):
+    def drawLine(self, qp, value: float):
         """Draw line on triangle indicating value.
 
         Parameters
         ----------
         qp : QPainter object
-        value : int
+        value : float
             Value of highlight thickness.
         """
         col = QColor('white')
@@ -309,7 +309,7 @@ class QtHighlightPreviewWidget(QWidget):
 
     def __init__(
         self,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
         description: str = '',
         value: dict | None = None,
         min_value: int = 1,
