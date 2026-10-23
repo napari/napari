@@ -33,10 +33,6 @@ def get_unit_from_name(unit: str | pint.Unit | None) -> pint.Unit:
 
 
 @overload
-def get_units_from_name(units: None) -> None: ...
-
-
-@overload
 def get_units_from_name(units: str | pint.Unit | None) -> pint.Unit: ...
 
 
