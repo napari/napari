@@ -392,10 +392,15 @@ def test_contrast_limits():
     assert layer.contrast_limits == layer.contrast_limits_range
 
     # Change contrast_limits property
-    contrast_limits = [0, 2]
+    contrast_limits = (0, 2)
     layer.contrast_limits = contrast_limits
     assert layer.contrast_limits == contrast_limits
     assert layer.contrast_limits_range == contrast_limits
+
+    # lists are accepted as input, but are stored as tuples
+    layer.contrast_limits = [0, 2]
+    assert layer.contrast_limits == contrast_limits
+    assert isinstance(layer.contrast_limits, tuple)
 
     # Set contrast_limits as keyword argument
     layer = Image(data, contrast_limits=contrast_limits)
@@ -413,11 +418,11 @@ def test_contrast_limits_range():
     assert layer.contrast_limits_range[0] < layer.contrast_limits_range[1]
 
     # If all data is the same value the contrast_limits_range and
-    # contrast_limits defaults to [0, 1]
+    # contrast_limits defaults to (0, 1)
     data = np.zeros((10, 15))
     layer = Image(data)
-    assert layer.contrast_limits_range == [0, 1]
-    assert layer.contrast_limits == [0.0, 1.0]
+    assert layer.contrast_limits_range == (0, 1)
+    assert layer.contrast_limits == (0.0, 1.0)
 
 
 def test_set_contrast_limits_range():
@@ -425,39 +430,39 @@ def test_set_contrast_limits_range():
     np.random.seed(0)
     data = np.random.random((10, 15)) * 100
     layer = Image(data)
-    layer.contrast_limits_range = [0, 100]
-    layer.contrast_limits = [20, 40]
-    assert layer.contrast_limits_range == [0, 100]
-    assert layer.contrast_limits == [20, 40]
+    layer.contrast_limits_range = (0, 100)
+    layer.contrast_limits = (20, 40)
+    assert layer.contrast_limits_range == (0, 100)
+    assert layer.contrast_limits == (20, 40)
 
     # clim values should stay within the contrast limits range
-    layer.contrast_limits_range = [0, 30]
-    assert layer.contrast_limits == [20, 30]
+    layer.contrast_limits_range = (0, 30)
+    assert layer.contrast_limits == (20, 30)
     # setting clim range outside of clim should override clim
-    layer.contrast_limits_range = [0, 10]
-    assert layer.contrast_limits == [0, 10]
+    layer.contrast_limits_range = (0, 10)
+    assert layer.contrast_limits == (0, 10)
 
     # in both directions...
-    layer.contrast_limits_range = [0, 100]
-    layer.contrast_limits = [20, 40]
-    layer.contrast_limits_range = [60, 100]
-    assert layer.contrast_limits == [60, 100]
+    layer.contrast_limits_range = (0, 100)
+    layer.contrast_limits = (20, 40)
+    layer.contrast_limits_range = (60, 100)
+    assert layer.contrast_limits == (60, 100)
 
 
 @pytest.mark.parametrize(
     'contrast_limits_range',
     [
-        [-2, -1],  # range below lower boundary of [0, 1]
-        [-1, 0],  # range on lower boundary of [0, 1]
-        [1, 2],  # range on upper boundary of [0, 1]
-        [2, 3],  # range above upper boundary of [0, 1]
+        (-2, -1),  # range below lower boundary of [0, 1]
+        (-1, 0),  # range on lower boundary of [0, 1]
+        (1, 2),  # range on upper boundary of [0, 1]
+        (2, 3),  # range above upper boundary of [0, 1]
     ],
 )
 def test_set_contrast_limits_range_at_boundary_of_contrast_limits(
     contrast_limits_range,
 ):
     """See https://github.com/napari/napari/issues/5257"""
-    layer = Image(np.zeros((6, 5)), contrast_limits=[0, 1])
+    layer = Image(np.zeros((6, 5)), contrast_limits=(0, 1))
     layer.contrast_limits_range = contrast_limits_range
     assert layer.contrast_limits == contrast_limits_range
 
@@ -1025,7 +1030,7 @@ def test_thick_slice_maintains_contrast_limits():
 
     layer.projection_mode = 'mean'
     layer.reset_contrast_limits()
-    assert layer.contrast_limits == [0, 255]
+    assert layer.contrast_limits == (0, 255)
     np.testing.assert_array_equal(layer.thumbnail[..., -1], 255)
 
 

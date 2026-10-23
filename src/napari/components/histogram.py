@@ -247,9 +247,6 @@ class HistogramModel(EventedModel):
     def _finalize_histogram(self, data: np.ndarray) -> None:
         """Compute histogram from a complete data array and set model state."""
         range_min, range_max = self._layer.contrast_limits_range
-        if range_min is None or range_max is None:
-            range_min = float(np.nanmin(data))
-            range_max = float(np.nanmax(data))
 
         bin_edges, counts = self._calc_histogram(data, range_min, range_max)
         self._bin_edges = bin_edges
@@ -286,9 +283,6 @@ class HistogramModel(EventedModel):
         order = rng.choice(n_chunks, size=n_selected, p=probs, replace=False)
 
         range_min, range_max = self._layer.contrast_limits_range
-        if range_min is None or range_max is None:
-            range_min = 0.0
-            range_max = 1.0
 
         running_counts = np.zeros(self.bins, dtype=np.float64)
         for ci in order:

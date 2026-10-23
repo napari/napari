@@ -94,7 +94,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    contrast_limits : list (2,)
+    contrast_limits : tuple (2,) of float
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
@@ -198,7 +198,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    contrast_limits : list (2,)
+    contrast_limits : tuple (2,) of float
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
@@ -325,13 +325,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is not None:
-            self._contrast_limits_range = contrast_limits
+            self.contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
+            self.contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
 
-        self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
-        self.contrast_limits = self._contrast_limits
+        self.contrast_limits = self.contrast_limits_range
         self.auto_contrast = auto_contrast
 
         # Trigger generation of view slice and thumbnail.

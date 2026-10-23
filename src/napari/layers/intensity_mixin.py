@@ -1,7 +1,9 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
+from napari.layers import Layer
 from napari.utils._dtype import normalize_dtype
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
@@ -15,7 +17,52 @@ if TYPE_CHECKING:
     from napari.layers.surface import Surface
 
 
-class IntensityVisualizationMixin:
+def _validate_contrast_limits(
+    values: Sequence[float], name: str
+) -> tuple[float, float]:
+    """Validate a pair of contrast limits and return them as a tuple of floats.
+
+    Parameters
+    ----------
+    values : sequence of float
+        The two limits to validate. Any 2-length sequence is accepted
+        (e.g. a list, a tuple or a numpy array).
+    name : str
+        Name of the property being validated. Used in error messages.
+
+    Returns
+    -------
+    tuple of float
+        The validated limits.
+
+    Raises
+    ------
+    TypeError
+        If the values are not a pair of numbers.
+    ValueError
+        If the values are not strictly increasing.
+    """
+    validate_2_tuple(values)
+    # `validate_2_tuple` does not validate generators, so make sure we
+    # really do end up with a pair of numbers.
+    values = tuple(values)
+    if len(values) != 2:
+        raise ValueError(f'object must have length 2, got {len(values)}')
+    if any(value is None for value in values):
+        raise TypeError(
+            f'{name} must be a pair of numbers, got {values!r}. '
+            'None is not a valid contrast limit.'
+        )
+    _validate_increasing(values)
+    try:
+        return float(values[0]), float(values[1])
+    except (TypeError, ValueError) as e:
+        raise TypeError(
+            f'{name} must be a pair of numbers, got {values!r}.'
+        ) from e
+
+
+class IntensityVisualizationMixin(Layer):
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
     When used, this should come before the Layer in the inheritance, e.g.:
@@ -29,6 +76,12 @@ class IntensityVisualizationMixin:
     """
 
     def __init__(self, *args, **kwargs) -> None:
+        # initialize clims before calling super().__init__()
+        # so that they are always in a valid state, even if a subclass
+        # accesses or sets them while initializing
+        self._contrast_limits: tuple[float, float] = (0.0, 1.0)
+        self._contrast_limits_range: tuple[float, float] = (0.0, 1.0)
+
         super().__init__(*args, **kwargs)
 
         self.events.add(
@@ -41,14 +94,6 @@ class IntensityVisualizationMixin:
         self._gamma = 1.0
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits: tuple[float | None, float | None] = (
-            None,
-            None,
-        )
-        self._contrast_limits_range: tuple[float | None, float | None] = (
-            None,
-            None,
-        )
         self._auto_contrast_source = 'slice'
         self._auto_contrast = False
 
@@ -109,65 +154,83 @@ class IntensityVisualizationMixin:
         return self._overlays['colorbar']
 
     @property
-    def contrast_limits(self):
-        """list of float: Limits to use for the colormap."""
-        return list(self._contrast_limits)
+    def contrast_limits(self) -> tuple[float, float]:
+        """Limits to use for the colormap.
+
+        .. versionchanged:: 0.10.0
+            This is now a ``tuple`` of ``float`` instead of a ``list`` that
+            could contain ``None``.
+
+        Returns
+        -------
+        tuple of float
+            The ``(min, max)`` intensity values used for the colormap.
+        """
+        return self._contrast_limits
 
     @contrast_limits.setter
-    def contrast_limits(self, contrast_limits):
-        validate_2_tuple(contrast_limits)
-        _validate_increasing(contrast_limits)
-        self._contrast_limits_msg = (
-            format_float(contrast_limits[0])
-            + ', '
-            + format_float(contrast_limits[1])
+    def contrast_limits(self, contrast_limits: Sequence[float]) -> None:
+        cmin, cmax = _validate_contrast_limits(
+            contrast_limits, 'contrast_limits'
         )
-        self._contrast_limits = contrast_limits
+        self._contrast_limits_msg = (
+            format_float(cmin) + ', ' + format_float(cmax)
+        )
+        self._contrast_limits = (cmin, cmax)
         # make sure range slider is big enough to fit range
-        newrange = list(self.contrast_limits_range)
-        newrange[0] = min(newrange[0], contrast_limits[0])
-        newrange[1] = max(newrange[1], contrast_limits[1])
-        self.contrast_limits_range = newrange
+        range_min, range_max = self._contrast_limits_range
+        self.contrast_limits_range = (
+            min(range_min, cmin),
+            max(range_max, cmax),
+        )
         self._update_thumbnail()
         self.events.contrast_limits()
 
     @property
-    def contrast_limits_range(self):
-        """The current valid range of the contrast limits."""
-        return list(self._contrast_limits_range)
+    def contrast_limits_range(self) -> tuple[float, float]:
+        """The current valid range of the contrast limits.
+
+        .. versionchanged:: 0.10.0
+            This is now a ``tuple`` of ``float`` instead of a ``list`` that
+            could contain ``None``.
+
+        Returns
+        -------
+        tuple of float
+            The ``(min, max)`` extent of the allowed contrast limits.
+        """
+        return self._contrast_limits_range
 
     @contrast_limits_range.setter
-    def contrast_limits_range(self, value):
+    def contrast_limits_range(self, value: Sequence[float]) -> None:
         """Set the valid range of the contrast limits.
-        If either value is "None", the current range will be preserved.
-        If the range overlaps the current contrast limits, the range will be set
-        requested and there will be no change the contrast limits.
+
+        If the range overlaps the current contrast limits, the range will be
+        set as requested and there will be no change to the contrast limits.
         If the requested contrast range limits are completely outside the
         current contrast limits, the range will be set as requested and the
         contrast limits will be reset to the new range.
+
+        .. versionchanged:: 0.10.0
+            ``None`` is no longer accepted as a placeholder for "keep the
+            current value"; pass an explicit pair of numbers instead.
         """
-        validate_2_tuple(value)
-        _validate_increasing(value)
-        if list(value) == self.contrast_limits_range:
+        new_range = _validate_contrast_limits(value, 'contrast_limits_range')
+        if new_range == self._contrast_limits_range:
             return
 
-        # if either value is "None", it just preserves the current range
-        current_range = self.contrast_limits_range
-        value = list(value)  # make sure it is mutable
-        for i in range(2):
-            value[i] = current_range[i] if value[i] is None else value[i]
-        self._contrast_limits_range = value
+        self._contrast_limits_range = new_range
         self.events.contrast_limits_range()
 
         # make sure that the contrast limits fit within the new range
         # this also serves the purpose of emitting events.contrast_limits()
         # and updating the views/controllers
-        if hasattr(self, '_contrast_limits') and any(self._contrast_limits):
-            clipped_limits = np.clip(self.contrast_limits, *value)
-            if clipped_limits[0] < clipped_limits[1]:
-                self.contrast_limits = tuple(clipped_limits)
-            else:
-                self.contrast_limits = tuple(value)
+        cmin, cmax = self._contrast_limits
+        cmin = max(cmin, new_range[0])
+        cmax = min(cmax, new_range[1])
+        if cmin >= cmax:
+            cmin, cmax = new_range
+        self.contrast_limits = (cmin, cmax)
 
     @property
     def gamma(self):
