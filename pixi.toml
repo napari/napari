@@ -1,0 +1,113 @@
+# Configuration for testing napari against packages from conda-forge using pixi.
+#
+# Usage:
+#   pixi run -e test-py313-pyside6 test
+#
+# The lock file (pixi.lock) is committed to the repository and updated
+# by the `.github/workflows/upgrade_test_constraints.yml` workflow (`pixi update`).
+#
+# If tests segfault inside `libfontconfig` when run locally, the font cache created
+# by the system fontconfig (in `~/.cache/fontconfig`) is incompatible with
+# the conda-forge one. Run tests with a separate cache directory, e.g.
+# `XDG_CACHE_HOME=.pixi/cache pixi run -e test-py313-pyside6 test`.
+[workspace]
+name = "napari"
+authors = ["napari team <napari-steering-council@googlegroups.com>"]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+
+[package]
+# The version in pyproject.toml is dynamic (setuptools_scm), but pixi-build requires
+# a static one. It is only metadata of the locally built conda package, but it
+# needs to be higher than the latest release to satisfy the plugins requirements.
+version = "0.10.0.dev0"
+
+[package.build]
+backend.name = "pixi-build-python"
+config.ignore-pypi-mapping = false
+
+[package.host-dependencies]
+setuptools = ">=77.0.1"
+setuptools-scm = ">=8"
+git = "*"
+
+# packages that are missing in the PyPI to conda-forge mapping,
+# so pixi-build-python is not able to translate them from `pyproject.toml`
+[package.run-dependencies]
+napari-resources = ">=1.0.1"
+
+# both pyqt6 and pyside6 depend on qt6-main, so it is enough to constrain it once
+[package.run-constraints]
+qt6-main = "!=6.11.0,!=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
+
+# there is no automatic mapping from `optional-dependencies`
+# to `package.extra-dependencies` yet,
+# ref. https://github.com/prefix-dev/pixi/issues/4764#issuecomment-4781239118
+# keep in sync with `project.optional-dependencies` in `pyproject.toml`
+[package.extra-dependencies.pyqt6]
+pyqt6 = ">6.5,!=6.6.1"  # 6.6.1 is excluded only on macOS in pyproject.toml
+
+[package.extra-dependencies.pyside6]
+pyside6 = ">6.7"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.pyqt6.dependencies]
+napari = { path = ".", extras = ["pyqt6"] }
+
+[feature.pyside6.dependencies]
+napari = { path = ".", extras = ["pyside6"] }
+
+# keep in sync with `optional-base`, `optional-numba`, `bermuda`
+# and `dependency-groups.testing` in `pyproject.toml`
+[feature.test.dependencies]
+# optional-base
+zarr = ">=3.0.8"
+aiohttp = "*"
+napari-metadata = ">=0.1.0"
+napari-plugin-manager = ">=0.1.10,<0.2.0"
+rapidfuzz = ">=3"
+# optional-numba
+numba = ">=0.58.0"
+# bermuda
+bermuda = ">=0.1.5"
+# testing
+babel = ">=2.9.0"
+docstring_parser = ">=0.15"
+fsspec = ">=2023.10.0"
+hypothesis = ">=6.8.0"
+lxml = ">5"
+lxml-html-clean = "*"
+matplotlib-base = ">=3.6.1"
+pooch = ">=1.6.0"
+coverage = ">7"
+pretend = ">=1.0.9"
+pytest-qt = ">=4.4.0"
+pytest-pretty = ">=1.1.0"
+pytest = ">=8.3.5"
+pytest-rerunfailures = ">=15.1"
+tensorstore = ">=0.1.43"
+virtualenv = ">=20.24.7"
+xarray = ">=2023.5.0"
+ipython = ">=7.25.0"
+qtconsole-base = ">=4.5.1"
+rich = ">=14.0.0"
+# additional test dependencies from tox.ini
+pytest-json-report = "*"
+objgraph = "*"
+
+# napari is built as a noarch package, so platform-specific dependencies
+# from `pyproject.toml` are skipped and need to be added here
+[feature.test.target.win-64.dependencies]
+pywin32 = "*"
+
+[feature.test.tasks]
+test = "python -m pytest --color=yes --ignore tools --maxfail=5 --json-report --json-report-file=report-pixi.json --save-leaked-object-graph --import-mode=importlib"
+
+[environments]
+default = { features = ["py313", "pyside6", "test"] }
+
+test-py313-pyqt6 = ["py313", "pyqt6", "test"]
+test-py313-pyside6 = ["py313", "pyside6", "test"]
