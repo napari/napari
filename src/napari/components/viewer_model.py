@@ -111,6 +111,7 @@ DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
     'keymap',
     '_mouse_wheel_gen',
+    '_mouse_move_gen',
     '_mouse_drag_gen',
     '_persisted_mouse_event',
     'mouse_move_callbacks',

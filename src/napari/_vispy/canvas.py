@@ -519,6 +519,18 @@ class VispyCanvas:
 
         canvas_position = tuple(event.pos[::-1])
 
+        if (
+            event.type == 'mouse_press'
+            and event.last_event is not None
+            and event.last_event.type != 'mouse_release'
+            and event.buttons == event.last_event.buttons
+        ):
+            # something went wrong and we lost the mouse release. Make an artificial one here
+            # based on this same event, which will go through this whole machinery first.
+            # We use the native event so that the whole vispy machinery tracking previous
+            # events kicks in properly. Ideally this should be done by us eventually.
+            self._scene_canvas.native.mouseReleaseEvent(event.native)
+
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
