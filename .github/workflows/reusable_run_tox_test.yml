@@ -53,8 +53,7 @@ jobs:
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
-      PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
-      UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
+      NAPARI_TEST_CONSTRAINTS: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
