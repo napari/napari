@@ -345,10 +345,22 @@ namespaces = false
     "*.pyi",
 ]
 napari = [
+    "**/*.png",
+    "**/*.svg",
+    "**/*.qss",
+    "**/*.gif",
+    "**/*.ico",
+    "**/*.icns",
+    "**/*.yaml",
+    "**/*.py_tmpl",
+    "**/_tests/*.py",
+    "_vendor/**/LICENSE",
     "resources/fonts/*.ttf",
+    "resources/fonts/*.txt",
 ]
 napari_builtins = [
     "builtins.yaml",
+    "**/_tests/*.py",
 ]
 
 
