@@ -225,6 +225,7 @@ class QtDynamicLayerControls(QFrame):
         super().__init__()
 
         self._ndisplay: int = 2
+        self._is_thick: bool = False
         self._layers = layers
         self._controls = []
 
@@ -306,6 +307,19 @@ class QtDynamicLayerControls(QFrame):
         """
         for control in self._controls:
             control._change_ndisplay(self._ndisplay)
+
+    @property
+    def is_thick(self) -> bool:
+        return self._is_thick
+
+    @is_thick.setter
+    def is_thick(self, is_thick: bool) -> None:
+        self._is_thick = is_thick
+        self._on_is_thick_change()
+
+    def _on_is_thick_change(self):
+        for control in self._controls:
+            control._change_is_thick(self._is_thick)
 
     def _on_surface_coloring_change(
         self,

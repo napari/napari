@@ -100,6 +100,22 @@ def test_plane_controls_show_hide_on_ndisplay_change(qtbot):
     assert not qtctrl._depiction_control.plane_normal_label.isHidden()
 
 
+def test_projection_mode_control_hides_when_slice_is_thin(qtbot):
+    """Projection mode is only relevant for thick slices."""
+    layer = Image(np.random.rand(10, 15, 20))
+    qtctrl = QtImageControls(layer)
+    qtbot.addWidget(qtctrl)
+    control = qtctrl._projection_mode_control
+
+    qtctrl.is_thick = True
+    assert not control.projection_combobox.isHidden()
+    assert not control.projection_combobox_label.isHidden()
+
+    qtctrl.is_thick = False
+    assert control.projection_combobox.isHidden()
+    assert control.projection_combobox_label.isHidden()
+
+
 def test_plane_slider_value_change(qtbot):
     """Changing the model should update the view."""
     layer = Image(np.random.rand(10, 15, 20))
