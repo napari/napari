@@ -87,6 +87,13 @@ Q_FILE_ACTIONS: list[Action] = [
         ],
     ),
     Action(
+        id='napari.window.file.open_url_dialog',
+        title='Open Path/URL/URI...',
+        callback=QtViewer._open_url_dialog,
+        menus=[{'id': MenuId.MENUBAR_FILE, 'group': MenuGroup.OPEN}],
+        keybindings=[{'primary': KeyMod.CtrlCmd | KeyCode.KeyL}],
+    ),
+    Action(
         id='napari.window.file._open_files_with_plugin',
         title='Open File(s)...',
         callback=_open_files_with_plugin,
