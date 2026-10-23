@@ -106,12 +106,13 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.axes.text.text = axis_labels
         self.node.axes.text.visible = self.overlay.labels
 
-    def _on_font_info_change(self) -> None:
+    def _on_font_change(self) -> None:
         self.node.axes.text.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
             else self.font_info.default_size
         ) * self.font_info.scale
+        self.node.axes.text.face = self.font_info.face
 
     def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""
