@@ -50,7 +50,7 @@ def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
 
     with monkeypatch.context() as m:
         mock_exec = Mock()
-        m.setattr(qapp, 'exec_', mock_exec)
+        m.setattr(qapp, 'exec', mock_exec)
         run()
         mock_exec.assert_called_once()
 
@@ -94,9 +94,6 @@ def test_no_wayland_warning(
     )
 
 
-@pytest.mark.skipif(
-    not hasattr(QFont, 'Tag'), reason='QFont.setFeature requires Qt 6.7+'
-)
 def test_status_bar_requests_tabular_numerals_with_preexisting_app(
     make_napari_viewer, qapp, qtbot
 ):

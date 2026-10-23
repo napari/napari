@@ -201,7 +201,7 @@ class QtViewer(QSplitter):
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
-            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            autoswap=get_settings().advanced.autoswap_buffers,  # see #5734
             config={
                 'samples': 4 if get_settings().advanced.multisampling else 0
             },
@@ -1359,7 +1359,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()  # pyrefly: ignore [missing-argument]
+        self.dims.stop()
         self.canvas.delete()
         if self._console is not None:
             self._console.close()

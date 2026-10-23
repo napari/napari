@@ -1,7 +1,6 @@
 import inspect
 import time
 import types
-from unittest.mock import patch
 
 import pytest
 from app_model.types import KeyBinding, KeyCode, KeyMod
@@ -12,8 +11,6 @@ from napari.utils.key_bindings import (
     KeymapHandler,
     KeymapProvider,
     _bind_keymap,
-    _bind_user_key,
-    _get_user_keymap,
     bind_key,
 )
 
@@ -146,7 +143,6 @@ def test_handle_single_keymap_provider():
     handler.keymap_providers = [foo]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(foo.keymap, foo),
         _bind_keymap(foo.class_keymap, foo),
     ]
@@ -192,39 +188,6 @@ def test_handle_single_keymap_provider():
 
 
 @pytest.mark.key_bindings
-@patch('napari.utils.key_bindings.USER_KEYMAP', new_callable=dict)
-def test_bind_user_key(keymap_mock):
-    foo = Foo()
-    bar = Bar()
-    handler = KeymapHandler()
-    handler.keymap_providers = [bar, foo]
-
-    x = 0
-
-    @_bind_user_key('D')
-    def abc():
-        nonlocal x
-        x = 42
-
-    assert handler.active_keymap == {
-        KeyBinding.from_str('A'): types.MethodType(
-            foo.class_keymap[KeyBinding.from_str('A')], foo
-        ),
-        KeyBinding.from_str('B'): types.MethodType(
-            foo.keymap[KeyBinding.from_str('B')], foo
-        ),
-        KeyBinding.from_str('D'): abc,
-        KeyBinding.from_str('E'): types.MethodType(
-            bar.class_keymap[KeyBinding.from_str('E')], bar
-        ),
-    }
-
-    handler.press_key('D')
-
-    assert x == 42
-
-
-@pytest.mark.key_bindings
 def test_handle_multiple_keymap_providers():
     foo = Foo()
     bar = Bar()
@@ -232,7 +195,6 @@ def test_handle_multiple_keymap_providers():
     handler.keymap_providers = [bar, foo]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(bar.keymap, bar),
         _bind_keymap(bar.class_keymap, bar),
         _bind_keymap(foo.keymap, foo),
@@ -296,7 +258,6 @@ def test_inherited_keymap():
     handler.keymap_providers = [baz]
 
     assert handler.keymap_chain.maps == [
-        _get_user_keymap(),
         _bind_keymap(baz.keymap, baz),
         _bind_keymap(baz.class_keymap, baz),
         _bind_keymap(Bar.class_keymap, baz),
@@ -451,13 +412,12 @@ def _handler_with_provider():
     return handler, Foo
 
 
-@pytest.mark.parametrize('key', ['Up', 'Down', 'Left', 'Right'])
-def test_navigation_keys_autorepeat_however_they_are_bound(key):
-    """Held navigation keys repeat even when bound through `bind_key` (#9203).
+@pytest.mark.parametrize('key', ['Up', 'K', 'PageDown'])
+def test_autorepeat_delivered_by_default(key):
+    """A held key repeats at the OS rate, however and to whatever it is bound.
 
-    The old `repeatables` set held the nav keys as `str` literals, which never
-    `==`-match the `KeyBinding` tested against them, so a nav key bound via
-    `bind_key` fired once no matter how long it was held.
+    Auto-repeat used to be dropped unless the binding was on an opt-in
+    whitelist; now the OS policy applies uniformly, as in any desktop app.
     """
     handler, Foo = _handler_with_provider()
     presses = []
@@ -470,26 +430,12 @@ def test_navigation_keys_autorepeat_however_they_are_bound(key):
     assert len(presses) == 5  # initial press plus every auto-repeat
 
 
-def test_non_navigation_keys_still_do_not_autorepeat():
-    """The exemption is scoped: an ordinary bound key still fires once."""
-    handler, Foo = _handler_with_provider()
-    presses = []
-
-    @Foo.bind_key('K')
-    def _count(x):
-        presses.append(1)
-
-    _press(handler, 'K', held_for=4)
-    assert len(presses) == 1  # auto-repeats filtered out
-
-
-def test_modified_navigation_keys_still_do_not_autorepeat():
-    """A modified arrow is a different KeyBinding than the bare one, so it stays
-    filtered -- pinning the exemption to exactly the four bare nav keys.
+def test_modified_keys_autorepeat():
+    """Modified combos repeat too, exactly like their bare counterparts.
 
     Uses Alt, not Control: vispy's CONTROL maps to KeyMod.CtrlCmd, spelled
-    `Meta+` on macOS but `Ctrl+` by `bind_key`, so a Control test would miss the
-    binding for reasons unrelated to auto-repeat.
+    `Meta+` on macOS but `Ctrl+` by `bind_key`, so a Control test would miss
+    the binding for reasons unrelated to auto-repeat.
     """
     handler, Foo = _handler_with_provider()
     presses = []
@@ -499,4 +445,104 @@ def test_modified_navigation_keys_still_do_not_autorepeat():
         presses.append(1)
 
     _press(handler, 'Up', held_for=4, modifiers=[keys.ALT])
-    assert len(presses) == 1  # bound and fired, but auto-repeats filtered out
+    assert len(presses) == 5
+
+
+def test_autorepeat_suppressed_while_hold_generator_pending():
+    """A generator (press/release) binding must not re-enter under repeat.
+
+    Its press body runs once; auto-repeats while the release side is pending
+    are dropped, and the release body still runs exactly once on real release.
+    """
+    handler, Foo = _handler_with_provider()
+    pressed = []
+    released = []
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        pressed.append(1)
+        yield
+        released.append(1)
+
+    _press(handler, 'A', held_for=4)
+    assert len(pressed) == 1
+    assert len(released) == 0
+
+    handler.on_key_release(_key_event('A', auto_repeat=False))
+    assert len(released) == 1
+
+
+def test_autorepeat_release_events_ignored():
+    """Auto-repeat *release* events never resume a pending hold.
+
+    On Linux a held key arrives as press/release trains; resuming the
+    generator on those would end the hold while the key is still down.
+    """
+    handler, Foo = _handler_with_provider()
+    released = []
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        yield
+        released.append(1)
+
+    _press(handler, 'A', held_for=2)
+    handler.on_key_release(_key_event('A', auto_repeat=True))
+    assert len(released) == 0
+
+    handler.on_key_release(_key_event('A', auto_repeat=False))
+    assert len(released) == 1
+
+
+def test_autorepeat_preserves_tap_vs_hold(monkeypatch):
+    """Repeats neither re-enter a release-callback binding nor reset its clock.
+
+    Attribute actions (layer mode switches) return a restore callback and time
+    the hold; re-entering under repeat would re-stash with a fresh timestamp,
+    turning every hold into a tap.
+    """
+    monkeypatch.setattr(time, 'time', lambda: 1)
+    handler, Foo = _handler_with_provider()
+    presses = []
+    restored = []
+
+    @Foo.bind_key('K')
+    def _mode_switch(x):
+        presses.append(1)
+        return lambda: restored.append(1)
+
+    _press(handler, 'K', held_for=4)
+    assert len(presses) == 1
+    assert len(restored) == 0
+
+    monkeypatch.setattr(time, 'time', lambda: 2)  # > hold_button_delay
+    handler.on_key_release(_key_event('K', auto_repeat=False))
+    assert len(restored) == 1
+
+
+def test_release_clears_pending_hold_state():
+    """Release pops the stashed hold, so presence means exactly 'pending'.
+
+    The auto-repeat suppression in `on_key_press` keys off that stash; a
+    stale entry would wrongly swallow repeats of later bindings on the key.
+    """
+    handler, Foo = _handler_with_provider()
+
+    @Foo.bind_key('A')
+    def _hold(x):
+        yield
+
+    assert handler.press_key('A')
+    assert handler.release_key('A')
+    # popped: a second release finds nothing to resume
+    assert not handler.release_key('A')
+
+    # and a subsequent auto-repeat of the same key is delivered again
+    presses = []
+
+    @Foo.bind_key('A', overwrite=True)
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'A', held_for=2)
+    assert len(presses) == 3

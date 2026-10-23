@@ -15,18 +15,12 @@ class ScaleBar(Compound):
     """Scale bar visual with text and line components.
 
     Layout of Scale Bar Elements (from top to bottom):
-    - Padding
     - Text
     - Gap between text and line
     - Scale line (with optional ticks)
-    - Padding
     """
 
     def __init__(self, font_info: FontInfo) -> None:
-        # Layout constants
-        self.PADDING = 6  # Space around the entire scale bar
-        self.TICK_LENGTH = 11  # Height of tick marks (odd numbers look better)
-
         # Line geometry: main line + optional tick marks
         self._line_data = np.array(
             [
@@ -49,14 +43,20 @@ class ScaleBar(Compound):
             font_size=10,
             font_info=font_info,
         )
-        self.line = Line(
-            connect='segments', method='gl', width=3, antialias=True
-        )
+        self.line = Line(connect='segments', method='gl', antialias=True)
         # order matters (last is drawn on top)
         super().__init__([self.text, self.line])
 
-    def _calculate_layout(self, length: float) -> dict:
-        """Calculate all layout dimensions and positions."""
+    def _calculate_layout(
+        self, length: float, tick_length: float, thickness: float
+    ) -> dict:
+        """Calculate all layout dimensions and positions.
+
+            text
+        |          |
+        |----------|
+        |          |
+        """
         # Text dimensions
         text_width, text_height = self.text.get_width_height()
 
@@ -65,36 +65,38 @@ class ScaleBar(Compound):
         text_height = np.ceil(text_height)
 
         width = max(
-            length + self.line.width,
+            length + thickness,
             text_width,
         )
-        height = text_height + self.TICK_LENGTH
-
-        line_center_y = text_height + (self.TICK_LENGTH / 2)
+        # padding below the text to ensure space from the line, if the ticks+thickness
+        # are not enough to push the text higher (e.g: if ticks have 0 length)
+        text_padding = text_height * 0.2
+        tick_padding = (tick_length + thickness) / 2
+        # from the top!
+        line_y = text_height + max(tick_padding, text_padding)
+        height = line_y + tick_padding
 
         return {
             'width': width,
             'height': height,
-            'line_center_y': line_center_y,
+            'line_y': line_y,
         }
 
-    def set_data(self, *, length, color, ticks, font_size):
+    def set_data(self, *, length, tick_length, thickness, font_size, color):
         """Update scale bar with new dimensions and styling."""
         # font size need to be set first cause layout calculations depend on it
         self.text.font_size = font_size
 
-        layout = self._calculate_layout(length)
-
-        # Choose line data based on whether ticks are enabled
-        line_data = self._line_data if ticks else self._line_data[:2]
+        layout = self._calculate_layout(length, tick_length, thickness)
 
         # Position and scale the line
         self.line.set_data(
-            pos=line_data * (length / 2, self.TICK_LENGTH / 2)
+            pos=self._line_data * (length / 2, tick_length / 2)
             + (
                 layout['width'] / 2,  # Center horizontally
-                layout['line_center_y'],  # Position vertically
+                layout['line_y'],  # Position vertically
             ),
+            width=thickness,
             color=color,
         )
 
@@ -103,5 +105,4 @@ class ScaleBar(Compound):
         self.text.color = color
 
         # Return dimensions for the overlay system
-        # Extra padding needed for proper canvas positioning (not sure why padding is needed here, ugh)
         return layout['width'], layout['height']
