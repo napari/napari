@@ -616,7 +616,7 @@ class _QtMainWindow(QMainWindow):
                 dock.setFloating(False)
 
         canvas_native = self._qt_viewer.canvas.native
-        for notification in NapariQtNotification._instances:
+        for notification in list(NapariQtNotification._instances):
             if notification.parent() is canvas_native:
                 notification.close(start_next=False)
 
