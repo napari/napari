@@ -785,6 +785,11 @@ class Shape(ABC):
         shape is not filled. Negative points or points outside the mask_shape
         after the zoom and offset are clipped.
 
+        The shape is drawn in the plane shown in 2D display and repeated over
+        its extent in the other dimensions. The exception is a line or path
+        whose vertices leave that plane: it is drawn as a line through all
+        dimensions.
+
         Parameters
         ----------
         mask_shape : (D,) array
@@ -832,15 +837,21 @@ class Shape(ABC):
 
         data = (self._vertices_for_mask(plane) - offset) * zoom_factor
         to_indices = poly_to_indices if self._filled else path_to_indices
-        rows, cols = to_indices(shape_plane, data)
         if not embedded:
-            return rows, cols
+            return to_indices(shape_plane, data)
 
         # `others` are the remaining dims. The shape covers the range its
         # bounding box spans in each of them, which is a single slice for a
         # shape drawn in a 2D view.
         others = self.dims_order[:-2]
         others_key = self._slice_key_of(others)
+        if not self._filled and (others_key[0] != others_key[1]).any():
+            # A path that leaves its plane is a line through nD, not a prism.
+            vertices = self.data.astype(float)
+            vertices[:, plane] = data
+            return path_to_indices(mask_shape, vertices)
+
+        rows, cols = to_indices(shape_plane, data)
         index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
         for col, dim in enumerate(others):
             index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
