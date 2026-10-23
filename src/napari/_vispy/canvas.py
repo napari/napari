@@ -17,7 +17,6 @@ from superqt.utils import qthrottled
 from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
-from napari._vispy.mouse_event import NapariMouseEvent
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
@@ -35,6 +34,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.mouse_event import MouseEvent
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
@@ -44,7 +44,11 @@ if TYPE_CHECKING:
     from qtpy.QtCore import Qt, pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
-    from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
+    from vispy.app.canvas import (
+        DrawEvent,
+        MouseEvent as VispyMouseEvent,
+        ResizeEvent,
+    )
     from vispy.scene import Node
     from vispy.scene.subscene import SubScene
 
@@ -93,7 +97,7 @@ class NapariSceneCanvas(SceneCanvas_):
         self.native.enterEvent = MethodType(enterEvent, self.native)
         self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
-    def _process_mouse_event(self, event: MouseEvent):
+    def _process_mouse_event(self, event: VispyMouseEvent):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
@@ -487,7 +491,7 @@ class VispyCanvas:
         return None, None
 
     def _process_mouse_event(
-        self, mouse_callbacks: Callable, event: MouseEvent
+        self, mouse_callbacks: Callable, event: VispyMouseEvent
     ) -> None:
         """Add properties to the mouse event before passing the event to the
         napari events system. Called whenever the mouse moves or is clicked.
@@ -548,7 +552,7 @@ class VispyCanvas:
             # events kicks in properly. Ideally this should be done by us eventually.
             self._scene_canvas.native.mouseReleaseEvent(event.native)
 
-        napari_event = NapariMouseEvent(
+        napari_event = MouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
             up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
@@ -577,7 +581,7 @@ class VispyCanvas:
 
         event.handled = napari_event.handled
 
-    def _on_mouse_double_click(self, event: MouseEvent) -> None:
+    def _on_mouse_double_click(self, event: VispyMouseEvent) -> None:
         """Called whenever a mouse double-click happen on the canvas
 
         Parameters
@@ -602,7 +606,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_double_click_callbacks, event)
 
-    def _on_mouse_move(self, event: MouseEvent) -> None:
+    def _on_mouse_move(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse moves over canvas.
 
         Parameters
@@ -616,7 +620,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_move_callbacks, event)
 
-    def _on_mouse_press(self, event: MouseEvent) -> None:
+    def _on_mouse_press(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse pressed in canvas.
 
         Parameters
@@ -630,7 +634,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_press_callbacks, event)
 
-    def _on_mouse_release(self, event: MouseEvent) -> None:
+    def _on_mouse_release(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse released in canvas.
 
         Parameters
@@ -644,7 +648,7 @@ class VispyCanvas:
         """
         self._process_mouse_event(mouse_release_callbacks, event)
 
-    def _on_mouse_wheel(self, event: MouseEvent) -> None:
+    def _on_mouse_wheel(self, event: VispyMouseEvent) -> None:
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
