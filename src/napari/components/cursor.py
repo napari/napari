@@ -49,7 +49,7 @@ class Cursor(EventedModel):
     style: str = Field(
         'default',
         deprecated=deprecated(
-            'Cursor.style is deprecated and no longer has an effect; use Viewer.window.override_cursor_style instead'
+            'Cursor.style is deprecated and no longer has an effect; use Viewer.window.cursor_style_override instead'
         ),
     )
     # this is here just to support viewermodel.update_status_from_cursor during deprecation

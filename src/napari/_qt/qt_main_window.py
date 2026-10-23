@@ -98,7 +98,7 @@ if TYPE_CHECKING:
 
     import numpy as np
     from magicgui.widgets import Widget
-    from qtpy.QtGui import QHideEvent, QImage, QShowEvent
+    from qtpy.QtGui import QCursor, QHideEvent, QImage, QShowEvent
 
     from napari._qt.widgets.qt_viewer_tour import GuidedTour
     from napari.viewer import Viewer
@@ -1937,6 +1937,20 @@ class Window:
         )
         if dial.exec():
             update_save_history(dial.selectedFiles()[0])
+
+    @property
+    def cursor_style_override(self) -> Qt.CursorShape | QCursor | None:
+        """Override cursor style."""
+        return self._cursor_style_override
+
+    @cursor_style_override.setter
+    def cursor_style_override(
+        self, value: Qt.CursorShape | QCursor | None
+    ) -> None:
+        if value is None:
+            value = Qt.CursorShape.ArrowCursor
+        self._qt_window.setCursor(value)
+        self._cursor_style_override = value
 
 
 def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
