@@ -44,7 +44,7 @@ def get_units_from_name(
 
 def get_units_from_name(units: UnitsLike) -> UnitsInfo:
     """Convert a string or sequence of strings to pint units."""
-    if isinstance(units, str) or units is None:
+    if isinstance(units, str | pint.Unit) or units is None:
         return get_unit_from_name(units)
     if isinstance(units, Sequence):
         return tuple(get_unit_from_name(u) for u in units)

@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from typing import TypeAlias
 
+    from napari.utils.transforms._units import UnitsLike
+
     # TODO: use ``Vector1D`` and ``Matrix2D`` from ``napari.utils._typing``
     # instead of ``_Vector1D`` and ``_Matrix2D`` once #9782 is merged.
     # A 1D vector of numbers, e.g. a per-axis ``scale`` or ``translate``.
@@ -461,7 +463,7 @@ class Affine(Transform):
         ndim: int | None = None,
         rotate: float | _Vector1D | _Matrix2D | None = None,
         shear: _Vector1D | _Matrix2D | None = None,
-        units: Sequence[str | pint.Unit] | None = None,
+        units: UnitsLike = None,
     ) -> None:
         super().__init__(name=name)
         self._upper_triangular = True
@@ -544,7 +546,7 @@ class Affine(Transform):
         return self._units
 
     @units.setter
-    def units(self, value: Sequence[str | pint.Unit] | None) -> None:
+    def units(self, value: UnitsLike) -> None:
         units = get_units_from_name(value)
         if isinstance(units, pint.Unit):
             units = (units,) * self.ndim
@@ -851,7 +853,7 @@ class CompositeAffine(Affine):
         shear: _Vector1D | _Matrix2D | None = None,
         ndim: int | None = None,
         name: str | None = None,
-        units: Sequence[str | pint.Unit] | None = None,
+        units: UnitsLike = None,
     ) -> None:
         super().__init__(
             scale,
