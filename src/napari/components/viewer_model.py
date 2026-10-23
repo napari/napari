@@ -37,7 +37,7 @@ from napari.components._viewer_mouse_bindings import (
     layers_scroll,
 )
 from napari.components.canvas import Canvas
-from napari.components.cursor import Cursor, CursorStyle
+from napari.components.cursor import Cursor
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.scene import Scene
@@ -163,8 +163,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         The canvas model, controlling grid mode and canvas overlays.
 
         .. versionadded:: 0.9.0
-    cursor: napari.components.cursor.Cursor
-        The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
     help: str
@@ -191,7 +189,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # have an event emitter associated with them
     canvas: Canvas = Field(default_factory=Canvas, frozen=True)
     scene: Scene = Field(default_factory=Scene, frozen=True)
-    cursor: Cursor = Field(default_factory=Cursor, frozen=True)
+    cursor: Cursor = Field(
+        default_factory=Cursor, frozen=True, deprecated='TODO'
+    )
     dims: Dims = Field(default_factory=Dims, frozen=True)
     layers: LayerList = Field(
         default_factory=LayerList, frozen=True
@@ -784,16 +784,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers = layers or self.layers
         self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
-        # If the currently selected layer is sliced asynchronously, then the value
-        # shown with this position may be incorrect. See the discussion for more details:
-        # https://github.com/napari/napari/pull/5377#discussion_r1036280855
-        position = list(self.cursor.position)
-        if len(position) < self.dims.ndim:
-            # cursor dimensionality is outdated — reset to correct dimension
-            position = [0.0] * self.dims.ndim
-        for ind in self.dims.order[: -self.dims.ndisplay]:
-            position[ind] = self.dims.point[ind]
-        self.cursor.position = tuple(position)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
@@ -803,7 +793,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 layer.update_transform_box_visibility(False)
                 layer.update_highlight_visibility(False)
             self.help = ''
-            self.cursor.style = CursorStyle.STANDARD
             self.scene.camera.mouse_pan = True
             self.scene.camera.mouse_zoom = True
         else:
@@ -814,8 +803,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     layer.update_transform_box_visibility(False)
                     layer.update_highlight_visibility(False)
             self.help = active_layer.help
-            self.cursor.style = active_layer.cursor
-            self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
 
@@ -853,15 +840,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 )
             self._layers_had_custom_axis_labels = not layers_are_default
 
-        new_dim = self.dims.ndim
-        dim_diff = new_dim - len(self.cursor.position)
-        if dim_diff < 0:
-            self.cursor.position = self.cursor.position[:new_dim]
-        elif dim_diff > 0:
-            self.cursor.position = tuple(
-                list(self.cursor.position) + [0] * dim_diff
-            )
-
     def _update_mouse_pan(self, event):
         """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
@@ -871,14 +849,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         """Set the viewer interactive mouse zoom"""
         if event.source is self.layers.selection.active:
             self.scene.camera.mouse_zoom = event.mouse_zoom
-
-    def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor.style = event.cursor
-
-    def _update_cursor_size(self, event):
-        """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor.size = event.cursor_size
 
     def _update_async(self, event: Event) -> None:
         """Set layer slicer to force synchronous if async is disabled."""
