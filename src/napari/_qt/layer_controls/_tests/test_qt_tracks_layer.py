@@ -47,7 +47,7 @@ def test_tracks_controls_color_by(null_data, properties, qtbot):
     qt_update_color_by = 'track_id'
     speed_index = (
         controls._color_properties_combobox_control.color_by_combobox.findText(
-            qt_update_color_by, Qt.MatchFixedString
+            qt_update_color_by, Qt.MatchFlag.MatchFixedString
         )
     )
     controls._color_properties_combobox_control.color_by_combobox.setCurrentIndex(
