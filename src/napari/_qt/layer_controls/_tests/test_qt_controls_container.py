@@ -29,6 +29,6 @@ def test_qt_container_theme_change(dynamic, qtbot, viewer_model):
     cont = QtLayerControlsContainer(viewer_model)
     qtbot.addWidget(cont)
     viewer_model.add_image(np.arange(25).reshape(5, 5))
-    viewer_model.theme = 'light'
+    viewer_model.theme = 'napari-light'
     # only affects histogram; too nasty to actualy check for, but
     # at least this runs the lines to ensure nothign crashes

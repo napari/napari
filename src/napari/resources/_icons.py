@@ -162,7 +162,7 @@ def _theme_path(theme_name: str) -> Path:
     return Path(user_cache_dir()) / '_themes' / theme_name
 
 
-def build_theme_svgs(theme_name: str, source: str) -> str:
+def build_theme_svgs(full_theme_name: str, source: str) -> str:
     """Build theme-specific SVGs for a given theme and source.
 
     Parameters
@@ -177,11 +177,11 @@ def build_theme_svgs(theme_name: str, source: str) -> str:
     str
         The path to the directory containing the generated SVGs.
     """
-    out = _theme_path(theme_name)
+    out = _theme_path(full_theme_name)
     write_colorized_svgs(
         out,
         svg_paths=ICONS.values(),
-        colors=[(theme_name, 'icon')],
+        colors=[(full_theme_name, 'icon')],
         opacities=(0.5, 1),
         theme_override={
             'warning': 'warning',

@@ -26,12 +26,12 @@ from napari.utils.theme import available_themes, get_system_theme
 def test_theme_toggle_keybinding():
     viewer = ViewerModel()
     assert viewer.theme == get_settings().appearance.theme
-    assert viewer.theme != 'light'
+    assert viewer.theme != 'napari-light'
     toggle_theme(viewer)
     # toggle_theme should not change settings
-    assert get_settings().appearance.theme != 'light'
+    assert get_settings().appearance.theme != 'napari-light'
     # toggle_theme should change the viewer theme
-    assert viewer.theme == 'light'
+    assert viewer.theme == 'napari-light'
     # ensure toggle_theme loops through all themes
     initial_theme = viewer.theme
     number_of_actual_themes = len(available_themes())
@@ -52,7 +52,7 @@ def test_theme_toggle_from_system_theme():
     get_settings().appearance.theme = 'system'
     viewer = ViewerModel()
     assert viewer.theme == 'system'
-    actual_initial_theme = get_system_theme()
+    actual_initial_theme = f'napari-{get_system_theme()}'
     toggle_theme(viewer)
     # ensure that theme has changed
     assert viewer.theme != actual_initial_theme

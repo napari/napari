@@ -106,7 +106,7 @@ if TYPE_CHECKING:
     )
 
 
-DEFAULT_THEME = 'dark'
+DEFAULT_THEME = 'napari-dark'
 EXCLUDE_DICT = {
     'keymap',
     '_mouse_wheel_gen',
