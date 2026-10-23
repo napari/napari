@@ -615,6 +615,16 @@ class _QtMainWindow(QMainWindow):
             if isinstance(dock, QWidget) and dock.isFloating():
                 dock.setFloating(False)
 
+        canvas_native = self._qt_viewer.canvas.native
+        for notification in list(NapariQtNotification._instances):
+            try:
+                parent = notification.parent()
+            except RuntimeError:
+                NapariQtNotification._instances.remove(notification)
+                continue
+            if parent is canvas_native:
+                notification.close(start_next=False)
+
         self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
