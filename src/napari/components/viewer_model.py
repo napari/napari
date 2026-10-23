@@ -1065,8 +1065,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # to viewer.layers.events... and avoid direct viewer->layer connections
         layer.events.mouse_pan.connect(self._update_mouse_pan)
         layer.events.mouse_zoom.connect(self._update_mouse_zoom)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
         layer.events.units.connect(self._on_layers_change)

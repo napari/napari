@@ -348,16 +348,6 @@ class Labels(ScalarFieldBase):
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
-    _cursor_modes: ClassVar[dict[Mode, str]] = {  # pyrefly: ignore [bad-override]
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-        Mode.PICK: 'cross',
-        Mode.PAINT: 'circle',
-        Mode.FILL: 'cross',
-        Mode.ERASE: 'circle',
-        Mode.POLYGON: 'cross',
-    }
-
     _history_limit = 100
 
     def __init__(
