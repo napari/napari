@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import signal
 import socket
 import weakref
@@ -44,7 +43,6 @@ from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
 
 QBYTE_FLAG = '!QBYTE_'
-RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -399,15 +397,8 @@ def _maybe_allow_interrupt(qapp):
 
 
 def qt_might_be_rich_text(text) -> bool:
-    """
-    Check if a text might be rich text in a cross-binding compatible way.
-    """
-    from qtpy.QtCore import Qt as Qt_
-
-    try:
-        return Qt_.mightBeRichText(text)
-    except AttributeError:
-        return bool(RICH_TEXT_PATTERN.search(text))
+    """Check if a text might be rich text, using Qt's heuristic."""
+    return Qt.mightBeRichText(text)
 
 
 def in_qt_main_thread() -> bool:

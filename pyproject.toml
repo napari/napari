@@ -500,7 +500,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
