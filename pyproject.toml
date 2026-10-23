@@ -705,10 +705,6 @@ matches = "src/napari/layers/vectors/vectors.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
-matches = "src/napari/layers/tracks/tracks.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
 matches = "src/napari/layers/surface/surface.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
