@@ -128,8 +128,8 @@ def QImg2array(
         upper-left corner of the rendered region.
     """
     # Fix when  image is provided in wrong format (ex. test on Azure pipelines)
-    if img.format() != QImage.Format_ARGB32:
-        img = img.convertToFormat(QImage.Format_ARGB32)
+    if img.format() != QImage.Format.Format_ARGB32:
+        img = img.convertToFormat(QImage.Format.Format_ARGB32)
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 
@@ -530,7 +530,3 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
     getattr(obj.events, name).connect(callback)
 
     return callback
-
-
-def checked_to_bool(value: Qt.CheckState) -> bool:
-    return Qt.CheckState(value) == Qt.CheckState.Checked

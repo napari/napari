@@ -39,7 +39,9 @@ def check_view_menu_visibility(viewer, qtbot):
 
     assert not viewer.window.view_menu.isVisible()
     qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+        viewer.window._qt_window.menuBar(),
+        Qt.Key.Key_V,
+        modifier=Qt.KeyboardModifier.AltModifier,
     )
     qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
