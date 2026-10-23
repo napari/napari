@@ -25,6 +25,7 @@ import pooch
 import tifffile
 
 import napari
+from napari.utils import open_cached_zarr
 
 # download the data
 url = 'https://data.napari.dev/heart_example_data'
@@ -49,8 +50,10 @@ for id_, file_name in data_files.items():
 # read in image, segmentation mask and cell data
 # image can be read in either as tiff or as zarr
 # image = tifffile.imread(data_to_path['tiff_image'])
-# zarr v3 array is streamed lazily over HTTP - no local download needed
-image = dask.array.from_zarr(f'{url}/image.zarr')
+# zarr v3 array is streamed lazily over HTTP and cached in tmp_dir
+image = dask.array.from_zarr(
+    open_cached_zarr(f'{url}/image.zarr', tmp_dir / 'image.zarr')
+)
 mask = tifffile.imread(data_to_path['segmentation'])
 cells = pd.read_csv(data_to_path['cell_data'])
 
