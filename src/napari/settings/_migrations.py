@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from importlib.metadata import distributions
 from typing import TYPE_CHECKING, NamedTuple
 
-from napari.settings._fields import Version
+from napari.settings._fields import Theme, Version
 from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils.triangulation_backend import TriangulationBackend
 
@@ -211,11 +211,11 @@ def v010_011(model: NapariSettings) -> None:
     """
     match model.appearance.theme:
         case 'dark':
-            model.appearance.theme = 'napari-dark'
+            model.appearance.theme = Theme('napari-dark')
         case 'light':
-            model.appearance.theme = 'napari-light'
+            model.appearance.theme = Theme('napari-light')
         case 'system':
             pass
         case _:
             # TODO: is this sufficient to cover most cases?
-            model.appearance.theme = model.appearance.theme + '-dark'
+            model.appearance.theme = Theme(model.appearance.theme + '-dark')

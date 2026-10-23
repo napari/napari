@@ -368,7 +368,7 @@ def get_theme(theme_id: str) -> Theme:
     return theme
 
 
-def invert_theme(theme, **kwargs: Any):
+def invert_theme(theme: Theme, **kwargs: Any) -> Theme:
     new_type = 'dark' if theme.type == 'light' else 'light'
     inverted_kwargs: dict[str, Any] = {
         'id': theme.id,
