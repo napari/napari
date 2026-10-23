@@ -128,6 +128,17 @@ def test_empty_vectors_with_property_choices():
     np.testing.assert_equal(layer.property_choices, property_choices)
 
 
+def test_set_edge_color_on_empty_layer():
+    """Test that an edge color set on an empty layer is used for new vectors
+
+    See: https://github.com/napari/napari/issues/5791
+    """
+    layer = Vectors()
+    layer.edge_color = 'blue'
+    layer.data = np.array([[[0, 0], [1, 1]], [[1, 1], [2, 2]]])
+    np.testing.assert_allclose(layer.edge_color, [[0, 0, 1, 1]] * 2)
+
+
 def test_empty_layer_with_edge_colormap():
     """Test creating an empty layer where the edge color is a colormap"""
     shape = (0, 2, 2)
