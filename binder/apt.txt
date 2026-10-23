@@ -14,5 +14,5 @@ libxrender-dev
 libxi-dev
 libxkbcommon-dev
 libxkbcommon-x11-dev
-libqt5x11extras5-dev
+libxcb-cursor0
 libxcb-xinerama0
