@@ -180,7 +180,9 @@ def test_set_status_and_tooltip(make_napari_viewer):
     viewer.window._qt_window.set_status_and_tooltip(('Text1', 'Text2'))
     assert viewer.status == 'Text1'
     assert viewer.tooltip.text == 'Text2'
-    viewer.window._qt_window.set_status_and_tooltip(None)
+    # do not update while status is blocked
+    viewer.window._qt_window._status_locked = True
+    viewer.window._qt_window.set_status_and_tooltip(('some', 'stuff'))
     assert viewer.status == 'Text1'
     assert viewer.tooltip.text == 'Text2'
 
