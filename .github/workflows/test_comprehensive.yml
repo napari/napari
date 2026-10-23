@@ -30,7 +30,7 @@ jobs:
         with:
           persist-credentials: false
       - name: "Set up Python 3.14"
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
       - name: Install dependencies
@@ -53,15 +53,16 @@ jobs:
       matrix:
         platform: [ubuntu-latest, windows-latest]
         python: ["3.11", "3.12", "3.13", "3.14"]
-        backend: [pyqt5]
+        backend: [pyqt6]
+        exclude: [{platform: ubuntu-latest, python: "3.14"}] # testing_extra cover this case
         include:
           - python: "3.11"
             platform: macos-15
-            backend: pyqt5
+            backend: pyqt6
           # test with minimum specified requirements
           - python: "3.11"
             platform: ubuntu-22.04
-            backend: pyqt5
+            backend: pyqt6
             MIN_REQ: 1
           # test without any Qt backends
           - python: "3.11"
