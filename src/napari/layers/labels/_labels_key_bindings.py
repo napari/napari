@@ -129,10 +129,7 @@ def increase_label_id(layer: Labels) -> None:
         show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
-@register_label_action(
-    'Decrease the paint brush size by one',
-    repeatable=True,
-)
+@register_label_action('Decrease the paint brush size by one')
 def decrease_brush_size(layer: Labels) -> None:
     """Decrease the brush size"""
     if (
@@ -142,10 +139,7 @@ def decrease_brush_size(layer: Labels) -> None:
         layer.brush_size -= 1
 
 
-@register_label_action(
-    'Increase the paint brush size by one',
-    repeatable=True,
-)
+@register_label_action('Increase the paint brush size by one')
 def increase_brush_size(layer: Labels) -> None:
     """Increase the brush size"""
     layer.brush_size += 1
@@ -173,7 +167,7 @@ def redo(layer: Labels) -> None:
 @register_label_action(
     'Reset the current polygon',
 )
-def reset_polygon(layer: Labels) -> None:
+def reset_polygon_or_stroke(layer: Labels) -> None:
     """Reset the drawing of the current polygon or abort a brush stroke."""
     from napari.components.overlays.labels_brush_stroke import (
         LabelsBrushStrokeOverlay,

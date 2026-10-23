@@ -60,6 +60,7 @@ def test_live_paint_on_move_is_staged_not_committed():
     # moves staying within the radius do not complete the stroke
     for position in [(15, 16), (16, 16), (16, 15)]:
         event = read_only_mouse_event(type='mouse_move', position=position)
+        mouse_move_callbacks(layer, event)
 
     assert overlay.active is True
     assert layer._block_history is True

@@ -1349,7 +1349,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()  # pyrefly: ignore [missing-argument]
+        self.dims.stop()
         self.canvas.delete()
         if self._console is not None:
             self._console.close()
