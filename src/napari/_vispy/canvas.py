@@ -35,7 +35,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
-from napari.utils.mouse_event import MouseEvent
+from napari.utils.mouse_event import MouseEvent, MouseEventType
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
@@ -521,8 +521,6 @@ class VispyCanvas:
             event.handled = True
             return
 
-        canvas_position = tuple(event.pos[::-1])
-
         if (
             event.type == 'mouse_press'
             and event.last_event is not None
@@ -535,22 +533,30 @@ class VispyCanvas:
             # events kicks in properly. Ideally this should be done by us eventually.
             self._scene_canvas.native.mouseReleaseEvent(event.native)
 
+        canvas_position = tuple(event.pos[::-1])
+        view_direction = self._calculate_view_direction(event.pos)
+        up_direction = self.viewer.scene.camera.calculate_nd_up_direction(
+            self.viewer.dims.ndim, self.viewer.dims.displayed
+        )
+        world_position = self.viewer.canvas_to_world(
+            canvas_position, grid_coords
+        )
+
         napari_event = MouseEvent(
-            event=event,
-            view_direction=self._calculate_view_direction(event.pos),
-            up_direction=self.viewer.scene.camera.calculate_nd_up_direction(
-                self.viewer.dims.ndim, self.viewer.dims.displayed
-            ),
+            type=MouseEventType(event.type),
+            view_direction=np.array(view_direction),
+            up_direction=np.array(up_direction),
             camera_zoom=self.viewer.scene.camera.zoom,
-            position=self.viewer.canvas_to_world(canvas_position, grid_coords),
+            canvas_position=canvas_position,
+            world_position=world_position,
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
 
         # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
+        self.viewer.cursor._view_direction = view_direction
+        self.viewer.cursor.position = world_position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(

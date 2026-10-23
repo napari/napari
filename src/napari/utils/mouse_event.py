@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
+from typing import Literal, TypeAlias
 
+import numpy as np
 from app_model.types import KeyMod
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import deprecated
 
 
 class MouseEventType(StrEnum):
@@ -12,6 +15,9 @@ class MouseEventType(StrEnum):
     mouse_release = auto()
     mouse_double_click = auto()
     mouse_wheel = auto()
+
+
+Vector3D: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class MouseEvent(BaseModel):
@@ -58,13 +64,14 @@ class MouseEvent(BaseModel):
     """
 
     model_config = ConfigDict(
+        arbitrary_types_allowed=True,
         validate_assignment=True,
         validate_default=True,
     )
 
     # napari info
-    view_direction: tuple[int, int, int]
-    up_direction: tuple[int, int, int]
+    view_direction: Vector3D
+    up_direction: Vector3D
     camera_zoom: float
     canvas_position: tuple[int, int]
     viewbox: tuple[int, int]
@@ -80,4 +87,18 @@ class MouseEvent(BaseModel):
     delta: tuple[float, float] | None = None
     press_event: MouseEvent | None = None
 
-    handled: bool = True
+    handled: bool = False
+
+    @property
+    @deprecated('TODO')
+    def pos(self) -> tuple[int, int]:
+        return self.canvas_position[::-1]
+
+    @property
+    @deprecated('TODO')
+    def position(self) -> tuple[float, ...]:
+        return self.world_position
+
+    @property
+    def is_dragging(self) -> bool:
+        return self.press_event is not None
