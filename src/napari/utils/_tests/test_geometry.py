@@ -13,6 +13,7 @@ from napari.utils.geometry import (
     intersect_line_with_axis_aligned_plane,
     intersect_line_with_multiple_planes_3d,
     intersect_line_with_plane_3d,
+    iter_all_triangle_intersections,
     line_in_quadrilateral_3d,
     line_in_triangles_3d,
     point_in_quadrilateral_2d,
@@ -551,3 +552,35 @@ def test_find_nearest_triangle_intersection_no_intersection():
 
     assert index is None
     assert intersection is None
+
+
+@pytest.mark.parametrize(
+    ('ray_start', 'ray_direction', 'expected_indices', 'expected_positions'),
+    [
+        ([0, 1, 1], [1, 0, 0], (0, 1), ([3, 1, 1], [5, 1, 1])),
+        ([6, 1, 1], [-1, 0, 0], (1, 0), ([5, 1, 1], [3, 1, 1])),
+    ],
+)
+def test_iter_all_triangle_intersections(
+    ray_start, ray_direction, expected_indices, expected_positions
+):
+    triangles = np.array(
+        [
+            [[3, 0, 0], [3, 0, 10], [3, 10, 0]],
+            [[5, 0, 0], [5, 0, 10], [5, 10, 0]],
+            [
+                [2, 50, 50],
+                [2, 50, 100],
+                [2, 100, 50],
+            ],
+        ]
+    )
+    for j, (index, intersection) in enumerate(
+        iter_all_triangle_intersections(
+            ray_position=ray_start,
+            ray_direction=ray_direction,
+            triangles=triangles,
+        )
+    ):
+        assert index == expected_indices[j]
+        np.testing.assert_allclose(intersection, expected_positions[j])
