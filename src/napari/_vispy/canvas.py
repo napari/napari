@@ -541,6 +541,18 @@ class VispyCanvas:
 
         canvas_position = tuple(event.pos[::-1])
 
+        if (
+            event.type == 'mouse_press'
+            and event.last_event is not None
+            and event.last_event.type != 'mouse_release'
+            and event.buttons == event.last_event.buttons
+        ):
+            # something went wrong and we lost the mouse release. Make an artificial one here
+            # based on this same event, which will go through this whole machinery first.
+            # We use the native event so that the whole vispy machinery tracking previous
+            # events kicks in properly. Ideally this should be done by us eventually.
+            self._scene_canvas.native.mouseReleaseEvent(event.native)
+
         napari_event = NapariMouseEvent(
             event=event,
             view_direction=self._calculate_view_direction(event.pos),
@@ -814,10 +826,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
-        for vispy_scale_bar_overlay in self._viewer_overlay_to_visual.get(
-            self.viewer.canvas.overlays.scale_bar, []
-        ):
-            vispy_scale_bar_overlay._on_unit_change()
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                if hasattr(vispy_overlay, '_on_unit_change'):
+                    vispy_overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.

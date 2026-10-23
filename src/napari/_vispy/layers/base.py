@@ -64,6 +64,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         self.layer = layer
         self.font_info = font_info
+        self._default_font_size = 9
         self._array_like = False
         self.node = node
         self.first_visible = False

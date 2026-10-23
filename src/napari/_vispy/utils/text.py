@@ -18,7 +18,7 @@ def update_text(
     *,
     node: Text,
     layer: Points | Shapes,
-    default_font_size=9,
+    default_font_size: float = 9,
 ) -> None:
     """Update the vispy text node with a layer's text parameters.
 

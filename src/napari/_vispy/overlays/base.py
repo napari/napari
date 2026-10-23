@@ -72,6 +72,13 @@ class VispyBaseOverlay:
         self.node.set_gl_state(**BLENDING_MODES[self.overlay.blending])
         self.node.update()
 
+    def _get_bgcolor(self) -> ColorValue:
+        return self.viewer.canvas.background_color
+
+    def _get_fgcolor(self) -> ColorValue:
+        bgcolor = self._get_bgcolor()
+        return _readable_color(_contrasting_color(bgcolor), bgcolor)
+
     def _on_font_change(self) -> None:
         # to be implemented by subclasses that need it
         pass
@@ -88,6 +95,11 @@ class VispyBaseOverlay:
         self.overlay.events.blending.disconnect(self._on_blending_change)
         disconnect_events(self.viewer.events, self)
         disconnect_events(self.viewer.canvas.events, self)
+        disconnect_events(self.viewer.dims.events, self)
+        disconnect_events(self.viewer.scene.events, self)
+        disconnect_events(self.viewer.scene.camera.events, self)
+        disconnect_events(self.viewer.canvas.grid.events, self)
+        disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self.font_info.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
@@ -157,12 +169,8 @@ class VispyCanvasOverlay(VispyBaseOverlay):
 
     def _get_bgcolor(self) -> ColorValue:
         if not self.overlay.box or self.overlay.box_color is None:
-            return self.viewer.canvas.background_color
+            return super()._get_bgcolor()
         return self.overlay.box_color
-
-    def _get_fgcolor(self) -> ColorValue:
-        bgcolor = self._get_bgcolor()
-        return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
     def _on_blending_change(self) -> None:
         self.box.set_gl_state(**BLENDING_MODES[self.overlay.blending])

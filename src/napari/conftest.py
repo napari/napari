@@ -39,6 +39,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
+from importlib.metadata import version
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -325,15 +326,36 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
-@pytest.fixture
-def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
-    from napari.plugins import _initialize_plugins
+if parse_version(version('npe2')) < parse_version('0.10.0'):
 
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=manifest_path):
-        yield npe2pm
+    @pytest.fixture
+    def manifest_path() -> str:
+        path_to = (
+            Path(__file__)
+            .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+            .resolve()
+        )
+        assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+        return str(path_to)
+
+    @pytest.fixture
+    def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        mock_reg = MagicMock()
+        npe2pm._command_registry = mock_reg
+        with npe2pm.tmp_plugin(manifest=manifest_path):
+            yield npe2pm
+
+else:
+
+    @pytest.fixture
+    def mock_pm(npe2pm_w_plugin: TestPluginManager):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        return npe2pm_w_plugin
 
 
 @pytest.fixture(autouse=True)
@@ -362,17 +384,6 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
-
-
-@pytest.fixture
-def manifest_path() -> str:
-    path_to = (
-        Path(__file__)
-        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
-        .resolve()
-    )
-    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
-    return str(path_to)
 
 
 @pytest.fixture
@@ -1044,7 +1055,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
+        if animation.state() == QPropertyAnimation.State.Running:
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:
