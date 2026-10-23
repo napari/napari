@@ -200,3 +200,22 @@ def v060_070(model: NapariSettings) -> None:
         else TriangulationBackend.fastest_available  # must match default setting
     )
     model.experimental.compiled_triangulation = False  # reset to default
+
+
+@migrator('0.10.0', '0.11.0')
+def v010_011(model: NapariSettings) -> None:
+    """Migrate from v0.10.0 to v0.11.0.
+
+    Themes now have light/dark pairs, so they are selected via their `full_id`
+    (e.g: napari-dark).
+    """
+    match model.appearance.theme:
+        case 'dark':
+            model.appearance.theme = 'napari-dark'
+        case 'light':
+            model.appearance.theme = 'napari-light'
+        case 'system':
+            pass
+        case _:
+            # TODO: is this sufficient to cover most cases?
+            model.appearance.theme = model.appearance.theme + '-dark'
