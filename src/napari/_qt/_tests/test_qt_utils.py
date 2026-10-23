@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor, QFont
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QColorDialog, QLabel, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
+    _tnum_tag,
     add_flash_animation,
     get_color,
     is_qbyte,
@@ -211,6 +212,9 @@ def test_get_color_reject(
     assert color_ is None, 'Expected color to be None when dialog is rejected'
 
 
+@pytest.mark.skipif(
+    _tnum_tag() is None, reason='PySide6 < 6.8.3 lacks QFont.Tag(str)'
+)
 def test_use_tabular_numerals(qtbot: QtBot) -> None:
     """Label gets tabular numerals, but font family is not changed."""
     label = QLabel('123')
@@ -219,5 +223,17 @@ def test_use_tabular_numerals(qtbot: QtBot) -> None:
 
     use_tabular_numerals(label)
 
-    assert label.font().isFeatureSet(QFont.Tag('tnum'))
+    assert label.font().isFeatureSet(_tnum_tag())
     assert label.font().family() == family
+
+
+def test_use_tabular_numerals_without_tag_support(qtbot: QtBot) -> None:
+    """On bindings without QFont.Tag(str), the call is a no-op, not a crash."""
+    if _tnum_tag() is not None:
+        pytest.skip('binding can build QFont.Tag(str)')
+    label = QLabel('123')
+    original = label.font()
+
+    use_tabular_numerals(label)
+
+    assert label.font() == original

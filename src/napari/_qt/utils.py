@@ -422,6 +422,15 @@ def in_qt_main_thread() -> bool:
     return QCoreApplication.instance().thread() == QThread.currentThread()
 
 
+def _tnum_tag() -> QFont.Tag | None:
+    """Return the `tnum` QFont.Tag, or None if the binding cannot build it."""
+    try:
+        return QFont.Tag('tnum')
+    except TypeError:
+        # PySide6 < 6.8.3 lacks the QFont.Tag(str) constructor (PYSIDE-3013)
+        return None
+
+
 def use_tabular_numerals(obj: QWidget | QGuiApplication) -> None:
     """Render digits in `obj` using tabular numerals, if the font supports it.
 
@@ -435,10 +444,14 @@ def use_tabular_numerals(obj: QWidget | QGuiApplication) -> None:
     discard it.
 
     Important: if the actual font does not support tabular numerals, this
-    will have no effect, because Qt will silently ignore it.
+    will have no effect, because Qt will silently ignore it. PySide6 < 6.8.3
+    is treated the same way, as it cannot build a QFont.Tag from a string.
     """
+    tag = _tnum_tag()
+    if tag is None:
+        return
     font = QFont(obj.font())
-    font.setFeature(QFont.Tag('tnum'), 1)
+    font.setFeature(tag, 1)
     obj.setFont(font)
 
 
