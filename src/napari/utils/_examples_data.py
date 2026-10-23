@@ -83,3 +83,12 @@ def napari_choose_downloader(url: str, progressbar: bool=False) -> HTTPDownloade
     if skimage_mirror_url(url) is not None:
         return SkimageMirrorDownloader(progressbar=progressbar)
     return choose_downloader(url)
+
+
+def nilearn_change_url(**kwargs) -> Any:
+    from nilearn import datasets
+
+    if kwargs.get('n_subjects') == 1:
+        kwargs.setdefault('url', 'https://data.napari.dev/examples/')
+
+    return datasets.fetch_surf_nki_enhanced(**kwargs)
