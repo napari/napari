@@ -64,9 +64,9 @@ def _mock_nilearn(monkeypatch):
         from nilearn import datasets
     except ImportError:
         return
-    from napari.utils._examples_data import nilearn_change_url
+    from napari.utils._examples_data import nilearn_download_factory
 
-    monkeypatch.setattr(datasets, 'fetch_surf_nki_enhanced', nilearn_change_url)
+    monkeypatch.setattr(datasets, 'fetch_surf_nki_enhanced', nilearn_download_factory(datasets.fetch_surf_nki_enhanced))
 
 
 @pytest.fixture

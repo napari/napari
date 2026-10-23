@@ -85,12 +85,13 @@ def napari_choose_downloader(url: str, progressbar: bool=False) -> HTTPDownloade
     return choose_downloader(url)
 
 
-def nilearn_change_url(**kwargs: Any) -> Any:
-    from nilearn import datasets
+def nilearn_download_factory(fetch_surf_nki_enhanced):
+    def nilearn_change_url(**kwargs: Any) -> Any:
+        if kwargs.get('n_subjects') == 1:
+            # we kee copy of only data fetched with n_subjects=1,
+            # so only for ths case we can use our mirror
+            kwargs.setdefault('url', 'https://data.napari.dev/examples/')
 
-    if kwargs.get('n_subjects') == 1:
-        # we kee copy of only data fetched with n_subjects=1,
-        # so only for ths case we can use our mirror
-        kwargs.setdefault('url', 'https://data.napari.dev/examples/')
+        return fetch_surf_nki_enhanced(**kwargs)
 
-    return datasets.fetch_surf_nki_enhanced(**kwargs)
+    return nilearn_change_url
