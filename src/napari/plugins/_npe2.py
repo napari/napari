@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
-    from napari.types import PathLike, SampleDict
+    from napari.types import PathLike
 
 
 def read(
@@ -247,20 +247,6 @@ def widget_iterator() -> Iterator[tuple[str, tuple[str, Sequence[str]]]]:
     for wdg_contrib in pm.iter_widgets():
         wdgs[wdg_contrib.plugin_name].append(wdg_contrib.display_name)
     return (('dock', x) for x in wdgs.items())
-
-
-def sample_iterator() -> Iterator[tuple[str, dict[str, SampleDict]]]:
-    return (
-        (
-            # use display_name for user facing display
-            plugin_name,
-            {
-                c.key: {'data': c.open, 'display_name': c.display_name}
-                for c in contribs
-            },
-        )
-        for plugin_name, contribs in pm.iter_sample_data()
-    )
 
 
 def get_sample_data(

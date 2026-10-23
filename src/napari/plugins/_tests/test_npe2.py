@@ -190,20 +190,6 @@ def test_get_sample_data(mock_pm):
     ]
 
 
-def test_sample_iterator(mock_pm):
-    samples = list(_npe2.sample_iterator())
-    assert samples
-    for plugin, contribs in samples:
-        assert isinstance(plugin, str)
-        assert isinstance(contribs, dict)
-        # check that the manifest display_name is used
-        assert plugin == PLUGIN_NAME
-        assert contribs
-        for i in contribs.values():
-            assert 'data' in i
-            assert 'display_name' in i
-
-
 def test_widget_iterator(mock_pm):
     wdgs = list(_npe2.widget_iterator())
     assert wdgs == [('dock', (PLUGIN_NAME, ['My Widget']))]

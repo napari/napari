@@ -435,37 +435,3 @@ class Shortcut:
 
     def __str__(self) -> str:
         return self.platform
-
-
-def get_key_bindings_summary(
-    keymap: dict, col: str = 'rgb(134, 142, 147)'
-) -> str:
-    """Get summary of key bindings in keymap.
-
-    Parameters
-    ----------
-    keymap : dict
-        Dictionary of key bindings.
-    col : str
-        Color string in format rgb(int, int, int) used for highlighting
-        keypress combination.
-
-    Returns
-    -------
-    str
-        String with summary of all key_bindings and their functions.
-    """
-    key_bindings_strs = ['<table border="0" width="100%">']
-    for key in keymap:
-        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes_str = '+'.join(
-            [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
-        )
-        key_bindings_strs.append(
-            "<tr><td width='80' style='text-align: right; padding: 4px;'>"
-            f"<span style='color: rgb(66, 72, 80)'>{keycodes_str}</span></td>"
-            "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f'{keymap[key]}</td></tr>'
-        )
-    key_bindings_strs.append('</table>')
-    return ''.join(key_bindings_strs)

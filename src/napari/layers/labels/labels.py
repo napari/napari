@@ -1532,7 +1532,7 @@ class Labels(ScalarFieldBase):
         radius = np.floor(self.brush_size / 2) + 0.5
 
         # Radius in pixels for each dimension (accounting for scale)
-        # Use floor to match old sphere_indices behavior: points where dist <= radius
+        # Use floor: points where dist <= radius
         # means integer coordinates from -floor(radius) to +floor(radius)
         normalized_scale = np.abs(paint_scale)
         normalized_scale = normalized_scale / np.min(normalized_scale)

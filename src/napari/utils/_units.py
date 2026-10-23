@@ -1,12 +1,8 @@
 """Units utilities."""
 
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
 import numpy as np
-
-if TYPE_CHECKING:
-    import pint
 
 # define preferred scale bar values
 PREFERRED_VALUES = [
@@ -26,23 +22,6 @@ PREFERRED_VALUES = [
     500,
     750,
 ]
-
-
-def get_unit_registry() -> 'pint.UnitRegistry':
-    """Get pint's UnitRegistry.
-
-    Pint greedily imports many libraries, (including dask, xarray, pandas, and
-    babel) to check for compatibility.  Some of those libraries may be slow to
-    import.  This accessor function should be used (and only when units are
-    actually necessary) to avoid incurring a large import time penalty.
-
-    See comment for details:
-    https://github.com/napari/napari/pull/2617#issuecomment-827747792
-    """
-    import pint
-
-    return pint.get_application_registry()
-
 
 PREFERRED_TICK_VALUES = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5]
 
