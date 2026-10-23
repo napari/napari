@@ -20,11 +20,13 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
     from typing import Any
 
+    from npe2._pytest_plugin import TestPluginManager
     from pytest import FixtureRequest  # noqa: PT013
     from pytestqt.qtbot import QtBot
 
     from napari import Viewer
     from napari._app_model._app import NapariApplication
+    from napari._qt.qt_viewer import QtViewer
     from napari.utils._proxies import PublicOnlyProxy
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
@@ -54,7 +56,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 COUNTER = 0
 
 
-def fail_obj_graph(Klass: Any) -> None:  # pragma: no cover
+def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
     """
     Fail is a given class _instances weakset is non empty and print the object graph.
     """
@@ -191,7 +193,11 @@ def mock_app_model() -> Generator[NapariApplication, None, None]:
 
 
 @pytest.fixture
-def plugin_settings(npe2pm, tmp_path, monkeypatch):
+def plugin_settings(
+    npe2pm: TestPluginManager,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
     """Make `napari.settings.get_plugin_settings` fresh for each test.
 
     Clears the `_PLUGIN_SETTINGS` cache and redirects the default plugin
@@ -347,10 +353,12 @@ def make_napari_viewer(
 
     if 'enable_console' not in request.keywords:
 
+        class _DummyConsole(QWidget):
+            def _update_theme(self, *_: Any, **__: Any) -> None:
+                pass
+
         def _dummy_widget(*_: Any) -> QWidget:
-            w = QWidget()
-            w._update_theme = _empty  # type: ignore[attr-defined]
-            return w
+            return _DummyConsole()
 
         monkeypatch.setattr(
             'napari._qt.qt_viewer.QtViewer._get_console', _dummy_widget
@@ -457,7 +465,7 @@ def make_napari_viewer(
 def make_napari_viewer_proxy(
     make_napari_viewer: Callable[..., Viewer],
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[..., PublicOnlyProxy]:
+) -> Callable[..., PublicOnlyProxy[Viewer]]:
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
     Use in the same way like `make_napari_viewer` fixture.
 
@@ -473,11 +481,11 @@ def make_napari_viewer_proxy(
     """
     from napari.utils._proxies import PublicOnlyProxy
 
-    proxies: list[PublicOnlyProxy] = []
+    proxies: list[PublicOnlyProxy[Viewer]] = []
 
     def actual_factory(
         *model_args: Any, ensure_main_thread: bool = True, **model_kwargs: Any
-    ) -> PublicOnlyProxy:
+    ) -> PublicOnlyProxy[Viewer]:
         monkeypatch.setenv(
             'NAPARI_ENSURE_PLUGIN_MAIN_THREAD', str(ensure_main_thread)
         )
