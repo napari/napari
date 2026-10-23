@@ -25,6 +25,10 @@ VIEW_SUBMENUS = [
         MenuId.MENUBAR_VIEW,
         SubmenuItem(submenu=MenuId.VIEW_SCALEBAR, title='Scale Bar'),
     ),
+    (
+        MenuId.MENUBAR_VIEW,
+        SubmenuItem(submenu=MenuId.VIEW_GRIDLINES, title='Grid Lines'),
+    ),
 ]
 
 
@@ -110,6 +114,23 @@ toggle_actions = {
             'canvas.overlays.scale_bar.ticks',
         ),
     ],
+    MenuId.VIEW_GRIDLINES: [
+        (
+            'napari.scene.toggle_grid_lines',
+            'Toggle Grid Lines',
+            'scene.overlays.grid_lines.visible',
+        ),
+        (
+            'napari.scene.toggle_grid_lines_axis_labels',
+            'Toggle Grid Lines Axis Labels',
+            'scene.overlays.grid_lines.axis_labels',
+        ),
+        (
+            'napari.scene.toggle_grid_lines_tick_labels',
+            'Toggle Grid Lines Tick Labels',
+            'scene.overlays.grid_lines.tick_labels',
+        ),
+    ],
 }
 
 
@@ -157,6 +178,18 @@ def _get_current_grid_mode(viewer: ViewerModel) -> bool:
 
 
 VIEW_ACTIONS: list[Action] = [
+    ViewerModelToggleAction(
+        id='napari.scene.toggle_crosshair',
+        title='Toggle Crosshair',
+        attribute_path='scene.overlays.crosshair.visible',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+    ),
     Action(
         # TODO: this whole action should be replaced with a ViewerModelToggleAction
         #       once their keybinding become settable...

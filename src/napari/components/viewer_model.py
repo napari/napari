@@ -110,6 +110,7 @@ DEFAULT_THEME = 'napari-dark'
 EXCLUDE_DICT = {
     'keymap',
     '_mouse_wheel_gen',
+    '_mouse_move_gen',
     '_mouse_drag_gen',
     '_persisted_mouse_event',
     'mouse_move_callbacks',
@@ -1008,7 +1009,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if viewbox is None:
             viewbox = (0, 0)
         viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
-        viewbox_center = viewbox_size * viewbox + viewbox_size / 2
+        spacing = (
+            self.canvas.grid._compute_canvas_spacing(
+                self.canvas.size, self.layers
+            )
+            if self.canvas.grid.enabled
+            else 0
+        )
+        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
         world_center = np.array(camera.center)
 
         if ndisplay == 2:

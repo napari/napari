@@ -233,7 +233,7 @@ class LayerDelegate(QStyledItemDelegate):
         This can be used to customize how the delegate handles mouse/key events
         """
         if (
-            event.type() == QMouseEvent.MouseButtonRelease
+            event.type() == QMouseEvent.Type.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = event.globalPosition().toPoint()
@@ -243,7 +243,7 @@ class LayerDelegate(QStyledItemDelegate):
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
-        if event.type() == QMouseEvent.MouseButtonDblClick:
+        if event.type() == QMouseEvent.Type.MouseButtonDblClick:
             self.initStyleOption(option, index)
             style = option.widget.style()
             check_rect = style.subElementRect(
@@ -267,9 +267,9 @@ class LayerDelegate(QStyledItemDelegate):
 
         # catch alt-click on the vis checkbox and hide *other* layer visibility
         # on second alt-click, restore the visibility state of the layers
-        if event.type() == QMouseEvent.MouseButtonRelease and (
+        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             self.initStyleOption(option, index)
             style = option.widget.style()
@@ -282,7 +282,7 @@ class LayerDelegate(QStyledItemDelegate):
                 return self._show_on_alt_click_hide_others(model, index)
 
         # on regular click of visibility icon, clear alt-click state
-        if event.type() == QMouseEvent.MouseButtonRelease and (
+        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
