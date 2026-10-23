@@ -164,7 +164,7 @@ def angles_from_view_and_up_directions(
     # result in a bad matrix)
     up_raw = np.asarray(up_direction, dtype=float)
     up_ortho = up_raw - np.dot(up_raw, view) * view
-    if all(up_ortho == 0):
+    if np.allclose(up_ortho, 0):
         # can happen if one sets the view direction to the same or opposite
         # value as the up direction. This is unsolvable, so as a workaround
         # just nudge the view_direction arbitrarily and use it as new up
