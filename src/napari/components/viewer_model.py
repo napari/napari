@@ -955,12 +955,14 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             update_status_from_cursor will be removed; use a mouse callback instead.
         """
         # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
-        self.status, self.tooltip.text = self._calc_status_from_cursor(
-            self.cursor.position,
-            self.cursor._view_direction,
-            (0, 0),
-            self.cursor.viewbox,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.status, self.tooltip.text = self._calc_status_from_cursor(
+                self.cursor.position,
+                self.cursor._view_direction,
+                (0, 0),
+                self.cursor.viewbox,
+            )
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 

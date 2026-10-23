@@ -1,4 +1,5 @@
-from pydantic import Field
+import numpy as np
+from pydantic import Field, PrivateAttr
 from typing_extensions import deprecated
 
 from napari.utils.events import EventedModel
@@ -46,8 +47,10 @@ class Cursor(EventedModel):
         ),
     )
     style: str = Field(
-        CursorStyle,
+        'default',
         deprecated=deprecated(
             'Cursor.style is deprecated and no longer has an effect; use Viewer.window.override_cursor_style instead'
         ),
     )
+    # this is here just to support viewermodel.update_status_from_cursor during deprecation
+    _view_direction: np.ndarray | None = PrivateAttr(None)
