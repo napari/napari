@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import requests
 from pooch import core
 
 import napari
@@ -49,6 +50,26 @@ dev_examples = [
 
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
+
+# examples fetch their data over the network, which fails transiently on CI;
+# rerun only on dropped connections, timeouts and 5xx or 429 responses, so a
+# missing file or a 404 from a moved dataset still fails on the first run
+pytestmark = pytest.mark.flaky(
+    reruns=2,
+    reruns_delay=10,
+    only_rerun=[
+        ConnectionError,
+        TimeoutError,
+        requests.ConnectionError,
+        requests.Timeout,
+        requests.exceptions.ChunkedEncodingError,
+        r'^(HTTPError|ClientResponseError): (5\d\d|429)\b',
+        (
+            r'^(ClientConnectorError|ClientConnectorDNSError|ClientOSError'
+            r'|ClientPayloadError|ServerDisconnectedError|ServerTimeoutError):'
+        ),
+    ],
+)
 
 
 @pytest.fixture(autouse=True)
