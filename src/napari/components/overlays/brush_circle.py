@@ -10,11 +10,7 @@ class BrushCircleOverlay(CanvasOverlay):
     Attributes
     ----------
     position : 2-tuple of int
-        Position of the circle on the canvas.
-    box : bool
-        Whether the background box is visible or not.
-    box_color : ColorValue or None
-        Background box color. If unset, it defaults to the canvas color.
+        Position of the circle on the canvas. None when outside.
     gridded : bool
         The overlay will be duplicated across all grid cells in gridded mode.
     visible : bool
@@ -30,3 +26,4 @@ class BrushCircleOverlay(CanvasOverlay):
 
     position: tuple[int, int] | None = None
     _is_resizing: bool = PrivateAttr(False)
+    gridded: bool = True

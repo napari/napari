@@ -37,27 +37,20 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self._outside = (-1000, -1000)
         self._last_mouse_pos = self._outside
 
+        self.overlay.events.position.connect(self._on_position_change)
         self.layer.events.brush_size.connect(self._on_size_change)
         self.layer.events.brush_size_is_canvas_pixels.connect(
             self._on_size_change
         )
         self.viewer.scene.camera.events.zoom.connect(self._on_size_change)
-        self.viewer.cursor.events.canvas_position.connect(
-            self._on_canvas_position_change
-        )
 
         self.reset()
 
-    def _on_position_change(self, event: Event | None = None) -> None:
-        # TODO: this overrides behaviuour of tiled overlays. To be removed
-        #       with #9083
-        pass
-
-    def _on_canvas_position_change(self) -> None:
+    def _on_position_change(self) -> None:
         if self.overlay._is_resizing:
             return
 
-        pos = self.viewer.cursor.canvas_position
+        pos = self.overlay.position
         self._set_position(pos[::-1] if pos is not None else self._outside)
 
     def _set_position(self, pos: tuple[int, int]) -> None:
@@ -77,4 +70,4 @@ class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     def reset(self) -> None:
         super().reset()
         self._on_size_change()
-        self._on_canvas_position_change()
+        self._on_position_change()
