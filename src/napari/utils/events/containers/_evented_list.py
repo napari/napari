@@ -25,7 +25,7 @@ cover this in test_evented_list.py)
 import contextlib
 import logging
 from collections.abc import Callable, Generator, Iterable, Sequence
-from typing import cast
+from typing import cast, overload
 
 from napari.utils.events.containers._typed import (
     _L,
@@ -85,7 +85,7 @@ class EventedList(TypedMutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: type[_T] | Sequence[type[_T]] = (),
-        lookup: dict[type[_L], Callable[[_T], _T | _L]] | None = None,
+        lookup: dict[type[_L], Callable[[_T], _L]] | None = None,
     ) -> None:
         if lookup is None:
             lookup = {}
@@ -119,6 +119,14 @@ class EventedList(TypedMutableSequence[_T]):
     # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
+    @overload
+    def __setitem__(self, key: int, value: _T) -> None: ...  # pragma: no cover
+
+    @overload
+    def __setitem__(
+        self, key: slice, value: Iterable[_T]
+    ) -> None: ...  # pragma: no cover
+
     def __setitem__(self, key: Index, value: _T | Iterable[_T]) -> None:
         old = self._list[key]  # https://github.com/napari/napari/pull/2120
         if isinstance(key, slice):
@@ -151,7 +159,7 @@ class EventedList(TypedMutableSequence[_T]):
             self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
-        self, key: Index
+        self, key: Index | str
     ) -> Iterable[tuple['EventedList[_T]', int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
@@ -164,7 +172,7 @@ class EventedList(TypedMutableSequence[_T]):
         valid = {int, slice}.union(set(self._lookup))
         raise TypeError(f'Deletion index must be {valid!r}, got {type(key)}')
 
-    def __delitem__(self, key: Index) -> None:
+    def __delitem__(self, key: Index | str) -> None:
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
