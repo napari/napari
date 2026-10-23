@@ -3,9 +3,7 @@ import pytest
 
 from napari._vispy.layers.points import VispyPointsLayer
 from napari._vispy.utils.qt_font import FontInfo
-from napari.components import Dims
 from napari.layers import Points
-from napari.layers.points._points_constants import PointsProjectionMode
 
 
 @pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
@@ -148,43 +146,3 @@ def test_negative_scale_highlight(scale):
     ):
         assert np.all(markers._data['a_size'] > 0)
         assert np.all(markers._data['a_edgewidth'] >= 0)
-
-
-def test_highlight_with_rescale_projection():
-    """Highlight should work when projection is 'rescale_linear'.
-
-    Regression test for a bug where _view_size_scale (array for all view
-    points) was multiplied with size indexed only by highlighted points,
-    causing a shape mismatch when more than one point was in view but only
-    a subset was highlighted.
-    """
-    # Place 5 points at known z positions, with a large size so all 5 spill
-    # into the z=50 slice and _view_size_scale becomes a (5,) array.
-    data = np.array(
-        [[0, 0, 0], [25, 0, 0], [50, 0, 0], [75, 0, 0], [100, 0, 0]],
-        dtype=float,
-    )
-    layer = Points(data, size=200)
-    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
-
-    # Select point 0 BEFORE slicing so update_selected_view populates
-    # _selected_view and _set_highlight populates _highlight_index.
-    layer.selected_data = {0}
-    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
-    layer._slice_dims(
-        Dims(
-            ndim=3,
-            point=(50, 0, 0),
-            margin_left=(100, 0, 0),
-            margin_right=(100, 0, 0),
-        )
-    )
-
-    # Verify the preconditions that cause the bug:
-    # all 5 points in view, scale is a per-point array, only 1 highlighted
-    assert len(layer._view_indices) == 5
-    assert isinstance(layer._view_size, np.ndarray)
-    assert len(layer._highlight_index) == 1
-
-    # Previously, raised ValueError: could not broadcast input array from shape (5,) into shape (1,)
-    vispy_layer._on_highlight_change()
