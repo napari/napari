@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import weakref
 from collections.abc import Callable, Sequence
-from contextlib import suppress
 from typing import ClassVar
 
 from qtpy.QtCore import (
@@ -74,7 +74,9 @@ class NapariQtNotification(QDialog):
     source_label: QLabel
     severity_icon: QLabel
 
-    _instances: ClassVar[list[NapariQtNotification]] = []
+    _instances: ClassVar[
+        list[weakref.ReferenceType[NapariQtNotification]]
+    ] = []
 
     def __init__(
         self,
@@ -144,7 +146,7 @@ class NapariQtNotification(QDialog):
     def show(self):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
-        self._instances.append(self)
+        self._instances.append(weakref.ref(self))
         self.slide_in()
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
@@ -153,8 +155,9 @@ class NapariQtNotification(QDialog):
         parent = self.parent()
         if parent is None or parent.isActiveWindow():
             if parent is not None:
-                for notification in self._instances:
-                    notification.timer_stop()
+                for ref in self._instances:
+                    if (notification := ref()) is not None:
+                        notification.timer_stop()
             if self.DISMISS_AFTER > 0:
                 self.timer.start()
 
@@ -183,14 +186,19 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
-        notifications = self._instances
-        with suppress(ValueError):
-            # if show is not called, the element is not in list
-            notifications.remove(self)
-        if self.parent() is not None:
-            if notifications and not notifications[-1].underMouse():
-                notifications[-1].timer_start()
-            self.parent().setFocus()
+        for i, ref in enumerate(self._instances):
+            if (notification := ref()) is self:
+                del self._instances[i]
+                break
+        parent = self.parent()
+        if isinstance(parent, QWidget):
+            for ref in self._instances[::-1]:
+                if (
+                    notification := ref()
+                ) is not None and not notification.underMouse():
+                    notification.timer_start()
+                    break
+            parent.setFocus()
         super().close()
 
     def close_with_fade(self):
