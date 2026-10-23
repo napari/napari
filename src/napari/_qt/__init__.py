@@ -87,15 +87,20 @@ except Exception as e:
     raise
 
 
-MIN_QT_VERSION = (6, 7)
+MIN_PYQT_VERSION = (6, 7)
+MIN_PYSIDE_VERSION = (6, 8, 3)
 
 
 def _check_qt_version(qt_version: str, api_name: str) -> None:
     """Raise ImportError if the Qt version used by qtpy is not supported."""
-    if tuple(int(x) for x in qt_version.split('.')[:2]) >= MIN_QT_VERSION:
+    if api_name.startswith('pyqt'):
+        min_qt_version = MIN_PYQT_VERSION
+    else:
+        min_qt_version = MIN_PYSIDE_VERSION
+    if tuple(int(x) for x in qt_version.split('.')[:2]) >= min_qt_version:
         return
 
-    min_version = '.'.join(map(str, MIN_QT_VERSION))
+    min_version = '.'.join(map(str, min_qt_version))
     qt5_hint = (
         (
             'If PyQt6 or PySide6 is also installed, select it with the QT_API '
