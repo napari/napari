@@ -17,6 +17,7 @@ import magicgui as mgui
 import numpy as np
 import pint
 from npe2 import plugin_manager as pm
+from pydantic_core import core_schema
 
 from napari.layers.base._base_constants import (
     BaseProjectionMode,
@@ -45,7 +46,7 @@ from napari.layers.utils.layer_utils import (
 )
 from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 from napari.settings import get_settings
-from napari.types import LayerDataType
+from napari.types import LayerDataTuple, LayerDataType
 from napari.utils._dask_utils import configure_dask
 from napari.utils._magicgui import (
     add_layer_to_viewer,
@@ -53,6 +54,7 @@ from napari.utils._magicgui import (
     get_layers,
 )
 from napari.utils.events import EmitterGroup, Event, EventedDict
+from napari.utils.events.evented_model import _serialize_arbitrary
 from napari.utils.geometry import (
     find_front_back_face,
     intersect_line_with_axis_aligned_bounding_box_3d,
@@ -69,6 +71,8 @@ from napari.utils.transforms import Affine, CompositeAffine, TransformChain
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
     from napari.components.dims import Dims
     from napari.components.overlays import BoundingBoxOverlay, Overlay
@@ -2502,6 +2506,56 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     ) -> _LayerSlicingState:
         """Return a LayerSlicer instance appropriate for this layer."""
         raise NotImplementedError
+
+    def _as_json_safe_data_tuple(self):
+        # for now be safe, just disregard data and metadata which
+        # can be arbitrarily huge or complex or remote
+        _, meta, typestring = self.as_layer_data_tuple()
+        meta['metadata'] = '...'
+        # using ... allows us to know when reconstructing that there was
+        # data that was elided
+        return ('...', _serialize_arbitrary(meta), typestring)
+
+    def update(self, layerdatatuple: LayerDataTuple):
+        data, meta, type_str = layerdatatuple
+        if type_str != self._type_string:
+            raise ValueError(
+                f'Cannot update a {self._type_string} layer from a {type_str} data tuple.'
+            )
+        if data != '...':
+            self.data = data
+        metadata = meta.pop('metadata', '...')
+        if metadata != '...':
+            self.metadata = metadata
+        for k, v in meta:
+            setattr(self, k, v)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        validate_schema = core_schema.no_info_plain_validator_function(
+            cls.as_layer_data_tuple
+        )
+
+        serialize_schema = core_schema.plain_serializer_function_ser_schema(
+            cls._as_json_safe_data_tuple,
+            when_used='json',
+        )
+
+        return core_schema.json_or_python_schema(
+            # Schema for JSON inputs (always run validation)
+            json_schema=validate_schema,
+            # Schema for Python inputs (allow existing instances to pass through)
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(cls),
+                    validate_schema,
+                ],
+                mode='left_to_right',
+            ),
+            serialization=serialize_schema,
+        )
 
 
 mgui.register_type(type_=list[Layer], return_callback=add_layers_to_viewer)
