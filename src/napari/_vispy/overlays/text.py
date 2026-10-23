@@ -35,7 +35,7 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
         self.overlay.events.color.connect(self._on_color_change)
         self.overlay.events.box.connect(self._on_color_change)
         self.overlay.events.box_color.connect(self._on_color_change)
-        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.font_size.connect(self._on_font_change)
 
         self.viewer.canvas.events.background_color.connect(
             self._on_color_change
@@ -62,12 +62,13 @@ class _VispyBaseTextOverlay(VispyCanvasOverlay):
             else self._get_fgcolor()
         )
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_change(self) -> None:
         self.node.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
-            else self._default_font_size
-        )
+            else self.font_info.default_size
+        ) * self.font_info.scale
+        self.node.face = self.font_info.face
         self._on_position_change()
 
     def _on_position_change(self, event: Event | None = None) -> None:

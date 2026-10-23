@@ -22,7 +22,8 @@ class GridLines3D(Node):
     ):
         super().__init__()
         self.font_info = font_info
-        self.font_size = 9.0
+        self.font_size = self.font_info.default_size
+        self.font_face = self.font_info.face
 
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
@@ -233,6 +234,7 @@ class GridLines3D(Node):
                 tick.parent = self.grids[axis]
                 tick.visible = True
                 tick.font_size = self.font_size
+                tick.face = self.font_face
 
             for extra_tick in tick_visuals[len(new_tick_values) :]:
                 # disable all extra ones
@@ -254,4 +256,5 @@ class GridLines3D(Node):
             visual.color = self.color
             visual.opacity = self._opacity
             visual.font_size = self.font_size * 1.5
+            visual.face = self.font_face
             visual.visible = show_labels

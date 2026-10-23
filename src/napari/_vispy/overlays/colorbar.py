@@ -67,6 +67,7 @@ class ColorManagerWrapper:
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
     layer: Image | Surface
+    node: ColorBar
 
     def __init__(
         self,
@@ -149,9 +150,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.node.set_size(self.overlay.size)
         self._on_ticks_change()
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_change(self) -> None:
         # this reroute needs to exist cause the base class uses
-        # _on_font_size_change as well to connect to the settings
+        # _on_font_change as well to connect to the settings
         self._on_ticks_change()
 
     def _on_ticks_change(self) -> None:
@@ -163,8 +164,6 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         if self.source_wrapper.contrast_limits is None:
             return
 
-        color = self.overlay.color
-
         if self.overlay.color is not None:
             color = self.overlay.color
         else:
@@ -173,12 +172,14 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
-            else self._default_font_size
-        )
+            else self.font_info.default_size
+        ) * self.font_info.scale
+        font_face = self.font_info.face
 
         text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
             font_size=font_size,
+            font_face=font_face,
             clim=_coerce_contrast_limits(
                 self.source_wrapper.contrast_limits
             ).contrast_limits,

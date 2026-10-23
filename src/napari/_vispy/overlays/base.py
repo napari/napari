@@ -45,8 +45,7 @@ class VispyBaseOverlay:
     ) -> None:
         super().__init__()
         self.overlay = overlay
-        self._font_info = font_info
-        self._default_font_size = 9
+        self.font_info = font_info
         self.viewer = viewer
 
         self.node = node
@@ -55,6 +54,7 @@ class VispyBaseOverlay:
         self.overlay.events.visible.connect(self._on_visible_change)
         self.overlay.events.opacity.connect(self._on_opacity_change)
         self.overlay.events.blending.connect(self._on_blending_change)
+        self.font_info.events.connect(self._on_font_change)
 
         if parent is not None:
             self.node.parent = parent
@@ -79,19 +79,15 @@ class VispyBaseOverlay:
         bgcolor = self._get_bgcolor()
         return _readable_color(_contrasting_color(bgcolor), bgcolor)
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_change(self) -> None:
         # to be implemented by subclasses that need it
         pass
-
-    def set_default_font_size(self, font_size: int) -> None:
-        self._default_font_size = font_size
-        self._on_font_size_change()
 
     def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
-        self._on_font_size_change()
+        self._on_font_change()
 
     def close(self) -> None:
         self.overlay.events.visible.disconnect(self._on_visible_change)
@@ -104,6 +100,7 @@ class VispyBaseOverlay:
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.canvas.grid.events, self)
         disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self.font_info.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
 

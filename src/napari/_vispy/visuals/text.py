@@ -9,10 +9,6 @@ from napari._vispy.utils.text import (
     get_text_width_height,
 )
 
-# Global Qt-based font manager instance shared across all Text visuals
-
-_FONT_FAMILY = 'OpenSans'
-
 if TYPE_CHECKING:
     from vispy.visuals.visual import Visual
 

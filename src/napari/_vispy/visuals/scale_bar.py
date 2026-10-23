@@ -82,10 +82,13 @@ class ScaleBar(Compound):
             'line_y': line_y,
         }
 
-    def set_data(self, *, length, tick_length, thickness, font_size, color):
+    def set_data(
+        self, *, length, tick_length, thickness, font_size, font_face, color
+    ):
         """Update scale bar with new dimensions and styling."""
         # font size need to be set first cause layout calculations depend on it
         self.text.font_size = font_size
+        self.text.face = font_face
 
         layout = self._calculate_layout(length, tick_length, thickness)
 

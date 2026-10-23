@@ -190,7 +190,12 @@ class VispyCanvas:
         self.max_texture_sizes = None
         self._last_theme_color = None
 
-        self._font_info = FontInfo(face=font_family, font_manager=font_manager)
+        self._font_info = FontInfo(
+            default_size=get_settings().appearance.font_size,
+            scale=1,
+            face=font_family,
+            font_manager=font_manager,
+        )
         self.viewer = viewer
         self._scene_canvas = NapariSceneCanvas(
             *args, keys=None, vsync=True, **kwargs
@@ -951,7 +956,7 @@ class VispyCanvas:
         if vispy_overlay is None:
             vispy_overlay = create_vispy_overlay(
                 overlay=overlay,
-                font_info=self._font_info,
+                font_info=self.font_info,
                 viewer=self.viewer,
                 parent=parent,
                 **kwargs,
@@ -1285,16 +1290,11 @@ class VispyCanvas:
         self._needs_overlay_position_update = False
 
     def _update_font_sizes(self, *, font_size: float | None = None):
-        if font_size is None:
-            font_size = get_settings().appearance.font_size
-        for vispy_overlays in self._viewer_overlay_to_visual.values():
-            for vispy_overlay in vispy_overlays:
-                vispy_overlay.set_default_font_size(font_size)
-        for overlay_to_visual in self._layer_overlay_to_visual.values():
-            for vispy_overlay in overlay_to_visual.values():
-                vispy_overlay.set_default_font_size(font_size)
-        for vispy_layer in self.layer_to_visual.values():
-            vispy_layer.set_default_font_size(font_size)
+        self.font_info.default_size = (
+            font_size
+            if font_size is not None
+            else get_settings().appearance.font_size
+        )
 
     def _calculate_view_direction(
         self, event_pos: tuple[float, float]
@@ -1479,6 +1479,7 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self._clean_and_update_scenegraph()
 
+    @property
     def font_info(self) -> FontInfo:
         """Get the vispy visual for a given overlay."""
         return self._font_info

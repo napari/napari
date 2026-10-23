@@ -102,6 +102,7 @@ class ColorBar(Node):
         self,
         tick_length: float,
         font_size: float,
+        font_face: str,
         clim: tuple[float, float],
         color: ColorValue,
     ) -> tuple[float, float]:
@@ -115,6 +116,7 @@ class ColorBar(Node):
         self.ticks.text_color = color
         self.ticks.tick_color = color
         self.ticks.tick_font_size = font_size
+        self.ticks._text.face = font_face
         self.ticks.major_tick_length = tick_length
         self.ticks.minor_tick_length = tick_length / 2
         self.ticks.domain = clim
