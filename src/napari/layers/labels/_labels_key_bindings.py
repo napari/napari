@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 from app_model.types import KeyCode, KeyMod
@@ -11,6 +11,12 @@ from napari.layers.utils.layer_utils import (
     register_layer_attr_action,
 )
 from napari.utils.notifications import show_info, show_warning
+
+if TYPE_CHECKING:
+    from napari.components.overlays import (
+        LabelsBrushStrokeOverlay,
+        LabelsPolygonOverlay,
+    )
 
 MIN_BRUSH_SIZE = 1
 CONVERT_TEXT = 'You can convert the layer dtype in the right-click contextual menu of the layer list.'
@@ -129,7 +135,10 @@ def increase_label_id(layer: Labels) -> None:
         show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
-@register_label_action('Decrease the paint brush size by one')
+@register_label_action(
+    'Decrease the paint brush size by one',
+    repeatable=True,
+)
 def decrease_brush_size(layer: Labels) -> None:
     """Decrease the brush size"""
     if (
@@ -139,7 +148,10 @@ def decrease_brush_size(layer: Labels) -> None:
         layer.brush_size -= 1
 
 
-@register_label_action('Increase the paint brush size by one')
+@register_label_action(
+    'Increase the paint brush size by one',
+    repeatable=True,
+)
 def increase_brush_size(layer: Labels) -> None:
     """Increase the brush size"""
     layer.brush_size += 1
@@ -169,17 +181,13 @@ def redo(layer: Labels) -> None:
 )
 def reset_polygon_or_stroke(layer: Labels) -> None:
     """Reset the drawing of the current polygon or abort a brush stroke."""
-    from napari.components.overlays.labels_brush_stroke import (
-        LabelsBrushStrokeOverlay,
-    )
-
     brush_stroke = cast(
-        LabelsBrushStrokeOverlay, layer._overlays['brush_stroke']
+        'LabelsBrushStrokeOverlay', layer._overlays['brush_stroke']
     )
-    if brush_stroke.active:
-        brush_stroke.abort(layer)
-        return
-    layer._overlays['polygon'].points = []
+    brush_stroke.position = None
+
+    polygon = cast('LabelsPolygonOverlay', layer._overlays['polygon'])
+    polygon.points = []
 
 
 @register_label_action(
@@ -187,13 +195,6 @@ def reset_polygon_or_stroke(layer: Labels) -> None:
 )
 def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
-    # Because layer._overlays has type Overlay, pyrefly doesn't know that
-    # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
-    # TODO: Improve typing of layer._overlays to fix this
-    from napari.components.overlays.labels_polygon import (
-        LabelsPolygonOverlay,
-    )
-
     cast(
-        LabelsPolygonOverlay, layer._overlays['polygon']
+        'LabelsPolygonOverlay', layer._overlays['polygon']
     ).add_polygon_to_labels(layer)
