@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Union,
     cast,
 )
@@ -35,9 +36,10 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_status_from_cursor,
 )
 from napari.components.canvas import Canvas
-from napari.components.cursor import Cursor, CursorStyle
+from napari.components.cursor import Cursor
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.scene import Scene
@@ -163,16 +165,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         The canvas model, controlling grid mode and canvas overlays.
 
         .. versionadded:: 0.9.0
-    cursor: napari.components.cursor.Cursor
-        The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
     help: str
         A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
-    mouse_over_canvas: bool
-        Indicating whether the mouse cursor is on the viewer canvas.
     scene : napari.components.scene.Scene
         The scene model, controlling the camera and scene overlays.
 
@@ -193,7 +191,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     # have an event emitter associated with them
     canvas: Canvas = Field(default_factory=Canvas, frozen=True)
     scene: Scene = Field(default_factory=Scene, frozen=True)
-    cursor: Cursor = Field(default_factory=Cursor, frozen=True)
+    cursor: Cursor = Field(
+        default_factory=Cursor, frozen=True, deprecated='TODO'
+    )
     dims: Dims = Field(default_factory=Dims, frozen=True)
     layers: LayerList = Field(
         default_factory=LayerList, frozen=True
@@ -203,9 +203,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
     title: str = 'napari'
-    # To check if mouse is over canvas to avoid race conditions between
-    # different events systems
-    mouse_over_canvas: bool = False
 
     # Need to use default factory because slicer is not copyable which
     # is required for default values.
@@ -280,7 +277,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.dims.events.margin_left.connect(self._update_layers)
         self.dims.events.margin_right.connect(self._update_layers)
-        self.cursor.events.position.connect(self.update_status_from_cursor)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
@@ -288,6 +284,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
+        self.mouse_move_callbacks.append(update_status_from_cursor)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
@@ -790,16 +787,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers = layers or self.layers
         self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
-        # If the currently selected layer is sliced asynchronously, then the value
-        # shown with this position may be incorrect. See the discussion for more details:
-        # https://github.com/napari/napari/pull/5377#discussion_r1036280855
-        position = list(self.cursor.position)
-        if len(position) < self.dims.ndim:
-            # cursor dimensionality is outdated — reset to correct dimension
-            position = [0.0] * self.dims.ndim
-        for ind in self.dims.order[: -self.dims.ndisplay]:
-            position[ind] = self.dims.point[ind]
-        self.cursor.position = tuple(position)
 
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
@@ -809,7 +796,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 layer.update_transform_box_visibility(False)
                 layer.update_highlight_visibility(False)
             self.help = ''
-            self.cursor.style = CursorStyle.STANDARD
             self.scene.camera.mouse_pan = True
             self.scene.camera.mouse_zoom = True
         else:
@@ -820,11 +806,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                     layer.update_transform_box_visibility(False)
                     layer.update_highlight_visibility(False)
             self.help = active_layer.help
-            self.cursor.style = active_layer.cursor
-            self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
             self.scene.camera.mouse_zoom = active_layer.mouse_zoom
-            self.update_status_from_cursor()
 
     def _merge_dims_and_layers_axis_labels(self) -> tuple[str, ...]:
         """Combine layerlist axis labels onto the current dims labels.
@@ -860,15 +843,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 )
             self._layers_had_custom_axis_labels = not layers_are_default
 
-        new_dim = self.dims.ndim
-        dim_diff = new_dim - len(self.cursor.position)
-        if dim_diff < 0:
-            self.cursor.position = self.cursor.position[:new_dim]
-        elif dim_diff > 0:
-            self.cursor.position = tuple(
-                list(self.cursor.position) + [0] * dim_diff
-            )
-
     def _update_mouse_pan(self, event):
         """Set the viewer interactive mouse panning"""
         if event.source is self.layers.selection.active:
@@ -879,21 +853,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if event.source is self.layers.selection.active:
             self.scene.camera.mouse_zoom = event.mouse_zoom
 
-    def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor.style = event.cursor
-
-    def _update_cursor_size(self, event):
-        """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor.size = event.cursor_size
-
     def _update_async(self, event: Event) -> None:
         """Set layer slicer to force synchronous if async is disabled."""
         self._layer_slicer._force_sync = not event.value
 
     def _calc_status_from_cursor(
         self,
-    ) -> tuple[str | Dict, str] | None:
+        world_position: tuple[float, ...],
+        view_direction: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
+        | None,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int],
+    ) -> tuple[str | dict, str]:
         """Calculate coordinates and status info from cursor position.
 
         General logic:
@@ -901,22 +872,25 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         - restrict info to only selected layers, if any
         - if only one is shown, show more detailed info
         """
-        if not self.mouse_over_canvas:
-            return None
+        if view_direction is None:
+            viewbox_size = self.canvas.viewbox_size(self.layers)
+            viewbox_position = tuple(np.array(canvas_position) % viewbox_size)
+            view_direction = self.scene.camera.calculate_nd_view_direction(
+                ndim=self.dims.ndim,
+                dims_displayed=self.dims.displayed,
+                canvas_position=viewbox_position,
+                canvas_size=viewbox_size,
+            )
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox: list[Layer] = []
-        if self.cursor.viewbox is not None:
-            layers_in_viewbox = [
-                self.layers[idx]
-                for idx in sorted(
-                    self.canvas.grid.contents_at(
-                        self.cursor.viewbox, self.layers
-                    ),
-                    reverse=self.canvas.grid.stride > 0,
-                )
-            ]
+        layers_in_viewbox: list[Layer] = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
+            )
+        ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
@@ -929,8 +903,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if len(valid_layers) == 1:
             if self.tooltip.visible:
                 tooltip_text = valid_layers[0]._get_tooltip_text(
-                    np.asarray(self.cursor.position),
-                    view_direction=self.cursor._view_direction,
+                    np.asarray(world_position),
+                    view_direction=view_direction,
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -938,8 +912,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 tooltip_text = ''
 
             status = valid_layers[0].get_status(
-                self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                world_position,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -954,8 +928,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         coords = ''
         for layer in valid_layers:
             status = layer.get_status(
-                self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                world_position,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -971,11 +945,24 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         status_str = f'{coords} » {values}'
         return status_str, ''
 
+    @deprecated(
+        'update_status_from_cursor will be removed. Use a mouse callback isntead.'
+    )
     def update_status_from_cursor(self):
-        """Update the status and tooltip from the cursor position."""
-        status = self._calc_status_from_cursor()
-        if status is not None:
-            self.status, self.tooltip.text = status
+        """Update the status and tooltip from the cursor position.
+
+        .. deprecated: 0.11.0:
+            update_status_from_cursor will be removed; use a mouse callback instead.
+        """
+        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.status, self.tooltip.text = self._calc_status_from_cursor(
+                self.cursor.position,
+                self.cursor._view_direction,
+                (0, 0),
+                self.cursor.viewbox,
+            )
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
@@ -983,7 +970,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self,
         canvas_position: tuple[int, int],
         viewbox: tuple[int, int] | None = None,
-    ) -> np.ndarray:
+    ) -> tuple[float, ...]:
         """Convert canvas pixel position to world coordinates.
 
         The position is calculated on a plane parallel to the screen and passing
@@ -1049,7 +1036,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         position_world = list(self.dims.point)
         for i, d in enumerate(self.dims.displayed):
             position_world[d] = world_displayed[i]
-        return np.array(position_world)
+        return tuple(position_world)
 
     @property
     def experimental(self):
@@ -1078,8 +1065,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # to viewer.layers.events... and avoid direct viewer->layer connections
         layer.events.mouse_pan.connect(self._update_mouse_pan)
         layer.events.mouse_zoom.connect(self._update_mouse_zoom)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
         layer.events.scale.connect(self._on_layers_change)
         layer.events.units.connect(self._on_layers_change)

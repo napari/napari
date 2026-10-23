@@ -18,7 +18,12 @@ if TYPE_CHECKING:
     from vispy.scene import Node, ViewBox
 
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import CanvasOverlay, Overlay, SceneOverlay
+    from napari.components.overlays import (
+        CanvasOverlay,
+        Overlay,
+        SceneOverlay,
+        TiledCanvasOverlay,
+    )
     from napari.components.viewer_model import ViewerModel
     from napari.layers import Layer
     from napari.utils.events import Event
@@ -83,6 +88,10 @@ class VispyBaseOverlay:
         # to be implemented by subclasses that need it
         pass
 
+    def _on_mouse_leave(self) -> None:
+        # to be implemented by subclasses that need it
+        pass
+
     def set_default_font_size(self, font_size: int) -> None:
         self._default_font_size = font_size
         self._on_font_size_change()
@@ -111,24 +120,34 @@ class VispyBaseOverlay:
 class VispyCanvasOverlay(VispyBaseOverlay):
     """
     Vispy overlay backend for overlays that live in canvas space.
-
-    NOTE: Subclasses must follow some rules:
-    - ensure that when `_on_position_change` is called, the x_size and y_size
-      attributes are already updated depending on the overlay size, to ensure
-      proper tiling. Alternatively, override this method if the overlay is
-      *not* supposed to be tiled
-    - ensure that the napari Overlay model uses the `position` field correctly
-      (must be a CanvasPosition enum if tileable, or anything else if "free")
     """
 
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.node.transform = STTransform()
+
     overlay: CanvasOverlay
+
+
+class VispyTiledCanvasOverlay(VispyCanvasOverlay):
+    """
+    Vispy canvas overlays that should be tiled around the edges of the canvas.
+
+    NOTE: Subclasses must ensure that when `_on_position_change` is called,
+    the x_size and y_size attributes are already updated depending on the overlay
+    size, to ensure proper tiling.
+
+    canvas_position_callback is set by the VispyCanvas object, and is responsible
+    to update the position of all canvas overlays whenever necessary
+    """
+
+    overlay: TiledCanvasOverlay
 
     def __init__(self, **kwargs: Any) -> None:
 
         super().__init__(**kwargs)
         self.x_size = 0.0
         self.y_size = 0.0
-        self.node.transform = STTransform()
         self.overlay.events.position.connect(self._on_position_change)
         self.overlay.events.box.connect(self._on_box_change)
         self.overlay.events.box_color.connect(self._on_box_change)
