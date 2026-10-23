@@ -608,11 +608,13 @@ def test_active_layer_status_update():
 
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
-    viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer._calc_status_from_cursor()[
-        0
-    ] == viewer.layers.selection.active.get_status(
-        viewer.cursor.position, world=True
+    assert viewer._calc_status_from_cursor(
+        world_position=(1, 1, 1, 1, 1),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )[0] == viewer.layers.selection.active.get_status(
+        (1, 1, 1, 1, 1), world=True
     )
 
 
@@ -1041,27 +1043,55 @@ def test_make_layer_visible_after_slicing():
 
 def test_get_status_text():
     viewer = ViewerModel(ndisplay=2)
-    assert viewer._calc_status_from_cursor() == (' » [empty]', '')
-    viewer.cursor.position = (1, 2)
     viewer.add_labels(
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
-        sorted(
-            {
-                'coordinates': '[1, 2]: 0; a: 1',
-                'coords': '[1, 2]',
-                'layer_base': 'Labels',
-                'layer_name': 'Labels',
-                'plugin': '',
-                'source_type': '',
-                'value': '0; a: 1',
-            }.items()
-        )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(-10, -10),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[-10, -10]: [empty]',
+            'coords': '[-10, -10]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '',
+        }.items()
+    )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
     )
     viewer.tooltip.visible = True
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
         {
             'coordinates': '[1, 2]: 0; a: 1',
             'coords': '[1, 2]',
@@ -1072,20 +1102,7 @@ def test_get_status_text():
             'value': '0; a: 1',
         }.items()
     )
-    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
-    viewer.update_status_from_cursor()
-    assert sorted(viewer.status.items()) == sorted(
-        {
-            'coordinates': '[1, 2]: 0; a: 1',
-            'coords': '[1, 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        }.items()
-    )
-    assert viewer.tooltip.text == '0\na: 1'
+    assert status[1] == '0\na: 1'
 
 
 def test_reset_view():
