@@ -359,7 +359,7 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
         if iso_threshold is None:
             cmin, cmax = self.contrast_limits_range
-            self._iso_threshold = cmin + (cmax - cmin) / 2  # pyrefly: ignore [unsupported-operation]
+            self._iso_threshold = cmin + (cmax - cmin) / 2
         else:
             self._iso_threshold = iso_threshold
 
