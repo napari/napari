@@ -884,17 +884,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox: list[Layer] = []
-        if self.cursor.viewbox is not None:
-            layers_in_viewbox = [
-                self.layers[idx]
-                for idx in sorted(
-                    self.canvas.grid.contents_at(
-                        self.cursor.viewbox, self.layers
-                    ),
-                    reverse=self.canvas.grid.stride > 0,
-                )
-            ]
+        layers_in_viewbox: list[Layer] = [
+            self.layers[idx]
+            for idx in sorted(
+                self.canvas.grid.contents_at(viewbox, self.layers),
+                reverse=self.canvas.grid.stride > 0,
+            )
+        ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
