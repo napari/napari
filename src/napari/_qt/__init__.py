@@ -93,7 +93,7 @@ MIN_PYSIDE_VERSION = (6, 8, 3)
 
 def _check_qt_version(qt_version: str, api_name: str) -> None:
     """Raise ImportError if the Qt version used by qtpy is not supported."""
-    if api_name.startswith('pyqt'):
+    if api_name.lower().startswith('pyqt'):
         min_qt_version = MIN_PYQT_VERSION
     else:
         min_qt_version = MIN_PYSIDE_VERSION
