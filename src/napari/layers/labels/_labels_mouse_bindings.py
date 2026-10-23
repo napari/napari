@@ -89,13 +89,16 @@ def pick(layer, event):
     )
 
 
-def resize_or_continue_stroke(layer, event):
+def move_resize_or_continue_stroke(layer, event):
     if all(
         modifier in event.modifiers
         for modifier in BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS
     ):
         yield from resize_on_mouse_move(layer, event)
         return
+
+    brush_circle = layer._overlays['brush_circle']
+    brush_circle.position = event.pos[::-1]
 
     brush_stroke = layer._overlays['brush_stroke']
     if brush_stroke.position is not None and len(event.dims_displayed) == 2:

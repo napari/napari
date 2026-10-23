@@ -9,6 +9,8 @@ class BrushCircleOverlay(CanvasOverlay):
 
     Attributes
     ----------
+    position : 2-tuple of int
+        Position of the circle on the canvas.
     box : bool
         Whether the background box is visible or not.
     box_color : ColorValue or None
@@ -26,4 +28,5 @@ class BrushCircleOverlay(CanvasOverlay):
         alpha values of the overlay get mixed with the visuals below.
     """
 
+    position: tuple[int, int] | None = None
     _is_resizing: bool = PrivateAttr(False)

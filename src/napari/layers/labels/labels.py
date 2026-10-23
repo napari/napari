@@ -36,8 +36,8 @@ from napari.layers.labels._labels_constants import (
 )
 from napari.layers.labels._labels_mouse_bindings import (
     draw,
+    move_resize_or_continue_stroke,
     pick,
-    resize_or_continue_stroke,
 )
 from napari.layers.labels._labels_utils import (
     expand_slice,
@@ -342,9 +342,9 @@ class Labels(ScalarFieldBase):
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
         Mode.PICK: no_op,
-        Mode.PAINT: resize_or_continue_stroke,
+        Mode.PAINT: move_resize_or_continue_stroke,
         Mode.FILL: no_op,
-        Mode.ERASE: resize_or_continue_stroke,
+        Mode.ERASE: move_resize_or_continue_stroke,
         Mode.POLYGON: no_op,  # the overlay handles mouse events in this mode
     }
 
