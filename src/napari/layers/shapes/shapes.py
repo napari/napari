@@ -3211,7 +3211,7 @@ class Shapes(Layer):
                 isinstance(v[shape_index], float) and np.isnan(v[shape_index])
             )
         ]
-    
+
     def _get_index_and_intersection(
         self,
         start_point: np.ndarray,
