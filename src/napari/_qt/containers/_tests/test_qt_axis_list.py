@@ -57,7 +57,7 @@ def test_QtAxisListModel_data(qtbot):
             axislistmodel.index(idx),
             role=Qt.ItemDataRole.TextAlignmentRole,
         )
-        == Qt.AlignCenter
+        == Qt.AlignmentFlag.AlignCenter
         for idx in dims.order
     )
     assert all(
