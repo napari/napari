@@ -16,13 +16,16 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
+    from napari.layers._data_protocols import LayerDataProtocol
     from napari.layers._multiscale_data import MultiScaleData
     from napari.types import FullLayerData
 
 logger = logging.getLogger(__name__)
 
 
-def slice_from_axis(array, *, axis, element):
+def slice_from_axis(
+    array: LayerDataProtocol, *, axis: int, element: int
+) -> LayerDataProtocol:
     """Take a single index slice from array using slicing.
 
     Equivalent to :func:`np.take`, but using slicing, which ensures that the
@@ -52,7 +55,7 @@ def slice_from_axis(array, *, axis, element):
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
 
-    slices = [slice(None) for i in range(array.ndim)]
+    slices: list[slice | int] = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
 
@@ -60,7 +63,7 @@ def slice_from_axis(array, *, axis, element):
 def split_channels(
     data: Any,
     channel_axis: int,
-    **kwargs,
+    **kwargs: Any,
 ) -> list[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
@@ -174,7 +177,7 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
+def stack_to_images(stack: Image, axis: int, **kwargs: Any) -> list[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -253,7 +256,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     return imagelist
 
 
-def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
+def split_rgb(stack: Image, with_alpha: bool = False) -> list[Image]:
     """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError('Image must be RGB to use split_rgb')
@@ -280,7 +283,9 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     return images if with_alpha else images[:3]
 
 
-def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
+def images_to_stack(
+    images: list[Image], axis: int = 0, **kwargs: Any
+) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
