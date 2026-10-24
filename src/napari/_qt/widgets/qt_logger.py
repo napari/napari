@@ -27,14 +27,14 @@ class LogWidget(QWidget):
     ) -> None:
         super().__init__(parent)
 
-        self.layout = QVBoxLayout()
+        layout = QVBoxLayout()
 
         # Description
         title_label = QLabel('logger')
         title_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.layout.addWidget(title_label)
+        layout.addWidget(title_label)
 
         # level selection
         self.level_layout = QHBoxLayout()
@@ -45,7 +45,7 @@ class LogWidget(QWidget):
         )
         self.level_layout.addWidget(self.loglevel)
         self.level_layout.addStretch()
-        self.layout.addLayout(self.level_layout)
+        layout.addLayout(self.level_layout)
 
         # filtering
         self.filter_layout = QHBoxLayout()
@@ -59,15 +59,15 @@ class LogWidget(QWidget):
         self.text_filter = QLineEdit()
         self.text_filter.setPlaceholderText('text filter')
         self.filter_layout.addWidget(self.text_filter)
-        self.layout.addLayout(self.filter_layout)
+        layout.addLayout(self.filter_layout)
 
         # log text box
         self.log_text_box = QTextEdit()
         self.log_text_box.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.log_text_box.setLineWrapMode(QTextEdit.NoWrap)
-        font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        self.log_text_box.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        font = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
         self.log_text_box.setFont(font)
 
         # Add text copy button
@@ -78,9 +78,9 @@ class LogWidget(QWidget):
             self.infoCopyButton, 0, Qt.AlignmentFlag.AlignTop
         )
         self.info_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.layout.addLayout(self.info_layout)
+        layout.addLayout(self.info_layout)
 
-        self.setLayout(self.layout)
+        self.setLayout(layout)
 
         self.loglevel.currentTextChanged.connect(self._on_loglevel_change)
         self.level_filter.currentTextChanged.connect(self._on_change)
@@ -97,11 +97,11 @@ class LogWidget(QWidget):
         self._on_change()
         self._jump_to_pos()
 
-    def _on_loglevel_change(self, event=None):
+    def _on_loglevel_change(self, event=None) -> None:
         level = get_log_level_value(event)
         logging.getLogger().setLevel(level)
 
-    def _on_new_message(self, event=None):
+    def _on_new_message(self, event=None) -> None:
         self._prev_pos = self._scroll_pos()
 
         log = LOG_STREAM.get_filtered_logs_html(
@@ -111,7 +111,7 @@ class LogWidget(QWidget):
         )[0]
         self.log_text_box.append(log)
 
-    def _on_change(self, event=None):
+    def _on_change(self, event=None) -> None:
         self._prev_pos = self._scroll_pos()
 
         logs = LOG_STREAM.get_filtered_logs_html(
@@ -123,7 +123,7 @@ class LogWidget(QWidget):
             # we ensure each line is separate (allows better selection)
             self.log_text_box.append(log)
 
-    def _jump_to_pos(self, event=None):
+    def _jump_to_pos(self, event=None) -> None:
         # maintains position when updating the contents of the text
         # for some reason using scrollbar.setValue() doesn't keep up,
         # cursor's better
@@ -137,7 +137,7 @@ class LogWidget(QWidget):
         # self.log_text_box.moveCursor(self.log_text_box.textCursor().StartOfLine)
         # self.log_text_box.ensureCursorVisible()
 
-    def _scroll_pos(self):
+    def _scroll_pos(self) -> int | None:
         scrollbar = self.log_text_box.verticalScrollBar()
         curr = scrollbar.value()
         if curr == scrollbar.maximum():

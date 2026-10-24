@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 import pytest
 from qtpy.QtCore import QByteArray, QObject, Signal
-from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QColorDialog, QMainWindow
+from qtpy.QtGui import QColor, QFont
+from qtpy.QtWidgets import QColorDialog, QLabel, QMainWindow
 
 from napari._qt.utils import (
     QBYTE_FLAG,
@@ -17,6 +17,7 @@ from napari._qt.utils import (
     qt_might_be_rich_text,
     qt_signals_blocked,
     str_to_qbytearray,
+    use_tabular_numerals,
 )
 from napari.utils._proxies import PublicOnlyProxy
 
@@ -164,15 +165,15 @@ def test_get_color(
 ) -> None:
     """Test the get_color utility function."""
 
-    def _mock_exec_(self):
-        """Mock exec_ method to always return Accepted."""
+    def _mock_exec(self):
+        """Mock exec method to always return Accepted."""
         qtbot.addWidget(self)
         return QColorDialog.DialogCode.Accepted
 
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
-    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
+    monkeypatch.setattr(QColorDialog, 'exec', _mock_exec)
 
     color_ = get_color(color, mode)
     _assert_eq(color_, expected, f'Expected color to be {expected}')
@@ -196,15 +197,27 @@ def test_get_color_reject(
 ) -> None:
     """Test the get_color utility function."""
 
-    def _mock_exec_(self):
-        """Mock exec_ method to always return Accepted."""
+    def _mock_exec(self):
+        """Mock exec method to always return Accepted."""
         qtbot.addWidget(self)
         return QColorDialog.DialogCode.Rejected
 
     widget = QMainWindow()
     qtbot.addWidget(widget)
 
-    monkeypatch.setattr(QColorDialog, 'exec_', _mock_exec_)
+    monkeypatch.setattr(QColorDialog, 'exec', _mock_exec)
 
     color_ = get_color(color, mode)
     assert color_ is None, 'Expected color to be None when dialog is rejected'
+
+
+def test_use_tabular_numerals(qtbot: QtBot) -> None:
+    """Label gets tabular numerals, but font family is not changed."""
+    label = QLabel('123')
+    qtbot.addWidget(label)
+    family = label.font().family()
+
+    use_tabular_numerals(label)
+
+    assert label.font().isFeatureSet(QFont.Tag('tnum'))
+    assert label.font().family() == family

@@ -10,6 +10,7 @@ import warnings
 from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
+from types import ModuleType
 from typing import Any
 
 from napari import Viewer
@@ -276,8 +277,7 @@ def _build_viewer() -> Viewer:
     # but in the meantime if the garbage collector runs;
     # in a way that is machine, os, time (and likely weather dependant).
     # it will collect it and hang napari at start time.
-    # don't show viewer until we've processed all the args
-    viewer = Viewer(show=False)
+    viewer = Viewer()
     _run_configured_startup_script()
 
     # For backwards compatibility
@@ -339,8 +339,6 @@ def _build_viewer() -> Viewer:
     if running_as_constructor_app():
         install_certifi_opener()
         maybe_patch_conda_exe()
-    # now that we've processed all the args, show viewer
-    viewer.show()
     return viewer
 
 
@@ -351,7 +349,7 @@ def _run() -> None:
     run(gui_exceptions=True)
 
 
-def _run_plugin_module(mod, plugin_name):
+def _run_plugin_module(mod: ModuleType, plugin_name: str) -> None:
     """Register `mod` as a plugin, find/create viewer, and run napari."""
     from napari import Viewer, run
 
