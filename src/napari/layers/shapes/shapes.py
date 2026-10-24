@@ -80,6 +80,7 @@ from napari.utils.events import Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import ensure_iterable
 from napari.utils.notifications import show_warning
+from napari.utils.status_messages import format_feature_value
 
 if TYPE_CHECKING:
     from itertools import cycle
@@ -3134,6 +3135,82 @@ class Shapes(Layer):
         )
 
         return value, None
+
+    def _get_tooltip_text(
+        self,
+        position,
+        *,
+        view_direction: np.ndarray | None = None,
+        dims_displayed: list[int] | None = None,
+        world: bool = False,
+    ) -> str:
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        view_direction : Optional[np.ndarray]
+            A unit vector giving the direction of the ray in nD world coordinates.
+            The default value is None.
+        dims_displayed : Optional[List[int]]
+            A list of the dimensions currently being displayed in the viewer.
+            The default value is None.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return '\n'.join(
+            self._get_properties(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+        )
+
+    def _get_properties(
+        self,
+        position,
+        *,
+        view_direction: np.ndarray | None = None,
+        dims_displayed: list[int] | None = None,
+        world: bool = False,
+    ) -> list:
+        if self.features.shape[1] == 0:
+            return []
+
+        value = self.get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+        # `get_value` returns None if the layer is not visible
+        if value is None:
+            return []
+
+        shape_index = value[0]
+        # if the cursor is not over a shape
+        if shape_index is None or shape_index >= self.nshapes:
+            return []
+
+        return [
+            f'{k}: {format_feature_value(v[shape_index])}'
+            for k, v in self.features.items()
+            if k != 'index'
+            and len(v) > shape_index
+            and v[shape_index] is not None
+            and not (
+                isinstance(v[shape_index], float) and np.isnan(v[shape_index])
+            )
+        ]
 
     def _get_index_and_intersection(
         self,
