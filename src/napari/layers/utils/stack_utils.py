@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pint
@@ -13,12 +13,19 @@ from napari.utils.colormaps import CMYBGR, MAGENTA_GREEN, Colormap
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    from napari.layers._data_protocols import LayerDataProtocol
+    from napari.layers._multiscale_data import MultiScaleData
     from napari.types import FullLayerData
 
 logger = logging.getLogger(__name__)
 
 
-def slice_from_axis(array, *, axis, element):
+def slice_from_axis(
+    array: LayerDataProtocol, *, axis: int, element: int
+) -> LayerDataProtocol:
     """Take a single index slice from array using slicing.
 
     Equivalent to :func:`np.take`, but using slicing, which ensures that the
@@ -48,15 +55,15 @@ def slice_from_axis(array, *, axis, element):
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
 
-    slices = [slice(None) for i in range(array.ndim)]
+    slices: list[slice | int] = [slice(None) for i in range(array.ndim)]
     slices[axis] = element
     return array[tuple(slices)]
 
 
 def split_channels(
-    data: np.ndarray,
+    data: Any,
     channel_axis: int,
-    **kwargs,
+    **kwargs: Any,
 ) -> list[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
@@ -170,7 +177,7 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
+def stack_to_images(stack: Image, axis: int, **kwargs: Any) -> list[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -241,6 +248,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     for i, tup in enumerate(layerdata_list):
         idata, imeta, _ = tup
         layer_name = f'{name} layer {i}'
+        imeta = dict(imeta)
         imeta['name'] = layer_name
 
         imagelist.append(Image(idata, **imeta))
@@ -248,7 +256,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs) -> list[Image]:
     return imagelist
 
 
-def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
+def split_rgb(stack: Image, with_alpha: bool = False) -> list[Image]:
     """Split RGB image into separate channel images while preserving affine transforms."""
     if not stack.rgb:
         raise ValueError('Image must be RGB to use split_rgb')
@@ -275,7 +283,9 @@ def split_rgb(stack: Image, with_alpha=False) -> list[Image]:
     return images if with_alpha else images[:3]
 
 
-def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
+def images_to_stack(
+    images: list[Image], axis: int = 0, **kwargs: Any
+) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
@@ -332,7 +342,9 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
 
     if all(multiscale_flags):
         # Check that all multiscale images have the same number of levels
-        n_scales_list = [len(image.data) for image in images]
+        n_scales_list = [
+            len(cast('MultiScaleData', image.data)) for image in images
+        ]
         if len(set(n_scales_list)) != 1:
             raise ValueError(
                 f'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}'
@@ -356,10 +368,10 @@ def images_to_stack(images: list[Image], axis: int = 0, **kwargs) -> Image:
             'zarr array cannot be sliced lazily, converted to dask array.'
         )
     else:
-        stacker = np.stack
+        stacker = cast('Callable[..., Any]', np.stack)
 
     if all(multiscale_flags):
-        n_scales = len(images[0].data)
+        n_scales = len(cast('MultiScaleData', images[0].data))
         new_data = [
             stacker([image.data[level] for image in images], axis=axis)
             for level in range(n_scales)
