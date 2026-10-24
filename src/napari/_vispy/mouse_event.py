@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 from vispy.app.canvas import MouseEvent
 
 if TYPE_CHECKING:
     import numpy as np
-    import numpy.typing as npt
+
+    VectorF64: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
 class NapariMouseEvent(MouseEvent):
@@ -16,13 +17,13 @@ class NapariMouseEvent(MouseEvent):
     ----------
     event : MouseEvent
         The MouseEvent object to extend.
-    view_direction : Optional[npt.NDArray[np.float64]]
+    view_direction : npt.NDArray[np.float64], optional
         The direction of the camera view, or None if not viewing in 3D.
-    up_direction : Optional[np.ndarray]
+    up_direction : npt.NDArray[np.float64], optional
         The direction of the camera up vector.
     camera_zoom : float
         The camera zoom level.
-    position : tuple[float, ...]
+    position : npt.NDArray[np.float64]
         The position of the mouse in world coordinates.
     dims_displayed : list[int]
         The dimensions displayed in the viewer.
@@ -35,10 +36,10 @@ class NapariMouseEvent(MouseEvent):
     def __init__(
         self,
         event: MouseEvent,
-        view_direction: npt.NDArray[np.float64] | None,
-        up_direction: np.ndarray | None,
+        view_direction: VectorF64 | None,
+        up_direction: VectorF64 | None,
         camera_zoom: float,
-        position: tuple[float, ...],
+        position: VectorF64,
         dims_displayed: list[int],
         dims_point: list[float],
         viewbox: tuple[int, int],
