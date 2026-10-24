@@ -52,7 +52,7 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-resources>=1.0.1",
     "napari-svg>=0.1.8",
-    "npe2>=0.9.0",
+    "npe2>=0.10.0",
     "numpy>=1.25",
     "pandas>=1.5.0",
     "Pillow>=10.0",
@@ -619,7 +619,6 @@ project-excludes = [
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',
-    'src/napari/utils/interactions.py',
     'src/napari/utils/key_bindings.py',
     'src/napari/utils/transforms/transforms.py',
 ]
@@ -683,22 +682,6 @@ errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/_register.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/_proxies.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_migrations.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_fields.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_base.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]

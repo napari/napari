@@ -52,7 +52,7 @@ class Extension2ReaderTable(QWidget):
 
         layout = QVBoxLayout()
         instructions.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Expanding
+            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding
         )
         layout.addWidget(instructions)
         layout.addWidget(self._edit_row)
@@ -75,7 +75,9 @@ class Extension2ReaderTable(QWidget):
             'border-bottom: 2px solid white;'
         )
         self._table.setHorizontalHeaderLabels(header_strs)
-        self._table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self._table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
     def _populate_table(self):
         """Add row for each extension to reader mapping in settings"""
