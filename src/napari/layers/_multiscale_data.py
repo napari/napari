@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, SupportsIndex, overload
 
 import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol, assert_protocol
+
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
 
 
 # note: this also implements `LayerDataProtocol`, but we don't need to inherit.
@@ -51,7 +55,7 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         return self._data[0].ndim
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> DTypeLike:
         """Return dtype of the first scale.."""
         return self._data[0].dtype
 
@@ -65,23 +69,37 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
         """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
-    def __getitem__(self, key: int | tuple[slice, ...]) -> LayerDataProtocol:
+    @overload
+    def __getitem__(
+        self, key: int
+    ) -> LayerDataProtocol: ...  # pragma: no cover
+
+    @overload
+    def __getitem__(
+        self, key: slice
+    ) -> list[LayerDataProtocol]: ...  # pragma: no cover
+
+    def __getitem__(
+        self, key: int | slice
+    ) -> LayerDataProtocol | list[LayerDataProtocol]:
         """Multiscale indexing."""
         return self._data[key]
 
     def __len__(self) -> int:
         return len(self._data)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return self._data == other
 
-    def __add__(self, other) -> bool:
+    def __add__(
+        self, other: list[LayerDataProtocol]
+    ) -> list[LayerDataProtocol]:
         return self._data + other
 
-    def __mul__(self, other) -> bool:
+    def __mul__(self, other: SupportsIndex) -> list[LayerDataProtocol]:
         return self._data * other
 
-    def __rmul__(self, other) -> bool:
+    def __rmul__(self, other: SupportsIndex) -> list[LayerDataProtocol]:
         return other * self._data
 
     def __array__(self) -> np.ndarray:
