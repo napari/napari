@@ -381,7 +381,9 @@ def bounding_box_to_face_vertices(
     return face_coords
 
 
-def inside_triangles(triangles):
+def inside_triangles(
+    triangles: np.ndarray,
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Checks which triangles contain the origin
 
     Parameters
@@ -577,7 +579,7 @@ def point_in_quadrilateral_2d(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
     in_triangles = inside_triangles(triangle_vertices - point)
-    return in_triangles.sum() >= 1  # pyrefly: ignore [bad-return]
+    return bool(in_triangles.any())
 
 
 def line_in_quadrilateral_3d(
@@ -633,7 +635,7 @@ def line_in_quadrilateral_3d(
 
 def line_in_triangles_3d(
     line_point: np.ndarray, line_direction: np.ndarray, triangles: np.ndarray
-):
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Determine if a line goes through any of a set of triangles.
 
     For example, this could be used to determine if a click was
@@ -769,7 +771,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
 
 def distance_between_point_and_line_3d(
     point: np.ndarray, line_position: np.ndarray, line_direction: np.ndarray
-):
+) -> float:
     """Determine the minimum distance between a point and a line in 3D.
 
     Parameters

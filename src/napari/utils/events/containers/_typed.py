@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import (
     Callable,
@@ -56,7 +58,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._basetypes: tuple[type[_T], ...] = (
             tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
-        self._lookup = lookup.copy()  # pyrefly: ignore [invalid-type-var]
+        self._lookup: dict[type, Callable[[_T], Any]] = lookup.copy()
         self.extend(data)
 
     def __len__(self) -> int:
@@ -81,7 +83,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self, key: slice, value: Iterable[_T]
     ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: Index, value: _T | Iterable[_T]) -> None:
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
@@ -111,9 +113,9 @@ class TypedMutableSequence(MutableSequence[_T]):
     @overload
     def __getitem__(
         self, key: slice
-    ) -> 'TypedMutableSequence[_T]': ...  # pragma: no cover
+    ) -> TypedMutableSequence[_T]: ...  # pragma: no cover
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> _T | TypedMutableSequence[_T]:
         """Get an item from the list
 
         Parameters
@@ -143,7 +145,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         result = self._list[key]
         return self.__newlike__(result) if isinstance(result, list) else result
 
-    def __delitem__(self, key) -> None:
+    def __delitem__(self, key: Any) -> None:
         _key = self.index(key) if type(key) in self._lookup else key
         del self._list[_key]
 
@@ -156,9 +158,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             )
         return e
 
-    def __newlike__(
-        self, iterable: Iterable[_T]
-    ) -> 'TypedMutableSequence[_T]':
+    def __newlike__(self, iterable: Iterable[_T]) -> TypedMutableSequence[_T]:
         new = self.__class__()
         # separating this allows subclasses to omit these from their `__init__`
         new._basetypes = self._basetypes
@@ -166,11 +166,11 @@ class TypedMutableSequence(MutableSequence[_T]):
         new.extend(iterable)
         return new
 
-    def copy(self) -> 'TypedMutableSequence[_T]':
+    def copy(self) -> TypedMutableSequence[_T]:
         """Return a shallow copy of the list."""
         return self.__newlike__(self)
 
-    def __add__(self, other: Iterable[_T]) -> 'TypedMutableSequence[_T]':
+    def __add__(self, other: Iterable[_T]) -> TypedMutableSequence[_T]:
         """Add other to self, return new object."""
         copy = self.copy()
         copy.extend(other)
