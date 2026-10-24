@@ -24,7 +24,12 @@ from pydantic import (
     field_validator,
 )
 
-from napari.utils.color import ColorArray, ColorArrayParam, ColorValue
+from napari.utils.color import (
+    ColorArray,
+    ColorArrayParam,
+    ColorValue,
+    ColorValueParam,
+)
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
 from napari.utils.colormaps.standardize_color import transform_color
@@ -50,6 +55,7 @@ _LabelValues1D: TypeAlias = (
 _LabelValues2D: TypeAlias = (
     np.ndarray[tuple[int, int], np.dtype[np.integer]] | Sequence[Sequence[int]]
 )
+_LabelValuesND: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.integer]]
 _LabelColor: TypeAlias = np.ndarray[tuple[Literal[4]], np.dtype[np.float32]]
 _LabelColors1D: TypeAlias = np.ndarray[
     tuple[int, Literal[4]], np.dtype[np.float32]
@@ -124,14 +130,20 @@ class Colormap(EventedModel):
         super().__init__(colors=colors, **data)
         self._display_name = display_name
 
+    @field_validator('controls', mode='before')
+    @classmethod
+    def _none_to_empty_controls(cls, v: object) -> object:
+        # None means "use the default control points"
+        return [] if v is None else v
+
     # controls validator must be called even if None for correct initialization
     @field_validator('controls', mode='after')
     @classmethod
     def _check_controls(
-        cls, v: np.ndarray, info: ValidationInfo
-    ) -> np.ndarray:
+        cls, v: npt.NDArray[Any], info: ValidationInfo
+    ) -> npt.NDArray[Any]:
         # If no control points provided generate defaults
-        if v is None or len(v) == 0:
+        if len(v) == 0:
             n_controls = len(info.data['colors']) + int(
                 info.data['interpolation'] == ColormapInterpolationMode.ZERO
             )
@@ -320,7 +332,7 @@ class LabelColormapBase(Colormap):
         """Number of unique colors, not counting transparent black."""
         return len(self.colors) - 1
 
-    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
+    def _map_without_cache(self, values: _LabelValuesND) -> _LabelColorsND:
         """Function that maps values to colors without selection or cache"""
         raise NotImplementedError
 
@@ -422,7 +434,7 @@ class CyclicLabelColormap(LabelColormapBase):
         """Map input values to values for send to GPU."""
         return _cast_labels_data_to_texture_dtype_auto(values, self)
 
-    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
+    def _map_without_cache(self, values: _LabelValuesND) -> _LabelColorsND:
         texture_dtype_values = _accel_cmap.zero_preserving_modulo_numpy(
             values,
             len(self.colors) - 1,
@@ -536,8 +548,10 @@ class DirectLabelColormap(LabelColormapBase):
     @field_validator('color_dict', mode='before')
     @classmethod
     def _validate_color_dict(
-        cls, v: MutableMapping, values: ValidationInfo
-    ) -> dict[int | None, np.ndarray]:
+        cls,
+        v: MutableMapping[int | None, ColorValueParam],
+        values: ValidationInfo,
+    ) -> dict[int | None, _LabelColor]:
         """Ensure colors are RGBA arrays, not strings.
 
         Parameters
@@ -575,7 +589,13 @@ class DirectLabelColormap(LabelColormapBase):
         ):
             res[bg] = transform_color('transparent')[0]
         if isinstance(v, defaultdict):
-            res = defaultdict(v.default_factory, res)
+            default_factory = v.default_factory
+            res = defaultdict(
+                None
+                if default_factory is None
+                else lambda: transform_color(default_factory())[0],
+                res,
+            )
         return res
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
@@ -647,14 +667,14 @@ class DirectLabelColormap(LabelColormapBase):
             mapped[(values != self.selection)] = 0
         return mapped
 
-    def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
+    def _map_without_cache(self, values: _LabelValuesND) -> _LabelColorsND:
         cmap = self._cmap_without_selection()
         cast = _accel_cmap.labels_raw_to_texture_direct(values, cmap)
         return self._map_precast(cast, apply_selection=False)
 
     def _map_precast(
-        self, values: np.ndarray, apply_selection: bool
-    ) -> np.ndarray:
+        self, values: _LabelValuesND, apply_selection: bool
+    ) -> _LabelColorsND:
         """Map values to colors.
 
         Parameters
@@ -1039,9 +1059,9 @@ def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
 def _normalize_label_colormap(
     any_colormap_like: CyclicLabelColormap
     | DirectLabelColormap
-    | Sequence
-    | MutableMapping
-    | np.ndarray,
+    | Sequence[ColorValueParam]
+    | MutableMapping[int | None, ColorValueParam]
+    | np.ndarray[tuple[int, int], np.dtype[Any]],
 ) -> CyclicLabelColormap | DirectLabelColormap:
     """Convenience function to convert color containers to LabelColormaps.
 

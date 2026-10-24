@@ -6,7 +6,6 @@ from functools import lru_cache
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
-    Any,
     Literal,
     NamedTuple,
     Protocol,
@@ -15,6 +14,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 from vispy.color import (
     Color,
     ColorArray,
@@ -23,6 +23,7 @@ from vispy.color import (
     get_colormaps,
 )
 
+from napari.utils.color import ColorValueParam
 from napari.utils.colormaps import _accelerated_cmap
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
@@ -289,7 +290,11 @@ def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     return VispyColormap(**cmap_args)
 
 
-def _validate_rgb(colors: np.ndarray, *, tolerance: float = 0.0) -> np.ndarray:
+def _validate_rgb(
+    colors: np.ndarray[tuple[int, int], np.dtype[np.floating]],
+    *,
+    tolerance: float = 0.0,
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Return the subset of colors that is in [0, 1] for all channels.
 
     Parameters
@@ -327,8 +332,8 @@ def _validate_rgb(colors: np.ndarray, *, tolerance: float = 0.0) -> np.ndarray:
 
 
 def low_discrepancy_image(
-    image: np.ndarray, seed: float = 0.5, margin: float = 1 / 256
-) -> np.ndarray:
+    image: npt.NDArray[np.integer], seed: float = 0.5, margin: float = 1 / 256
+) -> npt.NDArray[np.float32]:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -363,8 +368,8 @@ def low_discrepancy_image(
 
 
 def _low_discrepancy(
-    dim: int, n: int, seed: float | np.ndarray = 0.5
-) -> np.ndarray:
+    dim: int, n: int, seed: float | npt.NDArray[np.floating] = 0.5
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
     Parameters
@@ -402,8 +407,8 @@ def _color_random(
     *,
     colorspace: Literal['lab', 'luv', 'rgb'] = 'lab',
     tolerance: float = 0.0,
-    seed: float | np.ndarray = 0.5,
-) -> np.ndarray:
+    seed: float | npt.NDArray[np.floating] = 0.5,
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Generate n random RGB colors uniformly from LAB or LUV space.
 
     Parameters
@@ -619,7 +624,7 @@ def shuffle_and_extend_colormap(
 
 
 def direct_colormap(
-    color_dict: Mapping[int | None, Any] | None = None,
+    color_dict: Mapping[int | None, ColorValueParam] | None = None,
 ) -> DirectLabelColormap:
     """Make a direct colormap from a dictionary mapping labels to colors.
 

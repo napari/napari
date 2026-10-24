@@ -7,7 +7,7 @@ import numpy as np
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Hashable, Mapping
 
     import numpy.typing as npt
     from pydantic import GetCoreSchemaHandler
@@ -128,7 +128,8 @@ def _coerce_colorcycle_from_colors(
 
 
 def compare_colormap_dicts(
-    cmap_1: Mapping[Any, npt.ArrayLike], cmap_2: Mapping[Any, npt.ArrayLike]
+    cmap_1: Mapping[Hashable, npt.ArrayLike],
+    cmap_2: Mapping[Hashable, npt.ArrayLike],
 ) -> bool:
     if len(cmap_1) != len(cmap_2):
         return False

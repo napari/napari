@@ -1,3 +1,4 @@
+from collections.abc import Hashable
 from typing import Any
 
 import numpy as np
@@ -108,8 +109,8 @@ class CategoricalColormap(EventedModel):
 
     @field_serializer('colormap', when_used='json')
     def _serialize_colormap(
-        self, colormap: dict[Any, ColorValue]
-    ) -> dict[Any, Any]:
+        self, colormap: dict[Hashable, ColorValue]
+    ) -> dict[Hashable, list[float]]:
         return {
             k: v.tolist() if isinstance(v, np.ndarray) else v
             for k, v in colormap.items()
