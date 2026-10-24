@@ -1,6 +1,7 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
+from types import TracebackType
 from typing import Any, ClassVar, Union, cast
 
 import numpy as np
@@ -43,8 +44,14 @@ class EventedMetaclass(ModelMetaclass):
     when each instance of an ``EventedModel`` is instantiated).
     """
 
-    def __new__(mcs, name, bases, namespace, **kwargs):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type:
+        cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
         non_evented_properties = getattr(
             cls, '__non_evented_properties__', set()
         )
@@ -94,12 +101,19 @@ class EventedMetaclass(ModelMetaclass):
 
 
 def _update_dependents_from_property_code(
-    cls, prop_name, prop, deps, visited=()
-):
+    cls: 'type[EventedModel]',
+    prop_name: str,
+    prop: property,
+    deps: dict[str, set[str]],
+    visited: tuple[str, ...] = (),
+) -> None:
     """Recursively find all the dependents of a property by inspecting the code object.
 
     Update the given deps dictionary with the new findings.
     """
+    if prop.fget is None:
+        # write-only property, nothing to inspect
+        return
     for name in prop.fget.__code__.co_names:
         if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
@@ -218,7 +232,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         json_encoders=_BASE_JSON_ENCODERS,
     )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self._events.source = self
@@ -276,7 +290,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._primary_changes[name] = None
             self._setattr_impl(name, value)
 
-    def _check_if_values_changed_and_emit_if_needed(self):
+    def _check_if_values_changed_and_emit_if_needed(self) -> None:
         """
         Check if field values changed and emit events if needed.
 
@@ -367,7 +381,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def events(self) -> EmitterGroup:
         return self._events
 
-    def _reset_event_source(self):
+    def _reset_event_source(self) -> None:
         """
         set the event sources of self and all the children to the correct values
         """
@@ -386,7 +400,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _defaults(self) -> dict[str, Any]:
         return get_defaults(self)
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the state of the model to default values."""
         for name, value in self._defaults.items():
             if isinstance(getattr(self, name), EventedModel):
@@ -430,7 +444,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if block.count:
             self.events(Event(value=self, type_name='update'))
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check equality with another object.
 
         We override the pydantic approach (which just checks
@@ -451,7 +465,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         return True
 
     @contextmanager
-    def enums_as_values(self, as_values: bool = True):
+    def enums_as_values(
+        self, as_values: bool = True
+    ) -> Generator[None, None, None]:
         """Temporarily override how enums are retrieved.
 
         Parameters
@@ -478,8 +494,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Generate a JSON schema for this model.
 
@@ -528,9 +544,14 @@ class ComparisonDelayer:
     def __init__(self, target: EventedModel):
         self._target = target
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self._target._delay_check_semaphore += 1
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()
