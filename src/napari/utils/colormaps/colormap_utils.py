@@ -14,6 +14,7 @@ from typing import (
 )
 
 import numpy as np
+import numpy.typing as npt
 from vispy.color import (
     Color,
     ColorArray,
@@ -22,10 +23,12 @@ from vispy.color import (
     get_colormaps,
 )
 
+from napari.utils.color import ColorValueParam
 from napari.utils.colormaps import _accelerated_cmap
 from napari.utils.colormaps.bop_colors import bopd
 from napari.utils.colormaps.colormap import (
     Colormap,
+    ColormapInterpolationMode,
     CyclicLabelColormap,
     DirectLabelColormap,
 )
@@ -84,10 +87,10 @@ class ColormapDict(UserDict[str, Colormap]):
     Prevent overriding of existing keys.
     """
 
-    def __setitem__(self, key: str, value: Colormap) -> None:  # pyrefly: ignore [bad-override-param-name]
+    def __setitem__(self, key: str, item: Colormap) -> None:
         if key in self:
             raise KeyError(f"Colormap with name '{key}' already exists")
-        super().__setitem__(key, value)
+        super().__setitem__(key, item)
 
     def add_colormap_if_missing(self, colormap: Colormap) -> str:
         if colormap.name in self and not self[colormap.name].same_colors(
@@ -235,7 +238,9 @@ LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
 
 
-def convert_vispy_colormap(colormap, name='vispy') -> Colormap:
+def convert_vispy_colormap(
+    colormap: VispyColormap, name: str = 'vispy'
+) -> Colormap:
     """Convert a vispy colormap object to a napari colormap.
 
     Parameters
@@ -285,7 +290,11 @@ def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
     return VispyColormap(**cmap_args)
 
 
-def _validate_rgb(colors, *, tolerance=0.0):
+def _validate_rgb(
+    colors: np.ndarray[tuple[int, int], np.dtype[np.floating]],
+    *,
+    tolerance: float = 0.0,
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Return the subset of colors that is in [0, 1] for all channels.
 
     Parameters
@@ -322,7 +331,9 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
+def low_discrepancy_image(
+    image: npt.NDArray[np.integer], seed: float = 0.5, margin: float = 1 / 256
+) -> npt.NDArray[np.float32]:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -356,7 +367,9 @@ def low_discrepancy_image(image, seed=0.5, margin=1 / 256) -> np.ndarray:
     return image_out
 
 
-def _low_discrepancy(dim, n, seed=0.5):
+def _low_discrepancy(
+    dim: int, n: int, seed: float | npt.NDArray[np.floating] = 0.5
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
     Parameters
@@ -384,12 +397,18 @@ def _low_discrepancy(dim, n, seed=0.5):
     seed = np.broadcast_to(seed, (1, dim))
     phi = np.array([phi1, phi2, phi3])
     g = 1 / phi
-    n = np.reshape(np.arange(n), (n, 1))
-    pts = (seed + (n * g[:dim])) % 1
+    indices = np.reshape(np.arange(n), (n, 1))
+    pts = (seed + (indices * g[:dim])) % 1
     return pts
 
 
-def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
+def _color_random(
+    n: int,
+    *,
+    colorspace: Literal['lab', 'luv', 'rgb'] = 'lab',
+    tolerance: float = 0.0,
+    seed: float | npt.NDArray[np.floating] = 0.5,
+) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
     """Generate n random RGB colors uniformly from LAB or LUV space.
 
     Parameters
@@ -446,7 +465,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
 
 def label_colormap(
-    num_colors=256, seed=0.5, background_value=0
+    num_colors: int = 256, seed: float = 0.5, background_value: int = 0
 ) -> CyclicLabelColormap:
     """Produce a colormap suitable for use with a given label set.
 
@@ -511,14 +530,14 @@ def label_colormap(
         display_name='low discrepancy colors',
         colors=colors,
         controls=np.linspace(0, 1, len(colors) + 1),
-        interpolation='zero',  # pyrefly: ignore [bad-argument-type]
+        interpolation=ColormapInterpolationMode.ZERO,
         background_value=background_value,
         seed=seed,
     )
 
 
 @lru_cache
-def _primes(upto=2**16) -> np.ndarray[tuple[int], np.dtype[np.int_]]:
+def _primes(upto: int = 2**16) -> np.ndarray[tuple[int], np.dtype[np.int_]]:
     """Generate primes up to a given number.
 
     Parameters
@@ -598,13 +617,15 @@ def shuffle_and_extend_colormap(
         name=colormap.name,
         colors=extended_colors,
         controls=np.linspace(0, 1, len(extended_colors) + 1),
-        interpolation='zero',  # pyrefly: ignore [bad-argument-type]
+        interpolation=ColormapInterpolationMode.ZERO,
         background_value=colormap.background_value,
     )
     return new_colormap
 
 
-def direct_colormap(color_dict=None) -> DirectLabelColormap:
+def direct_colormap(
+    color_dict: Mapping[int | None, ColorValueParam] | None = None,
+) -> DirectLabelColormap:
     """Make a direct colormap from a dictionary mapping labels to colors.
 
     Parameters
@@ -624,7 +645,7 @@ def direct_colormap(color_dict=None) -> DirectLabelColormap:
     )
 
 
-def vispy_or_mpl_colormap(name) -> Colormap:
+def vispy_or_mpl_colormap(name: str) -> Colormap:
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
     Parameters
@@ -905,7 +926,7 @@ def _colormap_from_colors(
     )
 
 
-def display_name_to_name(display_name) -> str:
+def display_name_to_name(display_name: str) -> str:
     display_name_map = {
         v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
     }
@@ -970,7 +991,7 @@ def scale_up(contrast_limits: tuple[float, float]) -> CoercedContrastLimits:
 
 # label_colormap uses _color_random which has an expensive skimage.color import
 # PEP562 implementation to delay this until it is actually accessed
-def __getattr__(name) -> dict[str, CyclicLabelColormap]:
+def __getattr__(name: str) -> dict[str, CyclicLabelColormap]:
     if name == 'AVAILABLE_LABELS_COLORMAPS':
         return {
             'lodisc-50': label_colormap(50),

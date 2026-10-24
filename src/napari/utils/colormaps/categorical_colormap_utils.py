@@ -7,6 +7,9 @@ import numpy as np
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable, Mapping
+
+    import numpy.typing as npt
     from pydantic import GetCoreSchemaHandler
 
 
@@ -49,7 +52,7 @@ class ColorCycle:
         )
 
     @classmethod
-    def validate_type(cls, val) -> ColorCycle:
+    def validate_type(cls, val: Any) -> ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
@@ -58,7 +61,7 @@ class ColorCycle:
 
         return _coerce_colorcycle_from_colors(val)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, ColorCycle):
             eq = np.array_equal(self.values, other.values)
         else:
@@ -124,7 +127,10 @@ def _coerce_colorcycle_from_colors(
     return ColorCycle(values=transformed_color_values)
 
 
-def compare_colormap_dicts(cmap_1, cmap_2) -> bool:
+def compare_colormap_dicts(
+    cmap_1: Mapping[Hashable, npt.ArrayLike],
+    cmap_2: Mapping[Hashable, npt.ArrayLike],
+) -> bool:
     if len(cmap_1) != len(cmap_2):
         return False
     for k, v in cmap_1.items():
