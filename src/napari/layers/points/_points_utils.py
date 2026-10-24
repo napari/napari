@@ -218,7 +218,8 @@ def points_in_box(
 
 
 def fix_data_points(
-    points: np.ndarray | None, ndim: int | None
+    points: Sequence[Sequence[float]] | np.ndarray | None,
+    ndim: int | None,
 ) -> tuple[np.ndarray, int]:
     """
     Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)

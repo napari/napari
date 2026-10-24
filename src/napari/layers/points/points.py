@@ -10,6 +10,7 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
+    TypeAlias,
 )
 
 import numpy as np
@@ -44,6 +45,7 @@ from napari.layers.utils._slice_input import (
 )
 from napari.layers.utils.color_manager import (
     ColorManager,
+    ColorProperties,
     ensure_categorical_colormap,
 )
 from napari.layers.utils.color_transformations import ColorType
@@ -72,14 +74,26 @@ if TYPE_CHECKING:
         Callable,
         Generator,
         Iterable,
+        Mapping,
         Sequence,
         Set as AbstractSet,
     )
 
     import pandas as pd
+    import pint
 
     from napari.components.dims import Dims
+    from napari.components.overlays import ColorBarOverlay
+    from napari.layers.utils.layer_utils import _CurrentPropertyValue
+    from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+    from napari.utils.colormaps.categorical_colormap import (
+        CategoricalColormap,
+    )
     from napari.utils.misc import StringEnum
+
+    # ``face_color``/``border_color`` in ``__init__``: a color or property
+    # name, a dict of color settings, or a list/array of colors.
+    _PointsColor: TypeAlias = str | dict[str, Any] | list | np.ndarray
 
     # Mouse callbacks receive the layer they are bound to. ``dict`` is
     # invariant, so the layer parameter is left as ``Any`` to stay
@@ -389,45 +403,64 @@ class Points(Layer):
     @deprecated_constructor_arg_by_attr('out_of_slice_display')
     def __init__(
         self,
-        data=None,
-        ndim=None,
+        data: Sequence[Sequence[float]] | np.ndarray | None = None,
+        ndim: int | None = None,
         *,
-        affine=None,
-        antialiasing=1,
-        axis_labels=None,
-        blending='translucent',
-        border_color='dimgray',
-        border_color_cycle=None,
-        border_colormap='viridis',
-        border_contrast_limits=None,
-        border_width=0.05,
-        border_width_is_relative=True,
-        cache=True,
-        canvas_size_limits=(2, 10000),
-        experimental_clipping_planes=None,
-        face_color='white',
-        face_color_cycle=None,
-        face_colormap='viridis',
-        face_contrast_limits=None,
-        feature_defaults=None,
-        features=None,
-        metadata=None,
-        name=None,
-        opacity=1.0,
-        projection_mode='all',
-        properties=None,
-        property_choices=None,
-        rotate=None,
-        scale=None,
-        shading='none',
-        shear=None,
-        shown=True,
-        size=10,
-        symbol='o',
-        text=None,
-        translate=None,
-        units=None,
-        visible=True,
+        affine: npt.ArrayLike | Affine | None = None,
+        antialiasing: float = 1,
+        axis_labels: Sequence[str] | None = None,
+        blending: str = 'translucent',
+        border_color: _PointsColor = 'dimgray',
+        border_color_cycle: CategoricalColormap
+        | dict
+        | list
+        | np.ndarray
+        | None = None,
+        border_colormap: str | Colormap = 'viridis',
+        border_contrast_limits: tuple[float, float] | None = None,
+        border_width: float | np.ndarray | list = 0.05,
+        border_width_is_relative: bool = True,
+        cache: bool = True,
+        canvas_size_limits: tuple[float, float] = (2, 10000),
+        experimental_clipping_planes: dict
+        | ClippingPlane
+        | list[ClippingPlane | dict]
+        | ClippingPlaneList
+        | None = None,
+        face_color: _PointsColor = 'white',
+        face_color_cycle: CategoricalColormap
+        | dict
+        | list
+        | np.ndarray
+        | None = None,
+        face_colormap: str | Colormap = 'viridis',
+        face_contrast_limits: tuple[float, float] | None = None,
+        feature_defaults: dict[str, Any] | pd.DataFrame | None = None,
+        features: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        metadata: dict | None = None,
+        name: str | None = None,
+        opacity: float = 1.0,
+        projection_mode: str = 'all',
+        properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        property_choices: dict[str, np.ndarray] | None = None,
+        rotate: float
+        | Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        scale: Sequence[float] | npt.NDArray | None = None,
+        shading: str | Shading = 'none',
+        shear: Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        shown: bool | Sequence[bool] | np.ndarray = True,
+        size: float | np.ndarray | list = 10,
+        symbol: str | np.ndarray | list = 'o',
+        text: TextManager | dict[str, Any] | str | Sequence[str] | None = None,
+        translate: Sequence[float] | npt.NDArray | None = None,
+        units: Sequence[str | pint.Unit | None] | None = None,
+        visible: bool = True,
     ) -> None:
         if ndim is None:
             if scale is not None:
@@ -770,14 +803,18 @@ class Points(Layer):
         self.events.feature_defaults()
 
     @property
-    def border_colorbar(self):
+    def border_colorbar(self) -> ColorBarOverlay:
         """The colorbar associated with this layer's color manager."""
-        return self._overlays['border_colorbar']
+        # set to a ColorBarOverlay in __init__
+        return typing.cast(
+            'ColorBarOverlay', self._overlays['border_colorbar']
+        )
 
     @property
-    def face_colorbar(self):
+    def face_colorbar(self) -> ColorBarOverlay:
         """The colorbar associated with this layer's color manager."""
-        return self._overlays['face_colorbar']
+        # set to a ColorBarOverlay in __init__
+        return typing.cast('ColorBarOverlay', self._overlays['face_colorbar'])
 
     @property
     def property_choices(self) -> dict[str, np.ndarray]:
@@ -789,7 +826,9 @@ class Points(Layer):
         return self._feature_table.properties()
 
     @staticmethod
-    def _update_color_manager(color_manager, feature_table, name):
+    def _update_color_manager(
+        color_manager: ColorManager, feature_table: _FeatureTable, name: str
+    ) -> None:
         if color_manager.color_properties is not None:
             color_name = color_manager.color_properties.name
             if color_name not in feature_table.values:
@@ -800,11 +839,11 @@ class Points(Layer):
                     RuntimeWarning,
                 )
             else:
-                color_manager.color_properties = {
-                    'name': color_name,
-                    'values': feature_table.values[color_name].to_numpy(),
-                    'current_value': feature_table.defaults[color_name][0],
-                }
+                color_manager.color_properties = ColorProperties(
+                    name=color_name,
+                    values=feature_table.values[color_name].to_numpy(),
+                    current_value=feature_table.defaults[color_name][0],
+                )
 
     @properties.setter
     def properties(
@@ -818,7 +857,10 @@ class Points(Layer):
         return self._feature_table.currents()
 
     @current_properties.setter
-    def current_properties(self, current_properties):
+    def current_properties(
+        self,
+        current_properties: Mapping[str, _CurrentPropertyValue],
+    ) -> None:
         update_indices = None
         if self._update_properties and len(self.selected_data) > 0:
             update_indices = list(self.selected_data)
@@ -840,7 +882,7 @@ class Points(Layer):
         return self._text
 
     @text.setter
-    def text(self, text):
+    def text(self, text: TextManager | dict[str, Any] | str | None) -> None:
         self._text._update_from_layer(
             text=text,
             features=self.features,
@@ -1044,7 +1086,7 @@ class Points(Layer):
         return self._shading
 
     @shading.setter
-    def shading(self, value):
+    def shading(self, value: str | Shading) -> None:
         self._shading = Shading(value)
         self.events.shading()
 
@@ -1054,7 +1096,7 @@ class Points(Layer):
         return self._canvas_size_limits
 
     @canvas_size_limits.setter
-    def canvas_size_limits(self, value):
+    def canvas_size_limits(self, value: tuple[float, float]) -> None:
         self._canvas_size_limits = float(value[0]), float(value[1])
         self.events.canvas_size_limits()
 
@@ -1066,7 +1108,7 @@ class Points(Layer):
         return self._shown
 
     @shown.setter
-    def shown(self, shown):
+    def shown(self, shown: bool | Sequence[bool] | np.ndarray) -> None:
         self._shown = np.broadcast_to(shown, self.data.shape[0]).astype(bool)
         self.refresh(extent=False, highlight=False)
 
@@ -1130,7 +1172,7 @@ class Points(Layer):
         return self._border.colors
 
     @border_color.setter
-    def border_color(self, border_color):
+    def border_color(self, border_color: str | list | np.ndarray) -> None:
         self._border._set_color(
             color=border_color,
             n_colors=len(self.data),
@@ -1223,7 +1265,7 @@ class Points(Layer):
         return self._face.colors
 
     @face_color.setter
-    def face_color(self, face_color):
+    def face_color(self, face_color: str | list | np.ndarray) -> None:
         self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
@@ -1305,7 +1347,7 @@ class Points(Layer):
         return self._face.color_mode
 
     @face_color_mode.setter
-    def face_color_mode(self, face_color_mode):
+    def face_color_mode(self, face_color_mode: str | ColorMode) -> None:
         self._set_color_mode(face_color_mode, 'face')
 
     def _set_color_mode(
@@ -1468,7 +1510,7 @@ class Points(Layer):
             ) is not None:
                 self.current_symbol = unique_symbol
 
-            unique_properties = {}
+            unique_properties: dict[str, Any] = {}
             for k, v in self.properties.items():
                 unique_properties[k] = _unique_element(v[index])
 
@@ -1685,8 +1727,13 @@ class Points(Layer):
             self.mode = Mode.PAN_ZOOM
 
     def _update_draw(
-        self, scale_factor, corner_pixels_displayed, shape_threshold
-    ):
+        self,
+        scale_factor: float,
+        corner_pixels_displayed: np.ndarray[
+            tuple[int, int], np.dtype[np.float64]
+        ],
+        shape_threshold: tuple[int, int],
+    ) -> None:
         prev_scale = self.scale_factor
         super()._update_draw(
             scale_factor, corner_pixels_displayed, shape_threshold
@@ -1713,7 +1760,9 @@ class Points(Layer):
             ),
         )
 
-    def _get_value(self, position) -> int | None:
+    def _get_value(
+        self, position: Sequence[float] | npt.NDArray
+    ) -> int | None:
         """Index of the point at a given 2D position in data coordinates.
 
         Parameters
@@ -2132,7 +2181,7 @@ class Points(Layer):
         }
         return info
 
-    def pop(self, index=-1) -> dict[str, Any]:
+    def pop(self, index: int = -1) -> dict[str, Any]:
         """Remove and return the point at the given index.
 
         Parameters
@@ -2411,6 +2460,9 @@ class Points(Layer):
             value=value,
         )
 
+        if position is None:
+            return status
+
         # if this points layer has properties
         properties = self._get_properties(
             position,
@@ -2426,7 +2478,7 @@ class Points(Layer):
 
     def _get_tooltip_text(
         self,
-        position,
+        position: npt.ArrayLike,
         *,
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
@@ -2465,7 +2517,7 @@ class Points(Layer):
 
     def _get_properties(
         self,
-        position,
+        position: npt.ArrayLike,
         *,
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
@@ -2498,10 +2550,10 @@ class Points(Layer):
     ) -> _PointsSlicingState:
         return _PointsSlicingState(layer=self, data=data, cache=cache)
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         raise NotImplementedError
 
-    def _refresh_highlight(self):
+    def _refresh_highlight(self) -> None:
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 

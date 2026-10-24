@@ -214,25 +214,13 @@ class ColorManager(EventedModel):
     @field_validator('categorical_colormap', mode='before')
     @classmethod
     def _ensure_categorical_colormap(
-        cls, categorical_colormap
+        cls,
+        categorical_colormap: CategoricalColormap
+        | dict
+        | Sequence
+        | np.ndarray,
     ) -> CategoricalColormap:
-        if isinstance(categorical_colormap, CategoricalColormap):
-            return categorical_colormap
-        if (
-            isinstance(categorical_colormap, dict)
-            and 'colormap' not in categorical_colormap
-            and 'fallback_color' not in categorical_colormap
-        ):
-            # assume it's a direct mapping between property values and colors
-            categorical_colormap = {
-                'colormap': categorical_colormap,
-            }
-        elif isinstance(categorical_colormap, (Sequence, np.ndarray)):
-            categorical_colormap = {
-                'fallback_color': categorical_colormap,
-            }
-
-        return CategoricalColormap(**categorical_colormap)
+        return ensure_categorical_colormap(categorical_colormap)
 
     @field_validator('colors', mode='before')
     @classmethod
@@ -523,7 +511,7 @@ class ColorManager(EventedModel):
                     )
 
     def _update_current_color(
-        self, current_color: np.ndarray, update_indices: list | None = None
+        self, current_color: ColorType, update_indices: list | None = None
     ) -> None:
         """Update the current color and update the colors if requested.
 
@@ -551,7 +539,7 @@ class ColorManager(EventedModel):
     @classmethod
     def _from_layer_kwargs(
         cls,
-        colors: dict | str | np.ndarray,
+        colors: dict | str | list | np.ndarray,
         properties: dict[str, np.ndarray],
         n_colors: int | None = None,
         continuous_colormap: str | Colormap | None = None,

@@ -11,6 +11,7 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    TypeAlias,
     TypeVar,
 )
 
@@ -29,6 +30,11 @@ if TYPE_CHECKING:
     import pint
 
     from napari.layers._data_protocols import LayerDataProtocol
+
+    # A value for one entry of a current-properties mapping.
+    _CurrentPropertyValue: TypeAlias = (
+        float | str | int | bool | list | tuple | npt.NDArray
+    )
 else:
 
     class _LazyPandas:
@@ -536,9 +542,7 @@ def _coerce_current_properties_value(
 
 
 def coerce_current_properties(
-    current_properties: Mapping[
-        str, float | str | int | bool | list | tuple | npt.NDArray
-    ],
+    current_properties: Mapping[str, _CurrentPropertyValue],
 ) -> dict[str, np.ndarray]:
     """Coerce a current_properties dictionary into the correct type.
 
@@ -1016,7 +1020,7 @@ class _FeatureTable:
 
     def set_currents(
         self,
-        currents: dict[str, npt.NDArray],
+        currents: Mapping[str, _CurrentPropertyValue],
         *,
         update_indices: list[int] | None = None,
     ) -> None:
