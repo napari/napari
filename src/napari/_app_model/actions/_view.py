@@ -178,6 +178,18 @@ def _get_current_grid_mode(viewer: ViewerModel) -> bool:
 
 
 VIEW_ACTIONS: list[Action] = [
+    ViewerModelToggleAction(
+        id='napari.scene.toggle_crosshair',
+        title='Toggle Crosshair',
+        attribute_path='scene.overlays.crosshair.visible',
+        menus=[
+            {
+                'id': MenuId.MENUBAR_VIEW,
+                'group': MenuGroup.ZOOM,
+                'order': 1,
+            }
+        ],
+    ),
     Action(
         # TODO: this whole action should be replaced with a ViewerModelToggleAction
         #       once their keybinding become settable...
