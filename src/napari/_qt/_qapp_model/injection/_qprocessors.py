@@ -27,7 +27,7 @@ from napari._qt._qapp_model.injection._qproviders import (
 from napari.layers._source import layer_source
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
 
 def _add_plugin_dock_widget(
@@ -79,7 +79,7 @@ def _add_layer_data_to_viewer(
     viewer: viewer.Viewer | None = None,
     layer_name: str | None = None,
     source: dict | None = None,
-    meta: dict | None = None,
+    meta: Mapping[str, Any] | None = None,
 ) -> None:
     """Show a result in the viewer.
 
