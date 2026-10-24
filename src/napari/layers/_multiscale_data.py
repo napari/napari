@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, SupportsIndex, overload
 
 import numpy as np
 
@@ -88,16 +88,18 @@ class MultiScaleData(Sequence[LayerDataProtocol]):
     def __len__(self) -> int:
         return len(self._data)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return self._data == other
 
-    def __add__(self, other) -> bool:
+    def __add__(
+        self, other: list[LayerDataProtocol]
+    ) -> list[LayerDataProtocol]:
         return self._data + other
 
-    def __mul__(self, other) -> bool:
+    def __mul__(self, other: SupportsIndex) -> list[LayerDataProtocol]:
         return self._data * other
 
-    def __rmul__(self, other) -> bool:
+    def __rmul__(self, other: SupportsIndex) -> list[LayerDataProtocol]:
         return other * self._data
 
     def __array__(self) -> np.ndarray:
