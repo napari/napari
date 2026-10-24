@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import weakref
 from functools import cache, partial
-from typing import TYPE_CHECKING, Any, TypeAlias, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, TypedDict, Union, get_args, get_origin
 
 import numpy as np
 from magicgui.widgets import ComboBox, FunctionGui, Widget
@@ -38,7 +38,15 @@ if TYPE_CHECKING:
     from napari.utils.events import Event
     from napari.viewer import Viewer
 
-    SpatialMeta: TypeAlias = dict[str, npt.NDArray | tuple[pint.Unit, ...]]
+    class SpatialMeta(TypedDict):
+        """Spatial information a new layer inherits from its source layers."""
+
+        scale: np.ndarray[tuple[int], np.dtype[np.number]]
+        translate: np.ndarray[tuple[int], np.dtype[np.number]]
+        rotate: np.ndarray[tuple[int, int], np.dtype[np.floating]]
+        shear: npt.NDArray[np.floating]
+        affine: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+        units: tuple[pint.Unit, ...]
 
 
 def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Layer | None:
@@ -111,12 +119,13 @@ def _compare_meta(meta1: SpatialMeta, meta2: SpatialMeta) -> bool:
         and np.array_equal(meta1['rotate'], meta2['rotate'])
         and np.array_equal(meta1['shear'], meta2['shear'])
         and np.array_equal(meta1['affine'], meta2['affine'])
+        and meta1['units'] == meta2['units']
     )
 
 
 def _calc_affine_from_source_layers(
     data_ndim: int, source_layers: list[Layer]
-) -> SpatialMeta:
+) -> SpatialMeta | None:
     """Calculate affine information for provided data based on source layers.
 
     Parameters
@@ -128,8 +137,8 @@ def _calc_affine_from_source_layers(
 
     Returns
     -------
-    dict
-        Dictionary with affine information.
+    dict or None
+        Dictionary with affine information, or None if it cannot be inherited.
     """
     lower_dim_layers = [
         layer.name for layer in source_layers if layer.ndim < data_ndim
@@ -144,7 +153,7 @@ def _calc_affine_from_source_layers(
         )
 
     if not source_layers_:
-        return {}
+        return None
 
     meta = _get_spatial_from_layer(source_layers_[0], data_ndim)
 
@@ -154,7 +163,7 @@ def _calc_affine_from_source_layers(
             show_info(
                 'Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.'
             )
-            return {}
+            return None
 
     return meta
 
@@ -226,7 +235,7 @@ def add_layer_data_to_viewer(
     )
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
-        meta = {}
+        meta: SpatialMeta | None = None
         if isinstance(gui, FunctionGui):
             layers = _get_layers_from_widget(gui, viewer)
             layer_type_name = _get_layer_name_from_annotation(return_type)
