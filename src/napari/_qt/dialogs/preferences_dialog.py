@@ -334,7 +334,7 @@ class PreferencesDialog(QDialog):
         QApplication.instance().setAttribute(
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
-        if response == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.StandardButton.RestoreDefaults:
             self._settings.reset()
             for plugin_setting in self._plugin_settings.values():
                 plugin_setting.reset()
