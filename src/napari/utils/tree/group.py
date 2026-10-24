@@ -10,8 +10,6 @@ from napari.utils.tree.node import Node
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
 
-    from napari.utils.events.containers._nested_list import MaybeNestedIndex
-
 NodeType = TypeVar('NodeType', bound=Node)
 
 
@@ -75,14 +73,14 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
     def __getitem__(self, key: Any) -> NodeType | Group[NodeType]:  # pyrefly: ignore [bad-override]
         return super().__getitem__(key)
 
-    def __delitem__(self, key: MaybeNestedIndex | str) -> None:
+    def __delitem__(self, key: object) -> None:
         """Remove item at ``key``, and unparent."""
         if isinstance(key, int | tuple | str):
             self[key].parent = None
         else:
             for item in self[key]:  # pyrefly: ignore [not-iterable]
                 item.parent = None
-        super().__delitem__(key)  # pyrefly: ignore [bad-argument-type]
+        super().__delitem__(key)
 
     def insert(self, index: int, value: NodeType) -> None:
         """Insert ``value`` as child of this group at position ``index``."""

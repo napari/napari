@@ -159,7 +159,7 @@ class EventedList(TypedMutableSequence[_T]):
             self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
-        self, key: Index | str
+        self, key: object
     ) -> Iterable[tuple['EventedList[_T]', int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
@@ -172,7 +172,7 @@ class EventedList(TypedMutableSequence[_T]):
         valid = {int, slice}.union(set(self._lookup))
         raise TypeError(f'Deletion index must be {valid!r}, got {type(key)}')
 
-    def __delitem__(self, key: Index | str) -> None:
+    def __delitem__(self, key: object) -> None:
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
