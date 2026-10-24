@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from psygnal.containers import Selection
@@ -27,6 +27,8 @@ if TYPE_CHECKING:
 
     from napari._vispy.mouse_event import NapariMouseEvent
     from napari.layers.shapes.shapes import Shapes
+
+    Coordinates: TypeAlias = np.ndarray[tuple[int], np.dtype[np.floating]]
 
 
 def _get_shape_and_vertex(
@@ -259,7 +261,10 @@ def add_rectangle(
 
 
 def _add_line_rectangle_ellipse(
-    layer: Shapes, event: NapariMouseEvent, data: npt.NDArray, shape_type: str
+    layer: Shapes,
+    event: NapariMouseEvent,
+    data: npt.NDArray,
+    shape_type: Literal['line', 'rectangle', 'ellipse'],
 ) -> Generator[None, None, None]:
     """Helper function for adding a line, rectangle or ellipse.
 
@@ -315,7 +320,7 @@ def finish_drawing_shape(layer: Shapes, event: MouseEvent) -> None:
     layer._finish_drawing()
 
 
-def initiate_polygon_draw(layer: Shapes, coordinates: npt.NDArray) -> None:
+def initiate_polygon_draw(layer: Shapes, coordinates: Coordinates) -> None:
     """Start drawing of polygon.
 
     Creates the polygon shape when initializing the draw, adding to layer and selecting the initiatlized shape and
@@ -382,7 +387,7 @@ def add_vertex_to_path(
     layer: Shapes,
     event: MouseEvent,
     index: int,
-    coordinates: npt.NDArray,
+    coordinates: Coordinates,
     new_type: type[Shape] | None,
 ) -> None:
     """Add a vertex to an existing path or polygon and edit the layer view.
@@ -483,7 +488,7 @@ def add_path_polygon(layer: Shapes, event: MouseEvent) -> None:
 
 
 def move_active_vertex_under_cursor(
-    layer: Shapes, coordinates: npt.NDArray
+    layer: Shapes, coordinates: Coordinates
 ) -> None:
     """While a path or polygon is being created, move next vertex to be added.
 
@@ -649,7 +654,7 @@ def vertex_remove(layer: Shapes, event: MouseEvent) -> None:
     layer.refresh()
 
 
-def _drag_selection_box(layer: Shapes, coordinates: npt.NDArray) -> None:
+def _drag_selection_box(layer: Shapes, coordinates: Coordinates) -> None:
     """Drag a selection box.
 
     Parameters
@@ -673,7 +678,7 @@ def _drag_selection_box(layer: Shapes, coordinates: npt.NDArray) -> None:
     layer._set_highlight()
 
 
-def _set_drag_start(layer: Shapes, coordinates: npt.NDArray) -> list[float]:
+def _set_drag_start(layer: Shapes, coordinates: Coordinates) -> list[float]:
     """Indicate where in data space a drag event started.
 
     Sets the coordinates relative to the center of the bounding box of a shape and returns the position
@@ -700,7 +705,7 @@ def _set_drag_start(layer: Shapes, coordinates: npt.NDArray) -> list[float]:
 
 
 def _move_selected_layer(
-    layer: Shapes, coordinates: npt.NDArray, vertex: int | None
+    layer: Shapes, coordinates: Coordinates, vertex: int | None
 ) -> None:
     if layer._mode == Mode.SELECT and not layer._is_moving:
         vertex_indices = tuple(
@@ -830,7 +835,7 @@ def _move_selected_layer(
 
 
 def _add_rectangle_ellipse_line(
-    layer: Shapes, coordinates: npt.NDArray, vertex: int
+    layer: Shapes, coordinates: Coordinates, vertex: int
 ) -> None:
     coord = _set_drag_start(layer, coordinates)
     layer._moving_coordinates = coordinates
@@ -924,7 +929,7 @@ def _add_rectangle_ellipse_line(
 
 
 def _move_active_element_under_cursor(
-    layer: Shapes, coordinates: npt.NDArray
+    layer: Shapes, coordinates: Coordinates
 ) -> None:
     """Moves object at given mouse position and set of indices.
 

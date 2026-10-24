@@ -3092,7 +3092,7 @@ class Shapes(Layer):
                     distances <= self._normalized_vertex_radius, axis=1
                 ).nonzero()
                 if len(matches[0]) > 0:
-                    value = (selected_index[0], matches[0][-1])
+                    value = (selected_index[0], int(matches[0][-1]))
             elif self._mode in (
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
@@ -3120,7 +3120,7 @@ class Shapes(Layer):
                         return_index=True,
                     )
                     shape_in_list = list(vals).index(shape)
-                    value = (shape, index - idx[shape_in_list])
+                    value = (int(shape), int(index - idx[shape_in_list]))
 
         if value is None:
             # Check if mouse inside shape
@@ -3221,7 +3221,7 @@ class Shapes(Layer):
         position: np.ndarray,
         view_direction: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, npt.NDArray | None]:
+    ) -> tuple[int | None, npt.NDArray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 
