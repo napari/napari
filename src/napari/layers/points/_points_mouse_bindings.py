@@ -37,7 +37,7 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
 
     # Get value under the cursor, for points, this is the index of the highlighted
     # if any, or None.
-    value = layer._get_value_(
+    value = layer.get_value(
         position=event.position,
         view_direction=event.view_direction,
         dims_displayed=event.dims_displayed,
