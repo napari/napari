@@ -19,16 +19,24 @@ def create_func(cls, name=None, doc=None):
     Creates a function (such as `add_<layer>`) to add a layer to the viewer
 
     The functionality is inherited from the corresponding `<layer>` class.
+    If the class name starts with an underscore, the generated function is
+    private too: ``_PrivateClass`` -> ``_add_private_class``. If ``name`` is
+    given, its own leading underscore decides this instead.
     """
     cls_name = cls.__name__
 
     if name is None:
-        name = camel_to_snake(cls_name)
+        is_private = cls_name.startswith('_')
+        name = camel_to_snake(cls_name.lstrip('_'))
+    else:
+        is_private = name.startswith('_')
+        name = name.lstrip('_')
 
     if 'layer' in name:
         raise ValueError(f"name {name} should not include 'layer'")
 
-    name = 'add_' + name
+    prefix = '_add_' if is_private else 'add_'
+    name = prefix + name
 
     if doc is None:
         # While the original class may have Attributes in its docstring, the
