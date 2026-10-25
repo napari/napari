@@ -117,7 +117,11 @@ def view_and_up_directions_from_angles(
 
 
 def _nudge_vector(v: np.ndarray) -> np.ndarray:
-    """Nudge a vector, to guarantee it's not parallel to the input."""
+    """Nudge a vector, to guarantee it's not parallel to the input.
+
+    Takes the least aligned axis to the input and uses a small value
+    in that direction to nudge the input vector.
+    """
     # choose the coordinate axis least aligned with v
     axis_nudge = np.zeros_like(v)
     axis_nudge[np.argmin(np.abs(v))] = 1.0
