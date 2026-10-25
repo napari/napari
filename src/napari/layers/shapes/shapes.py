@@ -3204,8 +3204,7 @@ class Shapes(Layer):
         return [
             f'{k}: {format_feature_value(v[shape_index])}'
             for k, v in self.features.items()
-            if k != 'index'
-            and len(v) > shape_index
+            if len(v) > shape_index
             and v[shape_index] is not None
             and not (
                 isinstance(v[shape_index], float | np.floating) and np.isnan(v[shape_index])
