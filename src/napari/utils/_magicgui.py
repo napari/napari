@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from concurrent.futures import Future
 
-    import numpy.typing as npt
     import pint
     from magicgui.widgets.bases import CategoricalWidget
     from qtpy.QtWidgets import QWidget
@@ -44,7 +43,7 @@ if TYPE_CHECKING:
         scale: np.ndarray[tuple[int], np.dtype[np.number]]
         translate: np.ndarray[tuple[int], np.dtype[np.number]]
         rotate: np.ndarray[tuple[int, int], np.dtype[np.floating]]
-        shear: npt.NDArray[np.floating]
+        shear: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.floating]]
         affine: np.ndarray[tuple[int, int], np.dtype[np.float64]]
         units: tuple[pint.Unit, ...]
 
@@ -312,11 +311,11 @@ def add_worker_data(
 
     Parameters
     ----------
-    widget : MagicGui
+    widget : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    worker : WorkerBase
-        An instance of `napari._qt.qthreading.WorkerBase`, on worker.returned,
+    worker : FunctionWorker
+        An instance of `napari._qt.qthreading.FunctionWorker`, on worker.returned,
         the result will be added to the viewer.
     return_type : type
         The return annotation that was used in the decorated function.
@@ -398,7 +397,7 @@ def find_viewer_ancestor(widget: Widget | QWidget) -> Viewer | None:
 
     Parameters
     ----------
-    widget : QWidget
+    widget : magicgui.widgets.Widget or QWidget
         A widget
 
     Returns
@@ -408,8 +407,6 @@ def find_viewer_ancestor(widget: Widget | QWidget) -> Viewer | None:
     """
     from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-    # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
-    # widget is available at widget.native
     if isinstance(widget, Widget):
         parent = widget.native.parent()
     else:
@@ -530,16 +527,16 @@ def _make_choice_data_setter(
 
 
 def add_layer_to_viewer(
-    gui: FunctionGui, result: Any, return_type: type[Layer]
+    gui: FunctionGui, result: Layer | None, return_type: type[Layer]
 ) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : Layer or None
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.
@@ -557,16 +554,18 @@ def add_layer_to_viewer(
 
 
 def add_layers_to_viewer(
-    gui: FunctionGui, result: Any, return_type: type[list[Layer]]
+    gui: FunctionGui,
+    result: list[Layer | None],
+    return_type: type[list[Layer]],
 ) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : list of Layer or None
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.
