@@ -3207,7 +3207,8 @@ class Shapes(Layer):
             if len(v) > shape_index
             and v[shape_index] is not None
             and not (
-                isinstance(v[shape_index], float | np.floating) and np.isnan(v[shape_index])
+                isinstance(v[shape_index], float | np.floating)
+                and np.isnan(v[shape_index])
             )
         ]
 
