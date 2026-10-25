@@ -3182,7 +3182,7 @@ class Shapes(Layer):
         view_direction: np.ndarray | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> list:
+    ) -> list[str]:
         if self.features.shape[1] == 0:
             return []
 
