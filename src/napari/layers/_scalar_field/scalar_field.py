@@ -574,16 +574,16 @@ class ScalarFieldBase(Layer, ABC):
         """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
 
         Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Only spatially 2D multiscale layers, including RGB, cache the thumbnail
-        level. Other layers set ``_level_materializer`` to ``None``.
+        Only multiscale layers with a single plane per level, including RGB and
+        those with singleton leading dimensions, cache the thumbnail level.
+        Other layers set ``_level_materializer`` to ``None``.
         """
         data = self._data
         if isinstance(data, MultiScaleData):
             self._thumbnail_level = len(data) - 1
+            single_plane = all(s == 1 for s in self.level_shapes[0][:-2])
             self._level_materializer = (
-                _make_level_materializer(data)
-                if self._get_ndim() == 2
-                else None
+                _make_level_materializer(data) if single_plane else None
             )
         else:
             self._thumbnail_level = 0
