@@ -29,10 +29,14 @@ def test_docstring():
     )
 
 
-def test_multiscale_thumbnail_level_prematerialized():
-    """Thumbnail level materializes as numpy via the level materializer."""
+@pytest.mark.parametrize('prefix', [(), (1, 1, 1)], ids=['2d', 'singletons'])
+def test_multiscale_thumbnail_level_prematerialized(prefix):
+    """Thumbnail level materializes as numpy via the level materializer.
+
+    Singleton leading dims (e.g. OME's TCZ) still mean one plane per level.
+    """
     rng = np.random.default_rng(0)
-    data = [rng.random((128, 128)), rng.random((64, 64))]
+    data = [rng.random(prefix + (128, 128)), rng.random(prefix + (64, 64))]
     layer = Image(data, multiscale=True)
     result = layer._level_materializer(layer._thumbnail_level)
     assert isinstance(result, np.ndarray)
@@ -346,6 +350,35 @@ def test_rgb_2d_multiscale_prematerialized():
     assert isinstance(tld, np.ndarray)
     assert tld.shape == (64, 64, 3)
     np.testing.assert_array_equal(tld, data[1])
+
+
+@pytest.mark.parametrize('prefix', [(), (1, 1, 1)], ids=['2d', 'singletons'])
+def test_cropped_thumbnail_level_materialized_once(prefix):
+    """Panning a cropped tile must not re-read the thumbnail level."""
+    levels = [
+        _RecordingArray(np.ones(prefix + (128, 128), np.uint8)),
+        _RecordingArray(np.ones(prefix + (64, 64), np.uint8)),
+    ]
+    layer = Image(levels, multiscale=True)
+    layer._data_level = 0
+    ndim = layer.ndim
+    dims = Dims(
+        ndim=ndim,
+        ndisplay=2,
+        range=tuple((0, s - 1, 1) for s in levels[0].shape),
+    )
+
+    for start in (0, 16, 32):
+        corner_pixels = np.zeros((2, ndim), dtype=int)
+        corner_pixels[0, -2:] = start
+        corner_pixels[1, -2:] = start + 31
+        layer.corner_pixels = corner_pixels
+        response = layer._slicing_state._make_slice_request(dims)()
+        assert response.thumbnail is not response.image
+        assert response.thumbnail.view.shape == (64, 64)
+
+    # one materialization in total, none per pan
+    assert len(levels[1].materialization_threads) == 1
 
 
 @pytest.mark.parametrize('Layer', [Image, Labels])
