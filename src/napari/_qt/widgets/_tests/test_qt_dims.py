@@ -303,7 +303,7 @@ def test_slice_labels_scale_with_font_size(qtbot):
     original_width = slice_label.width()
 
     view.setStyleSheet(
-        get_stylesheet('dark', extra_variables={'font_size': '20pt'})
+        get_stylesheet('napari-dark', extra_variables={'font_size': '20pt'})
     )
     view._on_font_changed()
 
