@@ -2,12 +2,11 @@ import numpy as np
 import pytest
 
 from napari._vispy.overlays.labels_brush_stroke import (
-    RADIUS_FACTOR,
     VispyLabelsBrushStrokeOverlay,
 )
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
-from napari.layers.labels._labels_key_bindings import reset_polygon
+from napari.layers.labels._labels_key_bindings import reset_polygon_or_stroke
 from napari.utils._test_utils import read_only_mouse_event
 from napari.utils.interactions import (
     mouse_move_callbacks,
@@ -44,7 +43,7 @@ def test_brush_stroke_circle_appears_on_right_click():
 
     assert overlay.active is True
     assert vispy._circle.visible is True
-    assert overlay.radius == layer.brush_size * RADIUS_FACTOR
+    assert overlay.radius == layer.brush_size * overlay.radius
     # first pixel painted
     assert data[15, 15] == 1
 
@@ -82,7 +81,7 @@ def test_escape_aborts_and_restores():
         mouse_move_callbacks(layer, event)
 
     # Escape -> abort
-    reset_polygon(layer)
+    reset_polygon_or_stroke(layer)
 
     assert overlay.active is False
     assert vispy._circle.visible is False

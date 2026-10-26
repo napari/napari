@@ -369,12 +369,17 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         # recreated arbitrarily during validation
         self.events.source = self
         for name in self.__class__.model_fields:
-            child = getattr(self, name)
-            if isinstance(child, EventedModel):
-                # TODO: this isinstance check should be EventedMutables in the future
-                child._reset_event_source()
-            elif name in self.events.emitters:
-                getattr(self.events, name).source = self
+            with warnings.catch_warnings():
+                # hide deprecation and future warnings when doing this
+                warnings.simplefilter(
+                    'ignore', (DeprecationWarning, FutureWarning)
+                )
+                child = getattr(self, name)
+                if isinstance(child, EventedModel):
+                    # TODO: this isinstance check should be EventedMutables in the future
+                    child._reset_event_source()
+                elif name in self.events.emitters:
+                    getattr(self.events, name).source = self
 
     @property
     def _defaults(self) -> dict[str, Any]:

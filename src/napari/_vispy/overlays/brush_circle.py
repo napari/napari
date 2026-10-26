@@ -4,15 +4,17 @@ from typing import TYPE_CHECKING, Any
 
 from vispy.scene.visuals import Compound, Ellipse
 
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 
 if TYPE_CHECKING:
     from napari.components.overlays.brush_circle import BrushCircleOverlay
+    from napari.layers.labels import Labels
     from napari.utils.events import Event
 
 
-class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyBrushCircleOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: BrushCircleOverlay
+    layer: Labels
 
     def __init__(self, **kwargs: Any) -> None:
         self._white_circle = Ellipse(
@@ -32,54 +34,40 @@ class VispyBrushCircleOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             node=Compound([self._white_circle, self._black_circle]),
             **kwargs,
         )
+        self._outside = (-1000, -1000)
+        self._last_mouse_pos = self._outside
 
-        self._last_mouse_pos = None
-        self._outside = (10000, 10000)
-
-        self.overlay.events.size.connect(self._on_size_change)
-        self.node.events.canvas_change.connect(self._on_canvas_change)
-        # no need to connect position, since that's in the base classes of CanvasOverlay
+        self.overlay.events.position.connect(self._on_position_change)
+        self.layer.events.brush_size.connect(self._on_size_change)
+        self.layer.events.brush_size_is_canvas_pixels.connect(
+            self._on_size_change
+        )
+        self.viewer.scene.camera.events.zoom.connect(self._on_size_change)
 
         self.reset()
 
-        # manually connect this once and get the correct canvas
-        if self.node.parent is not None:
-            self.node.parent.scene.canvas.events.mouse_move.connect(
-                self._on_mouse_move
-            )
+    def _on_position_change(self) -> None:
+        if self.overlay._is_resizing:
+            return
 
-    def _on_mouse_leave(self) -> None:
-        self._set_position(self._outside)
-
-    def _on_position_change(self, event: Event | None = None) -> None:
-        self._set_position(self.overlay.position)
-
-    def _on_size_change(self, event: Event | None = None) -> None:
-        self._white_circle.radius = self.overlay.size / 2
-        self._black_circle.radius = self._white_circle.radius - 1
-
-    def _on_mouse_move(self, event: Event) -> None:
-        # TODO: this will be replaced by handling the event
-        #       in a label mouse callback (after the brush becomes a layer overlay)
-        if self.overlay.visible:
-            self.overlay.position = event.pos.tolist()
+        pos = self.overlay.position
+        self._set_position(pos[::-1] if pos is not None else self._outside)
 
     def _set_position(self, pos: tuple[int, int]) -> None:
-        if not self.overlay.position_is_frozen:
-            self.node.transform.translate = [pos[0], pos[1], 0, 0]
+        self.node.transform.translate = [pos[0], pos[1], 0, 0]
+        self.node.visible = True
+        self._last_mouse_pos = pos
 
-    def _on_canvas_change(self, event: Event) -> None:
-        if event.new is not None:
-            event.new.events.mouse_move.connect(self._on_mouse_move)
-        if event.old is not None:
-            event.old.events.mouse_move.disconnect(self._on_mouse_move)
+    def _on_size_change(self, event: Event | None = None) -> None:
+        size = self.layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+        self._white_circle.radius = size / 2
+        self._black_circle.radius = self._white_circle.radius - 1
+
+    def _on_visible_change(self) -> None:
+        self._set_position(self._last_mouse_pos)
+        self.node.visible = self.overlay.visible
 
     def reset(self) -> None:
         super().reset()
-        self._on_mouse_leave()
         self._on_size_change()
-        self._last_mouse_pos = None
-
-    def close(self) -> None:
-        self.node.events.canvas_change.disconnect(self._on_canvas_change)
-        super().close()
+        self._on_position_change()
