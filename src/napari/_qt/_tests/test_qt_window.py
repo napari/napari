@@ -4,8 +4,9 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from magicgui.widgets import Container
-from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QWidget
+from qtpy.QtCore import QEvent, QPoint
+from qtpy.QtGui import QHelpEvent, QImage
+from qtpy.QtWidgets import QToolTip, QWidget
 
 from napari._qt.qt_main_window import (
     Window,
@@ -189,6 +190,22 @@ def test_set_status_and_tooltip(make_napari_viewer):
     bar = viewer.window._qt_window.statusBar()
     for name in _EXPERIMENTAL_FEATURES_TO_WARN:
         assert name in bar._warn_labels
+
+
+@patch.object(QToolTip, 'showText')
+def test_viewer_tooltip_help_event(show_text, make_napari_viewer):
+    """ToolTip events are QHelpEvents, which have globalPos() only."""
+    viewer = make_napari_viewer()
+    viewer.tooltip.visible = True
+    viewer.tooltip.text = 'Tooltip text'
+    qt_window = viewer.window._qt_window
+    event = QHelpEvent(QEvent.Type.ToolTip, QPoint(5, 5), QPoint(105, 205))
+
+    qt_window.event(event)
+
+    show_text.assert_called_once()
+    assert show_text.call_args[0][0] == QPoint(105, 205)
+    assert show_text.call_args[0][1] == 'Tooltip text'
 
 
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
