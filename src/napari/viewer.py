@@ -172,7 +172,7 @@ class Viewer(ViewerModel):
             world_position=self.cursor.position,
             view_direction=self.cursor._view_direction,
             canvas_position=(0, 0),
-            viewbox=self.cursor.viewbox,
+            viewbox=self.cursor.viewbox or (0, 0),
         )
 
     def update_console(self, variables):
