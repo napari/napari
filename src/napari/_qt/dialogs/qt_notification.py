@@ -156,7 +156,9 @@ class NapariQtNotification(QDialog):
         if parent is None or parent.isActiveWindow():
             if parent is not None:
                 for ref in self._instances:
-                    if (notification := ref()) is not None:
+                    if (notification := ref()) is None:
+                        self._instances.remove(ref)
+                    else:
                         notification.timer_stop()
             if self.DISMISS_AFTER > 0:
                 self.timer.start()
@@ -186,9 +188,11 @@ class NapariQtNotification(QDialog):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
-        for i, ref in enumerate(self._instances):
-            if (notification := ref()) is self:
-                del self._instances[i]
+        for ref in list(self._instances):
+            notification = ref()
+            if notification in (None, self):
+                self._instances.remove(ref)
+            if notification is self:
                 break
         parent = self.parent()
 
