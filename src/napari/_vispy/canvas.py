@@ -557,7 +557,9 @@ class VispyCanvas:
         else:
             viewbox, grid_coords = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.viewer.cursor.viewbox = grid_coords
 
         if viewbox is None:
             # this means we're in an empty viewbox, so do nothing
@@ -605,9 +607,11 @@ class VispyCanvas:
             viewbox=grid_coords,
         )
 
-        # Update the cursor position
-        self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            # Update the cursor position
+            self.viewer.cursor._view_direction = napari_event.view_direction
+            self.viewer.cursor.position = napari_event.position
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
