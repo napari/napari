@@ -353,7 +353,7 @@ class VispyCanvas:
     def _disconnect_events(self) -> None:
         _disconnect_all_events(self.viewer, self)
         disconnect_events(self._scene_canvas.events, self)
-        disconnect_events(get_settings().appearance.events, self)
+        _disconnect_all_events(get_settings(), self)
 
     @property
     def central_widget(self) -> Widget:
