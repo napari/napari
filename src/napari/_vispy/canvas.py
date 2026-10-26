@@ -534,9 +534,19 @@ class VispyCanvas:
             self._scene_canvas.native.mouseReleaseEvent(event.native)
 
         canvas_position = tuple(event.pos[::-1])
-        view_direction = self._calculate_view_direction(event.pos)
+        viewbox_pos = self.viewer.canvas_to_viewbox(
+            canvas_position=canvas_position, viewbox=grid_coords
+        )
+
+        view_direction = self.viewer.scene.camera.calculate_nd_view_direction(
+            ndim=self.viewer.dims.ndim,
+            dims_displayed=self.viewer.dims.displayed,
+            canvas_position=tuple(viewbox_pos),
+            canvas_size=self._current_viewbox_size,
+        )
         up_direction = self.viewer.scene.camera.calculate_nd_up_direction(
-            self.viewer.dims.ndim, self.viewer.dims.displayed
+            ndim=self.viewer.dims.ndim,
+            dims_displayed=self.viewer.dims.displayed,
         )
         world_position = self.viewer.canvas_to_world(
             canvas_position, grid_coords
