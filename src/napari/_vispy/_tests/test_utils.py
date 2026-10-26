@@ -1,6 +1,7 @@
 import numpy as np
 from qtpy.QtCore import Qt
 
+from napari._vispy.utils.cursor import QtCursorVisual, cursor_style_to_qcursor
 from napari._vispy.utils.visual import get_view_direction_in_scene_coordinates
 
 
@@ -68,11 +69,11 @@ def test_set_cursor(make_napari_viewer):
         == Qt.CursorShape.BlankCursor
     )
 
-    # A brush that is too small falls back to the standard cursor
+    # A brush that is too small falls back to a crosshair
     labels_layer.brush_size = 0
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
-        == Qt.CursorShape.ArrowCursor
+        == cursor_style_to_qcursor(QtCursorVisual.crosshair).shape()
     )
     assert not brush_overlay.visible
 
@@ -84,10 +85,10 @@ def test_set_cursor(make_napari_viewer):
         == Qt.CursorShape.BlankCursor
     )
 
-    # A brush that is larger than the canvas falls back to the standard cursor
+    # A brush that is larger than the canvas falls back to the crosshair cursor
     viewer.scene.camera.zoom = 100
     assert not brush_overlay.visible
     assert (
         viewer.window._qt_viewer.canvas.cursor.shape()
-        == Qt.CursorShape.ArrowCursor
+        == cursor_style_to_qcursor(QtCursorVisual.crosshair).shape()
     )
