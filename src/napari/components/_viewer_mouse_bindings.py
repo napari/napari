@@ -108,7 +108,6 @@ def drag_to_zoom(viewer, event):
     zoom_rect = viewer.canvas.overlays._zoom_rect
     zoom_rect.visible = True
     press_pos = event.pos[::-1]
-    press_position = event.position
     move_pos = press_pos
     zoom_rect.corners_canvas = (press_pos, press_pos)
     yield
@@ -122,12 +121,7 @@ def drag_to_zoom(viewer, event):
             return
 
         move_pos = event.pos[::-1]
-        move_position = event.position
         zoom_rect.corners_canvas = (press_pos, move_pos)
-        zoom_rect.corners_world = (
-            press_position,
-            move_position,
-        )
         yield
 
     # on mouse release
@@ -140,7 +134,10 @@ def drag_to_zoom(viewer, event):
         ratio = np.min(
             viewer.canvas.viewbox_size(viewer.layers) / box_size_canvas
         )
-        box_center_world = np.mean(zoom_rect.corners_world, axis=0)
+        viewbox = event.viewbox
+        press_world = viewer.canvas_to_world(tuple(press_pos), viewbox)
+        move_world = viewer.canvas_to_world(tuple(move_pos), viewbox)
+        box_center_world = np.mean([press_world, move_world], axis=0)
         camera_center = box_center_world[list(viewer.dims.displayed)]
 
         viewer.camera.zoom = viewer.camera.zoom * np.min(ratio)

@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
+    from napari.components.viewer_model import ViewerModel
+
 
 class NapariMouseEvent(MouseEvent):
     """NapariMouseEvent extends MouseEvent to include additional information.
@@ -16,6 +18,9 @@ class NapariMouseEvent(MouseEvent):
     ----------
     event : MouseEvent
         The MouseEvent object to extend.
+    viewer : ViewerModel
+        The viewer that generated the event, used to convert between world
+        and canvas coordinates.
     view_direction : npt.NDArray[np.float64]
         The direction of the camera view.
     up_direction : Optional[np.ndarray]
@@ -35,6 +40,7 @@ class NapariMouseEvent(MouseEvent):
     def __init__(
         self,
         event: MouseEvent,
+        viewer: ViewerModel,
         view_direction: npt.NDArray[np.float64],
         up_direction: np.ndarray | None,
         camera_zoom: float,
@@ -58,6 +64,7 @@ class NapariMouseEvent(MouseEvent):
             native=event.native,
             **public_attrs,
         )
+        self.viewer = viewer
         self.view_direction = view_direction
         self.up_direction = up_direction
         self.camera_zoom = camera_zoom

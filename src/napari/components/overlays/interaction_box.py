@@ -3,7 +3,7 @@ import numpy as np
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
-    calculate_bounds_from_contained_points,
+    create_box_from_points,
 )
 
 
@@ -12,7 +12,7 @@ class SelectionBoxOverlay(SceneOverlay):
 
     Attributes
     ----------
-    bounds : 2-tuple of 2-tuples
+    bounds : 2-tuple of D-tuples
         Corners at top left and bottom right in layer coordinates.
     handles : bool
         Whether to show the handles for transfomation or just the box.
@@ -29,13 +29,13 @@ class SelectionBoxOverlay(SceneOverlay):
         alpha values of the overlay get mixed with the visuals below.
     """
 
-    bounds: tuple[tuple[float, float], tuple[float, float]] = ((0, 0), (0, 0))
+    bounds: tuple[tuple[float, ...], tuple[float, ...]] = ((0, 0), (0, 0))
     handles: bool = False
     selected_handle: InteractionBoxHandle | None = None
 
     def update_from_points(self, points: np.ndarray) -> None:
         """Create as a bounding box of the given points"""
-        self.bounds = calculate_bounds_from_contained_points(points)
+        self.bounds = tuple(create_box_from_points(points))
 
 
 class TransformBoxOverlay(SceneOverlay):

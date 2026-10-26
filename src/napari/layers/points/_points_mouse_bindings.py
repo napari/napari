@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Collection
-from typing import TYPE_CHECKING, TypeVar
+from itertools import product
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 
@@ -21,6 +22,7 @@ from napari.utils.events import Event
 if TYPE_CHECKING:
     from collections.abc import Generator, Set as AbstractSet
 
+    from napari.components.overlays import SelectionRectOverlay
     from napari.layers.points.points import Points
 
 
@@ -116,32 +118,22 @@ def _select_with_rectangle(
 ) -> Generator[None, None, None]:
     rect = layer._overlays['selection_rect']
     rect.corners_canvas = (start_pos_canvas, start_pos_canvas)
-    rect.corners_world = (start_pos_world, start_pos_world)
     rect.visible = True
 
     initial_selection = set(layer.selected_data)
 
     while event.type == 'mouse_move':
         pos_canvas = event.pos[::-1]
-        pos_world = event.position
         rect.corners_canvas = (start_pos_canvas, pos_canvas)
-        rect.corners_world = (start_pos_world, pos_world)
 
-        corners = np.array(rect.corners_world)
-        corners_data = np.array(
-            [layer.world_to_data(corners[0]), layer.world_to_data(corners[1])]
-        )
         displayed = dims_displayed_world_to_layer(
             dims_displayed_world=event.dims_displayed,
             ndim_world=len(event.position),
             ndim_layer=layer.ndim,
         )
-        selected_in_view = points_in_box(
-            corners_data[:, displayed],
-            layer.data[np.ix_(layer._view_indices, displayed)],
-            layer.size[layer._view_indices],
-        )
-        selected = layer._view_indices[selected_in_view]
+
+        selected = _points_in_canvas_rectangle(layer, event, displayed)
+
         if modify_selection:
             selected = _toggle_selected(initial_selection, selected)
         layer.selected_data = selected
@@ -149,6 +141,99 @@ def _select_with_rectangle(
         yield
 
     rect.visible = False
+
+
+def _points_in_canvas_rectangle(
+    layer: Points, event: Event, displayed: list[int]
+) -> np.ndarray:
+    """Select points whose canvas bounding box overlaps the drag rectangle.
+
+    The point bounding boxes are built in data coordinates, mapped to world
+    coordinates, and projected onto the canvas, so also FOV is accounted for.
+    """
+    view_indices = layer._view_indices
+    if len(view_indices) == 0:
+        return np.array([], dtype=int)
+
+    rect = cast('SelectionRectOverlay', layer._overlays['selection_rect'])
+    rect_corners = np.asarray(rect.corners_canvas, dtype=float)
+    rect_min = rect_corners.min(axis=0)
+    rect_max = rect_corners.max(axis=0)
+
+    # point sizes are scaled uniformly by the last layer scale, so correct for
+    # anisotropic scale (see Points._get_value).
+    scale_ratio = np.abs(layer.scale[list(displayed)] / layer.scale[-1])
+    half_sizes = (np.asarray(layer._view_size)[:, None] / 2) / scale_ratio
+
+    centers = np.asarray(layer.data[view_indices], dtype=float)
+    n_points = len(view_indices)
+    n_corners = 2 ** len(displayed)
+    signs = np.array(
+        list(product((-1.0, 1.0), repeat=len(displayed))), dtype=float
+    )
+
+    # (n_points * n_corners, layer.ndim), ordered point by point.
+    offsets = np.zeros((n_points * n_corners, layer.ndim), dtype=float)
+    for dim_idx, dim in enumerate(displayed):
+        offsets[:, dim] = np.tile(signs[:, dim_idx], n_points) * np.repeat(
+            half_sizes[:, dim_idx], n_corners
+        )
+    corners_data = np.repeat(centers, n_corners, axis=0) + offsets
+
+    corners_layer_world = np.asarray(
+        layer._transforms[1:].simplified(corners_data), dtype=float
+    )
+    ndim_world = len(event.position)
+    corners_world = np.zeros((len(corners_data), ndim_world), dtype=float)
+    corners_world[:] = event.dims_point
+    corners_world[:, ndim_world - layer.ndim :] = corners_layer_world
+
+    canvas_corners = np.asarray(
+        event.viewer.world_to_canvas(corners_world, viewbox=event.viewbox),
+        dtype=float,
+    ).reshape(n_points, n_corners, 2)
+
+    # Corners behind the camera are NaN; ignore them when computing the
+    # projected extent.
+    valid = np.isfinite(canvas_corners).all(axis=2)
+    has_valid_corner = valid.any(axis=1)
+    point_min = np.min(
+        np.where(valid[..., None], canvas_corners, np.inf), axis=1
+    )
+    point_max = np.max(
+        np.where(valid[..., None], canvas_corners, -np.inf), axis=1
+    )
+
+    overlaps = (
+        has_valid_corner
+        & (point_max[:, 0] >= rect_min[0])
+        & (point_min[:, 0] <= rect_max[0])
+        & (point_max[:, 1] >= rect_min[1])
+        & (point_min[:, 1] <= rect_max[1])
+    )
+    return view_indices[overlaps]
+
+
+def _points_in_axis_aligned_box(
+    layer: Points, corners_world: np.ndarray, displayed: list[int]
+) -> np.ndarray:
+    """Select points inside an axis-aligned box in world coordinates.
+
+    Fallback used when the event does not carry a viewer, so canvas
+    projection is unavailable.
+    """
+    corners_data = np.array(
+        [
+            layer.world_to_data(corners_world[0]),
+            layer.world_to_data(corners_world[1]),
+        ]
+    )
+    selected_in_view = points_in_box(
+        corners_data[:, displayed],
+        layer.data[np.ix_(layer._view_indices, displayed)],
+        layer.size[layer._view_indices],
+    )
+    return layer._view_indices[selected_in_view]
 
 
 def _move_selection(

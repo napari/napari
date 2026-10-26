@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -90,27 +90,27 @@ def generate_transform_box_from_layer(
     )[:, ::-1]
 
 
-def calculate_bounds_from_contained_points(
-    points: np.ndarray,
-) -> tuple[tuple[float, float], tuple[float, float]] | None:
-    """
-    Calculate the top-left and bottom-right corners of an axis-aligned bounding box.
+def create_box_from_points(
+    points: np.ndarray[tuple[int, int], np.dtype[np.floating]],
+) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.floating]]:
+    """Create the axis aligned interaction box of a list of points
 
     Parameters
     ----------
-    points : np.ndarray
-        Array of point coordinates.
+    data : (N, D) array
+        Points around which the interaction box is created.
 
     Returns
     -------
-    Tuple[Tuple[float, float], Tuple[float, float]]
-        Top-left and bottom-right corners of the bounding box.
+    box : (D, 2) array
+        Vertices of the interaction box (top left and bottom right)
     """
-    points = np.atleast_2d(points)
-    if points.ndim != 2:
-        raise ValueError('only 2D coordinates are accepted')
-
-    return tuple(points.min(axis=0)), tuple(points.max(axis=0))
+    min_val = points.min(axis=0)
+    max_val = points.max(axis=0)
+    tl = np.array([min_val[0], min_val[1]])
+    br = np.array([max_val[0], max_val[1]])
+    box = np.array([tl, br])
+    return box
 
 
 def get_nearby_handle(

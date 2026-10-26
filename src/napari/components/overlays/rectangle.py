@@ -14,8 +14,6 @@ class _RectOverlay(CanvasOverlay):
     ----------
     corners_canvas : 2-tuple of 2-tuples
         Corners at the top left and bottom right in canvas coordinates.
-    corners_world : 2-tuple of n-tuples
-        Corners at the top left and bottom right in world coordinates.
     visible : bool
         If the overlay is visible or not.
     opacity : float
@@ -30,10 +28,6 @@ class _RectOverlay(CanvasOverlay):
         (0, 0),
         (0, 0),
     )
-    corners_world: tuple[tuple[float, ...], tuple[float, ...]] = (
-        (0, 0),
-        (0, 0),
-    )
 
     @field_validator('corners_canvas', mode='before')
     @classmethod
@@ -44,16 +38,6 @@ class _RectOverlay(CanvasOverlay):
         x1, y1 = (float(coord) for coord in tup_1)
         x2, y2 = (float(coord) for coord in tup_2)
         return (x1, y1), (x2, y2)
-
-    @field_validator('corners_world', mode='before')
-    @classmethod
-    def _validate_world(
-        cls, v: tuple[tuple[float, ...], tuple[float, ...]]
-    ) -> tuple[tuple[float, ...], tuple[float, ...]]:
-        tup_1, tup_2 = v
-        coord1 = tuple(float(coord) for coord in tup_1)
-        coord2 = tuple(float(coord) for coord in tup_2)
-        return (coord1, coord2)
 
 
 class ZoomRectOverlay(_RectOverlay):
