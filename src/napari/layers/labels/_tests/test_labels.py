@@ -2705,7 +2705,6 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
 
     kwargs = {'brush_size_data': 5} if method == 'paint' else {}
-
     with pytest.raises(IndexError, match='out of bounds'):
         getattr(layer, method)(oob_args, 1, **kwargs)
 
@@ -2721,8 +2720,8 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
 def test_fixed_axis_in_bounds_succeeds(method, good_args):
     """In-bounds paint on non-painted axis should still work."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
-    getattr(layer, method)(good_args, 1)
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
+    getattr(layer, method)(good_args, 1, **kwargs)
     assert np.any(layer.data != 0)
 
 
@@ -2737,8 +2736,8 @@ def test_fixed_axis_in_bounds_succeeds(method, good_args):
 def test_fixed_axis_negative_one_means_last_slice(method, args):
     """-1 on a non-painted axis should paint the last slice, not the first."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
-    getattr(layer, method)(args, 1)
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
+    getattr(layer, method)(args, 1, **kwargs)
     assert np.any(layer.data[-1])
     assert not np.any(layer.data[0])
 
@@ -2754,9 +2753,9 @@ def test_fixed_axis_negative_one_means_last_slice(method, args):
 def test_fixed_axis_negative_out_of_bounds_raises(method, args):
     """A negative coord that resolves past the start raises, never wraps."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
     with pytest.raises(IndexError, match='out of bounds'):
-        getattr(layer, method)(args, 1)
+        getattr(layer, method)(args, 1, **kwargs)
 
 
 def test_paint_negative_painted_coord_clips_not_wraps():
