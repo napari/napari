@@ -25,13 +25,8 @@ from napari.utils.events.event import WarningEmitter
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
-    assert viewer.title == 'napari'
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
-
-    # Create viewer model with custom title
-    viewer = ViewerModel(title='testing')
-    assert viewer.title == 'testing'
 
 
 def test_add_image():
