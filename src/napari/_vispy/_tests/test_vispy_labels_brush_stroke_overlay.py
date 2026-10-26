@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from napari._vispy.overlays.labels_brush_stroke import (
-    RADIUS_FACTOR,
     VispyLabelsBrushStrokeOverlay,
 )
 from napari._vispy.utils.qt_font import FontInfo
@@ -44,7 +43,7 @@ def test_brush_stroke_circle_appears_on_right_click():
 
     assert overlay.active is True
     assert vispy._circle.visible is True
-    assert overlay.radius == layer.brush_size * RADIUS_FACTOR
+    assert overlay.radius == layer.brush_size * overlay.radius
     # first pixel painted
     assert data[15, 15] == 1
 

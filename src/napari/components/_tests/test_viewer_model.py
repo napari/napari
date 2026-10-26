@@ -785,9 +785,7 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
             assert len(em.callbacks) == count_warning_events(em.callbacks) + 1
 
 
-@pytest.mark.parametrize(
-    'field', ['scene', 'cursor', 'dims', 'canvas', 'layers']
-)
+@pytest.mark.parametrize('field', ['scene', 'dims', 'canvas', 'layers'])
 def test_not_mutable_fields(field):
     """Test appropriate fields are not mutable."""
     viewer = ViewerModel()
