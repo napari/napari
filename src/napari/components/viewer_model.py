@@ -489,7 +489,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     def __hash__(self):
         return id(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Simple string representation"""
         return 'napari.ViewerModel'
 

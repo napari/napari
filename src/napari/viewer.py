@@ -74,7 +74,7 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(  # pyrefly: ignore [bad-assignment]
+        self._window = Window(
             self,
             show=show,
             show_welcome_screen=show_welcome_screen,
@@ -108,7 +108,7 @@ class Viewer(ViewerModel):
         """
         return super().__new__(cls)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'napari.Viewer: {self.window.title}'
 
     # Expose private window publicly. This is needed to keep window off pydantic model
@@ -140,7 +140,7 @@ class Viewer(ViewerModel):
         .. deprecated:: 0.9.1
             The title property is deprecated. Use `viewer.window.title` instead.
         """
-        self.window.title = title
+        self.window.title = title  # pyrefly: ignore [missing-attribute]
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
