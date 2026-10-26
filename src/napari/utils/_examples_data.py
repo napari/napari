@@ -1,5 +1,6 @@
 import re
-from typing import Any
+from collections.abc import Callable
+from typing import Any, ParamSpec, TypeVar
 
 import gdown
 from pooch import get_logger
@@ -83,3 +84,21 @@ def napari_choose_downloader(url: str, progressbar: bool=False) -> HTTPDownloade
     if skimage_mirror_url(url) is not None:
         return SkimageMirrorDownloader(progressbar=progressbar)
     return choose_downloader(url)
+
+
+P = ParamSpec('P')
+R = TypeVar('R')
+
+
+def nilearn_download_factory(
+    fetch_surf_nki_enhanced: Callable[P, R],
+) -> Callable[P, R]:
+    def nilearn_change_url(*args: P.args, **kwargs: P.kwargs) -> R:
+        if kwargs.get('n_subjects') == 1:
+            # we kee copy of only data fetched with n_subjects=1,
+            # so only for ths case we can use our mirror
+            kwargs.setdefault('url', 'https://data.napari.dev/examples/')
+
+        return fetch_surf_nki_enhanced(*args, **kwargs)
+
+    return nilearn_change_url
