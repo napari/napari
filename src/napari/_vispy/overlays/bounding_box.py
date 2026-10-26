@@ -112,7 +112,7 @@ class VispyLayerBoundingBoxOverlay(
             # the corners change with zooming/panning.
             tile2data = self.layer._transforms[0]
             scale = np.asarray(tile2data.scale)[displayed]
-            return bounds / scale[:, np.newaxis] - 0.5
+            return tuple(bounds / scale[:, np.newaxis] - 0.5)
 
         return tuple(
             self.layer._display_bounding_box_augmented_data_level(displayed)
