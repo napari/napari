@@ -87,7 +87,7 @@ except Exception as e:
     raise
 
 
-MIN_PYQT_VERSION = (6, 7)
+MIN_PYQT_VERSION = (6, 7, 0)
 MIN_PYSIDE_VERSION = (6, 8, 3)
 
 
