@@ -52,7 +52,7 @@ def test_2d_known_values():
     world = viewer.canvas_to_world(canvas_pos)
     expected_displayed = (np.array(canvas_pos) - vc) / 2.0 + np.array([5, 5])
     np.testing.assert_allclose(
-        world[list(viewer.dims.displayed)], expected_displayed
+        np.array(world)[list(viewer.dims.displayed)], expected_displayed
     )
     # and back
     np.testing.assert_allclose(viewer.world_to_canvas(world), canvas_pos)
@@ -211,7 +211,7 @@ def test_2d_matches_scale_translate():
     canvas = (123.0, 321.0)
     np.testing.assert_allclose(
         aff(np.array(canvas)),
-        viewer.canvas_to_world(canvas)[list(viewer.dims.displayed)],
+        np.array(viewer.canvas_to_world(canvas))[list(viewer.dims.displayed)],
     )
     np.testing.assert_allclose(aff.inverse(np.array(cc)), vc)
 
@@ -244,11 +244,13 @@ def test_viewbox_to_world_matches_methods():
         local = viewer2d.canvas_to_viewbox(tuple(cw), (0, 0))
         np.testing.assert_allclose(
             tr(local),
-            viewer2d.canvas_to_world(tuple(cw))[list(viewer2d.dims.displayed)],
+            np.array(viewer2d.canvas_to_world(tuple(cw)))[
+                list(viewer2d.dims.displayed)
+            ],
         )
         world = viewer2d.canvas_to_world(tuple(cw))
         np.testing.assert_allclose(
-            tr.inverse(world[list(viewer2d.dims.displayed)]),
+            tr.inverse(np.array(world)[list(viewer2d.dims.displayed)]),
             viewer2d.canvas_to_viewbox(
                 viewer2d.world_to_canvas(world), (0, 0)
             ),
