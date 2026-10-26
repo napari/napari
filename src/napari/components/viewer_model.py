@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Union,
     cast,
 )
@@ -35,6 +36,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_status_from_cursor,
 )
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
@@ -298,6 +300,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
+        self.mouse_move_callbacks.append(update_status_from_cursor)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
@@ -930,6 +933,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     def _calc_status_from_cursor(
         self,
+        world_position: tuple[float, ...],
+        view_direction: np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
+        | None,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int],
     ) -> tuple[str | Dict, str]:
         """Calculate coordinates and status info from cursor position.
 
@@ -938,6 +946,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         - restrict info to only selected layers, if any
         - if only one is shown, show more detailed info
         """
+        # TODO: cnvas_position unused for now, used once we have FOV-awareness
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
         layers_in_viewbox: list[Layer] = []
@@ -963,8 +972,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         if len(valid_layers) == 1:
             if self.tooltip.visible:
                 tooltip_text = valid_layers[0]._get_tooltip_text(
-                    np.asarray(self.cursor.position),
-                    view_direction=self.cursor._view_direction,
+                    np.asarray(world_position),
+                    view_direction=view_direction,
                     dims_displayed=list(self.dims.displayed),
                     world=True,
                 )
@@ -972,8 +981,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 tooltip_text = ''
 
             status = valid_layers[0].get_status(
-                self.cursor.position,
-                view_direction=self.cursor._view_direction,
+                world_position,
+                view_direction=view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
@@ -988,7 +997,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         coords = ''
         for layer in valid_layers:
             status = layer.get_status(
-                self.cursor.position,
+                world_position,
                 view_direction=self.cursor._view_direction,
                 dims_displayed=list(self.dims.displayed),
                 world=True,
@@ -1005,9 +1014,22 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         status_str = f'{coords} » {values}'
         return status_str, ''
 
+    @deprecated(
+        'update_status_from_cursor will be removed. Use a mouse callback isntead.'
+    )
     def update_status_from_cursor(self):
-        """Update the status and tooltip from the cursor position."""
-        self.status, self.tooltip.text = self._calc_status_from_cursor()
+        """Update the status and tooltip from the cursor position.
+
+        .. deprecated: 0.11.0:
+            update_status_from_cursor will be removed; use a mouse callback instead.
+        """
+        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
+        self.status, self.tooltip.text = self._calc_status_from_cursor(
+            self.cursor.position,
+            self.cursor._view_direction,
+            (0, 0),
+            self.cursor.viewbox,
+        )
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
 
