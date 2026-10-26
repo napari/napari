@@ -109,3 +109,20 @@ def test_angles_from_view_direction_non_orthogonal_up(orientation):
     view, up = view_and_up_directions_from_angles(angles, orientation)
     assert np.allclose(np.dot(up, view), 0)
     assert np.dot(up, up_direction) > 0
+
+
+@pytest.mark.parametrize('orientation', ORIENTATIONS)
+@pytest.mark.parametrize(
+    'direction', [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1e-16, 0, 0)]
+)
+def test_angles_from_view_direction_identical(orientation, direction):
+    """Check that identical view and up directions does not fail."""
+    angles = angles_from_view_and_up_directions(
+        direction, direction, orientation
+    )
+    direction = np.array(direction, float)
+    direction /= np.linalg.norm(direction)
+    # view direction should "win"
+    view, up = view_and_up_directions_from_angles(angles, orientation)
+    assert np.allclose(view, direction)
+    assert np.allclose(np.dot(up, view), 0)
