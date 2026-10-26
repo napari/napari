@@ -427,7 +427,7 @@ def test_screenshot_dialog(
         mock.patch('napari._qt._qt_viewer.QMessageBox') as mocker2,
     ):
         mocker.getSaveFileName.return_value = mock_return
-        mocker2.warning.return_value = QMessageBox.Yes
+        mocker2.warning.return_value = QMessageBox.StandardButton.Yes
         qt_viewer._screenshot_dialog()
 
     # Assert behaviour is correct
@@ -492,13 +492,29 @@ def test_process_mouse_event(
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer_model.dims.ndisplay = 3
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_over_empty_grid_viewbox(
+    qt_viewer: QtViewer, viewer_model: ViewerModel
+) -> None:
+    viewer_model.add_image(np.zeros((20, 20)))
+    viewer_model.canvas.grid.enabled = True
+    # any position outside the populated viewboxes resolves to an empty one
+    pos = np.array([-1.0, -1.0])
+    assert qt_viewer.canvas._get_viewbox_at(pos) == (None, None)
+
+    qt_viewer.canvas._process_mouse_event(
+        mouse_press_callbacks, MouseEvent(type='mouse_press', pos=pos)
+    )
+
+    assert viewer_model.cursor.viewbox is None
+    viewer_model.mouse_over_canvas = True
+    assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
 
 
 def test_process_mouse_event_2d_layer_3d_viewer(
@@ -521,9 +537,7 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     @image.mouse_drag_callbacks.append
     def on_click(layer, event):
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     assert viewer_model.dims.ndisplay == 2
@@ -531,6 +545,31 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     viewer_model.dims.ndisplay = 3
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_canvas_to_world_grid_spacing(
+    viewer_model: ViewerModel, ndisplay: int
+) -> None:
+    """The center of every grid viewbox maps to the camera center."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = ndisplay
+    viewer_model.canvas.size = (800, 1200)
+    viewer_model.canvas.grid.enabled = True
+    viewer_model.canvas.grid.spacing = 45
+    spacing = viewer_model.canvas.grid._compute_canvas_spacing(
+        viewer_model.canvas.size, viewer_model.layers
+    )
+    assert spacing > 0
+    height, width = viewer_model.canvas.viewbox_size(viewer_model.layers)
+    expected = viewer_model.canvas_to_world((height / 2, width / 2), (0, 0))
+
+    for col in range(2):
+        center_px = (height / 2, col * (width + spacing) + width / 2)
+        np.testing.assert_allclose(
+            viewer_model.canvas_to_world(center_px, (0, col)), expected
+        )
 
 
 @pytest.mark.usefixtures(

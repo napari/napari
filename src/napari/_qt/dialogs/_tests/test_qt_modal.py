@@ -69,9 +69,9 @@ class TestQtPopup:
         popup.show()
         qtbot.waitUntil(popup.isVisible)
 
-        qtbot.keyClick(popup, Qt.Key_Return)
+        qtbot.keyClick(popup, Qt.Key.Key_Return)
         assert popup.isVisible()
         clicked.assert_not_called()
 
-        qtbot.keyClick(popup, Qt.Key_Escape)
+        qtbot.keyClick(popup, Qt.Key.Key_Escape)
         assert not popup.isVisible()

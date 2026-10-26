@@ -910,22 +910,27 @@ def test_lines_roundtrip():
 
 
 @pytest.mark.parametrize(
-    'shape',
+    'vertices',
     [
-        # single path, six points
-        (6, 2),
-    ]
-    + [
-        # multiple 2D paths with different numbers of points
-        (np.random.randint(2, 12), 2)
-        for _ in range(10)
+        pytest.param([[0, 0], [10, 10]], id='segment'),
+        pytest.param(
+            [[0, 0], [5, 10], [10, 0], [15, 10], [20, 0]], id='zigzag'
+        ),
+        pytest.param(
+            [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], id='closed'
+        ),
+        pytest.param([[0, 0], [10, 10], [10, 0], [0, 10]], id='self-crossing'),
+        pytest.param(
+            [[0, 0], [3, 7], [8, 9], [14, 6], [16, 1], [12, -4], [5, -3]],
+            id='curve',
+        ),
     ],
 )
-def test_paths(shape):
-    """Test instantiating Shapes layer with random 2D paths."""
+def test_paths(vertices):
+    """Test instantiating Shapes layer with 2D paths."""
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape).astype(np.float32)]
+    data = [np.array(vertices, dtype=np.float32)]
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all(
@@ -1022,22 +1027,42 @@ def test_paths_roundtrip():
 
 
 @pytest.mark.parametrize(
-    'shape',
+    'vertices',
     [
-        # single 2D polygon, six points
-        (6, 2),
-    ]
-    + [
-        # multiple 2D polygons with different numbers of points
-        (np.random.randint(3, 12), 2)
-        for _ in range(10)
+        pytest.param([[0, 0], [10, 0], [5, 8]], id='triangle'),
+        pytest.param([[0, 0], [10, 0], [10, 10], [0, 10]], id='square'),
+        pytest.param(
+            [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], id='square-closed'
+        ),
+        pytest.param(
+            [[0, 0], [8, 2], [12, 9], [6, 14], [-1, 8]], id='convex-irregular'
+        ),
+        pytest.param(
+            [[0, 0], [10, 0], [10, 4], [4, 4], [4, 10], [0, 10]],
+            id='concave-L',
+        ),
+        pytest.param(
+            [
+                [10, 0],
+                [12, 7],
+                [19, 7],
+                [13, 11],
+                [16, 18],
+                [10, 14],
+                [4, 18],
+                [7, 11],
+                [1, 7],
+                [8, 7],
+            ],
+            id='concave-star',
+        ),
     ],
 )
-def test_polygons(shape):
-    """Test instantiating Shapes layer with a random 2D polygons."""
+def test_polygons(vertices):
+    """Test instantiating Shapes layer with 2D polygons."""
 
     # Test instantiating with data
-    data = [20 * np.random.random(shape).astype(np.float32)]
+    data = [np.array(vertices, dtype=np.float32)]
     layer = Shapes(data, shape_type='polygon')
     assert layer.nshapes == len(data)
     assert np.all(
@@ -1287,6 +1312,17 @@ def test_changing_shapes(ten_four_corner, twenty_four_corner):
     assert np.allclose(layer._data_view.face_color[:5], current_face_color)
     assert np.allclose(layer._data_view.edge_widths[:5], current_edge_width)
     assert np.allclose(layer._data_view.z_indices[:5], current_z)
+
+
+@pytest.mark.parametrize(('n_old', 'n_new'), [(3, 2), (3, 4), (0, 2)])
+def test_setting_data_with_a_single_shape_type(n_old, n_new):
+    square = np.array([[0, 0], [0, 10], [10, 10], [10, 0]], dtype=float)
+    layer = Shapes(
+        [square + 20 * i for i in range(n_old)], shape_type='rectangle'
+    )
+    layer.data = ([square + 20 * i for i in range(n_new)], 'polygon')
+
+    assert list(layer.shape_type) == ['polygon'] * n_new
 
 
 def test_changing_shape_type():
@@ -2595,6 +2631,25 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.array_equal(labels.shape, labels_shape)
     assert np.array_equal(np.unique(labels), [0, 1, 2, 3])
+
+
+def test_to_labels_and_masks_in_3d_display():
+    data = [
+        [[0, 100, 100], [0, 100, 200], [0, 200, 200], [0, 200, 100]],
+        [[1, 125, 125], [1, 125, 175], [1, 175, 175], [1, 175, 125]],
+        [[2, 100, 100], [2, 100, 200], [2, 200, 200], [2, 200, 100]],
+    ]
+    layer = Shapes(np.array(data), shape_type='polygon')
+    labels_2d = layer.to_labels(labels_shape=(3, 300, 300))
+    masks_2d = layer.to_masks(mask_shape=(3, 300, 300))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    np.testing.assert_array_equal(
+        layer.to_labels(labels_shape=(3, 300, 300)), labels_2d
+    )
+    np.testing.assert_array_equal(
+        layer.to_masks(mask_shape=(3, 300, 300)), masks_2d
+    )
 
 
 def test_add_single_shape_consistent_properties():

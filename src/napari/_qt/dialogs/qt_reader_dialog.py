@@ -74,7 +74,10 @@ class QtReaderDialog(QDialog):
             self.reader_btn_group.buttons()[0].toggle()
 
         # OK & cancel buttons for the dialog
-        btns = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        btns = (
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
         self.btn_box = QDialogButtonBox(btns)
         self.btn_box.accepted.connect(self.accept)
         self.btn_box.rejected.connect(self.reject)
@@ -136,7 +139,7 @@ class QtReaderDialog(QDialog):
         display_name = ''
         persist_choice = False
 
-        dialog_result = self.exec_()
+        dialog_result = self.exec()
         # user pressed cancel
         if dialog_result:
             # grab the selected radio button text
