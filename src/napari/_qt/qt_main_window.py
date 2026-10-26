@@ -33,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QImage
+from qtpy.QtGui import QImage, QShortcut
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -41,7 +41,6 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QMenu,
-    QShortcut,
     QToolTip,
     QWidget,
 )
@@ -282,7 +281,8 @@ class _QtMainWindow(QMainWindow):
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            pnt = e.globalPosition().toPoint()
+            # ToolTip events are QHelpEvent, which only provides globalPos()
+            pnt = e.globalPos()
             rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
             QToolTip.showText(
                 pnt, self._qt_viewer.viewer.tooltip.text, self, rect
@@ -355,14 +355,14 @@ class _QtMainWindow(QMainWindow):
                     rect = self.geometry()
                     # set mouse-sensitive zone to trigger showing the menubar
                     rect.setHeight(25)
-                    if rect.contains(event.globalPos()):
+                    if rect.contains(event.globalPosition().toPoint()):
                         self.menuBar().show()
                 else:
                     rect = QRect(
                         self.menuBar().mapToGlobal(QPoint(0, 0)),
                         self.menuBar().size(),
                     )
-                    if not rect.contains(event.globalPos()):
+                    if not rect.contains(event.globalPosition().toPoint()):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
@@ -630,6 +630,16 @@ class _QtMainWindow(QMainWindow):
         for dock in self.findChildren(QtViewerDockWidget):
             if isinstance(dock, QWidget) and dock.isFloating():
                 dock.setFloating(False)
+
+        canvas_native = self._qt_viewer.canvas.native
+        for notification in list(NapariQtNotification._instances):
+            try:
+                parent = notification.parent()
+            except RuntimeError:
+                NapariQtNotification._instances.remove(notification)
+                continue
+            if parent is canvas_native:
+                notification.close(start_next=False)
 
         self._save_current_window_settings()
 
