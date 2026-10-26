@@ -511,7 +511,6 @@ def test_process_mouse_event_over_empty_grid_viewbox(
     )
 
     assert viewer_model.cursor.viewbox is None
-    viewer_model.mouse_over_canvas = True
     assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
 
 

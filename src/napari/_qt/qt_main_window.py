@@ -204,8 +204,7 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
         viewer.layers.selection.events.active.connect(
-            # need lambda to not send any args
-            lambda _: self.status_thread.trigger_status_update()
+            self.status_thread.refresh_status
         )
 
         self._command_palette = QCommandPalette(self)

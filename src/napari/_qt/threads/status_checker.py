@@ -64,17 +64,24 @@ class StatusChecker(QThread):
         self._last_args: tuple[Any, Any] | None = None
         self.setObjectName('StatusChecker')
 
-    def trigger_status_update(self, *args, **kwargs) -> None:
+    def trigger_status_update(self, *args: Any, **kwargs: Any) -> None:
         """Trigger a status update computation.
 
         When the cursor moves, the viewer will call this to instruct
         the status checker to update the viewer with the present status.
         """
-        if args or kwargs:
-            self._last_args = (args, kwargs)
-            # if called with no args, just rerun with the last arguments, which
-            # happens when layer selection changes and we want to use the last mouse
-            # event to update the status bar
+        self._last_args = (args, kwargs)
+        self.refresh_status()
+
+    def refresh_status(self) -> None:
+        """Refresh status based on new active layer.
+
+        Separate from trigger_status_update so it can be called with no args
+        as part of a callback.
+        """
+        # just rerun with the last arguments, which
+        # happens when layer selection changes and we want to use the last mouse
+        # event to update the status bar
         self._need_status_update.set()
 
     def close_terminate(self) -> None:
