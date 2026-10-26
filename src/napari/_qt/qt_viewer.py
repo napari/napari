@@ -63,7 +63,7 @@ from napari.utils.notifications import show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
@@ -977,7 +977,7 @@ class QtViewer(QSplitter):
     @contextlib.contextmanager
     def resize_canvas(
         self, size: tuple[int, int] | None, scale: float
-    ) -> Iterator[None]:
+    ) -> Generator[None]:
         """Temporarily, safely, resize the canvas
 
         Parameters
@@ -997,6 +997,8 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
+
+        camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
         try:
             yield
