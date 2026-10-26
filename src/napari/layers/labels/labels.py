@@ -1437,13 +1437,17 @@ class Labels(ScalarFieldBase):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
                 self.paint(
-                    c,
+                    c,  # pyrefly: ignore [bad-argument-type]
                     new_label,
                     refresh=False,
                     brush_size_data=brush_size_data,
                 )
             elif self._mode == Mode.FILL:
-                self.fill(c, new_label, refresh=False)
+                self.fill(
+                    c,  # pyrefly: ignore [bad-argument-type]
+                    new_label,
+                    refresh=False,
+                )
         self._partial_labels_refresh()
 
     def paint(

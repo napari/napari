@@ -1103,7 +1103,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self,
         canvas_position: tuple[int, int],
         viewbox: tuple[int, int] = (0, 0),
-    ) -> np.ndarray:
+    ) -> tuple[float, ...]:
         """Convert canvas pixel position to world coordinates.
 
         The position is calculated on a plane parallel to the screen and passing

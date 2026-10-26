@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +12,8 @@ from napari.utils.geometry import (
 
 if TYPE_CHECKING:
     from napari.layers.image.image import Image
+
+Vector3D: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 def displayed_plane_from_nd_line_segment(
@@ -53,7 +55,7 @@ def displayed_plane_from_nd_line_segment(
 def drag_data_to_projected_distance(
     start_position: npt.NDArray,
     end_position: npt.NDArray,
-    view_direction: npt.NDArray,
+    view_direction: Vector3D,
     vector: npt.NDArray,
 ) -> npt.NDArray:
     """Calculate the projected distance between two mouse events.
@@ -102,7 +104,9 @@ def drag_data_to_projected_distance(
     return np.einsum('j, ij -> i', drag_vector_canvas, vector).squeeze()
 
 
-def move_plane_position_from_mouse(layer, world_position, view_direction):
+def move_plane_position_from_mouse(
+    layer: Image, world_position: Vector3D, view_direction: Vector3D
+) -> None:
     """Move the plane position to the mouse cursor, within the plane.
 
     If the cursor ray does not intersect the plane, the position will remain
@@ -135,7 +139,7 @@ def move_plane_position_from_mouse(layer, world_position, view_direction):
 
     # update plane position
     if point_in_bounding_box(intersection, bounding_box):
-        layer.plane.position = intersection  # pyrefly: ignore [bad-assignment]
+        layer.plane.position = tuple(intersection)
 
 
 def reorient_plane_normal(layer: Image, plane_normal: tuple) -> None:
