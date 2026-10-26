@@ -42,7 +42,7 @@ class InteractionBox(Compound):
         self._marker_size = 10
         # squares for corners, diamonds for midpoints, disc for rotation handle
         self._marker_symbol = ['square'] * 4 + ['diamond'] * 4 + ['disc']
-        self.highlight_color = (0, 0, 1, 1)
+        self.highlight_color = (0.0, 0.0, 1.0, 1.0)
         self.highlight_width = 2
 
         super().__init__(

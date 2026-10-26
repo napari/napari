@@ -22,7 +22,10 @@ from napari.utils.events import Event
 if TYPE_CHECKING:
     from collections.abc import Generator, Set as AbstractSet
 
-    from napari.components.overlays import SelectionRectOverlay
+    from napari.components.overlays import (
+        SelectionBoxOverlay,
+        SelectionRectOverlay,
+    )
     from napari.layers.points.points import Points
 
 
@@ -104,7 +107,6 @@ def select(layer: Points, event: Event) -> Generator[None, None, None]:
             layer,
             event,
             start_pos_canvas,
-            start_pos_world,
             modify_selection,
         )
 
@@ -113,7 +115,6 @@ def _select_with_rectangle(
     layer: Points,
     event: Event,
     start_pos_canvas: np.ndarray,
-    start_pos_world: np.ndarray,
     modify_selection: bool,
 ) -> Generator[None, None, None]:
     rect = layer._overlays['selection_rect']
@@ -237,7 +238,7 @@ def _points_in_axis_aligned_box(
 
 
 def _move_selection(
-    layer: Points, event: Event, start_pos
+    layer: Points, event: Event, start_pos: np.ndarray
 ) -> Generator[None, None, None]:
     # do everything relative to the original data to remove drift
     selected = np.fromiter(layer.selected_data, dtype=int)
@@ -261,7 +262,7 @@ def _move_selection(
             vertex_indices=((),),
         )
         layer.events.features()
-        box = layer._overlays['selection_box']
+        box = cast('SelectionBoxOverlay', layer._overlays['selection_box'])
 
         displayed = dims_displayed_world_to_layer(
             dims_displayed_world=event.dims_displayed,
@@ -277,10 +278,10 @@ def _move_selection(
 def _resize_selection(
     layer: Points,
     event: Event,
-    start_pos,
-    dragged_handle,
+    start_pos: np.ndarray,
+    dragged_handle: InteractionBoxHandle,
 ) -> Generator[None, None, None]:
-    box = layer._overlays['selection_box']
+    box = cast('SelectionBoxOverlay', layer._overlays['selection_box'])
     fixed_handle = InteractionBoxHandle.opposite_handle(dragged_handle)
 
     # get exact coordinates of original handle to avoid unwanted shifts
@@ -336,7 +337,7 @@ def _resize_selection(
 def _rotate_selection(
     layer: Points,
     event: Event,
-    start_pos,
+    start_pos: np.ndarray,
 ) -> Generator[None, None, None]:
     while event.type == 'mouse_move':
         warnings.warn('rotation not yet implemented')
@@ -344,9 +345,9 @@ def _rotate_selection(
 
 
 def _transform_selection_box(
-    layer: Points, event: Event, start_pos
+    layer: Points, event: Event, start_pos: np.ndarray
 ) -> Generator[None, None, None]:
-    box = layer._overlays['selection_box']
+    box = cast('SelectionBoxOverlay', layer._overlays['selection_box'])
     if len(event.dims_displayed) != 2:
         return
 
@@ -390,7 +391,7 @@ def add(layer: Points, event: Event) -> Generator[None, None, None]:
 
 def highlight(layer: Points, event: Event) -> None:
     """Highlight hovered points."""
-    box = layer._overlays['selection_box']
+    box = cast('SelectionBoxOverlay', layer._overlays['selection_box'])
     # TODO: how to make this appear/disappear on clicking shift
     #       instead of on mouse move? Separate key binding just on shift?
     box.visible = False

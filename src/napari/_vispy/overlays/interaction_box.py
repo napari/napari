@@ -55,7 +55,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
         self.reset()
 
     def _on_settings_change(self):
-        self.node.highlight_color = (
+        self.node.highlight_color = tuple(
             get_settings().appearance.highlight.highlight_color
         )
         self.node.highlight_width = (

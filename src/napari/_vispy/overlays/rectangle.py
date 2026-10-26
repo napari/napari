@@ -36,7 +36,7 @@ class _VispyRectOverlay(VispyCanvasOverlay):
         self.node.highlight_width = (
             settings.appearance.highlight.highlight_thickness
         )
-        self.node.highlight_color = tuple(  # type: ignore
+        self.node.highlight_color = (
             settings.appearance.highlight.highlight_color
         )
 

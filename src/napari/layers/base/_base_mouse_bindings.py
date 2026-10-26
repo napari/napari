@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -18,6 +18,7 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from napari.components.overlays import SelectionBoxOverlay
     from napari.layers.base import Layer
 
 
@@ -34,7 +35,7 @@ def highlight_selection_box_handles(layer: Layer, event: Event) -> None:
         layer._transforms[1:].set_slice(layer._slice_input.displayed).inverse
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
-    box = layer._overlays['selection_box']
+    box = cast('SelectionBoxOverlay', layer._overlays['selection_box'])
     # flip bounds to match vispy order which is used for the coordinates of handles
     bounds = (tuple(point) for point in np.array(box.bounds)[:, ::-1])
     handle_coords = generate_interaction_box_handles(*bounds)[:, ::-1]
