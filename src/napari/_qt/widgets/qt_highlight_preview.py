@@ -153,7 +153,7 @@ class QtTriangle(QFrame):
     def mousePressEvent(self, event):
         """When mouse is clicked, adjust to new values."""
         # set value based on position of event
-        perc = event.pos().x() / self.rect().width()
+        perc = event.position().x() / self.rect().width()
         value = ((self._max_value - self._min_value) * perc) + self._min_value
         self.setValue(value)
 

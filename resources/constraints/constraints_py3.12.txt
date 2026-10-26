@@ -27,7 +27,7 @@ build==1.6.1
     # via npe2
 cachey==0.2.1
     # via napari (pyproject.toml)
-certifi==2026.10.18
+certifi==2026.10.23
     # via
     #   napari (pyproject.toml)
     #   requests
@@ -41,11 +41,11 @@ comm==0.2.3
     # via ipykernel
 contourpy==1.4.0
     # via matplotlib
-coverage==7.16.2
+coverage==7.17.0
     # via napari (pyproject.toml)
 cuda-bindings==13.4.4
     # via torch
-cuda-pathfinder==1.8.3
+cuda-pathfinder==1.8.4
     # via cuda-bindings
 cuda-toolkit==13.0.3.0
     # via torch
@@ -91,9 +91,9 @@ google-crc32c==1.9.0
     # via zarr
 heapdict==1.0.1
     # via cachey
-hsluv==5.0.4
+hsluv==5.0.5
     # via vispy
-hypothesis==6.170.2
+hypothesis==6.170.11
     # via napari (pyproject.toml)
 idna==3.20
     # via
@@ -108,7 +108,7 @@ in-n-out==0.2.1
     # via app-model
 iniconfig==2.3.1
     # via pytest
-ipykernel==6.31.0
+ipykernel==7.4.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari-console
@@ -178,23 +178,23 @@ mpmath==1.3.0
     # via sympy
 msgspec==0.22.0
     # via zarr
-multidict==7.1.0
+multidict==7.2.1
     # via
     #   aiohttp
     #   yarl
-napari-console==0.1.4
+napari-console==0.1.5
     # via napari (pyproject.toml)
-napari-metadata==0.4.1
+napari-metadata==0.5.0
     # via napari (pyproject.toml)
 napari-plugin-engine==0.2.1
     # via napari (pyproject.toml)
-napari-plugin-manager==0.1.11
+napari-plugin-manager==0.1.12
     # via napari (pyproject.toml)
 napari-resources==1.0.1
     # via napari (pyproject.toml)
 napari-svg==0.2.1
     # via napari (pyproject.toml)
-nest-asyncio==1.6.0
+nest-asyncio2==1.7.4
     # via ipykernel
 networkx==3.7
     # via
@@ -206,7 +206,7 @@ npe2==0.10.0
     #   napari-plugin-manager
 numba==0.68.0
     # via napari (pyproject.toml)
-numcodecs==0.17.0
+numcodecs==0.17.1
     # via zarr
 numpy==2.5.4
     # via
@@ -289,7 +289,7 @@ packaging==26.3
     #   vispy
     #   xarray
     #   zarr
-pandas==3.0.6
+pandas==3.1.0
     # via
     #   napari (pyproject.toml)
     #   xarray
@@ -307,11 +307,11 @@ pillow==13.0.0
     #   imageio
     #   matplotlib
     #   scikit-image
-pint==0.26.1
+pint==0.26.2
     # via
     #   napari (pyproject.toml)
     #   napari-metadata
-pip==26.2.1
+pip==26.2.2
     # via napari-plugin-manager
 platformdirs==4.13.5
     # via
@@ -340,7 +340,6 @@ propcache==0.5.4
 psutil==7.2.2
     # via
     #   napari (pyproject.toml)
-    #   ipykernel
     #   ipython
 psygnal==0.16.1
     # via
@@ -368,7 +367,7 @@ pydantic-extra-types==2.11.1
     # via
     #   napari (pyproject.toml)
     #   npe2
-pydantic-settings==2.16.0
+pydantic-settings==2.16.1
     # via napari (pyproject.toml)
 pygments==2.21.0
     # via
@@ -428,7 +427,7 @@ pytest-qt==4.5.0
     # via napari (pyproject.toml)
 pytest-rerunfailures==16.7
     # via napari (pyproject.toml)
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
     # via
     #   jupyter-client
     #   matplotlib
@@ -486,7 +485,7 @@ scipy==1.18.1
     # via
     #   napari (pyproject.toml)
     #   scikit-image
-setuptools==84.0.0
+setuptools==84.2.1
     # via torch
 shellingham==1.5.4
     # via typer
@@ -523,7 +522,7 @@ toolz==1.2.0
     #   partd
 torch==2.14.1
     # via napari (pyproject.toml:testing-extra)
-tornado==6.5.10
+tornado==6.6
     # via
     #   ipykernel
     #   jupyter-client
@@ -551,7 +550,6 @@ typing-extensions==4.16.0
     #   flexparser
     #   jupyter-client
     #   magicgui
-    #   napari-metadata
     #   numcodecs
     #   pint
     #   pydantic
@@ -568,15 +566,17 @@ typing-inspection==0.4.4
     # via
     #   pydantic
     #   pydantic-settings
+tzdata==2026.5
+    # via python-dateutil
 urllib3==2.8.0
     # via requests
-virtualenv==21.14.11
+virtualenv==21.14.13
     # via napari (pyproject.toml)
 vispy==0.17.0
     # via
     #   napari (pyproject.toml)
     #   napari-svg
-wcwidth==0.9.2
+wcwidth==0.9.4
     # via prompt-toolkit
 wrapt==2.5.1
     # via
