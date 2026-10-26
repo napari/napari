@@ -1055,7 +1055,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
+        if animation.state() == QPropertyAnimation.State.Running:
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:

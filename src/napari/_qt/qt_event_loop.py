@@ -66,7 +66,7 @@ def _svg_path_to_icon(path: str | Path) -> QIcon:
 
     for s in (16, 32, 48, 64, 128):
         pixmap = QPixmap(QSize(s, s))
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
         renderer.render(painter, QRectF(0, 0, s, s))
         painter.end()
