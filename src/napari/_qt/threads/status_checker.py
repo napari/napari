@@ -64,7 +64,7 @@ class StatusChecker(QThread):
         self._last_args: tuple[Any, Any] | None = None
         self.setObjectName('StatusChecker')
 
-    def trigger_status_update(self, *args, **kwargs) -> None:
+    def trigger_status_update(self, *args: Any, **kwargs: Any) -> None:
         """Trigger a status update computation.
 
         When the cursor moves, the viewer will call this to instruct
