@@ -977,7 +977,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 self.cursor.position,
                 self.cursor._view_direction,
                 (0, 0),
-                self.cursor.viewbox,
+                self.cursor.viewbox or (0, 0),
             )
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
