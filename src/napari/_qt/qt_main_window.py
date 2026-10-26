@@ -289,10 +289,13 @@ class _QtMainWindow(QMainWindow):
         help_text = self._qt_viewer.viewer._layer_help_from_active()
         self.statusBar().setHelpText(help_text)
 
+    def set_help(self, help_msg: str) -> None:
+        self.statusBar().setHelpText(help_msg)
+
     def _set_drag_help(self) -> None:
         """Set dedicated help message when dragging files into viewer."""
         self.set_status_and_tooltip(('Ready', ''))
-        self.statusBar().setHelpText(
+        self.set_help(
             'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
         )
 

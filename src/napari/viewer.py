@@ -158,6 +158,23 @@ class Viewer(ViewerModel):
         """
         self.window.title = title  # pyrefly: ignore [missing-attribute]
 
+    @deprecated(
+        'update_status_from_cursor will be removed. Use a mouse callback instead.'
+    )
+    def update_status_from_cursor(self):
+        """Update the status and tooltip from the cursor position.
+
+        .. deprecated: 0.11.0:
+            update_status_from_cursor will be removed; use a mouse callback instead.
+        """
+        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
+        self.window.status_thread.trigger_status_update(  # pyrefly: ignore [missing-attribute]
+            world_position=self.cursor.position,
+            view_direction=self.cursor._view_direction,
+            canvas_position=(0, 0),
+            viewbox=self.cursor.viewbox,
+        )
+
     def update_console(self, variables):
         """Update console's namespace with desired variables.
 

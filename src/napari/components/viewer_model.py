@@ -17,7 +17,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Union,
     cast,
 )
 from urllib.parse import urlparse
@@ -36,14 +35,12 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
-    update_status_from_cursor,
 )
 from napari.components.canvas import Canvas
 from napari.components.cursor import Cursor, CursorStyle
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.components.scene import Scene
-from napari.components.tooltip import Tooltip
 from napari.errors import (
     MultipleReaderError,
     NoAvailableReaderError,
@@ -175,8 +172,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         The cursor object containing the position and properties of the cursor.
     dims : napari.components.dims.Dimensions
         Contains axes, indices, dimensions and sliders.
-    help: str
-        A help message of the viewer model
     layers : napari.components.layerlist.LayerList
         List of contained layers.
     scene : napari.components.scene.Scene
@@ -185,8 +180,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. versionadded:: 0.9.0
     theme: str
         Name of the Napari theme of the viewer
-    tooltip: napari.components.tooltip.Tooltip
-        A tooltip showing extra information on the cursor
     window : napari._qt.qt_main_window.Window
         Parent window.
     _layer_slicer: napari.components._layer_slicer._Layer_Slicer
@@ -202,9 +195,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     layers: LayerList = Field(
         default_factory=LayerList, frozen=True
     )  # Need to create custom JSON encoder for layer!
-    help: str = ''
-    status: Union[str, Dict[str, str]] = 'Ready'
-    tooltip: Tooltip = Field(default_factory=Tooltip, frozen=True)
     theme: str = Field(default_factory=_current_theme)
 
     # Need to use default factory because slicer is not copyable which
@@ -242,10 +232,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self._title = title
 
         settings = get_settings()
-        self.tooltip.visible = settings.appearance.layer_tooltip_visibility
-        settings.appearance.events.layer_tooltip_visibility.connect(
-            self._tooltip_visible_update
-        )
 
         self._update_camera_orientation()
         settings.application.events.depth_axis_orientation.connect(
@@ -300,7 +286,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.layers.events.units.connect(self._on_layers_change)
 
         # Add mouse callback
-        self.mouse_move_callbacks.append(update_status_from_cursor)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)
@@ -434,9 +419,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             The grid property is deprecated. Use `viewer.canvas.grid` instead.
         """
         return self.canvas.grid
-
-    def _tooltip_visible_update(self, event):
-        self.tooltip.visible = event.value
 
     def _update_camera_orientation(self):
         """Update camera orientation based on settings."""
@@ -849,7 +831,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             for layer in self.layers:
                 layer.update_transform_box_visibility(False)
                 layer.update_highlight_visibility(False)
-            self.help = ''
             self.cursor.style = CursorStyle.STANDARD
             self.scene.camera.mouse_pan = True
             self.scene.camera.mouse_zoom = True
@@ -860,7 +841,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 if layer != active_layer:
                     layer.update_transform_box_visibility(False)
                     layer.update_highlight_visibility(False)
-            self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.scene.camera.mouse_pan = active_layer.mouse_pan
@@ -970,15 +950,12 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         # if showing status for a single layer, we give more info (old version)
         # and set the tooltip text
         if len(valid_layers) == 1:
-            if self.tooltip.visible:
-                tooltip_text = valid_layers[0]._get_tooltip_text(
-                    np.asarray(world_position),
-                    view_direction=view_direction,
-                    dims_displayed=list(self.dims.displayed),
-                    world=True,
-                )
-            else:
-                tooltip_text = ''
+            tooltip_text = valid_layers[0]._get_tooltip_text(
+                np.asarray(world_position),
+                view_direction=view_direction,
+                dims_displayed=list(self.dims.displayed),
+                world=True,
+            )
 
             status = valid_layers[0].get_status(
                 world_position,
@@ -1013,25 +990,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         status_str = f'{coords} » {values}'
         return status_str, ''
-
-    @deprecated(
-        'update_status_from_cursor will be removed. Use a mouse callback isntead.'
-    )
-    def update_status_from_cursor(self):
-        """Update the status and tooltip from the cursor position.
-
-        .. deprecated: 0.11.0:
-            update_status_from_cursor will be removed; use a mouse callback instead.
-        """
-        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
-        self.status, self.tooltip.text = self._calc_status_from_cursor(
-            self.cursor.position,
-            self.cursor._view_direction,
-            (0, 0),
-            self.cursor.viewbox,
-        )
-        if (active := self.layers.selection.active) is not None:
-            self.help = active.help
 
     def canvas_to_world(
         self,
@@ -1144,9 +1102,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.axis_labels.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
         layer.events.reload.connect(self._on_layer_reload)
-        if hasattr(layer.events, 'mode'):
-            layer.events.mode.connect(self._on_layer_mode_change)
-        self._layer_help_from_mode(layer)
 
         # Update dims
         self._on_layers_change()
@@ -1158,11 +1113,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.reset_view()
             self.dims._go_to_center_step()
 
-    @staticmethod
-    def _layer_help_from_mode(layer: Layer):
+    def _layer_help_from_active(self):
         """
-        Update layer help text base on layer mode.
+        Get the help text relative to the current active layer
         """
+        if (active := self.layers.selection.active) is None:
+            return ''
+
         layer_to_func_and_mode: dict[type[Layer], list] = {
             Points: points_fun_to_mode,
             Labels: labels_fun_to_mode,
@@ -1176,8 +1133,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         help_li = []
         shortcuts = get_settings().shortcuts.shortcuts
 
-        for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
-            if mode_ == layer.mode:
+        for fun, mode_ in layer_to_func_and_mode.get(active.__class__, []):
+            if mode_ == active.mode:
                 continue
             action_name = f'napari:{fun.__name__}'
             desc = action_manager._actions[action_name].description.lower()
@@ -1185,12 +1142,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
                 continue
             help_li.append(f'use <{shortcuts[action_name][0]}> for {desc}')
 
-        layer.help = ', '.join(help_li)
-
-    def _on_layer_mode_change(self, event):
-        self._layer_help_from_mode(event.source)
-        if (active := self.layers.selection.active) is not None:
-            self.help = active.help
+        return ', '.join(help_li)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
