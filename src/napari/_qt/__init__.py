@@ -97,7 +97,7 @@ def _check_qt_version(qt_version: str, api_name: str) -> None:
         min_qt_version = MIN_PYQT_VERSION
     else:
         min_qt_version = MIN_PYSIDE_VERSION
-    if tuple(int(x) for x in qt_version.split('.')[:2]) >= min_qt_version:
+    if tuple(int(x) for x in qt_version.split('.')) >= min_qt_version:
         return
 
     min_version = '.'.join(map(str, min_qt_version))
