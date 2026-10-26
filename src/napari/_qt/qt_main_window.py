@@ -204,7 +204,7 @@ class _QtMainWindow(QMainWindow):
             self._toggle_status_thread
         )
         viewer.layers.selection.events.active.connect(
-            self.status_thread.trigger_status_update
+            self.status_thread.refresh_status
         )
 
         self._command_palette = QCommandPalette(self)
@@ -341,7 +341,6 @@ class _QtMainWindow(QMainWindow):
             ):
                 # only update status when on the canvas and there are layers
                 self._status_locked = False
-                self.status_thread.trigger_status_update()
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
