@@ -137,7 +137,6 @@ def increase_label_id(layer: Labels) -> None:
 
 @register_label_action(
     'Decrease the paint brush size by one',
-    repeatable=True,
 )
 def decrease_brush_size(layer: Labels) -> None:
     """Decrease the brush size"""
@@ -150,7 +149,6 @@ def decrease_brush_size(layer: Labels) -> None:
 
 @register_label_action(
     'Increase the paint brush size by one',
-    repeatable=True,
 )
 def increase_brush_size(layer: Labels) -> None:
     """Increase the brush size"""
