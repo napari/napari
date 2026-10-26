@@ -36,6 +36,7 @@ from napari.components._viewer_mouse_bindings import (
     double_click_to_zoom,
     drag_to_zoom,
     layers_scroll,
+    update_crosshair_position,
     update_status_from_cursor,
 )
 from napari.components.canvas import Canvas
@@ -287,6 +288,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # Add mouse callback
         self.mouse_move_callbacks.append(update_status_from_cursor)
+        self.mouse_move_callbacks.append(update_crosshair_position)
         self.mouse_wheel_callbacks.append(dims_scroll)
         self.mouse_wheel_callbacks.append(layers_scroll)
         self.mouse_double_click_callbacks.append(double_click_to_zoom)

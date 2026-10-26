@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
 if TYPE_CHECKING:
+    from napari.components.overlays import CrosshairOverlay
     from napari.viewer import Viewer
 
 # This is the minimum size of the zoom box (in pixels) that will
@@ -152,3 +153,8 @@ def update_status_from_cursor(viewer, event):
         canvas_position=event.pos[::-1],
         viewbox=event.viewbox,
     )
+
+
+def update_crosshair_position(viewer, event):
+    crosshair = cast('CrosshairOverlay', viewer.scene.overlays.crosshair)
+    crosshair.position = event.position

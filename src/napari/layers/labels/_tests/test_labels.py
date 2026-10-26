@@ -2421,7 +2421,7 @@ def test_draw(colormap, expected):
     labels.selected_label = 1
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected[:1])
-    labels._draw(1, (15, 15), (15, 15))
+    labels._draw(1, (15, 15), (15, 15), brush_size_data=10)
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
 
@@ -2703,10 +2703,11 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
     that caused a ValueError during mask/data broadcast.
     """
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
+
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
 
     with pytest.raises(IndexError, match='out of bounds'):
-        getattr(layer, method)(oob_args, 1)
+        getattr(layer, method)(oob_args, 1, **kwargs)
 
 
 @pytest.mark.parametrize(
