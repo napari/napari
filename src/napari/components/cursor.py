@@ -28,8 +28,8 @@ class Cursor(EventedModel):
             'Cursor.position is deprecated; use Event.position from a mouse callback instead.'
         ),
     )
-    viewbox: tuple[int, int] = Field(
-        (0, 0),
+    viewbox: tuple[int, int] | None = Field(
+        None,
         deprecated=deprecated(
             'Cursor.position is deprecated; use Event.viewbox from a mouse callback instead.'
         ),
