@@ -10,9 +10,9 @@ def test_supported_qt_version(qt_version):
 
 def test_old_qt6_version():
     with pytest.raises(
-        ImportError, match=r'Qt >= 6\.7.*PyQt6 with Qt 6\.5\.3'
+        ImportError, match=r'Qt >= 6\.8.*PySide6 with Qt 6\.5\.3'
     ) as exc:
-        _check_qt_version('6.5.3', 'PyQt6')
+        _check_qt_version('6.5.3', 'PySide6')
     msg = str(exc.value)
     assert "pip install -U 'napari[pyqt6]'" in msg
     assert 'QT_API' not in msg

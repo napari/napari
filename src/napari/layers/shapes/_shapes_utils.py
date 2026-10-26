@@ -21,6 +21,7 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
     TriangleArray,
+    TriangleDtype,
 )
 
 if TYPE_CHECKING:
@@ -631,7 +632,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
-    return vertices, triangles
+    return vertices, triangles.astype(TriangleDtype)
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
