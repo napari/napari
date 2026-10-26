@@ -16,23 +16,23 @@ from napari._qt.qt_viewer import QtViewer
 
 
 # View actions
-def _toggle_activity_dock(window: Window):
+def _toggle_activity_dock(window: Window) -> None:
     window._status_bar._toggle_activity_dock()
 
 
-def _get_current_fullscreen_status(window: Window):
+def _get_current_fullscreen_status(window: Window) -> bool:
     return window._qt_window.isFullScreen()
 
 
-def _get_current_menubar_status(window: Window):
+def _get_current_menubar_status(window: Window) -> bool:
     return window._qt_window._toggle_menubar_visibility
 
 
-def _get_current_play_status(qt_viewer: QtViewer):
+def _get_current_play_status(qt_viewer: QtViewer) -> bool:
     return bool(qt_viewer.dims.is_playing)
 
 
-def _get_current_activity_dock_status(window: Window):
+def _get_current_activity_dock_status(window: Window) -> bool:
     return window._qt_window._activity_dialog.isVisible()
 
 

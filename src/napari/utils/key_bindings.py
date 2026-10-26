@@ -45,9 +45,6 @@ from vispy.util import keys
 KeyBindingLike = Union[KeyBinding, str, int]
 Keymap = Mapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
-# global user keymap; to be made public later in refactoring process
-USER_KEYMAP: Mapping[str, Callable] = {}
-
 KEY_SUBS = {
     'Super': 'Meta',
     'Command': 'Meta',
@@ -215,27 +212,6 @@ def bind_key(
     return unbound
 
 
-def _get_user_keymap() -> Keymap:
-    """Retrieve the current user keymap. The user keymap is global and takes precedent over all other keymaps.
-
-    Returns
-    -------
-    user_keymap : dict of str: callable
-        User keymap.
-    """
-    return USER_KEYMAP
-
-
-def _bind_user_key(
-    key_bind: KeyBindingLike, func=_UNDEFINED, *, overwrite=False
-):
-    """Bind a key combination to the user keymap.
-
-    See ``bind_key`` docs for details.
-    """
-    return bind_key(_get_user_keymap(), key_bind, func, overwrite=overwrite)
-
-
 def _vispy2appmodel(event) -> KeyBinding:
     key, modifiers = event.key.name, event.modifiers
     if len(key) == 1 and key.isalpha():  # it's a letter
@@ -355,7 +331,7 @@ class KeymapHandler:
     @property
     def keymap_chain(self):
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = [_get_user_keymap()]
+        maps = []
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
@@ -439,7 +415,9 @@ class KeymapHandler:
         key_bind = coerce_keybinding(key_bind)
         key = str(key_bind.parts[-1].key)
         try:
-            val = self._key_release_generators[key]
+            # pop so the pending-hold check in on_key_press sees exactly the
+            # holds whose release side has not yet run
+            val = self._key_release_generators.pop(key)
             # val could be callback function with time to check
             # if it should be called or generator that need to make
             # additional step on key release
@@ -461,39 +439,32 @@ class KeymapHandler:
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
 
+        OS auto-repeat is delivered like any other press, so a held key
+        repeats at the user's configured rate — matching how every desktop
+        platform treats held keys. The one case a repeat is mechanically
+        wrong is a hold-semantics binding (a generator, or a binding that
+        returned a release callback) whose release side is still pending:
+        re-entering the press body would clobber the stashed release state
+        and reset the tap-vs-hold timing. Only those repeats are dropped.
+
         Parameters
         ----------
         event : vispy.util.event.Event
             The vispy key press event that triggered this method.
         """
-        from napari.utils.action_manager import action_manager
-
         if event.key is None:
             # TODO determine when None key could be sent.
             return
 
         kb = _vispy2appmodel(event)
 
-        repeatables = {
-            *action_manager._get_repeatable_shortcuts(self.keymap_chain),
-            # Nav keys are exempt however they were bound. They must be
-            # KeyBinding, not str: the set is tested against a KeyBinding, which
-            # never compares equal to a str, so str literals here silently never
-            # matched and no key bound via bind_key() auto-repeated. See #9203.
-            *(
-                KeyBinding.from_str(key)
-                for key in ('Up', 'Down', 'Left', 'Right')
-            ),
-        }
-
         if (
             event.native is not None
             and event.native.isAutoRepeat()
-            and kb not in repeatables
-        ) or event.key is None:
-            # pass if no key is present or if the shortcut combo is held down,
-            # unless the combo being held down is one of the autorepeatables or
-            # one of the navigation keys (helps with scrolling).
+            and str(kb.parts[-1].key) in self._key_release_generators
+        ):
+            # a hold-semantics binding is in flight for this key; its press
+            # body already ran and must not re-enter until release
             return
 
         event.handled = self.press_key(kb)

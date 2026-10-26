@@ -132,6 +132,11 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0003-1759-4194
   alias: dalthviz
+- given-names: Chirag
+  family-names: Anand
+  affiliation: Dayananda Sagar College of Engineering
+  orcid: https://orcid.org/0009-0009-8502-280X
+  alias: chirag-433
 - given-names: Mélodie
   family-names: Ambroset
   affiliation: INRAE, Nantes, France
@@ -166,6 +171,9 @@ authors:
   affiliation: University of California, Santa Cruz
   orcid: https://orcid.org/0000-0002-4172-4676
   alias: FilBalza
+- given-names: Lundy
+  family-names: Bernard
+  alias: lundybernard
 - given-names: Peter
   family-names: Boone
   alias: boonepeter
@@ -274,6 +282,10 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Aditi
+  family-names: Juneja
+  affiliation: Independent
+  alias: Schefflera-Arboricola
 - given-names: Hiroki
   family-names: Kawai
   affiliation: The University of Tokyo / LPIXEL Inc.
@@ -378,6 +390,10 @@ authors:
   affiliation: Kavli Institute for Systems Neuroscience at NTNU, Trondheim, Norway
   orcid: https://orcid.org/0000-0002-7670-4827
   alias: horsto
+- given-names: Jayme
+  family-names: Paiva
+  affiliation: Pontifícia Universidade Católica do Rio de Janeiro (PUC-Rio)
+  alias: Lyinno
 - given-names: David
   family-names: Palecek
   affiliation: Algarve Centre of Marine Sciences (CCMAR)
@@ -426,6 +442,11 @@ authors:
   family-names: Reksoatmodjo
   affiliation: Translucence Biosystems
   alias: Modjular
+- given-names: Kai
+  family-names: Riedmiller
+  affiliation: University Heidelberg
+  orcid: https://orcid.org/0000-0003-1738-754X
+  alias: KRiedmiller
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
@@ -636,5 +657,19 @@ authors:
   family-names: Zaid
   affiliation: Université Paris-Saclay
   alias: lettyz3
+- given-names: Bruno
+  family-names: Pannunzio
+  affiliation: Institut Pasteur de Montevideo; Universidad de la República, Uruguay
+  orcid: https://orcid.org/0009-0001-2778-6694
+  alias: bruno-pannunzio
+- given-names: Felipe
+  family-names: Cybis Pereira
+  affiliation: Independent researcher
+  orcid: https://orcid.org/0009-0009-6124-0466
+  alias: FelipeCybis
+- given-names: Aleksandra
+  family-names: Tarskaia
+  affiliation: Independent
+  alias: i-ymka
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
