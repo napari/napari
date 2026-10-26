@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
 
     from napari.components.histogram import HistogramModel
     from napari.types import ArrayLike
+    from napari.utils.color import ColorValue
     from napari.utils.transforms import Affine
 
 __all__ = ('Image',)
@@ -661,9 +662,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _calculate_values_and_positions_from_ray_samples(
         self,
-        sample_values: npt.NDArray,
-        sample_points: npt.NDArray,
-    ) -> Generator[tuple[float, np.ndarray], None, None]:
+        sample_values: np.ndarray[tuple[int], np.dtype[np.floating]]
+        | np.ndarray[tuple[int, Literal[3, 4]], np.dtype[np.floating]],
+        sample_points: np.ndarray[tuple[int], np.dtype[np.integer]],
+    ) -> Generator[tuple[float | ColorValue, np.ndarray], None, None]:
         """Calculate values and positions from ray samples.
 
         Parameters
@@ -715,24 +717,24 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         mid_idx = len(sample_values) // 2
         if self.rendering == ImageRendering.AVERAGE:
             value = np.nanmean(sample_values, axis=0)
-            yield value, sample_points[mid_idx]
+            yield value, sample_points[mid_idx]  # pyrefly: ignore [invalid-yield]
             return
 
         if self.rendering == ImageRendering.ADDITIVE:
             value = np.nansum(sample_values, axis=0)
-            yield value, sample_points[mid_idx]
+            yield value, sample_points[mid_idx]  # pyrefly: ignore [invalid-yield]
             return
 
         # all the following cases are returning the *actual* value at the
         # "selected" pixel, whose position changes depending on the rendering mode.
         if self.rendering == ImageRendering.MIP:
             idx = np.nanargmax(sample_values, axis=0)
-            yield sample_values[idx], sample_points[idx]
+            yield sample_values[idx], sample_points[idx]  # pyrefly: ignore [invalid-yield]
             return
 
         if self.rendering == ImageRendering.MINIP:
             idx = np.nanargmin(sample_values, axis=0)
-            yield sample_values[idx], sample_points[idx]
+            yield sample_values[idx], sample_points[idx]  # pyrefly: ignore [invalid-yield]
             return
 
         if self.rendering == ImageRendering.ATTENUATED_MIP:

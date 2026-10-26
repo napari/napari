@@ -704,7 +704,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> Generator[tuple[float, np.ndarray], None, None]:
+    ) -> Generator[tuple[float | None, np.ndarray], None, None]:
         """Get all vertices along a ray in 3D.
 
         Parameters
@@ -751,10 +751,15 @@ class Surface(IntensityVisualizationMixin, Layer):
             barycentric_coordinates = calculate_barycentric_coordinates(
                 intersection, triangle_vertices
             )
-            vertex_values = self._view_vertex_values[triangle_vertex_indices]
-            intersection_value = (
-                barycentric_coordinates * vertex_values
-            ).sum()
+            if self._view_vertex_values is not None:
+                vertex_values = self._view_vertex_values[
+                    triangle_vertex_indices
+                ]
+                intersection_value = (
+                    barycentric_coordinates * vertex_values
+                ).sum()
+            else:
+                intersection_value = None
 
             yield intersection_value, intersection_point
 

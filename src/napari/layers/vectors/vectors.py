@@ -814,7 +814,8 @@ class Vectors(Layer):
             The point index and its nD data-space position.
             Sorted by distance from start_point (closest first).
         """
-        return
+        # TODO: implement this!
+        return  # pyrefly: ignore [bad-return]
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
