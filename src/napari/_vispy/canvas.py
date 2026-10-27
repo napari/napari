@@ -35,6 +35,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from napari.utils.key_bindings import _vispy_to_appmodel_mods
 from napari.utils.mouse_event import MouseEvent, MouseEventType
 from napari.utils.notifications import show_warning
 
@@ -176,6 +177,7 @@ class VispyCanvas:
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._last_event = None
+        self._drag_press_event = None
 
         self._font_info = FontInfo(face=font_family, font_manager=font_manager)
         self.viewer = viewer
@@ -475,7 +477,7 @@ class VispyCanvas:
         return None, None
 
     @property
-    def last_event(self) -> NapariMouseEvent | None:
+    def last_event(self) -> MouseEvent | None:
         return self._last_event
 
     def _process_mouse_event(
@@ -559,6 +561,11 @@ class VispyCanvas:
 
         napari_event = MouseEvent(
             type=MouseEventType(event.type),
+            button=event.button,
+            buttons=event.buttons,
+            delta=event.delta,
+            modifier_keys=_vispy_to_appmodel_mods(event.modifiers),
+            press_event=self._drag_press_event,
             view_direction=np.array(view_direction),
             up_direction=np.array(up_direction),
             camera_zoom=self.viewer.scene.camera.zoom,
@@ -570,6 +577,10 @@ class VispyCanvas:
         )
 
         self._last_event = napari_event
+        if self._drag_press_event is None:
+            self._drag_press_event = (
+                napari_event if napari_event.type == 'mouse_press' else None
+            )
 
         # Update the cursor position
         self.viewer.cursor._view_direction = view_direction

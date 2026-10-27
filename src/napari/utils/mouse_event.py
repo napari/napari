@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
-from typing import Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
 from app_model.types import KeyMod
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import deprecated
+
+from napari.utils.key_bindings import _appmodel_to_vispy_mods
+
+if TYPE_CHECKING:
+    from vispy.util.keys import Key
 
 
 class MouseEventType(StrEnum):
@@ -33,7 +38,7 @@ class MouseEvent(BaseModel):
         will return the button that started the drag.
     buttons : tuple[int, ...]
         Tuple of buttons held during this event.
-    modifiers : tuple[KeyMod, ...]
+    modifier_keys : tuple[Modifier, ...]
         Tuple of modifier keys held during this event.
     delta : tuple[float, float]
         The amount of scrolling in horizontal and vertical direction. One
@@ -67,6 +72,7 @@ class MouseEvent(BaseModel):
         arbitrary_types_allowed=True,
         validate_assignment=True,
         validate_default=True,
+        extra='forbid',
     )
 
     # napari info
@@ -83,7 +89,7 @@ class MouseEvent(BaseModel):
     type: MouseEventType
     button: int | None = None
     buttons: tuple[int, ...] = ()
-    modifiers: tuple[KeyMod, ...] = ()
+    modifier_keys: tuple[KeyMod, ...] = ()
     delta: tuple[float, float] | None = None
     press_event: MouseEvent | None = None
 
@@ -106,6 +112,15 @@ class MouseEvent(BaseModel):
     )
     def position(self) -> tuple[float, ...]:
         return self.world_position
+
+    @property
+    @deprecated(
+        'event.modifiers is deprecated. Use event.modifier_keys instead.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def modifiers(self) -> list[Key]:
+        return _appmodel_to_vispy_mods(self.modifier_keys)
 
     @property
     def is_dragging(self) -> bool:
