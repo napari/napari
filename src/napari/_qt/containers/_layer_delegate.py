@@ -71,7 +71,8 @@ from napari.resources import LOADING_GIF_PATH
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from qtpy.QtCore import QAbstractItemModel
+    from app_model.backends.qt import QModelMenu
+    from qtpy.QtCore import QAbstractItemModel, QObject
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QTreeView, QWidget
 
@@ -114,7 +115,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     loading_frame_changed = Signal()
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._load_movie = QMovie(LOADING_GIF_PATH)
         self._load_movie.setScaledSize(QSize(18, 18))
@@ -123,6 +124,7 @@ class LayerDelegate(QStyledItemDelegate):
             WeakKeyDictionary()
         )
         self._alt_click_layer: Callable[[], Layer | None] = lambda: None
+        self._context_menu: QModelMenu | None = None
 
     def paint(
         self,
@@ -399,12 +401,12 @@ class LayerDelegate(QStyledItemDelegate):
         """Show the layerlist context menu.
         To add a new item to the menu, update the _LAYER_ACTIONS dict.
         """
-        if not hasattr(self, '_context_menu'):
-            self._context_menu = build_qmodel_menu(
-                MenuId.LAYERLIST_CONTEXT, parent=parent
-            )
+        menu = self._context_menu
+        if menu is None:
+            menu = build_qmodel_menu(MenuId.LAYERLIST_CONTEXT, parent=parent)
+            self._context_menu = menu
 
         layer_list = _layer_list_model(model)._root
         ctx = get_context(layer_list)
-        self._context_menu.update_from_context(ctx)
-        self._context_menu.exec(pos)
+        menu.update_from_context(ctx)
+        menu.exec(pos)
