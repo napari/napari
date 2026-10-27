@@ -9,6 +9,7 @@ from napari.components import ViewerModel
 from napari.components.dims import RangeTuple
 from napari.components.overlays import GridLinesOverlay
 from napari.utils._units import compute_nice_ticks
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 def test_scene_axes_dimensions_properly_detected():
@@ -78,3 +79,27 @@ def test_grid_lines_clipped_to_viewbox():
     grid_lines.parent = view_2.scene
     assert all(clipped_to(view_2))
     assert not any(clipped_to(view_1))
+
+
+def test_grid_lines_updated_in_place():
+    """Grid visuals are reused, not recreated, when the view changes.
+
+    Creating visuals means building new shader programs, which is slow.
+    """
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((10, 10, 10)))
+    overlay = GridLinesOverlay(visible=True)
+    vispy_overlay = VispyGridLinesOverlay(
+        viewer=viewer, overlay=overlay, font_info=FontInfo()
+    )
+    grid_lines = vispy_overlay.node
+    grids = list(grid_lines.grids)
+
+    viewer.dims.ndisplay = 3
+    viewer.dims.order = (1, 0, 2)
+    overlay.color = 'red'
+    assert grid_lines.grids == grids
+
+    for grid in grid_lines.grids:
+        color = grid._grid_color_fn['color'].value
+        np.testing.assert_array_equal(color, transform_color('red')[0])
