@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
+    from napari._vispy.mouse_event import NapariMouseEvent
 
 
 def _provide_viewer(public_proxy: bool = True) -> viewer.Viewer | None:
@@ -100,6 +101,10 @@ def register_qt_types() -> None:
             **app.injection_store.namespace,
             'QtViewer': QtViewer,
         }
+
+
+def _provide_last_mouse_event() -> NapariMouseEvent | None:
+    w._qt_viewer.canvas.last_event if (w := _provide_window()) else None
 
 
 # syntax could be simplified after

@@ -189,6 +189,7 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
+        self._last_event = None
 
         self._font_info = FontInfo(face=font_family, font_manager=font_manager)
         self.viewer = viewer
@@ -486,6 +487,10 @@ class VispyCanvas:
 
         return None, None
 
+    @property
+    def last_event(self) -> NapariMouseEvent | None:
+        return self._last_event
+
     def _process_mouse_event(
         self, mouse_callbacks: Callable, event: MouseEvent
     ) -> None:
@@ -560,6 +565,8 @@ class VispyCanvas:
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
         )
+
+        self._last_event = napari_event
 
         # Update the cursor position
         self.viewer.cursor._view_direction = napari_event.view_direction
