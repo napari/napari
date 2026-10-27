@@ -1085,30 +1085,6 @@ def poly_to_indices(
     return rows, cols
 
 
-def grid_points_in_poly(shape, vertices):
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Loops through all indices in the grid
-
-    Parameters
-    ----------
-    shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    points = np.array(
-        [(x, y) for x in range(shape[0]) for y in range(shape[1])], dtype=int
-    )
-    inside = points_in_poly(points, vertices)
-    mask = inside.reshape(shape)
-    return mask
-
-
 def points_in_poly(
     points, vertices
 ) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
