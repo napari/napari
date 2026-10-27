@@ -80,6 +80,10 @@ def test_viewer(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
+    with pytest.warns(FutureWarning):
+        assert viewer.title == 'napari'
+    with pytest.warns(FutureWarning):
+        viewer.title = 'test'
 
     assert view.viewer == viewer
 
