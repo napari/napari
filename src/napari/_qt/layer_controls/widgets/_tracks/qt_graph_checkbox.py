@@ -7,7 +7,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import checked_to_bool
 from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
 
@@ -41,10 +40,9 @@ class QtGraphCheckBoxControl(QtWidgetControlsBase):
         self.graph_checkbox = QCheckBox()
         self.graph_checkbox.setChecked(True)
         connect_setattr(
-            self.graph_checkbox.stateChanged,
+            self.graph_checkbox.toggled,
             layer,
             'display_graph',
-            convert_fun=checked_to_bool,
         )
 
         self.graph_checkbox_label = QtWrappedLabel('graph:')
