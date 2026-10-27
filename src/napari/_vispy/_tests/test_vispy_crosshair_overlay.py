@@ -93,6 +93,18 @@ def test_crosshair_default_axes_colors(crosshair_overlay):
     np.testing.assert_allclose(vispy_overlay.node.color[:2], [cyan, yellow])
 
 
+def test_crosshair_default_axes_colors_2d_data_3d_view(crosshair_overlay):
+    """Test the z line has its own color for 2D data in a 3D view"""
+    viewer, _, vispy_overlay = crosshair_overlay
+    viewer.add_image(np.zeros((10, 20)))
+    viewer.dims.ndisplay = 3
+    cyan, magenta, yellow = AXES_COLORS[:3]
+    # same colors as once the data gains a leading dim
+    np.testing.assert_allclose(
+        vispy_overlay.node.color, [cyan, magenta, yellow]
+    )
+
+
 def test_crosshair_three_colors(crosshair_overlay):
     """Test three colors follow the displayed axes, in napari order"""
     viewer, overlay, vispy_overlay = crosshair_overlay
