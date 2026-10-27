@@ -328,6 +328,9 @@ class VispyCanvas:
 
     @property
     def events(self):
+        warnings.warn(
+            'viewer._qt_viewer.canvas.events is deprecated. Use viewer or layer mouse callbacks instead (e.g. Viewer.mouse_drag_callbacks.append(my_callback)).'
+        )
         # This is backwards compatible with the old events system
         # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
         return self._scene_canvas.events

@@ -204,12 +204,44 @@ def mouse_double_click_callbacks(
         mouse_click_func(obj, event)
 
 
+def mouse_click_callbacks(
+    obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
+) -> None:
+    """Run mouse click callbacks on either layer or viewer object.
+
+    click callbacks must be regular functions, not generators:
+
+    .. code-block:: python
+
+        def click_callback(layer, event):
+            layer._finish_drawing()
+
+    Parameters
+    ----------
+    obj : ViewerModel or Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+
+    Returns
+    -------
+    None
+
+    """
+    # iterate through drag callback functions
+    for mouse_click_func in obj.mouse_click_callbacks:
+        # execute function to run press event code
+        if inspect.isgeneratorfunction(mouse_click_func):
+            raise ValueError("Click actions can't be generators.")
+        mouse_click_func(obj, event)
+
+
 def mouse_press_callbacks(
     obj: MousemapProvider, event: ReadOnlyWrapper[NapariMouseEvent]
 ) -> None:
     """Run mouse press callbacks on either layer or viewer object.
 
-    Drag callbacks go through this machinery too on setup (since the first
+    Drag callbacks go through this machinery on setup (since the first
     step of a drag is a press).
 
     Note that drag callbacks should have the following form:
