@@ -526,6 +526,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
+
     _cursor_modes: ClassVar[dict[StringEnum, str]] = {
         Mode.PAN_ZOOM: 'standard',
         Mode.TRANSFORM: 'standard',
@@ -757,6 +758,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
             (self.mouse_move_callbacks, self._move_modes),
+            (
+                self.mouse_click_callbacks,
+                getattr(self, '_click_modes', defaultdict(lambda: no_op)),
+            ),
             (
                 self.mouse_double_click_callbacks,
                 getattr(

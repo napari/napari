@@ -535,7 +535,7 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     image = viewer_model.add_image(data)
 
-    @image.mouse_drag_callbacks.append
+    @image.mouse_click_callbacks.append
     def on_click(layer, event):
         expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
