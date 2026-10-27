@@ -956,6 +956,9 @@ class VispyCanvas:
                 parent=parent,
                 **kwargs,
             )
+            vispy_overlay.set_default_font_size(
+                get_settings().appearance.font_size
+            )
         else:
             vispy_overlay.node.parent = parent
             if isinstance(overlay, CanvasOverlay):
@@ -1224,6 +1227,13 @@ class VispyCanvas:
             yield from overlays_by_tiling_order['direct']
 
     def _update_overlay_canvas_positions(self, event=None):
+        if any(
+            layer not in self.layer_to_visual for layer in self.viewer.layers
+        ):
+            # a layer is being added (e.g. a redraw caused by the dims
+            # sliders updating) and its viewbox has no overlays yet; the
+            # positions will be updated by `_update_scenegraph` once done
+            return
         x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
         x_offset_total = {}
         y_offset_total = {}
