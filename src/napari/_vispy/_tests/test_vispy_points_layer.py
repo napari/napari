@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -188,3 +190,33 @@ def test_highlight_with_rescale_projection():
 
     # Previously, raised ValueError: could not broadcast input array from shape (5,) into shape (1,)
     vispy_layer._on_highlight_change()
+
+
+@pytest.mark.parametrize(
+    ('border_width', 'is_relative', 'expected'),
+    [
+        (0.5, True, 15),  # relative: size + 0.5 * size
+        (4, False, 14),  # absolute, smaller than the size
+        (30, False, 20),  # absolute, capped to the size like the markers
+    ],
+)
+def test_highlight_size_includes_capped_border(
+    border_width, is_relative, expected
+):
+    """The highlight must use the same border-capped size as hit-testing."""
+    layer = Points(
+        [[5.0, 5.0]],
+        size=10,
+        border_width=border_width,
+        border_width_is_relative=is_relative,
+    )
+    layer.selected_data = {0}
+    assert len(layer._highlight_index) == 1
+
+    # Call the method on a stub, as creating the node needs a working GL.
+    stub = MagicMock()
+    stub.layer = layer
+    VispyPointsLayer._on_highlight_change(stub)
+
+    kwargs = stub.node.selection_markers.set_data.call_args.kwargs
+    assert kwargs['size'][0] == pytest.approx(expected)
