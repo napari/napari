@@ -10,23 +10,23 @@ from contextlib import suppress
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 from unittest.mock import patch
 from weakref import WeakSet
 
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable, Generator, Sequence
     from typing import Any
 
     from npe2._pytest_plugin import TestPluginManager
-    from pytest import FixtureRequest  # noqa: PT013
     from pytestqt.qtbot import QtBot
 
     from napari import Viewer
     from napari._app_model._app import NapariApplication
     from napari._qt.qt_viewer import QtViewer
+    from napari._vispy.mouse_event import VectorF64
     from napari.utils._proxies import PublicOnlyProxy
 
 _SAVE_GRAPH_OPNAME = '--save-leaked-object-graph'
@@ -251,13 +251,25 @@ def plugin_settings(
     napari_settings._clear_plugin_settings_cache()
 
 
+class ViewerFactory(Protocol):
+    """Callable returned by the ``make_napari_viewer`` fixture."""
+
+    def __call__(
+        self,
+        *model_args: Any,
+        ViewerClass: type[Viewer] = ...,
+        strict_qt: bool | str | None = ...,
+        **model_kwargs: Any,
+    ) -> Viewer: ...
+
+
 @pytest.fixture
 def make_napari_viewer(
     qtbot: QtBot,
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
     mock_app_model: NapariApplication,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[Callable[..., Viewer], None, None]:
+) -> Generator[ViewerFactory, None, None]:
     """A pytest fixture function that creates a napari viewer for use in testing.
 
     This fixture will take care of creating a viewer and cleaning up at the end of the
@@ -433,7 +445,7 @@ def make_napari_viewer(
         leak: set[QWidget] = set(QApplication.topLevelWidgets()).difference(
             initial
         )
-        leak_filtered = (x for x in leak if x.objectName() != 'handled_widget')
+        leak_filtered = [x for x in leak if x.objectName() != 'handled_widget']
         # still not sure how to clean up some of the remaining vispy
         # vispy.app.backends._qt.CanvasBackendDesktop widgets...
         # observed in `test_sys_info.py`
@@ -443,7 +455,7 @@ def make_napari_viewer(
         ):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
-            msg = f"""The following Widgets leaked!: {leak}.
+            msg = f"""The following Widgets leaked!: {leak_filtered}.
 
             Note: If other tests are failing it is likely that widgets will leak
             as they will be (indirectly) attached to the tracebacks of previous failures.
@@ -463,7 +475,7 @@ def make_napari_viewer(
 
 @pytest.fixture
 def make_napari_viewer_proxy(
-    make_napari_viewer: Callable[..., Viewer],
+    make_napari_viewer: ViewerFactory,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[..., PublicOnlyProxy[Viewer]]:
     """Fixture that returns a function for creating a napari viewer wrapped in proxy.
@@ -498,30 +510,29 @@ def make_napari_viewer_proxy(
     return actual_factory
 
 
+@dataclass
+class _MouseEvent:
+    type: str
+    position: tuple[float, ...]
+    is_dragging: bool = False
+    dims_displayed: Sequence[int] = (0, 1)
+    dims_point: tuple[float, ...] = (0, 0)
+    view_direction: Sequence[float] | VectorF64 | None = None
+    pos: tuple[int, int] = (0, 0)
+    button: int | None = None
+    handled: bool = False
+
+
 @pytest.fixture
-def MouseEvent() -> type:
-    """Create a subclass for simulating vispy mouse events.
+def MouseEvent() -> type[_MouseEvent]:
+    """Return a dataclass for simulating napari mouse events.
 
     Returns
     -------
-    Event : Type
-        A new dataclass named Event that can be used in place of
-        a NapariMouseEvent in tests.
+    type[_MouseEvent]
+        A dataclass that can be used in place of a NapariMouseEvent in tests.
     """
-
-    @dataclass
-    class Event:
-        type: str
-        position: tuple[float, ...]
-        is_dragging: bool = False
-        dims_displayed: tuple[int, int] | tuple[int, int, int] = (0, 1)
-        dims_point: tuple[float, ...] = (0, 0)
-        view_direction: tuple[float, float, float] | None = None
-        pos: tuple[int, int] = (0, 0)
-        button: int | None = None
-        handled: bool = False
-
-    return Event
+    return _MouseEvent
 
 
 class LeakSafeLogRecord(logging.LogRecord):
