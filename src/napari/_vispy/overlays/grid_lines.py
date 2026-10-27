@@ -128,7 +128,6 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
             if self.overlay.color is not None
             else self._get_fgcolor()
         )
-        self.node.reset_grids()
         self._on_extent_change()
 
         self._on_view_direction_change()
