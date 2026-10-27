@@ -90,12 +90,20 @@ class MouseEvent(BaseModel):
     handled: bool = False
 
     @property
-    @deprecated('TODO')
+    @deprecated(
+        'event.pos is deprecated. Use event.canvas_position instead.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
     def pos(self) -> tuple[int, int]:
         return self.canvas_position[::-1]
 
     @property
-    @deprecated('TODO')
+    @deprecated(
+        'event.position is deprecated. Use event.world_position instead.',
+        category=FutureWarning,
+        stacklevel=2,
+    )
     def position(self) -> tuple[float, ...]:
         return self.world_position
 
