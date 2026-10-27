@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakSet
 
 import numpy as np
@@ -159,7 +159,7 @@ class VispyCanvas:
         for ignoring mousewheel events with modifiers.
     """
 
-    _instances: WeakSet[VispyCanvas] = WeakSet()
+    _instances: ClassVar[WeakSet[VispyCanvas]] = WeakSet()
 
     def __init__(
         self,
