@@ -71,9 +71,9 @@ class EventedList(TypedMutableSequence[_T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``.
+        Slice assignment emits remove and insert events instead; an extended
+        slice emits one ``changed`` per index.
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -95,9 +95,9 @@ class EventedList(TypedMutableSequence[_T]):
             'removing': None,  # int
             'removed': None,  # Tuple[int, Any] - (idx, value)
             'moving': None,  # Tuple[int, int]
-            'moved': None,  # Tuple[Tuple[int, int], Any]
+            'moved': None,  # Tuple[int, int, Any] - (idx, new_idx, value)
             'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
-            'reordered': None,  # None
+            'reordered': None,  # self
         }
 
         # For inheritance: If the mro already provides an EmitterGroup, add...
@@ -245,8 +245,8 @@ class EventedList(TypedMutableSequence[_T]):
 
         Parameters
         ----------
-        sources : Sequence[int or slice]
-            A sequence of indices
+        sources : Iterable[int or slice]
+            The indices to move
         dest_index : int, optional
             The destination index.  All sources will be inserted before this
             index (in pre-move space), by default 0... which has the effect of
@@ -304,9 +304,9 @@ class EventedList(TypedMutableSequence[_T]):
 
         Parameters
         ----------
-        sources : Iterable[tuple[int, ...]]
-            An iterable of tuple[int] that should be moved to ``dest_index``.
-        dest_index : Tuple[int]
+        sources : Iterable[int or slice]
+            Indices or slices that should be moved to ``dest_index``.
+        dest_index : int
             The destination for sources.
         """
         if isinstance(dest_index, slice):
