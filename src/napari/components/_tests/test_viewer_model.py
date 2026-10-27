@@ -27,6 +27,10 @@ def test_viewer_model():
     viewer = ViewerModel()
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
+    with pytest.warns(FutureWarning):
+        assert viewer.title == 'napari'
+    with pytest.warns(FutureWarning):
+        viewer.title = 'test'
 
 
 def test_add_image():
