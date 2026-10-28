@@ -101,13 +101,13 @@ class EventedMetaclass(ModelMetaclass):
 
         # to allow simpler configurtion, the `properties_dependence` config
         # allows any collection of strings, but we convert it to a set here for consistency
-        prop_dependence = {
+        child_dependencies = {
             k: set(v)
             for k, v in cls.model_config.get('child_dependencies', {}).items()
         }
-        cls.__properties_dependence__ = {
+        cls.__child_dependencies__ = {
             **getattr(cls, '__properties_dependence__', {}),
-            **prop_dependence,
+            **child_dependencies,
         }
 
         cls.__field_dependents__ = _get_field_dependents(cls)
@@ -209,9 +209,7 @@ def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
                     cls.__properties__.get(prop_name), RenamedProperty
                 ) or any(
                     path.startswith(f'{dep_name}.')
-                    for path in cls.__properties_dependence__.get(
-                        prop_name, ()
-                    )
+                    for path in cls.__child_dependencies__.get(prop_name, ())
                 ):
                     # The RenamedProperty will be handled by RenamedWarningEmitter, so no need to
                     # add it to the dependencies.
@@ -242,7 +240,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __non_evented_properties__: ClassVar[set[str]] = {'events', '_defaults'}
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
-    __properties_dependence__: ClassVar[dict[str, set[str]]]
+    __child_dependencies__: ClassVar[dict[str, set[str]]]
     __field_dependents__: ClassVar[dict[str, set[str]]]
     __eq_operators__: ClassVar[dict[str, Callable[[Any, Any], bool]]]
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
@@ -278,7 +276,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
         property_events = {
             name: _property_to_event_emitter(
-                name, prop, self.__properties_dependence__.get(name, set())
+                name, prop, self.__child_dependencies__.get(name, set())
             )
             for name, prop in self.__properties__.items()
         }
