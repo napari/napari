@@ -176,8 +176,8 @@ class VispyCanvas:
         self._pause_scene_graph = False
         self.max_texture_sizes = None
         self._last_theme_color = None
-        self._last_event = None
         self._drag_press_event = None
+        self._last_event = None
 
         self._font_info = FontInfo(face=font_family, font_manager=font_manager)
         self.viewer = viewer
