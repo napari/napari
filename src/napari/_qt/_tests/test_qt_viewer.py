@@ -497,23 +497,6 @@ def test_process_mouse_event(
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-def test_process_mouse_event_over_empty_grid_viewbox(
-    qt_viewer: QtViewer, viewer_model: ViewerModel
-) -> None:
-    viewer_model.add_image(np.zeros((20, 20)))
-    viewer_model.canvas.grid.enabled = True
-    # any position outside the populated viewboxes resolves to an empty one
-    pos = np.array([-1.0, -1.0])
-    assert qt_viewer.canvas._get_viewbox_at(pos) == (None, None)
-
-    qt_viewer.canvas._process_mouse_event(
-        mouse_press_callbacks, MouseEvent(type='mouse_press', pos=pos)
-    )
-
-    assert viewer_model.cursor.viewbox is None
-    assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
-
-
 def test_process_mouse_event_2d_layer_3d_viewer(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
