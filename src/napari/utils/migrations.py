@@ -344,7 +344,9 @@ def add_deprecated_property(
     return _func
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> Callable:
+def deprecated_constructor_arg_by_attr(
+    name: str,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
@@ -359,7 +361,7 @@ def deprecated_constructor_arg_by_attr(name: str) -> Callable:
     Returns
     -------
     function
-        decorated function
+        decorator that wraps the constructor
     """
 
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
