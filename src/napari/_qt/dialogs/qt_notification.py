@@ -106,11 +106,9 @@ class NapariQtNotification(QDialog):
         self.opacity = QGraphicsOpacityEffect(parent=self)
         self.setGraphicsEffect(self.opacity)
         self.opacity_anim = QPropertyAnimation(
-            target=self.opacity, propertyName=b'opacity', parent=self
+            self.opacity, b'opacity', parent=self
         )
-        self.geom_anim = QPropertyAnimation(
-            target=self, propertyName=b'geometry', parent=self
-        )
+        self.geom_anim = QPropertyAnimation(self, b'geometry', parent=self)
         self.move_to_bottom_right()
 
     def _update_icon(self, severity: str):
