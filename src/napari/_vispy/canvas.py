@@ -949,6 +949,9 @@ class VispyCanvas:
                 parent=parent,
                 **kwargs,
             )
+            vispy_overlay.set_default_font_size(
+                get_settings().appearance.font_size
+            )
         else:
             vispy_overlay.node.parent = parent
             if isinstance(overlay, CanvasOverlay):
