@@ -40,7 +40,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: Window = None  # pyrefly: ignore[bad-assignment]
+    _window: Window
     _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
 
     def __init__(
