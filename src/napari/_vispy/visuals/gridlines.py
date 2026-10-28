@@ -11,6 +11,8 @@ from napari.components.dims import RangeTuple
 from napari.utils._units import compute_nice_ticks
 
 if TYPE_CHECKING:
+    from vispy.visuals.filters.clipper import Clipper
+
     from napari._vispy.utils.qt_font import FontInfo
     from napari.utils.color import ColorValue
 
@@ -26,7 +28,12 @@ class GridLines3D(Node):
 
         # compound does not play well with sub-transforms for some reason
         # so we use a simple empty node with children instead
-        self.tick_labels: dict[int, list[Text]] = {0: [], 1: [], 2: []}
+        # one Text visual per axis holds all its ticks: each visual has its
+        # own shader program, and building those is slow, notably when
+        # overlays are created or moved between views (e.g: grid mode)
+        self.tick_labels: list[Text] = [
+            Text(font_info=font_info) for _ in range(3)
+        ]
         self.axis_labels: list[Text] = [
             Text(font_info=font_info) for _ in range(3)
         ]
@@ -55,6 +62,29 @@ class GridLines3D(Node):
             self.grids.append(grid)
             self.axis_labels[axis].transform = STTransform()
             self.axis_labels[axis].parent = grid
+            self.tick_labels[axis].transform = STTransform()
+            self.tick_labels[axis].parent = grid
+
+    def _set_clipper(self, node: Node, clipper: Clipper | None) -> None:
+        """Propagate the viewbox clipper to all child visuals.
+
+        GridLines3D is just a Node (not VisualNode), so it would otherwise
+        ignore the clipper and draw outside its viewbox (like ColorBar).
+
+        Unlike ColorBar, which is a child of the ViewBox, this is a child of
+        its scene, which doesn't remove the clipper when the grid moves to
+        another viewbox. The base Node does, but only for the clippers it
+        finds in `_clippers`, so they need to be stored there.
+        """
+        if clipper is None:
+            self._clippers.pop(node, None)
+        else:
+            self._clippers[node] = clipper
+        # labels are children of the grids, not of this node. We need to explicity
+        # set the clipper for all of them otherwise they can get out of sync.
+        for grid in self.grids:
+            for visual in (grid, *grid.children):
+                visual._set_clipper(node, clipper)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for grid in self.grids:
@@ -69,9 +99,8 @@ class GridLines3D(Node):
         self._opacity = opacity
         for grid in self.grids:
             grid.opacity = opacity
-        for ticks in self.tick_labels.values():
-            for tick in ticks:
-                tick.opacity = opacity
+        for ticks in self.tick_labels:
+            ticks.opacity = opacity
         for axis in self.axis_labels:
             axis.opacity = opacity
 
@@ -90,8 +119,7 @@ class GridLines3D(Node):
 
         is_3d = len(bounds) == 3
         self.grids[2].visible = is_3d
-        for tick in self.tick_labels[2]:
-            tick.visible = is_3d
+        self.tick_labels[2].visible = is_3d
         self.axis_labels[2].visible = is_3d
 
         self.update()
@@ -107,8 +135,7 @@ class GridLines3D(Node):
         far_bounds = []
         for axis in range(3):
             self.grids[axis].transform.reset()
-            for tick in self.tick_labels[axis]:
-                tick.transform.translate = (0, 0, 0)
+            self.tick_labels[axis].transform.translate = (0, 0, 0)
             self.axis_labels[axis].transform.translate = (0, 0, 0)
 
             # get the translation necessary to bring the grid to the back
@@ -131,15 +158,14 @@ class GridLines3D(Node):
             # These branches were found by trial and error with the goal to reproduce the
             # tick positioning by plotly (e.g: https://plotly.com/python/3d-scatter-plots/)
 
-            for tick in self.tick_labels[axis]:
-                self._translate_text_based_on_camera(
-                    tick,
-                    axis,
-                    far_bounds,
-                    ranges,
-                    tick_offset,
-                    view_is_flipped,
-                )
+            self._translate_text_based_on_camera(
+                self.tick_labels[axis],
+                axis,
+                far_bounds,
+                ranges,
+                tick_offset,
+                view_is_flipped,
+            )
             # offset * 3 for axis labels so they don't overlap
             self._translate_text_based_on_camera(
                 self.axis_labels[axis],
@@ -196,9 +222,8 @@ class GridLines3D(Node):
         ranges: list[RangeTuple],
     ) -> None:
         if not show_ticks:
-            for axis_ticks in self.tick_labels.values():
-                for tick in axis_ticks:
-                    tick.visible = False
+            for ticks in self.tick_labels:
+                ticks.visible = False
             return
 
         # generate tick positions with round values
@@ -214,29 +239,15 @@ class GridLines3D(Node):
         ndim = len(ranges)
         for axis in range(ndim):
             next_axis = (axis + 1) % ndim
-            tick_visuals = self.tick_labels[axis]
-            new_tick_values = tick_positions[axis]
-            for i, val in enumerate(new_tick_values):
-                if i >= len(tick_visuals):
-                    # more ticks than before, make a new one
-                    tick = Text(font_info=self.font_info)
-                    tick.transform = STTransform()
-                    tick_visuals.append(tick)
-                else:
-                    tick = tick_visuals[i]
-
-                decimals = max(0, -interval_magnitudes[axis])
-                tick.text = f'{val:.{decimals}f}'
-                tick.pos = (val, ranges[next_axis].start, 0)
-                tick.color = self.color
-                tick.opacity = self._opacity
-                tick.parent = self.grids[axis]
-                tick.visible = True
-                tick.font_size = self.font_size
-
-            for extra_tick in tick_visuals[len(new_tick_values) :]:
-                # disable all extra ones
-                extra_tick.parent = None
+            ticks = self.tick_labels[axis]
+            values = tick_positions[axis]
+            decimals = max(0, -interval_magnitudes[axis])
+            ticks.text = [f'{val:.{decimals}f}' for val in values]
+            ticks.pos = [(val, ranges[next_axis].start, 0) for val in values]
+            ticks.color = self.color
+            ticks.opacity = self._opacity
+            ticks.visible = len(values) > 0
+            ticks.font_size = self.font_size
 
     def set_axis_labels(
         self, show_labels: bool, ranges: list[RangeTuple], labels: list[str]
