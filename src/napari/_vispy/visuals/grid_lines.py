@@ -73,7 +73,8 @@ class GridLines3D(Node):
             self._clippers.pop(node, None)
         else:
             self._clippers[node] = clipper
-        # labels are children of the grids, not of this node
+        # labels are children of the grids, not of this node. We need to explicity
+        # set the clipper for all of them otherwise they can get out of sync.
         for grid in self.grids:
             for visual in (grid, *grid.children):
                 visual._set_clipper(node, clipper)
