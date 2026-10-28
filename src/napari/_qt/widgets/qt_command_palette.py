@@ -25,6 +25,7 @@ _COMMON_ALIASES = {
     'color': 'colour',
     'visualize': 'visualise',
     'preferences': 'settings',
+    'gridlines': 'coordinates',
 }
 _NULL_INDEX = QtCore.QModelIndex()
 
