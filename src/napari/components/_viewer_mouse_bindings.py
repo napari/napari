@@ -143,7 +143,9 @@ def drag_to_zoom(viewer, event):
 
 
 def update_status_from_cursor(viewer, event):
-    if not hasattr(viewer.window, '_qt_window'):
+    if not hasattr(viewer, 'window') or not hasattr(
+        viewer.window, '_qt_window'
+    ):
         return
 
     qt_window = viewer.window._qt_window
