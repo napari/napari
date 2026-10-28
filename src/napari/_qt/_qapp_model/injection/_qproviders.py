@@ -11,6 +11,7 @@ from napari import components, layers, viewer
 from napari._app_model import get_app_model
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.events.containers._selection import Selection
+from napari.utils.mouse_event import MouseEvent
 from napari.viewer import ViewerModel
 
 if TYPE_CHECKING:
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
 
     from napari._qt.qt_main_window import Window
     from napari._qt.qt_viewer import QtViewer
-    from napari._vispy.mouse_event import NapariMouseEvent
 
 
 def _provide_viewer(public_proxy: bool = True) -> viewer.Viewer | None:
@@ -103,8 +103,8 @@ def register_qt_types() -> None:
         }
 
 
-def _provide_last_mouse_event() -> NapariMouseEvent | None:
-    w._qt_viewer.canvas.last_event if (w := _provide_window()) else None
+def _provide_last_mouse_event() -> MouseEvent | None:
+    return w._qt_viewer.canvas.last_event if (w := _provide_window()) else None
 
 
 # syntax could be simplified after
@@ -117,4 +117,5 @@ QPROVIDERS: list[tuple[Callable]] = [
     (_provide_active_layer,),
     (_provide_active_layer_list,),
     (_provide_selected_layers,),
+    (_provide_last_mouse_event,),
 ]
