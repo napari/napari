@@ -353,6 +353,9 @@ def add_path_polygon_lasso(
         while event.type == 'mouse_move':
             polygon_creating(layer, event)
             yield
+        # Enter or Escape may have finished the shape during the drag.
+        if not layer._is_creating:
+            return
         index = layer._moving_value[0]
         vertices = layer._data_view.shapes[index].data
         # If number of vertices is higher than 2, tablet draw mode is assumed and shape is finished upon mouse release

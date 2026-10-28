@@ -11,7 +11,7 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.utils.events.event_utils import connect_setattr
 
 if TYPE_CHECKING:
@@ -60,10 +60,9 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         )
         for layer in self._layers:
             connect_setattr(
-                preserve_labels_cb.stateChanged,
+                preserve_labels_cb.toggled,
                 layer,
                 'preserve_labels',
-                convert_fun=checked_to_bool,
             )
         self.preserve_labels_checkbox = preserve_labels_cb
 
