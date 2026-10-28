@@ -56,6 +56,8 @@ ValidColormapArg = Union[
 ]
 
 T = TypeVar('T', contravariant=True)
+_DT = TypeVar('_DT', bound=np.dtype[np.floating])
+_ShapeT = TypeVar('_ShapeT', bound=tuple[int, ...])
 
 
 class SizedContainer(Protocol[T]):
@@ -291,10 +293,10 @@ def _napari_cmap_to_vispy(colormap: Colormap) -> VispyColormap:
 
 
 def _validate_rgb(
-    colors: np.ndarray[tuple[int, int], np.dtype[np.floating]],
+    colors: np.ndarray[tuple[int, int], _DT],
     *,
     tolerance: float = 0.0,
-) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
+) -> np.ndarray[tuple[int, int], _DT]:
     """Return the subset of colors that is in [0, 1] for all channels.
 
     Parameters
@@ -332,8 +334,10 @@ def _validate_rgb(
 
 
 def low_discrepancy_image(
-    image: npt.NDArray[np.integer], seed: float = 0.5, margin: float = 1 / 256
-) -> npt.NDArray[np.float32]:
+    image: np.ndarray[_ShapeT, np.dtype[np.integer]],
+    seed: float = 0.5,
+    margin: float = 1 / 256,
+) -> np.ndarray[_ShapeT, np.dtype[np.float32]]:
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -350,7 +354,7 @@ def low_discrepancy_image(
 
     Returns
     -------
-    image_out : array of float
+    image_out : array of float, same shape as ``image``
         The set of ``labels`` remapped to [0, 1] quasirandomly.
 
     """
@@ -408,7 +412,7 @@ def _color_random(
     colorspace: Literal['lab', 'luv', 'rgb'] = 'lab',
     tolerance: float = 0.0,
     seed: float | npt.NDArray[np.floating] = 0.5,
-) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Generate n random RGB colors uniformly from LAB or LUV space.
 
     Parameters
@@ -745,7 +749,7 @@ def _increment_unnamed_colormap(
     return name, display_name
 
 
-def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
+def ensure_colormap(colormap: ValidColormapArg | None) -> Colormap:
     """Accept any valid colormap argument, and return Colormap, or raise.
 
     Adds any new colormaps to AVAILABLE_COLORMAPS in the process, except
@@ -753,7 +757,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
     Parameters
     ----------
-    colormap : ValidColormapArg
+    colormap : ValidColormapArg or None
         See ValidColormapArg for supported input types. If None, the default
         ``gray`` colormap is returned.
 

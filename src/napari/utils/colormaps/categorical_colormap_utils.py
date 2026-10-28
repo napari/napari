@@ -52,7 +52,9 @@ class ColorCycle:
         )
 
     @classmethod
-    def validate_type(cls, val: Any) -> ColorCycle:
+    def validate_type(
+        cls, val: dict | ColorCycle | str | list | np.ndarray
+    ) -> ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
@@ -81,9 +83,7 @@ class ColorCycle:
         return self.values[self.current_index]
 
 
-def _coerce_colorcycle_from_dict(
-    val: dict[str, str | list | np.ndarray | int],
-) -> ColorCycle:
+def _coerce_colorcycle_from_dict(val: dict[str, Any]) -> ColorCycle:
     # avoid circular import
     from napari.layers.utils.color_transformations import (
         transform_color,

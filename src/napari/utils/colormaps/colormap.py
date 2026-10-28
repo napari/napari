@@ -140,8 +140,10 @@ class Colormap(EventedModel):
     @field_validator('controls', mode='after')
     @classmethod
     def _check_controls(
-        cls, v: npt.NDArray[Any], info: ValidationInfo
-    ) -> npt.NDArray[Any]:
+        cls,
+        v: np.ndarray[tuple[int], np.dtype[np.floating]],
+        info: ValidationInfo,
+    ) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         # If no control points provided generate defaults
         if len(v) == 0:
             n_controls = len(info.data['colors']) + int(
@@ -234,7 +236,9 @@ class Colormap(EventedModel):
         return cols
 
     @property
-    def colorbar(self) -> npt.NDArray[np.uint8]:
+    def colorbar(
+        self,
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         return make_colorbar(self)
 
     def same_colors(self, other: 'Colormap') -> bool:
@@ -464,7 +468,7 @@ class CyclicLabelColormap(LabelColormapBase):
 
         Parameters
         ----------
-        values : np.ndarray or int
+        values : np.ndarray, sequence of int, or int
             Values to be mapped.
 
         Returns
@@ -568,7 +572,7 @@ class DirectLabelColormap(LabelColormapBase):
 
         Returns
         -------
-        res : (default)dict[int, np.ndarray[float]]
+        res : (default)dict[int | None, np.ndarray[float]]
             A properly-formatted dictionary mapping labels to RGBA arrays.
         """
         if not isinstance(v, defaultdict) and None not in v:
@@ -636,7 +640,7 @@ class DirectLabelColormap(LabelColormapBase):
 
         Parameters
         ----------
-        values : np.ndarray or int
+        values : np.ndarray, sequence of int, or int
             Values to be mapped.
 
         Returns
@@ -933,7 +937,7 @@ def _cast_labels_data_to_texture_dtype_auto(
 
     Parameters
     ----------
-    data : np.ndarray
+    data : np.ndarray | np.integer
         Labels data to be converted.
     colormap : CyclicLabelColormap
         Colormap used to display the labels data.
@@ -1011,7 +1015,7 @@ def _cast_labels_data_to_texture_dtype_direct(
     ----------
     data : np.ndarray | np.integer
         Labels data to be converted.
-    direct_colormap : CyclicLabelColormap
+    direct_colormap : DirectLabelColormap
         Colormap used to display the labels data.
 
     Returns
@@ -1054,6 +1058,31 @@ def _texture_dtype(num_colors: int, dtype: np.dtype) -> np.dtype:
     if dtype.itemsize == 2:
         return np.dtype(np.uint16)
     return _accel_cmap.minimum_dtype_for_labels(num_colors)
+
+
+@overload
+def _normalize_label_colormap(
+    any_colormap_like: CyclicLabelColormap,
+) -> CyclicLabelColormap: ...
+
+
+@overload
+def _normalize_label_colormap(
+    any_colormap_like: DirectLabelColormap,
+) -> DirectLabelColormap: ...
+
+
+@overload
+def _normalize_label_colormap(
+    any_colormap_like: Sequence[ColorValueParam]
+    | np.ndarray[tuple[int, int], np.dtype[Any]],
+) -> CyclicLabelColormap: ...
+
+
+@overload
+def _normalize_label_colormap(
+    any_colormap_like: MutableMapping[int | None, ColorValueParam],
+) -> DirectLabelColormap: ...
 
 
 def _normalize_label_colormap(

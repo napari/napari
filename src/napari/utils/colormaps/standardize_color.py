@@ -23,21 +23,26 @@ from __future__ import annotations
 import functools
 import types
 import warnings
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Generator, Iterable, Sequence
 
     import numpy.typing as npt
 
     from napari.utils.color import ColorValueParam
 
+# Nx4 float32 RGBA array
+_RGBAArray: TypeAlias = np.ndarray[
+    tuple[int, Literal[4]], np.dtype[np.float32]
+]
 
-def transform_color(colors: Any) -> np.ndarray:
+
+def transform_color(colors: ColorValueParam | Generator) -> _RGBAArray:
     """Transforms provided color(s) to an Nx4 array of RGBA np.float32
     values.
 
@@ -76,7 +81,7 @@ def transform_color(colors: Any) -> np.ndarray:
 
 
 @functools.lru_cache(maxsize=1024)
-def _handle_str(color: str) -> np.ndarray:
+def _handle_str(color: str) -> _RGBAArray:
     """Creates an array from a color of type string.
 
     The function uses an LRU cache to enhance performance.
@@ -103,7 +108,7 @@ def _handle_str(color: str) -> np.ndarray:
     return colorarray
 
 
-def _handle_list_like(colors: Sequence) -> np.ndarray | None:
+def _handle_list_like(colors: Sequence) -> _RGBAArray:
     """Parse a list-like container of colors into a numpy Nx4 array.
 
     Handles all list-like containers of colors using recursion (if necessary).
@@ -148,12 +153,12 @@ def _handle_list_like(colors: Sequence) -> np.ndarray | None:
     # User input was an iterable with strings
     if color_array.dtype.kind in ['U', 'O']:
         return _handle_str_list_like(color_array.ravel())
-    return None
+
+    # any other dtype raises, same as for array input
+    return _handle_array(color_array)
 
 
-def _handle_generator(
-    colors: Iterable[Any],
-) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]] | None:
+def _handle_generator(colors: Iterable[Any]) -> _RGBAArray:
     """Generators are converted to lists since we need to know their
     length to instantiate a proper array.
     """
@@ -170,7 +175,7 @@ def handle_nested_colors(
     return ColorArray(colors_as_rbga)
 
 
-def _handle_array(colors: np.ndarray) -> np.ndarray:
+def _handle_array(colors: np.ndarray) -> _RGBAArray:
     """Converts the given array into an array in the right format."""
     kind = colors.dtype.kind
 
@@ -239,7 +244,7 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     raise ValueError(f'Data type of array ({colors.dtype}) not supported.')
 
 
-def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
+def _convert_array_to_correct_format(colors: np.ndarray) -> _RGBAArray:
     """Asserts shape, dtype and normalization of given color array.
 
     This function deals with arrays which are already 'well-behaved',
@@ -274,7 +279,7 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
     return np.atleast_2d(np.asarray(colors, dtype=np.float32))
 
 
-def _handle_str_list_like(colors: Sequence | np.ndarray) -> np.ndarray:
+def _handle_str_list_like(colors: Sequence | np.ndarray) -> _RGBAArray:
     """Converts lists or arrays filled with strings to the proper color array
     format.
 
@@ -288,7 +293,7 @@ def _handle_str_list_like(colors: Sequence | np.ndarray) -> np.ndarray:
     color_array : np.ndarray
         Nx4, float32 color array
     """
-    color_array = np.empty((len(colors), 4), dtype=np.float32)
+    color_array: _RGBAArray = np.empty((len(colors), 4), dtype=np.float32)
     for idx, c in enumerate(colors):
         try:
             color_array[idx, :] = _color_switch[type(c)](c)
@@ -299,9 +304,7 @@ def _handle_str_list_like(colors: Sequence | np.ndarray) -> np.ndarray:
     return color_array
 
 
-def _handle_none(
-    color: None,
-) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.float32]]:
+def _handle_none(color: None) -> _RGBAArray:
     """Converts color given as None to black.
 
     Parameters
@@ -344,7 +347,7 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     return colors.astype(np.float32)
 
 
-_color_switch: dict[Any, Callable] = {
+_color_switch: dict[type, Callable[[Any], _RGBAArray]] = {
     str: _handle_str,
     np.str_: _handle_str,
     list: _handle_list_like,
@@ -390,7 +393,7 @@ def _check_color_dim(
 
     Parameters
     ----------
-    val : np.ndarray
+    val : array-like
         A color array of possibly less than 4 columns
 
     Returns
