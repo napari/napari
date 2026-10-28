@@ -54,6 +54,20 @@ class OverlayTiling(EventedModel):
     bottom_right: Orientation = Orientation.VERTICAL
 
 
+class CanvasEventedDictNamespace(EventedDictNamespace[CanvasOverlay]):
+    """Canvas overlays namespace with the type of each overlay declared.
+
+    The annotations are only for type checkers; values still live in the dict.
+    """
+
+    scale_bar: ScaleBarOverlay
+    text: TextOverlay
+    _brush_circle: BrushCircleOverlay
+    _zoom_box: ZoomOverlay
+    current_slice: CurrentSliceOverlay
+    axes: CanvasAxesOverlay
+
+
 class Canvas(EventedModel):
     """
     Canvas evented model.
@@ -66,7 +80,7 @@ class Canvas(EventedModel):
         Override the theme background color with a custom one.
     grid : GridCanvas
         A model that controls the enabling and settings of the grid mode.
-    overlays : EventedDictNamespace
+    overlays : CanvasEventedDictNamespace
         A dictionary/namespace containing canvas overlays. By default, it exposes
         publicly 'scale_bar', 'text', 'current_slice' and 'axes'
     overlay_tiling : OverlayTiling
@@ -77,8 +91,8 @@ class Canvas(EventedModel):
 
     background_color_override: ColorValue | None = None
     grid: GridCanvas = Field(default_factory=GridCanvas, frozen=True)
-    overlays: EventedDictNamespace[CanvasOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(
+    overlays: CanvasEventedDictNamespace = Field(
+        default_factory=lambda: CanvasEventedDictNamespace(
             {
                 'scale_bar': ScaleBarOverlay(),
                 'text': TextOverlay(),

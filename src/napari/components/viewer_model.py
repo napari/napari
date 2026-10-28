@@ -110,6 +110,7 @@ if TYPE_CHECKING:
         ExperimentalNamespace,
     )
     from napari.components.grid import GridCanvas
+    from napari.layers.utils.plane import SlicingPlane
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
 
@@ -307,8 +308,6 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
     # simple properties exposing overlays for backward compatibility and easy access
-    # NOTE: the isinstance asserts are needed because the EventedDictNamespace does not
-    #       know that specific elements match specific types
     @property
     @deprecated(
         (
@@ -339,9 +338,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The axes property is deprecated. Use `viewer.scene.overlays.axes` instead.
         """
-        overlay = self.scene.overlays.axes
-        assert isinstance(overlay, SceneAxesOverlay)
-        return overlay
+        return self.scene.overlays.axes
 
     @property
     @deprecated(
@@ -357,9 +354,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The floating_axes property is deprecated. Use `viewer.canvas.overlays.axes` instead.
         """
-        overlay = self.canvas.overlays.axes
-        assert isinstance(overlay, CanvasAxesOverlay)
-        return overlay
+        return self.canvas.overlays.axes
 
     @property
     @deprecated(
@@ -375,9 +370,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The scale_bar property is deprecated. Use `viewer.canvas.overlays.scale_bar` instead.
         """
-        overlay = self.canvas.overlays.scale_bar
-        assert isinstance(overlay, ScaleBarOverlay)
-        return overlay
+        return self.canvas.overlays.scale_bar
 
     @property
     @deprecated(
@@ -393,9 +386,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         .. deprecated:: 0.9.0
             The text_overlay property is deprecated. Use `viewer.canvas.overlays.text` instead.
         """
-        overlay = self.canvas.overlays.text
-        assert isinstance(overlay, TextOverlay)
-        return overlay
+        return self.canvas.overlays.text
 
     @property
     @deprecated(
@@ -1216,7 +1207,10 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         multiscale: bool | None = None,
         name: str | Sequence[str] | None = None,
         opacity: float | Sequence[float] = 1.0,
-        plane: dict | Sequence[dict] | None = None,
+        plane: dict
+        | SlicingPlane
+        | Sequence[dict | SlicingPlane]
+        | None = None,
         projection_mode: str | Sequence[str] = 'mean',
         rendering: str | Sequence[str] = 'mip',
         rgb: bool | None = None,
@@ -1325,7 +1319,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             Name of the layer.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.
-        plane : dict or SlicingPlane
+        plane : dict or SlicingPlane, or list of these
             Properties defining plane rendering in 3D. Properties are defined in
             data coordinates. Valid dictionary keys are
             {'position', 'normal', 'thickness', and 'enabled'}.

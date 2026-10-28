@@ -10,6 +10,17 @@ from napari.components.overlays import (
 from napari.utils.events import EventedDictNamespace, EventedModel
 
 
+class SceneEventedDictNamespace(EventedDictNamespace[SceneOverlay]):
+    """EventedDictNamespace for Scene overlays.
+
+    This class is used to provide type hints for the overlays attribute of the
+    Scene class. It ensures that the overlays attribute is an EventedDictNamespace
+    containing only SceneOverlay objects.
+    """
+
+    axes: SceneAxesOverlay
+
+
 class Scene(EventedModel):
     """
     Scene evented model.
@@ -20,18 +31,14 @@ class Scene(EventedModel):
     ----------
     camera: napari.components.camera.Camera
         The camera object modeling the position and view.
-    overlays : EventedDictNamespace
+    overlays : SceneEventedDictNamespace
         A dictionary/namespace containing scene overlays. By default, it exposes
         publicly 'axes'.
     """
 
     camera: Camera = Field(default_factory=Camera, frozen=True)
-    # NOTE: the type ignore comment below is only there because pyrefly
-    #       thinks EventedDictNamespace[SceneAxesOverlay] is not a subtype
-    #       of EventedDictNamespace[SceneOverlay]. This will not be necessary
-    #       as soon as we add any other overlay
-    overlays: EventedDictNamespace[SceneOverlay] = Field(
-        default_factory=lambda: EventedDictNamespace(
+    overlays: SceneEventedDictNamespace = Field(
+        default_factory=lambda: SceneEventedDictNamespace(
             {
                 'axes': SceneAxesOverlay(),
             }
