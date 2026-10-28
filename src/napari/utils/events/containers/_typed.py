@@ -94,7 +94,7 @@ class TypedMutableSequence(MutableSequence[_T]):
     def insert(self, index: int, value: _T) -> None:
         self._list.insert(index, self._type_check(value))
 
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: object) -> bool:
         if type(key) in self._lookup:
             try:
                 self[self.index(key)]
@@ -185,7 +185,9 @@ class TypedMutableSequence(MutableSequence[_T]):
         """Add other to self in place (self += other)."""
         return other + list(self)
 
-    def index(self, value: _L, start: int = 0, stop: int | None = None) -> int:
+    def index(
+        self, value: object, start: int = 0, stop: int | None = None
+    ) -> int:
         """Return first index of value.
 
         Parameters
