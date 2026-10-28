@@ -1,16 +1,16 @@
 import numpy as np
 
-from napari._vispy.overlays.grid_lines import VispyGridLinesOverlay
+from napari._vispy.overlays.gridlines import VispyGridlinesOverlay
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
-from napari.components.overlays import GridLinesOverlay
+from napari.components.overlays import GridlinesOverlay
 from napari.utils._units import compute_nice_ticks
 
 
 def test_scene_axes_dimensions_properly_detected():
     viewer = ViewerModel()
-    gridlines_model = GridLinesOverlay()
-    gridlines_vispy = VispyGridLinesOverlay(
+    gridlines_model = GridlinesOverlay()
+    gridlines_vispy = VispyGridlinesOverlay(
         viewer=viewer, overlay=gridlines_model, font_info=FontInfo()
     )
     viewer.add_image(

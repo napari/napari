@@ -5,17 +5,17 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
-from napari._vispy.visuals.grid_lines import GridLines3D
+from napari._vispy.visuals.gridlines import GridLines3D
 from napari.components.dims import RangeTuple
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
-    from napari.components.overlays import GridLinesOverlay
+    from napari.components.overlays import GridlinesOverlay
 
 
-class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
-    overlay: GridLinesOverlay
+class VispyGridlinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
+    overlay: GridlinesOverlay
     node: GridLines3D
 
     def __init__(

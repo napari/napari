@@ -5,7 +5,7 @@ from napari.layers.base._base_constants import Blending
 from napari.utils.color import ColorValue
 
 
-class GridLinesOverlay(SceneOverlay):
+class GridlinesOverlay(SceneOverlay):
     """Grid lines overlay.
 
     Attributes

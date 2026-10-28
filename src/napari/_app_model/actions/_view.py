@@ -116,19 +116,19 @@ toggle_actions = {
     ],
     MenuId.VIEW_GRIDLINES: [
         (
-            'napari.scene.toggle_grid_lines',
+            'napari.scene.toggle_gridlines',
             'Toggle Grid Lines',
-            'scene.overlays.grid_lines.visible',
+            'scene.overlays.gridlines.visible',
         ),
         (
-            'napari.scene.toggle_grid_lines_axis_labels',
+            'napari.scene.toggle_gridlines_axis_labels',
             'Toggle Grid Lines Axis Labels',
-            'scene.overlays.grid_lines.axis_labels',
+            'scene.overlays.gridlines.axis_labels',
         ),
         (
-            'napari.scene.toggle_grid_lines_tick_labels',
+            'napari.scene.toggle_gridlines_tick_labels',
             'Toggle Grid Lines Tick Labels',
-            'scene.overlays.grid_lines.tick_labels',
+            'scene.overlays.gridlines.tick_labels',
         ),
     ],
 }

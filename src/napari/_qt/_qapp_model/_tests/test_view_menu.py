@@ -52,7 +52,7 @@ def check_view_menu_visibility(viewer, qtbot):
     ('action_id', 'action_title', 'attribute_path'),
     functools.reduce(operator.iadd, toggle_actions.values(), []),
 )
-def test_toggle_axes_scale_bar_grid_lines_attr(
+def test_toggle_axes_scale_bar_gridlines_attr(
     action_id, action_title, attribute_path
 ):
     """
@@ -69,7 +69,7 @@ def test_toggle_axes_scale_bar_grid_lines_attr(
         * `box`
         * `colored`
         * `ticks`
-    * Viewer `grid_lines` attributes:
+    * Viewer `gridlines` attributes:
         * `visible`
         * `labels`
     """
