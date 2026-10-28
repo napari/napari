@@ -186,7 +186,7 @@ class Viewer(ViewerModel):
         rois: list[np.ndarray],
         paths: str | Path | list[str | Path] | None = None,
         scale: float = 1.0,
-    ) -> list[np.ndarray]:
+    ) -> list[np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]]:
         """Export the given rectangular rois to specified file paths.
 
         Iteratively take a screenshot of each given roi. Note that 3D rois
