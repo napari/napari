@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, NamedTuple, cast
 
 import numpy as np
@@ -72,10 +73,9 @@ def _check_xarray(data: ArrayLike) -> _XarrayProps:
     Returns a named tuple with ``has_dims`` (True for Variable / DataArray)
     and ``has_coords`` (True for DataArray only).
     """
-    # xarray is an optional dependency, so it may not be importable.
-    try:
-        import xarray as xr
-    except ImportError:
+    # data can only be an xarray object if xarray was already imported
+    xr = sys.modules.get('xarray')
+    if xr is None:
         return _XarrayProps()
 
     if isinstance(data, xr.DataArray):
