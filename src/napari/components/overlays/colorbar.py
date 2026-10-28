@@ -1,11 +1,11 @@
 from pydantic import Field
 
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays.base import CanvasOverlay
+from napari.components.overlays.base import TiledCanvasOverlay
 from napari.utils.color import ColorValue
 
 
-class ColorBarOverlay(CanvasOverlay):
+class ColorBarOverlay(TiledCanvasOverlay):
     """ColorBar legend overlay.
 
     Attributes
