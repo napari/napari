@@ -6,7 +6,7 @@ from napari.utils.color import ColorValue
 
 
 class GridlinesOverlay(SceneOverlay):
-    """Grid lines overlay.
+    """Gridlines overlay.
 
     Attributes
     ----------

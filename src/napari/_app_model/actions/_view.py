@@ -27,7 +27,7 @@ VIEW_SUBMENUS = [
     ),
     (
         MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_GRIDLINES, title='Grid Lines'),
+        SubmenuItem(submenu=MenuId.VIEW_GRIDLINES, title='Gridlines'),
     ),
 ]
 
@@ -117,17 +117,17 @@ toggle_actions = {
     MenuId.VIEW_GRIDLINES: [
         (
             'napari.scene.toggle_gridlines',
-            'Toggle Grid Lines',
+            'Toggle Gridlines',
             'scene.overlays.gridlines.visible',
         ),
         (
             'napari.scene.toggle_gridlines_axis_labels',
-            'Toggle Grid Lines Axis Labels',
+            'Toggle Gridlines Axis Labels',
             'scene.overlays.gridlines.axis_labels',
         ),
         (
             'napari.scene.toggle_gridlines_tick_labels',
-            'Toggle Grid Lines Tick Labels',
+            'Toggle Gridlines Tick Labels',
             'scene.overlays.gridlines.tick_labels',
         ),
     ],
