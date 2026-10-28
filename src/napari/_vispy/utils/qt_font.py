@@ -8,7 +8,7 @@ This allows for uniform fonts across the entire napari application.
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -17,6 +17,8 @@ from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication, QImage, QPainter
 from vispy.gloo import TextureAtlas
 from vispy.io import load_spatial_filters
 from vispy.visuals.text.text import SDFRendererCPU
+
+from napari.utils.events import EventedModel
 
 if TYPE_CHECKING:
     from typing import Any
@@ -314,10 +316,10 @@ class QtFontManager:
         return self._fonts[key]
 
 
-# using dataclass to not play with pydantic serialization till we want to add events
-@dataclass
-class FontInfo:
+class FontInfo(EventedModel):
     """Font information for vispy text visuals."""
 
+    default_size: float = 9
+    scale: float = 1
     face: str = 'Open Sans'
     font_manager: QtFontManager = field(default_factory=QtFontManager)

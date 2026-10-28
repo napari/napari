@@ -186,7 +186,7 @@ class QtViewer(QSplitter):
         self._dockPerformance: QtViewerDockWidget | None = None
         self._show_welcome_screen = show_welcome_screen
         self._font_manager = QtFontManager()
-        self._overlay_font = QGuiApplication.font().family()
+        self._qt_font_family = QGuiApplication.font().family()
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -198,7 +198,7 @@ class QtViewer(QSplitter):
             viewer=viewer,
             parent=main_widget,
             font_manager=self._font_manager,
-            font_family=self._overlay_font,
+            font_family=self._qt_font_family,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
             autoswap=get_settings().advanced.autoswap_buffers,  # see #5734
@@ -708,7 +708,7 @@ class QtViewer(QSplitter):
             Layer to be added.
         """
         vispy_layer = create_vispy_layer(
-            layer, font_info=self.canvas.font_info()
+            layer, font_info=self.canvas.font_info
         )
 
         # QtPoll is experimental.
@@ -998,24 +998,27 @@ class QtViewer(QSplitter):
             Scale factor to modify final canvas size.
         """
         canvas = self.canvas
-        prev_size = canvas.size
+        old_size = canvas.size
         camera = self.viewer.scene.camera
         old_center = camera.center
         old_zoom = camera.zoom
+        old_font_scale = canvas.font_info.scale
         if size is not None:
             size_arr = np.asarray(size) / self.devicePixelRatio()
         else:
-            size_arr = np.asarray(prev_size)
+            size_arr = np.asarray(old_size)
         size_arr = (size_arr * scale).astype(np.int64)
 
         camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
+        canvas.font_info.scale = scale
         try:
             yield
         finally:
-            canvas.size = prev_size
+            canvas.size = old_size
             camera.center = old_center
             camera.zoom = old_zoom
+            canvas.font_info.scale = old_font_scale
 
     def clipboard(self, flash: bool = True) -> None:
         """Take a screenshot of the currently displayed screen and copy the

@@ -35,7 +35,7 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.overlay.events.color.connect(self._rebuild_all)
         self.overlay.events.axis_labels.connect(self._on_axis_labels_change)
         self.overlay.events.tick_labels.connect(self._on_ticks_change)
-        self.overlay.events.font_size.connect(self._on_font_size_change)
+        self.overlay.events.font_size.connect(self._on_font_change)
         self.overlay.events.n_ticks.connect(self._on_ticks_change)
         self.viewer.dims.events.order.connect(self._rebuild_all)
         self.viewer.dims.events.range.connect(self._on_extent_change)
@@ -86,15 +86,16 @@ class VispyGridLinesOverlay(ViewerOverlayMixin, VispySceneOverlay):
         #       so it doesn't need to be connected to events for that
         self._on_axis_labels_change()
 
-    def _on_font_size_change(self) -> None:
+    def _on_font_change(self) -> None:
         # called by vispy canvas when global fonts are updated
-        font_size = (
+        self.node.font_size = (
             self.overlay.font_size
             if self.overlay.font_size is not None
-            else self._default_font_size
-        )
+            else self.font_info.default_size
+        ) * self.font_info.scale
 
-        self.node.font_size = font_size
+        self.node.face = self.font_info.face
+
         self._on_axis_labels_change()
         self._on_ticks_change()
 
