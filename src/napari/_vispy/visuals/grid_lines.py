@@ -53,26 +53,6 @@ class GridLines3D(Node):
             self.tick_labels[axis].transform = STTransform()
             self.tick_labels[axis].parent = grid
 
-    def _set_clipper(self, node: Node, clipper: Clipper | None) -> None:
-        """Propagate the viewbox clipper to all child visuals.
-
-        GridLines3D is just a Node (not VisualNode), so it would otherwise
-        ignore the clipper and draw outside its viewbox (like ColorBar).
-
-        Unlike ColorBar, which is a child of the ViewBox, this is a child of
-        its scene, which doesn't remove the clipper when the grid moves to
-        another viewbox. The base Node does, but only for the clippers it
-        finds in `_clippers`, so they need to be stored there.
-        """
-        if clipper is None:
-            self._clippers.pop(node, None)
-        else:
-            self._clippers[node] = clipper
-        # labels are children of the grids, not of this node
-        for grid in self.grids:
-            for visual in (grid, *grid.children):
-                visual._set_clipper(node, clipper)
-
     @property
     def color(self) -> ColorValue | str:
         return self._color
