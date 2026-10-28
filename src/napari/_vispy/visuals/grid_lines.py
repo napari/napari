@@ -73,10 +73,9 @@ class GridLines3D(Node):
             self._clippers.pop(node, None)
         else:
             self._clippers[node] = clipper
-        # labels are children of the grids, not of this node
-        for grid in self.grids:
-            for visual in (grid, *grid.children):
-                visual._set_clipper(node, clipper)
+
+        for child in self.children:
+            child._set_clipper(node, clipper)
 
     def set_gl_state(self, *args: Any, **kwargs: Any) -> None:
         for grid in self.grids:
