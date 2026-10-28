@@ -13,7 +13,6 @@ from napari._qt.layer_controls.widgets.qt_contrast_limits import (
     QContrastLimitsPopup,
     range_to_decimals,
 )
-from napari._qt.utils import set_range_slider_value
 from napari.components.dims import Dims
 from napari.layers import Image, Surface
 
@@ -154,9 +153,7 @@ def test_qt_image_controls_change_contrast(qtbot):
     layer = Image(np.random.rand(8, 8))
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
-    set_range_slider_value(
-        qtctrl._contrast_limits_control.contrast_limits_slider, (0.1, 0.8)
-    )
+    qtctrl._contrast_limits_control.contrast_limits_slider.setValue((0.1, 0.8))
     assert tuple(layer.contrast_limits) == (0.1, 0.8)
 
 

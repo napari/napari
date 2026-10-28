@@ -17,7 +17,6 @@ from qtpy.QtWidgets import (
 )
 from superqt import (
     QDoubleRangeSlider,
-    QLabeledDoubleRangeSlider,
     QLabeledDoubleSlider,
 )
 
@@ -27,8 +26,8 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import (
+    QLabeledDoubleRangeSlider,
     qt_signals_blocked,
-    set_range_slider_value,
     set_widgets_enabled_with_opacity,
 )
 from napari._qt.widgets.qt_mode_buttons import QtModePushButton
@@ -128,7 +127,7 @@ class QContrastLimitsPopup(QtPopup):
         self.slider.setRange(*self._layers[0].contrast_limits_range)
         self.slider.setDecimals(decimals)
         self.slider.setSingleStep(10**-decimals)
-        set_range_slider_value(self.slider, self._layers[0].contrast_limits)
+        self.slider.setValue(self._layers[0].contrast_limits)
 
         clim_row = QHBoxLayout()
         clim_row.setContentsMargins(0, 0, 0, 0)
@@ -429,9 +428,7 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
         )
         self.contrast_limits_slider.setSingleStep(10**-decimals)
         # set value of slider based on first layer until we implement a way to handle multiple layers
-        set_range_slider_value(
-            self.contrast_limits_slider, self._layers[0].contrast_limits
-        )
+        self.contrast_limits_slider.setValue(self._layers[0].contrast_limits)
         self.contrast_limits_slider.setToolTip(
             'Right click for detailed slider popup.'
         )
@@ -510,14 +507,14 @@ class QtContrastLimitsControl(QtWidgetControlsBase):
     def _on_contrast_limits_change(self):
         """Receive layer model contrast limits change event and update slider."""
         with qt_signals_blocked(self.contrast_limits_slider):
-            set_range_slider_value(
-                self.contrast_limits_slider, self._layers[0].contrast_limits
+            self.contrast_limits_slider.setValue(
+                self._layers[0].contrast_limits
             )
 
         if self.clim_popup:
             with qt_signals_blocked(self.clim_popup.slider):
-                set_range_slider_value(
-                    self.clim_popup.slider, self._layers[0].contrast_limits
+                self.clim_popup.slider.setValue(
+                    self._layers[0].contrast_limits
                 )
 
     def _on_auto_contrast_change(self):
