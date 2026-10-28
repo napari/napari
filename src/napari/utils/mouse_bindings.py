@@ -37,7 +37,6 @@ class MousemapProvider:
         self.mouse_move_callbacks: list[Callable] = []
         self.mouse_drag_callbacks: list[Callable] = []
         self.mouse_wheel_callbacks: list[Callable] = []
-        self.mouse_click_callbacks: list[Callable] = []
         self.mouse_double_click_callbacks: list[Callable] = []
 
         self._persisted_mouse_event: dict[
