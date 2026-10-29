@@ -1007,11 +1007,15 @@ class QtViewer(QSplitter):
             size_arr = np.asarray(size) / self.devicePixelRatio()
         else:
             size_arr = np.asarray(old_size)
-        size_arr = (size_arr * scale).astype(np.int64)
+        # rough resize ratio (apart from the pure `scale` value), needed for better
+        # resizing of elements such as text
+        size_ratio = np.mean(size_arr / old_size)
+
+        final_size = (size_arr * scale).astype(np.int64)
 
         camera.zoom = old_zoom * scale
-        canvas.size = tuple(size_arr)
-        canvas.font_info.scale = scale
+        canvas.size = tuple(final_size)
+        canvas.font_info.scale = scale * size_ratio
         try:
             yield
         finally:
