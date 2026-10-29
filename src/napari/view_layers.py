@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
 
+    from napari.layers.utils.plane import SlicingPlane
     from napari.types import ArrayLike
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
@@ -94,7 +95,7 @@ def imshow(
     affine: npt.ArrayLike | Affine | Sequence[Affine] | None = ...,
     attenuation: float | Sequence[float] = ...,
     auto_contrast: bool | Sequence[bool] = ...,
-    axis_labels: Sequence[str] | None = ...,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
     blending: str | Sequence[str] | None = ...,
     cache: bool | Sequence[bool] = ...,
     colormap: ValidColormapArg | None = ...,
@@ -111,7 +112,7 @@ def imshow(
     multiscale: bool | None = ...,
     name: str | Sequence[str] | None = ...,
     opacity: float | Sequence[float] = ...,
-    plane: dict | Sequence[dict] | None = ...,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = ...,
     projection_mode: str | Sequence[str] = ...,
     rendering: str | Sequence[str] = ...,
     rgb: bool | None = ...,
@@ -137,7 +138,7 @@ def imshow(
     affine: npt.ArrayLike | Affine | Sequence[Affine] | None = ...,
     attenuation: float | Sequence[float] = ...,
     auto_contrast: bool | Sequence[bool] = ...,
-    axis_labels: Sequence[str] | None = ...,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
     blending: str | Sequence[str] | None = ...,
     cache: bool | Sequence[bool] = ...,
     colormap: ValidColormapArg | None = ...,
@@ -154,7 +155,7 @@ def imshow(
     multiscale: bool | None = ...,
     name: str | Sequence[str] | None = ...,
     opacity: float | Sequence[float] = ...,
-    plane: dict | Sequence[dict] | None = ...,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = ...,
     projection_mode: str | Sequence[str] = ...,
     rendering: str | Sequence[str] = ...,
     rgb: bool | None = ...,
@@ -179,7 +180,7 @@ def imshow(
     affine: npt.ArrayLike | Affine | Sequence[Affine] | None = None,
     attenuation: float | Sequence[float] = 0.05,
     auto_contrast: bool | Sequence[bool] = False,
-    axis_labels: Sequence[str] | None = None,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
     blending: str | Sequence[str] | None = None,
     cache: bool | Sequence[bool] = True,
     colormap: ValidColormapArg | None = None,
@@ -196,7 +197,7 @@ def imshow(
     multiscale: bool | None = None,
     name: str | Sequence[str] | None = None,
     opacity: float | Sequence[float] = 1.0,
-    plane: dict | Sequence[dict] | None = None,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = None,
     projection_mode: str | Sequence[str] = 'mean',
     rendering: str | Sequence[str] = 'mip',
     rgb: bool | None = None,
@@ -305,7 +306,7 @@ def imshow(
         Name of the layer.
     opacity : float or list
         Opacity of the layer visual, between 0.0 and 1.0.
-    plane : dict or SlicingPlane
+    plane : dict or SlicingPlane, or list of these
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
@@ -333,6 +334,8 @@ def imshow(
         A vector of shear values for an upper triangular n-D shear matrix.
     translate : tuple of float or list of tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
     visible : bool or list of bool
         Whether the layer visual is currently being displayed.
     viewer : Viewer object, optional, by default None.
@@ -344,8 +347,9 @@ def imshow(
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3. By default None
-    axis_labels : list of str, optional
-        Dimension names. By default they are labeled with sequential numbers
+    axis_labels : list of str or list of list of str, optional
+        Dimension names. With ``channel_axis``, one list per channel can be
+        given. By default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. By default True.
 
