@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from napari._qt.qt_viewer import QtViewer
 
 counter = count()
-# typed Any so it can be the default of the deprecated `shortcut` argument
+# default of the deprecated shortcut argument, Any keeps the checker quiet
 _sentinel: Any = object()
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
@@ -385,7 +385,7 @@ class QtViewerDockWidget(QDockWidget):
         return title
 
     def setWidget(self, widget: QWidget) -> None:
-        # attribute added on purpose so the widget can find its dock
+        # the widget uses this to find its dock
         widget._parent = self  # pyrefly: ignore[missing-attribute]
         self.setFocusProxy(widget)
         super().setWidget(widget)
