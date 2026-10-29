@@ -973,8 +973,9 @@ def _dangling_qtimers(monkeypatch, request):
     dangling_timers = []
 
     for timer, calling in chain(timer_dkt.items(), single_shot_list):
-        if timer.isActive():
-            dangling_timers.append((timer, calling))
+        with contextlib.suppress(RuntimeError):
+            if timer.isActive():
+                dangling_timers.append((timer, calling))
 
     for timer, _ in dangling_timers:
         with suppress(RuntimeError):
