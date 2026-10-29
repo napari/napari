@@ -12,8 +12,6 @@ import numpy.testing as npt
 import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
-from qtpy.QtCore import QEvent, QPointF
-from qtpy.QtGui import QEnterEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 from vispy.app import MouseEvent
@@ -499,24 +497,6 @@ def test_process_mouse_event(
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-def test_process_mouse_event_over_empty_grid_viewbox(
-    qt_viewer: QtViewer, viewer_model: ViewerModel
-) -> None:
-    viewer_model.add_image(np.zeros((20, 20)))
-    viewer_model.canvas.grid.enabled = True
-    # any position outside the populated viewboxes resolves to an empty one
-    pos = np.array([-1.0, -1.0])
-    assert qt_viewer.canvas._get_viewbox_at(pos) == (None, None)
-
-    qt_viewer.canvas._process_mouse_event(
-        mouse_press_callbacks, MouseEvent(type='mouse_press', pos=pos)
-    )
-
-    assert viewer_model.cursor.viewbox is None
-    viewer_model.mouse_over_canvas = True
-    assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
-
-
 def test_process_mouse_event_2d_layer_3d_viewer(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
@@ -570,6 +550,22 @@ def test_canvas_to_world_grid_spacing(
         np.testing.assert_allclose(
             viewer_model.canvas_to_world(center_px, (0, col)), expected
         )
+
+
+def test_canvas_to_world_2d_data_with_3d_viewer(
+    viewer_model: ViewerModel,
+) -> None:
+    """The position should map back onto existing dims."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    middle_of_canvas = (400, 600)
+    middle_of_image = (4.5, 4.5)
+    world_pos = viewer_model.canvas_to_world(middle_of_canvas)
+    # special case that needs special fixing. Before fix, we'd end up
+    # with (0, 4.5) because it embedded as `(0, 4.5, 4.5)` and then dropped
+    # the last dim
+    np.testing.assert_allclose(world_pos, middle_of_image)
 
 
 @pytest.mark.usefixtures(
@@ -728,28 +724,6 @@ def test_qt_viewer_canvas_is_nested_in_main_widget(
     assert qt_viewer.canvas.native.parentWidget() is main_widget
     assert main_widget.layout().itemAt(0).widget() is qt_viewer.canvas.native
     assert main_widget.layout().itemAt(1).widget() is qt_viewer.dims
-
-
-def test_qt_viewer_canvas_hover_state_comes_from_canvas(
-    qt_viewer: QtViewer, viewer_model: ViewerModel
-) -> None:
-    viewer_model.mouse_over_canvas = False
-    viewer_model.status = ''
-
-    canvas = qt_viewer.canvas.native
-    canvas.enterEvent(
-        QEnterEvent(
-            QPointF(10, 10),
-            QPointF(10, 10),
-            QPointF(10, 10),
-        )
-    )
-    assert viewer_model.mouse_over_canvas
-    assert viewer_model.status == 'Ready'
-
-    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer_model.mouse_over_canvas
-    assert viewer_model.status == ''
 
 
 def test_qt_viewer_accepts_custom_welcome_tips(

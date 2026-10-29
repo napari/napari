@@ -144,3 +144,18 @@ def drag_to_zoom(viewer, event):
         viewer.camera.center = camera_center
 
     yield
+
+
+def update_status_from_cursor(viewer, event):
+    if not hasattr(viewer, 'window') or not hasattr(
+        viewer.window, '_qt_window'
+    ):
+        return
+
+    qt_window = viewer.window._qt_window
+    qt_window.status_thread.trigger_status_update(
+        world_position=event.position,
+        view_direction=event.view_direction,
+        canvas_position=event.pos[::-1],
+        viewbox=event.viewbox,
+    )
