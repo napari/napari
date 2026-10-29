@@ -253,7 +253,7 @@ def test_export_figure_3d(
     rng = np.random.default_rng(0)
     # Add image, keep values low to contrast with white background
     viewer_model.dims.ndisplay = 3
-    viewer_model.theme = 'light'
+    viewer_model.theme = 'napari-light'
 
     data = rng.integers(50, 100, size=(10, 250, 250), dtype=np.uint8)
     layer = viewer_model.add_image(data)

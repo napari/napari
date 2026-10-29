@@ -41,11 +41,11 @@ def test_migration_works(test_migrator):
 
     @test_migrator('0.1.0', '0.2.0')
     def _(model: NapariSettings):
-        model.appearance.theme = 'light'
+        model.appearance.theme = 'napari-light'
 
     settings = NapariSettings(schema_version='0.1.0')
     assert settings.schema_version == '0.2.0'
-    assert settings.appearance.theme == 'light'
+    assert settings.appearance.theme == 'napari-light'
 
 
 def test_migration_saves(test_migrator):
@@ -64,8 +64,8 @@ def test_failed_migration_leaves_version(test_migrator):
     # where it was before the migration, and any changes reverted.
     @test_migrator('0.1.0', '0.2.0')
     def _(model: NapariSettings):
-        model.appearance.theme = 'light'
-        assert model.appearance.theme == 'light'
+        model.appearance.theme = 'napari-light'
+        assert model.appearance.theme == 'napari-light'
         raise ValueError('broken migration')
 
     with pytest.warns(
@@ -74,7 +74,7 @@ def test_failed_migration_leaves_version(test_migrator):
         settings = NapariSettings(schema_version='0.1.0')
     assert settings.schema_version == '0.1.0'
     # test migration was atomic, and reverted the theme change
-    assert settings.appearance.theme == 'dark'
+    assert settings.appearance.theme == 'napari-dark'
 
 
 @pytest.mark.skipif(
