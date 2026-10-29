@@ -39,7 +39,6 @@ def test_waiting_on_no_request(monkeypatch, qtbot):
         return value == (' » [empty]', '')
 
     model = ViewerModel()
-    model.mouse_over_canvas = True
     status_checker = StatusChecker(model)
     status_checker.start()
     with qtbot.waitSignal(
@@ -47,7 +46,12 @@ def test_waiting_on_no_request(monkeypatch, qtbot):
         timeout=1000,
         check_params_cb=_check_status,
     ):
-        status_checker.trigger_status_update()
+        status_checker.trigger_status_update(
+            world_position=(0, 0),
+            view_direction=None,
+            canvas_position=(10, 10),
+            viewbox=(10, 10),
+        )
     status_checker.terminate()
 
     qtbot.wait_until(lambda: status_checker.isFinished())

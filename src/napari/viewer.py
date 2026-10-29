@@ -3,6 +3,7 @@ from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -12,7 +13,15 @@ if typing.TYPE_CHECKING:
     # helpful for IDE support
     from pathlib import Path
 
-    from napari._qt.qt_main_window import Window
+    from napari.window import (
+        Window,
+    )
+
+
+_TITLE_DEPRECATION_MSG = (
+    'viewer.title is a deprecated attribute since 0.9.1. Use viewer.window.title instead.'
+    ' There is currently no planned date for removal of the legacy attribute.'
+)
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -50,7 +59,6 @@ class Viewer(ViewerModel):
         **kwargs,
     ) -> None:
         super().__init__(
-            title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
@@ -66,8 +74,11 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(  # pyrefly: ignore [bad-assignment]
-            self, show=show, show_welcome_screen=show_welcome_screen
+        self._window = Window(
+            self,
+            show=show,
+            show_welcome_screen=show_welcome_screen,
+            title=title,
         )
         self._instances.add(self)
 
@@ -97,10 +108,72 @@ class Viewer(ViewerModel):
         """
         return super().__new__(cls)
 
+    def __str__(self) -> str:
+        return f'napari.Viewer: {self.window.title}'
+
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
     def window(self) -> 'Window':
         return self._window
+
+    @property
+    @deprecated(
+        (
+            'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0. '
+            'This now always returns True, and will be removed later.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def mouse_over_canvas(self) -> bool:
+        """Whether the mouse is over the canvas.
+
+        .. deprecated:: 0.10.0
+        """
+        return True
+
+    @property
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        stacklevel=2,
+    )
+    def title(self) -> str:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        return self.window.title
+
+    @title.setter
+    @deprecated(
+        _TITLE_DEPRECATION_MSG,
+        stacklevel=2,
+    )
+    def title(self, title: str) -> None:
+        """Title of the viewer window.
+
+        .. deprecated:: 0.9.1
+            The title property is deprecated. Use `viewer.window.title` instead.
+        """
+        self.window.title = title  # pyrefly: ignore [missing-attribute]
+
+    @deprecated(
+        'update_status_from_cursor will be removed. Use a mouse callback instead.'
+    )
+    def update_status_from_cursor(self):
+        """Update the status and tooltip from the cursor position.
+
+        .. deprecated: 0.11.0:
+            update_status_from_cursor will be removed; use a mouse callback instead.
+        """
+        # TODO: will remove this so we don't use the internal self.cursor, but for now deprecate
+        self.window.status_thread.trigger_status_update(  # pyrefly: ignore [missing-attribute]
+            world_position=self.cursor.position,
+            view_direction=self.cursor._view_direction,
+            canvas_position=(0, 0),
+            viewbox=self.cursor.viewbox or (0, 0),
+        )
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
