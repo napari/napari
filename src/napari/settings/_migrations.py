@@ -200,3 +200,12 @@ def v060_070(model: NapariSettings) -> None:
         else TriangulationBackend.fastest_available  # must match default setting
     )
     model.experimental.compiled_triangulation = False  # reset to default
+
+
+@migrator('0.9.2', '0.10.0')
+def v092_0100(model: NapariSettings) -> None:
+    """Migrate from v0.9.2 to v0.10.0.
+
+    autoswap_buffers was moved from experimental to advanced.
+    """
+    model.advanced.autoswap_buffers = model.experimental.autoswap_buffers
