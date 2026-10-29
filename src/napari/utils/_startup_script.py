@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from napari.utils.io import execute_python_code
-from napari.utils.translations import trans
 
 
 @dataclass
@@ -39,14 +38,10 @@ def _run_configured_startup_script() -> None:
 
     if not (script_path.exists() and script_path.is_file()):
         warnings.warn(
-            trans._(
-                'Startup script path is set to {script_path}. '
-                'This path does not have a valid startup script. '
-                'Please check the setting. '
-                'napari will be launched without a startup script.',
-                deferred=True,
-                script_path=script_path,
-            )
+            f'Startup script path is set to {script_path}. '
+            'This path does not have a valid startup script. '
+            'Please check the setting. '
+            'napari will be launched without a startup script.',
         )
         return
 
@@ -55,14 +50,9 @@ def _run_configured_startup_script() -> None:
             script_code = file.read()
     except (OSError, SyntaxError, UnicodeDecodeError) as exc:
         warnings.warn(
-            trans._(
-                'Failed to read startup script at {script_path}. '
-                'napari will be launched without running it. '
-                'Error: {error_message}',
-                deferred=True,
-                script_path=script_path,
-                error_message=str(exc),
-            )
+            f'Failed to read startup script at {script_path}. '
+            'napari will be launched without running it. '
+            f'Error: {exc!s}',
         )
         return
 

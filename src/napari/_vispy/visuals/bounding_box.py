@@ -66,7 +66,7 @@ class BoundingBox(Compound):
         if any(b is None for b in bounds):
             return
 
-        vertices = np.array(list(product(*bounds)))
+        vertices = np.array(list(product(*bounds)))  # pyrefly: ignore [no-matching-overload]
 
         self.lines.set_data(
             pos=vertices,

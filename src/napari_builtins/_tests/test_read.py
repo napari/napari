@@ -8,6 +8,7 @@ import tifffile
 
 from napari_builtins.io._read import (
     _read_python_source,
+    _read_wavefront_obj_lines,
 )
 from napari_builtins.io._write import write_csv
 
@@ -101,3 +102,53 @@ def test_read_python_source_uses_python_source_encoding(
     script_path.write_bytes(script.encode(encoding))
 
     assert _read_python_source(script_path) == script
+
+
+def test_read_obj(tmp_path):
+    obj_path = tmp_path / 'test.obj'
+    with open(obj_path, 'w') as f:
+        f.write("""
+        # this should be ignored
+        v 0 0 1
+        v 1 0 2
+        v 0 2 3
+        f 0/9/6 1/4/5 2/7/8
+        f 0 2 3
+        f 0 1 2
+        """)
+
+    layer_data = npe2.read([obj_path], stack=False)
+    assert isinstance(layer_data, list)
+    assert len(layer_data) == 1
+    assert isinstance(layer_data[0], tuple)
+    assert layer_data[0][2] == 'surface'
+
+
+@pytest.mark.parametrize(
+    ('subject', 'vertices', 'faces'),
+    [
+        (['#\n'], [], []),
+        ([''], [], []),
+        (['v 1 -2.5 3'], [1.0, -2.5, 3.0], []),
+        (['f 1 2 3'], [], [[0, 1, 2]]),
+        (['f 1// 2// 3//'], [], [[0, 1, 2]]),
+        (['f 1/8/9/ 2/5/6 3/0/0'], [], [[0, 1, 2]]),
+        (
+            ['v 1 2 3', 'v 3 4 5', 'v 0 0 1', 'f 1 2 3'],
+            [[1.0, 2.0, 3.0], [3.0, 4.0, 5.0], [0.0, 0.0, 1.0]],
+            [[0, 1, 2]],
+        ),
+    ],
+)
+def test_read_wavefront_obj_lines(subject, vertices, faces):
+    vertices_actual, faces_actual = _read_wavefront_obj_lines(subject)
+    assert np.allclose(vertices_actual, vertices)
+    assert np.array_equal(faces_actual, faces)
+
+
+def test_read_obj_with_quads():
+    lines = ['v 1 2 3', 'v 3 4 5', 'v 0 0 1', 'v 6 -7 1', 'f 1 2 3 4']
+    with pytest.raises(
+        ValueError, match='Only triangular faces are supported'
+    ):
+        _read_wavefront_obj_lines(lines)

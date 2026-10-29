@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import pint
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
 
 _L = TypeVar('_L', bound=Layer)
+Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
 
 
 class VispyBaseLayer(ABC, Generic[_L]):
@@ -63,6 +64,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         self.layer = layer
         self.font_info = font_info
+        self._default_font_size = 9
         self._array_like = False
         self.node = node
         self.first_visible = False
@@ -103,7 +105,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
             self._recalculate_units_scale()
         self._on_matrix_change()
 
-    def _recalculate_units_scale(self):
+    def _recalculate_units_scale(self) -> None:
         """Calculate the scale factor between the layer units and the world units.
 
         This is used to convert the layer's data coordinates to world coordinates.
@@ -133,7 +135,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         return self._master_transform.matrix[-1, :]
 
     @property
-    def scale(self):
+    def scale(self) -> np.ndarray[tuple[int], np.dtype[np.floating]]:
         """sequence of float: Scale factors."""
         matrix = self._master_transform.matrix[:-1, :-1]
         _, upper_tri = np.linalg.qr(matrix)
@@ -148,7 +150,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         return self.node.order
 
     @order.setter
-    def order(self, order):
+    def order(self, order) -> None:
         self.node.order = order
         self._on_blending_change()
 
@@ -156,16 +158,16 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def _on_data_change(self):
         raise NotImplementedError
 
-    def _on_refresh_change(self):
+    def _on_refresh_change(self) -> None:
         self.node.update()
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         self.node.visible = self.layer.visible
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self) -> None:
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, event=None) -> None:
         blending = self.layer.blending
         blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 
@@ -200,9 +202,17 @@ class VispyBaseLayer(ABC, Generic[_L]):
         self.node.set_gl_state(**blending_kwargs)
         self.node.update()
 
-    def _on_matrix_change(self):
+    def _on_matrix_change(self) -> None:
         dims_displayed = self.layer._slice_input.displayed
-        # mypy: self.layer._transforms.simplified cannot be None
+        # If the layer's dimensionality changed (e.g., data swapped from 2D
+        # to 3D), _world_to_layer_units_scale reflects the old ndim
+        # and cannot be indexed with the new dims_displayed values.  Refresh
+        # both cached unit tracking fields to match the current layer.
+        if len(self._world_to_layer_units_scale) != self.layer.ndim:
+            self._world_units = self.layer.units
+            self._world_to_layer_units_scale = (1,) * self.layer.ndim
+
+        # pyrefly: self.layer._transforms.simplified cannot be None
         transform = self.layer._transforms.simplified.set_slice(dims_displayed)
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -294,7 +304,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
         for child in self.node.children:
             child.transform.matrix = child_matrix
 
-    def _on_experimental_clipping_planes_change(self):
+    def _on_experimental_clipping_planes_change(self) -> None:
         if hasattr(self.node, 'clipping_planes') and hasattr(
             self.layer, 'experimental_clipping_planes'
         ):
@@ -303,18 +313,30 @@ class VispyBaseLayer(ABC, Generic[_L]):
                 self.layer.experimental_clipping_planes.as_array()[..., ::-1]
             )
 
-    def _on_camera_move(self, event=None):
+    def _on_view_direction_change(
+        self,
+        view: Vector3 | None = None,
+        up: Vector3 | None = None,
+    ) -> None:
         return
 
-    def reset(self):
+    def _on_font_size_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
+
+    def reset(self) -> None:
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
         self._on_matrix_change()
         self._on_experimental_clipping_planes_change()
-        self._on_camera_move()
+        self._on_view_direction_change()
 
-    def _on_poll(self, event=None):
+    def _on_poll(self, event=None) -> None:
         """Called when camera moves, before we are drawn.
 
         Optionally called for some period once the camera stops, so the
@@ -322,8 +344,8 @@ class VispyBaseLayer(ABC, Generic[_L]):
         VRAM or animating itself.
         """
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.events, self)
-        self.node.transforms = MatrixTransform()
+        self.node.transform = MatrixTransform()
         self.node.parent = None

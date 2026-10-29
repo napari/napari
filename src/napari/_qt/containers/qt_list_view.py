@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 ItemType = TypeVar('ItemType')
 
 
-class QtListView(_BaseEventedItemView[ItemType], QListView):  # type: ignore[misc]
+class QtListView(_BaseEventedItemView[ItemType], QListView):
     """A QListView for a :class:`~napari.utils.events.SelectableEventedList`.
 
     Designed to work with :class:`~napari._qt.containers.QtListModel`.
@@ -23,7 +23,7 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):  # type: ignore[mis
     This class is an adapter between
     :class:`~napari.utils.events.SelectableEventedList` and Qt's
     `QAbstractItemView` interface (see `Qt Model/View Programming
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_). It allows python
     users to interact with the list in the "usual" python ways, updating any Qt
     Views that may be connected, and also updates the python list object if any
     GUI events occur in the view.
@@ -45,4 +45,4 @@ class QtListView(_BaseEventedItemView[ItemType], QListView):  # type: ignore[mis
         self.setRoot(root)
 
     def model(self) -> QtListModel[ItemType]:
-        return super().model()  # type: ignore[return-value]
+        return super().model()  # pyrefly: ignore [bad-return]

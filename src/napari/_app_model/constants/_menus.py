@@ -11,7 +11,7 @@ SOME of these (but definitely not all) will be exposed as "contributable"
 menus for plugins to contribute commands and submenu items to.
 """
 
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 class MenuId(StrEnum):
@@ -25,9 +25,10 @@ class MenuId(StrEnum):
     FILE_ACQUIRE = 'napari/file/acquire'
 
     MENUBAR_VIEW = 'napari/view'
-    VIEW_AXES = 'napari/view/axes'
-    VIEW_FLOATING_AXES = 'napari/view/floating_axes'
+    VIEW_SCENE_AXES = 'napari/view/scene_axes'
+    VIEW_CANVAS_AXES = 'napari/view/canvas_axes'
     VIEW_SCALEBAR = 'napari/view/scalebar'
+    VIEW_COORDINATE_GRID = 'napari/view/coordinate_grid'
 
     MENUBAR_LAYERS = 'napari/layers'
     LAYERS_VISUALIZE = 'napari/layers/visualize'

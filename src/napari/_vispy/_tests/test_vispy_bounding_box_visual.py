@@ -52,7 +52,7 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
     # Set canvas size to target amount
     viewer.window._qt_viewer.canvas.size = (200, 200)
     viewer.window._qt_viewer.canvas.on_draw(None)
-    viewer.camera.zoom = 2
+    viewer.scene.camera.zoom = 2
 
     assert viewer.layers[0].data_level == 0
 
@@ -102,8 +102,8 @@ def test_bounding_box_multiscale_2D_zoom_stable(make_napari_viewer, qtbot):
 
     seen_states = set()
     for zoom in (0.2, 1.0, 4.0):
-        viewer.camera.zoom = zoom
-        viewer.camera.center = (0.0, 300.0, 300.0)
+        viewer.scene.camera.zoom = zoom
+        viewer.scene.camera.center = (0.0, 300.0, 300.0)
         viewer.window._qt_viewer.canvas.on_draw(None)
         qtbot.waitUntil(lambda: layer.loaded)
         viewer.window._qt_viewer.canvas.on_draw(None)

@@ -5,6 +5,7 @@ from napari._vispy.layers.points import VispyPointsLayer
 from napari._vispy.utils.qt_font import FontInfo
 from napari.components import Dims
 from napari.layers import Points
+from napari.layers.points._points_constants import PointsProjectionMode
 
 
 @pytest.mark.parametrize('opacity', [0, 0.3, 0.7, 1])
@@ -124,8 +125,33 @@ def test_change_antialiasing():
     assert vispy_layer.node.antialias == layer.antialiasing
 
 
-def test_highlight_with_out_of_slice_display():
-    """Highlight should work when out_of_slice_display is enabled.
+@pytest.mark.parametrize('scale', [(-1, -1), (1, -1), (-1, 1)])
+def test_negative_scale_highlight(scale):
+    """Negative layer scale must not produce negative sizes/widths.
+
+    A negative scale is sometimes used to flip axes (and can be inherited
+    from an image layer); vispy rejects negative ``edge_width``, so adding
+    or selecting a point used to raise ValueError.
+    """
+    layer = Points(np.zeros((0, 2)), size=10, scale=scale)
+    layer.border_width_is_relative = False
+    layer.border_width = 1.0
+
+    vispy_layer = VispyPointsLayer(layer, font_info=FontInfo())
+
+    # previously raised ValueError: edge_width cannot be negative
+    layer.add([10, 10])
+
+    for markers in (
+        vispy_layer.node.points_markers,
+        vispy_layer.node.selection_markers,
+    ):
+        assert np.all(markers._data['a_size'] > 0)
+        assert np.all(markers._data['a_edgewidth'] >= 0)
+
+
+def test_highlight_with_rescale_projection():
+    """Highlight should work when projection is 'rescale_linear'.
 
     Regression test for a bug where _view_size_scale (array for all view
     points) was multiplied with size indexed only by highlighted points,
@@ -144,13 +170,20 @@ def test_highlight_with_out_of_slice_display():
     # Select point 0 BEFORE slicing so update_selected_view populates
     # _selected_view and _set_highlight populates _highlight_index.
     layer.selected_data = {0}
-    layer.out_of_slice_display = True
-    layer._slice_dims(Dims(ndim=3, point=(50, 0, 0)))
+    layer.projection_mode = PointsProjectionMode.RESCALE_LINEAR
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            point=(50, 0, 0),
+            margin_left=(100, 0, 0),
+            margin_right=(100, 0, 0),
+        )
+    )
 
     # Verify the preconditions that cause the bug:
     # all 5 points in view, scale is a per-point array, only 1 highlighted
-    assert len(layer._indices_view) == 5
-    assert isinstance(layer._view_size_scale, np.ndarray)
+    assert len(layer._view_indices) == 5
+    assert isinstance(layer._view_size, np.ndarray)
     assert len(layer._highlight_index) == 1
 
     # Previously, raised ValueError: could not broadcast input array from shape (5,) into shape (1,)

@@ -107,7 +107,7 @@ def calculate_bounds_from_contained_points(
         Top-left and bottom-right corners of the bounding box.
     """
     if points is None:
-        return None
+        return None  # pyrefly: ignore [bad-return]
 
     points = np.atleast_2d(points)
     if points.ndim != 2:

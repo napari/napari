@@ -97,7 +97,7 @@ class LabelVispyColormap(VispyColormap):
         colormap: CyclicLabelColormap,
         view_dtype: np.dtype,
         raw_dtype: np.dtype,
-    ):
+    ) -> None:
         super().__init__(
             colors=['w', 'w'], controls=None, interpolation='zero'
         )
@@ -133,7 +133,7 @@ class DirectLabelVispyColormap(VispyColormap):
         scale=1.0,
         color_map_size=255,
         multi=False,
-    ):
+    ) -> None:
         colors = ['w', 'w']  # dummy values, since we use our own machinery
         super().__init__(colors, controls=None, interpolation='zero')
         shader = direct_lookup_shader_many if multi else direct_lookup_shader
@@ -198,6 +198,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
     def __init__(
         self, layer, node=None, texture_format='r8', **kwargs
     ) -> None:
+        self._colormap_dtypes: tuple[np.dtype, np.dtype] | None = None
         super().__init__(
             layer,
             node=node,
@@ -216,7 +217,19 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         # as we generate colormap texture based on the data type, we need to
         # update it when the data type changes
 
-    def _on_rendering_change(self):
+    def _on_data_change(self) -> None:
+        super()._on_data_change()
+        dtypes = (
+            self.layer._slice.image.raw.dtype,
+            self.layer._slice.image.view.dtype,
+        )
+        # The empty slice created by _ScalarFieldSliceResponse.make_empty uses
+        # the view dtype for both raw and view. An async slice response replaces
+        # it with the source raw dtype, so rebuild to avoid stale label colors.
+        if dtypes != self._colormap_dtypes:
+            self._on_colormap_change()
+
+    def _on_rendering_change(self) -> None:
         # overriding the Image method, so we can maintain the same old rendering name
         if isinstance(self.node, VolumeNode):
             rendering = self.layer.rendering
@@ -226,7 +239,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                 else 'translucent_categorical'
             )
 
-    def _on_colormap_change(self, event=None):
+    def _on_colormap_change(self, event=None) -> None:
         # self.layer.colormap is a labels_colormap, which is an evented model
         # from napari.utils.colormaps.Colormap (or similar). If we use it
         # in our constructor, we have access to the texture data we need
@@ -255,10 +268,14 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
                     colormap._background_as_minimum_dtype(raw_dtype)
                 )
             color_texture = _select_colormap_texture(
-                colormap, view_dtype, raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype,
+                raw_dtype,
             )
             self.node.cmap = LabelVispyColormap(
-                colormap, view_dtype=view_dtype, raw_dtype=raw_dtype
+                colormap,  # pyrefly: ignore [bad-argument-type]
+                view_dtype=view_dtype,
+                raw_dtype=raw_dtype,
             )
             self.node.shared_program['texture2D_values'] = Texture2D(
                 color_texture,
@@ -268,7 +285,7 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
             self.texture_data = color_texture
 
         elif not auto_mode:  # only for raw_dtype.itemsize > 2
-            color_dict = colormap._values_mapping_to_minimum_values_set()[1]
+            color_dict = colormap._values_mapping_to_minimum_values_set()[1]  # pyrefly: ignore [missing-attribute]
             max_size = get_max_texture_sizes()[0]
             val_texture = build_textures_from_dict(color_dict, max_size)
 
@@ -297,11 +314,13 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
         else:
             self.node.cmap = VispyColormap(*colormap)
 
-    def _on_iso_gradient_mode_change(self):
+        self._colormap_dtypes = (raw_dtype, view_dtype)
+
+    def _on_iso_gradient_mode_change(self) -> None:
         if isinstance(self.node, VolumeNode):
             self.node.iso_gradient_mode = self.layer.iso_gradient_mode
 
-    def _on_partial_labels_update(self, event):
+    def _on_partial_labels_update(self, event) -> None:
         if not self.layer.loaded:
             return
 
@@ -325,11 +344,11 @@ class VispyLabelsLayer(VispyScalarFieldBaseLayer):
 
 
 class LabelLayerNode(ScalarFieldLayerNode):
-    def __init__(self, custom_node: Node = None, texture_format=None):
+    def __init__(self, custom_node: Node = None, texture_format=None) -> None:
         self._custom_node = custom_node
         self._setup_nodes(texture_format)
 
-    def _setup_nodes(self, texture_format):
+    def _setup_nodes(self, texture_format) -> None:
         self._image_node = LabelNode(
             (
                 None

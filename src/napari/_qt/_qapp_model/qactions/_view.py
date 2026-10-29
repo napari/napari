@@ -13,34 +13,33 @@ from app_model.types import (
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
 from napari._qt.qt_viewer import QtViewer
-from napari.utils.translations import trans
 
 
 # View actions
-def _toggle_activity_dock(window: Window):
+def _toggle_activity_dock(window: Window) -> None:
     window._status_bar._toggle_activity_dock()
 
 
-def _get_current_fullscreen_status(window: Window):
+def _get_current_fullscreen_status(window: Window) -> bool:
     return window._qt_window.isFullScreen()
 
 
-def _get_current_menubar_status(window: Window):
+def _get_current_menubar_status(window: Window) -> bool:
     return window._qt_window._toggle_menubar_visibility
 
 
-def _get_current_play_status(qt_viewer: QtViewer):
+def _get_current_play_status(qt_viewer: QtViewer) -> bool:
     return bool(qt_viewer.dims.is_playing)
 
 
-def _get_current_activity_dock_status(window: Window):
+def _get_current_activity_dock_status(window: Window) -> bool:
     return window._qt_window._activity_dialog.isVisible()
 
 
 Q_VIEW_ACTIONS: list[Action] = [
     Action(
         id='napari.window.view.toggle_fullscreen',
-        title=trans._('Toggle Full Screen'),
+        title='Toggle Full Screen',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -54,7 +53,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_command_palette',
-        title=trans._('Command Palette'),
+        title='Command Palette',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -69,7 +68,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_menubar',
-        title=trans._('Toggle Menubar Visibility'),
+        title='Toggle Menubar Visibility',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -87,12 +86,12 @@ Q_VIEW_ACTIONS: list[Action] = [
         ],
         # TODO: add is_mac global context keys (rather than boolean here)
         enablement=sys.platform != 'darwin',
-        status_tip=trans._('Show/Hide Menubar'),
+        status_tip='Show/Hide Menubar',
         toggled=ToggleRule(get_current=_get_current_menubar_status),
     ),
     Action(
         id='napari.window.view.toggle_play',
-        title=trans._('Toggle Play'),
+        title='Toggle Play',
         menus=[
             {
                 'id': MenuId.MENUBAR_VIEW,
@@ -106,7 +105,7 @@ Q_VIEW_ACTIONS: list[Action] = [
     ),
     Action(
         id='napari.window.view.toggle_activity_dock',
-        title=trans._('Toggle Activity Dock'),
+        title='Toggle Activity Dock',
         menus=[
             {'id': MenuId.MENUBAR_VIEW, 'group': MenuGroup.RENDER, 'order': 11}
         ],

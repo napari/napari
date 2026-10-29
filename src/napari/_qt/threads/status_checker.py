@@ -54,7 +54,9 @@ class StatusChecker(QThread):
     # viewer and the status checker thread for cursor events and related status
     status_and_tooltip_changed = Signal(object)
 
-    def __init__(self, viewer: ViewerModel, parent: QObject | None = None):
+    def __init__(
+        self, viewer: ViewerModel, parent: QObject | None = None
+    ) -> None:
         super().__init__(parent=parent)
         self.viewer_ref = ref(viewer)
         self._need_status_update = Event()
@@ -142,4 +144,4 @@ if os.environ.get('ASV') == 'true':
     # running when the benchmark is running. This is because the
     # StatusChecker thread may introduce some noise in the benchmark
     # results from waiting on its termination.
-    StatusChecker.start = lambda self, priority=0: None
+    StatusChecker.start = lambda self, priority=0: None  # pyrefly: ignore [bad-assignment]

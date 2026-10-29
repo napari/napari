@@ -30,7 +30,7 @@ jobs:
       matrix:
         platform: [windows-latest, macos-15, ubuntu-latest]
         python: [3.13, 3.14]
-        backend: [pyqt5, pyqt6, pyside6]
+        backend: [pyqt6, pyside6]
         include:
           - platform: ubuntu-latest
             python: 3.13
@@ -40,12 +40,12 @@ jobs:
             backend: pyqt6
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
@@ -60,7 +60,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        uses: pyvista/setup-headless-display-action@c103a2ff45650d38cb71684b5dc6cdfeb9442c79 # v5.1.0
         with:
           qt: true
           wm: herbstluftwm
@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions
+          pip install setuptools tox tox-gh-actions tox-uv tox-min-req
 
       - name: Test with tox (with retry)
         uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
@@ -77,16 +77,14 @@ jobs:
           attempt_limit: 3
           attempt_delay: 30000 # 30s
           retry_condition: github.ref_name == 'main'  # avoid restart in PR
-          command: python -m tox -v --pre  --recreate
+          command: python -m tox -v --pre --recreate  --runner virtualenv
         env:
-          PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
           PYTHON: ${{ matrix.python }}
-          COVERAGE: "no_cov"
           PYVISTA_OFF_SCREEN: True  # required for opengl on windows
           PIP_CONSTRAINT: resources/constraints/version_denylist.txt
           PIP_EXTRA_INDEX_URL: https://www.riverbankcomputing.com/pypi/simple/
-          PIP_ONLY_BINARY: "PyQt5,PyQt6"
+          PIP_ONLY_BINARY: "PyQt6"
 
       - name: Upload leaked viewer graph
         if: failure()

@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import os
 import struct
-import warnings
+import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, BinaryIO
 
 import numpy as np
 
 from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from pathlib import Path
 
     from napari.viewer import Viewer
@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 # or the Python file reader. It maps the script path to the
 # namespace. This global dict should only be modified; overwriting
 # it may break other scripts that are already running.
-_SCRIPT_NAMESPACES: dict[str | Path, dict[str, Any]] = {}
+_SCRIPT_NAMESPACES: dict[str, dict[str, Any]] = {}
 
 
-def imsave(filename: str, data: np.ndarray):
+def imsave(filename: str, data: np.ndarray) -> None:
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -55,9 +55,7 @@ def imsave(filename: str, data: np.ndarray):
         '.stk',
     ] and np.issubdtype(data.dtype, np.floating):
         show_warning(
-            trans._(
-                'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
-            )
+            'Image was not saved, because image data is of dtype float.\nEither convert dtype or save as different file type (e.g. TIFF).'
         )
         return
     # Save screenshot image data to output file
@@ -71,7 +69,7 @@ def imsave(filename: str, data: np.ndarray):
         iio.imwrite(filename, data)  # for all other file extensions
 
 
-def imsave_png(filename, data):
+def imsave_png(filename: str | Path | BinaryIO, data: np.ndarray) -> None:
     """Save .png image to file
 
     PNG images created in napari have a digital watermark.
@@ -101,7 +99,7 @@ def imsave_png(filename, data):
     )
 
 
-def imsave_tiff(filename, data):
+def imsave_tiff(filename: str | Path | BinaryIO, data: np.ndarray) -> None:
     """Save .tiff image to file
 
     Parameters
@@ -138,30 +136,6 @@ def imsave_tiff(filename, data):
             )
 
 
-def __getattr__(name: str):
-    if name in {
-        'imsave_extensions',
-        'write_csv',
-        'read_csv',
-        'csv_to_layer_data',
-        'read_zarr_dataset',
-    }:
-        warnings.warn(
-            trans._(
-                '{name} was moved to napari_builtins.io and will be removed from here in v0.8.0.',
-                deferred=True,
-                name=name,
-            ),
-            FutureWarning,
-            stacklevel=2,
-        )
-        import napari_builtins.io
-
-        return getattr(napari_builtins.io, name)
-
-    raise AttributeError(f'module {__name__} has no attribute {name}')
-
-
 def execute_python_code(code: str, script_path: str | Path = '') -> None:
     """Execute Python code in the current viewer's context.
 
@@ -180,7 +154,19 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
     with _patched_viewer_new(), _noop_napari_run():
         try:
             patched_viewer = current_viewer()
-            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_path, {})
+            script_key = str(script_path)
+            script_namespace = _SCRIPT_NAMESPACES.setdefault(script_key, {})
+            main_module = sys.modules['__main__']
+
+            if script_path:
+                # When launched with multiprocessing, a script executed via
+                # `multiprocessing.spawn` (e.g. Windows) either re-imports the
+                # parent __main__ module by name or re-executes its file path.
+                # Point __main__ at the executed script path so child workers
+                # can import functions/classes defined in the script.
+                main_module.__spec__ = None
+                main_module.__file__ = script_key
+                script_namespace['__file__'] = script_key
 
             # The `__name__` variable stores the module name.
             # If a module is imported, set `__name__` to the module name.
@@ -192,40 +178,41 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
             script_namespace['__name__'] = '__main__'
             code_obj = compile(code, script_path, 'exec', dont_inherit=True)
             exec(code_obj, script_namespace)
+            main_module.__dict__.update(script_namespace)
             _add_variables_to_viewer_console(
-                _SCRIPT_NAMESPACES[script_path], patched_viewer
+                _SCRIPT_NAMESPACES[script_key], patched_viewer
             )
         except BaseException as e:  # noqa: BLE001
             notification_manager.receive_error(type(e), e, e.__traceback__)
 
 
 @contextmanager
-def _patched_viewer_new():
+def _patched_viewer_new() -> Generator[None, None, None]:
     """Context manager to patch the viewer's new method."""
     from napari.viewer import Viewer, current_viewer
 
     _saved_new = Viewer.__new__
     _saved_init = Viewer.__init__
 
-    def patched_init(self, *args, **kwargs):
+    def patched_init(self: Viewer, *args: Any, **kwargs: Any) -> None:
         Viewer.__init__ = _saved_init
 
-    def patched_new(cls, *args, **kwargs):
+    def patched_new(cls: type[Viewer], *args: Any, **kwargs: Any) -> Viewer:
         ndisplay = None
         if len(kwargs) == 1 and 'ndisplay' in kwargs:
             ndisplay = kwargs.pop('ndisplay')
 
         if not kwargs and not args:
             viewer = current_viewer()
-            if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay  # type: ignore
             if viewer is not None:
+                if ndisplay is not None:
+                    viewer.dims.ndisplay = ndisplay
                 Viewer.__new__ = _saved_new
                 return viewer
         Viewer.__init__ = _saved_init
         return _saved_new(cls)
 
-    Viewer.__new__ = patched_new
+    Viewer.__new__ = patched_new  # pyrefly: ignore[bad-assignment]
     Viewer.__init__ = patched_init
     try:
         yield
@@ -235,7 +222,7 @@ def _patched_viewer_new():
 
 
 @contextmanager
-def _noop_napari_run():
+def _noop_napari_run() -> Generator[None, None, None]:
     """Context manager used to patch napari.run to be a no-op.
 
     napari.run() executes the Qt event loop, *except* when napari

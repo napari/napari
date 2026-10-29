@@ -36,3 +36,6 @@ codecov:
 comment:
   require_changes: true  # if true: only post the PR comment if coverage changes
   after_n_builds: 1
+
+github_checks:
+  annotations: true

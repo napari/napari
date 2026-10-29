@@ -1,6 +1,7 @@
 import dask.array as da
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari.components import ViewerModel
 from napari.utils.colormaps import (
@@ -240,3 +241,60 @@ def test_multichannel_index_error_hint():
         'Requested channel_axis (0) had length 5, but the '
         "'name' argument only provided 2 values." in str(e)
     )
+
+
+def test_multichannel_xarray_rgb_metadata():
+    """Channel-split xarray whose channels are RGB excludes the color axis."""
+    data = xr.DataArray(
+        np.zeros((3, 64, 64, 3)),
+        dims=['channel', 'y', 'x', 'rgb'],
+        coords={
+            'channel': np.arange(3),
+            'y': np.arange(64),
+            'x': np.arange(64),
+            'rgb': np.arange(3),
+        },
+    )
+    layers = ViewerModel().add_image(data, channel_axis=0)
+    assert len(layers) == 3
+    for layer in layers:
+        assert layer.ndim == 2
+        assert layer.axis_labels == ('y', 'x')
+        assert len(layer.scale) == 2
+        assert len(layer.translate) == 2
+        assert len(layer.units) == 2
+
+
+def test_multichannel_colormap_list_of_none():
+    """A list of only None should give the default colormaps, like None."""
+    data = np.random.random((2, 15, 15))
+    viewer = ViewerModel()
+    expected = viewer.add_image(data, channel_axis=0, colormap=None)
+    result = viewer.add_image(data, channel_axis=0, colormap=[None, None])
+    assert [layer.colormap.name for layer in result] == [
+        layer.colormap.name for layer in expected
+    ]
+
+
+def test_multichannel_colormap_none_and_name():
+    """A None entry in a colormap list falls back to gray instead of black."""
+    data = np.random.random((2, 15, 15))
+    viewer = ViewerModel()
+    layers = viewer.add_image(data, channel_axis=0, colormap=[None, 'red'])
+    assert [layer.colormap.name for layer in layers] == ['gray', 'red']
+
+
+def test_multichannel_colormap_empty_list_still_errors():
+    """An empty colormap list doesn't match the channels, so it errors."""
+    viewer = ViewerModel()
+    with pytest.raises(IndexError):
+        viewer.add_image(
+            np.random.random((2, 15, 15)), channel_axis=0, colormap=[]
+        )
+
+
+def test_colormap_list_of_none_without_channel_axis_errors():
+    """Without channel_axis, a colormap list keeps the helpful TypeError."""
+    viewer = ViewerModel()
+    with pytest.raises(TypeError, match='channel_axis'):
+        viewer.add_image(np.random.random((15, 15)), colormap=[None])

@@ -15,6 +15,7 @@ themes and any plugin-contributed themes discovered when the viewer starts.
 from __future__ import annotations
 
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -25,6 +26,7 @@ from qtpy.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QProgressBar,
@@ -35,6 +37,8 @@ from qtpy.QtWidgets import (
     QSizePolicy,
     QSlider,
     QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QTextEdit,
     QTimeEdit,
@@ -45,6 +49,52 @@ from superqt import QLabeledSlider, QRangeSlider
 
 import napari
 from napari.utils.theme import available_themes, get_theme
+
+# ── WCAG 2.1 helpers ───────────
+_AA_NORMAL = 4.5
+_AA_LARGE = 3.0
+_AAA_NORMAL = 7.0
+_AAA_LARGE = 4.5
+
+_CONTRAST_PAIRS: list[tuple[str, str, str]] = [
+    ('background', 'text', 'normal'),
+    ('primary', 'text', 'normal'),
+    ('foreground', 'text', 'normal'),
+    ('current', 'text', 'normal'),
+    ('highlight', 'text', 'normal'),
+    ('console', 'text', 'normal'),
+    ('background', 'icon', 'large'),
+    ('primary', 'icon', 'large'),
+    ('current', 'icon', 'large'),
+]
+
+
+def _linearize(c: float) -> float:
+    c /= 255.0
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _rel_lum(r: int, g: int, b: int) -> float:
+    return 0.2126 * _linearize(r) + 0.7152 * _linearize(g) + 0.0722 * _linearize(b)
+
+
+def _contrast_ratio(c1: tuple[int, int, int], c2: tuple[int, int, int]) -> float:
+    l1 = _rel_lum(*c1)
+    l2 = _rel_lum(*c2)
+    return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+
+
+def _parse_rgb(color_str: str) -> tuple[int, int, int]:
+    import ast
+    if color_str.startswith('rgb('):
+        return ast.literal_eval(color_str.lstrip('rgb(').rstrip(')'))
+    named = {'black': (0, 0, 0), 'white': (255, 255, 255)}
+    if color_str.lower() in named:
+        return named[color_str.lower()]
+    if color_str.startswith('#'):
+        c = color_str.lstrip('#')
+        return (int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16))
+    return (0, 0, 0)
 
 _BLURB = """
 <h3>Heading</h3>
@@ -191,7 +241,8 @@ class ThemeSampleWidget(QWidget):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(10)
         right_layout.addWidget(self._build_color_group())
-        right_layout.addStretch(1)
+        self._contrast_group = self._build_contrast_group()
+        right_layout.addWidget(self._contrast_group, 1)
         content_layout.addWidget(right_column, 3)
 
     def _build_theme_selector_group(self) -> QGroupBox:
@@ -338,6 +389,62 @@ class ThemeSampleWidget(QWidget):
         layout.addWidget(self._theme_meta)
         return group
 
+    def _build_contrast_group(self) -> QGroupBox:
+        group = QGroupBox('Contrast ratios (WCAG 2.1)')
+        layout = QVBoxLayout(group)
+        layout.setContentsMargins(6, 5, 6, 5)
+
+        self._contrast_table = QTableWidget(len(_CONTRAST_PAIRS), 4)
+        self._contrast_table.setHorizontalHeaderLabels(
+            ['Pair', 'Ratio', 'AA', 'AAA']
+        )
+        self._contrast_table.verticalHeader().hide()
+        self._contrast_table.setEditTriggers(
+            QTableWidget.EditTrigger.NoEditTriggers
+        )
+        header = self._contrast_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for col in (1, 2, 3):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+
+        layout.addWidget(self._contrast_table, 1)
+        self._contrast_legend = QLabel(
+            '<small>AA ≥ 4.5:1 (normal) / 3.0:1 (large) &middot; '
+            'AAA ≥ 7.0:1 (normal) / 4.5:1 (large)</small>'
+        )
+        self._contrast_legend.setWordWrap(True)
+        layout.addWidget(self._contrast_legend)
+        return group
+
+    def _refresh_contrast(self, theme_dict: dict) -> None:
+        """Update the contrast table for the current theme."""
+        parsed: dict[str, tuple[int, int, int]] = {}
+        for k in ('background', 'primary', 'foreground', 'current',
+                   'highlight', 'console', 'text', 'icon', 'canvas'):
+            if k in theme_dict:
+                parsed[k] = _parse_rgb(str(theme_dict[k]))
+
+        # Filter to only WCAG pairs (skip visual-only ones with None aa)
+        for row, (bg_key, fg_key, cat) in enumerate(_CONTRAST_PAIRS):
+            if bg_key not in parsed or fg_key not in parsed:
+                continue
+            ratio = _contrast_ratio(parsed[bg_key], parsed[fg_key])
+            threshold_aa = _AA_NORMAL if cat == 'normal' else _AA_LARGE
+            threshold_aaa = _AAA_NORMAL if cat == 'normal' else _AAA_LARGE
+            aa_pass = ratio >= threshold_aa
+            aaa_pass = ratio >= threshold_aaa
+
+            self._contrast_table.setItem(row, 0, QTableWidgetItem(f'{bg_key} / {fg_key}'))
+            self._contrast_table.setItem(
+                row, 1, QTableWidgetItem(f'{ratio:.1f}:1')
+            )
+            for col, ok in ((2, aa_pass), (3, aaa_pass)):
+                item = QTableWidgetItem('Yes' if ok else 'No')
+                if not ok:
+                    item.setBackground(QColor(255, 220, 220))
+                    item.setForeground(QColor(0, 0, 0))  # dark text on light bg
+                self._contrast_table.setItem(row, col, item)
+
     def _make_state_button(
         self,
         label: str,
@@ -373,6 +480,7 @@ class ThemeSampleWidget(QWidget):
         self._current_button.setStyleSheet(
             f'background-color: {theme.current.as_rgb()};'
         )
+        self._refresh_contrast(theme_dict)
 
 
 viewer = napari.Viewer(title='Theme sample', show_welcome_screen=False)

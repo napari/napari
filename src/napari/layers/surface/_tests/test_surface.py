@@ -33,7 +33,7 @@ def test_random_surface():
     assert np.array_equal(layer.vertices, vertices)
     assert np.array_equal(layer.faces, faces)
     assert np.array_equal(layer.vertex_values, values)
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
 
@@ -99,7 +99,7 @@ def test_random_surface_no_values():
     assert np.array_equal(layer.vertices, vertices)
     assert np.array_equal(layer.faces, faces)
     assert np.array_equal(layer.vertex_values, np.ones(len(vertices)))
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
 
@@ -131,12 +131,26 @@ def test_random_3D_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
-    assert layer._data_view.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
+
+
+@pytest.mark.parametrize('order', [(0, 1, 2), (2, 1, 0), (1, 0, 2)])
+def test_3D_surface_follows_dims_order(order):
+    """Test view vertices follow the dims order when all axes are displayed."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    layer = Surface((vertices, faces))
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=3, order=order))
+    np.testing.assert_array_equal(
+        layer._view_vertices, vertices[:, list(order)]
+    )
 
 
 def test_random_4D_surface():
@@ -154,11 +168,11 @@ def test_random_4D_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
     layer._slice_dims(Dims(ndim=4, ndisplay=3))
-    assert layer._data_view.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
 
@@ -177,19 +191,51 @@ def test_random_3D_timeseries_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
     assert layer.extent.data[1][0] == 21
 
     layer._slice_dims(Dims(ndim=4, ndisplay=3))
-    assert layer._data_view.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
-    with pytest.warns(UserWarning, match='Assigning multiple data per vertex'):
+    with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
         layer._slice_dims(Dims(ndim=4, ndisplay=3, order=(3, 0, 1, 2)))
-    assert len(layer._data_view) == 0
+    assert len(layer._view_vertices) == 0
+
+
+def test_rollling_random_3D_timeseries_surface_in_2D():
+    """Test instantiating Surface layer with random 3D timeseries data."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((5, 22, 10))
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    ndim = layer.ndim
+    assert ndim == 5
+
+    # hide the extra dims (0, 1) and the last vertex axis (4), display (2, 3)
+    # equivalent to rolling after first displaying (0, 1, 2, 3, 4)
+    order = (4, 0, 1, 2, 3)
+    layer._slice_dims(Dims(ndim=ndim, ndisplay=2, order=order))
+
+
+def test_2D_timeseries_surface_in_3D():
+    """Test 2D surface with a values axis shows no data in 3D view."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random((22, 10))
+    layer = Surface((vertices, faces, values))
+    assert layer.ndim == 3
+
+    # all axes are displayed, so the values axis is too
+    with pytest.warns(UserWarning, match='must be non-displayed dimensions'):
+        layer._slice_dims(Dims(ndim=3, ndisplay=3))
+    assert len(layer._view_vertices) == 0
 
 
 def test_random_3D_multitimeseries_surface():
@@ -207,13 +253,13 @@ def test_random_3D_multitimeseries_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
     assert layer.extent.data[1][0] == 15
     assert layer.extent.data[1][1] == 21
 
     layer._slice_dims(Dims(ndim=5, ndisplay=3))
-    assert layer._data_view.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
 
@@ -238,11 +284,11 @@ def test_changing_surface():
             for ld, d in zip(layer.data, data, strict=False)
         ]
     )
-    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertices.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
     layer._slice_dims(Dims(ndim=3, ndisplay=3))
-    assert layer._data_view.shape[1] == 3
+    assert layer._view_vertices.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
 
@@ -329,19 +375,8 @@ def test_texture():
 
     np.testing.assert_allclose(layer.texture, texture)
     np.testing.assert_allclose(layer.texcoords, texcoords)
-    assert layer._has_texture
 
-    layer.texture, layer.texcoords = None, texcoords
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = texture, None
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = None, None
-    assert not layer._has_texture
-
-    layer.texture, layer.texcoords = texture, texcoords
-    assert layer._has_texture
+    # actual rendering state depends on slicing, and should be checked elsewhere
 
 
 def test_vertex_colors():

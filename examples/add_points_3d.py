@@ -31,7 +31,7 @@ pts = viewer.add_points(
     blending='translucent_no_depth',
 )
 
-viewer.camera.angles = (0, -50, 50)
+viewer.scene.camera.angles = (0, -50, 50)
 pts.mode = 'add'
 
 if __name__ == '__main__':

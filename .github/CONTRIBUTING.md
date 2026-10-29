@@ -37,7 +37,6 @@ napari uses the following:
    - `bug_report.yml` config file to provide text areas for users to complete for bug reports.
 - `FUNDING.yml`: redirect GitHub to napari NumFOCUS account
 - Testing and bots
-   - `missing_translations.md`: used if an action detects a missing language translation
    - `dependabot.yml`: opens a PR to notify maintainers of updates to dependencies
    - `labeler.yml` is a labels config file for labeler action
    - `BOT_REPO_UPDATE_FAIL_TEMPLATE.md` is an bot failure notification template

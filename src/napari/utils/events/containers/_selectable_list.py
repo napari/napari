@@ -4,7 +4,6 @@ from typing import Any, TypeVar
 from napari.utils.events.containers._evented_list import EventedList
 from napari.utils.events.containers._nested_list import NestableEventedList
 from napari.utils.events.containers._selection import Selectable
-from napari.utils.translations import trans
 
 _T = TypeVar('_T')
 
@@ -45,19 +44,13 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._activate_on_insert = True
         super().__init__(*args, **kwargs)
-        # bound/unbound methods are ambiguous for mypy so we need to ignore
-        # https://mypy.readthedocs.io/en/stable/error_code_list.html?highlight=method-assign#check-that-assignment-target-is-not-a-method-method-assign
         self.selection._pre_add_hook = self._preselect_hook
 
     def _preselect_hook(self, value: _T) -> _T:
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
-                trans._(
-                    'Cannot select item that is not in list: {value!r}',
-                    deferred=True,
-                    value=value,
-                )
+                f'Cannot select item that is not in list: {value!r}'
             )
         return value
 
@@ -88,7 +81,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
             new = (*tuple(root), _idx - 1) if _idx >= 1 else tuple(root)
             do_add = len(self) > new[0]
         if do_add:
-            self.selection.add(self[new])
+            self.selection.add(self[new])  # pyrefly: ignore [bad-index]
 
     def move_selected(self, index: int, insert: int) -> None:
         """Reorder list by moving the item at index and inserting it
@@ -112,10 +105,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """
         # this is just here for now to support the old layerlist API
         warnings.warn(
-            trans._(
-                'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
-                deferred=True,
-            ),
+            'move_selected is deprecated since 0.4.16. Please use layers.move_multiple with layers.selection instead.',
             FutureWarning,
             stacklevel=2,
         )

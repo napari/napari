@@ -7,7 +7,6 @@ from app_model.types import Action
 
 from napari._app_model.constants import MenuGroup, MenuId
 from napari._qt.qt_main_window import Window
-from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 
@@ -35,13 +34,13 @@ def _show_plugin_install_dialog(window: Window) -> None:
         window._qt_window
     )
     if window._qt_window._plugin_manager_dialog is not None:
-        window._qt_window._plugin_manager_dialog.exec_()
+        window._qt_window._plugin_manager_dialog.exec()
 
 
 Q_PLUGINS_ACTIONS: list[Action] = [
     Action(
         id='napari.window.plugins.plugin_install_dialog',
-        title=trans._('Install/Uninstall Plugins...'),
+        title='Install/Uninstall Plugins...',
         menus=[
             {
                 'id': MenuId.MENUBAR_PLUGINS,

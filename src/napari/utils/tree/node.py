@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from napari.utils.translations import trans
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -63,11 +61,11 @@ class Node:
         item = self
         indices: list[int] = []
         while item.parent is not None:
-            indices.insert(0, item.index_in_parent())  # type: ignore
+            indices.insert(0, item.index_in_parent())  # pyrefly: ignore [bad-argument-type]
             item = item.parent
         return tuple(indices)
 
-    def iter_parents(self):
+    def iter_parents(self) -> Generator[Group, None, None]:
         """Iterate the parent chain, starting with nearest relatives"""
         obj = self.parent
         while obj:
@@ -80,7 +78,7 @@ class Node:
         return parents[-1] if parents else self
 
     def traverse(
-        self, leaves_only=False, with_ancestors=False
+        self, leaves_only: bool = False, with_ancestors: bool = False
     ) -> Generator[Node, None, None]:
         """Recursive all nodes and leaves of the Node.
 
@@ -89,7 +87,7 @@ class Node:
         """
         yield self
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Render ascii tree string representation of this node"""
         return '\n'.join(self._render())
 
@@ -108,15 +106,11 @@ class Node:
         """
         return self.name
 
-    def unparent(self):
+    def unparent(self) -> Self:
         """Remove this object from its parent."""
         if self.parent is not None:
             self.parent.remove(self)
             return self
         raise IndexError(
-            trans._(
-                'Cannot unparent orphaned Node: {node!r}',
-                deferred=True,
-                node=self,
-            ),
+            f'Cannot unparent orphaned Node: {self!r}',
         )

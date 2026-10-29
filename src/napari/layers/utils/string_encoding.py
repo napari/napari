@@ -4,7 +4,7 @@ from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
 from pydantic import GetCoreSchemaHandler, TypeAdapter
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 
 from napari.layers.utils.style_encoding import (
     StyleEncoding,
@@ -13,7 +13,6 @@ from napari.layers.utils.style_encoding import (
     _ManualStyleEncoding,
 )
 from napari.utils.events.custom_types import Array
-from napari.utils.translations import trans
 
 """A scalar array that represents one string value."""
 StringValue = Array[str, ()]
@@ -32,8 +31,8 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source, handler: GetCoreSchemaHandler
-    ):
+        cls, source: Any, handler: GetCoreSchemaHandler, /
+    ) -> CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate, core_schema.any_schema()
         )
@@ -86,10 +85,7 @@ class StringEncoding(StyleEncoding[StringValue, StringArray], Protocol):
         if isinstance(value, Sequence):
             return ManualStringEncoding(array=value, default=DEFAULT_STRING)
         raise ValueError(
-            trans._(
-                'value should be a StringEncoding, a dict, a string, a sequence of strings, or None',
-                deferred=True,
-            )
+            'value should be a StringEncoding, a dict, a string, a sequence of strings, or None'
         )
 
 

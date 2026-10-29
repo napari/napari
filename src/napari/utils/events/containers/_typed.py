@@ -1,5 +1,11 @@
 import logging
-from collections.abc import Callable, Iterable, MutableSequence, Sequence
+from collections.abc import (
+    Callable,
+    Generator,
+    Iterable,
+    MutableSequence,
+    Sequence,
+)
 from typing import (
     Any,
     Self,
@@ -7,8 +13,6 @@ from typing import (
     Union,
     overload,
 )
-
-from napari.utils.translations import trans
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +48,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: type[_T] | Sequence[type[_T]] = (),
-        lookup: dict[type[_L], Callable[[_T], _T | _L]] | None = None,
+        lookup: dict[type[_L], Callable[[_T], _L]] | None = None,
     ) -> None:
         if lookup is None:
             lookup = {}
@@ -52,7 +56,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         self._basetypes: tuple[type[_T], ...] = (
             tuple(basetype) if isinstance(basetype, Sequence) else (basetype,)
         )
-        self._lookup = lookup.copy()
+        self._lookup = lookup.copy()  # pyrefly: ignore [invalid-type-var]
         self.extend(data)
 
     def __len__(self) -> int:
@@ -70,22 +74,17 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T) -> None: ...  # pragma: no cover
 
     @overload
     def __setitem__(
         self, key: slice, value: Iterable[_T]
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError(
-                    trans._(
-                        'Can only assign an iterable to slice',
-                        deferred=True,
-                    )
-                )
+                raise TypeError('Can only assign an iterable to slice')
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
@@ -153,12 +152,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             isinstance(e, t) for t in self._basetypes
         ):
             raise TypeError(
-                trans._(
-                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
-                    deferred=True,
-                    dtype=type(e),
-                    basetypes=self._basetypes,
-                )
+                f'Cannot add object with type {type(e)!r} to TypedList expecting type {self._basetypes!r}'
             )
         return e
 
@@ -227,13 +221,7 @@ class TypedMutableSequence(MutableSequence[_T]):
             if v is value or v == value:
                 return i
 
-        raise ValueError(
-            trans._(
-                '{value!r} is not in list',
-                deferred=True,
-                value=value,
-            )
-        )
+        raise ValueError(f'{value!r} is not in list')
 
     def _iter_indices(
         self, start: int = 0, stop: int | None = None
@@ -245,10 +233,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         """
         yield from range(start, len(self) if stop is None else stop)
 
-    def _ipython_key_completions_(self):
+    def _ipython_key_completions_(self) -> Generator[str, None, None] | None:
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
-        return None  # type: ignore
+        return None
 
 
 def _noop(x: _T) -> _T:

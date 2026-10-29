@@ -1,8 +1,6 @@
-from collections import OrderedDict
 from enum import auto
 
 from napari.utils.misc import StringEnum
-from napari.utils.translations import trans
 
 
 class VectorStyle(StringEnum):
@@ -23,22 +21,16 @@ class VectorStyle(StringEnum):
     ARROW = auto()
 
 
-VECTORSTYLE_TRANSLATIONS = OrderedDict(
-    [
-        (VectorStyle.LINE, trans._('line')),
-        (VectorStyle.TRIANGLE, trans._('triangle')),
-        (VectorStyle.ARROW, trans._('arrow')),
-    ]
-)
-
-
 class VectorsProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 
         * NONE: ignore slice thickness, only using the dims point
         * ALL: project all vectors in the slice onto displayed dimensions
+        * FADE: fade away vectors based on how far the vector position is from the mid point
+            of the thick slice.
     """
 
     NONE = auto()
     ALL = auto()
+    FADE = auto()

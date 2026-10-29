@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from napari.layers import Layer
 from napari.plugins import _npe2
 from napari.types import LayerData, PathLike
-from napari.utils.translations import trans
 
 logger = getLogger(__name__)
 if TYPE_CHECKING:
@@ -52,10 +51,7 @@ def read_data_with_plugins(
     """
     if plugin == 'builtins':
         warnings.warn(
-            trans._(
-                'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
-                deferred=True,
-            ),
+            'The "builtins" plugin name is deprecated and will not work in a future version. Please use "napari" instead.',
         )
         plugin = 'napari'
 
@@ -72,7 +68,7 @@ def read_data_with_plugins(
 
 
 def save_layers(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     *,
     plugin: str | None = None,
@@ -86,7 +82,7 @@ def save_layers(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         A filepath, directory, or URL to write.
     layers : List[layers.Layer]
         Non-empty List of layers to be saved. Warns when the list
@@ -106,7 +102,7 @@ def save_layers(
             path, layers, plugin_name=plugin, _writer=_writer
         )
     else:
-        warnings.warn(trans._('No layers to write.'))
+        warnings.warn('No layers to write.')
         return []
 
     # If written is empty, something went wrong.
@@ -114,29 +110,15 @@ def save_layers(
     if not written:
         if writer_name:
             warnings.warn(
-                trans._(
-                    "Plugin '{name}' tried to save layers but did not return any written paths.",
-                    deferred=True,
-                    name=writer_name,
-                )
+                f"Plugin '{writer_name}' tried to save layers but did not return any written paths."
             )
         elif plugin:
             warnings.warn(
-                trans._(
-                    "Given plugin '{name}' is not a valid writer for {path}.",
-                    deferred=True,
-                    name=plugin,
-                    path=path,
-                )
+                f"Given plugin '{plugin}' is not a valid writer for {path}."
             )
         else:
             warnings.warn(
-                trans._(
-                    'No data written! A plugin could not be found to write these {length} layers to {path}.',
-                    deferred=True,
-                    length=len(layers),
-                    path=path,
-                )
+                f'No data written! A plugin could not be found to write these {len(layers)} layers to {path}.'
             )
 
     return written
@@ -166,7 +148,7 @@ def _is_null_layer_sentinel(layer_data: Any) -> bool:
 
 
 def _write_layers_with_plugins(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     *,
     plugin_name: str | None = None,
@@ -180,7 +162,7 @@ def _write_layers_with_plugins(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.

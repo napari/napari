@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
 import numpy.typing as npt
@@ -15,8 +15,8 @@ from napari.layers.shapes._shapes_utils import (
     _save_failed_triangulation,
     find_planar_axis,
     is_collinear,
-    path_to_mask,
-    poly_to_mask,
+    path_to_indices,
+    poly_to_indices,
     triangulate_edge,
     triangulate_face,
     triangulate_face_and_edges,
@@ -28,8 +28,6 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray,
     TriangleArray,
 )
-from napari.utils.misc import argsort
-from napari.utils.translations import trans
 from napari.utils.triangulation_backend import TriangulationBackend
 
 try:
@@ -118,8 +116,6 @@ class Shape(ABC):
         Tx3 array of vertex indices that form the triangles for the shape edge
     _filled : bool
         Flag if array is filled or not.
-    _use_face_vertices : bool
-        Flag to use face vertices for mask generation.
     """
 
     slice_key: np.ndarray[tuple[Literal[2], int], np.dtype[np.int64]]
@@ -140,19 +136,18 @@ class Shape(ABC):
         self._face_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._face_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # pyrefly: ignore [bad-assignment]
         self._edge_vertices: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
         self._edge_offsets: CoordinateArray = np.empty(
             (0, self.ndisplay), dtype=np.float32
         )
-        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)
+        self._edge_triangles: TriangleArray = np.empty((0, 3), dtype=np.uint32)  # pyrefly: ignore [bad-assignment]
         self._box: BoxArray = np.empty((9, 2), dtype=np.float32)
 
         self._closed = False
         self._filled = True
-        self._use_face_vertices = False
         self.edge_width = edge_width
         self.z_index = z_index
         self.name = ''
@@ -160,7 +155,7 @@ class Shape(ABC):
         self._data: npt.NDArray
         self._bounding_box = np.empty((0, self.ndisplay))
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Self:
         if (
             TRIANGULATION_BACKEND
             in {
@@ -215,7 +210,7 @@ class Shape(ABC):
         return self._ndisplay
 
     @ndisplay.setter
-    def ndisplay(self, ndisplay):
+    def ndisplay(self, ndisplay) -> None:
         if self.ndisplay == ndisplay:
             return
         self._ndisplay = ndisplay
@@ -227,7 +222,7 @@ class Shape(ABC):
         return self._dims_order
 
     @dims_order.setter
-    def dims_order(self, dims_order):
+    def dims_order(self, dims_order) -> None:
         if self.dims_order == dims_order:
             return
         self._dims_order = dims_order
@@ -263,7 +258,7 @@ class Shape(ABC):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width):
+    def edge_width(self, edge_width) -> None:
         self._edge_width = edge_width
 
     @property
@@ -274,7 +269,7 @@ class Shape(ABC):
         return self._z_index
 
     @z_index.setter
-    def z_index(self, z_index):
+    def z_index(self, z_index) -> None:
         self._z_index = z_index
 
     @property
@@ -310,11 +305,11 @@ class Shape(ABC):
     def _set_empty_edge(self) -> None:
         self._edge_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
         self._edge_offsets = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)  # pyrefly: ignore [bad-assignment]
 
     def _set_empty_face(self) -> None:
         self._face_vertices = np.empty((0, self.ndisplay), dtype=np.float32)
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)  # pyrefly: ignore [bad-assignment]
 
     def _set_meshes_compiled_3d(
         self,
@@ -322,10 +317,10 @@ class Shape(ABC):
         closed: bool = True,
         face: bool = True,
         edge: bool = True,
-    ):
+    ) -> None:
         if face:
             face_triangles, face_vertices = (
-                bermuda.triangulate_polygons_face_3d([data])
+                bermuda.triangulate_polygons_face_3d([data])  # pyrefly: ignore [missing-attribute]
             )
             self._face_vertices = face_vertices
             self._face_triangles = face_triangles
@@ -383,7 +378,7 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    bermuda.triangulate_polygons_with_edge([data])
+                    bermuda.triangulate_polygons_with_edge([data])  # pyrefly: ignore [missing-attribute]
                 )
             except BaseException as e:  # pragma: no cover
                 path, text_path = _save_failed_triangulation(
@@ -403,13 +398,13 @@ class Shape(ABC):
         # otherwise, we make individual calls to specialized functions
         if edge:
             self._edge_vertices, self._edge_offsets, self._edge_triangles = (
-                bermuda.triangulate_path_edge(data, closed=closed)
+                bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore [missing-attribute]
             )
         else:
             self._set_empty_edge()
         if face:
             self._face_triangles, self._face_vertices = (
-                bermuda.triangulate_polygons_face([data])
+                bermuda.triangulate_polygons_face([data])  # pyrefly: ignore [missing-attribute]
             )
         else:
             self._set_empty_face()
@@ -445,7 +440,7 @@ class Shape(ABC):
         if edge and face:
             try:
                 (triangles, vertices), (centers, offsets, edge_triangles) = (
-                    partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(
+                    partsegcore_triangulate.triangulate_polygon_with_edge_numpy_li(  # pyrefly: ignore [missing-attribute]
                         [data], split_edges=True
                     )
                 )
@@ -467,7 +462,7 @@ class Shape(ABC):
         # otherwise, we make individual calls to specialized functions
         if edge:
             self._edge_vertices, self._edge_offsets, self._edge_triangles = (
-                partsegcore_triangulate.triangulate_path_edge_numpy(
+                partsegcore_triangulate.triangulate_path_edge_numpy(  # pyrefly: ignore [missing-attribute]
                     data, closed=closed
                 )
             )
@@ -475,7 +470,7 @@ class Shape(ABC):
             self._set_empty_edge()
         if face:
             self._face_triangles, self._face_vertices = (
-                partsegcore_triangulate.triangulate_polygon_numpy_li([data])
+                partsegcore_triangulate.triangulate_polygon_numpy_li([data])  # pyrefly: ignore [missing-attribute]
             )
         else:
             self._set_empty_face()
@@ -540,7 +535,7 @@ class Shape(ABC):
                 # axis and value can be None if data 3D but not limited to an
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
-                # we check anyway for mypy's sake
+                # we check anyway for pyrefly's sake
                 vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
@@ -606,7 +601,7 @@ class Shape(ABC):
                 # axis and value can be None if data 3D but not limited to an
                 # axis-aligned plane. However in that situation data2d will be
                 # empty, is_collinear is True, and we will never get here. But
-                # we check anyway for mypy's sake
+                # we check anyway for pyrefly's sake
                 vertices = np.insert(vertices, axis, value, axis=1)
             if len(triangles) > 0:
                 self._face_vertices = vertices
@@ -637,22 +632,24 @@ class Shape(ABC):
     def _triangulate_edge_partseg(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return partsegcore_triangulate.triangulate_path_edge_numpy(
+        return partsegcore_triangulate.triangulate_path_edge_numpy(  # pyrefly: ignore [missing-attribute]
             data, closed=closed
         )
 
     def _triangulate_edge_bermuda(
         self, data: CoordinateArray, closed: bool
     ) -> tuple[CoordinateArray, CoordinateArray, TriangleArray]:
-        return bermuda.triangulate_path_edge(data, closed=closed)
+        return bermuda.triangulate_path_edge(data, closed=closed)  # pyrefly: ignore[missing-attribute]
 
-    def _all_triangles(self):
+    def _all_triangles(
+        self,
+    ) -> np.ndarray[tuple[int, Literal[3], int], np.dtype[np.floating]]:
         """Return all triangles for the shape
 
         Returns
         -------
         np.ndarray
-            Nx3 array of vertex indices that form the triangles for the shape
+            Nx3xD array of vertex coordinates that form the triangles for the shape
         """
         return np.vstack(
             [
@@ -712,7 +709,7 @@ class Shape(ABC):
         )
         self._clean_cache()
 
-    def scale(self, scale, center=None):
+    def scale(self, scale, center=None) -> None:
         """Performs a scaling on the shape
 
         Parameters
@@ -734,7 +731,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def rotate(self, angle, center=None):
+    def rotate(self, angle, center=None) -> None:
         """Performs a rotation on the shape
 
         Parameters
@@ -756,7 +753,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def flip(self, axis, center=None):
+    def flip(self, axis, center=None) -> None:
         """Performs a flip on the shape, either horizontal or vertical.
 
         Parameters
@@ -772,12 +769,7 @@ class Shape(ABC):
         elif axis == 1:
             transform = np.array([[-1, 0], [0, 1]])
         else:
-            raise ValueError(
-                trans._(
-                    'Axis not recognized, must be one of "{{0, 1}}"',
-                    deferred=True,
-                )
-            )
+            raise ValueError('Axis not recognized, must be one of "{{0, 1}}"')
         if center is None:
             self.transform(transform)
         else:
@@ -797,7 +789,7 @@ class Shape(ABC):
         ----------
         mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
-            the displayed vertices.
+            the vertices in the 2D display plane.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -811,60 +803,61 @@ class Shape(ABC):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+            plane = self.dims_order[-2:]
+            mask_shape = np.round(self.data[:, plane].max(axis=0)).astype(
                 'int'
             )
+        mask = np.zeros(mask_shape, dtype=bool)
+        mask[self._mask_index(mask_shape, zoom_factor, offset)] = True
+        return mask
 
-        if len(mask_shape) == 2:
-            embedded = False
+    def _mask_index(self, mask_shape, zoom_factor=1, offset=(0, 0)) -> tuple:
+        """Index selecting the shape's pixels in an array of mask_shape.
+
+        Same pixels as ``to_mask``, without allocating a mask, so callers can
+        write the shape straight into a labels or colors array.
+        """
+        # The shape is drawn in `plane`, the two dims shown in 2D display.
+        # Using them whatever ndisplay is gives the same mask in 2D and 3D.
+        plane = self.dims_order[-2:]
+        embedded = len(mask_shape) != 2
+        if not embedded:
             shape_plane = mask_shape
         elif len(mask_shape) == self.data.shape[1]:
-            embedded = True
-            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+            shape_plane = [mask_shape[d] for d in plane]
         else:
             raise ValueError(
-                trans._(
-                    'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.',
-                    deferred=True,
-                    expected=self.data.shape[1],
-                    received=len(mask_shape),
-                )
+                f'mask shape length must either be 2 or the same as the dimensionality of the shape, expected {self.data.shape[1]} got {len(mask_shape)}.'
             )
 
-        if self._use_face_vertices:
-            data = self._face_vertices
-        else:
-            data = self.data_displayed
+        data = (self._vertices_for_mask(plane) - offset) * zoom_factor
+        to_indices = poly_to_indices if self._filled else path_to_indices
+        rows, cols = to_indices(shape_plane, data)
+        if not embedded:
+            return rows, cols
 
-        data = data[:, -len(shape_plane) :]
+        # `others` are the remaining dims. The shape covers the range its
+        # bounding box spans in each of them, which is a single slice for a
+        # shape drawn in a 2D view.
+        others = self.dims_order[:-2]
+        others_key = self._slice_key_of(others)
+        index: list[slice | np.ndarray] = [slice(None)] * len(mask_shape)
+        for col, dim in enumerate(others):
+            index[dim] = slice(others_key[0, col], others_key[1, col] + 1)
+        # the pixels drawn in `plane` go on its two dims
+        index[plane[0]], index[plane[1]] = rows, cols
+        return tuple(index)
 
-        if self._filled:
-            mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
-        else:
-            mask_p = path_to_mask(shape_plane, (data - offset) * zoom_factor)
+    def _slice_key_of(self, dims) -> np.ndarray:
+        """First and last integer index of the bounding box along dims.
 
-        # If the mask is to be embedded in a larger array, compute array
-        # and embed as a slice.
-        if embedded:
-            mask = np.zeros(mask_shape, dtype=bool)
-            slice_key: list[int | slice] = [0] * len(mask_shape)
-            for i in range(len(mask_shape)):
-                if i in self.dims_displayed:
-                    slice_key[i] = slice(None)
-                elif self.slice_key is not None:
-                    slice_key[i] = slice(
-                        self.slice_key[0, i], self.slice_key[1, i] + 1
-                    )
-                else:
-                    raise RuntimeError(
-                        'Internal error: self.slice_key is None'
-                    )
-            displayed_order = argsort(self.dims_displayed)
-            mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
-        else:
-            mask = mask_p
+        Returns a (2, len(dims)) array with one column per dim.
+        """
+        return np.rint(self._bounding_box[:, dims]).astype(int)
 
-        return mask
+    def _vertices_for_mask(self, plane) -> np.ndarray:
+        """Return the vertices used to draw the mask in plane."""
+        return self.data[:, plane]
 
     def _clean_cache(self) -> None:
         if 'dims_displayed' in self.__dict__:

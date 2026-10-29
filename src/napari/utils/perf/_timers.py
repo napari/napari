@@ -324,7 +324,7 @@ else:
 
     # perf_timer is disabled. Using contextlib.nullcontext did not work.
     @contextlib.contextmanager
-    def perf_timer(  # type: ignore [misc]
+    def perf_timer(
         name: str,
         category: str | None = None,
         print_time: bool = False,

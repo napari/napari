@@ -1,12 +1,13 @@
-import warnings
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
-from pydantic import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
-from napari.utils.translations import trans
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
 
 
 @dataclass(eq=False)
@@ -48,7 +49,7 @@ class ColorCycle:
         )
 
     @classmethod
-    def validate_type(cls, val):
+    def validate_type(cls, val) -> ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
@@ -57,33 +58,24 @@ class ColorCycle:
 
         return _coerce_colorcycle_from_colors(val)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, ColorCycle):
             eq = np.array_equal(self.values, other.values)
         else:
             eq = False
         return eq
 
-    def __next__(self):
+    def __next__(self) -> np.ndarray:
         val = self.current_color()
         self.current_index += 1
         self.current_index %= len(self.values)
         return val
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         return self
 
     def current_color(self) -> np.ndarray:
         return self.values[self.current_index]
-
-    @property
-    def cycle(self):
-        warnings.warn(
-            'ColorCycle.cycle is deprecated and will be removed in 0.8.0. '
-            'To iterate colors, use next(ColorCycle) directly.',
-            stacklevel=2,
-        )
-        return self
 
 
 def _coerce_colorcycle_from_dict(
@@ -97,9 +89,7 @@ def _coerce_colorcycle_from_dict(
     # validate values
     color_values = val.get('values')
     if color_values is None:
-        raise ValueError(
-            trans._('ColorCycle requires a values argument', deferred=True)
-        )
+        raise ValueError('ColorCycle requires a values argument')
 
     transformed_color_values = transform_color(color_values)
 
@@ -134,7 +124,7 @@ def _coerce_colorcycle_from_colors(
     return ColorCycle(values=transformed_color_values)
 
 
-def compare_colormap_dicts(cmap_1, cmap_2):
+def compare_colormap_dicts(cmap_1, cmap_2) -> bool:
     if len(cmap_1) != len(cmap_2):
         return False
     for k, v in cmap_1.items():

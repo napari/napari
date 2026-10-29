@@ -31,15 +31,20 @@ if TYPE_CHECKING:
 
 
 def _add_plugin_dock_widget(
-    widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str],
+    widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str, str, bool],
     viewer: viewer.Viewer | None = None,
 ) -> None:
     if viewer is None:
         viewer = _provide_viewer_or_raise(
             msg='Widgets cannot be opened in headless mode.',
         )
-    widget, full_name = widget_name_tuple
-    viewer.window.add_dock_widget(widget, name=full_name)
+    widget, full_name, default_dock_area, tabify = widget_name_tuple
+    area = viewer.window._resolve_dock_area(
+        name=full_name, default_area=default_dock_area
+    )
+    viewer.window.add_dock_widget(
+        widget, name=full_name, area=area, tabify=tabify
+    )
 
 
 def _add_layer_data_tuples_to_viewer(
@@ -202,7 +207,7 @@ def _add_future_data(
 
 QPROCESSORS: dict[object, Callable] = {
     Optional[
-        tuple[FunctionGui | QWidget | Widget, str]
+        tuple[FunctionGui | QWidget | Widget, str, str, bool]
     ]: _add_plugin_dock_widget,
     types.LayerDataTuple: _add_layer_data_tuples_to_viewer,
     list[types.LayerDataTuple]: _add_layer_data_tuples_to_viewer,
@@ -210,9 +215,9 @@ QPROCESSORS: dict[object, Callable] = {
 }
 
 # Add future and LayerData processors for each layer type.
-for t in types._LayerData.__args__:  # type: ignore [attr-defined]
+for t in types._LayerData.__args__:  # pyrefly: ignore [missing-attribute]
     QPROCESSORS[t] = partial(_add_layer_data_to_viewer, return_type=t)
 
-    QPROCESSORS[Future[t]] = partial(  # type: ignore [valid-type]
+    QPROCESSORS[Future[t]] = partial(
         _add_future_data, return_type=t, _from_tuple=False
     )

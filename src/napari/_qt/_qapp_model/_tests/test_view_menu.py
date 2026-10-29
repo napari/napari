@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import sys
 
@@ -13,7 +15,7 @@ from napari._app_model import get_app_model
 from napari._app_model.actions._view import (
     _get_current_tooltip_visibility,
     _toggle_canvas_ndim,
-    toggle_action_details,
+    toggle_actions,
 )
 from napari._tests.utils import skip_local_focus, skip_local_popups
 from napari.viewer import ViewerModel
@@ -37,7 +39,9 @@ def check_view_menu_visibility(viewer, qtbot):
 
     assert not viewer.window.view_menu.isVisible()
     qtbot.keyClick(
-        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
+        viewer.window._qt_window.menuBar(),
+        Qt.Key.Key_V,
+        modifier=Qt.KeyboardModifier.AltModifier,
     )
     qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
@@ -45,11 +49,11 @@ def check_view_menu_visibility(viewer, qtbot):
 
 
 @pytest.mark.parametrize(
-    ('action_id', 'action_title', 'viewer_attr', 'sub_attr'),
-    toggle_action_details,
+    ('action_id', 'action_title', 'attribute_path'),
+    functools.reduce(operator.iadd, toggle_actions.values(), []),
 )
-def test_toggle_axes_scale_bar_attr(
-    action_id, action_title, viewer_attr, sub_attr
+def test_toggle_axes_scale_bar_coordinate_grid_attr(
+    action_id, action_title, attribute_path
 ):
     """
     Test toggle actions related with viewer axes and scale bar attributes.
@@ -65,20 +69,26 @@ def test_toggle_axes_scale_bar_attr(
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `coordinate_grid` attributes:
+        * `visible`
+        * `labels`
     """
     app = get_app_model()
     viewer = ViewerModel()
 
     # Get viewer attribute to check (`axes` or `scale_bar`)
-    axes_scale_bar = getattr(viewer, viewer_attr)
-
-    # Get initial sub-attribute value (for example `axes.visible`)
-    initial_value = getattr(axes_scale_bar, sub_attr)
+    *parent_path, attr_name = attribute_path.split('.')
+    parent = viewer
+    for part in parent_path:
+        parent = getattr(parent, part)
+    initial_value = getattr(parent, attr_name)
 
     # Change sub-attribute via action command execution and check value
     with app.injection_store.register(providers={ViewerModel: viewer}):
         app.commands.execute_command(action_id)
-    changed_value = getattr(axes_scale_bar, sub_attr)
+
+    changed_value = getattr(parent, attr_name)
+
     assert initial_value is not changed_value
 
 
@@ -196,24 +206,14 @@ def _mouse_move_to(widget, pos):
     for testing the event-filter-based menubar toggle behavior.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    if QT_VERSION.startswith('5'):
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            pos,
-            global_pos,
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    else:
-        event = QMouseEvent(
-            QEvent.Type.MouseMove,
-            QPointF(pos),
-            QPointF(global_pos),
-            Qt.MouseButton.NoButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
+    event = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(pos),
+        QPointF(global_pos),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
 
     QApplication.sendEvent(widget, event)
 
@@ -321,7 +321,7 @@ def test_toggle_activity_dock(make_napari_viewer):
 def test_toggle_layer_tooltips(make_napari_viewer, qtbot):
     """Test toggle layer tooltips"""
     make_napari_viewer()
-    action_id = 'napari.window.view.toggle_layer_tooltips'
+    action_id = 'napari.window.toggle_layer_tooltips'
     app = get_app_model()
 
     # Check initial layer tooltip visibility settings state (False)
@@ -344,29 +344,29 @@ def test_zoom_actions(make_napari_viewer):
     viewer.add_image(np.ones((10, 10, 10)))
 
     # get initial zoom state
-    initial_zoom = viewer.camera.zoom
+    initial_zoom = viewer.scene.camera.zoom
 
     # Check zoom in action
-    app.commands.execute_command('napari.viewer.camera.zoom_in')
-    assert viewer.camera.zoom == pytest.approx(1.5 * initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_in')
+    assert viewer.scene.camera.zoom == pytest.approx(1.5 * initial_zoom)
 
     # Check zoom out action
-    app.commands.execute_command('napari.viewer.camera.zoom_out')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.zoom_out')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
-    viewer.camera.zoom = 2
+    viewer.scene.camera.zoom = 2
     # Check reset zoom action
-    app.commands.execute_command('napari.viewer.fit_to_view')
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
+    app.commands.execute_command('napari.scene.fit_to_view')
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
 
     # Check that angle is preserved
     viewer.dims.ndisplay = 3
-    viewer.camera.angles = (90, 0, 0)
-    viewer.camera.zoom = 2
-    app.commands.execute_command('napari.viewer.fit_to_view')
+    viewer.scene.camera.angles = (90, 0, 0)
+    viewer.scene.camera.zoom = 2
+    app.commands.execute_command('napari.scene.fit_to_view')
     # Zoom should be reset, but angle unchanged
-    assert viewer.camera.zoom == pytest.approx(initial_zoom)
-    assert viewer.camera.angles == (90, 0, 0)
+    assert viewer.scene.camera.zoom == pytest.approx(initial_zoom)
+    assert viewer.scene.camera.angles == (90, 0, 0)
 
 
 @pytest.mark.parametrize(('initial', 'expected'), [(3, 2), (2, 3)])
@@ -376,3 +376,31 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
+
+
+def test_toggle_grid_mode():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    viewer.add_image(np.ones((10, 10, 10)))
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.canvas.grid.enabled is False
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is True
+        app.commands.execute_command('napari.canvas.toggle_grid_mode')
+        assert viewer.canvas.grid.enabled is False
+
+
+def test_toggle_crosshair():
+    viewer = ViewerModel()
+    app = get_app_model()
+
+    # Change sub-attribute via action command execution and check value
+    with app.injection_store.register(providers={ViewerModel: viewer}):
+        assert viewer.scene.overlays.crosshair.visible is False
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is True
+        app.commands.execute_command('napari.scene.toggle_crosshair')
+        assert viewer.scene.overlays.crosshair.visible is False

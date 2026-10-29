@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Any, SupportsInt
+from typing import TYPE_CHECKING, Any, SupportsInt
 
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 
 from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
-from napari.utils.translations import _load_language, get_language_packs, trans
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+    from pydantic.json_schema import JsonSchemaValue
+    from pydantic_core import CoreSchema
 
 
 class StrField(str):
@@ -26,35 +33,32 @@ class StrField(str):
         )
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema, handler):
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
         json_schema.update(enum=cls._available_options())
         return json_schema
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v: Any) -> str:
         if not isinstance(v, str):
-            raise TypeError(trans._('must be a string', deferred=True))
+            raise TypeError('must be a string')
 
         value = v.lower()
         if not cls._valid_option(v):
             raise ValueError(
-                trans._(
-                    '"{value}" is not valid. It must be one of {options}',
-                    deferred=True,
-                    value=value,
-                    options=', '.join(cls._available_options()),
-                )
+                f'"{value}" is not valid. It must be one of {", ".join(cls._available_options())}'
             )
 
         return value
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         raise NotImplementedError
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v: str) -> bool:
         raise NotImplementedError
 
 
@@ -64,11 +68,11 @@ class Logo(StrField):
     """
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         return available_logos()
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v: str) -> bool:
         return v in cls._available_options()
 
 
@@ -78,26 +82,12 @@ class Theme(StrField):
     """
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         return available_themes()
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v: str) -> bool:
         return is_theme_available(v)
-
-
-class Language(StrField):
-    """
-    Custom theme type to dynamically load all installed language packs.
-    """
-
-    @classmethod
-    def _available_options(cls):
-        return list(get_language_packs(_load_language()).keys())
-
-    @classmethod
-    def _valid_option(cls, v):
-        return v in cls._available_options()
 
 
 @total_ordering
@@ -137,38 +127,32 @@ class Version:
     )
 
     @classmethod
-    def parse(cls, version: bytes | str) -> 'Version':
+    def parse(cls, version: bytes | str) -> Version:
         """Convert string or bytes into Version object."""
         if isinstance(version, bytes):
             version = version.decode('UTF-8')
         match = cls._SEMVER_PATTERN.match(version)
         if match is None:
-            raise ValueError(
-                trans._(
-                    '{version} is not valid SemVer string',
-                    deferred=True,
-                    version=version,
-                )
-            )
+            raise ValueError(f'{version} is not valid SemVer string')
         matched_version_parts: dict[str, Any] = match.groupdict()
         return cls(**matched_version_parts)
 
     # NOTE: we're only comparing the numeric parts for now.
     # ALSO: the rest of the comparators come  from functools.total_ordering
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         try:
             return self.to_tuple()[:3] == self._from_obj(other).to_tuple()[:3]
         except TypeError:
             return NotImplemented
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: object) -> bool:
         try:
             return self.to_tuple()[:3] < self._from_obj(other).to_tuple()[:3]
         except TypeError:
             return NotImplemented
 
     @classmethod
-    def _from_obj(cls, other):
+    def _from_obj(cls, other: object) -> Version:
         if isinstance(other, str | bytes):
             other = Version.parse(other)
         elif isinstance(other, dict):
@@ -177,12 +161,7 @@ class Version:
             other = Version(*other)
         elif not isinstance(other, Version):
             raise TypeError(
-                trans._(
-                    'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {other_type}',
-                    deferred=True,
-                    cls=cls,
-                    other_type=type(other),
-                )
+                f'Expected str, bytes, dict, tuple, list, or {cls} instance, but got {type(other)}'
             )
         return other
 
@@ -196,7 +175,7 @@ class Version:
             str(self.build) if self.build is not None else None,
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int | str | None]:
         yield from self.to_tuple()
 
     def __str__(self) -> str:
@@ -214,8 +193,8 @@ class Version:
         return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
-    def validate(cls, v):
+    def validate(cls, v: Any) -> Version:
         return cls._from_obj(v)
 
-    def _json_encode(self):
+    def _json_encode(self) -> str:
         return str(self)

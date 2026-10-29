@@ -6,8 +6,7 @@ may be inconsistent with the backend used.
 """
 
 import sys
-
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 class TriangulationBackend(StrEnum):
@@ -104,5 +103,5 @@ def set_backend(backend: TriangulationBackend) -> TriangulationBackend:
 
     prev = shape.TRIANGULATION_BACKEND
 
-    shape.TRIANGULATION_BACKEND = backend
+    shape.TRIANGULATION_BACKEND = backend  # pyrefly: ignore [bad-assignment]
     return prev
