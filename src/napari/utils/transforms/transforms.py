@@ -310,7 +310,7 @@ class ScaleTranslate(Transform):
         self.scale = np.array(scale_list)
         self.translate = np.array(translate_list)
 
-    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray:
+    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray[np.number]:
         coords = np.asarray(coords)
         append_first_axis = coords.ndim == 1
         if append_first_axis:
@@ -503,7 +503,7 @@ class Affine(Transform):
         self.axis_labels = axis_labels
         self.units = units
 
-    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray:
+    def __call__(self, coords: npt.ArrayLike) -> npt.NDArray[np.floating]:
         coords = np.asarray(coords)
         append_first_axis = coords.ndim == 1
         if append_first_axis:
@@ -613,7 +613,12 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def shear(self) -> npt.NDArray[np.floating]:
+    def shear(
+        self,
+    ) -> (
+        np.ndarray[tuple[int], np.dtype[np.floating]]
+        | np.ndarray[tuple[int, int], np.dtype[np.floating]]
+    ):
         """Return the shear of the transform."""
         if self._is_diagonal:
             return np.zeros((self.ndim,))
@@ -639,7 +644,12 @@ class Affine(Transform):
         self._clean_cache()
 
     @property
-    def _shear_cache(self) -> npt.NDArray[np.floating]:
+    def _shear_cache(
+        self,
+    ) -> (
+        np.ndarray[tuple[int], np.dtype[np.floating]]
+        | np.ndarray[tuple[int, int], np.dtype[np.floating]]
+    ):
         self._setup_decompose_linear_matrix_cache()
         return self._cache_dict['decompose_linear_matrix'][2]
 
@@ -900,7 +910,12 @@ class CompositeAffine(Affine):
         self._clean_cache()
 
     @property
-    def shear(self) -> npt.NDArray[np.float64]:
+    def shear(
+        self,
+    ) -> (
+        np.ndarray[tuple[int], np.dtype[np.float64]]
+        | np.ndarray[tuple[int, int], np.dtype[np.float64]]
+    ):
         """Return the shear of the transform."""
         return (
             self._shear[np.triu_indices(n=self.ndim, k=1)]
