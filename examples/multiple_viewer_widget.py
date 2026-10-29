@@ -33,7 +33,6 @@ from napari.layers import Labels, Layer, Vectors
 from napari.qt import QtViewer
 from napari.utils.action_manager import action_manager
 from napari.utils.events.event import WarningEmitter
-from napari.utils.notifications import show_info
 
 
 def copy_layer(layer: Layer, name: str = ''):
@@ -62,14 +61,6 @@ def center_cross_on_mouse(
     viewer_model: napari.components.viewer_model.ViewerModel,
 ):
     """move the cross to the mouse position"""
-
-    if not getattr(viewer_model, 'mouse_over_canvas', True):
-        # There is no way for napari 0.4.15 to check if mouse is over sending canvas.
-        show_info(
-            'Mouse is not over the canvas. You may need to click on the canvas.'
-        )
-        return
-
     viewer_model.dims.current_step = tuple(
         np.round(
             [
