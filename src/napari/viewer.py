@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Any, Self
+from typing import Any, Literal, Self
 from weakref import WeakSet
 
 import magicgui as mgui
@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
 
     import numpy as np
 
-    from napari._qt.qt_main_window import Window
+    from napari.window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -71,7 +71,7 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(  # pyrefly: ignore[bad-assignment]
+        self._window = Window(
             self, show=show, show_welcome_screen=show_welcome_screen
         )
         self._instances.add(self)
@@ -134,7 +134,7 @@ class Viewer(ViewerModel):
         *,
         scale_factor: float = 1,
         flash: bool = False,
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -227,7 +227,7 @@ class Viewer(ViewerModel):
         self,
         path: str | None = None,
         *,
-        size: tuple[str, str] | None = None,
+        size: tuple[int, int] | None = None,
         scale: float | None = None,
         canvas_only: bool = True,
         flash: bool = False,
