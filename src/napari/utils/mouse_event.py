@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
@@ -84,6 +85,8 @@ class MouseEvent(BaseModel):
     world_position: tuple[float, ...]
     dims_displayed: list[int]
     dims_point: tuple[float, ...]
+    world_to_canvas: Callable[[np.ndarray, tuple[int, int]], np.ndarray]
+    canvas_to_world: Callable[[np.ndarray, tuple[int, int]], np.ndarray]
 
     # hardware stuff
     type: MouseEventType

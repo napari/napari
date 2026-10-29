@@ -552,6 +552,8 @@ class VispyCanvas:
             dims_displayed=list(self.viewer.dims.displayed),
             dims_point=list(self.viewer.dims.point),
             viewbox=grid_coords,
+            canvas_to_world=self.viewer.canvas_to_world,
+            world_to_canvas=self.viewer.world_to_canvas,
         )
 
         self._last_event = napari_event

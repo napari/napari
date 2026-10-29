@@ -190,7 +190,7 @@ def _points_in_canvas_rectangle(
     corners_world[:, ndim_world - layer.ndim :] = corners_layer_world
 
     canvas_corners = np.asarray(
-        event.viewer.world_to_canvas(corners_world, viewbox=event.viewbox),
+        event.world_to_canvas(corners_world, viewbox=event.viewbox),
         dtype=float,
     ).reshape(n_points, n_corners, 2)
 

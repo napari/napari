@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from unittest.mock import MagicMock
 
@@ -37,13 +38,7 @@ class Event:
     dims_point: list[float] = field(default_factory=lambda: [0, 0])
     viewbox: tuple[int, int] = (0, 0)
     viewer: object = None
-
-
-class FakeViewer:
-    """Minimal viewer stand-in that drops the depth axis when projecting."""
-
-    def world_to_canvas(self, world, viewbox=(0, 0)):
-        return np.asarray(world)[..., -2:]
+    world_to_canvas: Callable = lambda pos, viewbox: np.asarray(pos)[..., -2:]
 
 
 def read_only_event(*args, **kwargs):
@@ -508,7 +503,6 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     # drag a box that includes all the points
     box_drag_begin = (20, 20)
     box_drag_end = (0, 0)
-    viewer = FakeViewer()
 
     # Simulate click
     event = read_only_event(
@@ -518,7 +512,6 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_press_callbacks(layer, event)
 
@@ -531,7 +524,6 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -544,7 +536,6 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -557,7 +548,6 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_release_callbacks(layer, event)
 
@@ -570,7 +560,6 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
     layer, _n_points, known_non_point = create_known_points_layer_2d
 
     layer.mode = 'select'
-    viewer = FakeViewer()
 
     # Simulate click
     event = read_only_event(
@@ -580,7 +569,6 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_press_callbacks(layer, event)
 
@@ -593,7 +581,6 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -606,7 +593,6 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -619,7 +605,6 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_release_callbacks(layer, event)
 
@@ -632,7 +617,6 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
     layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
-    viewer = FakeViewer()
 
     # Simulate click
     event = read_only_event(
@@ -644,7 +628,6 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_press_callbacks(layer, event)
 
@@ -659,7 +642,6 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -674,7 +656,6 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -689,7 +670,6 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 0, 0],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_release_callbacks(layer, event)
 
@@ -702,7 +682,6 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
     layer = create_known_points_layer_3d[0]
 
     layer.mode = 'select'
-    viewer = FakeViewer()
 
     # Simulate click
     event = read_only_event(
@@ -714,7 +693,6 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 15, 15],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_press_callbacks(layer, event)
 
@@ -729,7 +707,6 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 15, 15],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -744,7 +721,6 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 20, 20],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_move_callbacks(layer, event)
 
@@ -759,7 +735,6 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         dims_displayed=[0, 1, 2],
         dims_point=[5, 20, 20],
         viewbox=(0, 0),
-        viewer=viewer,
     )
     mouse_release_callbacks(layer, event)
 
@@ -791,7 +766,6 @@ def test_selecting_points_with_drag_3d_perspective():
             dims_displayed=list(viewer.dims.displayed),
             dims_point=list(viewer.dims.point),
             viewbox=(0, 0),
-            viewer=viewer,
         )
 
     mouse_press_callbacks(layer, event_at((108, 108), 'mouse_press'))
@@ -859,7 +833,6 @@ def test_drag_start_selection(
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=FakeViewer(),
     )
     mouse_press_callbacks(layer, event)
     if modifier:
@@ -904,7 +877,6 @@ def test_drag_start_selection(
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=FakeViewer(),
     )
     mouse_move_callbacks(layer, event)
 
@@ -946,7 +918,6 @@ def test_drag_start_selection(
         dims_displayed=[0, 1],
         dims_point=[0, 0],
         viewbox=(0, 0),
-        viewer=FakeViewer(),
     )
     mouse_move_callbacks(layer, event)
 
