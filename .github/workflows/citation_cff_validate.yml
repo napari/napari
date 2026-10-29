@@ -12,6 +12,10 @@ on:
   workflow_dispatch:
 
 name: CITATION.cff
+
+permissions:
+  contents: read
+
 jobs:
   Validate-CITATION-cff:
     runs-on: ubuntu-latest
