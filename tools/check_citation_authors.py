@@ -29,6 +29,7 @@ import json
 import subprocess
 import sys
 import unicodedata
+from collections import Counter
 from itertools import pairwise
 from pathlib import Path
 
@@ -90,22 +91,51 @@ def get_authors(data: dict) -> list[dict]:
     return authors
 
 
+def find_duplicate_aliases(authors: list[dict]) -> list[str]:
+    counts = Counter(
+        github_login_key(author['alias'])
+        for author in authors
+        if isinstance(author.get('alias'), str) and author['alias'].strip()
+    )
+    return [
+        author_label(author)
+        for author in authors
+        if counts[github_login_key(author.get('alias') or '')] > 1
+    ]
+
+
 def check_order(path: Path = CITATION_CFF) -> int:
-    _, _, community, _ = split_citation_author_sections(path)
+    _, core, community, _ = split_citation_author_sections(path)
+
+    duplicates = find_duplicate_aliases(core + community)
+    if duplicates:
+        print(
+            'CITATION.cff lists the same alias more than once:',
+            file=sys.stderr,
+        )
+        for label in duplicates:
+            print(f'  {label}', file=sys.stderr)
+        return 1
+
     for index, (current, following) in enumerate(
         pairwise(community),
         start=1,
     ):
         if author_sort_key(current) > author_sort_key(following):
             print(
-                'Community contributors in CITATION.cff must be alphabetized by '
-                'family-names after the core-team section marker.',
+                'Community contributors in CITATION.cff must be alphabetized '
+                'by family-names after the core-team section marker.',
                 file=sys.stderr,
             )
             print(
                 f'Out-of-order community pair #{index} and #{index + 1}: '
                 f'{author_label(current)} should sort after '
                 f'{author_label(following)}.',
+                file=sys.stderr,
+            )
+            print(
+                'Run `python tools/check_citation_authors.py write-order` '
+                'to fix the ordering.',
                 file=sys.stderr,
             )
             return 1
