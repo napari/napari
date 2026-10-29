@@ -278,6 +278,11 @@ authors:
   affiliation: Biohub, San Francisco
   orcid: https://orcid.org/0000-0002-8984-2882
   alias: TeunHuijben
+- given-names: Ian
+  family-names: Hunt-Isaak
+  affiliation: Earthmover
+  orcid: https://orcid.org/0000-0002-7591-083X
+  alias: ianhi
 - given-names: Katherine
   family-names: Hutchings
   affiliation: University College London

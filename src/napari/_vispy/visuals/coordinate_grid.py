@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from math import floor, log
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from vispy.color import Color
 from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node
@@ -227,24 +227,23 @@ class CoordinateGrid(Node):
                 ticks.visible = False
             return
 
-        # generate tick positions with round values
-        tick_positions = [
-            compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
-            for r in ranges
-        ]
-        interval_magnitudes = [
-            floor(log((r.stop - r.start) / len(tick_positions), 10))
-            for r in ranges
-        ]
-
         ndim = len(ranges)
         for axis in range(ndim):
             next_axis = (axis + 1) % ndim
             ticks = self.tick_labels[axis]
-            values = tick_positions[axis]
-            decimals = max(0, -interval_magnitudes[axis])
-            ticks.text = [f'{val:.{decimals}f}' for val in values]
-            ticks.pos = [(val, ranges[next_axis].start, 0) for val in values]
+            # generate tick positions with round values
+            values, decimals = compute_nice_ticks(
+                ranges[axis].start, ranges[axis].stop, target_ticks=n_ticks
+            )
+            text = []
+            pos = []
+            for val in values:
+                text.append(
+                    np.format_float_positional(val, decimals, trim='-')
+                )
+                pos.append((val, ranges[next_axis].start, 0))
+            ticks.text = text
+            ticks.pos = pos
             ticks.color = self.color
             ticks.opacity = self._opacity
             ticks.visible = len(values) > 0
