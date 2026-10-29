@@ -269,7 +269,7 @@ def write_order(path: Path = CITATION_CFF) -> int:
         print('CITATION.cff author order already matches the project policy.')
         return 0
 
-    path.write_text(new_text, encoding='utf-8')
+    path.write_text(new_text, encoding='utf-8', newline='\n')
     print(f'Reordered community contributors in {path}.')
     return 0
 
