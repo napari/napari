@@ -145,8 +145,12 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # custom title bar
-        self.title = self._create_title_bar(
-            vertical=area in {'top', 'bottom'}, is_floating=False
+        self.title = QtCustomTitleBar(
+            self,
+            title=self.name,
+            vertical=area in {'top', 'bottom'},
+            close_btn=close_btn,
+            is_floating=False,
         )
         self.setTitleBarWidget(self.title)
         self.topLevelChanged.connect(self._update_title_bar)
@@ -354,8 +358,12 @@ class QtViewerDockWidget(QDockWidget):
                 )
                 self.setFeatures(features)
             old_title = self.titleBarWidget()
-            self.title = self._create_title_bar(
-                vertical=vertical, is_floating=is_floating
+            self.title = QtCustomTitleBar(
+                self,
+                title=self.name,
+                vertical=vertical,
+                close_btn=self._close_btn,
+                is_floating=is_floating,
             )
             # Qt hides and detaches the previous title bar widget here
             self.setTitleBarWidget(self.title)
@@ -365,24 +373,6 @@ class QtViewerDockWidget(QDockWidget):
                 QCoreApplication.sendPostedEvents(
                     None, QEvent.Type.DeferredDelete
                 )
-
-    def _create_title_bar(
-        self, *, vertical: bool, is_floating: bool
-    ) -> QtCustomTitleBar:
-        title = QtCustomTitleBar(
-            self,
-            title=self.name,
-            vertical=vertical,
-            close_btn=self._close_btn,
-            is_floating=is_floating,
-        )
-        title.hide_button.clicked.connect(lambda: self.close())
-        title.float_button.clicked.connect(
-            lambda: self.setFloating(not self.isFloating())
-        )
-        if self._close_btn:
-            title.close_button.clicked.connect(lambda: self.destroyOnClose())
-        return title
 
     def setWidget(self, widget: QWidget) -> None:
         # the widget uses this to find its dock
@@ -395,8 +385,7 @@ class QtCustomTitleBar(QLabel):
     """A widget to be used as the titleBar in the QtViewerDockWidget.
 
     Keeps vertical size minimal, has a hand cursor and styles (in stylesheet)
-    for hover. Close and float buttons, which are connected to the dock
-    widget by ``QtViewerDockWidget._create_title_bar``.
+    for hover. Close and float buttons.
 
     Parameters
     ----------
@@ -434,6 +423,7 @@ class QtCustomTitleBar(QLabel):
         self.hide_button.setToolTip('hide this panel')
         self.hide_button.setObjectName('QTitleBarHideButton')
         self.hide_button.setCursor(Qt.CursorShape.ArrowCursor)
+        self.hide_button.clicked.connect(lambda: parent.close())
 
         self.float_button = QPushButton(self)
         self.float_button.setToolTip(
@@ -441,6 +431,9 @@ class QtCustomTitleBar(QLabel):
         )
         self.float_button.setObjectName('QTitleBarFloatButton')
         self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
+        self.float_button.clicked.connect(
+            lambda: parent.setFloating(not parent.isFloating())
+        )
         self.title: QLabel = QLabel(title, self)
         self.title.setSizePolicy(
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
@@ -451,6 +444,7 @@ class QtCustomTitleBar(QLabel):
             self.close_button.setToolTip('close this panel')
             self.close_button.setObjectName('QTitleBarCloseButton')
             self.close_button.setCursor(Qt.CursorShape.ArrowCursor)
+            self.close_button.clicked.connect(lambda: parent.destroyOnClose())
 
         if vertical:
             layout = QVBoxLayout()
