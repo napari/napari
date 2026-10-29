@@ -8,12 +8,14 @@ from typing import (
     Any,
     Literal,
     Self,
+    TypeAlias,
     cast,
     overload,
 )
 from warnings import warn
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import (
     ConfigDict,
     Field,
@@ -40,6 +42,22 @@ __all__ = (
     'CyclicLabelColormap',
     'DirectLabelColormap',
 )
+
+# Input values and RGBA outputs of the label colormaps' `map` methods
+_LabelValues1D: TypeAlias = (
+    np.ndarray[tuple[int], np.dtype[np.integer]] | Sequence[int]
+)
+_LabelValues2D: TypeAlias = (
+    np.ndarray[tuple[int, int], np.dtype[np.integer]] | Sequence[Sequence[int]]
+)
+_LabelColor: TypeAlias = np.ndarray[tuple[Literal[4]], np.dtype[np.float32]]
+_LabelColors1D: TypeAlias = np.ndarray[
+    tuple[int, Literal[4]], np.dtype[np.float32]
+]
+_LabelColors2D: TypeAlias = np.ndarray[
+    tuple[int, int, Literal[4]], np.dtype[np.float32]
+]
+_LabelColorsND: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float32]]
 
 
 class ColormapInterpolationMode(StrEnum):
@@ -139,10 +157,35 @@ class Colormap(EventedModel):
 
         return v
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.colors)
 
-    def map(self, values):
+    @overload
+    def map(
+        self, values: float | np.number
+    ) -> np.ndarray[tuple[Literal[1], Literal[4]], np.dtype[np.floating]]: ...
+
+    @overload
+    def map(
+        self,
+        values: np.ndarray[tuple[int], np.dtype[np.number]] | Sequence[float],
+    ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
+
+    @overload
+    def map(
+        self,
+        values: np.ndarray[tuple[int, int], np.dtype[np.number]]
+        | Sequence[Sequence[float]],
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
+
+    @overload
+    def map(
+        self, values: npt.ArrayLike
+    ) -> np.ndarray[tuple[int, ...], np.dtype[np.floating]]: ...
+
+    def map(
+        self, values: npt.ArrayLike
+    ) -> np.ndarray[tuple[int, ...], np.dtype[np.floating]]:
         values = np.atleast_1d(values)
         if self.interpolation == ColormapInterpolationMode.LINEAR:
             # One color per control point
@@ -200,7 +243,7 @@ class _RebuildableCache(dict):
     attributes or which hook a copy routes through.
     """
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo) -> Self:
         return type(self)()
 
 
@@ -262,7 +305,7 @@ class LabelColormapBase(Colormap):
             self._cache_mapping[key] = self._map_without_cache(data)
         return self._cache_mapping.get(key)
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         """Mechanism to clean cached properties"""
         self._cache_mapping = _RebuildableCache()
         self._cache_other = _RebuildableCache()
@@ -275,6 +318,26 @@ class LabelColormapBase(Colormap):
     def _map_without_cache(self, values: np.ndarray) -> np.ndarray:
         """Function that maps values to colors without selection or cache"""
         raise NotImplementedError
+
+    if TYPE_CHECKING:
+        # Label colormaps only map integers, and map a scalar to a (4,) color
+        # instead of the (1, 4) array returned by `Colormap.map`. Declared
+        # only for type checkers so runtime still inherits `Colormap.map`.
+        @overload
+        def map(self, values: int | np.integer) -> _LabelColor: ...  # pyrefly: ignore[bad-override]
+
+        @overload
+        def map(self, values: _LabelValues1D) -> _LabelColors1D: ...
+
+        @overload
+        def map(self, values: _LabelValues2D) -> _LabelColors2D: ...
+
+        @overload
+        def map(self, values: np.ndarray) -> _LabelColorsND: ...
+
+        def map(
+            self, values: np.ndarray | Sequence | np.integer | int
+        ) -> _LabelColor | _LabelColorsND: ...
 
     def _selection_as_minimum_dtype(self, dtype: np.dtype) -> int:
         """Treat selection as given dtype and calculate value with min dtype.
@@ -365,7 +428,21 @@ class CyclicLabelColormap(LabelColormapBase):
         mapped[texture_dtype_values == 0] = 0
         return mapped
 
-    def map(self, values: np.ndarray | np.integer | int) -> np.ndarray:
+    @overload
+    def map(self, values: int | np.integer) -> _LabelColor: ...
+
+    @overload
+    def map(self, values: _LabelValues1D) -> _LabelColors1D: ...
+
+    @overload
+    def map(self, values: _LabelValues2D) -> _LabelColors2D: ...
+
+    @overload
+    def map(self, values: np.ndarray) -> _LabelColorsND: ...
+
+    def map(
+        self, values: np.ndarray | Sequence | np.integer | int
+    ) -> _LabelColor | _LabelColorsND:
         """Map values to colors.
 
         Parameters
@@ -394,7 +471,7 @@ class CyclicLabelColormap(LabelColormapBase):
 
         return np.reshape(mapped, original_shape + (4,))
 
-    def shuffle(self, seed: int):
+    def shuffle(self, seed: int) -> None:
         """Shuffle the colormap colors.
 
         Parameters
@@ -443,7 +520,7 @@ class DirectLabelColormap(LabelColormapBase):
             kwargs['colors'] = np.zeros(3)
         super().__init__(*args, **kwargs)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Overwrite from base class because .color is a dummy array.
 
         This returns the number of colors in the colormap, including
@@ -513,7 +590,21 @@ class DirectLabelColormap(LabelColormapBase):
         """Map input values to values for send to GPU."""
         return _cast_labels_data_to_texture_dtype_direct(values, self)
 
-    def map(self, values: np.ndarray | np.integer | int) -> np.ndarray:
+    @overload
+    def map(self, values: int | np.integer) -> _LabelColor: ...
+
+    @overload
+    def map(self, values: _LabelValues1D) -> _LabelColors1D: ...
+
+    @overload
+    def map(self, values: _LabelValues2D) -> _LabelColors2D: ...
+
+    @overload
+    def map(self, values: np.ndarray) -> _LabelColorsND: ...
+
+    def map(
+        self, values: np.ndarray | Sequence | np.integer | int
+    ) -> _LabelColor | _LabelColorsND:
         """Map values to colors.
 
         Parameters
@@ -530,7 +621,7 @@ class DirectLabelColormap(LabelColormapBase):
             values = int(values)
         if isinstance(values, int):
             if self.use_selection and values != self.selection:
-                return np.array((0, 0, 0, 0))
+                return np.zeros(4, dtype=np.float32)
             return self.color_dict.get(values, self.default_color)
         if isinstance(values, list | tuple):
             values = np.array(values)
@@ -589,7 +680,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         return len({tuple(x) for x in self.color_dict.values()})
 
-    def _clear_cache(self):
+    def _clear_cache(self) -> None:
         super()._clear_cache()
         if '_num_unique_colors' in self.__dict__:
             del self.__dict__['_num_unique_colors']
@@ -614,7 +705,7 @@ class DirectLabelColormap(LabelColormapBase):
         """
         if self.use_selection and apply_selection:
             return {self.selection: 1, None: 0}, {
-                0: np.array((0, 0, 0, 0)),
+                0: np.zeros(4, dtype=np.float32),
                 1: self.color_dict.get(
                     self.selection,
                     self.default_color,
@@ -700,7 +791,9 @@ class DirectLabelColormap(LabelColormapBase):
         return dkt
 
     @cached_property
-    def _array_map(self):
+    def _array_map(
+        self,
+    ) -> np.ndarray[tuple[int], np.dtype[np.uint8 | np.uint16 | np.float32]]:
         """Create an array to map labels to texture values of smaller dtype."""
 
         max_value = max(
@@ -733,7 +826,7 @@ class DirectLabelColormap(LabelColormapBase):
 
     @property
     def default_color(self) -> np.ndarray:
-        return self.color_dict.get(None, np.array((0, 0, 0, 0)))
+        return self.color_dict.get(None, np.zeros(4, dtype=np.float32))
         # we provided here default color for backward compatibility
         # if someone is using DirectLabelColormap directly, not through Label layer
 
