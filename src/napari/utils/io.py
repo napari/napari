@@ -4,7 +4,7 @@ import os
 import struct
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, BinaryIO
 
 import numpy as np
 
@@ -12,6 +12,7 @@ from napari._version import __version__
 from napari.utils.notifications import notification_manager, show_warning
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from pathlib import Path
 
     from napari.viewer import Viewer
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 _SCRIPT_NAMESPACES: dict[str, dict[str, Any]] = {}
 
 
-def imsave(filename: str, data: np.ndarray):
+def imsave(filename: str, data: np.ndarray) -> None:
     """Custom implementation of imsave to avoid skimage dependency.
 
     Parameters
@@ -68,7 +69,7 @@ def imsave(filename: str, data: np.ndarray):
         iio.imwrite(filename, data)  # for all other file extensions
 
 
-def imsave_png(filename, data):
+def imsave_png(filename: str | Path | BinaryIO, data: np.ndarray) -> None:
     """Save .png image to file
 
     PNG images created in napari have a digital watermark.
@@ -98,7 +99,7 @@ def imsave_png(filename, data):
     )
 
 
-def imsave_tiff(filename, data):
+def imsave_tiff(filename: str | Path | BinaryIO, data: np.ndarray) -> None:
     """Save .tiff image to file
 
     Parameters
@@ -186,32 +187,32 @@ def execute_python_code(code: str, script_path: str | Path = '') -> None:
 
 
 @contextmanager
-def _patched_viewer_new():
+def _patched_viewer_new() -> Generator[None, None, None]:
     """Context manager to patch the viewer's new method."""
     from napari.viewer import Viewer, current_viewer
 
     _saved_new = Viewer.__new__
     _saved_init = Viewer.__init__
 
-    def patched_init(self, *args, **kwargs):
+    def patched_init(self: Viewer, *args: Any, **kwargs: Any) -> None:
         Viewer.__init__ = _saved_init
 
-    def patched_new(cls, *args, **kwargs):
+    def patched_new(cls: type[Viewer], *args: Any, **kwargs: Any) -> Viewer:
         ndisplay = None
         if len(kwargs) == 1 and 'ndisplay' in kwargs:
             ndisplay = kwargs.pop('ndisplay')
 
         if not kwargs and not args:
             viewer = current_viewer()
-            if ndisplay is not None:
-                viewer.dims.ndisplay = ndisplay  # pyrefly: ignore [missing-attribute]
             if viewer is not None:
+                if ndisplay is not None:
+                    viewer.dims.ndisplay = ndisplay
                 Viewer.__new__ = _saved_new
                 return viewer
         Viewer.__init__ = _saved_init
         return _saved_new(cls)
 
-    Viewer.__new__ = patched_new  # pyrefly: ignore [bad-assignment]
+    Viewer.__new__ = patched_new  # pyrefly: ignore[bad-assignment]
     Viewer.__init__ = patched_init
     try:
         yield
@@ -221,7 +222,7 @@ def _patched_viewer_new():
 
 
 @contextmanager
-def _noop_napari_run():
+def _noop_napari_run() -> Generator[None, None, None]:
     """Context manager used to patch napari.run to be a no-op.
 
     napari.run() executes the Qt event loop, *except* when napari
