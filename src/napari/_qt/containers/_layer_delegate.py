@@ -36,7 +36,7 @@ General rendering flow:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
@@ -157,7 +157,8 @@ class LayerDelegate(QStyledItemDelegate):
         if layer is None:
             return
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
-            expanded = cast('QTreeView', option.widget).isExpanded(index)
+            tree: QTreeView = option.widget  # pyrefly: ignore[bad-assignment]
+            expanded = tree.isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'
         else:
             icon_name = f'new_{layer._type_string}'
@@ -167,7 +168,7 @@ class LayerDelegate(QStyledItemDelegate):
         except ValueError:
             return
         # guessing theme rather than passing it through.
-        palette = cast(QPalette, option.palette)
+        palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
         bg = palette.color(QPalette.ColorRole.Window).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore[bad-assignment]
         option.decorationSize = QSize(18, 18)  # pyrefly: ignore[bad-assignment]
@@ -185,7 +186,8 @@ class LayerDelegate(QStyledItemDelegate):
         loaded = index.data(LoadedRole)
         if not loaded:
             self._load_movie.start()
-            load_rect = cast(QRect, option.rect).translated(4, 8)
+            rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
+            load_rect = rect.translated(4, 8)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 16
             load_rect.setWidth(h)
             load_rect.setHeight(h)
@@ -212,7 +214,8 @@ class LayerDelegate(QStyledItemDelegate):
             if all_loaded:
                 self._load_movie.setPaused(True)
 
-            thumb_rect = cast(QRect, option.rect).translated(-2, 2)
+            rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
+            thumb_rect = rect.translated(-2, 2)
             h = index.data(Qt.ItemDataRole.SizeHintRole).height() - 4
             thumb_rect.setWidth(h)
             thumb_rect.setHeight(h)
@@ -232,7 +235,7 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
-        palette = cast(QPalette, option.palette)
+        palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
         bg = palette.color(QPalette.ColorRole.Window).red()
         colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
         lock_rect = self._lock_icon_rect(option, index)
@@ -243,7 +246,7 @@ class LayerDelegate(QStyledItemDelegate):
     ) -> QRect:
         """Return the QRect for the lock icon."""
 
-        rect = cast(QRect, option.rect)
+        rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
         icon_size = 16
         type_icon_reserved = 28
         x = rect.right() - type_icon_reserved - icon_size - 2
@@ -278,7 +281,7 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
-        widget = cast('QWidget', option.widget)
+        widget: QWidget = option.widget  # pyrefly: ignore[bad-assignment]
         if (
             event.type() == QMouseEvent.Type.MouseButtonRelease
             and isinstance(event, QMouseEvent)
