@@ -741,7 +741,7 @@ def test_painting_out_of_dtype_range_raises(new_label):
     labels = Labels(np.zeros((10, 10), dtype=np.uint8))
     match = f'The value {new_label}'
     with pytest.raises(WrongSelectedLabelError, match=match):
-        labels.paint((5, 5), new_label)
+        labels.paint((5, 5), new_label, brush_size_data=labels.brush_size)
     with pytest.raises(WrongSelectedLabelError, match=match):
         labels.fill((5, 5), new_label)
     with pytest.raises(WrongSelectedLabelError, match=match):
@@ -796,26 +796,23 @@ def test_paint():
     data[:10, :10] = 1
     layer = Labels(data)
 
-    assert np.unique(layer.data[:5, :5]) == 1
-    assert np.unique(layer.data[5:10, 5:10]) == 1
+    assert np.all(layer.data[:5, :5] == 1)
+    assert np.all(layer.data[5:10, 5:10] == 1)
 
-    layer.brush_size = 9
-    layer.paint([0, 0], 2)
-    assert np.unique(layer.data[:4, :4]) == 2
-    assert np.unique(layer.data[5:10, 5:10]) == 1
+    layer.paint([0, 0], 2, brush_size_data=9)
+    assert np.all(layer.data[:4, :4] == 2)
+    assert np.all(layer.data[5:10, 5:10] == 1)
 
-    layer.brush_size = 10
-    layer.paint([0, 0], 2)
-    assert np.unique(layer.data[0:6, 0:3]) == 2
-    assert np.unique(layer.data[0:3, 0:6]) == 2
-    assert np.unique(layer.data[6:10, 6:10]) == 1
+    layer.paint([0, 0], 2, brush_size_data=10)
+    assert np.all(layer.data[0:6, 0:3] == 2)
+    assert np.all(layer.data[0:3, 0:6] == 2)
+    assert np.all(layer.data[6:10, 6:10] == 1)
 
-    layer.brush_size = 19
-    layer.paint([0, 0], 2)
-    assert np.unique(layer.data[0:4, 0:10]) == 2
-    assert np.unique(layer.data[0:10, 0:4]) == 2
-    assert np.unique(layer.data[3:7, 3:7]) == 2
-    assert np.unique(layer.data[7:10, 7:10]) == 1
+    layer.paint([0, 0], 2, brush_size_data=19)
+    assert np.all(layer.data[0:4, 0:10] == 2)
+    assert np.all(layer.data[0:10, 0:4] == 2)
+    assert np.all(layer.data[3:7, 3:7] == 2)
+    assert np.all(layer.data[7:10, 7:10] == 1)
 
 
 def test_paint_with_preserve_labels():
@@ -825,14 +822,13 @@ def test_paint_with_preserve_labels():
     layer = Labels(data)
 
     layer.preserve_labels = True
-    assert np.unique(layer.data[:3, :3]) == 1
+    assert np.all(layer.data[:3, :3] == 1)
 
-    layer.brush_size = 9
-    layer.paint([0, 0], 2)
+    layer.paint([0, 0], 2, brush_size_data=9)
 
-    assert np.unique(layer.data[3:5, 0:3]) == 2
-    assert np.unique(layer.data[0:3, 3:5]) == 2
-    assert np.unique(layer.data[:3, :3]) == 1
+    assert np.all(layer.data[3:5, 0:3] == 2)
+    assert np.all(layer.data[0:3, 3:5] == 2)
+    assert np.all(layer.data[:3, :3] == 1)
 
 
 def test_setting_prev_selected_label():
@@ -865,9 +861,8 @@ def test_paint_swap_with_preserve_labels():
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
-    layer.brush_size = 9
     layer.selected_label = 2
-    layer.paint([0, 0], layer.selected_label)
+    layer.paint([0, 0], layer.selected_label, brush_size_data=9)
 
     assert np.unique(layer.data[3:5, 0:3]) == 2
     assert np.unique(layer.data[0:3, 3:5]) == 2
@@ -877,7 +872,7 @@ def test_paint_swap_with_preserve_labels():
     layer.swap_selected_and_background_labels()
     assert layer.selected_label == 0
     assert layer._prev_selected_label == current_label
-    layer.paint([0, 0], layer.selected_label)
+    layer.paint([0, 0], layer.selected_label, brush_size_data=9)
 
     # only label 2 should be erased
     assert np.unique(layer.data[3:5, 0:3]) == 0
@@ -889,21 +884,13 @@ def test_paint_2d():
     """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
-    layer.brush_size = 12
     layer.mode = 'paint'
-    layer.paint((0, 0), 3)
 
-    layer.brush_size = 12
-    layer.paint((15, 8), 4)
-
-    layer.brush_size = 13
-    layer.paint((30.2, 7.8), 5)
-
-    layer.brush_size = 12
-    layer.paint((39, 39), 6)
-
-    layer.brush_size = 20
-    layer.paint((15, 27), 7)
+    layer.paint((0, 0), 3, brush_size_data=12)
+    layer.paint((15, 8), 4, brush_size_data=12)
+    layer.paint((30.2, 7.8), 5, brush_size_data=13)
+    layer.paint((39, 39), 6, brush_size_data=12)
+    layer.paint((15, 27), 7, brush_size_data=20)
 
     assert np.sum(layer.data[:8, :8] == 3) == 41
     assert np.sum(layer.data[9:22, 2:15] == 4) == 137
@@ -943,9 +930,8 @@ def test_paint_2d_xarray():
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
-    layer.brush_size = 12
     layer.mode = 'paint'
-    layer.paint((1, 1, 512, 512), 3)
+    layer.paint((1, 1, 512, 512), 3, brush_size_data=12)
     assert isinstance(layer.data, xr.DataArray)
     assert layer.data.sum() == 411
     elapsed = time.monotonic() - now
@@ -956,20 +942,19 @@ def test_paint_3d():
     """Test painting labels with circle brush on 3D image."""
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
-    layer.brush_size = 12
     layer.mode = 'paint'
 
     # Paint in 2D
-    layer.paint((10, 10, 10), 3)
+    layer.paint((10, 10, 10), 3, brush_size_data=12)
 
     # Paint in 3D
     layer.n_edit_dimensions = 3
-    layer.paint((10, 25, 10), 4)
+    layer.paint((10, 25, 10), 4, brush_size_data=12)
 
     # Paint in 3D, preserve labels
     layer.n_edit_dimensions = 3
     layer.preserve_labels = True
-    layer.paint((10, 15, 15), 5)
+    layer.paint((10, 15, 15), 5, brush_size_data=12)
 
     assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == 137
     assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == 1189
@@ -986,12 +971,11 @@ def test_paint_3d_batch_refresh():
     """
     data = np.zeros((10, 20, 20), dtype=np.uint32)
     layer = Labels(data)
-    layer.brush_size = 8
     layer.mode = 'paint'
 
-    layer.paint((2, 10, 10), 1, refresh=False)
-    layer.paint((5, 10, 10), 2, refresh=False)
-    layer.paint((7, 10, 10), 3, refresh=False)
+    layer.paint((2, 10, 10), 1, brush_size_data=8, refresh=False)
+    layer.paint((5, 10, 10), 2, brush_size_data=8, refresh=False)
+    layer.paint((7, 10, 10), 3, brush_size_data=8, refresh=False)
 
     assert layer.data[2, 10, 10] == 1
     assert layer.data[5, 10, 10] == 2
@@ -1087,9 +1071,8 @@ def test_paint_contour_local_updates():
     )
     layer = Labels(data)
     layer.contour = 1
-    layer.brush_size = 1
 
-    layer.paint((5, 1), 2)
+    layer.paint((5, 1), 2, brush_size_data=1)
 
     _assert_contour_view_matches_data(layer)
 
@@ -1099,9 +1082,8 @@ def test_paint_contour_local_updates_thick():
     data[10:30, 10:30] = 1
     layer = Labels(data)
     layer.contour = 5
-    layer.brush_size = 1
 
-    layer.paint((20, 30), 1)
+    layer.paint((20, 30), 1, brush_size_data=1)
 
     _assert_contour_view_matches_data(layer)
 
@@ -1229,8 +1211,7 @@ def test_preserve_labels_non_background_is_noop_after_swap(tool):
     if tool == 'fill':
         layer.fill((3, 3), 3)
     elif tool == 'paint':
-        layer.brush_size = 1
-        layer.paint((3, 3), 3)
+        layer.paint((3, 3), 3, brush_size_data=1)
     else:
         layer.paint_polygon([[2, 2], [2, 5], [5, 5], [5, 2]], 3)
 
@@ -1281,9 +1262,8 @@ def test_fill_3d_batch_refresh():
 def test_data_setitem_after_paint_batch_refresh():
     data = np.zeros((10, 20, 20), dtype=np.uint32)
     layer = Labels(data)
-    layer.brush_size = 5
 
-    layer.paint((5, 10, 10), 1, refresh=False)
+    layer.paint((5, 10, 10), 1, brush_size_data=5, refresh=False)
     layer.data_setitem(
         (np.array([5]), np.array([10]), np.array([10])),
         2,
@@ -1433,7 +1413,6 @@ def test_undo_redo(
     blobs = sk_data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
@@ -1444,9 +1423,9 @@ def test_undo_redo(
     if layer.mode == 'fill':
         layer.fill(coord, layer.selected_label)
     if layer.mode == 'erase':
-        layer.paint(coord, 0)
+        layer.paint(coord, 0, brush_size_data=brush_size)
     if layer.mode == 'paint':
-        layer.paint(coord, layer.selected_label)
+        layer.paint(coord, layer.selected_label, brush_size_data=brush_size)
     data_history.append(np.copy(layer.data))
     layer.undo()
     np.testing.assert_array_equal(layer.data, data_history[0])
@@ -1479,8 +1458,8 @@ def test_ndim_paint():
     test_array = np.zeros((5, 6, 7, 8), dtype=int)
     layer = Labels(test_array)
     layer.n_edit_dimensions = 3
-    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
-    layer.paint((1, 1, 1, 1), 1)
+    brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1, brush_size_data=brush_size)
 
     assert np.sum(layer.data) == 19  # 18 + center
     assert not np.any(layer.data[0])
@@ -1488,7 +1467,7 @@ def test_ndim_paint():
 
     layer.n_edit_dimensions = 2  # 3x3 square
     layer._slice_dims(Dims(ndim=4, order=(1, 2, 0, 3)))
-    layer.paint((4, 5, 6, 7), 8)
+    layer.paint((4, 5, 6, 7), 8, brush_size_data=brush_size)
     assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
     np.testing.assert_array_equal(
         test_array[:, 5, 6, :],
@@ -1504,10 +1483,13 @@ def test_ndim_paint():
     )
 
 
-def test_cursor_size_with_negative_scale():
+def test_brush_world_size_with_negative_scale():
     layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
     layer.mode = 'paint'
-    assert layer.cursor_size > 0
+    layer.brush_size_is_canvas_pixels = False
+    assert layer._get_brush_size_data(1) > 0
+    layer.brush_size_is_canvas_pixels = True
+    assert layer._get_brush_size_data(1) > 0
 
 
 def test_large_label_values():
@@ -1633,9 +1615,8 @@ def test_fill_full_bbox_history_drops_mask():
 def test_paint_partial_bbox_history_stores_masked_atom():
     data = np.zeros((21, 21), dtype=np.uint8)
     layer = Labels(data.copy())
-    layer.brush_size = 9
 
-    layer.paint((10, 10), 3)
+    layer.paint((10, 10), 3, brush_size_data=9)
 
     atom = layer._undo_history[0][0]
     assert atom.mask is not None
@@ -1662,9 +1643,8 @@ def test_paint_history_undo_redo_with_dask():
 
     layer = Labels(da.from_array(data, chunks=(1, 21, 21)))
     layer.n_edit_dimensions = 2
-    layer.brush_size = 9
 
-    layer.paint((1, 10, 10), 3)
+    layer.paint((1, 10, 10), 3, brush_size_data=9)
     painted = np.asarray(layer.data).copy()
 
     atom = layer._undo_history[0][0]
@@ -1734,9 +1714,8 @@ def test_paint_undo_redo_with_zarr():
 
     layer = Labels(z)
     layer.refresh()
-    layer.brush_size = 5
 
-    layer.paint((10, 10), 4)
+    layer.paint((10, 10), 4, brush_size_data=5)
     painted = np.asarray(layer.data).copy()
     assert np.count_nonzero(painted == 4) > 0
 
@@ -1767,9 +1746,8 @@ def test_paint_undo_redo_with_tensorstore(tmp_path):
 
     layer = Labels(ts_array)
     layer.refresh()
-    layer.brush_size = 5
 
-    layer.paint((10, 10), 4)
+    layer.paint((10, 10), 4, brush_size_data=5)
     painted = ts_array.read().result().copy()
     assert np.count_nonzero(painted == 4) > 0
 
@@ -1793,9 +1771,8 @@ def test_paint_preserve_labels_undo_with_xarray():
 
     layer = Labels(xr.DataArray(data.copy()))
     layer.preserve_labels = True
-    layer.brush_size = 30
 
-    layer.paint((25, 25), 2)
+    layer.paint((25, 25), 2, brush_size_data=30)
     assert np.all(np.asarray(layer.data)[holes] == 2)
 
     layer.undo()
@@ -1811,8 +1788,7 @@ def test_paint_3d_negative_scale(scale):
         labels, scale=(1, *scale), translate=(-200, 100, 100)
     )
     labels_layer.n_edit_dimensions = 3
-    labels_layer.brush_size = 8
-    labels_layer.paint((1, 2, 5, 5), 1)
+    labels_layer.paint((1, 2, 5, 5), 1, brush_size_data=8)
     np.testing.assert_array_equal(
         np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
     )
@@ -2311,8 +2287,7 @@ def test_negative_label():
     original_data = np.copy(data)
     layer = Labels(data)
     layer.selected_label = -1
-    layer.brush_size = 3
-    layer.paint((5, 5), -1)
+    layer.paint((5, 5), -1, brush_size_data=3)
     assert np.count_nonzero(layer.data == -1) > np.count_nonzero(
         original_data == -1
     )
@@ -2446,7 +2421,7 @@ def test_draw(colormap, expected):
     labels.selected_label = 1
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected[:1])
-    labels._draw(1, (15, 15), (15, 15))
+    labels._draw(1, (15, 15), (15, 15), brush_size_data=10)
     npt.assert_array_equal(np.unique(labels._slice.image.raw), [0, 1])
     npt.assert_array_equal(np.unique(labels._slice.image.view), expected)
 
@@ -2650,7 +2625,6 @@ def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
     """
     data = np.zeros((50, 50, 50), dtype=np.int64)
     layer = Labels(data)
-    layer.brush_size = 5
     layer.n_edit_dimensions = n_edit_dimensions
 
     dims = Dims(ndim=3, ndisplay=ndisplay)
@@ -2665,7 +2639,7 @@ def test_paint_int64_view_update_3d_display(ndisplay, n_edit_dimensions):
 
     view_before = layer._slice.image.view.copy()
 
-    layer.paint([25, 25, 25], 1)
+    layer.paint([25, 25, 25], 1, brush_size_data=5)
 
     # Verify data was painted
     if n_edit_dimensions == 2:
@@ -2691,11 +2665,10 @@ def test_block_history_with_mask_painting():
     """Test that block_history groups mask-based paint operations."""
     data = np.zeros((20, 20), dtype=int)
     layer = Labels(data)
-    layer.brush_size = 3
 
     with layer.block_history():
-        layer.paint([5, 5], 1, refresh=False)
-        layer.paint([10, 10], 2, refresh=False)
+        layer.paint([5, 5], 1, brush_size_data=3, refresh=False)
+        layer.paint([10, 10], 2, brush_size_data=3, refresh=False)
 
     assert len(layer._undo_history) == 1  # Should be single grouped item
     layer.undo()
@@ -2707,10 +2680,9 @@ def test_paint_brush_fully_outside_returns_early():
     """Painting fully outside data bounds should not modify history."""
     data = np.zeros((10, 10), dtype=int)
     layer = Labels(data)
-    layer.brush_size = 1
     initial_history_len = len(layer._undo_history)
 
-    layer.paint([-100, -100], 1)
+    layer.paint([-100, -100], 1, brush_size_data=1)
 
     assert len(layer._undo_history) == initial_history_len
 
@@ -2731,10 +2703,10 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
     that caused a ValueError during mask/data broadcast.
     """
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
 
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
     with pytest.raises(IndexError, match='out of bounds'):
-        getattr(layer, method)(oob_args, 1)
+        getattr(layer, method)(oob_args, 1, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -2748,8 +2720,8 @@ def test_fixed_axis_out_of_bounds_raises(method, oob_args):
 def test_fixed_axis_in_bounds_succeeds(method, good_args):
     """In-bounds paint on non-painted axis should still work."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
-    getattr(layer, method)(good_args, 1)
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
+    getattr(layer, method)(good_args, 1, **kwargs)
     assert np.any(layer.data != 0)
 
 
@@ -2764,8 +2736,8 @@ def test_fixed_axis_in_bounds_succeeds(method, good_args):
 def test_fixed_axis_negative_one_means_last_slice(method, args):
     """-1 on a non-painted axis should paint the last slice, not the first."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
-    getattr(layer, method)(args, 1)
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
+    getattr(layer, method)(args, 1, **kwargs)
     assert np.any(layer.data[-1])
     assert not np.any(layer.data[0])
 
@@ -2781,9 +2753,9 @@ def test_fixed_axis_negative_one_means_last_slice(method, args):
 def test_fixed_axis_negative_out_of_bounds_raises(method, args):
     """A negative coord that resolves past the start raises, never wraps."""
     layer = Labels(np.zeros((3, 10, 10), dtype=np.uint32))
-    layer.brush_size = 5
+    kwargs = {'brush_size_data': 5} if method == 'paint' else {}
     with pytest.raises(IndexError, match='out of bounds'):
-        getattr(layer, method)(args, 1)
+        getattr(layer, method)(args, 1, **kwargs)
 
 
 def test_paint_negative_painted_coord_clips_not_wraps():
@@ -2794,8 +2766,7 @@ def test_paint_negative_painted_coord_clips_not_wraps():
     warp Python-style to the opposite edge.
     """
     layer = Labels(np.zeros((10, 10), dtype=np.uint32))
-    layer.brush_size = 3
-    layer.paint((-1, -1), 1)
+    layer.paint((-1, -1), 1, brush_size_data=3)
     assert np.any(layer.data[:3, :3])
     assert not np.any(layer.data[7:, 7:])
 
@@ -2818,15 +2789,13 @@ def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
     coord = (-1, 10, 10)
 
     selector = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
-    selector.brush_size = 5
     selector.n_edit_dimensions = 2
-    selector.paint(coord, 1)
+    selector.paint(coord, 1, brush_size_data=5)
     assert np.any(selector.data[-1])  # -1 wrapped to the last slice
     assert not np.any(selector.data[0])
 
     brush = Labels(np.zeros((10, 20, 20), dtype=np.uint32))
-    brush.brush_size = 5
     brush.n_edit_dimensions = 3
-    brush.paint(coord, 1)
+    brush.paint(coord, 1, brush_size_data=5)
     assert np.any(brush.data[0])  # -1 clipped to the near edge
     assert not np.any(brush.data[-1])

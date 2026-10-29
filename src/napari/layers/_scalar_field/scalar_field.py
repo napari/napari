@@ -19,7 +19,7 @@ from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.image._image_constants import Interpolation, VolumeDepiction
 from napari.layers.image._image_mouse_bindings import (
     move_plane_along_normal as plane_drag_callback,
-    set_plane_position as plane_double_click_callback,
+    set_plane_position as plane_move_callback,
 )
 from napari.layers.image._image_utils import guess_multiscale
 from napari.layers.utils._slice_input import (
@@ -634,23 +634,19 @@ class ScalarFieldBase(Layer, ABC):
         plane_drag_callback_connected = (
             plane_drag_callback in self.mouse_drag_callbacks
         )
-        double_click_callback_connected = (
-            plane_double_click_callback in self.mouse_double_click_callbacks
+        move_callback_connected = (
+            plane_move_callback in self.mouse_move_callbacks
         )
         if self.depiction == VolumeDepiction.VOLUME:
             if plane_drag_callback_connected:
                 self.mouse_drag_callbacks.remove(plane_drag_callback)
-            if double_click_callback_connected:
-                self.mouse_double_click_callbacks.remove(
-                    plane_double_click_callback
-                )
+            if move_callback_connected:
+                self.mouse_move_callbacks.remove(plane_move_callback)
         elif self.depiction == VolumeDepiction.PLANE:
             if not plane_drag_callback_connected:
                 self.mouse_drag_callbacks.append(plane_drag_callback)
-            if not double_click_callback_connected:
-                self.mouse_double_click_callbacks.append(
-                    plane_double_click_callback
-                )
+            if not move_callback_connected:
+                self.mouse_move_callbacks.append(plane_move_callback)
 
     @property
     def plane(self) -> SlicingPlane:
