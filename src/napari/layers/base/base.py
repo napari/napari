@@ -441,10 +441,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         coordinates of each layer. For multiscale data the coordinates are in
         the space of the currently viewed data level, not the highest resolution
         level.
-    cursor : str
-        String identifying which cursor displayed over canvas.
-    cursor_size : int | None
-        Size of cursor if custom. None yields default size
     help : str
         Displayed in status bar bottom right.
     mouse_pan : bool
@@ -526,10 +522,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Mode.PAN_ZOOM: no_op,
         Mode.TRANSFORM: highlight_box_handles,
     }
-    _cursor_modes: ClassVar[dict[StringEnum, str]] = {
-        Mode.PAN_ZOOM: 'standard',
-        Mode.TRANSFORM: 'standard',
-    }
     events: EmitterGroup
 
     def __init__(
@@ -581,8 +573,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
-        self._cursor = 'standard'
-        self._cursor_size = 1
         self._mouse_pan = True
         self._mouse_zoom = True
         self._value = None
@@ -661,8 +651,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             metadata=Event,
             affine=Event,
             blending=Event,
-            cursor=Event,
-            cursor_size=Event,
             editable=Event,
             locked=Event,
             extent=Event,
@@ -767,7 +755,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             if mode_dict[self._mode] in callback_list:
                 callback_list.remove(mode_dict[self._mode])
             callback_list.append(mode_dict[mode])
-        self.cursor = self._cursor_modes[mode]
 
         self.mouse_pan = mode == PAN_ZOOM
         self._overlays['transform_box'].visible = mode == TRANSFORM
@@ -1385,30 +1372,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         self.events.mouse_zoom(mouse_zoom=mouse_zoom)
 
     @property
-    def cursor(self) -> str:
-        """str: String identifying cursor displayed over canvas."""
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, cursor: str) -> None:
-        if cursor == self.cursor:
-            return
-        self._cursor = cursor
-        self.events.cursor(cursor=cursor)
-
-    @property
-    def cursor_size(self) -> int:
-        """int: Size of cursor if custom. None yields default size."""
-        return self._cursor_size
-
-    @cursor_size.setter
-    def cursor_size(self, cursor_size: int) -> None:
-        if cursor_size == self.cursor_size:
-            return
-        self._cursor_size = cursor_size
-        self.events.cursor_size(cursor_size=cursor_size)
-
-    @property
     def experimental_clipping_planes(self) -> ClippingPlaneList:
         return self._experimental_clipping_planes
 
@@ -1497,7 +1460,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         raise NotImplementedError
 
     @abstractmethod
-    def _get_value(self, position):
+    def _get_value(self, position: npt.ArrayLike):
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -1519,10 +1482,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         view_direction: npt.ArrayLike | None = None,
         dims_displayed: list[int] | None = None,
         world: bool = False,
-    ) -> tuple[int, ...] | None:
+    ) -> tuple[int | None, ...]:
         """Value of the data at a position.
-
-        If the layer is not visible, return None.
 
         Parameters
         ----------
@@ -1541,74 +1502,141 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         Returns
         -------
         value : tuple, None
-            Value of the data. If the layer is not visible return None.
+            Value of the data.
         """
-        position = np.asarray(position)
-        if self.visible:
-            if world:
-                ndim_world = len(position)
-
-                if dims_displayed is not None:
-                    # convert the dims_displayed to the layer dims.This accounts
-                    # for differences in the number of dimensions in the world
-                    # dims versus the layer and for transpose and rolls.
-                    dims_displayed = dims_displayed_world_to_layer(
-                        dims_displayed,
-                        ndim_world=ndim_world,
-                        ndim_layer=self.ndim,
-                    )
-                position = self.world_to_data(position)
-
-            if (dims_displayed is not None) and (view_direction is not None):
-                if len(dims_displayed) == 2 or self.ndim == 2:
-                    value = self._get_value(position=tuple(position))
-
-                else:  # if len(dims_displayed) == 3:
-                    view_direction = self._world_to_data_ray(view_direction)
-                    start_point, end_point = self.get_ray_intersections(
-                        position=position,
-                        view_direction=view_direction,
-                        dims_displayed=dims_displayed,
-                        world=False,
-                    )
-                    value = self._get_value_3d(
-                        start_point=start_point,
-                        end_point=end_point,
-                        dims_displayed=dims_displayed,
-                    )
-            else:
-                value = self._get_value(position)
-
+        if dims_displayed is None or view_direction is None:
+            value = self._get_value(position)
         else:
-            value = None
+            hits = self.iter_values_along_ray(
+                position,
+                view_direction=view_direction,
+                dims_displayed=dims_displayed,
+                world=world,
+            )
+            value, _ = next(hits, (None, None))
+
         # This should be removed as soon as possible, it is still
         # used in Points and Shapes.
         if self.mode != 'pan_zoom':
             self._value = value
         return value  # pyrefly: ignore [bad-return]
 
-    def _get_value_3d(
+    @abstractmethod
+    def _iter_values_along_ray(
         self,
-        start_point: np.ndarray | None,
-        end_point: np.ndarray | None,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> float | int | tuple[float | int | None, int | None] | None:
-        """Get the layer data value along a ray
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Get values and positions along a ray in 3D.
+
+        Each Layer sublass must implement its own logic.
 
         Parameters
         ----------
         start_point : np.ndarray
-            The start position of the ray used to interrogate the data.
+            Start of ray in data coordinates.
         end_point : np.ndarray
-            The end position of the ray used to interrogate the data.
-        dims_displayed : List[int]
-            The indices of the dimensions currently displayed in the Viewer.
+            End of ray in data coordinates.
+        dims_displayed : list of int
+            Displayed dimensions.
 
-        Returns
-        -------
-        value
-            The data value along the supplied ray.
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
         """
+        raise NotImplementedError
+
+    def iter_values_along_ray(
+        self,
+        position: npt.ArrayLike,
+        view_direction: npt.ArrayLike,
+        dims_displayed: list[int],
+        world: bool = False,
+    ) -> Generator[tuple[Any, np.ndarray], None, None]:
+        """Get value(s) and position(s) along a 3D ray that passes by a position.
+
+        May yield multiple values along the ray, sorted from closest to furthest.
+
+        Parameters
+        ----------
+        position : tuple of float
+            Position in either data or world coordinates.
+        view_direction : np.ndarray
+            A unit vector giving the direction of the ray in nD world coordinates.
+        dims_displayed : List[int]
+            A list of the dimensions currently being displayed in the viewer.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates.
+
+        Yields
+        ------
+        hits : tuple of (value, position)
+            Each tuple contains the value and position where it was found
+            (in the same coordinate space as the input position),
+            sorted from closest to furthest along the ray.
+        """
+        position = np.asarray(position)
+
+        if world:
+            ndim_world = len(position)
+
+            if dims_displayed is not None:
+                dims_displayed = dims_displayed_world_to_layer(
+                    dims_displayed,
+                    ndim_world=ndim_world,
+                    ndim_layer=self.ndim,
+                )
+            position_data = self.world_to_data(position)
+        else:
+            position_data = position
+
+        # 2D case: single hit at the position
+        if len(dims_displayed) == 2 or self.ndim == 2:
+            value = self._get_value(position=tuple(position_data))
+            if value is None:
+                return
+            hit_position = position if world else position_data
+            yield (value, hit_position)
+            return
+
+        # 3D case: ray-casting
+        view_direction_data = self._world_to_data_ray(view_direction)
+        start_point, end_point = self.get_ray_intersections(
+            position=position_data,
+            view_direction=view_direction_data,
+            dims_displayed=dims_displayed,
+            world=False,
+        )
+
+        if start_point is None or end_point is None:
+            return
+
+        for value, hit_position in self._iter_values_along_ray(
+            start_point=start_point,
+            end_point=end_point,
+            dims_displayed=dims_displayed,
+        ):
+            if world:
+                # convert hit positions back to world, embedding it in
+                # the original position so we get the non-displayed dimension
+                # coordinates correctly as well (as they are in the input position)
+                pos = position.copy()
+                dims_displayed_layer = dims_displayed_world_to_layer(
+                    dims_displayed_world=dims_displayed,
+                    ndim_world=len(position),
+                    ndim_layer=self.ndim,
+                )
+                pos[dims_displayed] = np.array(
+                    self.data_to_world(hit_position)
+                )[dims_displayed_layer]
+            else:
+                pos = hit_position
+            yield value, pos
 
     def projected_distance_from_mouse_drag(
         self,

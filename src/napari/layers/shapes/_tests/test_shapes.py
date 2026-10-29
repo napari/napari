@@ -2475,6 +2475,8 @@ def test_value_non_convex():
         ((0, 5, 21, 15), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 2),
         ((0, 5, 21, 15), [0, -1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), 0),
         ((0, 5, 0, 0), [0, 1, 0, 0], [1, 2, 3], True, (1, 1, 2, 1), None),
+        # test looking across so we pass through the extent but encounter nothing
+        ((0, 8.5, 10, 20), [0, 0, 1, 0], [1, 2, 3], True, (1, 1, 1, 1), None),
     ],
 )
 def test_value_3d(
@@ -2495,7 +2497,7 @@ def test_value_3d(
     )
     layer = Shapes(data, scale=scale)
     layer._slice_dims(Dims(ndim=4, ndisplay=3, point=(0, 0, 0, 0)))
-    value, _ = layer.get_value(
+    value = layer.get_value(
         position,
         view_direction=view_direction,
         dims_displayed=dims_displayed,

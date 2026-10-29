@@ -8,7 +8,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Protocol
 
-    from napari.utils.events.event import EmitterGroup, Event
+    from vispy.util.event import EmitterGroup as VispyEmitterGroup
+
+    from napari.utils.events.event import (
+        EmitterGroup as NapariEmitterGroup,
+        Event,
+    )
 
     class Emitter(Protocol):
         def connect(self, callback: Callable, /) -> object: ...
@@ -19,7 +24,9 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def disconnect_events(emitter: EmitterGroup, listener: object) -> None:
+def disconnect_events(
+    emitter: NapariEmitterGroup | VispyEmitterGroup, listener: object
+) -> None:
     """Disconnect all events between an emitter group and a listener.
 
     Parameters

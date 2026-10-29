@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 
@@ -16,7 +16,7 @@ _DTypeT = TypeVar('_DTypeT', bound=np.dtype[Any])
 
 def interpolate_coordinates(
     old_coord, new_coord, brush_size
-) -> np.ndarray[tuple[int, int], np.dtype[np.floating]]:
+) -> np.ndarray[tuple[int, Literal[2]], np.dtype[np.floating]]:
     """Interpolates coordinates depending on brush size.
 
     Useful for ensuring painting is continuous in labels layer.

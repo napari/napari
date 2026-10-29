@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Generator
 from copy import copy
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -789,6 +790,32 @@ class Vectors(Layer):
             Value of the data at the coord.
         """
         return
+
+    def _iter_values_along_ray(
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: list[int],
+    ) -> Generator[tuple[int, np.ndarray], None, None]:
+        """Get all points along a ray, sorted by distance from camera.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            The start position of the ray used to interrogate the data.
+        end_point : np.ndarray
+            The end position of the ray used to interrogate the data.
+        dims_displayed : list of int
+            The indices of the dimensions currently displayed in the Viewer.
+
+        Yields
+        ------
+        hits : tuple of (value, position)
+            The point index and its nD data-space position.
+            Sorted by distance from start_point (closest first).
+        """
+        # TODO: implement this!
+        return  # pyrefly: ignore [bad-return]
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool

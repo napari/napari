@@ -24,12 +24,11 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
             node=Crosshair(),
             **kwargs,
         )
+        self.overlay.events.position.connect(self._on_position_change)
+        self.overlay.events.gap.connect(self._on_gap_change)
         self.overlay.events.color.connect(self._on_color_change)
         self.viewer.dims.events.order.connect(self._on_color_change)
         self.viewer.dims.events.ndisplay.connect(self._on_color_change)
-        self.overlay.events.gap.connect(self._on_gap_change)
-
-        self.viewer.cursor.events.position.connect(self._on_position_change)
         self.viewer.dims.events.ndisplay.connect(self._on_position_change)
         self.viewer.dims.events.order.connect(self._on_position_change)
         self.viewer.dims.events.ndim.connect(self._on_position_change)
@@ -37,12 +36,8 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.reset()
 
     def _on_position_change(self) -> None:
-        position = np.asarray(self.viewer.cursor.position, dtype=float)
-        if position.size != self.viewer.dims.ndim:
-            # cursor position is only updated on mouse move, so it can
-            # temporarily be out of sync with the dims
-            return
-        displayed = list(self.viewer.dims.displayed[::-1])
+        position = np.asarray(self.overlay.position, dtype=float)
+        displayed = list(self.viewer.dims.displayed[::-1])  # flip xyz vispy
         position = position[displayed]
         if len(displayed) == 2:
             position = np.append(position, 0)

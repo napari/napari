@@ -47,7 +47,7 @@ _default_shortcuts: dict[str, list[KeyCombo | KeyCode]] = {
     'napari:decrease_brush_size': [KeyCode.BracketLeft],
     'napari:increase_brush_size': [KeyCode.BracketRight],
     'napari:toggle_preserve_labels': [KeyCode.KeyB],
-    'napari:reset_polygon': [KeyCode.Escape],
+    'napari:reset_polygon_or_stroke': [KeyCode.Escape],
     'napari:complete_polygon': [KeyCode.Enter],
     # points
     'napari:activate_points_add_mode': [KeyCode.Digit2, KeyCode.KeyP],

@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from napari.layers.utils.interactivity_utils import (
+    move_plane_position_from_mouse,
+)
 from napari.utils.geometry import (
     clamp_point_to_bounding_box,
     point_in_bounding_box,
@@ -52,7 +55,7 @@ def move_plane_along_normal(
     ):
         return None
 
-    layer.plane.position = intersection  # pyrefly: ignore [bad-assignment]
+    layer.plane.position = tuple(intersection)
 
     # Store original plane position and disable interactivity during plane drag
     original_plane_position = np.copy(layer.plane.position)
@@ -66,7 +69,7 @@ def move_plane_along_normal(
             start_position=initial_position_world,
             end_position=np.asarray(event.position),
             view_direction=np.asarray(event.view_direction),
-            vector=layer.plane.normal,  # pyrefly: ignore [bad-argument-type]
+            vector=np.asarray(layer.plane.normal),
             dims_displayed=event.dims_displayed,
         )
 
@@ -80,7 +83,7 @@ def move_plane_along_normal(
             layer._display_bounding_box_augmented(event.dims_displayed),
         )
 
-        layer.plane.position = clamped_plane_position
+        layer.plane.position = tuple(clamped_plane_position)
         yield None
 
     # Re-enable volume_layer interactivity after the drag
@@ -89,7 +92,7 @@ def move_plane_along_normal(
 
 
 def set_plane_position(layer: Image, event: Event) -> None:
-    """Set plane position on double click."""
+    """Set plane position."""
     # early exit clauses
     if (
         layer.visible is False
@@ -98,16 +101,4 @@ def set_plane_position(layer: Image, event: Event) -> None:
     ):
         return
 
-    # Calculate intersection of click with plane through data in data coordinates
-    intersection = layer.plane.intersect_with_line(
-        line_position=np.asarray(event.position)[event.dims_displayed],
-        line_direction=np.asarray(event.view_direction)[event.dims_displayed],
-    )
-
-    # Check if click was on plane and if not, exit early.
-    if not point_in_bounding_box(
-        intersection, layer.extent.data[:, event.dims_displayed]
-    ):
-        return
-
-    layer.plane.position = intersection  # pyrefly: ignore [bad-assignment]
+    move_plane_position_from_mouse(layer, event.position, event.view_direction)
