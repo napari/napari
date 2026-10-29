@@ -27,7 +27,7 @@ def test_scene_axes_dimensions_properly_detected():
         ticks = gridlines_vispy.node.tick_labels[axis]
         range_ = viewer.dims.range[2 - axis]  # zyx -> xyz
         np.testing.assert_array_equal(
-            [float(t.text) for t in ticks],
+            [float(t) for t in ticks.text],
             compute_nice_ticks(
                 range_.start, range_.stop, gridlines_model.n_ticks
             ),

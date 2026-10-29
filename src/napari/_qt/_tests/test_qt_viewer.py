@@ -572,6 +572,22 @@ def test_canvas_to_world_grid_spacing(
         )
 
 
+def test_canvas_to_world_2d_data_with_3d_viewer(
+    viewer_model: ViewerModel,
+) -> None:
+    """The position should map back onto existing dims."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    middle_of_canvas = (400, 600)
+    middle_of_image = (4.5, 4.5)
+    world_pos = viewer_model.canvas_to_world(middle_of_canvas)
+    # special case that needs special fixing. Before fix, we'd end up
+    # with (0, 4.5) because it embedded as `(0, 4.5, 4.5)` and then dropped
+    # the last dim
+    np.testing.assert_allclose(world_pos, middle_of_image)
+
+
 @pytest.mark.usefixtures(
     'qt_viewer'
 )  # need qt_viewer to trigger the vispy code

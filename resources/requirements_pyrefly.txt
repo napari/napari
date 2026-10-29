@@ -8,7 +8,7 @@ app-model==0.5.1
     # via -r resources/requirements_pyrefly.in
 build==1.6.1
     # via npe2
-certifi==2026.10.18
+certifi==2026.10.23
     # via requests
 charset-normalizer==3.5.2
     # via requests
