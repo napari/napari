@@ -81,7 +81,6 @@ from napari.types import (
 )
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
-from napari.utils.camera_orientations import DEFAULT_ORIENTATION_TYPED
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
