@@ -5,13 +5,13 @@ from napari.layers.base._base_constants import Blending
 from napari.utils.color import ColorValue
 
 
-class GridlinesOverlay(SceneOverlay):
-    """Gridlines overlay.
+class CoordinateGridOverlay(SceneOverlay):
+    """CoordinateGrid overlay.
 
     Attributes
     ----------
     color : ColorValue or None
-        Color of the grid lines, or None for automatic coloring.
+        Color of the grid lines and text, or None for automatic coloring.
     axis_labels : bool
         Whether to display axis labels.
     font_size : float, optional

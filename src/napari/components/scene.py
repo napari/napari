@@ -4,8 +4,8 @@ from pydantic import Field
 
 from napari.components.camera import Camera
 from napari.components.overlays import (
+    CoordinateGridOverlay,
     CrosshairOverlay,
-    GridlinesOverlay,
     SceneAxesOverlay,
     SceneOverlay,
 )
@@ -37,7 +37,7 @@ class Scene(EventedModel):
             {
                 'axes': SceneAxesOverlay(),
                 'crosshair': CrosshairOverlay(),
-                'gridlines': GridlinesOverlay(),
+                'coordinate_grid': CoordinateGridOverlay(),
             }
         ),
         frozen=True,
