@@ -136,9 +136,8 @@ class NestableEventedList(EventedList[_T]):
     moved (index: Index, new_index: Index, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: Index, old_value: T, value: T)
-        emitted when item at ``index`` is changed from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: list[_T], value: list[_T])
-        emitted when slice at ``index`` is changed from ``old_value`` to ``value``
+        emitted when item at ``index`` is changed from ``old_value`` to ``value``.
+        Slice assignment emits remove and insert events instead.
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -252,6 +251,16 @@ class NestableEventedList(EventedList[_T]):
 
         emitter(event)
 
+    @overload
+    def _non_negative_index(
+        self, parent_index: ParentIndex, dest_index: int
+    ) -> int: ...
+
+    @overload
+    def _non_negative_index(
+        self, parent_index: ParentIndex, dest_index: slice
+    ) -> slice: ...
+
     def _non_negative_index(
         self, parent_index: ParentIndex, dest_index: Index
     ) -> Index:
@@ -263,7 +272,9 @@ class NestableEventedList(EventedList[_T]):
         return dest_index
 
     def _move_plan(  # pyrefly: ignore [bad-override]
-        self, sources: Iterable[int | tuple[int, ...]], dest_index: NestedIndex
+        self,
+        sources: Iterable[int] | Iterable[tuple[int, ...]],
+        dest_index: NestedIndex,
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
 
@@ -278,16 +289,17 @@ class NestableEventedList(EventedList[_T]):
 
         Parameters
         ----------
-        sources : Iterable[tuple[int, ...]]
-            An iterable of tuple[int] that should be moved to ``dest_index``.
+        sources : Iterable[int] or Iterable[tuple[int, ...]]
+            Indices that should be moved to ``dest_index``. They are sorted,
+            so all must be ints or all must be tuples.
             (Note: currently, the order of ``sources`` will NOT be maintained.)
-        dest_index : Tuple[int]
+        dest_index : NestedIndex
             The destination for sources.
 
         Yields
         ------
-        Generator[tuple[int, ...], None, None]
-            [description]
+        tuple[NestedIndex, NestedIndex]
+            The ``(from_index, to_index)`` pair for one single move.
 
         Raises
         ------
@@ -302,7 +314,7 @@ class NestableEventedList(EventedList[_T]):
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
             raise TypeError('Destination index may not be a slice')
-        dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
+        dest_i = self._non_negative_index(dest_par, dest_i)
 
         # need to update indices as we pop, so we keep track of the indices
         # we have previously popped
@@ -322,12 +334,11 @@ class NestableEventedList(EventedList[_T]):
             if len(idx) > _parlen:
                 _idx: list[Index] = list(idx)
                 _cur = _idx[_parlen]
-                if isinstance(_idx[_parlen], slice):
+                if isinstance(_cur, slice):
                     raise NotImplementedError(
                         "Can't yet deal with slice source indices in multimove"
                     )
-                _cur_int = cast(int, _cur)
-                _idx[_parlen] = _cur_int + sum(x <= _cur_int for x in dumped)
+                _idx[_parlen] = _cur + sum(x <= _cur for x in dumped)
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
@@ -384,6 +395,9 @@ class NestableEventedList(EventedList[_T]):
             src_index,
             dest_index,
         )
+        if ensure_tuple_index(src_index) == ():
+            raise ValueError('Group cannot move itself')
+
         src_par_i, src_i = split_nested_index(src_index)
         dest_par_i, dest_i = split_nested_index(dest_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)
@@ -394,9 +408,6 @@ class NestableEventedList(EventedList[_T]):
 
         if isinstance(dest_i, slice):
             raise TypeError('Destination index may not be a slice')
-
-        if src_i == ():
-            raise ValueError('Group cannot move itself')
 
         if src_par_i == dest_par_i and isinstance(dest_i, int):
             if dest_i > src_i:
