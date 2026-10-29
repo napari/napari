@@ -6,8 +6,7 @@ import typing
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-from skimage import measure
-from skimage.draw import line, polygon2mask
+from skimage import draw, measure
 from vispy.geometry import Triangulation
 from vispy.visuals.tube import _frenet_frames
 
@@ -22,6 +21,7 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
     TriangleArray,
+    TriangleDtype,
 )
 
 if TYPE_CHECKING:
@@ -144,7 +144,9 @@ def inside_boxes(boxes):
     return inside
 
 
-def triangles_intersect_box(triangles, corners):
+def triangles_intersect_box(
+    triangles, corners
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Determines which triangles intersect an axis aligned box.
 
     Parameters
@@ -630,7 +632,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
-    return vertices, triangles
+    return vertices, triangles.astype(TriangleDtype)
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
@@ -1051,28 +1053,14 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
     return centers, offsets, triangles
 
 
-def path_to_mask(
-    mask_shape: npt.NDArray, vertices: npt.NDArray
-) -> npt.NDArray[np.bool_]:
-    """Converts a path to a boolean mask with `True` for points lying along
-    each edge.
+def path_to_indices(
+    mask_shape: npt.ArrayLike, vertices: npt.NDArray
+) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    """Row and column indices of the pixels along each edge of a path.
 
-    Parameters
-    ----------
-    mask_shape : array (2,)
-        Shape of mask to be generated.
-    vertices : array (N, 2)
-        Vertices of the path.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points along the path
-
+    Vertices outside the mask are clipped to its border.
     """
     mask_shape = np.asarray(mask_shape, dtype=int)
-    mask = np.zeros(mask_shape, dtype=bool)
-
     vertices = np.round(np.clip(vertices, 0, mask_shape - 1)).astype(int)
 
     # remove identical, consecutive vertices
@@ -1080,37 +1068,21 @@ def path_to_mask(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    iis, jjs = [], []
-    for v1, v2 in itertools.pairwise(vertices):
-        ii, jj = line(*v1, *v2)
-        iis.extend(ii.tolist())
-        jjs.extend(jj.tolist())
-
-    mask[iis, jjs] = 1
-
-    return mask
+    lines = [draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    if not lines:
+        return np.empty(0, np.intp), np.empty(0, np.intp)
+    iis, jjs = zip(*lines, strict=True)
+    return np.concatenate(iis), np.concatenate(jjs)
 
 
-def poly_to_mask(
-    mask_shape: npt.ArrayLike, vertices: npt.ArrayLike
-) -> npt.NDArray[np.bool_]:
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Uses the bounding box of the vertices to reduce
-    computation time.
-
-    Parameters
-    ----------
-    mask_shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    return polygon2mask(mask_shape, vertices)
+def poly_to_indices(
+    mask_shape: typing.Sequence[int], vertices: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Row and column indices of the pixels inside a polygon."""
+    rows, cols = draw.polygon(
+        vertices[:, 0], vertices[:, 1], tuple(mask_shape)
+    )
+    return rows, cols
 
 
 def grid_points_in_poly(shape, vertices):
@@ -1137,7 +1109,9 @@ def grid_points_in_poly(shape, vertices):
     return mask
 
 
-def points_in_poly(points, vertices):
+def points_in_poly(
+    points, vertices
+) -> np.ndarray[tuple[int], np.dtype[np.bool_]]:
     """Tests points for being inside a polygon using the ray casting algorithm
 
     Parameters
@@ -1265,7 +1239,7 @@ def get_shape_ndim(data):
     return ndim
 
 
-def number_of_shapes(data):
+def number_of_shapes(data) -> int:
     """Determine number of shapes in the data.
 
     Parameters
@@ -1293,7 +1267,7 @@ def number_of_shapes(data):
 
 def validate_num_vertices(
     data, shape_type, min_vertices=None, valid_vertices=None
-):
+) -> None:
     """Raises error if a shape in data has invalid number of vertices.
 
     Checks whether all shapes in data have a valid number of vertices
