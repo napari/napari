@@ -19,7 +19,7 @@ class ModifiedScrollBar(QScrollBar):
     When the user clicks on the scroll bar background area (aka, the "page
     control"), the default behavior of the QScrollBar is to move one "page"
     towards the click (rather than all the way to the clicked position).
-    See: https://doc.qt.io/qt-5/qscrollbar.html
+    See: https://doc.qt.io/qt-6/qscrollbar.html
     This scroll bar modifies the mousePressEvent to move the slider position
     fully to the clicked position.
     """
@@ -30,13 +30,7 @@ class ModifiedScrollBar(QScrollBar):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
 
-        # pos is for Qt5 e.position().toPoint() is for QT6
-        # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#pos
-        point = (
-            event.position().toPoint()
-            if hasattr(event, 'position')
-            else event.pos()
-        )
+        point = event.position().toPoint()
         style = self.style()
         if style is None:
             return

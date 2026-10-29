@@ -7,13 +7,14 @@ from superqt.utils import qdebounced
 
 from napari._vispy.layers.base import VispyBaseLayer
 from napari._vispy.utils.gl import BLENDING_MODES
-from napari._vispy.utils.text import update_text
+from napari._vispy.utils.text import _has_visible_text, update_text
 from napari._vispy.visuals.shapes import ShapesVisual
 from napari.settings import get_settings
 from napari.utils.events import disconnect_events
 
 if typing.TYPE_CHECKING:
     from napari._vispy.utils.qt_font import FontInfo
+    from napari._vispy.visuals.text import Text
     from napari.layers import Shapes
 
 
@@ -34,7 +35,6 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self.layer.text.events.connect(self._on_text_change)
-        self.layer.events.scale_factor.connect(self._update_text)
 
         # TODO: move to overlays
         self.node.highlight_vertices.symbol = 'square'
@@ -43,17 +43,21 @@ class VispyShapesLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
+
+        has_faces = (
+            vertices is not None and len(vertices) > 0 and len(faces) > 0
+        )
 
         # Note that the indices of the vertices need to be reversed to
         # go from numpy style to xyz
         if vertices is not None:
             vertices = vertices[:, ::-1]
 
-        if len(vertices) == 0 or len(faces) == 0:
+        if not has_faces:
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
@@ -68,20 +72,21 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.shape_faces.set_data(
             vertices=vertices, faces=faces, face_colors=colors
         )
+        self.node.shape_faces.visible = has_faces
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
         self._update_text(update_node=False)
         self.node.update()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self) -> None:
         if len(self.layer.selected_data) > 1000:
             # Defer to next frame to avoid blocking UI
             self._on_highlight_change_debounc()
         else:
             self._on_highlight_change_impl()
 
-    def _on_highlight_change_impl(self):
+    def _on_highlight_change_impl(self) -> None:
         settings = get_settings()
         self.layer._highlight_width = (
             settings.appearance.highlight.highlight_thickness
@@ -93,7 +98,11 @@ class VispyShapesLayer(VispyBaseLayer):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
 
-        if vertices is None or len(vertices) == 0 or len(faces) == 0:  # pyrefly: ignore [bad-argument-type]
+        has_outline = (
+            vertices is not None and len(vertices) > 0 and len(faces) > 0  # pyrefly: ignore [bad-argument-type]
+        )
+
+        if not has_outline:
             vertices = np.zeros((3, self.layer._slice_input.ndisplay))
             faces = np.array([[0, 1, 2]])
 
@@ -102,6 +111,7 @@ class VispyShapesLayer(VispyBaseLayer):
             faces=faces,
             color=self.layer._highlight_color,
         )
+        self.node.shape_highlights.visible = has_outline
 
         # Compute the location and properties of the vertices and box that
         # need to get rendered
@@ -115,7 +125,9 @@ class VispyShapesLayer(VispyBaseLayer):
 
         width = settings.appearance.highlight.highlight_thickness
 
-        if vertices is None or len(vertices) == 0:
+        has_vertices = vertices is not None and len(vertices) > 0
+
+        if not has_vertices:
             vertices = np.zeros((1, self.layer._slice_input.ndisplay))
             size = 0
         else:
@@ -128,16 +140,25 @@ class VispyShapesLayer(VispyBaseLayer):
             edge_color=edge_color,
             edge_width=width,
         )
+        self.node.highlight_vertices.visible = has_vertices
 
-        if pos is None or len(pos) == 0:
+        has_box = pos is not None and len(pos) > 0
+
+        if not has_box:
             pos = np.zeros((1, self.layer._slice_input.ndisplay))
             width = 0
 
         self.node.highlight_lines.set_data(
             pos=pos, color=edge_color, width=width
         )
+        self.node.highlight_lines.visible = has_box
 
-    def _update_text(self, *, update_node=True):
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
+    def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
         Parameters
@@ -145,15 +166,21 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self._get_text_node(), layer=self.layer)
+        text_node = self._get_text_node()
+        update_text(
+            node=text_node,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
+        text_node.visible = _has_visible_text(self.layer)
         if update_node:
             self.node.update()
 
-    def _get_text_node(self):
+    def _get_text_node(self) -> Text:
         """Function to get the text node from the Compound visual"""
         return self.node.text
 
-    def _on_text_change(self, event=None):
+    def _on_text_change(self, event=None) -> None:
         if event is not None:
             if event.type == 'blending':
                 self._on_blending_change(event)  # pyrefly: ignore [bad-argument-count]
@@ -162,7 +189,7 @@ class VispyShapesLayer(VispyBaseLayer):
                 return
         self._update_text()
 
-    def _on_blending_change(self):  # pyrefly: ignore [bad-override]
+    def _on_blending_change(self) -> None:  # pyrefly: ignore [bad-override]
         """Function to set the blending mode"""
         shapes_blending_kwargs = BLENDING_MODES[self.layer.blending]
         self.node.set_gl_state(**shapes_blending_kwargs)
@@ -172,12 +199,12 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node.set_gl_state(**text_blending_kwargs)
         self.node.update()
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_highlight_change()
         self._on_blending_change()
 
-    def close(self):
+    def close(self) -> None:
         """Vispy visual is closing."""
         disconnect_events(self.layer.text.events, self)
         super().close()

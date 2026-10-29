@@ -133,7 +133,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setDuration(self.FADE_IN_RATE)
         self.geom_anim.setStartValue(geom.translated(0, 20))
         self.geom_anim.setEndValue(geom)
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         # fade in
         self.opacity_anim.setDuration(self.FADE_IN_RATE)
         self.opacity_anim.setStartValue(0)
@@ -146,17 +146,17 @@ class NapariQtNotification(QDialog):
         super().show()
         self._instances.append(self)
         self.slide_in()
-        if self.parent() is not None and not self.parent().isActiveWindow():
-            return
-        if self.parent() is not None:
-            notifications = self._instances
-            for notification in notifications:
-                notification.timer_stop()
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.close_with_fade)
-            self.timer.start()
+        parent = self.parent()
+        if parent is None or parent.isActiveWindow():
+            if parent is not None:
+                for notification in self._instances:
+                    notification.timer_stop()
+            if self.DISMISS_AFTER > 0:
+                self.timer.start()
 
     def enterEvent(self, event):
         """On hover, stop the self-destruct timer"""
@@ -179,17 +179,19 @@ class NapariQtNotification(QDialog):
         """Expand the notification on double click."""
         self.toggle_expansion()
 
-    def close(self):
+    def close(self, start_next: bool = True):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
+        notifications = self._instances
         with suppress(ValueError):
             # if show is not called, the element is not in list
-            self._instances.remove(self)
+            notifications.remove(self)
+        if not start_next:
+            return
         if self.parent() is not None:
-            notifications = self._instances
-            if len(notifications) > 1 and notifications[-1] == self:
-                notifications[-2].timer_start()
+            if notifications and not notifications[-1].underMouse():
+                notifications[-1].timer_start()
             self.parent().setFocus()
         super().close()
 
@@ -230,7 +232,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(curr.x(), curr.y() - delta, curr.width(), new_height)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', True)
         self.style().unpolish(self.expand_button)
@@ -245,7 +247,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(geom.x(), geom.y() + dlt, geom.width(), geom.height() - dlt)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', False)
         self.style().unpolish(self.expand_button)
@@ -276,15 +278,17 @@ class NapariQtNotification(QDialog):
         )
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
-        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.message.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         self.row1.addWidget(self.message, alignment=Qt.AlignmentFlag.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
         self.expand_button.setObjectName('expand_button')
-        self.expand_button.setCursor(Qt.PointingHandCursor)
+        self.expand_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
 
@@ -293,7 +297,7 @@ class NapariQtNotification(QDialog):
         )
         self.close_button = QPushButton(self.row1_widget)
         self.close_button.setObjectName('close_button')
-        self.close_button.setCursor(Qt.PointingHandCursor)
+        self.close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
 
