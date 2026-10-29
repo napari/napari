@@ -218,14 +218,14 @@ class LayerOverlayMixin(VispyBaseOverlay):
         )
         # need manual connection here because these overlays are not necessarily
         # always a child of the actual vispy node of the layer (eg, canvas overlays)
-        self.layer.events.visible.connect(self._on_visible_change)  # pyrefly: ignore [missing-attribute]
+        self.layer.events.visible.connect(self._on_visible_change)
 
     def _should_be_visible(self) -> bool:
         return self.overlay.visible and self.layer.visible
 
     def close(self) -> None:
         disconnect_events(self.layer.events, self)
-        super().close()  # pyrefly: ignore [missing-attribute]
+        super().close()
 
 
 class ViewerOverlayMixin:

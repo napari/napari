@@ -18,6 +18,7 @@ from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 
 from napari._vispy.camera import VispyCamera
 from napari._vispy.mouse_event import NapariMouseEvent
+from napari._vispy.overlays.base import VispyCanvasOverlay
 from napari._vispy.utils.cursor import QtCursorVisual
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
@@ -39,7 +40,6 @@ from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
-    from typing import Any
 
     import numpy.typing as npt
     from qtpy.QtCore import QEvent, Qt, pyqtBoundSignal
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from vispy.scene.subscene import SubScene
     from vispy.util.event import EmitterGroup
 
-    from napari._qt.qt_main_window import QtViewer
+    from napari._qt.qt_viewer import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
@@ -220,7 +220,7 @@ class VispyCanvas:
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
-        self._overlay_callbacks: dict[Layer, Callable] = {}
+        self._overlay_callbacks: dict[Layer, Callable[[], None]] = {}
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
         self._needs_world_units_update = False
@@ -462,7 +462,9 @@ class VispyCanvas:
         )
         self.viewer.scene.camera.center = box_center_world
 
-    def _get_viewbox_at(self, position):
+    def _get_viewbox_at(
+        self, position: tuple[float, float]
+    ) -> tuple[ViewBox, tuple[int, int]] | tuple[None, None]:
         """Get the viewbox and its grid coordinates from the mouse position.
 
         Returns (None, None) when the view is empty (no layers).
@@ -535,9 +537,8 @@ class VispyCanvas:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
-        # unpack only after the check, so the type checker knows that the
-        # viewbox and its grid coordinates are either both set or both None
-        viewbox, grid_coords = viewbox_at
+        # read after the None check so the type checker knows it is set
+        grid_coords = viewbox_at[1]
 
         canvas_position = tuple(event.pos[::-1])
 
@@ -568,7 +569,7 @@ class VispyCanvas:
 
         # Update the cursor position
         self.viewer.cursor._view_direction = napari_event.view_direction
-        self.viewer.cursor.position = napari_event.position
+        self.viewer.cursor.position = tuple(napari_event.position)
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
@@ -664,7 +665,7 @@ class VispyCanvas:
         self._process_mouse_event(mouse_wheel_callbacks, event)
 
     @property
-    def _viewbox_corners_in_world(self) -> npt.NDArray:
+    def _viewbox_corners_in_world(self) -> npt.NDArray[np.floating]:
         """Location of the corners of canvas in world coordinates.
 
         Returns
@@ -925,7 +926,7 @@ class VispyCanvas:
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _defer_canvas_overlay_position_update(self):
+    def _defer_canvas_overlay_position_update(self) -> None:
         self._needs_overlay_position_update = True
 
     def _connect_canvas_overlay_events(self, overlay: Overlay) -> None:
@@ -968,7 +969,7 @@ class VispyCanvas:
             )
         else:
             vispy_overlay.node.parent = parent
-            if isinstance(overlay, CanvasOverlay):
+            if isinstance(vispy_overlay, VispyCanvasOverlay):
                 vispy_overlay._on_box_change()
         return vispy_overlay
 
@@ -982,8 +983,8 @@ class VispyCanvas:
             if isinstance(overlay, CanvasOverlay):
                 self._disconnect_canvas_overlay_events(overlay)
             vispy_overlays = self._viewer_overlay_to_visual.pop(overlay)
-            for old_vispy_overlay in vispy_overlays:
-                old_vispy_overlay.close()
+            for vispy_overlay in vispy_overlays:
+                vispy_overlay.close()
 
         # go through all overlays and ensure there are the exact amount of
         # corresponding visuals depending on number of views to display
@@ -1235,7 +1236,9 @@ class VispyCanvas:
             yield from reversed(overlays_by_tiling_order['reversed'])
             yield from overlays_by_tiling_order['direct']
 
-    def _update_overlay_canvas_positions(self, event=None):
+    def _update_overlay_canvas_positions(
+        self, event: Event | None = None
+    ) -> None:
         x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
         x_offset_total = {}
         y_offset_total = {}
@@ -1296,7 +1299,7 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _update_font_sizes(self, *, font_size: float | None = None):
+    def _update_font_sizes(self, *, font_size: int | None = None) -> None:
         if font_size is None:
             font_size = get_settings().appearance.font_size
         for vispy_overlays in self._viewer_overlay_to_visual.values():
@@ -1420,7 +1423,7 @@ class VispyCanvas:
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.node.parent = self.view.scene
 
-    def _setup_layer_views_in_grid(self):
+    def _setup_layer_views_in_grid(self) -> None:
         for (
             row,
             col,
@@ -1435,7 +1438,7 @@ class VispyCanvas:
                 vispy_layer.node.parent = view.scene
 
     @property
-    def _current_viewbox_size(self) -> tuple[int, int]:
+    def _current_viewbox_size(self) -> tuple[float, float]:
         """Get the actual size of the viewboxes in pixels.
 
         If grid is not enabled, this returns the size of the canvas.
@@ -1444,7 +1447,7 @@ class VispyCanvas:
 
         Returns
         -------
-        tuple[int, int]
+        tuple[float, float]
             The size of the viewbox(es) in pixels (width, height)
         """
         if self.viewer.canvas.grid.enabled and self.grid_views:
