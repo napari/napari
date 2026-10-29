@@ -106,7 +106,7 @@ for idx, name in zip(
         contrast_limits=[
             channel_metadata['contrast_min'][channel_metadata['channel_index'] == idx].values[0],
             channel_metadata['contrast_max'][channel_metadata['channel_index'] == idx].values[0],
-            ],
+        ],
         blending='additive',
         colormap=channel_metadata['colorhex'][channel_metadata['channel_index'] == idx].values[0],
     )
