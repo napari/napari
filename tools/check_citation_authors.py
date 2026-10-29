@@ -36,6 +36,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CITATION_CFF = REPO_ROOT / 'CITATION.cff'
+DEFAULT_REPO = 'napari/napari'
 CORE_TEAM_COMMENT = 'Current and emeritus core team members.'
 COMMUNITY_COMMENT = 'Community contributors, alphabetized by family-names.'
 KNOWN_BOT_LOGINS = {
@@ -364,22 +365,14 @@ def format_issue_body(logins: list[str], repos: list[str]) -> str:
 def audit_missing(
     path: Path, repos: list[str], org: str | None, issue_body: bool
 ) -> int:
-    if org:
-        org_repos = fetch_org_repos(org)
-        # Deduplicate while preserving order: org repos first, then extras
-        seen_repos: set[str] = set()
-        combined: list[str] = []
-        for r in org_repos + repos:
-            if r not in seen_repos:
-                seen_repos.add(r)
-                combined.append(r)
-        repos = combined
-        print(
-            f'Scanning {len(repos)} repos from org "{org}"...',
-            file=sys.stderr,
-        )
-
     try:
+        if org:
+            # Deduplicate while preserving order: org repos first, then extras
+            repos = list(dict.fromkeys(fetch_org_repos(org) + repos))
+            print(
+                f'Scanning {len(repos)} repos from org "{org}"...',
+                file=sys.stderr,
+            )
         logins = missing_contributors(path, repos)
     except RuntimeError as error:
         print(str(error), file=sys.stderr)
@@ -423,8 +416,12 @@ def build_parser() -> argparse.ArgumentParser:
         '--repo',
         action='append',
         dest='repos',
-        default=['napari/napari'],
-        help='GitHub repository in owner/name format (may be given multiple times).',
+        default=[],
+        help=(
+            'GitHub repository in owner/name format; may be given multiple '
+            f'times. Defaults to {DEFAULT_REPO} when neither --repo nor '
+            '--org is given.'
+        ),
     )
     audit_parser.add_argument(
         '--org',
@@ -451,8 +448,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == 'write-order':
         return write_order(args.citation_path)
     if args.command == 'audit-missing':
+        repos = args.repos or ([] if args.org else [DEFAULT_REPO])
         return audit_missing(
-            args.citation_path, args.repos, args.org, args.issue_body
+            args.citation_path, repos, args.org, args.issue_body
         )
 
     parser.error(f'Unsupported command: {args.command}')
