@@ -30,6 +30,7 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer, Points
 from napari.settings import get_settings
+from napari.utils.camera_orientations import AxesOrientation3D
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 
@@ -570,6 +571,41 @@ def test_canvas_to_world_grid_spacing(
         np.testing.assert_allclose(
             viewer_model.canvas_to_world(center_px, (0, col)), expected
         )
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize(
+    ('orientation', 'orientation_signs'),
+    [
+        (('towards', 'down', 'right'), (1, 1)),
+        (('towards', 'up', 'right'), (-1, 1)),
+        (('away', 'down', 'left'), (1, -1)),
+        (('towards', 'up', 'left'), (-1, -1)),
+    ],
+)
+def test_canvas_to_world_camera_orientation(
+    viewer_model: ViewerModel,
+    ndisplay: typing.Literal[2, 3],
+    orientation: AxesOrientation3D,
+    orientation_signs: tuple[int, int],
+) -> None:
+    """Camera orientation flips should be reflected in canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = ndisplay
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (5, 6, 7)
+    camera.zoom = 2
+    camera.orientation = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    offset_px = np.array([100, 200])
+    world_delta = viewer_model.canvas_to_world(
+        center_px + offset_px
+    ) - viewer_model.canvas_to_world(center_px)
+
+    expected = offset_px / camera.zoom * orientation_signs
+    np.testing.assert_allclose(world_delta[-2:], expected)
 
 
 def test_canvas_to_world_2d_data_with_3d_viewer(
