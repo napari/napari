@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from napari.utils.color import ColorValue
 
 
-class GridLines3D(Node):
+class CoordinateGrid(Node):
     def __init__(
         self,
         font_info: FontInfo,
@@ -69,7 +69,7 @@ class GridLines3D(Node):
     def _set_clipper(self, node: Node, clipper: Clipper | None) -> None:
         """Propagate the viewbox clipper to all child visuals.
 
-        GridLines3D is just a Node (not VisualNode), so it would otherwise
+        This is just a Node (not VisualNode), so it would otherwise
         ignore the clipper and draw outside its viewbox (like ColorBar).
 
         Unlike ColorBar, which is a child of the ViewBox, this is a child of
