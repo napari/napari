@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import floor, log
 from typing import TYPE_CHECKING, Any
 
+from vispy.color import Color
 from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node
 
@@ -37,33 +38,33 @@ class CoordinateGrid(Node):
         self.axis_labels: list[Text] = [
             Text(font_info=font_info) for _ in range(3)
         ]
-        self.color: ColorValue | str = 'white'
-        self.scale = (1, 1, 1)
+        self._color: ColorValue | str = 'white'
         self._opacity = 1.0
 
+        # grids are only created once and then updated in place: creating
+        # visuals means building new shader programs, which is slow
         self.grids: list[GridLines] = []
-        self.reset_grids()
-
-    def reset_grids(self) -> None:
-        # color and scale are not exposed on the visual, so this is how we set them...
-        for grid in self.grids:
-            grid.parent = None
-        self.grids.clear()
-
         for axis in range(3):
-            grid = GridLines(
-                parent=self,
-                border_width=0,
-                color=self.color,
-                scale=self.scale,
-            )
+            grid = GridLines(parent=self, border_width=0, color=self._color)
             grid.transform = MatrixTransform()
-            grid.opacity = self._opacity
             self.grids.append(grid)
             self.axis_labels[axis].transform = STTransform()
             self.axis_labels[axis].parent = grid
             self.tick_labels[axis].transform = STTransform()
             self.tick_labels[axis].parent = grid
+
+    @property
+    def color(self) -> ColorValue | str:
+        return self._color
+
+    @color.setter
+    def color(self, color: ColorValue | str) -> None:
+        self._color = color
+        # GridLines only takes color on init, but it's stored as a uniform
+        # in its shader function, so it can be updated without a rebuild
+        for grid in self.grids:
+            grid._grid_color_fn['color'] = Color(color).rgba
+            grid.update()
 
     def _set_clipper(self, node: Node, clipper: Clipper | None) -> None:
         """Propagate the viewbox clipper to all child visuals.

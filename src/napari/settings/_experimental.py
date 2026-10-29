@@ -104,6 +104,13 @@ class ExperimentalSettings(EventedSettings):
         '"triangulation backend" instead.',
     )
 
+    autoswap_buffers: bool = Field(
+        default=False,
+        title='Unused option. Use advanced.autoswap_buffers instead.',
+        description='This option was removed in napari 0.10.0. Use \n'
+        '"advanced.autoswap_buffers" instead.',
+    )
+
     command_palette_fuzzy_search: PaletteFuzzySearch = Field(
         default=PaletteFuzzySearch.enabled_if_available,
         title='Enable fuzzy search in the command palette',
@@ -136,7 +143,11 @@ class ExperimentalSettings(EventedSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ('schema_version', 'compiled_triangulation')
+        preferences_exclude = (
+            'schema_version',
+            'compiled_triangulation',
+            'autoswap_buffers',
+        )
 
 
 def _update_triangulation_backend(event: Event) -> None:
