@@ -1,9 +1,11 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Points
 from napari.layers._tests._utils import compare_dicts
@@ -33,6 +35,10 @@ class Event:
     view_direction: list[float] | None = None
     up_direction: list[float] | None = None
     dims_displayed: list[int] = field(default_factory=lambda: [0, 1])
+    dims_point: list[float] = field(default_factory=lambda: [0, 0])
+    viewbox: tuple[int, int] = (0, 0)
+    viewer: object = None
+    world_to_canvas: Callable = lambda pos, viewbox: np.asarray(pos)[..., -2:]
 
 
 def read_only_event(*args, **kwargs):
@@ -499,24 +505,49 @@ def test_selecting_all_points_with_drag_2d(create_known_points_layer_2d):
     box_drag_end = (0, 0)
 
     # Simulate click
-    event = read_only_event(type='mouse_press', position=box_drag_begin)
+    event = read_only_event(
+        type='mouse_press',
+        position=box_drag_begin,
+        pos=np.array(box_drag_begin[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=box_drag_begin
+        type='mouse_move',
+        is_dragging=True,
+        position=box_drag_begin,
+        pos=np.array(box_drag_begin[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=box_drag_end
+        type='mouse_move',
+        is_dragging=True,
+        position=box_drag_end,
+        pos=np.array(box_drag_end[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_event(
-        type='mouse_release', is_dragging=True, position=box_drag_end
+        type='mouse_release',
+        is_dragging=True,
+        position=box_drag_end,
+        pos=np.array(box_drag_end[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -531,24 +562,49 @@ def test_selecting_no_points_with_drag_2d(create_known_points_layer_2d):
     layer.mode = 'select'
 
     # Simulate click
-    event = read_only_event(type='mouse_press', position=known_non_point)
+    event = read_only_event(
+        type='mouse_press',
+        position=known_non_point,
+        pos=np.array(known_non_point[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=known_non_point
+        type='mouse_move',
+        is_dragging=True,
+        position=known_non_point,
+        pos=np.array(known_non_point[::-1]),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate drag end
     event = read_only_event(
-        type='mouse_move', is_dragging=True, position=(50, 60)
+        type='mouse_move',
+        is_dragging=True,
+        position=(50, 60),
+        pos=np.array((60, 50)),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = read_only_event(
-        type='mouse_release', is_dragging=True, position=(50, 60)
+        type='mouse_release',
+        is_dragging=True,
+        position=(50, 60),
+        pos=np.array((60, 50)),
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -566,9 +622,12 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
     event = read_only_event(
         type='mouse_press',
         position=(5, 0, 0),
+        pos=np.array((0, 0)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 0, 0],
+        viewbox=(0, 0),
     )
     mouse_press_callbacks(layer, event)
 
@@ -577,9 +636,12 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_move',
         is_dragging=True,
         position=(5, 0, 0),
+        pos=np.array((0, 0)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
@@ -588,9 +650,12 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_move',
         is_dragging=True,
         position=(5, 6, 6),
+        pos=np.array((6, 6)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
@@ -599,9 +664,12 @@ def test_selecting_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_release',
         is_dragging=True,
         position=(5, 6, 6),
+        pos=np.array((6, 6)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 0, 0],
+        viewbox=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
@@ -619,9 +687,12 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
     event = read_only_event(
         type='mouse_press',
         position=(5, 15, 15),
+        pos=np.array((15, 15)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 15, 15],
+        viewbox=(0, 0),
     )
     mouse_press_callbacks(layer, event)
 
@@ -630,9 +701,12 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_move',
         is_dragging=True,
         position=(5, 15, 15),
+        pos=np.array((15, 15)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 15, 15],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
@@ -641,9 +715,12 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_move',
         is_dragging=True,
         position=(5, 20, 20),
+        pos=np.array((20, 20)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 20, 20],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
@@ -652,14 +729,59 @@ def test_selecting_no_points_with_drag_3d(create_known_points_layer_3d):
         type='mouse_release',
         is_dragging=True,
         position=(5, 20, 20),
+        pos=np.array((20, 20)),
         view_direction=[1, 0, 0],
         up_direction=[0, 1, 0],
         dims_displayed=[0, 1, 2],
+        dims_point=[5, 20, 20],
+        viewbox=(0, 0),
     )
     mouse_release_callbacks(layer, event)
 
     # Check all points selected as drag box contains them
     assert len(layer.selected_data) == 0
+
+
+def test_selecting_points_with_drag_3d_perspective():
+    """Perspective changes the projected size, which drives 3D selection."""
+    viewer = ViewerModel(ndisplay=3)
+    viewer.canvas.size = (200, 200)
+    layer = viewer.add_points(
+        np.array([[0.0, 10.0, 10.0], [100.0, 10.0, 10.0]]), size=2
+    )
+    viewer.scene.camera.center = (0.0, 0.0, 0.0)
+    viewer.scene.camera.angles = (0.0, 0.0, 0.0)
+    viewer.scene.camera.zoom = 1.0
+    viewer.scene.camera.perspective = 30.0
+    layer.mode = 'select'
+
+    def event_at(canvas_position, type_, is_dragging=False):
+        return read_only_event(
+            type=type_,
+            is_dragging=is_dragging,
+            position=viewer.canvas_to_world(canvas_position),
+            pos=np.array(canvas_position[::-1]),
+            view_direction=viewer.scene.camera.view_direction,
+            up_direction=viewer.scene.camera.up_direction,
+            dims_displayed=list(viewer.dims.displayed),
+            dims_point=list(viewer.dims.point),
+            viewbox=(0, 0),
+        )
+
+    mouse_press_callbacks(layer, event_at((108, 108), 'mouse_press'))
+    mouse_move_callbacks(
+        layer, event_at((108, 108), 'mouse_move', is_dragging=True)
+    )
+    mouse_move_callbacks(
+        layer, event_at((112, 112), 'mouse_move', is_dragging=True)
+    )
+    mouse_release_callbacks(
+        layer, event_at((112, 112), 'mouse_release', is_dragging=True)
+    )
+
+    # The near point's projected box overlaps the rectangle; the far point
+    # projects past it because of perspective.
+    assert layer.selected_data == {0}
 
 
 @pytest.mark.parametrize(
@@ -704,10 +826,15 @@ def test_drag_start_selection(
 
     # Simulate click
     event = read_only_event(
-        type='mouse_press', position=initial_position, modifiers=modifier
+        type='mouse_press',
+        position=initial_position,
+        pos=np.array(initial_position[::-1]),
+        modifiers=modifier,
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_press_callbacks(layer, event)
-
     if modifier:
         if not on_point:
             assert layer.selected_data == pre_selection
@@ -745,7 +872,11 @@ def test_drag_start_selection(
         type='mouse_move',
         is_dragging=True,
         position=offset_position,
+        pos=np.array(offset_position[::-1]),
         modifiers=modifier,
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 
@@ -782,7 +913,11 @@ def test_drag_start_selection(
         type='mouse_move',
         is_dragging=True,
         position=offset_position,
+        pos=np.array(offset_position[::-1]),
         modifiers=modifier,
+        dims_displayed=[0, 1],
+        dims_point=[0, 0],
+        viewbox=(0, 0),
     )
     mouse_move_callbacks(layer, event)
 

@@ -105,37 +105,57 @@ def drag_to_zoom(viewer, event):
         return
 
     # on mouse press
-    viewer.canvas.overlays._zoom_box.visible = True
+    zoom_rect = viewer.canvas.overlays._zoom_rect
+    zoom_rect.visible = True
     press_pos = event.pos[::-1]
-    press_position = event.position
     move_pos = press_pos
-    move_position = press_position
-    viewer.canvas.overlays._zoom_box.position = (press_pos, press_pos)
+    zoom_rect.corners_canvas = (press_pos, press_pos)
     yield
     event.handled = True
 
     # on mouse move
     while event.type == 'mouse_move':
         if 'Alt' not in event.modifiers:
-            viewer.canvas.overlays._zoom_box.visible = False
+            zoom_rect.visible = False
             yield
             return
 
         move_pos = event.pos[::-1]
-        viewer.canvas.overlays._zoom_box.position = (press_pos, move_pos)
-        move_position = event.position
+        zoom_rect.corners_canvas = (press_pos, move_pos)
         yield
 
     # on mouse release
-    viewer.canvas.overlays._zoom_box.visible = False
+    zoom_rect.visible = False
 
     # only trigger zoom if the box is larger than a MIN_ZOOMBOX_SIZE in pixels
     distance = np.abs(np.array(press_pos) - np.array(move_pos))
     if distance.min() > MIN_ZOOMBOX_SIZE:
-        # Slice to the last two coordinates (displayed axes) for cases where
-        # ndim>2 and ndisplay=2
-        viewer.canvas.overlays._zoom_box.zoom_area = (
-            press_position[-2:],
-            move_position[-2:],
+        box_size_canvas = np.abs(np.diff(zoom_rect.corners_canvas, axis=0))
+        ratio = np.min(
+            viewer.canvas.viewbox_size(viewer.layers) / box_size_canvas
         )
+        viewbox = event.viewbox
+        press_world = viewer.canvas_to_world(tuple(press_pos), viewbox)
+        move_world = viewer.canvas_to_world(tuple(move_pos), viewbox)
+        box_center_world = np.mean([press_world, move_world], axis=0)
+        camera_center = box_center_world[list(viewer.dims.displayed)]
+
+        viewer.camera.zoom = viewer.camera.zoom * np.min(ratio)
+        viewer.camera.center = camera_center
+
     yield
+
+
+def update_status_from_cursor(viewer, event):
+    if not hasattr(viewer, 'window') or not hasattr(
+        viewer.window, '_qt_window'
+    ):
+        return
+
+    qt_window = viewer.window._qt_window
+    qt_window.status_thread.trigger_status_update(
+        world_position=event.position,
+        view_direction=event.view_direction,
+        canvas_position=event.pos[::-1],
+        viewbox=event.viewbox,
+    )

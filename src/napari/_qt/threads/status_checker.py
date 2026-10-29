@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from threading import Event
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from weakref import ref
 
 from qtpy.QtCore import QObject, QThread, Signal
@@ -12,7 +12,7 @@ from qtpy.QtCore import QObject, QThread, Signal
 from napari.utils.notifications import Notification, notification_manager
 
 if TYPE_CHECKING:
-    from napari.components import ViewerModel
+    from napari.viewer import Viewer
 
 
 class StatusChecker(QThread):
@@ -54,23 +54,34 @@ class StatusChecker(QThread):
     # viewer and the status checker thread for cursor events and related status
     status_and_tooltip_changed = Signal(object)
 
-    def __init__(
-        self, viewer: ViewerModel, parent: QObject | None = None
-    ) -> None:
+    def __init__(self, viewer: Viewer, parent: QObject | None = None) -> None:
         super().__init__(parent=parent)
         self.viewer_ref = ref(viewer)
         self._need_status_update = Event()
         self._need_status_update.clear()
         self._terminate = False
         self._allow_start = True
+        self._last_args: tuple[Any, Any] | None = None
         self.setObjectName('StatusChecker')
 
-    def trigger_status_update(self) -> None:
+    def trigger_status_update(self, *args: Any, **kwargs: Any) -> None:
         """Trigger a status update computation.
 
         When the cursor moves, the viewer will call this to instruct
         the status checker to update the viewer with the present status.
         """
+        self._last_args = (args, kwargs)
+        self.refresh_status()
+
+    def refresh_status(self) -> None:
+        """Refresh status based on new active layer.
+
+        Separate from trigger_status_update so it can be called with no args
+        as part of a callback.
+        """
+        # just rerun with the last arguments, which
+        # happens when layer selection changes and we want to use the last mouse
+        # event to update the status bar
         self._need_status_update.set()
 
     def close_terminate(self) -> None:
@@ -120,12 +131,13 @@ class StatusChecker(QThread):
         emit the signal that the status has changed.
         """
         viewer = self.viewer_ref()
-        if viewer is None:
+        if viewer is None or self._last_args is None:
             return
 
         try:
             # Calculate the status change from cursor's movement
-            res = viewer._calc_status_from_cursor()
+            args, kwargs = self._last_args
+            res = viewer._calc_status_from_cursor(*args, **kwargs)
         except Exception as e:  # pragma: no cover # noqa: BLE001
             # Our codebase is not threadsafe. It is possible that an
             # ViewerModel or Layer state is changed while we are trying to

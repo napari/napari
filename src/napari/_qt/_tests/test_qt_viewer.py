@@ -12,8 +12,6 @@ import numpy.testing as npt
 import pytest
 from imageio import imread
 from pytestqt.qtbot import QtBot
-from qtpy.QtCore import QEvent, QPointF
-from qtpy.QtGui import QEnterEvent
 from qtpy.QtWidgets import QApplication, QMessageBox
 from scipy import ndimage as ndi
 from vispy.app import MouseEvent
@@ -499,24 +497,6 @@ def test_process_mouse_event(
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
 
 
-def test_process_mouse_event_over_empty_grid_viewbox(
-    qt_viewer: QtViewer, viewer_model: ViewerModel
-) -> None:
-    viewer_model.add_image(np.zeros((20, 20)))
-    viewer_model.canvas.grid.enabled = True
-    # any position outside the populated viewboxes resolves to an empty one
-    pos = np.array([-1.0, -1.0])
-    assert qt_viewer.canvas._get_viewbox_at(pos) == (None, None)
-
-    qt_viewer.canvas._process_mouse_event(
-        mouse_press_callbacks, MouseEvent(type='mouse_press', pos=pos)
-    )
-
-    assert viewer_model.cursor.viewbox is None
-    viewer_model.mouse_over_canvas = True
-    assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
-
-
 def test_process_mouse_event_2d_layer_3d_viewer(
     qt_viewer: QtViewer, viewer_model: ViewerModel
 ) -> None:
@@ -744,28 +724,6 @@ def test_qt_viewer_canvas_is_nested_in_main_widget(
     assert qt_viewer.canvas.native.parentWidget() is main_widget
     assert main_widget.layout().itemAt(0).widget() is qt_viewer.canvas.native
     assert main_widget.layout().itemAt(1).widget() is qt_viewer.dims
-
-
-def test_qt_viewer_canvas_hover_state_comes_from_canvas(
-    qt_viewer: QtViewer, viewer_model: ViewerModel
-) -> None:
-    viewer_model.mouse_over_canvas = False
-    viewer_model.status = ''
-
-    canvas = qt_viewer.canvas.native
-    canvas.enterEvent(
-        QEnterEvent(
-            QPointF(10, 10),
-            QPointF(10, 10),
-            QPointF(10, 10),
-        )
-    )
-    assert viewer_model.mouse_over_canvas
-    assert viewer_model.status == 'Ready'
-
-    canvas.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not viewer_model.mouse_over_canvas
-    assert viewer_model.status == ''
 
 
 def test_qt_viewer_accepts_custom_welcome_tips(
@@ -1348,7 +1306,7 @@ def test_viewer_drag_to_zoom(
 
     zoom_area_mock = mock.Mock(side_effect=zoom_callback)
 
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1356,7 +1314,7 @@ def test_viewer_drag_to_zoom(
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1365,7 +1323,7 @@ def test_viewer_drag_to_zoom(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1379,10 +1337,10 @@ def test_viewer_drag_to_zoom(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model.canvas.overlays._zoom_box.position == (
+    assert viewer_model.canvas.overlays._zoom_rect.position == (
         (0, 0),
         (100, 100),
     ), 'Zoom box canvas positions should match the drag coordinates'
@@ -1392,7 +1350,7 @@ def test_viewer_drag_to_zoom(
         pos=(100, 100), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden after release'
     )
 
@@ -1408,7 +1366,7 @@ def test_viewer_drag_to_zoom_with_cancel(
 
     zoom_area_mock = mock.Mock()
 
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1416,7 +1374,7 @@ def test_viewer_drag_to_zoom_with_cancel(
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1425,7 +1383,7 @@ def test_viewer_drag_to_zoom_with_cancel(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1439,10 +1397,10 @@ def test_viewer_drag_to_zoom_with_cancel(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model.canvas.overlays._zoom_box.position == (
+    assert viewer_model.canvas.overlays._zoom_rect.position == (
         (0, 0),
         (0, 0),
     ), 'Zoom box canvas positions should match the drag coordinates'
@@ -1462,7 +1420,7 @@ def test_viewer_drag_to_zoom_3d_data(
     canvas = qt_viewer.canvas
 
     zoom_area_mock = mock.Mock()
-    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+    viewer_model.canvas.overlays._zoom_rect.events.zoom_area.connect(
         zoom_area_mock
     )
 
@@ -1477,7 +1435,7 @@ def test_viewer_drag_to_zoom_3d_data(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model.canvas.overlays._zoom_box.visible is True
+    assert viewer_model.canvas.overlays._zoom_rect.visible is True
 
     canvas._scene_canvas.events.mouse_move(
         pos=(100, 100),
@@ -1495,7 +1453,7 @@ def test_viewer_drag_to_zoom_3d_data(
     )
     qtbot.wait(10)
 
-    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_rect.visible is False, (
         'Zoom box should be hidden after release'
     )
     # zoom_area should have been set with 2-tuples (last 2 world coords)

@@ -15,12 +15,10 @@ class HighlightSettings(EventedModel):
         ge=1,
         le=10,
     )
-    highlight_color: list[float] = (
-        Field(  # TODO: fix type annotation to tuple[float, float, float, float],
-            [0.0, 0.6, 1.0, 1.0],
-            title='Highlight color',
-            description='Select the highlight color when hovering over shapes/points.',
-        )
+    highlight_color: tuple[float, float, float, float] = Field(
+        (0.0, 0.6, 1.0, 1.0),
+        title='Highlight color',
+        description='Select the highlight color when hovering over shapes/points.',
     )
 
 
