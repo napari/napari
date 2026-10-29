@@ -1022,14 +1022,11 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         # account for orientation flip. Only x and y matter, not depth, because
         # in 3D we poject onto the origin camera plane.
+        vertical, horizontal = camera.orientation2d
         flips = np.array(
             [
-                1 if ori == default else -1
-                for ori, default in zip(
-                    camera.orientation[1:],
-                    DEFAULT_ORIENTATION_TYPED[1:],
-                    strict=True,
-                )
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
             ]
         )
         canvas_offset = (np.array(canvas_position) - viewbox_center) * flips
