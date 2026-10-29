@@ -172,9 +172,20 @@ class Camera(EventedModel):
         )
 
     def calculate_nd_view_direction(
-        self, ndim: int, dims_displayed: tuple[int, ...]
+        self,
+        ndim: int,
+        dims_displayed: tuple[int, ...],
+        canvas_position: tuple[float, float] | None = None,
+        canvas_size: tuple[int, int] | None = None,
     ) -> npt.NDArray[np.float64] | None:
         """Calculate the nD view direction vector of the camera.
+
+        If canvas position and size are given, returns the view direction at
+        the pixel on the canvas: this will account for perspective>0 and differ
+        from the normal view direction through the camera center.
+
+        Note that canvas position and size should actually be viewbox position and
+        size, in order to get proper results when in grid mode.
 
         Parameters
         ----------
@@ -182,6 +193,10 @@ class Camera(EventedModel):
             Number of dimensions in which to embed the 3D view vector.
         dims_displayed : Tuple[int]
             Dimensions in which to embed the 3D view vector.
+        canvas_position : tuple of float, optional
+            Canvas position in (y, x). If None, the center of the canvas.
+        canvas_size : tuple of int, optional
+            Size of the canvas in (y, x). Used only if canvas_position is given.
 
         Returns
         -------
@@ -191,8 +206,57 @@ class Camera(EventedModel):
         if len(dims_displayed) != 3:
             return None
         view_direction_nd = np.zeros(ndim)
-        view_direction_nd[list(dims_displayed)] = self.view_direction
+        if (
+            canvas_position is not None
+            and canvas_size is not None
+            and self.perspective > 0
+        ):
+            view_direction = self._view_direction_at(
+                canvas_position, canvas_size
+            )
+        else:
+            view_direction = np.asarray(self.view_direction)
+        view_direction_nd[list(dims_displayed)] = view_direction
         return view_direction_nd
+
+    def _view_direction_at(
+        self,
+        canvas_position: tuple[float, float],
+        canvas_size: tuple[int, int],
+    ) -> npt.NDArray[np.float64]:
+        """Calculate the view direction of the ray from the eye through a canvas position.
+
+        Parameters
+        ----------
+        canvas_position : tuple of float, optional
+            Canvas position in (y, x). If None, the center of the canvas.
+        canvas_size : tuple of int, optional
+            Size of the canvas in (y, x). Used only if canvas_position is given.
+
+        Returns
+        -------
+        view_direction : np.ndarray
+            Normalized 3D view direction vector in scene coordinates
+        """
+        y, x = canvas_position
+        h, w = canvas_size
+
+        view_direction = np.asarray(self.view_direction)
+        up_direction = np.asarray(self.up_direction)
+        right_direction = np.cross(view_direction, up_direction)
+        if self.handedness == Handedness.LEFT:
+            right_direction = -right_direction
+
+        # distance of the eye from the center of the view
+        dist = h / (2 * self.zoom * np.tan(np.radians(self.perspective) / 2))
+
+        # offset of the canvas position from the canvas center
+        dx = (x - w / 2) / self.zoom
+        dy = (y - h / 2) / self.zoom
+
+        # ray direction from the eye through the canvas position
+        ray = dist * view_direction + dx * right_direction - dy * up_direction
+        return ray / np.linalg.norm(ray)
 
     def calculate_nd_up_direction(
         self, ndim: int, dims_displayed: tuple[int, ...]
