@@ -31,7 +31,7 @@ st_url = "doi:10.5281/zenodo.15852284/masks_pred.npz"
 st_path = pooch.retrieve(
     url=st_url,
     fname="masks_pred.npz",
-    known_hash=None,
+    known_hash='sha256:60b89eb6ba25728fd7d59c5a8272ee35471a0d438dd3aceb3b8564849a59d133',
     path=pooch.os_cache("napari cell tracking example")
 )
 
@@ -40,7 +40,7 @@ tif_url = "doi:10.5281/zenodo.17643282/01(1).zip"
 tif_file = pooch.retrieve(
     url=tif_url,
     fname="01(1).zip",
-    known_hash=None,
+    known_hash='sha256:126a99a7a86175c5c64cdc524ab94e17fbf762497a718973db751f83b1962422',
     path=pooch.os_cache("napari_cell_tracking_example"),
     processor=pooch.Unzip(),
 )
