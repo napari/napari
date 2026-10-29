@@ -208,6 +208,8 @@ def build_author_block(author: dict) -> str:
         allow_unicode=True,
         sort_keys=False,
         default_flow_style=False,
+        # never wrap long values (e.g. affiliations) onto continuation lines
+        width=sys.maxsize,
     )
 
 
