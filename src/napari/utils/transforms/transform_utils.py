@@ -1,12 +1,17 @@
 from collections.abc import Sequence
+from typing import Any, Literal, TypeAlias, overload
 
 import numpy as np
 import numpy.typing as npt
 
+_VectorF64: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
+_MatrixF64: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+_Matrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[Any]]
+
 
 def compose_linear_matrix(
     rotate: npt.ArrayLike, scale: npt.ArrayLike, shear: npt.ArrayLike
-) -> npt.NDArray:
+) -> _MatrixF64:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
@@ -21,7 +26,7 @@ def compose_linear_matrix(
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+        An empty vector implies no scaling.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
@@ -75,7 +80,7 @@ def infer_ndim(
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+        An empty vector implies no scaling.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
@@ -99,7 +104,7 @@ def infer_ndim(
 
 def translate_to_vector(
     translate: Sequence[float] | npt.NDArray | None, *, ndim: int
-) -> npt.NDArray:
+) -> _VectorF64:
     """Convert a translate input into an n-dimensional transform component.
 
     Parameters
@@ -125,7 +130,7 @@ def translate_to_vector(
 
 def scale_to_vector(
     scale: Sequence[float] | npt.NDArray | None, *, ndim: int
-) -> npt.NDArray:
+) -> _VectorF64:
     """Convert a scale input into an n-dimensional transform component.
 
     Parameters
@@ -149,9 +154,7 @@ def scale_to_vector(
     return scale_arr
 
 
-def rotate_to_matrix(
-    rotate: npt.ArrayLike | None, *, ndim: int
-) -> npt.NDArray:
+def rotate_to_matrix(rotate: npt.ArrayLike | None, *, ndim: int) -> _MatrixF64:
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
@@ -178,7 +181,7 @@ def rotate_to_matrix(
     return full_rotate_mat
 
 
-def _make_rotate_mat(rotate: npt.ArrayLike) -> npt.NDArray:
+def _make_rotate_mat(rotate: npt.ArrayLike) -> _Matrix:
     rotate_arr = np.array(rotate)
     if np.isscalar(rotate):
         return _make_2d_rotation(rotate_arr.item())
@@ -187,7 +190,7 @@ def _make_rotate_mat(rotate: npt.ArrayLike) -> npt.NDArray:
     return rotate_arr
 
 
-def _make_2d_rotation(theta_degrees: float) -> npt.NDArray:
+def _make_2d_rotation(theta_degrees: float) -> _MatrixF64:
     """Makes a 2D rotation matrix from an angle in degrees."""
     cos_theta, sin_theta = _cos_sin_degrees(theta_degrees)
     return np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
@@ -195,7 +198,7 @@ def _make_2d_rotation(theta_degrees: float) -> npt.NDArray:
 
 def _make_3d_rotation(
     alpha_degrees: float, beta_degrees: float, gamma_degrees: float
-) -> npt.NDArray:
+) -> _MatrixF64:
     """Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
 
     For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
@@ -235,7 +238,7 @@ def _cos_sin_degrees(angle_degrees: float) -> tuple[float, float]:
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def shear_to_matrix(shear: npt.ArrayLike | None, *, ndim: int) -> npt.NDArray:
+def shear_to_matrix(shear: npt.ArrayLike | None, *, ndim: int) -> _MatrixF64:
     """Convert a shear input into an n-dimensional transform component.
 
     Parameters
@@ -259,7 +262,7 @@ def shear_to_matrix(shear: npt.ArrayLike | None, *, ndim: int) -> npt.NDArray:
     return full_shear_mat
 
 
-def _make_shear_mat(shear: npt.ArrayLike) -> npt.NDArray:
+def _make_shear_mat(shear: npt.ArrayLike) -> _Matrix:
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
@@ -279,7 +282,7 @@ def _make_shear_mat(shear: npt.ArrayLike) -> npt.NDArray:
 
 def expand_upper_triangular(
     vector: Sequence[float] | npt.NDArray,
-) -> npt.NDArray:
+) -> _MatrixF64:
     """Expand a vector into an upper triangular matrix.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -308,7 +311,7 @@ def expand_upper_triangular(
     return upper_tri
 
 
-def embed_in_identity_matrix(matrix: npt.NDArray, ndim: int) -> npt.NDArray:
+def embed_in_identity_matrix(matrix: npt.NDArray, ndim: int) -> _Matrix:
     """Embed an MxM matrix bottom right of larger NxN identity matrix.
 
     Parameters
@@ -334,9 +337,27 @@ def embed_in_identity_matrix(matrix: npt.NDArray, ndim: int) -> npt.NDArray:
     return full_matrix
 
 
+@overload
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: Literal[True] = ...
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64]: ...
+
+
+@overload
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: Literal[False]
+) -> tuple[_MatrixF64, _VectorF64, _MatrixF64]: ...
+
+
+@overload
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: bool
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64 | _MatrixF64]: ...
+
+
 def decompose_linear_matrix(
     matrix: npt.NDArray, upper_triangular: bool = True
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64 | _MatrixF64]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -353,17 +374,10 @@ def decompose_linear_matrix(
 
     Returns
     -------
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    scale : 1-D array
-        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
-        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
-        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+    rotate : np.array shape (N, N)
+        The rotation matrix.
+    scale : np.array shape (N,)
+        The scale factor of each axis.
     shear : 1-D array or n-D array
         1-D array of upper triangular values or an n-D matrix if lower
         triangular.
@@ -399,7 +413,7 @@ def decompose_linear_matrix(
 
 def shear_matrix_from_angle(
     angle: float, ndim: int = 3, axes: tuple[int, int] = (-1, 0)
-) -> npt.NDArray:
+) -> _MatrixF64:
     """Create a shear matrix from an angle.
 
     Parameters
@@ -427,7 +441,7 @@ def is_matrix_upper_triangular(matrix: npt.ArrayLike) -> bool:
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -443,7 +457,7 @@ def is_matrix_lower_triangular(matrix: npt.ArrayLike) -> bool:
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -459,7 +473,7 @@ def is_matrix_triangular(matrix: npt.ArrayLike) -> bool:
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -493,4 +507,4 @@ def is_diagonal(matrix: npt.NDArray, tol: float = 1e-8) -> bool:
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
 
-    return np.max(np.abs(non_diag)) <= tol
+    return bool(np.max(np.abs(non_diag)) <= tol)
