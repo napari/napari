@@ -2,18 +2,24 @@ on:
   push:
     paths:
       - CITATION.cff
+      - tools/check_citation_authors.py
+      - .github/workflows/citation_cff_validate.yml
   pull_request:
     paths:
       - CITATION.cff
+      - tools/check_citation_authors.py
+      - .github/workflows/citation_cff_validate.yml
   workflow_dispatch:
 
 name: CITATION.cff
+
+permissions:
+  contents: read
+
 jobs:
   Validate-CITATION-cff:
     runs-on: ubuntu-latest
     name: Validate CITATION.cff
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
@@ -21,5 +27,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate CITATION.cff
-        uses: dieghernan/cff-validator@d8f85828214016ce6976e740b6e0504c0fdc4dbb # v5.1.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Check CITATION.cff author ordering
+        run: uv run tools/check_citation_authors.py check-order
+
+      - name: Validate CITATION.cff schema
+        run: uvx cffconvert@2.0.0 --validate

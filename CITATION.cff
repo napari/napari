@@ -5,6 +5,7 @@ identifiers:
 - type: doi
   value: 10.5281/zenodo.3555620
 authors:
+# Current and emeritus core team members.
 - given-names: Nicholas
   family-names: Sofroniew
   affiliation: Chan Zuckerberg Initiative
@@ -55,6 +56,16 @@ authors:
   family-names: Yamauchi
   affiliation: Iber Lab - ETH Zürich
   alias: kevinyamauchi
+- given-names: Justine
+  family-names: Larsen
+  alias: justinelarsen
+- given-names: Shannon
+  family-names: Axelrod
+  alias: shanaxel42
+- given-names: Ziyang
+  family-names: Liu
+  affiliation: Chan Zuckerberg Initiative Foundation
+  alias: liu-ziyang
 - given-names: Melissa
   family-names: Weber Mendonça
   affiliation: Quansight
@@ -112,6 +123,7 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-7237-1973
   alias: kephale
+# Community contributors, alphabetized by family-names.
 - given-names: Jacopo
   family-names: Abramo
   affiliation: Leibniz-IPHT, Jena, Germany
@@ -132,11 +144,6 @@ authors:
   affiliation: Quansight
   orcid: https://orcid.org/0000-0003-1759-4194
   alias: dalthviz
-- given-names: Chirag
-  family-names: Anand
-  affiliation: Dayananda Sagar College of Engineering
-  orcid: https://orcid.org/0009-0009-8502-280X
-  alias: chirag-433
 - given-names: Mélodie
   family-names: Ambroset
   affiliation: INRAE, Nantes, France
@@ -147,6 +154,11 @@ authors:
   affiliation: Harvard Medical School, BIDMC
   orcid: https://orcid.org/0000-0002-8070-0378
   alias: orena1
+- given-names: Chirag
+  family-names: Anand
+  affiliation: Dayananda Sagar College of Engineering
+  orcid: https://orcid.org/0009-0009-8502-280X
+  alias: chirag-433
 - given-names: Edward
   family-names: Andò
   affiliation: EPFL Center for Imaging
@@ -156,7 +168,7 @@ authors:
   family-names: Annex
   affiliation: SETI Institute/NASA ARC
   orcid: https://orcid.org/0000-0002-0253-2313
-  alias:  AndrewAnnex
+  alias: AndrewAnnex
 - given-names: Anwai
   family-names: Archit
   affiliation: Georg-August-Universität Göttingen
@@ -171,17 +183,25 @@ authors:
   affiliation: University of California, Santa Cruz
   orcid: https://orcid.org/0000-0002-4172-4676
   alias: FilBalza
+- given-names: Job
+  family-names: Becht
+  affiliation: Netherlands Forensic Institute
+  alias: job-b
 - given-names: Lundy
   family-names: Bernard
   alias: lundybernard
-- given-names: Peter
-  family-names: Boone
-  alias: boonepeter
 - given-names: Kresimir
   family-names: Bestak
   affiliation: Heidelberg University, Germany
   orcid: https://orcid.org/0009-0009-8245-9846
   alias: kbestak
+- given-names: Bas
+  family-names: Bloemsaat
+  affiliation: QStarsIT
+  alias: basbloemsaat
+- given-names: Peter
+  family-names: Boone
+  alias: boonepeter
 - given-names: Jordão
   family-names: Bragantini
   affiliation: Chan Zuckerberg Biohub
@@ -198,10 +218,14 @@ authors:
   alias: Carreau
 - given-names: Clément
   family-names: Caporal
-  affiliation: Laboratory for Optics and Biosciences, Ecole Polytechnique, INSERM,
-    CNRS, Palaiseau, France
+  affiliation: Laboratory for Optics and Biosciences, Ecole Polytechnique, INSERM, CNRS, Palaiseau, France
   orcid: https://orcid.org/0000-0002-9441-9173
   alias: ClementCaporal
+- given-names: Filippo Maria
+  family-names: Castelli
+  affiliation: Delta Tribe SRL
+  orcid: https://orcid.org/0000-0001-8170-8905
+  alias: filippocastelli
 - given-names: Margot
   family-names: Chazotte
   affiliation: Heidelberg University, Germany
@@ -217,13 +241,26 @@ authors:
   affiliation: Imaging Methods Core Facility at Biocev, Charles University
   orcid: https://orcid.org/0000-0002-7623-5848
   alias: cockovaz
+- given-names: Edouard
+  family-names: Coussoux
+  affiliation: Synopsys, Inc.
+  alias: ecoussoux-ansys
+- given-names: Christophe
+  family-names: Creeten
+  affiliation: Netherlands Forensic Institute
+  alias: ccreeten
+- given-names: Felipe
+  family-names: Cybis Pereira
+  affiliation: Independent researcher
+  orcid: https://orcid.org/0009-0009-6124-0466
+  alias: FelipeCybis
+- given-names: Sara
+  family-names: Czasak
+  alias: sara-czasak
 - given-names: Arne
   family-names: Defauw
   affiliation: Flemish Institute for Biotechnology
   alias: ArneDefauw
-- given-names: Sara
-  family-names: Czasak
-  alias: sara-czasak
 - given-names: Jan
   family-names: Eglinger
   affiliation: Friedrich Miescher Institute for Biomedical Research (FMI), Basel (Switzerland)
@@ -234,6 +271,10 @@ authors:
   affiliation: EMBL Heidelberg, Germany
   orcid: https://orcid.org/0000-0002-1113-9556
   alias: aeisenbarth
+- given-names: Imad Eddine
+  family-names: El Mouss
+  affiliation: Turku University of Applied Sciences
+  alias: imaddde867
 - given-names: Jeremy
   family-names: Freeman
   affiliation: Chan Zuckerberg Initiative
@@ -254,6 +295,11 @@ authors:
 - given-names: Kabilar
   family-names: Gunalan
   alias: kabilar
+- given-names: Aroj
+  family-names: Hada
+  alias: ArozHada
+  affiliation: University Hospital Heidelberg
+  orcid: https://orcid.org/0000-0002-0691-1214
 - given-names: Yaroslav Olegovich
   family-names: Halchenko
   affiliation: Dartmouth College
@@ -273,6 +319,11 @@ authors:
   affiliation: EMBL Heidelberg, Germany
   orcid: https://orcid.org/0000-0002-2255-2960
   alias: VolkerH
+- given-names: Lucien
+  family-names: Hinderling
+  affiliation: Institute of Cell Biology, University of Bern, Switzerland
+  orcid: https://orcid.org/0000-0002-3956-9363
+  alias: hinderling
 - given-names: Teun A.P.M.
   family-names: Huijben
   affiliation: Biohub, San Francisco
@@ -291,6 +342,15 @@ authors:
   family-names: Juneja
   affiliation: Independent
   alias: Schefflera-Arboricola
+- given-names: Omkar
+  family-names: Kabde
+  affiliation: Chaitanya Bharathi Institute of Technology
+  orcid: https://orcid.org/0009-0006-6163-3882
+  alias: omkar-334
+- given-names: Kamil
+  family-names: Kania
+  alias: Grzyb33k
+  orcid: https://orcid.org/0009-0008-1188-1081
 - given-names: Hiroki
   family-names: Kawai
   affiliation: The University of Tokyo / LPIXEL Inc.
@@ -320,6 +380,16 @@ authors:
   affiliation: Calico Life Sciences LLC
   orcid: https://orcid.org/0000-0001-8148-5369
   alias: aelefebv
+- given-names: Marcelo
+  family-names: Leomil Zoccoler
+  affiliation: Katana Labs
+  orcid: https://orcid.org/0000-0002-6165-4679
+  alias: zoccoler
+- given-names: Ioannis
+  family-names: Liaskas
+  alias: BadPrograms
+  affiliation: Aix Marseille University, IBDM, Turing Centre for Living systems
+  orcid: https://orcid.org/0000-0002-8715-084X
 - given-names: Gregor
   family-names: Lichtner
   affiliation: Universitätsmedizin Greifswald
@@ -330,10 +400,6 @@ authors:
   affiliation: Kobe University
   orcid: https://orcid.org/0009-0006-5724-8121
   alias: hanjinliu
-- given-names: Ziyang
-  family-names: Liu
-  affiliation: Chan Zuckerberg Initiative Foundation
-  alias: liu-ziyang
 - given-names: Alan
   family-names: Lowe
   affiliation: UCL & The Alan Turing Institute
@@ -371,16 +437,29 @@ authors:
   affiliation: Sainsbury Wellcome Centre - University College London
   orcid: https://orcid.org/0000-0001-6363-1545
   alias: sfmig
-- given-names: Hector
-  family-names: Muñoz
-  affiliation: University of California, Los Angeles
-  orcid: https://orcid.org/0000-0001-7851-2549
-  alias: hectormz
+- given-names: Sébastien
+  family-names: Morais
+  affiliation: Synopsys, Inc.
+  alias: SMoraisAnsys
 - given-names: Jan-Hendrik
   family-names: Müller
   affiliation: Georg-August-Universität Göttingen
   orcid: https://orcid.org/0009-0007-3670-9969
   alias: kolibril13
+- given-names: Hector
+  family-names: Muñoz
+  affiliation: University of California, Los Angeles
+  orcid: https://orcid.org/0000-0001-7851-2549
+  alias: hectormz
+- given-names: Venkateswarlu
+  family-names: Nagineni
+  alias: VenkateswarluNagineni
+  affiliation: Texas A&M University
+- given-names: Suyash
+  family-names: Naik
+  affiliation: Institute of Science and Technology Austria
+  orcid: https://orcid.org/0000-0001-8421-5508
+  alias: Suyash-Naik
 - given-names: Christopher
   family-names: Nauroth-Kreß
   affiliation: University Hospital Würzburg - Institute of Neuroradiology
@@ -390,6 +469,10 @@ authors:
   affiliation: University of Oregon
   orcid: https://orcid.org/0000-0003-2966-783X
   alias: pnewstein
+- given-names: Aditya
+  family-names: Nikam
+  alias: adityaanikam
+  affiliation: Pune University
 - given-names: Horst A.
   family-names: Obenhaus
   affiliation: Kavli Institute for Systems Neuroscience at NTNU, Trondheim, Norway
@@ -404,6 +487,11 @@ authors:
   affiliation: Algarve Centre of Marine Sciences (CCMAR)
   orcid: https://orcid.org/0009-0003-9328-8540
   alias: palec87
+- given-names: Bruno
+  family-names: Pannunzio
+  affiliation: Institut Pasteur de Montevideo; Universidad de la República, Uruguay
+  orcid: https://orcid.org/0009-0001-2778-6694
+  alias: bruno-pannunzio
 - given-names: Constantin
   family-names: Pape
   affiliation: Georg-August-Universität Göttingen
@@ -412,24 +500,19 @@ authors:
 - given-names: Yann
   family-names: Pellegrini
   alias: Yann-P
-- given-names: Eric
-  family-names: Perlman
-  affiliation: Yikes LLC
-  orcid: https://orcid.org/0000-0001-5542-1302
-  alias: perlman
-- given-names: Rensu Petrus
-  family-names: Theart
-  affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
-  orcid: https://orcid.org/0000-0003-0508-1690
-  alias: rensutheart
-- given-names: Kim
-  family-names: Pevey
-  alias: kcpevey
 - given-names: Gonzalo
   family-names: Peña-Castellanos
   affiliation: Quansight
   orcid: https://orcid.org/0000-0002-1214-4680
   alias: goanpeca
+- given-names: Eric
+  family-names: Perlman
+  affiliation: Yikes LLC
+  orcid: https://orcid.org/0000-0001-5542-1302
+  alias: perlman
+- given-names: Kim
+  family-names: Pevey
+  alias: kcpevey
 - given-names: Jasper
   family-names: Phelps
   affiliation: EPFL
@@ -452,6 +535,16 @@ authors:
   affiliation: University Heidelberg
   orcid: https://orcid.org/0000-0003-1738-754X
   alias: KRiedmiller
+- given-names: Mikkel
+  family-names: Roald-Arbøl
+  affiliation: University of Bonn
+  orcid: https://orcid.org/0000-0002-9998-0058
+  alias: roaldarbol
+- given-names: Giliane
+  family-names: Rochat
+  affiliation: Institute of Neuropathology, University Hospital of Zürich
+  orcid: https://orcid.org/0009-0003-6017-1418
+  alias: girochat
 - given-names: David
   family-names: Ross
   affiliation: NanoString Technologies, Inc.
@@ -479,6 +572,11 @@ authors:
   affiliation: University of Wisconsin-Madison
   orcid: https://orcid.org/0009-0002-2400-1940
   alias: gselzer
+- given-names: Mridul
+  family-names: Seth
+  affiliation: European Spallation Source
+  orcid: https://orcid.org/0000-0002-0969-0437
+  alias: mriduls
 - given-names: Rupesh
   family-names: Sharma
   affiliation: Mangalmay Institute of Management & Technology
@@ -519,16 +617,29 @@ authors:
 - given-names: Michal
   family-names: Steuer
   alias: michalslabs
+- given-names: Aleksandra
+  family-names: Tarskaia
+  affiliation: Independent
+  alias: i-ymka
 - given-names: Wulin
   family-names: Teo
   affiliation: Houston Methodist Research Institute
   orcid: https://orcid.org/0000-0001-7815-7014
   alias: wulinteousa2-hash
+- given-names: Rensu Petrus
+  family-names: Theart
+  affiliation: Department of Electrical and Electronic Engineering, Stellenbosch University
+  orcid: https://orcid.org/0000-0003-0508-1690
+  alias: rensutheart
 - given-names: Jules
   family-names: Vanaret
   affiliation: Aix Marseille University, CNRS, Fresnel, I2M, IBDM, Turing Centre for Living systems
   orcid: https://orcid.org/0009-0004-6070-2263
   alias: jules-vanaret
+- given-names: Revathy
+  family-names: Venugopal
+  affiliation: Synopsys, Inc.
+  alias: revathyvenugopal162
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
@@ -547,11 +658,25 @@ authors:
   family-names: Winston
   affiliation: Tobeva Software
   alias: pwinston
+- given-names: Guillaume
+  family-names: Witz
+  affiliation: Data Science Lab, University of Bern, Switzerland
+  orcid: https://orcid.org/0000-0003-1562-4265
+  alias: guiwitz
+- given-names: Aniket Singh
+  family-names: Yadav
+  affiliation: Galgotias University
+  orcid: https://orcid.org/0009-0004-4883-3797
+  alias: Aniketsy
 - given-names: Qin
   family-names: Yu
   affiliation: European Molecular Biology Laboratory (EMBL)
   orcid: https://orcid.org/0000-0002-4652-0795
   alias: qin-yu
+- given-names: Leticia
+  family-names: Zaid
+  affiliation: Université Paris-Saclay
+  alias: lettyz3
 - given-names: Liudeng
   family-names: Zhang
   affiliation: Baylor College of Medicine
@@ -562,123 +687,5 @@ authors:
   affiliation: Chinese Academy of Sciences - SIAT, Shenzhen, China
   orcid: https://orcid.org/0009-0005-8264-5682
   alias: BeanLi
-- given-names: Guillaume
-  family-names: Witz
-  affiliation: Data Science Lab, University of Bern, Switzerland
-  orcid: https://orcid.org/0000-0003-1562-4265
-  alias: guiwitz
-- given-names: Marcelo
-  family-names: Leomil Zoccoler
-  affiliation: Katana Labs
-  orcid: https://orcid.org/0000-0002-6165-4679
-  alias: zoccoler
-- given-names: Aniket Singh
-  family-names: Yadav
-  affiliation: Galgotias University
-  orcid: https://orcid.org/0009-0004-4883-3797
-  alias: Aniketsy
-- given-names: Lucien
-  family-names: Hinderling
-  affiliation: Institute of Cell Biology, University of Bern, Switzerland
-  orcid: https://orcid.org/0000-0002-3956-9363
-  alias: hinderling
-- given-names: Omkar
-  family-names: Kabde
-  affiliation: Chaitanya Bharathi Institute of Technology
-  orcid: https://orcid.org/0009-0006-6163-3882
-  alias: omkar-334
-- given-names: Mikkel
-  family-names: Roald-Arbøl
-  affiliation: University of Bonn
-  orcid: https://orcid.org/0000-0002-9998-0058
-  alias: roaldarbol
-- given-names: Giliane
-  family-names: Rochat
-  affiliation: Institute of Neuropathology, University Hospital of Zürich
-  orcid: https://orcid.org/0009-0003-6017-1418
-  alias: girochat
-- given-names: Filippo Maria
-  family-names: Castelli
-  affiliation: Delta Tribe SRL
-  orcid: https://orcid.org/0000-0001-8170-8905
-  alias: filippocastelli
-- given-names: Revathy
-  family-names: Venugopal
-  affiliation: Synopsys, Inc.
-  alias: revathyvenugopal162
-- given-names: Edouard
-  family-names: Coussoux
-  affiliation: Synopsys, Inc.
-  alias: ecoussoux-ansys
-- given-names: Mridul
-  family-names: Seth
-  affiliation: European Spallation Source
-  orcid: https://orcid.org/0000-0002-0969-0437
-  alias: mriduls
-- given-names: Job
-  family-names: Becht
-  affiliation: Netherlands Forensic Institute
-  alias: job-b
-- given-names: Christophe
-  family-names: Creeten
-  affiliation: Netherlands Forensic Institute
-  alias: ccreeten
-- given-names: Sébastien
-  family-names: Morais
-  affiliation: Synopsys, Inc.
-  alias: SMoraisAnsys
-- given-names: Bas
-  family-names: Bloemsaat
-  affiliation: QStarsIT
-  alias: basbloemsaat
-- given-names: Kamil
-  family-names: Kania
-  alias: Grzyb33k
-  orcid: https://orcid.org/0009-0008-1188-1081
-- given-names: Ioannis
-  family-names: Liaskas
-  alias: BadPrograms
-  affiliation: Aix Marseille University, IBDM, Turing Centre for Living systems
-  orcid: https://orcid.org/0000-0002-8715-084X
-- given-names: Aroj
-  family-names: Hada
-  alias: ArozHada
-  affiliation: University Hospital Heidelberg
-  orcid: https://orcid.org/0000-0002-0691-1214
-- given-names: Venkateswarlu
-  family-names: Nagineni
-  alias: VenkateswarluNagineni
-  affiliation: Texas A&M University
-- given-names: Aditya
-  family-names: Nikam
-  alias: adityaanikam
-  affiliation: Pune University
-- given-names: Suyash
-  family-names: Naik
-  affiliation: Institute of Science and Technology Austria
-  orcid: https://orcid.org/0000-0001-8421-5508
-  alias: Suyash-Naik
-- given-names: Leticia
-  family-names: Zaid
-  affiliation: Université Paris-Saclay
-  alias: lettyz3
-- given-names: Bruno
-  family-names: Pannunzio
-  affiliation: Institut Pasteur de Montevideo; Universidad de la República, Uruguay
-  orcid: https://orcid.org/0009-0001-2778-6694
-  alias: bruno-pannunzio
-- given-names: Felipe
-  family-names: Cybis Pereira
-  affiliation: Independent researcher
-  orcid: https://orcid.org/0009-0009-6124-0466
-  alias: FelipeCybis
-- given-names: Aleksandra
-  family-names: Tarskaia
-  affiliation: Independent
-  alias: i-ymka
-- given-names: Imad Eddine
-  family-names: El Mouss
-  affiliation: Turku University of Applied Sciences
-  alias: imaddde867
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
