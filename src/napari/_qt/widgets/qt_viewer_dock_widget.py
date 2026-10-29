@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 from weakref import ReferenceType, ref
 
-from qtpy.QtCore import QCoreApplication, QEvent, Qt
-from qtpy.QtGui import QFontMetrics
+from qtpy.QtCore import QCoreApplication, QEvent, QSize, Qt
+from qtpy.QtGui import QFontMetrics, QKeyEvent
 from qtpy.QtWidgets import (
     QDockWidget,
     QFrame,
@@ -22,14 +24,21 @@ from napari._qt.utils import combine_widgets, qt_signals_blocked
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from magicgui.widgets import Widget
 
     from napari._qt.qt_viewer import QtViewer
 
 counter = count()
-_sentinel = object()
+# typed Any so it can be the default of the deprecated `shortcut` argument
+_sentinel: Any = object()
 
 _SHORTCUT_DEPRECATION_STRING = f'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {"{shortcut}"})'
+
+# Floor the dock keeps on itself; the contained widget's minimum is added on
+# top of this by the layout (see ``event``).
+_MIN_DOCK_SIZE = 50
 
 dock_area_to_str = {
     Qt.DockWidgetArea.LeftDockWidgetArea: 'left',
@@ -53,7 +62,7 @@ class QtViewerDockWidget(QDockWidget):
     area : str
         Side of the main window to which the new dock widget will be added.
         Must be in {'left', 'right', 'top', 'bottom'}
-    allowed_areas : list[str], optional
+    allowed_areas : Sequence[str], optional
         Areas, relative to main window, that the widget is allowed dock.
         Each item in list must be in {'left', 'right', 'top', 'bottom'}
         By default, all areas are allowed.
@@ -72,16 +81,16 @@ class QtViewerDockWidget(QDockWidget):
 
     def __init__(
         self,
-        qt_viewer: 'QtViewer',
-        widget: Union[QWidget, 'Widget'],
+        qt_viewer: QtViewer,
+        widget: Union[QWidget, Widget],
         *,
         name: str = '',
         area: str = 'right',
-        allowed_areas: list[str] | None = None,
-        shortcut=_sentinel,
+        allowed_areas: Sequence[str] | None = None,
+        shortcut: str | None = _sentinel,
         object_name: str = '',
-        add_vertical_stretch=True,
-        close_btn=True,
+        add_vertical_stretch: bool = True,
+        close_btn: bool = True,
     ) -> None:
         self._ref_qt_viewer: ReferenceType[QtViewer] = ref(qt_viewer)
         super().__init__(name)
@@ -122,8 +131,7 @@ class QtViewerDockWidget(QDockWidget):
         else:
             qt_allowed_areas = Qt.DockWidgetArea.AllDockWidgetAreas
         self.setAllowedAreas(qt_allowed_areas)
-        self.setMinimumHeight(50)
-        self.setMinimumWidth(50)
+        self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
         # FIXME:
         self.setObjectName(object_name or name)
 
@@ -145,7 +153,7 @@ class QtViewerDockWidget(QDockWidget):
 
         self.dockLocationChanged.connect(self._update_default_dock_area)
 
-    def inner_widget(self) -> 'QWidget | Widget':
+    def inner_widget(self) -> QWidget | Widget:
         """The inner widget of the dock widget.
 
         This is the widget that was passed to the constructor
@@ -158,17 +166,21 @@ class QtViewerDockWidget(QDockWidget):
         # otherwise, return the widget itself
         return wdg
 
-    def _update_default_dock_area(self, value):
+    def _update_default_dock_area(self, value: Qt.DockWidgetArea) -> None:
         if value not in dock_area_to_str:
             return
         settings = get_settings()
-        settings.application.plugin_widget_positions[self.name] = (
-            dock_area_to_str[value]
-        )
+        positions = settings.application.plugin_widget_positions
+        area = dock_area_to_str[value]
+        # Only persist positions the user chose; the initial placement must
+        # not be stored, or later changes to the default would be ignored.
+        if self.name not in positions and area == self.area:
+            return
+        positions[self.name] = area
         settings._maybe_save()
 
     @property
-    def _parent(self):
+    def _parent(self) -> QtViewer | None:
         """
         Let's make sure parent always a weakref:
 
@@ -178,10 +190,10 @@ class QtViewerDockWidget(QDockWidget):
         return self._ref_parent()
 
     @_parent.setter
-    def _parent(self, obj):
+    def _parent(self, obj: QtViewer) -> None:
         self._ref_parent = ref(obj)
 
-    def destroyOnClose(self):
+    def destroyOnClose(self) -> None:
         """Destroys dock plugin dock widget when 'x' is clicked."""
         from napari.viewer import Viewer
 
@@ -191,7 +203,7 @@ class QtViewerDockWidget(QDockWidget):
         if isinstance(qt_viewer.viewer, Viewer):
             qt_viewer.viewer.window.remove_dock_widget(self)
 
-    def _maybe_add_vertical_stretch(self, widget):
+    def _maybe_add_vertical_stretch(self, widget: QWidget) -> None:
         """Add vertical stretch to the bottom of a vertical layout only
 
         ...if there is not already a widget that wants vertical space
@@ -215,7 +227,10 @@ class QtViewerDockWidget(QDockWidget):
             return
 
         for i in range(wlayout.count()):
-            wdg = wlayout.itemAt(i).widget()
+            item = wlayout.itemAt(i)
+            if item is None:
+                continue
+            wdg = item.widget()
             if (
                 wdg is not None
                 and wdg.sizePolicy().verticalPolicy() in exempt_policies
@@ -227,7 +242,7 @@ class QtViewerDockWidget(QDockWidget):
             wlayout.addStretch(next(counter))
 
     @property
-    def shortcut(self):
+    def shortcut(self) -> str | None:
         warnings.warn(
             _SHORTCUT_DEPRECATION_STRING,
             FutureWarning,
@@ -235,11 +250,18 @@ class QtViewerDockWidget(QDockWidget):
         )
         return self._shortcut
 
-    def setFeatures(self, features):
+    def setFeatures(self, features: QDockWidget.DockWidgetFeature) -> None:
         super().setFeatures(features)
         self._features = self.features()
 
-    def keyPressEvent(self, event):
+    def event(self, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.LayoutRequest:
+            # Reset the explicit floor first so it is recomputed from
+            # the content to avoid issue where minimum can only ever grow.
+            self.setMinimumSize(_MIN_DOCK_SIZE, _MIN_DOCK_SIZE)
+        return super().event(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
@@ -248,7 +270,7 @@ class QtViewerDockWidget(QDockWidget):
             return super().keyPressEvent(event)
         return qt_viewer.keyPressEvent(event)
 
-    def keyReleaseEvent(self, event):
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
         # if you subclass QtViewerDockWidget and override the keyReleaseEvent
         # method, be sure to call super().keyReleaseEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
@@ -257,7 +279,7 @@ class QtViewerDockWidget(QDockWidget):
             return super().keyReleaseEvent(event)
         return qt_viewer.keyReleaseEvent(event)
 
-    def _set_title_orientation(self, area):
+    def _set_title_orientation(self, area: Qt.DockWidgetArea) -> None:
         # NoDockWidgetArea means the widget is floating; nothing to orient.
         if area == Qt.DockWidgetArea.NoDockWidgetArea:
             return
@@ -283,7 +305,7 @@ class QtViewerDockWidget(QDockWidget):
                 self._update_title_bar(False)
 
     @property
-    def is_vertical(self):
+    def is_vertical(self) -> bool:
         if not self.isFloating():
             par = self.parent()
             if par and hasattr(par, 'dockWidgetArea'):
@@ -346,7 +368,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def _create_title_bar(
         self, *, vertical: bool, is_floating: bool
-    ) -> 'QtCustomTitleBar':
+    ) -> QtCustomTitleBar:
         title = QtCustomTitleBar(
             self,
             title=self.name,
@@ -362,8 +384,9 @@ class QtViewerDockWidget(QDockWidget):
             title.close_button.clicked.connect(lambda: self.destroyOnClose())
         return title
 
-    def setWidget(self, widget):
-        widget._parent = self
+    def setWidget(self, widget: QWidget) -> None:
+        # attribute added on purpose so the widget can find its dock
+        widget._parent = self  # pyrefly: ignore[missing-attribute]
         self.setFocusProxy(widget)
         super().setWidget(widget)
 
@@ -377,21 +400,25 @@ class QtCustomTitleBar(QLabel):
 
     Parameters
     ----------
-    parent : QDockWidget
+    parent : QtViewerDockWidget
         The QtViewerDockWidget to which this titlebar belongs
     title : str
         A string to put in the titlebar.
     vertical : bool
         Whether this titlebar is oriented vertically or not.
+    close_btn : bool
+        Whether to show a close button.
+    is_floating : bool
+        Whether the dock widget is currently floating.
     """
 
     def __init__(
         self,
-        parent,
+        parent: QtViewerDockWidget,
         title: str = '',
-        vertical=False,
-        close_btn=True,
-        is_floating=False,
+        vertical: bool = False,
+        close_btn: bool = True,
+        is_floating: bool = False,
     ) -> None:
         super().__init__(parent)
         self.setObjectName('QtCustomTitleBar')
@@ -459,16 +486,30 @@ class QtCustomTitleBar(QLabel):
 
         self.setLayout(layout)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self._update_font_metrics()
+
+    def _update_font_metrics(self) -> None:
+        """Resize the title bar to fit the current font."""
+        if not hasattr(self, 'title'):
+            return
         # set minimum heights to ensure enough space for the title text
         font_height = QFontMetrics(self.font()).height()
         self.setMinimumHeight(font_height + 10)
         self.title.setMinimumHeight(font_height)
 
-    def sizeHint(self):
+    def changeEvent(self, event: QEvent) -> None:
+        """Keep the title bar height in sync with font size changes."""
+        if event.type() == QEvent.Type.FontChange:
+            self._update_font_metrics()
+        super().changeEvent(event)
+
+    def sizeHint(self) -> QSize:
         # this seems to be the correct way to set the height of the titlebar
+        # responsive to font size
         szh = super().sizeHint()
+        size = QFontMetrics(self.font()).height() + 10
         if self.vertical:
-            szh.setWidth(20)
+            szh.setWidth(size)
         else:
-            szh.setHeight(20)
+            szh.setHeight(size)
         return szh

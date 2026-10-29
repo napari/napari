@@ -22,6 +22,10 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+# point size glyphs are rendered at before being scaled down to the text size
+SDF_FONT_SIZE = 256
+
+
 def make_qfont(
     face: str, size: int, bold: bool = False, italic: bool = False
 ) -> QFont:
@@ -175,7 +179,7 @@ class QtTextureFont:
         self._kernel, _ = load_spatial_filters()
         self._renderer = renderer
         self._font = deepcopy(font)
-        self._font['size'] = 256  # use high resolution point size for SDF
+        self._font['size'] = SDF_FONT_SIZE  # high-res point size for SDF
         self._lowres_size = 64  # end at this point size for storage
         assert (self._font['size'] % self._lowres_size) == 0
         # spread/border at the high-res for SDF calculation

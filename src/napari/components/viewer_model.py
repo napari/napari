@@ -110,6 +110,7 @@ DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
     'keymap',
     '_mouse_wheel_gen',
+    '_mouse_move_gen',
     '_mouse_drag_gen',
     '_persisted_mouse_event',
     'mouse_move_callbacks',
@@ -905,13 +906,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         selection = self.layers.selection
         valid_layers: Sequence[Layer]
-        layers_in_viewbox = [
-            self.layers[idx]
-            for idx in sorted(
-                self.canvas.grid.contents_at(self.cursor.viewbox, self.layers),
-                reverse=self.canvas.grid.stride > 0,
-            )
-        ]
+        layers_in_viewbox: list[Layer] = []
+        if self.cursor.viewbox is not None:
+            layers_in_viewbox = [
+                self.layers[idx]
+                for idx in sorted(
+                    self.canvas.grid.contents_at(
+                        self.cursor.viewbox, self.layers
+                    ),
+                    reverse=self.canvas.grid.stride > 0,
+                )
+            ]
         valid_layers = [
             layer
             for layer in layers_in_viewbox
@@ -973,6 +978,83 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             self.status, self.tooltip.text = status
         if (active := self.layers.selection.active) is not None:
             self.help = active.help
+
+    def canvas_to_world(
+        self,
+        canvas_position: tuple[int, int],
+        viewbox: tuple[int, int] | None = None,
+    ) -> np.ndarray:
+        """Convert canvas pixel position to world coordinates.
+
+        The position is calculated on a plane parallel to the screen and passing
+        through the camera center, so it is unaffected by perspective.
+
+        Parameters
+        ----------
+        canvas_position : tuple of int
+            (y, x) position in canvas pixels.
+        viewbox : tuple of int
+            (col, row) coordinates of the grid viewbox relative to which
+            to calculate the transformation. If None, use the first viewbox
+            or the whole canvas if the grid is disabled.
+
+        Returns
+        -------
+        world_position : np.ndarray
+            Canvas position (on the canvas plane) converted to world coordinates.
+        """
+        ndisplay = self.dims.ndisplay
+        camera = self.scene.camera
+
+        if viewbox is None:
+            viewbox = (0, 0)
+        viewbox_size = np.array(self.canvas.viewbox_size(self.layers))
+        spacing = (
+            self.canvas.grid._compute_canvas_spacing(
+                self.canvas.size, self.layers
+            )
+            if self.canvas.grid.enabled
+            else 0
+        )
+        viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
+        world_center = np.array(camera.center)
+
+        if ndisplay == 2:
+            world_displayed = (
+                np.array(canvas_position) - viewbox_center
+            ) / camera.zoom + world_center[-2:]
+        else:
+            # this import is expensive so it is deferred to here
+            # where it is actually needed
+            from scipy.spatial.transform import Rotation as R
+
+            # note that while we call napari axes "zyx", in terms of angles to
+            # rot conversion we need to treat them as normal xyz for internal
+            # consistency (zyx actually describes a different rotation order)
+            rot = R.from_euler('xyz', camera.angles, degrees=True)
+            rot_matrix = rot.as_matrix()
+            # the depth is set to zero because we want the position at the
+            # plane of the camera center.
+            # Any modifications should be done by callers afterwards.
+            canvas_position_3d = np.array([0, *canvas_position])
+            viewbox_center_3d = np.array([0, *viewbox_center])
+            world_displayed = (
+                rot_matrix.T
+                @ (canvas_position_3d - viewbox_center_3d)
+                / camera.zoom
+                + world_center
+            )
+
+        # with fewer dims than ndisplay , the leading components
+        # have no dim to map onto, so we drop them
+        displayed = self.dims.displayed
+        world_displayed = world_displayed[-len(displayed) :]
+
+        # embed it in the world point
+        position_world = list(self.dims.point)
+        for i, d in enumerate(displayed):
+            position_world[d] = world_displayed[i]
+        return np.array(position_world)
 
     @property
     def experimental(self):
@@ -1273,6 +1355,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
+        # A list of only None (e.g. [None, None]) means "no colormap specified"
+        # for every channel, so treat it like a single None and use the
+        # default colormaps instead of black ones. A tuple is not handled here,
+        # because a tuple is used to create a single colormap.
+        if (
+            channel_axis is not None
+            and isinstance(colormap, list)
+            and len(colormap) > 0
+            and all(cmap is None for cmap in colormap)
+        ):
+            colormap = None
 
         if colormap is not None:
             # standardize colormap argument(s) to Colormaps, and make sure they
