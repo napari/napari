@@ -342,13 +342,17 @@ def format_issue_body(logins: list[str], repos: list[str]) -> str:
     repos_str = ', '.join(repos)
     mentions = ' '.join(f'@{login}' for login in logins)
     lines = [
-        'The following GitHub contributors appear to have commits in '
-        f'{repos_str} but do not currently have an `alias` entry in '
-        '`CITATION.cff`.',
+        (
+            'The following GitHub contributors appear to have commits in '
+            f'{repos_str} but do not currently have an `alias` entry in '
+            '`CITATION.cff`.'
+        ),
         '',
-        'If you would like to be included, please open a PR that adds your '
-        'entry in alphabetical order by `family-names` within the community '
-        'contributor section.',
+        (
+            'If you would like to be included, please open a PR that adds '
+            'your entry in alphabetical order by `family-names` within the '
+            'community contributor section.'
+        ),
         '',
         mentions or '(No missing contributors found.)',
     ]
