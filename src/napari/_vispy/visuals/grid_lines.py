@@ -235,11 +235,15 @@ class GridLines3D(Node):
             values, decimals = compute_nice_ticks(
                 ranges[axis].start, ranges[axis].stop, target_ticks=n_ticks
             )
-            ticks.text = [
-                np.format_float_positional(val, decimals, trim='-')
-                for val in values
-            ]
-            ticks.pos = [(val, ranges[next_axis].start, 0) for val in values]
+            text = []
+            pos = []
+            for val in values:
+                text.append(
+                    np.format_float_positional(val, decimals, trim='-')
+                )
+                pos.append((val, ranges[next_axis].start, 0))
+            ticks.text = text
+            ticks.pos = pos
             ticks.color = self.color
             ticks.opacity = self._opacity
             ticks.visible = len(values) > 0
