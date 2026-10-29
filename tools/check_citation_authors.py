@@ -1,6 +1,13 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "PyYAML>=6.0",
+# ]
+# ///
 """Utilities for maintaining napari's CITATION.cff author list.
 
-Usage:
+Usage (``uv run tools/check_citation_authors.py ...`` also works and
+installs PyYAML on the fly):
     python tools/check_citation_authors.py check-order
         Validate that community contributors remain alphabetized by
         ``family-names`` after the core-team section marker.
