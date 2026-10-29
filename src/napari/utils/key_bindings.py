@@ -212,6 +212,25 @@ def bind_key(
     return unbound
 
 
+def _vispy_to_appmodel_mods(modifiers):
+    keymod = KeyMod.NONE
+
+    for key in modifiers:
+        keymod |= _VISPY_MODS[key]
+
+    return keymod
+
+
+def _appmodel_to_vispy_mods(keymod):
+    modifiers = []
+
+    for key, val in _VISPY_MODS.items():
+        if val in keymod:
+            modifiers.append(key)
+
+    return modifiers
+
+
 def _vispy2appmodel(event) -> KeyBinding:
     key, modifiers = event.key.name, event.modifiers
     if len(key) == 1 and key.isalpha():  # it's a letter
