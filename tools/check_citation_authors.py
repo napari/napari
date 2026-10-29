@@ -6,8 +6,8 @@
 # ///
 """Utilities for maintaining napari's CITATION.cff author list.
 
-Usage (``uv run tools/check_citation_authors.py ...`` also works and
-installs PyYAML on the fly):
+Usage (``python`` needs PyYAML installed; ``uv run`` in place of ``python``
+installs it from the inline script metadata):
     python tools/check_citation_authors.py check-order
         Validate that community contributors remain alphabetized by
         ``family-names`` after the core-team section marker.
