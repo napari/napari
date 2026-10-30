@@ -136,7 +136,7 @@ jobs:
             coverage: cov
             tox_extras: "all_optional"
           # test with torch, older version
-          - python: "3.11"
+          - python: "3.12"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
