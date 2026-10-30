@@ -680,5 +680,8 @@ authors:
   family-names: El Mouss
   affiliation: Turku University of Applied Sciences
   alias: imaddde867
+- given-names: Shriraj
+  family-names: Jadhav
+  alias: Shriraj1901
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause

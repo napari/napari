@@ -1734,6 +1734,63 @@ def test_value():
 
 
 @pytest.mark.parametrize(
+    ('border_width', 'border_width_is_relative', 'position', 'expected'),
+    [
+        # size 10 and no border: the point extends 5 from its center
+        (0, False, (5.5, 0), None),
+        # an absolute border of 2 adds 1 on each side
+        (2, False, (5.5, 0), 0),
+        (2, False, (6.5, 0), None),
+        # a relative border of 0.5 is 5, adding 2.5 on each side
+        (0.5, True, (7, 0), 0),
+        (0.5, True, (8, 0), None),
+        # absolute borders are capped to the point size, as when drawing
+        (20, False, (9.5, 0), 0),
+        (20, False, (10.5, 0), None),
+    ],
+)
+def test_value_includes_border(
+    border_width, border_width_is_relative, position, expected
+):
+    """Test that get_value accounts for the border drawn around points."""
+    layer = Points(
+        [[0, 0]],
+        size=10,
+        border_width=border_width,
+        border_width_is_relative=border_width_is_relative,
+    )
+    assert layer.get_value(position) == expected
+
+
+@pytest.mark.parametrize(
+    ('position', 'expected'),
+    [
+        ((0, 5, 15, 18), 0),
+        ((0, 5, 15, 19), None),
+    ],
+)
+def test_value_3d_includes_border(position, expected):
+    """Test that get_value in 3D accounts for the border drawn around points."""
+    # size 5 plus a border of 2 extends 3.5 from the center. The second point
+    # keeps the first one away from the edge of the layer's bounding box,
+    # which the ray is clipped to.
+    layer = Points(
+        [[0, 10, 15, 15], [0, 10, 15, 30]],
+        size=5,
+        border_width=2,
+        border_width_is_relative=False,
+    )
+    layer._slice_dims(Dims(ndim=4, ndisplay=3))
+    value = layer.get_value(
+        position,
+        view_direction=[0, 1, 0, 0],
+        dims_displayed=[1, 2, 3],
+        world=False,
+    )
+    assert value == expected
+
+
+@pytest.mark.parametrize(
     (
         'position',
         'view_direction',
