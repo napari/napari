@@ -81,6 +81,10 @@ from napari.types import (
 )
 from napari.utils._register import create_func as create_add_method
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -1019,10 +1023,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         viewbox_center = (viewbox_size + spacing) * viewbox + viewbox_size / 2
         world_center = np.array(camera.center)
 
+        # account for orientation flip. Only x and y matter, not depth, because
+        # in 3D we poject onto the origin camera plane.
+        vertical, horizontal = camera.orientation2d
+        flips = np.array(
+            [
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+        canvas_offset = (np.array(canvas_position) - viewbox_center) * flips
+
         if ndisplay == 2:
-            world_displayed = (
-                np.array(canvas_position) - viewbox_center
-            ) / camera.zoom + world_center[-2:]
+            world_displayed = canvas_offset / camera.zoom + world_center[-2:]
         else:
             # this import is expensive so it is deferred to here
             # where it is actually needed
@@ -1036,18 +1049,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             # the depth is set to zero because we want the position at the
             # plane of the camera center.
             # Any modifications should be done by callers afterwards.
-            canvas_position_3d = np.array([0, *canvas_position])
-            viewbox_center_3d = np.array([0, *viewbox_center])
+            canvas_position_3d = np.array([0, *canvas_offset])
             world_displayed = (
-                rot_matrix.T
-                @ (canvas_position_3d - viewbox_center_3d)
-                / camera.zoom
-                + world_center
+                rot_matrix.T @ canvas_position_3d / camera.zoom + world_center
             )
+
+        # with fewer dims than ndisplay , the leading components
+        # have no dim to map onto, so we drop them
+        displayed = self.dims.displayed
+        world_displayed = world_displayed[-len(displayed) :]
 
         # embed it in the world point
         position_world = list(self.dims.point)
-        for i, d in enumerate(self.dims.displayed):
+        for i, d in enumerate(displayed):
             position_world[d] = world_displayed[i]
         return np.array(position_world)
 

@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
+    QtMultiscaleLevelControl,
     _format_level_label,
 )
 from napari.layers import Image, Labels
@@ -138,6 +140,16 @@ def test_auto_label_shows_data_level(multiscale_controls):
     layer._data_level = 1
     layer.events.set_data()
     assert combo.itemText(0) == 'Auto (1)'
+
+
+def test_label_is_not_a_window(qtbot):
+    """The label is shown before it is added to a layout, so needs a parent
+    to not briefly show as a separate window."""
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    layer = Image(_MULTISCALE_DATA, multiscale=True)
+    ctrl = QtMultiscaleLevelControl(parent, layer)
+    assert not ctrl.level_label.isWindow()
 
 
 def test_not_multiscale_is_hidden(qtbot):
