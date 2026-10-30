@@ -1,0 +1,107 @@
+# Test napari against packages from conda-forge using pixi.
+# The environments are defined in pixi.toml and locked in pixi.lock.
+# The pixi.lock file is updated by the upgrade_test_constraints.yml workflow.
+name: Test using dependencies from conda-forge via pixi
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "Python version without a dot, for example 313"
+        required: true
+        type: string
+      platform:
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      qt_backend:
+        description: "Qt backend: pyqt6 or pyside6"
+        required: true
+        type: string
+      timeout:
+        required: false
+        type: number
+        default: 40
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }} pixi
+    runs-on: ${{ inputs.platform }}
+    env:
+      PIXI_ENV: test-py${{ inputs.python_version }}-${{ inputs.qt_backend }}
+      FORCE_COLOR: 1
+      PYVISTA_OFF_SCREEN: True
+      XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+    defaults:
+      run:
+        # use bash also on Windows, where the default is PowerShell
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # full history is required by setuptools_scm to determine napari version
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Cache pooch downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ github.workspace }}/.cache/scikit-image
+            ${{ github.workspace }}/.cache/napari-*
+            ${{ github.workspace }}/.cache/pooch
+          key: pooch
+
+      - name: Set Windows resolution
+        if: runner.os == 'Windows'
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        shell: powershell
+
+      - name: Setup headless display
+        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        with:
+          qt: true
+          wm: herbstluftwm
+
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          environments: ${{ env.PIXI_ENV }}
+          # Do not fail if pixi.lock is outdated (for example, when PR changes dependencies in pyproject.toml).
+          # In such case, pixi will update the lock file in place.
+          locked: false
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+
+      - name: List environment packages
+        run: pixi list -e "${PIXI_ENV}"
+
+      - name: Run tests
+        timeout-minutes: ${{ inputs.timeout }}
+        run: pixi run -e "${PIXI_ENV}" test --basetemp=.pytest_tmp
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }} pixi
+          path: .pytest_tmp
+          include-hidden-files: true
+
+      - name: Upload leaked viewer graph
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }} pixi
+          path: |
+            ./*leak-backref-graph*.pdf
+            ./*leak-backref-graph*.dot
+
+      - name: Upload pytest timing reports as json
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }} pixi
+          path: |
+            ./report-*.json
