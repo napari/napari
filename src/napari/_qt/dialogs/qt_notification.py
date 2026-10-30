@@ -102,11 +102,13 @@ class NapariQtNotification(QDialog):
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
-        self.timer = QTimer()
-        self.opacity = QGraphicsOpacityEffect()
+        self.timer = QTimer(parent=self)
+        self.opacity = QGraphicsOpacityEffect(parent=self)
         self.setGraphicsEffect(self.opacity)
-        self.opacity_anim = QPropertyAnimation(self.opacity, b'opacity', self)
-        self.geom_anim = QPropertyAnimation(self, b'geometry', self)
+        self.opacity_anim = QPropertyAnimation(
+            self.opacity, b'opacity', parent=self
+        )
+        self.geom_anim = QPropertyAnimation(self, b'geometry', parent=self)
         self.move_to_bottom_right()
 
     def _update_icon(self, severity: str):
