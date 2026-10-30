@@ -38,8 +38,7 @@ if typing.TYPE_CHECKING:
     import pint
 
     from napari.components.histogram import HistogramModel
-    from napari.types import ArrayLike
-    from napari.utils._typing import Matrix2D, Vector1D
+    from napari.types import ArrayLike, Matrix2D, Vector1D
     from napari.utils.transforms import Affine
 
 __all__ = ('Image',)

@@ -24,7 +24,6 @@ from pydantic import (
     field_validator,
 )
 
-from napari.utils._typing import Matrix2D, Vector1D
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -35,6 +34,8 @@ from napari.utils.migrations import deprecated_class_name
 
 if TYPE_CHECKING:
     from numba import typed
+
+    from napari.types import Matrix2D, Vector1D
 
 
 __all__ = (
@@ -168,12 +169,12 @@ class Colormap(EventedModel):
 
     @overload
     def map(
-        self, values: Vector1D
+        self, values: 'Vector1D'
     ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(
-        self, values: Matrix2D
+        self, values: 'Matrix2D'
     ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload

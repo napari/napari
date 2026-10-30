@@ -74,7 +74,7 @@ from napari.utils.status_messages import format_feature_value
 if TYPE_CHECKING:
     import pandas as pd
 
-    from napari.utils._typing import Vector1D
+    from napari.types import Vector1D
 
 __all__ = ('Labels',)
 
