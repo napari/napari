@@ -1,17 +1,27 @@
 """Status bar widget on the viewer MainWindow"""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, cast
+from webbrowser import open as web_open
 
 from qtpy.QtCore import QEvent, Qt
-from qtpy.QtGui import QFontMetrics, QResizeEvent
+from qtpy.QtGui import QFontMetrics, QMouseEvent, QResizeEvent
 from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
+from napari import __version__
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.qt_event_loop import NAPARI_UPCOMING_VERSIONS
 from napari._qt.utils import use_tabular_numerals
 from napari.settings import get_settings
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from distutils.version import Version
+
+    from qtpy.QtGui import QMouseEvent
+
     from napari._qt.qt_main_window import _QtMainWindow
 
 _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
@@ -20,8 +30,35 @@ _EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
 }
 
 
+class UpcomingUpdatesIcon(QLabel):
+    def __init__(self, upcoming_releases: Sequence[Version]) -> None:
+        super().__init__()
+        self.setObjectName('refresh_label')
+        self.setToolTip(
+            f'New napari versions available!\n'
+            f'You are currently running napari {__version__}, but napari {upcoming_releases[-1]} is out,\n'
+            f'meaning you are {len(upcoming_releases)} release(s) behind. You might be missing out\n'
+            'on some juicy new features!\n'
+            'Left click here to open the latest napari release notes in your browser.\n'
+            f'Right click to open the release notes for all {len(upcoming_releases)} upcoming releases.\n'
+            f'If you choose to update, remember to reinstall napari in a fresh environment to avoid issues!'
+        )
+        self.upcoming_releases = upcoming_releases
+
+    def mousePressEvent(self, ev: QMouseEvent | None) -> None:
+        if ev is None:
+            return
+        if ev.button() == Qt.MouseButton.LeftButton:
+            web_open('https://napari.org/stable/release/index.html')
+        if ev.button() == Qt.MouseButton.RightButton:
+            for release in self.upcoming_releases:
+                web_open(
+                    f'https://napari.org/stable/release/release_{str(release).replace(".", "_")}.html'
+                )
+
+
 class ViewerStatusBar(QStatusBar):
-    def __init__(self, parent: '_QtMainWindow') -> None:
+    def __init__(self, parent: _QtMainWindow) -> None:
         super().__init__(parent=parent)
 
         self._status = QLabel('Ready')
@@ -78,6 +115,8 @@ class ViewerStatusBar(QStatusBar):
         self.update_warning_icons()
         get_settings().experimental.events.connect(self.update_warning_icons)
 
+        self._updates_icon = None
+
     def update_warning_icons(self) -> None:
         exp_settings = get_settings().experimental
         for setting_id, letter in _EXPERIMENTAL_FEATURES_TO_WARN.items():
@@ -95,6 +134,16 @@ class ViewerStatusBar(QStatusBar):
                 label = self._warn_labels[setting_id]
 
             label.setVisible(getattr(exp_settings, setting_id))
+
+    def update_upcoming_versions_icon(
+        self, upcoming: Sequence[Version] | None = None
+    ) -> None:
+        if upcoming is None:
+            # use the predetermined values
+            upcoming = NAPARI_UPCOMING_VERSIONS
+        if upcoming and self._updates_icon is None:
+            self._updates_icon = UpcomingUpdatesIcon(upcoming)
+            self.addPermanentWidget(self._updates_icon)
 
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
