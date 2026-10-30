@@ -63,9 +63,9 @@ jobs:
     name: Build wheel
     uses: ./.github/workflows/reusable_build_wheel.yml
 
-  smoke:
+  test_initial:
     # Fast, fail-fast gate: the headless (no Qt) part of the test suite.
-    name: Smoke test
+    name: Initial smoke test (headless)
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
@@ -74,12 +74,12 @@ jobs:
       qt_backend: headless
       coverage: no_cov
       timeout: 10
-      artifacts_suffix: "smoke"
+      artifacts_suffix: "initial"
 
   test:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: smoke
+    needs: test_initial
     strategy:
       fail-fast: false
       matrix:
@@ -149,14 +149,14 @@ jobs:
 
 
   test_pip_install:
-    needs: smoke
+    needs: test_initial
     name: pip install
     uses: ./.github/workflows/reusable_pip_test.yml
 
   test_examples:
     name: test examples
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: smoke
+    needs: test_initial
     with:
         toxenv: py312-pyqt6-examples
         timeout: 60
@@ -178,7 +178,7 @@ jobs:
   test_benchmarks:
     name: test benchmarks
     runs-on: ubuntu-latest
-    needs: smoke
+    needs: test_initial
     timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: 1
