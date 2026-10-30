@@ -62,11 +62,18 @@ jobs:
         run: |
           pip uninstall -y numba
 
+      # This job only verifies that the built wheel installs and works. The
+      # full suite already runs against the same wheel in the tox jobs, so a
+      # representative subset is enough and saves ~15 minutes of CI time.
       - name: Test
-        timeout-minutes: 35
+        timeout-minutes: 15
         run: |
-          python -m pytest --pyargs napari --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
-          python -m pytest --pyargs napari_builtins --color=yes --basetemp=.pytest_tmp --config-file=napari-from-github/pyproject.toml
+          python -m pytest --pyargs \
+            napari._tests.test_top_level_availability \
+            napari._tests.test_viewer \
+            napari_builtins._tests.test_writer \
+            --color=yes --basetemp=.pytest_tmp \
+            --config-file=napari-from-github/pyproject.toml
 
       - name: Upload test artifacts
         if: failure()
