@@ -64,15 +64,29 @@ jobs:
     uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
-    name: Initial headless smoke test
+    name: Initial headless smoke tests
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: headless
+            coverage: no_cov
+            min_req: ""
+          - python: "3.14"
+            platform: ubuntu-latest
+            backend: headless
+            coverage: no_cov
+            min_req: ""
     with:
-      python_version: "3.14"
-      platform: ubuntu-latest
-      qt_backend: headless
-      coverage: no_cov
-      timeout: 10
+      python_version: ${{ matrix.python }}
+      platform: ${{ matrix.platform }}
+      qt_backend: ${{ matrix.backend }}
+      coverage: ${{ matrix.coverage }}
+      min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
 
   test:
@@ -89,6 +103,16 @@ jobs:
         include:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
+          - python: "3.11"
+            platform: ubuntu-latest
+            backend: pyqt6
+            coverage: no_cov
+            min_req: ""
+          - python: "3.14"
+            platform: ubuntu-latest
+            backend: pyqt6
+            coverage: no_cov
+            min_req: ""
           - python: "3.14"
             platform: windows-latest
             backend: pyqt6
@@ -116,11 +140,6 @@ jobs:
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
-          # test headless on older python
-          - python: "3.11"
-            platform: ubuntu-22.04
-            backend: headless
-            coverage: no_cov
           # test with torch
           - python: "3.11"
             platform: ubuntu-latest
