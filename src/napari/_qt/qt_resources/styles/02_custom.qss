@@ -305,8 +305,9 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ foreground }};
 }
 
-/* editable slice label and axis name */
-QtDimSliderWidget > QLineEdit {
+/* editable slice label and read-only axis name */
+QtDimSliderWidget > QLineEdit,
+QtDimSliderWidget > QLabel#axis_label {
   padding: 0 0 1px 2px;
   min-height: 12px;
   min-width: 16px;

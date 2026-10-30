@@ -257,7 +257,7 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
-    and vice versa with eliding capabilites.
+    with eliding capabilites, and that resizing never writes back to the model.
     """
     ndim = 4
     view = QtDims(Dims(ndim=ndim))
@@ -282,9 +282,7 @@ def test_update_dims_labels(qtbot):
 
     # check that the label text corresponds with the dims model
     # while being elided on the GUI
-    first_label.setFocus()
-    first_label.selectAll()
-    qtbot.keyClicks(first_label, 'napari')
+    view.dims.axis_labels = ['napari', 'Z', 'Y', 'X']
     assert first_label.text() == view.dims.axis_labels[0]
     assert '…' in first_label._elidedText()
     assert observed_axis_labels_event
@@ -293,6 +291,8 @@ def test_update_dims_labels(qtbot):
     view.setFixedWidth(250)
     assert first_label.text() == view.dims.axis_labels[0]
     assert first_label._elidedText() == view.dims.axis_labels[0]
+    # re-eliding on resize must not corrupt the model
+    assert view.dims.axis_labels == ('napari', 'Z', 'Y', 'X')
 
 
 def test_slice_labels_scale_with_font_size(qtbot):
@@ -311,7 +311,7 @@ def test_slice_labels_scale_with_font_size(qtbot):
 
 
 def test_model_axis_label_updates_do_not_write_back(qtbot):
-    """Programmatic model updates should not re-enter through QLineEdit signals."""
+    """Programmatic model updates should not write back to the model."""
     dims = Dims(ndim=4)
     view = QtDims(dims)
     qtbot.addWidget(view)
