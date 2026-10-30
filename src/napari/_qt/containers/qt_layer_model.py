@@ -14,6 +14,7 @@ from napari.settings import get_settings
 ThumbnailRole = Qt.ItemDataRole.UserRole + 2
 LoadedRole = Qt.ItemDataRole.UserRole + 3
 LockedRole = Qt.ItemDataRole.UserRole + 4
+ErroredRole = Qt.ItemDataRole.UserRole + 5
 
 if TYPE_CHECKING:
     from typing import Any
@@ -48,9 +49,13 @@ class QtLayerListModel(QtListModel[Layer]):
             return layer.name
         if role == Qt.ItemDataRole.ToolTipRole:  # for tooltip
             layer_source_info = layer.get_source_str()
-            if layer_loaded:
-                return layer_source_info
-            return f'{layer_source_info} (loading)'
+            if not layer_loaded:
+                layer_source_info = f'{layer_source_info} (loading)'
+            elif layer.errored:
+                layer_source_info = (
+                    'Layer failed loading.\nTry refreshing or reloading layer.'
+                )
+            return layer_source_info
         if (
             role == Qt.ItemDataRole.CheckStateRole
         ):  # the "checked" state of this item
@@ -69,6 +74,8 @@ class QtLayerListModel(QtListModel[Layer]):
                 thumbnail.shape[0],
                 QImage.Format.Format_RGBA8888,
             )
+        if role == ErroredRole:
+            return layer.errored
         if role == LoadedRole:
             return layer_loaded
         if role == LockedRole:
@@ -123,6 +130,7 @@ class QtLayerListModel(QtListModel[Layer]):
             'thumbnail': ThumbnailRole,
             'visible': Qt.ItemDataRole.CheckStateRole,
             'name': Qt.ItemDataRole.DisplayRole,
+            'errored': ErroredRole,
             'loaded': LoadedRole,
             'locked': LockedRole,
         }.get(event.type)
