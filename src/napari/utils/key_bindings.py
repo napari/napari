@@ -37,7 +37,7 @@ from __future__ import annotations
 import inspect
 import time
 from collections import ChainMap
-from collections.abc import Callable, MutableMapping
+from collections.abc import Callable, Mapping, MutableMapping
 from types import EllipsisType, MethodType
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, overload
 
@@ -55,6 +55,7 @@ Keymap = MutableMapping[KeyBinding | EllipsisType, Callable | EllipsisType]
 
 KeymapFunction = Callable[..., Any]
 
+_KeyLike = TypeVar('_KeyLike', bound=KeyBindingLike | EllipsisType)
 _F = TypeVar('_F', bound=KeymapFunction)
 
 KEY_SUBS: dict[str, str] = {
@@ -113,8 +114,10 @@ _VISPY_MODS: dict[keys.Key, KeyMod] = {
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
-def _coerce_keymap(keymap: Keymap) -> Keymap:
-    """Coerce every key of a keymap to a KeyBinding."""
+def _coerce_keymap(
+    keymap: Mapping[_KeyLike, Callable | EllipsisType],
+) -> Keymap:
+    """Copy a keymap, coercing every key but the wildcard to a KeyBinding."""
     return {
         k if isinstance(k, EllipsisType) else coerce_keybinding(k): v
         for k, v in keymap.items()
@@ -328,7 +331,9 @@ class KeymapProvider:
         return self._keymap
 
     @keymap.setter
-    def keymap(self, value: Keymap) -> None:
+    def keymap(
+        self, value: Mapping[_KeyLike, Callable | EllipsisType]
+    ) -> None:
         self._keymap = _coerce_keymap(value)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
