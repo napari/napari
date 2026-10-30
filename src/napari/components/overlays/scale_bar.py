@@ -1,5 +1,7 @@
 """Scale bar model."""
 
+from typing import Annotated
+
 from pydantic import Field
 
 from napari.components.overlays.base import CanvasOverlay
@@ -26,6 +28,9 @@ class ScaleBarOverlay(CanvasOverlay):
     length : Optional[float]
         Fixed length of the scale bar in physical units. If set to `None`,
         it is determined automatically based on zoom level.
+    canvas_ratio : float
+        When length is unset, the scale bar will resize to take up approximately
+        this much of the canvas width. If length is set, this is ignored.
     position : CanvasPosition
         The position of the overlay in the canvas.
     box : bool
@@ -50,3 +55,4 @@ class ScaleBarOverlay(CanvasOverlay):
     ticks: bool = True
     font_size: float | None = None
     length: float | None = None
+    canvas_ratio: Annotated[float, Field(ge=0, le=1)] = 0.25
