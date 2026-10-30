@@ -1127,3 +1127,19 @@ def test_contrast_outside_range():
 def test_docstring():
     validate_all_params_in_docstring(Image)
     validate_kwargs_sorted(Image)
+
+
+@pytest.mark.parametrize('shape', [(0, 0), (0, 5), (5, 0), (0, 5, 5)])
+def test_empty_data_raises_clear_error(shape):
+    """Data with a zero-length axis should raise a clear error."""
+    with pytest.raises(ValueError, match='must not be empty'):
+        Image(np.zeros(shape))
+
+
+def test_set_empty_data_raises_clear_error():
+    """Reject empty data without changing an existing layer."""
+    data = np.random.random((4, 4))
+    layer = Image(data)
+    with pytest.raises(ValueError, match='must not be empty'):
+        layer.data = np.zeros((0, 0))
+    assert layer.data is data

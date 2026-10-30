@@ -76,6 +76,22 @@ def _make_level_materializer(
     return _materializer
 
 
+def _check_data_not_empty(data) -> None:
+    """Raise a clear error when any data level has a zero-length axis."""
+    if isinstance(data, (MultiScaleData, list, tuple)):
+        data_levels = data
+    else:
+        data_levels = (data,)
+
+    for data_level in data_levels:
+        shape = getattr(data_level, 'shape', None)
+        if shape is not None and 0 in shape:
+            raise ValueError(
+                'Layer data must not be empty: got data with '
+                f'shape {tuple(shape)}, which has a zero-length axis.'
+            )
+
+
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
@@ -246,6 +262,9 @@ class ScalarFieldBase(Layer, ABC):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
+        if isinstance(data, (MultiScaleData, list, tuple)):
+            _check_data_not_empty(data)
+
         if getattr(data, 'ndim', 2) < 2:
             raise ValueError('Image data must have at least 2 dimensions.')
 
@@ -255,6 +274,8 @@ class ScalarFieldBase(Layer, ABC):
             multiscale, data = guess_multiscale(data)
         elif multiscale and not isinstance(data, MultiScaleData):
             data = MultiScaleData(data)
+
+        _check_data_not_empty(data)
 
         # Determine dimensionality of the data
         if ndim is None:
@@ -393,6 +414,7 @@ class ScalarFieldBase(Layer, ABC):
 
     @data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+        _check_data_not_empty(data)
         self._data_raw = data
         # note, we don't support changing from/to multiscale after construction
         self._data = MultiScaleData(data) if self.multiscale else data  # pyrefly: ignore [bad-argument-type]
