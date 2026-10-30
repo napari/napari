@@ -117,6 +117,11 @@ authors:
   affiliation: Leibniz-IPHT, Jena, Germany
   orcid: https://orcid.org/0000-0001-9293-2179
   alias: jacopoabramo
+- given-names: Aniket Singh
+  family-names: Yadav
+  affiliation: Galgotias University
+  orcid: https://orcid.org/0009-0004-4883-3797
+  alias: Aniketsy
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
@@ -234,6 +239,11 @@ authors:
   affiliation: EMBL Heidelberg, Germany
   orcid: https://orcid.org/0000-0002-1113-9556
   alias: aeisenbarth
+- given-names: Joost
+  family-names: de Folter
+  affiliation: The Francis Crick Institute
+  orcid: https://orcid.org/0000-0001-9704-2925
+  alias: folterj
 - given-names: Jeremy
   family-names: Freeman
   affiliation: Chan Zuckerberg Initiative
@@ -278,6 +288,11 @@ authors:
   affiliation: Biohub, San Francisco
   orcid: https://orcid.org/0000-0002-8984-2882
   alias: TeunHuijben
+- given-names: Ian
+  family-names: Hunt-Isaak
+  affiliation: Earthmover
+  orcid: https://orcid.org/0000-0002-7591-083X
+  alias: ianhi
 - given-names: Katherine
   family-names: Hutchings
   affiliation: University College London
@@ -567,11 +582,6 @@ authors:
   affiliation: Katana Labs
   orcid: https://orcid.org/0000-0002-6165-4679
   alias: zoccoler
-- given-names: Aniket Singh
-  family-names: Yadav
-  affiliation: Galgotias University
-  orcid: https://orcid.org/0009-0004-4883-3797
-  alias: Aniketsy
 - given-names: Lucien
   family-names: Hinderling
   affiliation: Institute of Cell Biology, University of Bern, Switzerland

@@ -379,6 +379,15 @@ class TestQtMultiscaleLevelControl:
         image.locked_data_level = None
         assert control.level_combobox.currentIndex() == 0
 
+    def test_label_is_not_a_window(self, qtbot: QtBot) -> None:
+        """The label is shown before it is added to a layout, so needs a
+        parent to not briefly show as a separate window."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        image = Image([np.zeros((10, 10)), np.zeros((5, 5))])
+        control = QtMultiscaleLevelControl([image], parent)
+        assert not control.level_label.isWindow()
+
     def test_mismatched_multiscale_shapes(self, qt_wrap: QtWrap) -> None:
         image1 = Image([np.zeros((10, 10)), np.zeros((5, 5))])
         image2 = Image([np.zeros((8, 8)), np.zeros((4, 4))])
