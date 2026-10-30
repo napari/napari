@@ -348,6 +348,7 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
 
 
 @skip_on_win_ci
+@pytest.mark.slow
 def test_screenshot(make_napari_viewer, qapp, qtbot):
     "Test taking a screenshot"
     viewer = make_napari_viewer(show=True)
