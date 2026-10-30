@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 )
 from superqt import (
     QDoubleRangeSlider,
+    QLabeledDoubleRangeSlider,
     QLabeledDoubleSlider,
 )
 
@@ -26,7 +27,6 @@ from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWrappedLabel,
 )
 from napari._qt.utils import (
-    QLabeledDoubleRangeSlider,
     qt_signals_blocked,
     set_widgets_enabled_with_opacity,
 )

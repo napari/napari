@@ -37,7 +37,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from superqt import QLabeledDoubleRangeSlider as QLabeledDoubleRangeSlider_
 
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
@@ -50,21 +49,6 @@ if TYPE_CHECKING:
 
     from magicgui.widgets import Widget
     from qtpy.QtGui import QGuiApplication
-
-
-class QLabeledDoubleRangeSlider(QLabeledDoubleRangeSlider_):
-    """Patched version of QLabeledDoubleRangeSlider.
-
-    QDoubleRangeSlider.setValue stores the value as given,
-    while the internal handle positions are always stored as a list.
-    Passing a tuple therefore leaves the two out of
-    sync, which makes the slider emit a spurious valueChanged signal
-    every time its range is updated.  Passing a list keeps them in sync.
-    This should be fixed in superqt, also for QDoubleRangeSlider.
-    """
-
-    def setValue(self, value) -> None:
-        super().setValue(list(value))
 
 
 class ColorMode(StringEnum):
