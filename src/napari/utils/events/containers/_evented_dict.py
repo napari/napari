@@ -1,8 +1,11 @@
 """MutableMapping that emits events when altered."""
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from psygnal import EmissionInfo, EventedModel as PsygnalModel
+from pydantic_core import CoreSchema, core_schema
 
 from napari.utils.events.containers._dict import _K, _T, TypedMutableMapping
 from napari.utils.events.event import EmitterGroup, Event
@@ -10,6 +13,8 @@ from napari.utils.events.types import SupportsEvents
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+
+    from pydantic import GetCoreSchemaHandler
 
 
 class EventedDict(TypedMutableMapping[_K, _T]):
@@ -51,8 +56,8 @@ class EventedDict(TypedMutableMapping[_K, _T]):
 
     def __init__(
         self,
-        data: 'Mapping[_K, _T] | None' = None,
-        basetype: 'type[_T] | Sequence[type[_T]]' = (),
+        data: Mapping[_K, _T] | None = None,
+        basetype: type[_T] | Sequence[type[_T]] = (),
     ) -> None:
         _events = {
             'changing': None,
@@ -194,4 +199,19 @@ class EventedDictNamespace(EventedDict[str, _T]):
         return sorted(
             set(super().__dir__())
             | {k for k in self.keys() if not k.startswith('_')}
+        )
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(
+            cls,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda value: dict(value),
+                info_arg=False,
+                when_used='json',
+            ),
         )
