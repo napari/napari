@@ -597,7 +597,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.thumbnail = colormapped
 
     def _calc_data_range(
-        self, mode: Literal['data', 'slice'] = 'data'
+        self,
+        mode: Literal['data', 'slice'] = 'data',
+        percentiles: tuple[float, float] | None = None,
     ) -> tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
@@ -613,7 +615,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
+            cast(LayerDataProtocol, input_data),
+            rgb=self.rgb,
+            dtype=self.dtype,
+            percentiles=percentiles,
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
