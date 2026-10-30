@@ -64,7 +64,7 @@ jobs:
     uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
-    name: Initial smoke test (headless)
+    name: Initial headless smoke test
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     with:
@@ -116,8 +116,8 @@ jobs:
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
-          # test without any Qt backends
-          - python: "3.12"
+          # test headless on older python
+          - python: "3.11"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
