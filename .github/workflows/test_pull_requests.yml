@@ -113,6 +113,10 @@ jobs:
             backend: pyqt6_no_numba
             coverage: cov
             timeout-minutes: 60
+            # Software rendering without numba makes screenshot-based tests
+            # take a minute or more each. They still run on every other
+            # platform, so skip the slow-marked ones here.
+            pytest_addopts: '-m "not slow"'
           - python: "3.14"
             platform: macos-15
             backend: pyqt6
@@ -156,6 +160,7 @@ jobs:
       platform: ${{ matrix.platform }}
       qt_backend: ${{ matrix.backend }}
       min_req: ${{ matrix.MIN_REQ }}
+      pytest_addopts: ${{ matrix.pytest_addopts }}
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
