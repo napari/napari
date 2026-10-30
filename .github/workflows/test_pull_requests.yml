@@ -63,36 +63,23 @@ jobs:
     name: Build wheel
     uses: ./.github/workflows/reusable_build_wheel.yml
 
-  test_initial:
-    name: Initial test
+  smoke:
+    # Fast, fail-fast gate: the headless (no Qt) part of the test suite.
+    name: Smoke test
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - python: "3.11"
-            platform: ubuntu-latest
-            backend: pyqt6
-            coverage: no_cov
-            min_req: ""
-          - python: "3.14"
-            platform: ubuntu-latest
-            backend: pyqt6
-            coverage: no_cov
-            min_req: ""
     with:
-      python_version: ${{ matrix.python }}
-      platform: ${{ matrix.platform }}
-      qt_backend: ${{ matrix.backend }}
-      coverage: ${{ matrix.coverage }}
-      min_req: ${{ matrix.MIN_REQ }}
-      artifacts_suffix: "initial"
+      python_version: "3.14"
+      platform: ubuntu-latest
+      qt_backend: headless
+      coverage: no_cov
+      timeout: 10
+      artifacts_suffix: "smoke"
 
   test:
     name: ${{ matrix.platform }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: test_initial
+    needs: smoke
     strategy:
       fail-fast: false
       matrix:
@@ -162,14 +149,14 @@ jobs:
 
 
   test_pip_install:
-    needs: test_initial
+    needs: smoke
     name: pip install
     uses: ./.github/workflows/reusable_pip_test.yml
 
   test_examples:
     name: test examples
     uses: ./.github/workflows/reusable_run_tox_test.yml
-    needs: test_initial
+    needs: smoke
     with:
         toxenv: py312-pyqt6-examples
         timeout: 60
@@ -191,7 +178,7 @@ jobs:
   test_benchmarks:
     name: test benchmarks
     runs-on: ubuntu-latest
-    needs: test_initial
+    needs: smoke
     timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: 1
