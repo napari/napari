@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from app_model.expressions import ContextNamespace as _ContextNamespace
 
 if TYPE_CHECKING:
+    from app_model.expressions import Context
+
     from napari.utils.events import Event
 
 A = TypeVar('A')
@@ -14,7 +16,10 @@ class ContextNamespace(_ContextNamespace, Generic[A]):
     meant to be subclassed, with class attributes that are `ContextKeys`.
     """
 
+    _context: 'Context'
+
     def update(self, event: 'Event') -> None:
         """Trigger an update of all "getter" functions in this namespace."""
-        for k, get in self._getters.items():
-            setattr(self, k, get(event.source))
+        with self._context.buffered_changes():
+            for k, get in self._getters.items():
+                setattr(self, k, get(event.source))
