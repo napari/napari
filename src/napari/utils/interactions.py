@@ -209,7 +209,7 @@ def mouse_press_callbacks(
 ) -> None:
     """Run mouse press callbacks on either layer or viewer object.
 
-    Drag callbacks go through this machinery too on setup (since the first
+    Drag callbacks go through this machinery on setup (since the first
     step of a drag is a press).
 
     Note that drag callbacks should have the following form:
