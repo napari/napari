@@ -10,7 +10,7 @@ from napari._vispy.layers.image import VispyImageLayer
 from napari._vispy.utils.qt_font import FontInfo
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components.dims import Dims
-from napari.components.overlays import BoundingBoxOverlay
+from napari.components.overlays import LayerBoundingBoxOverlay
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Image
 
@@ -153,7 +153,7 @@ def test_transforming_child_node(
     layer = VispyImageLayer(im_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
-        BoundingBoxOverlay(),
+        LayerBoundingBoxOverlay(),
         layer=im_layer,
         viewer=viewer,
         font_info=font_info,
@@ -200,7 +200,7 @@ def test_transforming_child_node_pyramid(pyramid_layer):
     layer = VispyImageLayer(pyramid_layer, font_info=font_info)
 
     overlay = create_vispy_overlay(
-        BoundingBoxOverlay(),
+        LayerBoundingBoxOverlay(),
         layer=pyramid_layer,
         viewer=viewer,
         font_info=font_info,
