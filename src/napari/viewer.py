@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import typing
+from typing import Any, Literal, Self
 from weakref import WeakSet
 
 import magicgui as mgui
-import numpy as np
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -10,9 +12,12 @@ from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
     # helpful for IDE support
+    from collections.abc import Sequence
     from pathlib import Path
 
-    from napari._qt.qt_main_window import Window
+    import numpy as np
+
+    from napari.window import Window
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -35,19 +40,19 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. By default True.
     """
 
-    _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
-    _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
+    _window: Window
+    _instances: typing.ClassVar[WeakSet[Viewer]] = WeakSet()
 
     def __init__(
         self,
         *,
-        title='napari',
-        ndisplay=2,
-        order=(),
-        axis_labels=(),
-        show=True,
-        show_welcome_screen=True,
-        **kwargs,
+        title: str = 'napari',
+        ndisplay: int = 2,
+        order: Sequence[int] = (),
+        axis_labels: Sequence[str] = (),
+        show: bool = True,
+        show_welcome_screen: bool = True,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             title=title,
@@ -66,12 +71,12 @@ class Viewer(ViewerModel):
 
         _initialize_plugins()
 
-        self._window = Window(  # pyrefly: ignore [bad-assignment]
+        self._window = Window(
             self, show=show, show_welcome_screen=show_welcome_screen
         )
         self._instances.add(self)
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         """Overload __new__ to facilitate temporary monkey-patching.
 
         This method simplifies scenarios where temporary patching of `__new__`
@@ -99,10 +104,12 @@ class Viewer(ViewerModel):
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
-    def window(self) -> 'Window':
+    def window(self) -> Window:
         return self._window
 
-    def update_console(self, variables):
+    def update_console(
+        self, variables: dict[str, Any] | str | list[str] | tuple[str, ...]
+    ) -> None:
         """Update console's namespace with desired variables.
 
         Parameters
@@ -127,7 +134,7 @@ class Viewer(ViewerModel):
         *,
         scale_factor: float = 1,
         flash: bool = False,
-    ) -> np.ndarray:
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Export an image of the full extent of the displayed layer data.
 
         This function finds a tight boundary around the data, resets the view
@@ -177,9 +184,9 @@ class Viewer(ViewerModel):
     def export_rois(
         self,
         rois: list[np.ndarray],
-        paths: 'str | Path | list[str | Path] | None' = None,
+        paths: str | Path | list[str | Path] | None = None,
         scale: float = 1.0,
-    ):
+    ) -> list[np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]]:
         """Export the given rectangular rois to specified file paths.
 
         Iteratively take a screenshot of each given roi. Note that 3D rois
@@ -220,11 +227,11 @@ class Viewer(ViewerModel):
         self,
         path: str | None = None,
         *,
-        size: tuple[str, str] | None = None,
+        size: tuple[int, int] | None = None,
         scale: float | None = None,
         canvas_only: bool = True,
         flash: bool = False,
-    ):
+    ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -260,11 +267,11 @@ class Viewer(ViewerModel):
             canvas_only=canvas_only,
         )
 
-    def show(self, *, block=False):
+    def show(self, *, block: bool = False) -> None:
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
 
-    def close(self):
+    def close(self) -> None:
         """Close the viewer window."""
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
@@ -309,4 +316,4 @@ def current_viewer() -> Viewer | None:
     except ImportError:
         return None
     else:
-        return _QtMainWindow.current_viewer()  # pyrefly: ignore [bad-return]
+        return _QtMainWindow.current_viewer()  # pyrefly: ignore[bad-return]
