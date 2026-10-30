@@ -3019,6 +3019,32 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
+    def get_value(
+        self,
+        position: npt.ArrayLike,
+        *,
+        view_direction: npt.ArrayLike | None = None,
+        dims_displayed: list[int] | None = None,
+        world: bool = False,
+    ) -> tuple[int | None, int | None] | None:
+        """Indices of the shape and vertex at a position.
+
+        See :meth:`napari.layers.Layer.get_value` for the parameters.
+
+        Returns
+        -------
+        value : tuple of (int | None, int | None), or None
+            Index of the shape and of the vertex under the position, either
+            of which is None if there is none. None if the layer is not
+            visible.
+        """
+        return super().get_value(
+            position,
+            view_direction=view_direction,
+            dims_displayed=dims_displayed,
+            world=world,
+        )
+
     def _get_value(self, position) -> tuple[int | None, int | None]:
         """Value of the data at a position in data coordinates.
 
@@ -3066,7 +3092,7 @@ class Shapes(Layer):
                     distances <= self._normalized_vertex_radius, axis=1
                 ).nonzero()
                 if len(matches[0]) > 0:
-                    value = (selected_index[0], matches[0][-1])
+                    value = (selected_index[0], int(matches[0][-1]))
             elif self._mode in (
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
@@ -3094,7 +3120,7 @@ class Shapes(Layer):
                         return_index=True,
                     )
                     shape_in_list = list(vals).index(shape)
-                    value = (shape, index - idx[shape_in_list])
+                    value = (int(shape), int(index - idx[shape_in_list]))
 
         if value is None:
             # Check if mouse inside shape
@@ -3108,7 +3134,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, None]:
+    ) -> tuple[int | None, None]:
         """Get the layer data value along a ray
 
         Parameters
@@ -3140,7 +3166,7 @@ class Shapes(Layer):
         start_point: np.ndarray,
         end_point: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, np.ndarray | None]:
+    ) -> tuple[int | None, np.ndarray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) along the specified 3D line segment.
 
@@ -3160,8 +3186,8 @@ class Shapes(Layer):
 
         Returns
         -------
-        value Union[None, float, int]
-            The data value along the supplied ray.
+        value : int | None
+            Index of the first shape along the supplied ray, if any.
         intersection_point : Union[None, np.ndarray]
             (n,) array containing the point where the ray intersects the first shape
             (i.e., the shape most in the foreground). The coordinate is in layer
@@ -3195,7 +3221,7 @@ class Shapes(Layer):
         position: np.ndarray,
         view_direction: np.ndarray,
         dims_displayed: list[int],
-    ) -> tuple[float | int | None, npt.NDArray | None]:
+    ) -> tuple[int | None, npt.NDArray | None]:
         """Get the shape index and intersection point of the first shape
         (i.e., closest to start_point) "under" a mouse click.
 
