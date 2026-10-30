@@ -1,6 +1,16 @@
+from typing import Any
+
 import numpy as np
 from qtpy.QtCore import QSize, Qt, Signal
-from qtpy.QtGui import QColor, QIntValidator, QPainter, QPainterPath, QPen
+from qtpy.QtGui import (
+    QColor,
+    QIntValidator,
+    QMouseEvent,
+    QPainter,
+    QPainterPath,
+    QPaintEvent,
+    QPen,
+)
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -25,22 +35,22 @@ class QtStar(QFrame):
 
     def __init__(
         self,
-        parent: QWidget = None,
-        value: int | None = None,
+        parent: QWidget | None = None,
+        value: int = 1,
     ) -> None:
         super().__init__(parent)
         self._value = value
         self._color = QColor(135, 206, 235)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """Override Qt sizeHint."""
         return QSize(100, 100)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """Override Qt minimumSizeHint."""
         return QSize(100, 100)
 
-    def paintEvent(self, e):
+    def paintEvent(self, e: QPaintEvent) -> None:
         """Paint star on frame."""
         qp = QPainter()
         qp.begin(self)
@@ -48,7 +58,7 @@ class QtStar(QFrame):
         self.drawStar(qp)
         qp.end()
 
-    def value(self):
+    def value(self) -> int:
         """Return value of star widget.
 
         Returns
@@ -59,7 +69,7 @@ class QtStar(QFrame):
         """
         return self._value
 
-    def setValue(self, value: int, color: QColor = None):
+    def setValue(self, value: int, color: QColor | None = None) -> None:
         """Set line width value of star widget.
 
         Parameters
@@ -73,7 +83,7 @@ class QtStar(QFrame):
             self._color = color
         self.update()
 
-    def drawStar(self, qp):
+    def drawStar(self, qp: QPainter) -> None:
         """Draw a star in the preview pane.
 
         Parameters
@@ -139,7 +149,7 @@ class QtTriangle(QFrame):
 
     def __init__(
         self,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
         value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
@@ -150,14 +160,17 @@ class QtTriangle(QFrame):
         self._value = value
         self._color = QColor(135, 206, 235)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """When mouse is clicked, adjust to new values."""
         # set value based on position of event
         perc = event.position().x() / self.rect().width()
-        value = ((self._max_value - self._min_value) * perc) + self._min_value
+        # valueChanged is an int signal, so keep the value an int
+        value = round(
+            ((self._max_value - self._min_value) * perc) + self._min_value
+        )
         self.setValue(value)
 
-    def paintEvent(self, e):
+    def paintEvent(self, e: QPaintEvent) -> None:
         """Paint triangle on frame."""
         qp = QPainter()
         qp.begin(self)
@@ -168,15 +181,15 @@ class QtTriangle(QFrame):
         self.drawLine(qp, self.rect().width() * perc)
         qp.end()
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """Override Qt sizeHint."""
         return QSize(75, 30)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """Override Qt minimumSizeHint."""
         return QSize(75, 30)
 
-    def drawTriangle(self, qp):
+    def drawTriangle(self, qp: QPainter) -> None:
         """Draw triangle.
 
         Parameters
@@ -200,7 +213,7 @@ class QtTriangle(QFrame):
 
         qp.drawPath(path)
 
-    def value(self):
+    def value(self) -> int:
         """Return value of triangle widget.
 
         Returns
@@ -210,7 +223,7 @@ class QtTriangle(QFrame):
         """
         return self._value
 
-    def setValue(self, value, color=None):
+    def setValue(self, value: int, color: QColor | None = None) -> None:
         """Set value for triangle widget.
 
         Parameters
@@ -223,7 +236,7 @@ class QtTriangle(QFrame):
             self._color = color
         self.update()
 
-    def minimum(self):
+    def minimum(self) -> int:
         """Return minimum value.
 
         Returns
@@ -233,7 +246,7 @@ class QtTriangle(QFrame):
         """
         return self._min_value
 
-    def maximum(self):
+    def maximum(self) -> int:
         """Return maximum value.
 
         Returns
@@ -243,7 +256,7 @@ class QtTriangle(QFrame):
         """
         return self._max_value
 
-    def setMinimum(self, value: int):
+    def setMinimum(self, value: int) -> None:
         """Set minimum value
 
         Parameters
@@ -254,7 +267,7 @@ class QtTriangle(QFrame):
         self._min_value = value
         self._value = max(self._value, value)
 
-    def setMaximum(self, value: int):
+    def setMaximum(self, value: int) -> None:
         """Set maximum value.
 
         Parameters
@@ -266,13 +279,13 @@ class QtTriangle(QFrame):
 
         self._value = min(self._value, value)
 
-    def drawLine(self, qp, value: int):
+    def drawLine(self, qp: QPainter, value: float) -> None:
         """Draw line on triangle indicating value.
 
         Parameters
         ----------
         qp : QPainter object
-        value : int
+        value : float
             Value of highlight thickness.
         """
         col = QColor('white')
@@ -309,9 +322,9 @@ class QtHighlightPreviewWidget(QWidget):
 
     def __init__(
         self,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
         description: str = '',
-        value: dict | None = None,
+        value: dict[str, Any] | None = None,
         min_value: int = 1,
         max_value: int = 10,
         unit: str = 'px',
@@ -421,13 +434,14 @@ class QtHighlightPreviewWidget(QWidget):
 
         self._refresh()
 
-    def _update_thickness_value(self, thickness_value):
+    def _update_thickness_value(self, thickness_value: int | str) -> None:
         """Update highlight thickness value.
 
         Parameters
         ----------
-        thickness_value : int
-            Highlight thickness value.
+        thickness_value : int or str
+            Highlight thickness value. Text comes from the line edit; an
+            empty string is ignored.
         """
         if thickness_value == '':
             return
@@ -442,13 +456,15 @@ class QtHighlightPreviewWidget(QWidget):
         self.valueChanged.emit(self._value)
         self._refresh()
 
-    def _update_color_value(self, color_value):
+    def _update_color_value(
+        self, color_value: list[float] | np.ndarray | str
+    ) -> None:
         """Update highlight color value.
 
         Parameters
         ----------
-        color_value : List[float]
-            Highlight color value as a list of floats.
+        color_value : list of float or np.ndarray
+            Highlight color value as RGBA floats. An empty string is ignored.
         """
         if isinstance(color_value, np.ndarray):
             color_value = color_value.tolist()
@@ -461,7 +477,7 @@ class QtHighlightPreviewWidget(QWidget):
         self.valueChanged.emit(self._value)
         self._refresh()
 
-    def _refresh(self):
+    def _refresh(self) -> None:
         """Set every widget value to the new set value."""
         self.blockSignals(True)
         # Transform color value from a float representation
@@ -475,7 +491,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._color_swatch_edit.setColor(self._color_value)
         self.blockSignals(False)
 
-    def value(self):
+    def value(self) -> dict[str, Any]:
         """Return current value.
 
         Returns
@@ -485,7 +501,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         return self._value
 
-    def setValue(self, value: dict):
+    def setValue(self, value: dict[str, Any]) -> None:
         """Set new value and update widget.
 
         Parameters
@@ -497,7 +513,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._update_color_value(value.get('highlight_color', ''))
         self._refresh()
 
-    def description(self):
+    def description(self) -> str:
         """Return the description text.
 
         Returns
@@ -507,7 +523,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         return self._description.text()
 
-    def setDescription(self, text):
+    def setDescription(self, text: str) -> None:
         """Set the description text.
 
         Parameters
@@ -517,7 +533,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         self._description.setText(text)
 
-    def unit(self):
+    def unit(self) -> str:
         """Return highlight value unit text.
 
         Returns
@@ -527,7 +543,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         return self._unit.text()
 
-    def setUnit(self, text):
+    def setUnit(self, text: str) -> None:
         """Set highlight value unit.
 
         Parameters
@@ -537,7 +553,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         self._unit.setText(text)
 
-    def setMinimum(self, value):
+    def setMinimum(self, value: int) -> None:
         """Set minimum highlight value for star, triangle, text and slider.
 
         Parameters
@@ -560,7 +576,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._value['highlight_thickness'] = self._thickness_value
         self._refresh()
 
-    def minimum(self):
+    def minimum(self) -> int:
         """Return minimum highlight value.
 
         Returns
@@ -570,7 +586,7 @@ class QtHighlightPreviewWidget(QWidget):
         """
         return self._min_value
 
-    def setMaximum(self, value):
+    def setMaximum(self, value: int) -> None:
         """Set maximum highlight value.
 
         Parameters
@@ -593,7 +609,7 @@ class QtHighlightPreviewWidget(QWidget):
         self._value['highlight_thickness'] = self._thickness_value
         self._refresh()
 
-    def maximum(self):
+    def maximum(self) -> int:
         """Return maximum highlight value.
 
         Returns
