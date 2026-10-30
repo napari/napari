@@ -42,6 +42,10 @@ on:
         required: false
         type: string
         default: ""
+      pytest_xdist_args:
+        required: false
+        type: string
+        default: "-n auto --dist worksteal"
 
 jobs:
   test:
@@ -58,7 +62,8 @@ jobs:
       # Above we calculate path to constraints file based on python version and platform
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
-      TOX_TEST_RUNNER: ${{ inputs.coverage == 'cov' && 'coverage run --parallel-mode' || 'python' }}
+      PYTEST_XDIST_ARGS: ${{ inputs.pytest_xdist_args }}
+      PYTEST_COVERAGE_ARGS: ${{ inputs.coverage == 'cov' && '--cov=napari --cov=napari_builtins --cov-report= --cov-append' || '' }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
@@ -217,6 +222,19 @@ jobs:
           name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
+
+      - name: Rename coverage data
+        if: ${{ inputs.coverage == 'cov' }}
+        shell: bash
+        run: |
+          if [[ -f .coverage ]]; then
+            # pytest-cov writes a bare `.coverage` file, but the coverage
+            # combine step in napari/shared-workflows only picks up
+            # `.coverage.*` files.
+            suffix="${{ inputs.platform }}-py${{ inputs.python_version }}-${{ inputs.toxenv || inputs.qt_backend }}-${{ inputs.artifacts_suffix }}"
+            suffix="${suffix//[^A-Za-z0-9_.-]/_}"
+            mv .coverage ".coverage.${suffix}"
+          fi
 
       - name: Upload coverage data
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
