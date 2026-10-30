@@ -8,7 +8,7 @@ import pytest
 from app_model.types import MenuItem, SubmenuItem
 from npe2.manifest.contributions import SampleDataURI
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QDialog
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
@@ -262,6 +262,68 @@ def test_open(
     mock_read.assert_called_once_with(
         filename_call, stack=stack, choose_plugin=False
     )
+
+
+@pytest.mark.parametrize(
+    ('dialog_result', 'text_value', 'expected'),
+    [
+        (
+            QDialog.DialogCode.Accepted,
+            '/tmp/image.tif',
+            '/tmp/image.tif',
+        ),
+        (
+            QDialog.DialogCode.Accepted,
+            'https://example.com/image.tif',
+            'https://example.com/image.tif',
+        ),
+        # check that whitespace is stripped
+        (
+            QDialog.DialogCode.Accepted,
+            '  https://example.com/image.tif  ',
+            'https://example.com/image.tif',
+        ),
+        # file:// URI is normalized to a local path
+        (
+            QDialog.DialogCode.Accepted,
+            'file:///tmp/image.tif',
+            '/tmp/image.tif',
+        ),
+        # check cancelled or empty input
+        (
+            QDialog.DialogCode.Rejected,
+            'https://example.com/image.tif',
+            None,
+        ),
+        (QDialog.DialogCode.Accepted, '', None),
+        (QDialog.DialogCode.Accepted, '   ', None),
+    ],
+)
+def test_open_url(make_napari_viewer, dialog_result, text_value, expected):
+    """Test `Open Path/URL/URI...` action uses `_open_from_list_of_urls_data`."""
+    from qtpy.QtCore import QUrl
+
+    make_napari_viewer()
+    app = get_app_model()
+
+    with (
+        mock.patch('napari._qt.qt_viewer.QInputDialog') as mock_dialog_cls,
+        mock.patch(
+            'napari._qt.qt_viewer.QtViewer._open_from_list_of_urls_data'
+        ) as mock_read,
+    ):
+        mock_dialog = mock_dialog_cls.return_value
+        mock_dialog.exec.return_value = dialog_result
+        mock_dialog.textValue.return_value = text_value
+        app.commands.execute_command('napari.window.file.open_url_dialog')
+    if expected is None:
+        mock_read.assert_not_called()
+    else:
+        mock_read.assert_called_once_with(
+            [QUrl.fromUserInput(expected)],
+            stack=False,
+            choose_plugin=False,
+        )
 
 
 @pytest.mark.parametrize(
