@@ -62,10 +62,9 @@ jobs:
         run: |
           pip uninstall -y numba
 
-      # This job only verifies that the built wheel installs and works. The
-      # full suite already runs against the same wheel in the tox jobs, so a
-      # representative subset is enough and saves ~15 minutes of CI time.
-      - name: Test
+      # we just do a light smoke test here, because the same built wheel is already tested
+      # fully on the tox tests
+      - name: Smoke Test
         timeout-minutes: 15
         run: |
           python -m pytest --pyargs \
