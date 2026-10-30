@@ -1,6 +1,7 @@
 import os
 import sys
 from inspect import Parameter, getdoc, signature
+from typing import Any
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
@@ -76,13 +77,16 @@ def create_func(cls, name=None, doc=None):
         cls_name=cls_name,
     )
 
-    execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
+    execdict: dict[str, Any] = {
+        cls_name: cls,
+        'napari': sys.modules.get('napari'),
+    }
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
     func = execdict[name]
 
     func.__doc__ = doc
-    func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]
+    func.__signature__ = sig.replace(
         parameters=[
             Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
