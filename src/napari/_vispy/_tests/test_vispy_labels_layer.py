@@ -202,3 +202,56 @@ def test_labels_iso_gradient_modes(qtbot, qt_viewer):
     QCoreApplication.instance().processEvents()
     assert layer.iso_gradient_mode == 'fast'
     assert visual.node.iso_gradient_mode == 'fast'
+
+
+@skip_local_popups
+@skip_on_win_ci
+def test_labels_iso_categorical_independent_of_step_size(qt_viewer):
+    """Check that voxels clipped by the ray between samples are rendered."""
+    qt_viewer.show()
+    viewer = qt_viewer.viewer
+    # a staircase at a grazing angle, away from the border of the volume
+    z, y, x = np.mgrid[:32, :32, :32]
+    labels = np.zeros((32, 32, 32), dtype=np.uint8)
+    labels[2:-2, 2:-2, 2:-2] = (z + y // 2 < x)[2:-2, 2:-2, 2:-2]
+    layer = viewer.add_labels(labels)
+    viewer.dims.ndisplay = 3
+    viewer.reset_view()
+    viewer.camera.angles = (5, 35, 70)
+    node = qt_viewer.layer_to_visual[layer].node
+
+    screenshot = qt_viewer.screenshot(flash=False)
+    node.relative_step_size = 0.1
+    np.testing.assert_array_equal(
+        qt_viewer.screenshot(flash=False), screenshot
+    )
+
+
+@skip_local_popups
+@skip_on_win_ci
+def test_labels_iso_categorical_depth_across_scales(qt_viewer):
+    """Check that the depth of labels is right for any scale, so that the
+    layer in front occludes the other."""
+    qt_viewer.show()
+    viewer = qt_viewer.viewer
+    in_front = np.zeros((16, 16, 16), dtype=np.uint8)
+    in_front[:11] = 1  # top at z = 10.5
+    behind = np.zeros((4, 4, 4), dtype=np.uint8)
+    behind[:3] = 1  # top at z = 10, with scale 4
+    colormap = DirectLabelColormap(color_dict={1: 'red', None: 'transparent'})
+    viewer.add_labels(in_front, colormap=colormap)
+    viewer.add_labels(
+        behind,
+        colormap=DirectLabelColormap(
+            color_dict={1: 'lime', None: 'transparent'}
+        ),
+        scale=(4, 4, 4),
+    )
+    viewer.dims.ndisplay = 3
+    # look down the first axis
+    viewer.reset_view()
+
+    screenshot = qt_viewer.screenshot(flash=False)
+    center = screenshot[screenshot.shape[0] // 2, screenshot.shape[1] // 2]
+    assert center[0] > 0
+    assert center[1] == 0
