@@ -64,7 +64,6 @@ jobs:
     uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
-    # Fast, fail-fast gate: the headless (no Qt) part of the test suite.
     name: Initial smoke test (headless)
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
