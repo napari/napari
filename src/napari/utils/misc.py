@@ -202,6 +202,22 @@ def ensure_sequence_of_iterables(
     return itertools.repeat(obj)
 
 
+def _external_stacklevel() -> int:
+    """Return the warnings stacklevel of the first frame outside napari.
+
+    Call it from the function that calls ``warnings.warn``.
+    """
+    napari_dir = str(Path(__file__).parent.parent) + os.sep
+    frame = sys._getframe(1)
+    level = 1
+    while frame is not None and frame.f_code.co_filename.startswith(
+        napari_dir
+    ):
+        frame = frame.f_back
+        level += 1
+    return level
+
+
 def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
     frame = inspect.currentframe().f_back  # pyrefly: ignore [missing-attribute]
