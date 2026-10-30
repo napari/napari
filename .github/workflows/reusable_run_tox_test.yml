@@ -223,6 +223,7 @@ jobs:
           path: |
             ./report-*.json
 
+      # TODO: this is probably fixable by updating the shared-workflows combine step?
       - name: Rename coverage data
         if: ${{ inputs.coverage == 'cov' }}
         shell: bash
