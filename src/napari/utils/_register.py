@@ -1,9 +1,16 @@
 import os
 import sys
+from collections.abc import Callable
 from inspect import Parameter, getdoc, signature
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
+
+if TYPE_CHECKING:
+    from napari.layers import Layer
+
+_L = TypeVar('_L', bound='Layer')
 
 tmpl_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
@@ -14,7 +21,9 @@ with open(tmpl_path) as f:
     template = f.read()
 
 
-def create_func(cls, name=None, doc=None):
+def create_func(
+    cls: type[_L], name: str | None = None, doc: str | None = None
+) -> Callable[..., _L]:
     """
     Creates a function (such as `add_<layer>`) to add a layer to the viewer
 
@@ -35,19 +44,20 @@ def create_func(cls, name=None, doc=None):
         # generated function should not have an Attributes section.
         # See https://numpydoc.readthedocs.io/en/latest/format.html#documenting-classes
         doc = getdoc(cls)
-        start = doc.find('\n\nParameters\n----------\n')  # pyrefly: ignore [missing-attribute]
-        end = doc.find('\n\nAttributes\n----------\n')  # pyrefly: ignore [missing-attribute]
-        if end == -1:
-            end = None
-        if start > 0:
-            doc = doc[start:end]  # pyrefly: ignore [unsupported-operation]
+        if doc is not None:
+            start = doc.find('\n\nParameters\n----------\n')
+            end = doc.find('\n\nAttributes\n----------\n')
+            if end == -1:
+                end = None
+            if start > 0:
+                doc = doc[start:end]
 
-        n = 'n' if cls_name[0].lower() in 'aeiou' else ''
-        doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc  # pyrefly: ignore [unsupported-operation]
-        doc += '\n\nReturns\n-------\n'
-        doc += f'layer : :class:`napari.layers.{cls_name}`'
-        doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
-        doc = doc.expandtabs(4)
+            n = 'n' if cls_name[0].lower() in 'aeiou' else ''
+            doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc
+            doc += '\n\nReturns\n-------\n'
+            doc += f'layer : :class:`napari.layers.{cls_name}`'
+            doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
+            doc = doc.expandtabs(4)
 
     sig = signature(cls)
     additional_parameters = []
@@ -76,13 +86,16 @@ def create_func(cls, name=None, doc=None):
         cls_name=cls_name,
     )
 
-    execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
+    execdict: dict[str, Any] = {
+        cls_name: cls,
+        'napari': sys.modules.get('napari'),
+    }
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
     func = execdict[name]
 
     func.__doc__ = doc
-    func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]
+    func.__signature__ = sig.replace(
         parameters=[
             Parameter('self', Parameter.POSITIONAL_OR_KEYWORD),
             *list(sig.parameters.values()),
