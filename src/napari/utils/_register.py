@@ -2,10 +2,15 @@ import os
 import sys
 from collections.abc import Callable
 from inspect import Parameter, getdoc, signature
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
+
+if TYPE_CHECKING:
+    from napari.layers import Layer
+
+_L = TypeVar('_L', bound='Layer')
 
 tmpl_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
@@ -17,8 +22,8 @@ with open(tmpl_path) as f:
 
 
 def create_func(
-    cls: type, name: str | None = None, doc: str | None = None
-) -> Callable[..., Any]:
+    cls: type[_L], name: str | None = None, doc: str | None = None
+) -> Callable[..., _L]:
     """
     Creates a function (such as `add_<layer>`) to add a layer to the viewer
 
