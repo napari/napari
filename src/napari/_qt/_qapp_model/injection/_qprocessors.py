@@ -29,6 +29,8 @@ from napari.layers._source import layer_source
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
+    from napari.components import ViewerModel
+
 
 def _add_plugin_dock_widget(
     widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str, str, bool],
@@ -50,7 +52,7 @@ def _add_plugin_dock_widget(
 def _add_layer_data_tuples_to_viewer(
     data: tuple | list[tuple],
     return_type: Any | None = None,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     source: dict | None = None,
 ) -> None:
     from napari.utils.misc import ensure_list_of_layer_data_tuple
@@ -76,7 +78,7 @@ def _add_layer_data_tuples_to_viewer(
 def _add_layer_data_to_viewer(
     data: Any,
     return_type: Any,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     layer_name: str | None = None,
     source: dict | None = None,
     meta: Mapping[str, Any] | None = None,
@@ -90,7 +92,7 @@ def _add_layer_data_to_viewer(
         *just* the data part of the corresponding layer type.
     return_type : Any
         The return annotation that was used in the decorated function.
-    viewer : Viewer or None
+    viewer : ViewerModel or None
         An optional viewer to use. Otherwise use current viewer.
     layer_name : str or None
         An optional layer name to use. If a layer with this name exists, it will
@@ -136,7 +138,7 @@ def _add_layer_data_to_viewer(
 
 def _add_layer_to_viewer(
     layer: layers.Layer,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     source: dict | None = None,
 ) -> None:
     if layer is not None and (viewer := viewer or _provide_viewer()):
@@ -152,7 +154,7 @@ def _add_future_data(
     future: Future,
     return_type: Any,
     _from_tuple: bool = True,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     source: dict | None = None,
 ) -> None:
     """Process a Future object.
