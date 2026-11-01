@@ -2,13 +2,12 @@ import warnings
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from types import TracebackType
-from typing import Any, ClassVar, Union, cast
+from typing import Any, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
-    ConfigDict,
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
@@ -173,7 +172,7 @@ def _get_field_dependents(cls: 'type[EventedModel]') -> dict[str, set[str]]:
 
     deps: dict[str, set[str]] = {}
 
-    _deps = cast(NapariConfigDict, cls.model_config).get('dependencies')
+    _deps = cls.model_config.get('dependencies')
     if _deps:
         for prop_name, fields in _deps.items():
             if prop_name not in cls.__properties__:
@@ -219,7 +218,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    model_config = ConfigDict(
+    model_config: ClassVar[NapariConfigDict] = NapariConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
@@ -476,17 +475,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Whether enums should be shown as values (or as enum objects),
             by default `True`
         """
-
-        class _Null:
-            pass
-
-        null = _Null()
-        before: bool | _Null = self.model_config.get('use_enum_values', null)
+        was_set = 'use_enum_values' in self.model_config
+        before = self.model_config.get('use_enum_values', False)
         self.model_config['use_enum_values'] = as_values
         try:
             yield
         finally:
-            if not isinstance(before, _Null):
+            if was_set:
                 self.model_config['use_enum_values'] = before
             else:
                 del self.model_config['use_enum_values']
