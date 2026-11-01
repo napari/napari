@@ -4,7 +4,7 @@ import contextlib
 import itertools
 import typing
 import warnings
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING, Literal
 
@@ -15,13 +15,14 @@ from napari.components.dims import RangeTuple
 from napari.layers import Layer
 from napari.layers.utils.layer_utils import Extent, LayerListExtent
 from napari.utils.events import Event
-from napari.utils.events.containers import SelectableEventedList
+from napari.utils.events.containers import (
+    SelectableEventedList,
+    TypedMutableSequence,
+)
 from napari.utils.naming import inc_name_count
 from napari.utils.transforms._units import get_units_from_name
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from npe2.manifest.io import WriterContribution
 
 __all__ = ('LayerList',)
@@ -127,8 +128,8 @@ class LayerList(SelectableEventedList[Layer]):
 
     """
 
-    def __init__(self, data=()) -> None:
-        self._units = None
+    def __init__(self, data: Iterable[Layer] = ()) -> None:
+        self._units: tuple[pint.Unit, ...] | None = None
         super().__init__(
             data=data,
             basetype=Layer,
@@ -141,23 +142,23 @@ class LayerList(SelectableEventedList[Layer]):
         self.events.removed.connect(self._on_layer_removed)
         self._create_contexts()
 
-    def _on_layer_inserted(self, event: Event):
+    def _on_layer_inserted(self, event: Event) -> None:
         """Connect to layer events when a new layer is inserted."""
         layer = event.value
         layer.events.name.connect(self._on_layer_renamed)
 
-    def _on_layer_removed(self, event: Event):
+    def _on_layer_removed(self, event: Event) -> None:
         """Disconnect from layer events when a layer is removed."""
         layer = event.value
         layer.events.name.disconnect(self._on_layer_renamed)
 
-    def _on_layer_renamed(self, event: Event):
+    def _on_layer_renamed(self, event: Event) -> None:
         """Re-emit layer name changes from a layer as a LayerList event."""
         layer = event.source
         index = self.index(layer)
         self.events.renamed(index=index)
 
-    def _create_contexts(self):
+    def _create_contexts(self) -> None:
         """Create contexts to manage enabled/visible action/menu states.
 
         Connects LayerList and Selection[Layer] to their context keys to allow
@@ -187,7 +188,7 @@ class LayerList(SelectableEventedList[Layer]):
                 self._selection_ctx_keys.update
             )
 
-    def _process_delete_item(self, item: Layer):
+    def _process_delete_item(self, item: Layer) -> None:
         super()._process_delete_item(item)
         item.events.extent.disconnect(self._clean_cache)
         item.events._extent_augmented.disconnect(self._clean_cache)
@@ -199,10 +200,10 @@ class LayerList(SelectableEventedList[Layer]):
         self.unlink_layers([item])
         self._clean_cache()
 
-    def _refresh_selection_ctx_keys(self, event):
+    def _refresh_selection_ctx_keys(self, event: Event) -> None:
         self.selection.events.changed(added={}, removed={})
 
-    def _clean_cache(self):
+    def _clean_cache(self) -> None:
         cached_properties = (
             'extent',
             '_extent_world',
@@ -211,10 +212,10 @@ class LayerList(SelectableEventedList[Layer]):
         )
         [self.__dict__.pop(p, None) for p in cached_properties]
 
-    def __newlike__(self, iterable):
+    def __newlike__(self, iterable: Iterable[Layer]) -> LayerList:
         return LayerList(iterable)
 
-    def _coerce_name(self, name, layer=None):
+    def _coerce_name(self, name: str, layer: Layer | None = None) -> str:
         """Coerce a name into a unique equivalent.
 
         Parameters
@@ -235,12 +236,14 @@ class LayerList(SelectableEventedList[Layer]):
                 name = inc_name_count(name)
         return name
 
-    def _update_name(self, event):
+    def _update_name(self, event: Event) -> None:
         """Coerce name of the layer in `event.layer`."""
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
-    def _ensure_unique(self, values, allow=()):
+    def _ensure_unique(
+        self, values: Layer | Iterable[Layer], allow: Iterable[Layer] = ()
+    ) -> tuple[Layer, ...]:
         bad = set(self._list) - set(allow)
         values = tuple(values) if isinstance(values, Iterable) else (values,)
         for v in values:
@@ -254,20 +257,31 @@ class LayerList(SelectableEventedList[Layer]):
     def __getitem__(self, key: int | str) -> Layer: ...
 
     @typing.overload
-    def __getitem__(self, key: slice) -> Self: ...
+    def __getitem__(self, key: slice) -> LayerList: ...
 
-    def __getitem__(self, key):
+    def __getitem__(
+        self, key: int | str | slice
+    ) -> Layer | TypedMutableSequence[Layer]:
         return super().__getitem__(key)
 
-    def __setitem__(self, key, value):
-        old = self._list[key]
-        if isinstance(key, slice):
-            value = self._ensure_unique(value, old)
-        elif isinstance(key, int):
-            (value,) = self._ensure_unique((value,), (old,))
-        super().__setitem__(key, value)
+    @typing.overload
+    def __setitem__(self, key: int, value: Layer) -> None: ...
 
-    def insert(self, index: int, value: Layer):
+    @typing.overload
+    def __setitem__(self, key: slice, value: Iterable[Layer]) -> None: ...
+
+    def __setitem__(
+        self, key: int | slice, value: Layer | Iterable[Layer]
+    ) -> None:
+        if isinstance(key, slice):
+            value = self._ensure_unique(value, self._list[key])
+        elif isinstance(key, int):
+            layer = self._type_check(value)
+            (value,) = self._ensure_unique((layer,), (self._list[key],))
+        # EventedList.__setitem__ is annotated for a single item only
+        super().__setitem__(key, value)  # pyrefly: ignore[bad-argument-type]
+
+    def insert(self, index: int, value: Layer) -> None:
         """Insert ``value`` before index."""
         (value,) = self._ensure_unique((value,))
         new_layer = self._type_check(value)
@@ -286,7 +300,7 @@ class LayerList(SelectableEventedList[Layer]):
         super().insert(index, new_layer)
         self._check_ndim_and_maybe_clean_units(new_layer.ndim)
 
-    def remove_selected(self):
+    def remove_selected(self) -> None:
         """Remove selected layers from LayerList, but first unlink them."""
         if not self.selection:
             return
@@ -312,7 +326,7 @@ class LayerList(SelectableEventedList[Layer]):
             self.selection.clear()
             self.selection.update(remaining_locked)
 
-    def toggle_selected_visibility(self):
+    def toggle_selected_visibility(self) -> None:
         """Toggle visibility of selected layers"""
         for layer in self.selection:
             layer.visible = not layer.visible
@@ -353,7 +367,14 @@ class LayerList(SelectableEventedList[Layer]):
             units=self.units,
         )
 
-    def _get_min_and_max(self, mins_list, maxes_list):
+    def _get_min_and_max(
+        self,
+        mins_list: Iterable[np.ndarray[tuple[int], np.dtype[np.float64]]],
+        maxes_list: Iterable[np.ndarray[tuple[int], np.dtype[np.float64]]],
+    ) -> tuple[
+        np.ndarray[tuple[int], np.dtype[np.float64]],
+        np.ndarray[tuple[int], np.dtype[np.float64]],
+    ]:
         # Reverse dimensions since it is the last dimensions that are
         # displayed.
         mins_list = [mins[::-1] for mins in mins_list]
@@ -387,7 +408,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     def _get_extent_world(
         self,
-        layer_extent_list,
+        layer_extent_list: list[Extent],
         augmented: bool = False,
         units: tuple[pint.Unit, ...] | None = None,
     ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float64]]:
@@ -424,7 +445,7 @@ class LayerList(SelectableEventedList[Layer]):
         return np.vstack([min_v, max_v])
 
     @cached_property
-    def _step_size(self) -> np.ndarray:
+    def _step_size(self) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         """Ideal step size between planes in world coordinates.
 
         Computes the best step size that allows all data planes to be
@@ -437,7 +458,9 @@ class LayerList(SelectableEventedList[Layer]):
         """
         return self._get_step_size([layer.extent for layer in self])
 
-    def _step_size_from_scales(self, scales):
+    def _step_size_from_scales(
+        self, scales: Iterable[np.ndarray[tuple[int], np.dtype[np.float64]]]
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         # Reverse order so last axes of scale with different ndim are aligned
         scales = [scale[::-1] for scale in scales]
         full_scales = list(
@@ -448,7 +471,7 @@ class LayerList(SelectableEventedList[Layer]):
 
     @staticmethod
     def _convert_scale_between_units(
-        scale: np.ndarray[tuple[int], np.dtype[np.float32]],
+        scale: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.float64]],
         from_units: tuple[pint.Unit, ...],
         to_units: tuple[pint.Unit, ...],
     ) -> np.ndarray:
@@ -491,7 +514,7 @@ class LayerList(SelectableEventedList[Layer]):
         self,
         layer_extent_list: list[Extent],
         units: tuple[pint.Unit, ...] | None = None,
-    ):
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         if len(layer_extent_list) == 0:
             return np.ones(self.ndim)
         if units is None:
@@ -604,7 +627,7 @@ class LayerList(SelectableEventedList[Layer]):
         return self._units or self.extent.units
 
     @units.setter
-    def units(self, units: tuple[pint.Unit, ...] | None):
+    def units(self, units: tuple[pint.Unit, ...] | None) -> None:
         """Set override of units of layers in world coordinates.
 
         Parameters
@@ -643,11 +666,11 @@ class LayerList(SelectableEventedList[Layer]):
         self._clean_cache()
         self.events.units(value=self.units)
 
-    def _trigger_check_ndim_and_maybe_clean_units(self, event: Event):
+    def _trigger_check_ndim_and_maybe_clean_units(self, event: Event) -> None:
         """Trigger check of new layer's ndim and maybe clean units."""
         self._check_ndim_and_maybe_clean_units(event.source.ndim)
 
-    def _check_ndim_and_maybe_clean_units(self, ndim: int):
+    def _check_ndim_and_maybe_clean_units(self, ndim: int) -> None:
         if self._units is not None and ndim > len(self._units):
             warnings.warn(
                 'New layer has more dimensions than the current units, dropping units override.',
@@ -699,7 +722,7 @@ class LayerList(SelectableEventedList[Layer]):
         method: str,
         layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
-    ):
+    ) -> None:
         # adding this method here allows us to emit an event when
         # layers in this group are linked/unlinked.  Which is necessary
         # for updating context
@@ -716,7 +739,7 @@ class LayerList(SelectableEventedList[Layer]):
         self,
         layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
-    ):
+    ) -> None:
         """
         Links the selected layers.
 
@@ -729,7 +752,7 @@ class LayerList(SelectableEventedList[Layer]):
         self,
         layers: Iterable[str | Layer] | None = None,
         attributes: Iterable[str] = (),
-    ):
+    ) -> None:
         """Unlinks previously linked layers.
 
         Changes to one of the layer's properties no longer result in the same
@@ -789,13 +812,13 @@ class LayerList(SelectableEventedList[Layer]):
 
         return save_layers(path, layers, plugin=plugin, _writer=_writer)
 
-    def clear(self):
+    def clear(self) -> None:
         """Remove all layers from viewer."""
         with self.batched_update():
             super().clear()
 
     @contextlib.contextmanager
-    def batched_update(self):
+    def batched_update(self) -> Generator[None, None, None]:
         try:
             self.events.begin_batch()
             yield
