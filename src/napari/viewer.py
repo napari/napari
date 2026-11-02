@@ -127,6 +127,7 @@ class Viewer(ViewerModel):
         *,
         scale_factor: float = 1,
         flash: bool = False,
+        margin: float | tuple[float, float] = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -147,6 +148,11 @@ class Viewer(ViewerModel):
 
         Upscaling will be done using the interpolation mode set on each layer.
 
+        The scene axes (``viewer.axes``) are drawn at the world origin, which
+        is often at the edge of the data, so they can be cut in the exported
+        figure. To show axes in a figure, use the canvas axes
+        (``viewer.canvas.overlays['axes']``), or add a ``margin``.
+
         Parameters
         ----------
         path : str, optional
@@ -161,6 +167,14 @@ class Viewer(ViewerModel):
         flash : bool
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured. By default, False.
+        margin : float or tuple of two floats
+            Blank space added on each side of the data in the exported image.
+            A value of 1 or more is a number of pixels, and a value between 0
+            and 1 is a fraction of the mean size of the data (like the grid
+            spacing). A (y, x) pair sets different vertical and horizontal
+            margins. For example, ``margin=20`` adds 20 pixels on each side,
+            and ``margin=(0, 40)`` adds 40 pixels only on the left and right.
+            The data keeps the same resolution. By default, 0.
 
         Returns
         -------
@@ -172,6 +186,7 @@ class Viewer(ViewerModel):
             path=path,
             scale=scale_factor,
             flash=flash,
+            margin=margin,
         )
 
     def export_rois(

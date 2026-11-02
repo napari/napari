@@ -115,6 +115,28 @@ def _npe2_decode_selected_filter(
     return None
 
 
+def _margin_in_pixels(
+    margin: float | tuple[float, float], data_size: np.ndarray
+) -> np.ndarray:
+    """Convert a margin to a number of pixels on each side, as (y, x).
+
+    Like the grid spacing, a value of 1 or more is a number of pixels, and a
+    value between 0 and 1 is a fraction of the mean data size, so that a
+    single value gives the same margin on all sides.
+    """
+    margin_arr = np.asarray(margin, dtype=float)
+    if margin_arr.ndim == 0:
+        margin_arr = np.repeat(margin_arr, 2)
+    if margin_arr.shape != (2,):
+        raise ValueError(
+            f'margin must be a single value or a (y, x) pair, got {margin!r}'
+        )
+    if np.any(margin_arr < 0):
+        raise ValueError(f'margin must be positive, got {margin!r}')
+    fraction_px = margin_arr * np.mean(data_size)
+    return np.round(np.where(margin_arr >= 1, margin_arr, fraction_px))
+
+
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
 
@@ -930,6 +952,7 @@ class QtViewer(QSplitter):
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
         fit_to_data_extent: bool = False,
+        margin: float | tuple[float, float] = 0,
     ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
         """Take currently displayed screen and convert to an image array.
 
@@ -949,6 +972,12 @@ class QtViewer(QSplitter):
             Tightly fit the canvas around the data to prevent margins from
             showing in the screenshot. If False, a screenshot of the currently
             visible canvas will be generated.
+        margin : float or tuple of two floats
+            Only used if ``fit_to_data_extent`` is True. Blank space added on
+            each side of the data: a value of 1 or more is a number of pixels,
+            a value between 0 and 1 is a fraction of the mean data size, and
+            a (y, x) pair sets different vertical and horizontal margins.
+            Default is 0.
 
         Returns
         -------
@@ -962,6 +991,7 @@ class QtViewer(QSplitter):
                 size=size,
                 scale=scale,
                 fit_to_data_extent=fit_to_data_extent,
+                margin=margin,
             )
         )
         if path is not None:
@@ -974,6 +1004,7 @@ class QtViewer(QSplitter):
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
         fit_to_data_extent: bool = False,
+        margin: float | tuple[float, float] = 0,
     ) -> QImage:
         """Take currently displayed screen and convert to an image array.
 
@@ -991,6 +1022,12 @@ class QtViewer(QSplitter):
             Tightly fit the canvas around the data to prevent margins from
             showing in the screenshot. If False, a screenshot of the currently
             visible canvas will be generated.
+        margin : float or tuple of two floats
+            Only used if ``fit_to_data_extent`` is True. Blank space added on
+            each side of the data: a value of 1 or more is a number of pixels,
+            a value between 0 and 1 is a fraction of the mean data size, and
+            a (y, x) pair sets different vertical and horizontal margins.
+            Default is 0.
 
         Returns
         -------
@@ -1012,6 +1049,7 @@ class QtViewer(QSplitter):
                 'or disable async slicing in Preferences->Experimental.'
             ) from e
 
+        fit_margin = 0.0
         if fit_to_data_extent:
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
             ndisplay = self.viewer.dims.ndisplay
@@ -1029,11 +1067,17 @@ class QtViewer(QSplitter):
             grid_shape = self.viewer.canvas.grid.actual_shape(
                 self.viewer.layers
             )
-            size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
+            data_size = np.ceil(scene_size / extent_scale * grid_shape)
+            # margin on each side, in pixels of the exported image (y, x)
+            margin_px = _margin_in_pixels(margin, data_size * scale)
+            size = data_size + 2 * margin_px / scale
+            # fraction of the canvas left blank, using the most constrained
+            # dimension like fit_to_view, so the data keeps its resolution
+            fit_margin = 1 - 1 / np.min(size / data_size)
 
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
-                self.viewer.fit_to_view(margin=0)
+                self.viewer.fit_to_view(margin=fit_margin)
             if self._welcome_widget.isVisible():
                 img = self.canvas.native.grab().toImage()
             else:
@@ -1524,6 +1568,7 @@ class QtViewer(QSplitter):
         path: str | None = None,
         scale: float = 1,
         flash: bool = True,
+        margin: float | tuple[float, float] = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -1543,6 +1588,12 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
+        margin : float or tuple of two floats
+            Blank space added on each side of the data in the exported image.
+            A value of 1 or more is a number of pixels, and a value between 0
+            and 1 is a fraction of the mean size of the data (like the grid
+            spacing). A (y, x) pair sets different vertical and horizontal
+            margins. By default, 0.
 
         Returns
         -------
@@ -1558,6 +1609,7 @@ class QtViewer(QSplitter):
                 scale=scale,
                 flash=flash,
                 fit_to_data_extent=True,
+                margin=margin,
             )
         )
         if path is not None:
