@@ -171,6 +171,10 @@ authors:
   affiliation: University of California, Santa Cruz
   orcid: https://orcid.org/0000-0002-4172-4676
   alias: FilBalza
+- given-names: Kalline
+  family-names: Barreto
+  affiliation: PUC-Rio
+  alias: KallineB
 - given-names: Lundy
   family-names: Bernard
   alias: lundybernard
