@@ -49,8 +49,7 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.position = position
 
     def _on_color_change(self) -> None:
-        # one color per line, in napari order (z, y, x); in 2D the z line
-        # is dropped by the shader, so its color is never seen
+        # one color per line, in napari order (z, y, x)
         color = self.overlay.color
         if color is None:
             # same as the axes overlay: colors are counted from the last
@@ -60,7 +59,10 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
             n = len(AXES_COLORS)
             colors = [AXES_COLORS[(ndim - 1 - axis) % n] for axis in displayed]
             if len(colors) == 2:
-                colors.insert(0, colors[0])  # placeholder for the z line
+                # no z dim: the z line is only seen for 2D data in a 3D
+                # camera (the shader drops it in a 2D camera), so color it
+                # as the third axis would be
+                colors.insert(0, AXES_COLORS[2])
         elif isinstance(color, tuple):
             colors = list(color)
         else:
