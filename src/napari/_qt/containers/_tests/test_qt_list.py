@@ -27,17 +27,19 @@ def test_list_model():
     root: SelectableEventedList[str] = SelectableEventedList('abcdef')
     model = QtListModel(root)
     assert all(
-        model.data(model.index(i), Qt.UserRole) == letter
+        model.data(model.index(i), Qt.ItemDataRole.UserRole) == letter
         for i, letter in enumerate('abcdef')
     )
     assert all(
-        model.data(model.index(i), Qt.DisplayRole) == letter
+        model.data(model.index(i), Qt.ItemDataRole.DisplayRole) == letter
         for i, letter in enumerate('abcdef')
     )
     # unknown data role
-    assert not any(model.data(model.index(i), Qt.FontRole) for i in range(5))
-    assert model.flags(QModelIndex()) & Qt.ItemIsDropEnabled
-    assert not (model.flags(model.index(1)) & Qt.ItemIsDropEnabled)
+    assert not any(
+        model.data(model.index(i), Qt.ItemDataRole.FontRole) for i in range(5)
+    )
+    assert model.flags(QModelIndex()) & Qt.ItemFlag.ItemIsDropEnabled
+    assert not (model.flags(model.index(1)) & Qt.ItemFlag.ItemIsDropEnabled)
 
     with pytest.raises(TypeError):
         model.setRoot('asdf')
@@ -90,7 +92,11 @@ def test_list_view_keypress(qtbot):
     assert first in root.selection
     # delete removes the item from the python model too
     view.keyPressEvent(
-        QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier)
+        QKeyEvent(
+            QEvent.Type.KeyPress,
+            Qt.Key.Key_Delete,
+            Qt.KeyboardModifier.NoModifier,
+        )
     )
     assert first not in root
 
@@ -109,7 +115,7 @@ def test_move_multiple(sources, dest, expectation):
     dest_mi = qt_tree.index(dest)
     qt_tree.dropMimeData(
         qt_tree.mimeData([qt_tree.index(i) for i in sources]),
-        Qt.MoveAction,
+        Qt.DropAction.MoveAction,
         dest_mi.row(),
         dest_mi.column(),
         dest_mi.parent(),

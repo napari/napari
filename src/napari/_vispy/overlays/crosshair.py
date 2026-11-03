@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispySceneOverlay
+from napari._vispy.visuals.axes import AXES_COLORS
 from napari._vispy.visuals.crosshair import Crosshair
 from napari.utils.events import disconnect_events
 
@@ -24,6 +25,8 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
             **kwargs,
         )
         self.overlay.events.color.connect(self._on_color_change)
+        self.viewer.dims.events.order.connect(self._on_color_change)
+        self.viewer.dims.events.ndisplay.connect(self._on_color_change)
         self.overlay.events.gap.connect(self._on_gap_change)
 
         self.viewer.cursor.events.position.connect(self._on_position_change)
@@ -46,7 +49,26 @@ class VispyCrosshairOverlay(ViewerOverlayMixin, VispySceneOverlay):
         self.node.position = position
 
     def _on_color_change(self) -> None:
-        self.node.color = self.overlay.color
+        # one color per line, in napari order (z, y, x)
+        color = self.overlay.color
+        if color is None:
+            # same as the axes overlay: colors are counted from the last
+            # axis, and cycle when there are more axes than colors
+            displayed = self.viewer.dims.displayed
+            ndim = self.viewer.dims.ndim
+            n = len(AXES_COLORS)
+            colors = [AXES_COLORS[(ndim - 1 - axis) % n] for axis in displayed]
+            if len(colors) == 2:
+                # no z dim: the z line is only seen for 2D data in a 3D
+                # camera (the shader drops it in a 2D camera), so color it
+                # as the third axis would be
+                colors.insert(0, AXES_COLORS[2])
+        elif isinstance(color, tuple):
+            colors = list(color)
+        else:
+            colors = [color] * 3
+        # vispy order is x, y, z, i.e. the reverse of napari order
+        self.node.color = np.array(colors[::-1])
 
     def _on_gap_change(self) -> None:
         self.node.gap = self.overlay.gap
