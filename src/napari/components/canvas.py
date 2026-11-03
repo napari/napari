@@ -13,6 +13,7 @@ from napari.components.overlays import (
     CanvasOverlay,
     CurrentSliceOverlay,
     ScaleBarOverlay,
+    SliceOrientationOverlay,
     TextOverlay,
     ZoomOverlay,
 )
@@ -68,7 +69,8 @@ class Canvas(EventedModel):
         A model that controls the enabling and settings of the grid mode.
     overlays : EventedDictNamespace
         A dictionary/namespace containing canvas overlays. By default, it exposes
-        publicly 'scale_bar', 'text', 'current_slice' and 'axes'
+        publicly 'scale_bar', 'text', 'current_slice', 'slice_orientation'
+        and 'axes'
     overlay_tiling : OverlayTiling
         Controls for the overlay tiling direction and padding.
     size : tuple[int, int]
@@ -85,6 +87,7 @@ class Canvas(EventedModel):
                 '_brush_circle': BrushCircleOverlay(),
                 '_zoom_box': ZoomOverlay(),
                 'current_slice': CurrentSliceOverlay(),
+                'slice_orientation': SliceOrientationOverlay(),
                 'axes': CanvasAxesOverlay(),
             }
         ),
