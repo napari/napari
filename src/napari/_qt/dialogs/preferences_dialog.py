@@ -1,5 +1,5 @@
 from enum import EnumMeta, StrEnum
-from typing import TYPE_CHECKING, ClassVar, get_origin
+from typing import TYPE_CHECKING, Any, ClassVar, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -50,10 +50,11 @@ class PreferencesDialog(QDialog):
 
         self._settings = get_settings()
         self._plugin_settings = get_plugin_settings()
+        self._page_settings: list[tuple[str, Any] | None] = []
         self._stack = QStackedWidget(self)
         self._list = QListWidget(self)
         self._list.setObjectName('Preferences')
-        self._list.currentRowChanged.connect(self._stack.setCurrentIndex)
+        self._list.currentRowChanged.connect(self._on_page_changed)
         self._list.setVerticalScrollMode(
             QAbstractItemView.ScrollMode.ScrollPerPixel
         )
@@ -63,14 +64,18 @@ class PreferencesDialog(QDialog):
         self._button_ok = QPushButton('OK')
         self._button_ok.clicked.connect(self.accept)
         self._button_ok.setDefault(True)
-        self._button_restore = QPushButton('Restore defaults')
+        self._button_restore_page = QPushButton('Restore page defaults')
+        self._button_restore_page.clicked.connect(self._restore_page_dialog)
+        self._button_restore = QPushButton('Restore all defaults')
         self._button_restore.clicked.connect(self._restore_default_dialog)
+        self._button_restore_all = self._button_restore
 
         # Layout
         left_layout = QVBoxLayout()
         left_layout.addWidget(self._list)
         # add a little breathing room between the list and the action buttons
         left_layout.addSpacing(self._button_restore.sizeHint().height())
+        left_layout.addWidget(self._button_restore_page)
         left_layout.addWidget(self._button_restore)
         left_layout.addWidget(self._button_cancel)
         left_layout.addWidget(self._button_ok)
@@ -81,6 +86,21 @@ class PreferencesDialog(QDialog):
 
         # Build dialog from settings
         self._rebuild_dialog()
+
+    def _on_page_changed(self, index: int) -> None:
+        self._stack.setCurrentIndex(index)
+        can_restore = (
+            0 <= index < len(self._page_settings)
+            and self._page_settings[index] is not None
+        )
+        self._button_restore_page.setEnabled(can_restore)
+        if can_restore:
+            page_name, _ = self._page_settings[index]
+            self._button_restore_page.setToolTip(
+                f"Restore default settings for '{page_name}'"
+            )
+        else:
+            self._button_restore_page.setToolTip('')
 
     def keyPressEvent(self, e: 'QKeyEvent') -> None:
         if e.key() == Qt.Key.Key_Escape:
@@ -107,6 +127,7 @@ class PreferencesDialog(QDialog):
             for name, plugin in self._plugin_settings.items()
         }
 
+        self._page_settings = []
         self._list.clear()
         while self._stack.count():
             self._stack.removeWidget(self._stack.currentWidget())
@@ -128,6 +149,7 @@ class PreferencesDialog(QDialog):
         )
         self._list.addItem(item)
         self._stack.addWidget(QWidget())
+        self._page_settings.append(None)
 
         for plugin_name, plugin in self._plugin_settings.items():
             self._add_plugin(plugin_name, plugin)
@@ -181,6 +203,7 @@ class PreferencesDialog(QDialog):
         page_scrollarea.setWidget(full)
         self._list.addItem(plugin.display_name)
         self._stack.addWidget(page_scrollarea)
+        self._page_settings.append((plugin.display_name, plugin))
 
     def _add_page(self, field_name: str, field_info: FieldInfo) -> None:
         """Builds the preferences widget using the json schema builder.
@@ -206,6 +229,7 @@ class PreferencesDialog(QDialog):
 
         self._list.addItem(name)
         self._stack.addWidget(page_scrollarea)
+        self._page_settings.append((name, getattr(self._settings, field_name)))
 
     def _widget_builder(
         self,
@@ -314,7 +338,46 @@ class PreferencesDialog(QDialog):
 
         return schema, values
 
-    def _restore_default_dialog(self):
+    def _restore_page_dialog(self, index: int | None = None) -> None:
+        """Launches dialog to confirm restore settings choice for current page."""
+        if index is None or isinstance(index, bool):
+            index = self._list.currentRow()
+        if not (0 <= index < len(self._page_settings)):
+            return
+        page_info = self._page_settings[index]
+        if page_info is None:
+            return
+
+        page_name, page_setting = page_info
+
+        prev = QApplication.instance().testAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True
+        )
+
+        response = QMessageBox.question(
+            self,
+            'Restore Page Settings',
+            (
+                'Are you sure you want to restore default settings for '
+                f"'{page_name}'?"
+            ),
+            QMessageBox.StandardButton.RestoreDefaults
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.RestoreDefaults,
+        )
+        QApplication.instance().setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
+        )
+        if response in (
+            QMessageBox.StandardButton.RestoreDefaults,
+            QMessageBox.RestoreDefaults,
+        ):
+            page_setting.reset()
+
+    def _restore_default_dialog(self) -> None:
         """Launches dialog to confirm restore settings choice."""
         prev = QApplication.instance().testAttribute(
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs
@@ -325,8 +388,11 @@ class PreferencesDialog(QDialog):
 
         response = QMessageBox.question(
             self,
-            'Restore Settings',
-            'Are you sure you want to restore default settings?',
+            'Restore All Settings',
+            (
+                'Are you sure you want to restore all default settings? '
+                'This will reset all napari and plugin preferences.'
+            ),
             QMessageBox.StandardButton.RestoreDefaults
             | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.RestoreDefaults,
@@ -334,7 +400,10 @@ class PreferencesDialog(QDialog):
         QApplication.instance().setAttribute(
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
-        if response == QMessageBox.RestoreDefaults:
+        if response in (
+            QMessageBox.StandardButton.RestoreDefaults,
+            QMessageBox.RestoreDefaults,
+        ):
             self._settings.reset()
             for plugin_setting in self._plugin_settings.values():
                 plugin_setting.reset()
