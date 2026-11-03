@@ -687,6 +687,9 @@ def pytest_runtestloop(session):
     so this is done only for napari's own test suite and not in the
     ``napari.utils._testsupport`` plugin used by plugin developers.
     """
+    # we run gc.collect() before freezing the list of created objects 
+    # to remove all leftovers from phase of collecting tests (some temporal objects)
+    # and reduce peak of consumed memory.
     gc.collect()
     gc.freeze()
     try:
