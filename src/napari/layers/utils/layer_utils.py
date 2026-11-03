@@ -242,6 +242,35 @@ def _nanmax(array):
     return max_value
 
 
+def _resize_to_thumbnail(
+    image: np.ndarray, thumbnail_shape: tuple[int, int]
+) -> np.ndarray:
+    """Nearest-neighbor resizeof ``image`` to fit ``thumbnail_shape``.
+
+    Preserves aspect ratio (each side at least 1 pixel) and trailing dims.
+    Equivalent to ``scipy.ndimage.zoom(image, ..., order=0, prefilter=False)``,
+    except that the last output pixel along each axis always comes from the
+    last input pixel (scipy's can land just outside ``image`` and become 0).
+    """
+    in_shape = np.array(image.shape[:2])
+    scale = np.min(np.divide(thumbnail_shape, in_shape))
+    # rint rounds ties to even, like scipy's output-shape rounding.
+    out_shape = np.rint(np.clip(scale * in_shape, 1, thumbnail_shape)).astype(
+        np.intp
+    )
+
+    # Evenly spaced positions from the first to the last input pixel.
+    row_positions = np.linspace(0, in_shape[0] - 1, out_shape[0])
+    col_positions = np.linspace(0, in_shape[1] - 1, out_shape[1])
+    # Round half up (not to even), matching scipy's order-0 sampling.
+    rows = np.floor(row_positions + 0.5).astype(np.intp)
+    cols = np.floor(col_positions + 0.5).astype(np.intp)
+
+    resized = image[np.ix_(rows, cols)]
+    # numba-backed label colormaps reject non-native byte order.
+    return resized.astype(resized.dtype.newbyteorder('='), copy=False)
+
+
 def calc_data_range(
     data: LayerDataProtocol, rgb: bool = False, dtype: np.dtype | None = None
 ) -> tuple[float, float]:
