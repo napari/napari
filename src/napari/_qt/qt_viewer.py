@@ -608,16 +608,9 @@ class QtViewer(QSplitter):
     def _emit_slice_ready(self, event: Event) -> None:
         """Callback connected to `viewer._layer_slicer.events.ready`.
 
-        This can run on the slicing thread, and passes the slice responses to
-        the main thread using a signal that stays connected.
-
-        Do not use `@ensure_main_thread` here. It connects a Qt signal to a
-        new `Future` for each call and returns that future, which then dies
-        on this thread. PySide6 releases the GIL to remove that connection,
-        and Qt calls back into PySide6 while holding one of its signal/slot
-        locks, which then has to wait for the GIL. That deadlocks if the main
-        thread holds the GIL and needs the same lock, and Qt shares a small
-        pool of these locks between all objects.
+        Pass the slice response data to the main thread via a Qt signal.
+        Do not use ensure_main_thead on Qt object because it creates
+        temporary objects that leaded to deadlocks on CI.
         """
         self._slice_ready.emit(event.value)
 
