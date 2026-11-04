@@ -5,10 +5,12 @@ from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QAction, QLabel, QShortcut
 
 from napari._qt.qt_event_loop import (
+    _enable_opengl_context_sharing,
     _ipython_has_eventloop,
     get_qapp,
     run,
@@ -38,6 +40,19 @@ def test_windows_grouping_overwrite(qapp):
     assert get_app_id() == 'custom_string'
     set_app_id(' ')
     assert get_app_id() == ' '
+
+
+def test_enable_opengl_context_sharing(monkeypatch):
+    """OpenGL contexts must be shared so floating canvases keep working."""
+    calls = []
+    monkeypatch.setattr(
+        'napari._qt.qt_event_loop.QApplication.setAttribute',
+        lambda *args: calls.append(args),
+    )
+
+    _enable_opengl_context_sharing()
+
+    assert calls == [(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)]
 
 
 def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
