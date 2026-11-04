@@ -63,7 +63,7 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
