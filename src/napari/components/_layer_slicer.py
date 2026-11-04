@@ -22,7 +22,7 @@ from napari.settings import get_settings
 from napari.utils.events.event import EmitterGroup, Event
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Generator, Iterable
 
     from napari.components import Dims
 
@@ -122,7 +122,7 @@ class _LayerSlicer:
         self._lock_futures_dicts = RLock()
 
     @contextmanager
-    def force_sync(self):
+    def force_sync(self) -> Generator[None, None, None]:
         """Context manager to temporarily force slicing to be synchronous.
 
         This should only be used from the main thread.

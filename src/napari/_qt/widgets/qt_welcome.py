@@ -27,6 +27,13 @@ from napari.utils.tips import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from qtpy.QtGui import (
+        QDragEnterEvent,
+        QDragLeaveEvent,
+        QDropEvent,
+        QPaintEvent,
+    )
+
     from napari.components.viewer_model import ViewerModel
 
 
@@ -113,10 +120,16 @@ class QtWelcomeWidget(QWidget):
         shortcut_layout.setVerticalSpacing(0)
         shortcut_layout.setHorizontalSpacing(10)
         # override default form styles for consistent appearance across platforms
-        shortcut_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        shortcut_layout.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
-        shortcut_layout.setFormAlignment(Qt.AlignHCenter | Qt.AlignTop)
-        shortcut_layout.setLabelAlignment(Qt.AlignRight)
+        shortcut_layout.setRowWrapPolicy(
+            QFormLayout.RowWrapPolicy.DontWrapRows
+        )
+        shortcut_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
+        )
+        shortcut_layout.setFormAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+        )
+        shortcut_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.refresh_shortcuts()
 
@@ -131,7 +144,9 @@ class QtWelcomeWidget(QWidget):
         logo_layout = QVBoxLayout(logo_container)
         logo_layout.setContentsMargins(0, 0, 0, 0)
         logo_layout.addStretch(1)
-        logo_layout.addWidget(self._image, alignment=Qt.AlignCenter)
+        logo_layout.addWidget(
+            self._image, alignment=Qt.AlignmentFlag.AlignCenter
+        )
         logo_layout.addStretch(4)  # Push logo up towards the top
         layout.addWidget(logo_container, 0, 0)
 
@@ -216,7 +231,7 @@ class QtWelcomeWidget(QWidget):
         tip_html = urls_to_html(tip_text, self._viewer.theme)
         self._tip_label.setText(f'Did you know?<br>{tip_html}')
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         """Override Qt method.
 
         Paint using the stylesheet.
@@ -230,7 +245,9 @@ class QtWelcomeWidget(QWidget):
         option = QStyleOption()
         option.initFrom(self)
         p = QPainter(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, option, p, self)
+        self.style().drawPrimitive(
+            QStyle.PrimitiveElement.PE_Widget, option, p, self
+        )
 
     def _set_drag_highlight(self, value: bool) -> None:
         """Update the QSS state used to highlight drag-and-drop.
@@ -258,7 +275,7 @@ class QtWelcomeWidget(QWidget):
         if parent is not None:
             self.setGeometry(parent.rect())
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Override Qt method.
 
         Update the drag highlight and forward valid URL drags upstream.
@@ -277,7 +294,7 @@ class QtWelcomeWidget(QWidget):
         self.urls_drag_entered.emit()
         event.accept()
 
-    def dragLeaveEvent(self, event):
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """Override Qt method.
 
         Clear the drag highlight when a drag leaves the overlay.
@@ -289,7 +306,7 @@ class QtWelcomeWidget(QWidget):
         """
         self._set_drag_highlight(False)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """Override Qt method.
 
         Clear the drag highlight and forward the drop to the viewer.

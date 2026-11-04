@@ -1,9 +1,13 @@
+from typing import Literal, TypeAlias, overload
+
 import numpy as np
 import numpy.typing as npt
 
+FaceNormal: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.int_]]
+
 # normal vectors for a 3D axis-aligned box
 # coordinates are ordered [z, y, x]
-FACE_NORMALS = {
+FACE_NORMALS: dict[str, FaceNormal] = {
     'x_pos': np.array([0, 0, 1]),
     'x_neg': np.array([0, 0, -1]),
     'y_pos': np.array([0, 1, 0]),
@@ -190,7 +194,24 @@ def point_in_bounding_box(point: np.ndarray, bounding_box: np.ndarray) -> bool:
     )
 
 
-def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
+@overload
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int], np.dtype[np.number]]: ...
+
+
+@overload
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int, int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int, int], np.dtype[np.number]]: ...
+
+
+def clamp_point_to_bounding_box(
+    point: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]],
+    bounding_box: np.ndarray[tuple[int, int], np.dtype[np.number]],
+) -> np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.number]]:
     """Ensure that a point is inside of the bounding box. If the point has a
     coordinate outside of the bounding box, the value is clipped to the max
     extent of the bounding box.
@@ -657,7 +678,7 @@ def line_in_triangles_3d(
 
 def find_front_back_face(
     click_pos: np.ndarray, bounding_box: np.ndarray, view_dir: np.ndarray
-):
+) -> tuple[FaceNormal | None, FaceNormal | None]:
     """Find the faces of an axis aligned bounding box a
     click intersects with.
 
@@ -676,12 +697,12 @@ def find_front_back_face(
 
     Returns
     -------
-    front_face_normal : np.ndarray
+    front_face_normal : np.ndarray | None
         The (3,) normal vector of the face closest to the camera the click
-        intersects with.
-    back_face_normal : np.ndarray
+        intersects with. None if the click does not intersect a front face.
+    back_face_normal : np.ndarray | None
         The (3,) normal vector of the face farthest from the camera the click
-        intersects with.
+        intersects with. None if the click does not intersect a back face.
     """
     front_face_normal = None
     back_face_normal = None
@@ -706,7 +727,7 @@ def intersect_line_with_axis_aligned_bounding_box_3d(
     line_direction: np.ndarray,
     bounding_box: np.ndarray,
     face_normal: np.ndarray,
-):
+) -> np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]:
     """Find the intersection of a ray with the specified face of an
     axis-aligned bounding box.
 

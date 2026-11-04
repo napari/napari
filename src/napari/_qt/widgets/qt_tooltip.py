@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class QtToolTipLabel(QLabel):
     """A QLabel that provides instant tooltips on mouser hover."""
 
-    def enterEvent(self, event: QEnterEvent | None) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:
         """Override to show tooltips instantly."""
         if self.toolTip():
             pos = self.mapToGlobal(self.contentsRect().center())

@@ -1,5 +1,11 @@
 import logging
-from collections.abc import Callable, Iterable, MutableSequence, Sequence
+from collections.abc import (
+    Callable,
+    Generator,
+    Iterable,
+    MutableSequence,
+    Sequence,
+)
 from typing import (
     Any,
     Self,
@@ -42,7 +48,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         data: Iterable[_T] = (),
         *,
         basetype: type[_T] | Sequence[type[_T]] = (),
-        lookup: dict[type[_L], Callable[[_T], _T | _L]] | None = None,
+        lookup: dict[type[_L], Callable[[_T], _L]] | None = None,
     ) -> None:
         if lookup is None:
             lookup = {}
@@ -68,14 +74,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T) -> None: ...  # pragma: no cover
 
     @overload
     def __setitem__(
         self, key: slice, value: Iterable[_T]
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
@@ -227,7 +233,7 @@ class TypedMutableSequence(MutableSequence[_T]):
         """
         yield from range(start, len(self) if stop is None else stop)
 
-    def _ipython_key_completions_(self):
+    def _ipython_key_completions_(self) -> Generator[str, None, None] | None:
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
         return None

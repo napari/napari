@@ -1,8 +1,11 @@
-from collections.abc import Collection, Generator, Iterable
+from collections.abc import Callable, Collection, Generator, Iterable
 from itertools import tee
+from typing import Any, TypeVar
+
+_V = TypeVar('_V')
 
 
-def validate_n_seq(n: int, dtype=None):
+def validate_n_seq(n: int, dtype: type | None = None) -> Callable[[Any], None]:
     """Creates a function to validate a sequence of len == N and type == dtype.
 
     Currently does **not** validate generators (will always validate true).
@@ -28,7 +31,7 @@ def validate_n_seq(n: int, dtype=None):
     >>> validate([4, 5])  # just fine, thank you very much
     """
 
-    def func(obj):
+    def func(obj: Any) -> None:
         """Function that validates whether an object is a sequence of len `n`.
 
         Parameters
@@ -65,7 +68,7 @@ def validate_n_seq(n: int, dtype=None):
     return func
 
 
-def _pairwise(iterable: Iterable):
+def _pairwise(iterable: Iterable[_V]) -> Iterable[tuple[_V, _V]]:
     """Convert iterable to a zip object containing tuples of pairs along the
     sequence.
 

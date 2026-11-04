@@ -18,7 +18,7 @@ class _PVisual(Protocol):
     _subvisuals: list[_PVisual] | None
     _clip_filter: PlanesClipper
 
-    def attach(self, filt: Filter, view=None): ...
+    def attach(self, filt: Filter, view=None) -> None: ...
 
 
 class ClippingPlanesMixin:
@@ -40,5 +40,5 @@ class ClippingPlanesMixin:
         return self._clip_filter.clipping_planes
 
     @clipping_planes.setter
-    def clipping_planes(self, value):
+    def clipping_planes(self, value) -> None:
         self._clip_filter.clipping_planes = value

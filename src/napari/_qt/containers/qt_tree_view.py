@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 NodeType = TypeVar('NodeType', bound=Node)
 
 
-class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):  # pyrefly: ignore [inconsistent-inheritance]
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
 
     This class is an adapter between :class:`~napari.utils.tree.Group` and Qt's
     `QAbstractItemView` interface (see `Qt Model/View Programming
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_). It allows python
     users to interact with a list of lists in the "usual" python ways, updating
     any Qt Views that may be connected, and also updates the python list object
     if any GUI events occur in the view.

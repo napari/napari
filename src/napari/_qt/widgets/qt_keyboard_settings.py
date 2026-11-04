@@ -156,7 +156,7 @@ class ShortcutEditor(QWidget):
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs, prev
         )
 
-        if response == QMessageBox.RestoreDefaults:
+        if response == QMessageBox.StandardButton.RestoreDefaults:
             self._reset_shortcuts()
 
     def _reset_shortcuts(self):
@@ -566,7 +566,7 @@ class ShortcutEditor(QWidget):
             text=message,
         )
         self._warn_dialog.move(global_point)
-        self._warn_dialog.exec_()
+        self._warn_dialog.exec()
 
     def value(self):
         """Return the actions and shortcuts currently assigned in action manager.
@@ -662,17 +662,17 @@ class EditorWidget(QLineEdit):
             # On macOS, the modifiers are not the same as on other platforms.
             # we also use pairs instead of a dict to keep the order.
             modmap = (
-                (Qt.ControlModifier, 'Meta+'),
-                (Qt.AltModifier, 'Alt+'),
-                (Qt.ShiftModifier, 'Shift+'),
-                (Qt.MetaModifier, 'Ctrl+'),
+                (Qt.KeyboardModifier.ControlModifier, 'Meta+'),
+                (Qt.KeyboardModifier.AltModifier, 'Alt+'),
+                (Qt.KeyboardModifier.ShiftModifier, 'Shift+'),
+                (Qt.KeyboardModifier.MetaModifier, 'Ctrl+'),
             )
         else:
             modmap = (
-                (Qt.ControlModifier, 'Ctrl+'),
-                (Qt.AltModifier, 'Alt+'),
-                (Qt.ShiftModifier, 'Shift+'),
-                (Qt.MetaModifier, 'Meta+'),
+                (Qt.KeyboardModifier.ControlModifier, 'Ctrl+'),
+                (Qt.KeyboardModifier.AltModifier, 'Alt+'),
+                (Qt.KeyboardModifier.ShiftModifier, 'Shift+'),
+                (Qt.KeyboardModifier.MetaModifier, 'Meta+'),
             )
         modifiers = event.modifiers()
         seq = ''

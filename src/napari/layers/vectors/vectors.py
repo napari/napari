@@ -336,7 +336,7 @@ class Vectors(Layer):
         return self._data
 
     @data.setter
-    def data(self, vectors: np.ndarray):
+    def data(self, vectors: np.ndarray) -> None:
         previous_n_vectors = len(self.data)
 
         self._data, _ = fix_data_vectors(vectors, self.ndim)
@@ -415,7 +415,7 @@ class Vectors(Layer):
         return self._feature_table.properties()
 
     @properties.setter
-    def properties(self, properties: dict[str, Array]):
+    def properties(self, properties: dict[str, Array]) -> None:
         self.features = properties
 
     @property
@@ -526,7 +526,7 @@ class Vectors(Layer):
         return self._edge_width
 
     @edge_width.setter
-    def edge_width(self, edge_width: float):
+    def edge_width(self, edge_width: float) -> None:
         self._edge_width = edge_width
 
         self.events.edge_width()
@@ -546,7 +546,7 @@ class Vectors(Layer):
         return str(self._vector_style)
 
     @vector_style.setter
-    def vector_style(self, vector_style: str):
+    def vector_style(self, vector_style: str) -> None:
         old_vector_style = self._vector_style
         self._vector_style = VectorStyle(vector_style)
         if self._vector_style != old_vector_style:
@@ -559,7 +559,7 @@ class Vectors(Layer):
         return self._length
 
     @length.setter
-    def length(self, length: float):
+    def length(self, length: float) -> None:
         self._length = float(length)
 
         self.events.length()
@@ -571,7 +571,7 @@ class Vectors(Layer):
         return self._edge.colors
 
     @edge_color.setter
-    def edge_color(self, edge_color: ColorType):
+    def edge_color(self, edge_color: ColorType) -> None:
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -580,7 +580,7 @@ class Vectors(Layer):
         )
         self.events.edge_color()
 
-    def refresh_colors(self, update_color_mapping: bool = False):
+    def refresh_colors(self, update_color_mapping: bool = False) -> None:
         """Calculate and update edge colors if using a cycle or color map
 
         Parameters
@@ -609,7 +609,7 @@ class Vectors(Layer):
         return self._edge.color_mode
 
     @edge_color_mode.setter
-    def edge_color_mode(self, edge_color_mode: str | ColorMode):
+    def edge_color_mode(self, edge_color_mode: str | ColorMode) -> None:
         edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
@@ -658,7 +658,7 @@ class Vectors(Layer):
         return self._edge.categorical_colormap.fallback_color.values
 
     @edge_color_cycle.setter
-    def edge_color_cycle(self, edge_color_cycle: list | np.ndarray):
+    def edge_color_cycle(self, edge_color_cycle: list | np.ndarray) -> None:
         self._edge.categorical_colormap = edge_color_cycle  # pyrefly: ignore [bad-assignment]
 
     @property
@@ -673,7 +673,7 @@ class Vectors(Layer):
         return self._edge.continuous_colormap
 
     @edge_colormap.setter
-    def edge_colormap(self, colormap: ValidColormapArg):
+    def edge_colormap(self, colormap: ValidColormapArg) -> None:
         self._edge.continuous_colormap = colormap  # pyrefly: ignore [bad-assignment]
 
     @property
@@ -686,7 +686,7 @@ class Vectors(Layer):
     @edge_contrast_limits.setter
     def edge_contrast_limits(
         self, contrast_limits: tuple[float, float] | None
-    ):
+    ) -> None:
         self._edge.contrast_limits = contrast_limits
 
     @property
@@ -722,7 +722,7 @@ class Vectors(Layer):
     def _set_view_slice(self):
         raise NotImplementedError
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current vectors and colors."""
         # Set the default thumbnail to black, opacity 1
         colormapped = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -775,7 +775,7 @@ class Vectors(Layer):
             )
             self.thumbnail = colormapped
 
-    def _get_value(self, position):
+    def _get_value(self, position) -> None:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -799,7 +799,7 @@ class Vectors(Layer):
 class _VectorsSlicingState(_LayerSlicingState):
     layer: Vectors
 
-    def __init__(self, layer: Layer, data: LayerDataType, cache: bool):
+    def __init__(self, layer: Layer, data: LayerDataType, cache: bool) -> None:
         super().__init__(layer, data, cache)
 
         # Data containing vectors in the currently viewed slice
@@ -809,7 +809,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         request = self._make_slice_request_internal(
             self.layer._slice_input, self.layer._data_slice
         )
@@ -831,7 +831,7 @@ class _VectorsSlicingState(_LayerSlicingState):
 
     def _make_slice_request_internal(
         self, slice_input: _SliceInput, data_slice: _ThickNDSlice
-    ):
+    ) -> _VectorSliceRequest:
         return _VectorSliceRequest(
             slice_input=slice_input,
             data=self.layer.data,
@@ -840,7 +840,7 @@ class _VectorsSlicingState(_LayerSlicingState):
             length=self.layer.length,
         )
 
-    def _update_slice_response(self, response: _VectorSliceResponse):
+    def _update_slice_response(self, response: _VectorSliceResponse) -> None:
         """Handle a slicing response."""
         self._slice_input = response.slice_input
         indices = response.indices

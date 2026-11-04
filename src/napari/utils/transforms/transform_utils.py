@@ -449,7 +449,7 @@ def is_matrix_triangular(matrix):
     )
 
 
-def is_diagonal(matrix, tol=1e-8):
+def is_diagonal(matrix, tol: float = 1e-8) -> bool:
     """Determine whether a matrix is diagonal up to some tolerance.
 
     Parameters

@@ -94,7 +94,7 @@ class PasswordWidget(TextSchemaWidget):
     def configure(self):
         super().configure()
 
-        self.setEchoMode(self.Password)
+        self.setEchoMode(self.EchoMode.Password)
 
     def setDescription(self, description: str):
         self.description = description
@@ -129,7 +129,7 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
         self.setChecked(checked)
 
     def configure(self):
-        self.stateChanged.connect(lambda _: self.on_changed.emit(self.state))
+        self.toggled.connect(lambda _: self.on_changed.emit(self.state))
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
@@ -207,7 +207,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         widget_builder: 'WidgetBuilder',
     ):
         super().__init__(
-            schema, ui_schema, widget_builder, orientation=QtCore.Qt.Horizontal
+            schema, ui_schema, widget_builder, orientation=QtCore.Qt.Orientation.Horizontal
         )
 
     @state_property
@@ -239,7 +239,7 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
         if "multipleOf" in self.schema:
             self.setTickInterval(self.schema["multipleOf"])
             self.setSingleStep(self.schema["multipleOf"])
-            self.setTickPosition(self.TicksBothSides)
+            self.setTickPosition(self.TickPosition.TicksBothSides)
 
         self.setRange(minimum, maximum)
 
@@ -282,11 +282,11 @@ class QColorButton(QtWidgets.QPushButton):
         if self._color:
             dlg.setCurrentColor(QtGui.QColor(self._color))
 
-        if dlg.exec_():
+        if dlg.exec():
             self.setColor(dlg.currentColor().name())
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.RightButton:
+        if event.button() == QtCore.Qt.MouseButton.RightButton:
             self.setColor(None)
 
         return super().mousePressEvent(event)
@@ -383,7 +383,7 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         style = self.style()
 
         self.up_button = QtWidgets.QPushButton()
-        self.up_button.setIcon(style.standardIcon(QtWidgets.QStyle.SP_ArrowUp))
+        self.up_button.setIcon(style.standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowUp))
         self.up_button.clicked.connect(lambda _: self.on_move_up.emit())
 
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
@@ -392,13 +392,13 @@ class ArrayControlsWidget(QtWidgets.QWidget):
 
         self.delete_button = QtWidgets.QPushButton()
         self.delete_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+            style.standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DialogCancelButton)
         )
         self.delete_button.clicked.connect(lambda _: self.on_delete.emit())
 
         self.down_button = QtWidgets.QPushButton()
         self.down_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_ArrowDown)
+            style.standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowDown)
         )
         self.down_button.clicked.connect(lambda _: self.on_move_down.emit())
 
@@ -469,7 +469,7 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
         self.add_button = QtWidgets.QPushButton()
         self.add_button.setIcon(
-            style.standardIcon(QtWidgets.QStyle.SP_FileIcon)
+            style.standardIcon(QtWidgets.QStyle.StandardPixmap.SP_FileIcon)
         )
         self.add_button.clicked.connect(lambda _: self.add_item())
 
@@ -787,7 +787,7 @@ class ObjectSchemaWidget(ObjectSchemaWidgetMinix, QtWidgets.QGroupBox):
     ) -> Dict[str, QtWidgets.QWidget]:
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.setFlat(False)
 
         if 'title' in schema:

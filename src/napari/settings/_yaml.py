@@ -93,7 +93,7 @@ class PydanticYamlMixin(BaseModel):
         return self._yaml_dump(data, dumper, **dumps_kwargs)
 
     def _yaml_dump(
-        self, data, dumper: type[SafeDumper] | None = None, **kw
+        self, data: Any, dumper: type[SafeDumper] | None = None, **kw: Any
     ) -> str:
         kw.setdefault('sort_keys', False)
         dumper = dumper or getattr(

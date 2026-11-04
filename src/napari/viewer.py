@@ -118,6 +118,7 @@ class Viewer(ViewerModel):
         if self.window._qt_viewer._console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
+        assert self.window._qt_viewer.console is not None
         self.window._qt_viewer.console.push(variables)
 
     def export_figure(

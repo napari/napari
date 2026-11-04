@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
 
@@ -49,10 +49,9 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             )
         )
         connect_setattr(
-            preserve_labels_cb.stateChanged,
+            preserve_labels_cb.toggled,
             layer,
             'preserve_labels',
-            convert_fun=checked_to_bool,
         )
         self.preserve_labels_checkbox = preserve_labels_cb
 

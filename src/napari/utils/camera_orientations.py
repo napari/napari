@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from enum import auto
+from functools import lru_cache
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import numpy as np
@@ -85,6 +86,7 @@ def _camera_rotation_matrix(
     return R.from_euler('XYZ', -np.asarray(angles), degrees=True).as_matrix()
 
 
+@lru_cache
 def view_and_up_directions_from_angles(
     angles: Vector3D,
     orientation: AxesOrientation3D,
@@ -112,6 +114,22 @@ def view_and_up_directions_from_angles(
     base_view, base_up = _base_view_and_up_direction(orientation)
     rot_matrix = _camera_rotation_matrix(angles)
     return tuple(rot_matrix @ base_view), tuple(rot_matrix @ base_up)
+
+
+def _nudge_vector(v: np.ndarray) -> np.ndarray:
+    """Nudge a vector, to guarantee it's not parallel to the input.
+
+    Takes the least aligned axis to the input and uses a small value
+    in that direction to nudge the input vector.
+    """
+    # choose the coordinate axis least aligned with v
+    axis_nudge = np.zeros_like(v)
+    axis_nudge[np.argmin(np.abs(v))] = 1.0
+
+    # this least-aligned vector is guaranteed to be non-parallel for nonzero
+    # vectors. Use it to nudge theinput slightly sideways (and renormalize)
+    new = v + (1e-6 * axis_nudge)
+    return new / np.linalg.norm(new)
 
 
 def angles_from_view_and_up_directions(
@@ -150,6 +168,12 @@ def angles_from_view_and_up_directions(
     # result in a bad matrix)
     up_raw = np.asarray(up_direction, dtype=float)
     up_ortho = up_raw - np.dot(up_raw, view) * view
+    if np.allclose(up_ortho, 0):
+        # can happen if one sets the view direction to the same or opposite
+        # value as the up direction. This is unsolvable, so as a workaround
+        # just nudge the view_direction arbitrarily and use it as new up
+        up_raw = _nudge_vector(view)
+        up_ortho = up_raw - np.dot(up_raw, view) * view
     up = up_ortho / np.linalg.norm(up_ortho)
 
     # the rotation maps the home-view basis onto the given view/up basis

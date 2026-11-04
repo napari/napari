@@ -27,7 +27,7 @@ __all__ = [
 class _SettingsProxy:
     """Backwards compatibility layer."""
 
-    def __getattribute__(self, name) -> Any:
+    def __getattribute__(self, name: str) -> Any:
         return getattr(get_settings(), name)
 
 
@@ -52,7 +52,9 @@ def _raise_path_set_twice() -> NoReturn:
     )
 
 
-def get_settings(path=_NOT_SET) -> NapariSettings:
+def get_settings(
+    path: Path | str | _NotSetType | None = _NOT_SET,
+) -> NapariSettings:
     """
     Get settings for a given path.
 
@@ -73,8 +75,8 @@ def get_settings(path=_NOT_SET) -> NapariSettings:
     global _SETTINGS
 
     if _SETTINGS is None:
-        if path is not _NOT_SET:
-            path = Path(path).resolve() if path is not None else None  # pyrefly: ignore [bad-argument-type]
+        if not isinstance(path, _NotSetType):
+            path = Path(path).resolve() if path is not None else None
         _SETTINGS = NapariSettings(config_path=path)
         _SETTINGS._connect_events()
 
