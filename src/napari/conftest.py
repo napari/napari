@@ -674,7 +674,9 @@ def pytest_collection_modifyitems(session, config, items) -> None:
 
 
 @pytest.hookimpl(wrapper=True)
-def pytest_runtestloop(session):
+def pytest_runtestloop(
+    session: pytest.Session,
+) -> Generator[None, bool | None, bool | None]:
     """Freeze objects created by imports and collection before running tests.
 
     Each full ``gc.collect()`` (for example, the one done when a layer is
