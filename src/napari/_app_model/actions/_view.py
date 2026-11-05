@@ -27,7 +27,9 @@ VIEW_SUBMENUS = [
     ),
     (
         MenuId.MENUBAR_VIEW,
-        SubmenuItem(submenu=MenuId.VIEW_GRIDLINES, title='Grid Lines'),
+        SubmenuItem(
+            submenu=MenuId.VIEW_COORDINATE_GRID, title='CoordinateGrid'
+        ),
     ),
 ]
 
@@ -114,21 +116,21 @@ toggle_actions = {
             'canvas.overlays.scale_bar.ticks',
         ),
     ],
-    MenuId.VIEW_GRIDLINES: [
+    MenuId.VIEW_COORDINATE_GRID: [
         (
-            'napari.scene.toggle_grid_lines',
-            'Toggle Grid Lines',
-            'scene.overlays.grid_lines.visible',
+            'napari.scene.toggle_coordinate_grid',
+            'Toggle Coordinate Grid',
+            'scene.overlays.coordinate_grid.visible',
         ),
         (
-            'napari.scene.toggle_grid_lines_axis_labels',
-            'Toggle Grid Lines Axis Labels',
-            'scene.overlays.grid_lines.axis_labels',
+            'napari.scene.toggle_coordinate_grid_axis_labels',
+            'Toggle Coordinate Grid Axis Labels',
+            'scene.overlays.coordinate_grid.axis_labels',
         ),
         (
-            'napari.scene.toggle_grid_lines_tick_labels',
-            'Toggle Grid Lines Tick Labels',
-            'scene.overlays.grid_lines.tick_labels',
+            'napari.scene.toggle_coordinate_grid_tick_labels',
+            'Toggle Coordinate Grid Tick Labels',
+            'scene.overlays.coordinate_grid.tick_labels',
         ),
     ],
 }

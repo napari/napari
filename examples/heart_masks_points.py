@@ -30,17 +30,30 @@ import napari
 url = 'https://data.napari.dev/heart_example_data'
 tmp_dir = pooch.os_cache('napari-heart-example')
 data_files = {
-    #'tiff_image': 'image.tif', # uncomment if you want to load the image as tiff instead of zarr
-    'segmentation': 'segmentation.tif',
-    'cell_data': 'cell_data.csv',
-    'channel_metadata': 'channel_metadata.csv'
+    # Uncomment to load the image as TIFF instead of Zarr.
+    # 'tiff_image': (
+    #     'image.tif',
+    #     'sha256:d1deb9cf65a64fce8b35bcfa11f14442bdf986c14a4a02c276f1727a33933f2b',
+    # ),
+    'segmentation': (
+        'segmentation.tif',
+        'sha256:01ecf9089ffb71d0209dc21d114d19cddd3929258859792f57e91b80bfcde3af',
+    ),
+    'cell_data': (
+        'cell_data.csv',
+        'sha256:4d577f438b9979143f4eaaa6244b92ebb11a5a74640df8e6ab3e6b5eea441aeb',
+    ),
+    'channel_metadata': (
+        'channel_metadata.csv',
+        'sha256:605ea07fe6b9ccff2f7ffaadccc3b4449c6b7a84f6a1c5cc10082e784367de11',
+    ),
 }
-data_to_path = {}
+data_to_path: dict[str, str] = {}
 print(f'downloading data into {tmp_dir}')
-for id_, file_name in data_files.items():
+for id_, (file_name, known_hash) in data_files.items():
     res = pooch.retrieve(
         f'{url}/{file_name}',
-        known_hash=None,
+        known_hash=known_hash,
         path=tmp_dir,
         progressbar=True
     )
