@@ -91,8 +91,8 @@ def _enable_opengl_context_sharing() -> None:
     Without this, floating a dock that contains a ``QOpenGLWidget`` (such as
     a vispy canvas) reparents it into a new top-level window with an unshared
     context. Buffers and textures created in the original context are then
-    invalid and rendering fails. Must be called before the ``QApplication``
-    is created.
+    invalid and rendering fails. Call before creating any OpenGL widgets,
+    and before constructing ``QApplication`` when napari creates it.
     """
     QApplication.setAttribute(
         Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True
@@ -189,6 +189,7 @@ def get_qapp(
     kwargs = locals() if set_values else _get_defaults()
     global _app_ref
 
+    _enable_opengl_context_sharing()
     app = QApplication.instance()
     if app:
         set_values.discard('ipy_interactive')
@@ -222,9 +223,6 @@ def get_qapp(
             )
 
     else:
-        # This must happen before QApplication is constructed.
-        _enable_opengl_context_sharing()
-
         argv = sys.argv.copy()
         if sys.platform == 'darwin' and not argv[0].endswith('napari'):
             # Make sure the app name in the Application menu is `napari`

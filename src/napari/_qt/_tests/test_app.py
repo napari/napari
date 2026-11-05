@@ -1,16 +1,16 @@
 import os
+import subprocess
 import sys
+import textwrap
 import warnings
 from collections import defaultdict
 from unittest.mock import Mock
 
 import pytest
-from qtpy.QtCore import Qt
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QAction, QLabel, QShortcut
 
 from napari._qt.qt_event_loop import (
-    _enable_opengl_context_sharing,
     _ipython_has_eventloop,
     get_qapp,
     run,
@@ -42,17 +42,42 @@ def test_windows_grouping_overwrite(qapp):
     assert get_app_id() == ' '
 
 
-def test_enable_opengl_context_sharing(monkeypatch):
-    """OpenGL contexts must be shared so floating canvases keep working."""
-    calls = []
-    monkeypatch.setattr(
-        'napari._qt.qt_event_loop.QApplication.setAttribute',
-        lambda *args: calls.append(args),
+@pytest.mark.parametrize('existing_app', [False, True])
+def test_get_qapp_enables_opengl_context_sharing(existing_app):
+    """Check startup order without reusing pytest's application or GL state."""
+    code = textwrap.dedent(
+        """
+        import sys
+
+        from qtpy.QtCore import Qt
+        from qtpy.QtWidgets import QApplication
+
+        from napari._qt import qt_event_loop
+
+        flag = Qt.ApplicationAttribute.AA_ShareOpenGLContexts
+        assert QApplication.instance() is None
+        assert not QApplication.testAttribute(flag)
+        existing_app = QApplication([]) if sys.argv[1] == 'True' else None
+
+        class CheckedApplication(QApplication):
+            def __init__(self, *args):
+                assert QApplication.testAttribute(flag)
+                super().__init__(*args)
+
+        qt_event_loop.QApplication = CheckedApplication
+        app = qt_event_loop.get_qapp(ipy_interactive=False)
+
+        assert QApplication.testAttribute(flag)
+        assert app is QApplication.instance()
+        if existing_app is not None:
+            assert app is existing_app
+        """
     )
-
-    _enable_opengl_context_sharing()
-
-    assert calls == [(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)]
+    subprocess.run(
+        [sys.executable, '-c', code, str(existing_app)],
+        check=True,
+        timeout=60,
+    )
 
 
 def test_run_outside_ipython(make_napari_viewer, qapp, monkeypatch):
