@@ -4,12 +4,11 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QPushButton,
     QWidget,
 )
-from superqt import QLabeledDoubleSlider
+from superqt import QEnumComboBox, QLabeledDoubleSlider
 
 from napari._qt.layer_controls.dynamic.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
@@ -98,7 +97,7 @@ class QtDepictionControl(QtWidgetControlsBase):
 
     Attributes
     ----------
-    depiction_combobox : qtpy.QtWidgets.QComboBox
+    depiction_combobox : superqt.QEnumComboBox
         ComboBox controlling current depiction value of the layer.
     depiction_label : napari._qt.layer_controls.widgets.qt_widget_controls_base.QtWrappedLabel
         Label for the depiction value chooser widget.
@@ -127,14 +126,11 @@ class QtDepictionControl(QtWidgetControlsBase):
             )
 
         # Setup widgets
-        self.depiction_combobox = QComboBox(parent)
-        depiction_options = [d.value for d in VolumeDepiction]
-        self.depiction_combobox.addItems(depiction_options)
-        index = self.depiction_combobox.findText(
-            self._layers[0].depiction, Qt.MatchFlag.MatchFixedString
+        self.depiction_combobox = QEnumComboBox(parent, VolumeDepiction)
+        self.depiction_combobox.setCurrentEnum(
+            VolumeDepiction(self._layers[0].depiction)
         )
-        self.depiction_combobox.setCurrentIndex(index)
-        self.depiction_combobox.currentTextChanged.connect(
+        self.depiction_combobox.currentEnumChanged.connect(
             self.change_depiction
         )
         self.depiction_label = QtWrappedLabel('depiction:')
@@ -169,9 +165,9 @@ class QtDepictionControl(QtWidgetControlsBase):
             self.depiction_combobox.hide()
             self.depiction_label.hide()
 
-    def change_depiction(self, text: str) -> None:
+    def change_depiction(self, value: VolumeDepiction) -> None:
         for layer in self._layers:
-            layer.depiction = text
+            layer.depiction = value
         self._update_plane_parameter_visibility()
 
     def change_plane_thickness(self, value: float) -> None:
@@ -181,10 +177,9 @@ class QtDepictionControl(QtWidgetControlsBase):
     def _on_depiction_change(self) -> None:
         """Receive layer model depiction change event and update combobox."""
         with qt_signals_blocked(self.depiction_combobox):
-            index = self.depiction_combobox.findText(
-                self._layers[0].depiction, Qt.MatchFlag.MatchFixedString
+            self.depiction_combobox.setCurrentEnum(
+                VolumeDepiction(self._layers[0].depiction)
             )
-            self.depiction_combobox.setCurrentIndex(index)
             self._update_plane_parameter_visibility()
 
     def _on_plane_thickness_change(self) -> None:

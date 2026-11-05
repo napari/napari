@@ -93,3 +93,14 @@ def test_create_func_renamed():
     with pytest.warns(FutureWarning, match="Argument 'd' is deprecated"):
         dc.add_simple_class_renamed(d=8)
     assert dc.layers[1].b == 8
+
+
+def test_create_func_class_outside_napari_namespace():
+    """create_func should work for classes whose module is not importable
+    from the exec namespace (e.g. a user script run as ``__main__``)."""
+
+    class OutsideClass:
+        """Class not reachable from the napari namespace"""
+
+    OutsideClass.__module__ = '__main__'  # mimics a user script
+    create_func(OutsideClass)
