@@ -464,19 +464,18 @@ class _QtMainWindow(QMainWindow):
 
     def close(self, quit_app=False, confirm_need=False):
         """Override to handle closing app or just the window."""
-        if not quit_app and not self._qt_viewer.viewer.layers:
+        if (
+            not quit_app
+            and not self._qt_viewer.viewer.layers
+            and not self._window._task_status_manager.is_busy()
+        ):
             return super().close()
         confirm_need_local = confirm_need and self._is_close_dialog[quit_app]
         self._is_close_dialog[quit_app] = False
 
         # here we save information that we could request confirmation on close
         # So if function `close` is called again, we don't ask again but just close
-        if (
-            not confirm_need_local
-            or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec()
-            == QDialog.DialogCode.Accepted
-        ):
+        if not confirm_need_local or self._confirm_close(close_app=quit_app):
             self._quit_app = quit_app
             self._is_close_dialog[quit_app] = True
             # here we inform that confirmation dialog is not open
@@ -485,6 +484,28 @@ class _QtMainWindow(QMainWindow):
         self._is_close_dialog[quit_app] = True
         return None
         # here we inform that confirmation dialog is not open
+
+    def _confirm_close(self, close_app: bool) -> bool:
+        """Ask the user to confirm closing, if needed; return whether to close.
+
+        Pending tasks are always shown, even when the confirmation dialog
+        has been turned off in the settings.
+        """
+        task_status = self._window._task_status_manager.get_status()
+        if task_status:
+            dialog = ConfirmCloseDialog(
+                self,
+                close_app=close_app,
+                extra_info='\n'.join(task_status),
+                display_checkbox=False,
+            )
+        elif get_settings().application.confirm_close_window and (
+            close_app or self._qt_viewer.viewer.layers
+        ):
+            dialog = ConfirmCloseDialog(self, close_app=close_app)
+        else:
+            return True
+        return dialog.exec() == QDialog.DialogCode.Accepted
 
     def close_window(self):
         """Close active dialog or active window."""
@@ -581,24 +602,7 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
-        task_status = self._window._task_status_manager.get_status()
-        if (
-            event.spontaneous()
-            and task_status
-            and ConfirmCloseDialog(
-                self,
-                close_app=False,
-                extra_info='\n'.join(task_status),
-                display_checkbox=False,
-            ).exec()
-            != QDialog.DialogCode.Accepted
-        ) or (
-            event.spontaneous()
-            and get_settings().application.confirm_close_window
-            and self._qt_viewer.viewer.layers
-            and ConfirmCloseDialog(self, close_app=False).exec()
-            != QDialog.DialogCode.Accepted
-        ):
+        if event.spontaneous() and not self._confirm_close(close_app=False):
             event.ignore()
             return
 
