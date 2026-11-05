@@ -86,6 +86,10 @@ def create_func(cls, name=None, doc=None):
     func = execdict[name]
 
     func.__doc__ = doc
+    # The annotations of ``func`` are strings copied from ``cls.__init__``.
+    # They use names from the layer module (``np``, ``npt``, ...), which the
+    # exec'd function does not know. stubgen reads this attribute to resolve
+    # them with ``get_type_hints``. Removing it breaks the stub generation.
     func._forwardrefns_ = vars(sys.modules[cls.__module__])
     func.__signature__ = sig.replace(
         parameters=[

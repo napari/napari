@@ -110,6 +110,7 @@ def _type_checking_namespace(module_name: str) -> dict[str, Any]:
 def _annotation_namespace(func: Any) -> dict[str, Any]:
     """Return the namespace used to evaluate the annotations of ``func``."""
     func_globals = getattr(func, '__globals__', {})
+    # set in napari.utils._register.create_func on the generated add_* methods
     forwardrefns = getattr(func, '_forwardrefns_', {})
 
     globalns = {**func_globals}
