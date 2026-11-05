@@ -609,8 +609,8 @@ class QtViewer(QSplitter):
         """Callback connected to `viewer._layer_slicer.events.ready`.
 
         Pass the slice response data to the main thread via a Qt signal.
-        Do not use ensure_main_thead on Qt object because it creates
-        temporary objects that leaded to deadlocks on CI.
+        Do not use ensure_main_theard on Qt object because it creates
+        temporary objects that result in deadlocks on CI.
         """
         self._slice_ready.emit(event.value)
 
