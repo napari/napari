@@ -6,7 +6,8 @@ import sys
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy.QtCore import QDir, QRectF, QSize, Qt
+from packaging.version import parse as parse_version
+from qtpy.QtCore import QCoreApplication, QDir, QRectF, QSize, Qt, qVersion
 from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import QApplication, QWidget
@@ -85,6 +86,14 @@ def _get_defaults() -> dict:
     }
 
 
+# Setting AA_ShareOpenGLContexts after the QApplication has been created is
+# only supported from Qt 6.10, where the global share context is created
+# lazily. Older versions emit a warning and ignore the attribute.
+_QT_SUPPORTS_LATE_OPENGL_SHARING = parse_version(qVersion()) >= parse_version(
+    '6.10'
+)
+
+
 def _enable_opengl_context_sharing() -> None:
     """Share OpenGL resources between all Qt widgets.
 
@@ -93,7 +102,16 @@ def _enable_opengl_context_sharing() -> None:
     context. Buffers and textures created in the original context are then
     invalid and rendering fails. Call before creating any OpenGL widgets,
     and before constructing ``QApplication`` when napari creates it.
+
+    If an application already exists, this can only take effect on Qt 6.10 or
+    newer, where the global share context is created lazily. Older Qt versions
+    require the attribute to be set before the application is created.
     """
+    if (
+        QCoreApplication.instance() is not None
+        and not _QT_SUPPORTS_LATE_OPENGL_SHARING
+    ):
+        return
     QApplication.setAttribute(
         Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True
     )

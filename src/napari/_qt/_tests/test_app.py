@@ -49,12 +49,16 @@ def test_get_qapp_enables_opengl_context_sharing(existing_app):
         """
         import sys
 
-        from qtpy.QtCore import Qt
+        from packaging.version import parse as parse_version
+        from qtpy.QtCore import Qt, qVersion
         from qtpy.QtWidgets import QApplication
 
         from napari._qt import qt_event_loop
 
         flag = Qt.ApplicationAttribute.AA_ShareOpenGLContexts
+        supports_late_sharing = parse_version(qVersion()) >= parse_version(
+            '6.10'
+        )
         assert QApplication.instance() is None
         assert not QApplication.testAttribute(flag)
         existing_app = QApplication([]) if sys.argv[1] == 'True' else None
@@ -67,7 +71,8 @@ def test_get_qapp_enables_opengl_context_sharing(existing_app):
         qt_event_loop.QApplication = CheckedApplication
         app = qt_event_loop.get_qapp(ipy_interactive=False)
 
-        assert QApplication.testAttribute(flag)
+        expected_sharing = existing_app is None or supports_late_sharing
+        assert QApplication.testAttribute(flag) is expected_sharing
         assert app is QApplication.instance()
         if existing_app is not None:
             assert app is existing_app

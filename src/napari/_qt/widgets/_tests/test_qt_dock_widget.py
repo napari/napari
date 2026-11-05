@@ -244,6 +244,8 @@ def test_float_button_respects_dock_widget_floatable(make_napari_viewer):
 
     dw.setFeatures(movable | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
     assert not dw.title.float_button.isHidden()
+    dw.title.float_button.click()
+    assert dw.isFloating()
 
 
 def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
