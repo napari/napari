@@ -134,8 +134,8 @@ class CurrentSliceOverlay(_BaseTextOverlay):
     """
 
 
-class SliceOrientationOverlay(_BaseTextOverlay):
-    """Label model to display the current slice orientation in the canvas
+class DimsDisplayedOverlay(_BaseTextOverlay):
+    """Label model to display the currently displayed dims in the canvas
 
     Attributes
     ----------

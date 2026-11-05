@@ -191,7 +191,7 @@ class VispyCurrentSliceOverlay(_VispyViewerTextOverlay):
         self._on_position_change()
 
 
-class VispySliceOrientationOverlay(_VispyViewerTextOverlay):
+class VispyDimsDisplayedOverlay(_VispyViewerTextOverlay):
     def _connect_events(self) -> None:
         dims_events = self.viewer.dims.events
         dims_events.order.connect(self._on_text_change)

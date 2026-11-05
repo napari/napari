@@ -31,8 +31,8 @@ from napari._vispy.overlays.scale_bar import VispyScaleBarOverlay
 from napari._vispy.overlays.scene_axes import VispySceneAxesOverlay
 from napari._vispy.overlays.text import (
     VispyCurrentSliceOverlay,
+    VispyDimsDisplayedOverlay,
     VispyLayerNameOverlay,
-    VispySliceOrientationOverlay,
     VispyTextOverlay,
 )
 from napari._vispy.overlays.zoom import VispyZoomOverlay
@@ -44,6 +44,7 @@ from napari.components.overlays import (
     CoordinateGridOverlay,
     CrosshairOverlay,
     CurrentSliceOverlay,
+    DimsDisplayedOverlay,
     LabelsBrushStrokeOverlay,
     LabelsPolygonOverlay,
     LayerNameOverlay,
@@ -51,7 +52,6 @@ from napari.components.overlays import (
     ScaleBarOverlay,
     SceneAxesOverlay,
     SelectionBoxOverlay,
-    SliceOrientationOverlay,
     TextOverlay,
     TransformBoxOverlay,
     ZoomOverlay,
@@ -97,7 +97,7 @@ overlay_to_visual: dict[type[Overlay], type[VispyBaseOverlay]] = {
     ZoomOverlay: VispyZoomOverlay,
     LayerNameOverlay: VispyLayerNameOverlay,
     CurrentSliceOverlay: VispyCurrentSliceOverlay,
-    SliceOrientationOverlay: VispySliceOrientationOverlay,
+    DimsDisplayedOverlay: VispyDimsDisplayedOverlay,
     ColorBarOverlay: VispyColorBarOverlay,
 }
 
