@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import tempfile
 from contextlib import suppress
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from napari import __version__
 from napari.utils._platformdirs import user_cache_dir
 
 if TYPE_CHECKING:
@@ -21,7 +20,6 @@ ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
 PLUGIN_FILE_NAME = 'plugin.txt'
 CACHE_FINGERPRINT_FILE = '_cache_fingerprint.txt'
-_ICON_CACHE_VERSION = 1
 THEME_OPACITIES = (0.5, 1)
 THEME_OVERRIDES = {
     'warning': 'warning',
@@ -219,7 +217,7 @@ def _compute_theme_svg_fingerprint(
     }
 
     fingerprint_data = {
-        'version': _ICON_CACHE_VERSION,
+        'napari_version': __version__,
         'style': svg_style,
         'opacities': list(THEME_OPACITIES),
         'theme_overrides': THEME_OVERRIDES,
@@ -266,31 +264,6 @@ def _remove_fingerprint_file(dest_dir: Path) -> None:
     """
     fingerprint_path = dest_dir / CACHE_FINGERPRINT_FILE
     fingerprint_path.unlink(missing_ok=True)
-
-
-def _write_fingerprint_atomic(dest_dir: Path, fingerprint: str) -> None:
-    """Write the fingerprint atomically to prevent partial cache validation."""
-    dest_file = dest_dir / CACHE_FINGERPRINT_FILE
-    temp_fd, temp_path = tempfile.mkstemp(
-        dir=dest_dir,
-        prefix=f'{CACHE_FINGERPRINT_FILE}.tmp',
-    )
-    closed = False
-    try:
-        with open(temp_fd, 'w', encoding='utf-8') as f:
-            closed = True
-            f.write(fingerprint)
-        os.replace(temp_path, dest_file)
-    except BaseException:
-        if not closed:
-            with suppress(OSError):
-                os.close(temp_fd)
-        try:
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-        except OSError:
-            pass
-        raise
 
 
 def build_theme_svgs(theme_name: str, source: str) -> str:
@@ -341,7 +314,11 @@ def build_theme_svgs(theme_name: str, source: str) -> str:
         with (out / PLUGIN_FILE_NAME).open('w', encoding='utf-8') as f:
             f.write(source)
 
-        _write_fingerprint_atomic(out, fingerprint)
+        # The old fingerprint was removed above and an incomplete one can
+        # never equal the expected value, so a plain write is enough.
+        (out / CACHE_FINGERPRINT_FILE).write_text(
+            fingerprint, encoding='utf-8'
+        )
     except BaseException:
         with suppress(OSError):
             _remove_fingerprint_file(out)

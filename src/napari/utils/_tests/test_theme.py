@@ -446,21 +446,42 @@ def test_compute_source_svgs_hash_with_dict_and_detects_changes(tmp_path):
         icons_module._compute_source_svgs_hash(icons_dict)
 
 
-def test_write_fingerprint_atomic_cleanup_on_error(tmp_path, monkeypatch):
-    dest_dir = tmp_path / 'atomic_test'
-    dest_dir.mkdir()
+def test_build_theme_svgs_rebuild_on_truncated_fingerprint(
+    tmp_path, monkeypatch
+):
+    # The fingerprint is written with a plain write, so an interrupted write
+    # can leave a prefix of it on disk. That must never validate the cache.
+    monkeypatch.setattr(icons_module, '_theme_path', lambda x: tmp_path / x)
+    spy = MagicMock(side_effect=icons_module.write_colorized_svgs)
+    monkeypatch.setattr(icons_module, 'write_colorized_svgs', spy)
 
-    monkeypatch.setattr(
-        icons_module.os,
-        'replace',
-        MagicMock(side_effect=OSError('Simulated replace failure')),
-    )
+    out_dir = Path(build_theme_svgs('dark', 'builtin'))
+    fp_file = out_dir / CACHE_FINGERPRINT_FILE
+    full_fingerprint = fp_file.read_text(encoding='utf-8')
 
-    with pytest.raises(OSError, match='Simulated replace failure'):
-        icons_module._write_fingerprint_atomic(dest_dir, 'some_fingerprint')
+    for partial in ('', full_fingerprint[: len(full_fingerprint) // 2]):
+        fp_file.write_text(partial, encoding='utf-8')
+        calls_before = spy.call_count
+        build_theme_svgs('dark', 'builtin')
+        assert spy.call_count == calls_before + 1
+        assert fp_file.read_text(encoding='utf-8') == full_fingerprint
 
-    # Ensure no leftover temporary files in dest_dir
-    assert list(dest_dir.iterdir()) == []
+
+def test_build_theme_svgs_rebuild_on_napari_version_change(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(icons_module, '_theme_path', lambda x: tmp_path / x)
+    spy = MagicMock(side_effect=icons_module.write_colorized_svgs)
+    monkeypatch.setattr(icons_module, 'write_colorized_svgs', spy)
+
+    build_theme_svgs('dark', 'builtin')
+    assert spy.call_count == 1
+    build_theme_svgs('dark', 'builtin')
+    assert spy.call_count == 1  # cache hit, same napari version
+
+    monkeypatch.setattr(icons_module, '__version__', '999.0.0')
+    build_theme_svgs('dark', 'builtin')
+    assert spy.call_count == 2  # new napari version invalidates the cache
 
 
 def test_remove_fingerprint_file_raises_on_error(tmp_path, monkeypatch):
