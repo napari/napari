@@ -301,6 +301,7 @@ class _QtMainWindow(QMainWindow):
             # when we close the MainWindow, remove it from the instance list
             with contextlib.suppress(ValueError):
                 _QtMainWindow._instances.remove(self)
+            self._window._teardown()
 
         return res
 
@@ -635,8 +636,6 @@ class _QtMainWindow(QMainWindow):
             for _ in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
-
-        self._window._teardown()
 
         if self._quit_app:
             quit_app_()
