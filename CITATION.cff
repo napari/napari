@@ -685,5 +685,9 @@ authors:
   family-names: El Mouss
   affiliation: Turku University of Applied Sciences
   alias: imaddde867
+- given-names: Maria Laura
+  family-names: Barbosa Soares
+  affiliation: Pontifical Catholic University of Rio de Janeiro (PUC-Rio)
+  alias: mlaurabs
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
