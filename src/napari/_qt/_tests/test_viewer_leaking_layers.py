@@ -71,3 +71,16 @@ def test_leaks_labels(
     gc.collect()
     assert lr() is None
     assert dr() is None
+
+
+def test_closing_window_releases_viewer(
+    qtbot: QtBot, make_napari_viewer: MakeNapariViewer
+) -> None:
+    viewer = make_napari_viewer()
+    viewer_ref = weakref.ref(viewer)
+    viewer.window._qt_window.close()
+    del viewer
+    qtbot.wait(100)
+    gc.collect()
+    gc.collect()
+    assert viewer_ref() is None
