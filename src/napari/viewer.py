@@ -6,6 +6,7 @@ import numpy as np
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
+from napari.utils.events import Event
 from napari.utils.events.event_utils import disconnect_events
 
 if typing.TYPE_CHECKING:
@@ -33,9 +34,18 @@ class Viewer(ViewerModel):
         Dimension names. By default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. By default True.
+
+    Events
+    ------
+    closing
+        emitted once, before the viewer's layers are removed and its window
+        is closed, whether by ``close()`` or from the window itself. Not
+        emitted when Python exits. Handlers must not close the viewer.
     """
 
     _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
+    _closing_emitted: bool = False
+    _emitting_closing: bool = False
     _instances: typing.ClassVar[WeakSet['Viewer']] = WeakSet()
 
     def __init__(
@@ -70,6 +80,7 @@ class Viewer(ViewerModel):
             self, show=show, show_welcome_screen=show_welcome_screen
         )
         self._instances.add(self)
+        self.events.add(closing=Event)
 
     def __new__(cls, *args, **kwargs):
         """Overload __new__ to facilitate temporary monkey-patching.
@@ -266,6 +277,9 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        if self._emitting_closing:
+            return
+        self._emit_closing()
         # Shutdown the slicer first to avoid processing any more tasks.
         self._layer_slicer.shutdown()
         # Disconnect changes to dims before removing layers one-by-one
@@ -277,6 +291,17 @@ class Viewer(ViewerModel):
         self.window.close()
 
         self._instances.discard(self)
+
+    def _emit_closing(self) -> None:
+        """Emit ``events.closing`` unless it has already been emitted."""
+        if self._closing_emitted:
+            return
+        self._closing_emitted = True
+        self._emitting_closing = True
+        try:
+            self.events.closing()
+        finally:
+            self._emitting_closing = False
 
     @classmethod
     def close_all(cls) -> int:
