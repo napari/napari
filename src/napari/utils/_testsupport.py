@@ -125,6 +125,33 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f'rep_{rep.when}', rep)
 
 
+def _release_cached_qt_menu_actions(app) -> None:
+    """Release ``QMenuItemAction`` objects cached for ``app``.
+
+    app-model's Qt backend caches menu actions per application and uses the
+    ``QApplication`` as their parent, so they (and the application they
+    reference) are never released. Each test creates a new 'test_app'
+    application, so without this the actions of every test accumulate for
+    the whole session. Cache keys use ``id(app)``, so a later application
+    with the same id could also get a stale action of a destroyed one.
+
+    Does nothing when the app-model Qt backend was never imported, for
+    example when Qt is not installed.
+    """
+    qt_backend = sys.modules.get('app_model.backends.qt')
+    if qt_backend is None:
+        return
+
+    cache = qt_backend.QMenuItemAction._cache
+    app_id = id(app)
+    for key in [key for key in list(cache) if key[0] == app_id]:
+        action = cache.pop(key, None)
+        if action is not None:
+            # give ownership back to Python, so the action is deleted
+            # when the last reference to it is dropped
+            action.setParent(None)
+
+
 @pytest.fixture
 def mock_app_model():
     """Mock clean 'test_app' `NapariApplication` instance.
@@ -172,6 +199,7 @@ def mock_app_model():
             yield app
         finally:
             Application.destroy('test_app')
+            _release_cached_qt_menu_actions(app)
             _initialize_plugins.cache_clear()
             init_qactions.cache_clear()
 
