@@ -290,7 +290,6 @@ def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
     assert tabify is expected_tabify
 
 
-
 def test_menu_close_shows_task_status(
     make_napari_viewer, monkeypatch, mock_qt_method_ctx
 ):
