@@ -38,9 +38,12 @@ class Viewer(ViewerModel):
     Events
     ------
     closing
-        emitted once, before the viewer's layers are removed and its window
-        is closed, whether by ``close()`` or from the window itself. Not
-        emitted when Python exits. Handlers must not close the viewer.
+        emitted once when the viewer starts to close, by ``close()`` or from
+        its window, while its layers are still present. Background work such
+        as slicing may still be running. Handlers must not close the viewer
+        or its window. Not emitted when Python exits.
+
+        .. versionadded:: 0.11.0
     """
 
     _window: 'Window' = None  # pyrefly: ignore [bad-assignment]
@@ -81,6 +84,7 @@ class Viewer(ViewerModel):
         )
         self._instances.add(self)
         self.events.add(closing=Event)
+        self.events.closing.ignore_callback_errors = True
 
     def __new__(cls, *args, **kwargs):
         """Overload __new__ to facilitate temporary monkey-patching.
