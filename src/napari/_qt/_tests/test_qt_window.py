@@ -115,6 +115,41 @@ def test_update_theme(
     mock_update_theme_no_event.assert_called()
 
 
+def _references(callback, obj) -> bool:
+    """Whether an EventEmitter callback holds a reference to ``obj``."""
+    if isinstance(callback, tuple):  # (weakref to instance, method name)
+        return callback[0]() is obj
+    closure = getattr(callback, '__closure__', None) or ()
+    return any(cell.cell_contents is obj for cell in closure)
+
+
+def test_close_disconnects_theme_events(make_napari_viewer):
+    """Closing a viewer removes the Window callbacks from all theme events.
+
+    Themes are module-level objects, so any callback left on their events
+    keeps the closed Window (and its menus and app) alive.
+    """
+    viewer = make_napari_viewer()
+    window = viewer.window
+    emitters = {
+        (theme_name, event_name): emitter
+        for theme_name, theme in _themes.items()
+        for event_name, emitter in theme.events.emitters.items()
+    }
+
+    def window_callbacks():
+        return [
+            (key, cb)
+            for key, emitter in emitters.items()
+            for cb in emitter.callbacks
+            if _references(cb, window)
+        ]
+
+    assert window_callbacks()
+    viewer.close()
+    assert window_callbacks() == []
+
+
 def test_lazy_console(make_napari_viewer):
     v = make_napari_viewer()
     assert v.window._qt_viewer._console is None
