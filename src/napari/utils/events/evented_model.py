@@ -1,28 +1,137 @@
+import importlib
+import json
 import warnings
-from collections.abc import Callable
+from collections.abc import (
+    Callable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from enum import StrEnum
+from functools import cache
+from pathlib import Path
+from types import FunctionType, NoneType
+from typing import Any, ClassVar, Literal, Union
 
 import numpy as np
+import pint
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
     ConfigDict,
     PrivateAttr,
+    PydanticSchemaGenerationError,
+    TypeAdapter,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 
 from napari._pydantic_util import get_inner_type, get_outer_type
 from napari.utils.events.event import EmitterGroup, Event
-from napari.utils.misc import pick_equality_operator
+from napari.utils.misc import StringEnum, pick_equality_operator
 
-# encoders for non-napari specific field types.  To declare a custom encoder
-# for a napari type, add a `_json_encode` method to the class itself.
-# it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
+# encoders for non-napari specific field types
 _BASE_JSON_ENCODERS = {
-    np.ndarray: lambda arr: arr.tolist(),
-    KeyBinding: lambda v: str(v),
+    (KeyBinding, pint.Unit, StrEnum, StringEnum, Path): lambda v: str(v),
+    (str, int, float, bool, NoneType): lambda v: v,
+    FunctionType: lambda f: f'{f.__module__}.{f.__name__}',
+    np.ndarray: lambda a: a.tolist(),
+    np.generic: lambda v: v.item(),
+    'pandas.DataFrame': lambda df: df.to_dict(orient='list'),
+    'dask.array.Array': lambda da: da.compute().tolist(),
 }
+
+
+_DROP = object()
+
+
+def _drop(on_error, exception):
+    if on_error == 'raise':
+        raise
+    if on_error == 'warn':
+        warnings.warn(str(exception), RuntimeWarning, stacklevel=2)
+    return _DROP
+
+
+@cache
+def _typeadapter(tp: type) -> TypeAdapter:
+    return TypeAdapter(tp)
+
+
+def _serialize_arbitrary(
+    value: Any,
+    json_encoders=None,
+    *,
+    on_error: Literal['raise', 'ignore', 'warn'] = 'raise',
+) -> Any:
+    """Serialize using pydantic machinery but unraveling nested objects first.
+
+    If an error occurs inside a container and on_error is ignore or warn,
+    the whole container is dropped.
+    """
+    # json_encoders machinery is deprecated since v2 without a replacement
+    # in pydantic, so we create our own here.
+    json_encoders = _BASE_JSON_ENCODERS | (json_encoders or {})
+
+    # fallback to older machinery, if objects declare a `json_encode`
+    if (encoder := getattr(value, '_json_encode', None)) is not None:
+        return encoder()
+
+    for tp, encoder in json_encoders.items():
+        if isinstance(tp, str):
+            mod_name, _, tp_name = tp.rpartition('.')
+            try:
+                mod = importlib.import_module(mod_name)
+                tp = getattr(mod, tp_name, None)
+            except (ImportError, AttributeError) as e:
+                return _drop(on_error=on_error, exception=e)
+        if isinstance(value, tp):
+            return encoder(value)
+
+    if isinstance(value, BaseModel):
+        data = {
+            name: getattr(value, name) for name in value.__class__.model_fields
+        }
+        return _serialize_arbitrary(
+            data, json_encoders=json_encoders, on_error=on_error
+        )
+
+    if isinstance(value, Mapping):
+        result = {}
+        for k, v in value.items():
+            k = _serialize_arbitrary(
+                k, json_encoders=json_encoders, on_error=on_error
+            )
+            v = _serialize_arbitrary(
+                v, json_encoders=json_encoders, on_error=on_error
+            )
+            if k is _DROP or v is _DROP:
+                continue
+            result[k] = v
+        return result
+
+    if isinstance(
+        value, (list, tuple, set, frozenset, Sequence)
+    ) and not isinstance(value, (str, bytes, bytearray)):
+        result = [
+            _serialize_arbitrary(
+                v, json_encoders=json_encoders, on_error=on_error
+            )
+            for v in value
+        ]
+        if any(v is _DROP for v in result):
+            return _DROP
+        return result
+
+    # fallbacks to pydantic machinery
+    try:
+        return _typeadapter(type(value)).dump_python(
+            value,
+            mode='json',
+        )
+    except PydanticSchemaGenerationError as e:
+        return _drop(on_error=on_error, exception=e)
 
 
 class EventedMetaclass(ModelMetaclass):
@@ -49,19 +158,6 @@ class EventedMetaclass(ModelMetaclass):
         for n, f in cls.model_fields.items():
             field_type = get_outer_type(f.annotation)
             cls.__eq_operators__[n] = pick_equality_operator(field_type)
-            # If a field type has a _json_encode method, add it to the json
-            # encoders for this model.
-            # NOTE: a _json_encode field must return an object that can be
-            # passed to json.dumps ... but it needn't return a string.
-            if hasattr(field_type, '_json_encode'):
-                encoder = field_type._json_encode
-                cls.model_config['json_encoders'][field_type] = encoder
-                # also add it to the base config
-                # required for pydantic>=1.8.0 due to:
-                # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.model_config['json_encoders'][field_type] = (
-                    encoder
-                )
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         # Current implementation ignores properties defined in mixins
@@ -206,10 +302,6 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         arbitrary_types_allowed=True,
         validate_assignment=True,
         validate_default=True,
-        # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
-        # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
-        # field declares a _json_encode method.
-        json_encoders=_BASE_JSON_ENCODERS,
     )
 
     def __init__(self, **kwargs) -> None:
@@ -416,13 +508,59 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         with self.events.blocker() as block:
             for key, value in values.items():
                 field = getattr(self, key)
-                if isinstance(field, EventedModel) and recurse:
-                    field.update(value, recurse=recurse)
-                else:
-                    setattr(self, key, value)
+                if recurse:
+                    # directly update models
+                    if isinstance(field, EventedModel):
+                        field.update(value, recurse=True)
+                        continue
+                    # containers such as dicts and lists may contain models as values;
+                    # update those recusrively as welll
+                    if isinstance(field, MutableMapping) and isinstance(
+                        value, Mapping
+                    ):
+                        for dict_key, seq_value in tuple(field.items()):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[dict_key])
+                            else:
+                                field[dict_key] = value[dict_key]
+                        continue
+                    if isinstance(field, MutableSequence) and isinstance(
+                        value, Sequence
+                    ):
+                        for idx, seq_value in enumerate(tuple(field)):
+                            if isinstance(seq_value, EventedModel):
+                                seq_value.update(value[idx])
+                            else:
+                                field[idx] = value[idx]
+                        continue
+                setattr(self, key, value)
 
         if block.count:
             self.events(Event(self))
+
+    def model_dump(
+        self, *args: Any, mode: str = 'python', **kwargs: Any
+    ) -> dict[str, Any]:
+        """Convert to a dictionary."""
+        # Always go through python mode first so that exclude/include and
+        # other options are handled by pydantic itself
+        data = super().model_dump(*args, mode='python', **kwargs)
+        if mode == 'json':
+            return _serialize_arbitrary(
+                data, json_encoders=_BASE_JSON_ENCODERS
+            )
+        return data
+
+    def model_dump_json(self, *args: Any, **kwargs: Any) -> str:
+        """Serialize to json, handling arbitrary types."""
+        # pop JSON-specific kwargs that BaseModel.model_dump does not accept
+        indent = kwargs.pop('indent', None)
+        # remaining kwargs (exclude, include, by_alias, exclude_unset, ...)
+        # are passed to model_dump, which handles them in python mode
+        data = self.model_dump(*args, mode='json', **kwargs)
+        if indent is None:
+            return json.dumps(data, separators=(',', ':'))
+        return json.dumps(data, indent=indent)
 
     def __eq__(self, other) -> bool:
         """Check equality with another object.
