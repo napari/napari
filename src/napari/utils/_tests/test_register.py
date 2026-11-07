@@ -23,6 +23,13 @@ class SimpleClass:
         self.a = a
 
 
+class _PrivateClass:
+    """Private class to test create_func"""
+
+    def __init__(self, a):
+        self.a = a
+
+
 class SimpleClassDeprecated:
     """Simple class to test create_func"""
 
@@ -75,6 +82,11 @@ def test_create_func():
     assert dc.layers[0].a == 1
 
 
+def test_create_func_private():
+    new_method = create_func(_PrivateClass)
+    assert new_method.__name__ == '_add_private_class'
+
+
 def test_create_func_deprecated():
     DummyClass.add_simple_class_deprecated = create_func(SimpleClassDeprecated)
     dc = DummyClass()
@@ -93,3 +105,14 @@ def test_create_func_renamed():
     with pytest.warns(FutureWarning, match="Argument 'd' is deprecated"):
         dc.add_simple_class_renamed(d=8)
     assert dc.layers[1].b == 8
+
+
+def test_create_func_class_outside_napari_namespace():
+    """create_func should work for classes whose module is not importable
+    from the exec namespace (e.g. a user script run as ``__main__``)."""
+
+    class OutsideClass:
+        """Class not reachable from the napari namespace"""
+
+    OutsideClass.__module__ = '__main__'  # mimics a user script
+    create_func(OutsideClass)

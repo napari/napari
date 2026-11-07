@@ -7,7 +7,7 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.layers import Tracks
 from napari.utils.events.event_utils import connect_setattr
 
@@ -47,10 +47,9 @@ class QtHideCompletedTracksCheckBoxControl(QtWidgetControlsBase):
             )
         )
         connect_setattr(
-            self.hide_completed_tracks_checkbox.stateChanged,
+            self.hide_completed_tracks_checkbox.toggled,
             layer,
             'hide_completed_tracks',
-            convert_fun=checked_to_bool,
         )
 
         self.hide_completed_tracks_checkbox_label = QtWrappedLabel(

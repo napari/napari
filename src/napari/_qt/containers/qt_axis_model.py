@@ -155,7 +155,7 @@ class QtAxisListModel(QtListModel[AxisModel]):
 
         Returns
         -------
-        qtpy.QtCore.Qt.ItemFlags
+        qtpy.QtCore.Qt.ItemFlag
             ItemFlags specific to the given index.
         """
         if not index.isValid():

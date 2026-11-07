@@ -52,7 +52,7 @@ dependencies = [
     "napari-plugin-engine>=0.2.1",
     "napari-resources>=1.0.1",
     "napari-svg>=0.1.8",
-    "npe2>=0.9.0",
+    "npe2>=0.10.0",
     "numpy>=1.25",
     "pandas>=1.5.0",
     "Pillow>=10.0",
@@ -95,7 +95,7 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside6 = [
-    "PySide6 >= 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
+    "PySide6 >= 6.8.3, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
     "PyQt6 >= 6.7",
@@ -161,7 +161,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=5.3.0",
+    "qtconsole>=5.4.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
@@ -251,7 +251,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=5.3.0",
+    "qtconsole>=5.4.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
@@ -500,7 +500,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
@@ -619,7 +618,6 @@ project-excludes = [
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',
-    'src/napari/utils/interactions.py',
     'src/napari/utils/key_bindings.py',
     'src/napari/utils/transforms/transforms.py',
 ]
@@ -691,22 +689,6 @@ errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]
 matches = "src/napari/utils/_register.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/utils/_proxies.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_migrations.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_fields.py"
-errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
-
-[[tool.pyrefly.sub-config]]
-matches = "src/napari/settings/_base.py"
 errors = { unannotated-return = "ignore", implicit-any-parameter = "ignore" }
 
 [[tool.pyrefly.sub-config]]

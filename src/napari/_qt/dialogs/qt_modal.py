@@ -34,7 +34,7 @@ class QtPopup(QDialog):
         super().__init__(parent)
         self.setObjectName('QtModalPopup')
         self.setModal(False)  # if False, then clicking anywhere else closes it
-        flags = Qt.Popup | Qt.FramelessWindowHint
+        flags = Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
         self.setWindowFlags(flags)
         self.setLayout(QVBoxLayout())
 

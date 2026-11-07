@@ -34,7 +34,7 @@ def _show_plugin_install_dialog(window: Window) -> None:
         window._qt_window
     )
     if window._qt_window._plugin_manager_dialog is not None:
-        window._qt_window._plugin_manager_dialog.exec_()
+        window._qt_window._plugin_manager_dialog.exec()
 
 
 Q_PLUGINS_ACTIONS: list[Action] = [

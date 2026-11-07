@@ -11,7 +11,10 @@ from napari.utils.logo import available_logos
 from napari.utils.theme import available_themes, is_theme_available
 
 if TYPE_CHECKING:
-    from pydantic import GetCoreSchemaHandler
+    from collections.abc import Iterator
+
+    from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
+    from pydantic.json_schema import JsonSchemaValue
     from pydantic_core import CoreSchema
 
 
@@ -30,13 +33,15 @@ class StrField(str):
         )
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema, handler):
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
         json_schema.update(enum=cls._available_options())
         return json_schema
 
     @classmethod
-    def validate(cls, v) -> str:
+    def validate(cls, v: Any) -> str:
         if not isinstance(v, str):
             raise TypeError('must be a string')
 
@@ -49,11 +54,11 @@ class StrField(str):
         return value
 
     @classmethod
-    def _available_options(cls):
+    def _available_options(cls) -> list[str]:
         raise NotImplementedError
 
     @classmethod
-    def _valid_option(cls, v):
+    def _valid_option(cls, v: str) -> bool:
         raise NotImplementedError
 
 
@@ -67,7 +72,7 @@ class Logo(StrField):
         return available_logos()
 
     @classmethod
-    def _valid_option(cls, v) -> bool:
+    def _valid_option(cls, v: str) -> bool:
         return v in cls._available_options()
 
 
@@ -81,7 +86,7 @@ class Theme(StrField):
         return available_themes()
 
     @classmethod
-    def _valid_option(cls, v) -> bool:
+    def _valid_option(cls, v: str) -> bool:
         return is_theme_available(v)
 
 
@@ -134,20 +139,20 @@ class Version:
 
     # NOTE: we're only comparing the numeric parts for now.
     # ALSO: the rest of the comparators come  from functools.total_ordering
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         try:
             return self.to_tuple()[:3] == self._from_obj(other).to_tuple()[:3]
         except TypeError:
             return NotImplemented
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: object) -> bool:
         try:
             return self.to_tuple()[:3] < self._from_obj(other).to_tuple()[:3]
         except TypeError:
             return NotImplemented
 
     @classmethod
-    def _from_obj(cls, other) -> Version:
+    def _from_obj(cls, other: object) -> Version:
         if isinstance(other, str | bytes):
             other = Version.parse(other)
         elif isinstance(other, dict):
@@ -170,7 +175,7 @@ class Version:
             str(self.build) if self.build is not None else None,
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int | str | None]:
         yield from self.to_tuple()
 
     def __str__(self) -> str:
@@ -188,7 +193,7 @@ class Version:
         return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
-    def validate(cls, v) -> Version:
+    def validate(cls, v: Any) -> Version:
         return cls._from_obj(v)
 
     def _json_encode(self) -> str:
