@@ -25,6 +25,8 @@ callable methods will be stubbed.
 
 from __future__ import annotations
 
+import ast
+import functools
 import importlib
 import inspect
 import subprocess
@@ -59,6 +61,87 @@ def _guess_exports(
     ]
 
 
+def _is_type_checking_block(node: ast.stmt) -> typing.TypeGuard[ast.If]:
+    """Return True for ``if TYPE_CHECKING:`` / ``if typing.TYPE_CHECKING:``."""
+    if not isinstance(node, ast.If):
+        return False
+    test = node.test
+    return (isinstance(test, ast.Name) and test.id == 'TYPE_CHECKING') or (
+        isinstance(test, ast.Attribute) and test.attr == 'TYPE_CHECKING'
+    )
+
+
+@functools.cache
+def _type_checking_namespace(module_name: str) -> dict[str, Any]:
+    """Return the names a module defines only under ``if TYPE_CHECKING:``.
+
+    They do not exist at runtime, but string annotations (from
+    ``from __future__ import annotations``) can still refer to them, so
+    they are needed to evaluate those annotations.
+    """
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError:
+        return {}
+    try:
+        tree = ast.parse(inspect.getsource(module))
+    except (OSError, TypeError):
+        return {}
+
+    runtime_ns = vars(module)
+    namespace = dict(runtime_ns)
+    for node in tree.body:
+        if not _is_type_checking_block(node):
+            continue
+        for stmt in node.body:
+            code = compile(
+                ast.Module(body=[stmt], type_ignores=[]),
+                filename=module.__file__ or module_name,
+                mode='exec',
+            )
+            try:
+                exec(code, namespace)
+            except ImportError:
+                # e.g. a module that only exists for type checkers
+                continue
+    return {k: v for k, v in namespace.items() if k not in runtime_ns}
+
+
+def _annotation_namespace(func: Any) -> dict[str, Any]:
+    """Return the namespace used to evaluate the annotations of ``func``."""
+    func_globals = getattr(func, '__globals__', {})
+    # set in napari.utils._register.create_func on the generated add_* methods
+    forwardrefns = getattr(func, '_forwardrefns_', {})
+
+    globalns = {**func_globals}
+    globalns.update(vars(typing))
+    globalns.update(forwardrefns)
+    # aliases from napari.types (e.g. ArrayLike) contain string references
+    # to optional libraries that it imports only for type checking
+    module_names = [ns.get('__name__') for ns in (func_globals, forwardrefns)]
+    for module_name in [*module_names, 'napari.types']:
+        if module_name:
+            for name, value in _type_checking_namespace(module_name).items():
+                globalns.setdefault(name, value)
+    return globalns
+
+
+def _fill_type_params(hint: Any) -> Any:
+    """Replace free type variables in ``hint`` with ``Any``.
+
+    A bare generic alias such as ``npt.NDArray`` still contains a type
+    variable, whose private name (e.g. ``_ScalarType_co``) cannot be imported
+    in the stub.
+    """
+    params = getattr(hint, '__parameters__', ())
+    if not params:
+        return hint
+    try:
+        return hint[tuple(Any for _ in params)]
+    except TypeError:
+        return hint
+
+
 def _iter_imports(hint: Any) -> Iterator[str]:
     """Get all imports necessary for `hint`"""
     # inspect.formatannotation strips "typing." from type annotations
@@ -85,11 +168,13 @@ def generate_function_stub(
     if hasattr(func, '__wrapped__'):
         # unwrap @wraps decorated functions
         func = func.__wrapped__
-    globalns = {**getattr(func, '__globals__', {})}
-    globalns.update(vars(typing))
-    globalns.update(getattr(func, '_forwardrefns_', {}))
 
-    hints = get_type_hints(func, globalns)
+    hints = {
+        name: _fill_type_params(hint)
+        for name, hint in get_type_hints(
+            func, _annotation_namespace(func)
+        ).items()
+    }
     sig = sig.replace(
         parameters=[
             p.replace(annotation=hints.get(p.name, p.empty))
@@ -197,8 +282,11 @@ def generate_module_stub(module: str | ModuleType, save: bool = True) -> str:
         subprocess.run(['ruff', 'format', file_path])
         # Ignored rules:
         # - ICN001 `numpy` should be imported as `np`
+        # - TID253 banned module-level imports (e.g. pandas): a stub is never
+        #   executed, so lazy-import rules do not apply
         subprocess.run(
-            ['ruff', 'check', '--ignore', 'ICN001', file_path], check=True
+            ['ruff', 'check', '--ignore', 'ICN001,TID253', file_path],
+            check=True,
         )
 
     return pyi
