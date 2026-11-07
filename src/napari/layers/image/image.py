@@ -24,7 +24,10 @@ from napari.layers.image._image_constants import (
 from napari.layers.image._image_utils import guess_rgb
 from napari.layers.image._slice import _ImageSliceRequest
 from napari.layers.intensity_mixin import IntensityVisualizationMixin
-from napari.layers.utils.layer_utils import calc_data_range
+from napari.layers.utils.layer_utils import (
+    _resize_to_thumbnail,
+    calc_data_range,
+)
 from napari.types import LayerDataType
 from napari.utils._dtype import get_dtype_limits, normalize_dtype
 from napari.utils.color import rgb_to_luminance
@@ -532,8 +535,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
 
     def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
-        from scipy import ndimage as ndi
-
         # black thumbnail if there is no data in the slice
         if self._slice.empty:
             self.thumbnail = np.zeros(self._thumbnail_shape, self.dtype)
@@ -544,24 +545,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         if self._slice_input.ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
-        # float16 not supported by ndi.zoom
-        dtype = np.dtype(image.dtype)
-        if dtype in [np.dtype(np.float16)]:
-            image = image.astype(np.float32)
+        downsampled = _resize_to_thumbnail(image, self._thumbnail_shape[:2])
 
-        raw_zoom_factor = np.divide(
-            self._thumbnail_shape[:2], image.shape[:2]
-        ).min()
-        new_shape = np.clip(
-            raw_zoom_factor * np.array(image.shape[:2]),
-            1,  # smallest side should be 1 pixel wide
-            self._thumbnail_shape[:2],
-        )
-        zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
-            downsampled = ndi.zoom(
-                image, zoom_factor + (1,), prefilter=False, order=0
-            )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -579,9 +565,6 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
             low, high = self.contrast_limits
             if np.issubdtype(downsampled.dtype, np.integer):
                 low = max(low, np.iinfo(downsampled.dtype).min)  # pyrefly: ignore [bad-specialization]
