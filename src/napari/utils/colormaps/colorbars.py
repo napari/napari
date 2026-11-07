@@ -1,20 +1,19 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import numpy.typing as npt
 
 if TYPE_CHECKING:
-    from vispy.color import Colormap
+    from napari.utils.colormaps.colormap import Colormap
 
 
 def make_colorbar(
     cmap: 'Colormap', size: tuple[int, int] = (18, 28), horizontal: bool = True
-) -> npt.NDArray[np.uint8]:
+) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.uint8]]:
     """Make a colorbar from a colormap.
 
     Parameters
     ----------
-    cmap : vispy.color.Colormap
+    cmap : napari.utils.Colormap
         Colormap to create colorbar with.
     size : 2-tuple
         Shape of colorbar.
