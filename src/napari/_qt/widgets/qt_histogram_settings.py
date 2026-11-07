@@ -15,7 +15,7 @@ from napari._qt.utils import qt_signals_blocked
 from napari.utils.events.event_utils import connect_setattr, disconnect_events
 
 if TYPE_CHECKING:
-    from napari.components.histogram import HistogramModel
+    from napari.components.histogram import Histogram
     from napari.utils.events import Event
 
 
@@ -39,7 +39,7 @@ class QtHistogramSettingsWidget(QWidget):
 
     def __init__(
         self,
-        histogram_model: HistogramModel,
+        histogram_model: Histogram,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)

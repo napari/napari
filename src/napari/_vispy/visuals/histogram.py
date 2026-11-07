@@ -24,14 +24,14 @@ class HistogramVisual(Compound):
 
     def __init__(self) -> None:
         """Initialize the histogram visual with all sub-components."""
-        # Initialize data attributes before creating visuals (vispy freezes
-        # objects)
-        self._gamma = 1.0
-        self._clims: tuple[float, float] | None = None
-        self._data_range: tuple[float, float] | None = None
         self._bar_color = (0.8, 0.8, 0.8, 0.8)  # Light gray bars
         self._lut_color = (1.0, 1.0, 0.0, 0.9)  # Yellow for LUT line
         self._axes_color = (0.5, 0.5, 0.5, 1.0)
+        self._bin_edges = None
+        self._counts = None
+        self._gamma = 1.0
+        self._clims: tuple[float, float] | None = None
+        self._data_range: tuple[float, float] | None = None
 
         # Create sub-visuals
         self._bars = Mesh()
@@ -54,49 +54,37 @@ class HistogramVisual(Compound):
 
     def set_data(
         self,
-        bin_edges: np.ndarray | None = None,
-        counts: np.ndarray | None = None,
-        gamma: float = 1.0,
-        clims: tuple[float, float] | None = None,
-        data_range: tuple[float, float] | None = None,
+        bin_edges: np.ndarray,
+        counts: np.ndarray,
+        gamma: float,
+        clims: tuple[float, float],
+        data_range: tuple[float, float],
     ) -> None:
         """
         Update histogram visualization data.
 
         Parameters
         ----------
-        bin_edges : np.ndarray, optional
+        bin_edges : np.ndarray
             Bin edges from histogram computation.
-        counts : np.ndarray, optional
+        counts : np.ndarray
             Count values for each bin.
-        gamma : float, optional
+        gamma : float
             Gamma correction value for gamma curve overlay.
-        clims : tuple[float, float], optional
+        clims : tuple[float, float]
             Contrast limits (min, max) for drawing indicator lines.
-        data_range : tuple[float, float], optional
+        data_range : tuple[float, float]
             Full data range (min, max) for normalizing positions.
         """
-        if (
-            bin_edges is None
-            or counts is None
-            or len(bin_edges) == 0
-            or len(counts) == 0
-        ):
-            self._clear()
-            return
-
+        self._bin_edges = bin_edges
+        self._counts = counts
         self._gamma = gamma
         self._clims = clims
         self._data_range = data_range
 
-        self._update_bars(bin_edges, counts)
+        self._update_bars()
         self._update_axes()
-
-        if clims is not None and data_range is not None:
-            self._update_lut_line(clims, gamma, data_range)
-        else:
-            dummy_line = np.array([[0, 0], [0, 0]], dtype=np.float32)
-            self._lut_line.set_data(pos=dummy_line)
+        self._update_lut_line()
 
     def _set_empty_data(self) -> None:
         """Set minimal valid data to avoid vispy / GL errors."""
@@ -112,35 +100,30 @@ class HistogramVisual(Compound):
         self._lut_line.set_data(pos=dummy_line)
         self._axes.set_data(pos=dummy_line)
 
-    def _clear(self) -> None:
-        """Clear all visual elements."""
-        self._gamma = 1.0
-        self._clims = None
-        self._data_range = None
-        self._set_empty_data()
-
-    def _update_bars(self, bin_edges: np.ndarray, counts: np.ndarray) -> None:
+    def _update_bars(self) -> None:
         """Update the bar chart mesh from bin_edges and counts."""
-        if len(bin_edges) < 2 or len(counts) == 0:
+        if self._bin_edges is None or self._counts is None:
+            return
+        if len(self._bin_edges) < 2 or len(self._counts) == 0:
             self._set_empty_data()
             return
 
         # Normalize to [0, 1]
-        bin_min = bin_edges[0]
-        bin_range = bin_edges[-1] - bin_min
+        bin_min = self._bin_edges[0]
+        bin_range = self._bin_edges[-1] - bin_min
         if bin_range == 0:
             bin_range = 1
 
-        max_count = float(np.max(counts))
+        max_count = float(np.max(self._counts))
         if max_count == 0:
             max_count = 1
 
         # Create vertices and faces for the bar mesh
         # Each bar is represented as two triangles (4 vertices, 2 faces).
-        n_bins = len(counts)
-        x_lefts = (bin_edges[:n_bins] - bin_min) / bin_range
-        x_rights = (bin_edges[1:] - bin_min) / bin_range
-        y_tops = counts.astype(np.float32) / max_count
+        n_bins = len(self._counts)
+        x_lefts = (self._bin_edges[:n_bins] - bin_min) / bin_range
+        x_rights = (self._bin_edges[1:] - bin_min) / bin_range
+        y_tops = self._counts.astype(np.float32) / max_count
 
         # Build mesh
         vertices = np.empty((n_bins * 4, 3), dtype=np.float32)
@@ -177,10 +160,6 @@ class HistogramVisual(Compound):
 
     def _update_lut_line(
         self,
-        clims: tuple[float, float],
-        gamma: float,
-        data_range: tuple[float, float],
-        npoints: int = 256,
     ) -> None:
         """
         Draw unified LUT line combining clim indicators and gamma curve.
@@ -192,8 +171,10 @@ class HistogramVisual(Compound):
         4. Top-right clim
         5. Bottom-right clim (vertical line from 1 to 0)
         """
-        clim_min, clim_max = clims
-        data_min, data_max = data_range
+        if self._clims is None or self._data_range is None:
+            return
+        clim_min, clim_max = self._clims
+        data_min, data_max = self._data_range
         range_size = data_max - data_min
         if range_size == 0:
             range_size = 1
@@ -204,9 +185,12 @@ class HistogramVisual(Compound):
         x_coords: list[float] = [x_min, x_min]
         y_coords: list[float] = [0.0, 1.0]
 
+        npoints = 256
         if x_max > x_min:
             x_gamma = np.linspace(x_min, x_max, npoints)
-            y_gamma = np.power((x_gamma - x_min) / (x_max - x_min), gamma)
+            y_gamma = np.power(
+                (x_gamma - x_min) / (x_max - x_min), self._gamma
+            )
             x_coords.extend(x_gamma.tolist())
             y_coords.extend(y_gamma.tolist())
         else:
@@ -229,10 +213,13 @@ class HistogramVisual(Compound):
         """Set colours for visual elements."""
         if bar_color is not None:
             self._bar_color = bar_color
+            self._update_bars()
         if lut_color is not None:
             self._lut_color = lut_color
+            self._update_lut_line()
         if axes_color is not None:
             self._axes_color = axes_color
+            self._update_axes()
 
     def destroy(self) -> None:
         """Clean up visual resources to avoid vispy resource leaks."""
