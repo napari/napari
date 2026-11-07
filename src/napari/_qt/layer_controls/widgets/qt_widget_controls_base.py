@@ -7,7 +7,7 @@ from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
 from napari.layers.base.base import Layer
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -78,9 +78,9 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         """
         Disconnect layer from widget controls.
         """
-        disconnect_events(self._layer.events, self)
+        _disconnect_all_events(self._layer, self)
         for callback in self._callbacks:
-            disconnect_events(self._layer.events, callback)
+            _disconnect_all_events(self._layer, callback)
 
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()

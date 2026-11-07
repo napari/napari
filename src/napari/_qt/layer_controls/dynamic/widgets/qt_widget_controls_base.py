@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, Qt
 from qtpy.QtWidgets import QLabel, QWidget
 
-from napari.utils.events import disconnect_events
+from napari.utils.events.event_utils import _disconnect_all_events
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -83,9 +83,9 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         Disconnect layers from widget controls.
         """
         for layer in self._layers:
-            disconnect_events(layer.events, self)
+            _disconnect_all_events(layer, self)
             for callback in self._callbacks:
-                disconnect_events(layer.events, callback)
+                _disconnect_all_events(layer, callback)
 
     def _change_ndisplay(self, ndisplay: int) -> None:
         """
