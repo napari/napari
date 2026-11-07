@@ -2,8 +2,6 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/main/docs/BENCHMARKS.md
-import asyncio
-
 import numpy as np
 import zarr
 from qtpy.QtWidgets import QApplication
@@ -11,7 +9,7 @@ from qtpy.QtWidgets import QApplication
 import napari
 from napari.layers import Image
 
-from .utils import Skip
+from .utils import Skip, SlowMemoryStore
 
 SAMPLE_PARAMS = {
     'skin_data': {
@@ -36,22 +34,6 @@ def get_image_params():
     params = (latencies, datanames)
 
     return params
-
-
-class SlowMemoryStore(zarr.storage.MemoryStore):
-    """Memory store that waits ``load_delay`` seconds on every read.
-
-    The wait is async, so concurrent chunk reads overlap like they would
-    against a remote store.
-    """
-
-    def __init__(self, load_delay, *args, **kwargs) -> None:
-        self.load_delay = load_delay
-        super().__init__(*args, **kwargs)
-
-    async def get(self, key, prototype=None, byte_range=None):
-        await asyncio.sleep(self.load_delay)
-        return await super().get(key, prototype, byte_range)
 
 
 class AsyncImage2DSuite:
