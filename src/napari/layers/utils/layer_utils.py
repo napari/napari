@@ -504,12 +504,6 @@ def validate_properties(
     return {k: np.asarray(v) for k, v in properties.items()}
 
 
-def _validate_property_choices(property_choices):
-    if property_choices is None:
-        property_choices = {}
-    return {k: np.unique(v) for k, v in property_choices.items()}
-
-
 def _coerce_current_properties_value(
     value: float | str | bool | list | tuple | np.ndarray,
 ) -> np.ndarray:
