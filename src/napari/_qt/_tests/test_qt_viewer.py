@@ -1410,6 +1410,28 @@ def test_dask_cache():
     )
 
 
+@pytest.mark.usefixtures('qt_viewer')
+def test_dask_chunk_size():
+    da = pytest.importorskip('dask.array')
+    dask_config = pytest.importorskip('dask.config')
+    dask_settings = get_settings().application.dask
+    initial_chunk_size = dask_settings.chunk_size
+
+    try:
+        # check that changing the chunk size setting updates the dask config
+        dask_settings.chunk_size = 64
+        assert dask_config.get('array.chunk-size') == '64MiB'
+
+        # and that dask actually uses it when it chunks an array automatically
+        arr = da.zeros((2048, 2048, 64), dtype=np.float64, chunks='auto')
+        chunk_nbytes = np.prod(arr.chunksize) * arr.dtype.itemsize
+        assert chunk_nbytes <= 64 * 2**20
+    finally:
+        dask_settings.chunk_size = initial_chunk_size
+
+    assert dask_config.get('array.chunk-size') == f'{initial_chunk_size}MiB'
+
+
 @pytest.mark.show_qt_viewer
 def test_viewer_drag_to_zoom(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot: QtBot
