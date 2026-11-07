@@ -1,19 +1,33 @@
+import inspect
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from types import FunctionType
+from typing import Any, ClassVar, NotRequired, TypedDict, Union
 
 import numpy as np
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
-    ConfigDict,
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 
-from napari._pydantic_util import get_inner_type, get_outer_type
-from napari.utils.events.event import EmitterGroup, Event
+from napari._pydantic_util import (
+    NapariConfigDict,
+    get_inner_type,
+    get_outer_type,
+)
+from napari.utils.events.event import (
+    DependentEmitter,
+    DependentWarningEmitter,
+    EmitterGroup,
+    Event,
+    EventEmitter,
+    RenamedWarningEmitter,
+    WarningEmitter,
+)
+from napari.utils.migrations import RenamedProperty
 from napari.utils.misc import pick_equality_operator
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -40,7 +54,9 @@ class EventedMetaclass(ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        cls: type[EventedModel] = super().__new__(
+            mcs, name, bases, namespace, **kwargs
+        )
         non_evented_properties = getattr(
             cls, '__non_evented_properties__', set()
         )
@@ -83,18 +99,35 @@ class EventedMetaclass(ModelMetaclass):
                         attr.fget.__annotations__['return']
                     )
 
+        # to allow simpler configurtion, the `properties_dependence` config
+        # allows any collection of strings, but we convert it to a set here for consistency
+        child_dependencies = {
+            k: set(v)
+            for k, v in cls.model_config.get('child_dependencies', {}).items()
+        }
+        cls.__child_dependencies__ = {
+            **getattr(cls, '__properties_dependence__', {}),
+            **child_dependencies,
+        }
+
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
 
 def _update_dependents_from_property_code(
-    cls, prop_name, prop, deps, visited=()
+    cls: type['EventedModel'],
+    prop_name: str,
+    prop: property,
+    deps: dict[str, set[str]],
+    visited=(),
 ):
     """Recursively find all the dependents of a property by inspecting the code object.
 
     Update the given deps dictionary with the new findings.
     """
-    for name in prop.fget.__code__.co_names:
+    if isinstance(prop, RenamedProperty):
+        deps.setdefault(prop.new_name.split('.')[0], set()).add(prop_name)
+    for name in inspect.unwrap(prop.fget).__code__.co_names:
         if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
         elif name in cls.__properties__ and name not in visited:
@@ -107,7 +140,7 @@ def _update_dependents_from_property_code(
             )
 
 
-def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
+def _get_field_dependents(cls: type['EventedModel']) -> dict[str, set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -170,6 +203,23 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
         # them from the property.fget code object:
         for prop_name, prop in cls.__properties__.items():
             _update_dependents_from_property_code(cls, prop_name, prop, deps)
+        for dep_name in list(deps):
+            for prop_name in list(deps[dep_name]):
+                if isinstance(
+                    cls.__properties__.get(prop_name), RenamedProperty
+                ) or any(
+                    path.startswith(f'{dep_name}.')
+                    for path in cls.__child_dependencies__.get(prop_name, ())
+                ):
+                    # The RenamedProperty will be handled by RenamedWarningEmitter, so no need to
+                    # add it to the dependencies.
+                    # if The `path.startswith(f'{dep_name}.')` is satisfied in
+                    # The second condition it means that this relation will be handled
+                    # DependentEmitter or DependentWarningEmitter, so no need to add it to the dependencies.
+                    deps[dep_name].remove(prop_name)
+            if not deps[dep_name]:
+                del deps[dep_name]
+
     return deps
 
 
@@ -190,6 +240,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     __non_evented_properties__: ClassVar[set[str]] = {'events', '_defaults'}
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
+    __child_dependencies__: ClassVar[dict[str, set[str]]]
     __field_dependents__: ClassVar[dict[str, set[str]]]
     __eq_operators__: ClassVar[dict[str, Callable[[Any, Any], bool]]]
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
@@ -199,7 +250,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    model_config = ConfigDict(
+    model_config = NapariConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
@@ -223,9 +274,14 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             if not field.frozen
         ]
 
-        self._events.add(
-            **dict.fromkeys(field_events + list(self.__properties__))
-        )
+        property_events = {
+            name: _property_to_event_emitter(
+                name, prop, self.__child_dependencies__.get(name, set())
+            )
+            for name, prop in self.__properties__.items()
+        }
+
+        self._events.add(**(dict.fromkeys(field_events) | property_events))
 
         # while seemingly redundant, this next line is very important to maintain
         # correct sources; see https://github.com/napari/napari/pull/4138
@@ -253,6 +309,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         Returns True if data changed, else False. Return current value.
         """
         new_value = getattr(self, name, object())
+        # Equal-valued children still have distinct event emitters, so replacing
+        # one must notify listeners without changing model value equality.
+        if isinstance(new_value, EventedModel) or isinstance(
+            old_value, EventedModel
+        ):
+            return new_value is not old_value, new_value
         if name in self.__eq_operators__:
             are_equal = self.__eq_operators__[name]
         else:
@@ -324,6 +386,12 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             # fallback to default behavior
             self._super_setattr_(name, value)
             return
+        if isinstance(self.__properties__.get(name), RenamedProperty):
+            # if the property is renamed, we dont want to make comparisons with the old value,
+            # as the RenamedProperty will call __setattr__ with the new name, which will trigger
+            # a comparison with the old value of the new name, which is not what we want.
+            self._super_setattr_(name, value)
+            return
 
         # grab current value
         field_dep = self.__field_dependents__.get(name, set())
@@ -354,7 +422,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                 self._changes_queue[dep] = getattr(self, dep, object())
 
         # set value using original setter
-        self._super_setattr_(name, value)
+        with getattr(self.events, name).blocker():
+            self._super_setattr_(name, value)
 
     # expose the private EmitterGroup publicly
     @property
@@ -522,3 +591,67 @@ class ComparisonDelayer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()
+
+
+class _DeprecatedParam(TypedDict):
+    message: str
+    category: NotRequired[type[Warning]]
+
+
+def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
+    message = getattr(function, '__deprecated__', '')
+    if (
+        closure := getattr(function, '__closure__', None)
+    ) is None or not hasattr(function, '__code__'):
+        # access with getattr as compiled functions may not have a __code__ or __closure__ attribute
+        return _DeprecatedParam(message=message)
+
+    # The closure object is a tuple of cell objects,
+    # which are the values of the free variables in the function.
+    # The names of the free variables are stored in the co_freevars attribute of the code object.
+    # The values of the free variables are stored in the cell_contents attribute of the cell objects.
+    # https://docs.python.org/3/reference/datamodel.html#function.__closure__
+
+    for name, cell in zip(function.__code__.co_freevars, closure, strict=True):
+        if name == 'category':
+            # infer warning category by inspecting code
+            category = cell.cell_contents
+            return _DeprecatedParam(message=message, category=category)
+    return _DeprecatedParam(message=message)
+
+
+def _property_to_event_emitter(
+    type_name: str, prop: property, dependencies: set[str]
+) -> EventEmitter:
+    """Convert a property to an EventEmitter.
+
+    If the property is deprecated, the EventEmitter will be a WarningEmitter.
+    """
+    if isinstance(prop, RenamedProperty):
+        return RenamedWarningEmitter(
+            message=prop.event_message,
+            category=prop.category,
+            new_path=prop.new_name,
+            type_name=type_name,
+        )
+
+    non_direct = [d for d in dependencies if '.' in d]
+    if non_direct:
+        if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
+            return DependentWarningEmitter(
+                type_name=type_name,
+                property_name=type_name,
+                sources_list=non_direct,
+                **_get_deprecated_params(prop.fget),
+            )
+        return DependentEmitter(
+            type_name=type_name,
+            property_name=type_name,
+            sources_list=non_direct,
+        )
+
+    if hasattr(prop, 'fget') and hasattr(prop.fget, '__deprecated__'):
+        return WarningEmitter(
+            type_name=type_name, **_get_deprecated_params(prop.fget)
+        )
+    return EventEmitter(type_name=type_name)
