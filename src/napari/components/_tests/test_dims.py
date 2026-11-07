@@ -387,3 +387,23 @@ def test_nsteps():
 def test_thickness():
     dims = Dims(margin_left=(0, 0.5), margin_right=(1, 1))
     assert dims.thickness == (1, 1.5)
+
+
+def test_is_thick():
+    dims = Dims(ndim=3)
+    assert dims.not_displayed == (0,)
+    assert dims.is_thick is False
+
+    # margins on a non-displayed dimension make the slice thick
+    dims.margin_left = (1, 0, 0)
+    assert dims.is_thick is True
+
+    # changing ndisplay changes which dimensions are considered
+    dims.ndisplay = 3
+    assert dims.not_displayed == ()
+    assert dims.is_thick is False
+
+    # margins on displayed dimensions do not count
+    dims.ndisplay = 2
+    dims.margin_left = (0, 0, 1)
+    assert dims.is_thick is False

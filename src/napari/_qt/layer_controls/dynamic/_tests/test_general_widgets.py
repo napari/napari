@@ -318,6 +318,35 @@ class TestQtProjectionModeControl:
         image.projection_mode = 'sum'
         assert control.projection_combobox.currentText() == 'sum'
 
+    def test_change_is_thick(self, qt_wrap: QtWrap) -> None:
+        image = Image(np.zeros((10, 10, 10)))
+        control = QtProjectionModeControl([image])
+        qt_wrap.add_control(control)
+        # widgets are not shown by default in this test, so show them first
+        control.projection_combobox.show()
+        control.projection_combobox_label.show()
+
+        control._change_is_thick(False)
+        assert control.projection_combobox.isHidden()
+        assert control.projection_combobox_label.isHidden()
+
+        control._change_is_thick(True)
+        assert not control.projection_combobox.isHidden()
+        assert not control.projection_combobox_label.isHidden()
+
+    def test_change_is_thick_points(self, qt_wrap: QtWrap) -> None:
+        """Points projection mode is useful even with a thin slice."""
+        points = Points(np.random.rand(10, 3))
+        control = QtProjectionModeControl([points])
+        qt_wrap.add_control(control)
+        # widgets are not shown by default in this test, so show them first
+        control.projection_combobox.show()
+        control.projection_combobox_label.show()
+
+        control._change_is_thick(False)
+        assert not control.projection_combobox.isHidden()
+        assert not control.projection_combobox_label.isHidden()
+
 
 class TestQtOpacityBlendingControls:
     def test_init(self, qt_wrap: QtWrap) -> None:

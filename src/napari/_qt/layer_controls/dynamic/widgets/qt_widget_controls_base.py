@@ -98,6 +98,17 @@ class QtWidgetControlsBase(QObject, metaclass=_QtABCMeta):
         """
         self._ndisplay = ndisplay
 
+    def _change_is_thick(self, is_thick: bool) -> None:
+        """
+        Change whether the slice is thick.
+
+        Parameters
+        ----------
+        is_thick : bool
+            The new is_thick value.
+        """
+        self._is_thick = is_thick
+
     def deleteLater(self) -> None:
         self.disconnect_widget_controls()
         super().deleteLater()
