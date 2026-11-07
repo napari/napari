@@ -1117,6 +1117,8 @@ class Points(Layer):
             current_properties=self.current_properties,
         )
         self.events.border_color()
+        if len(self.data) == 0:
+            self.events.current_border_color()
 
     @property
     def border_color_cycle(self) -> np.ndarray:
@@ -1206,6 +1208,8 @@ class Points(Layer):
             current_properties=self.current_properties,
         )
         self.events.face_color()
+        if len(self.data) == 0:
+            self.events.current_face_color()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
