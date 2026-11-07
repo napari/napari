@@ -127,6 +127,41 @@ def test_plugin_settings_restore_defaults(mock_pm, pref, monkeypatch):
     assert settings.reader.lazy is False
 
 
+def test_plugin_settings_restore_page(mock_pm, pref, monkeypatch):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+    assert get_settings().appearance.theme == 'light'
+
+    # Find the row for my-plugin in pref._list
+    plugin_row = None
+    for row in range(pref._list.count()):
+        if pref._list.item(row).text() == settings.display_name:
+            plugin_row = row
+            break
+    assert plugin_row is not None
+
+    pref._list.setCurrentRow(plugin_row)
+    assert pref._button_restore_page.isEnabled()
+
+    captured_title = []
+    captured_text = []
+
+    def fake_question(parent, title, text, buttons, default_btn):
+        captured_title.append(title)
+        captured_text.append(text)
+        return QMessageBox.StandardButton.RestoreDefaults
+
+    monkeypatch.setattr(QMessageBox, 'question', fake_question)
+    pref._restore_page_dialog()
+
+    assert captured_title[0] == 'Restore Page Settings'
+    assert settings.display_name in captured_text[0]
+    # Plugin settings are reset
+    assert settings.reader.lazy is False
+    # Napari settings are untouched
+    assert get_settings().appearance.theme == 'light'
+
+
 def test_dask_widget(qtbot, pref):
     dask_widget = pref._stack.currentWidget().widget().widget.widgets['dask']
     def_dask_enabled = True
@@ -371,6 +406,68 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
             ).text()
         )
     ) == KeyBinding.from_str('V')
+
+
+@pytest.mark.key_bindings
+def test_preferences_dialog_restore_single_page(qtbot, pref, monkeypatch):
+    theme_widget = pref._stack.widget(1).widget().widget.widgets['theme']
+    highlight_widget = (
+        pref._stack.widget(1).widget().widget.widgets['highlight']
+    )
+
+    assert get_settings().appearance.theme == 'light'
+    assert theme_widget.state == 'light'
+    assert get_settings().appearance.highlight.highlight_thickness == 5
+    assert highlight_widget.state['highlight_thickness'] == 5
+    assert get_settings().shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('U')]
+
+    # Row 1 is Appearance
+    pref._list.setCurrentRow(1)
+    assert pref._button_restore_page.isEnabled()
+
+    captured_title = []
+    captured_text = []
+
+    def fake_question(parent, title, text, buttons, default_btn):
+        captured_title.append(title)
+        captured_text.append(text)
+        return QMessageBox.StandardButton.RestoreDefaults
+
+    monkeypatch.setattr(QMessageBox, 'question', fake_question)
+    pref._restore_page_dialog()
+
+    assert captured_title[0] == 'Restore Page Settings'
+    assert 'Appearance' in captured_text[0]
+    # Appearance settings were restored to defaults
+    assert get_settings().appearance.theme == 'dark'
+    assert theme_widget.state == 'dark'
+    assert get_settings().appearance.highlight.highlight_thickness == 1
+    assert highlight_widget.state['highlight_thickness'] == 1
+    # Shortcuts was NOT reset
+    assert get_settings().shortcuts.shortcuts[
+        'napari:toggle_selected_visibility'
+    ] == [KeyBinding.from_str('U')]
+
+
+def test_preferences_dialog_restore_page_separator(pref, monkeypatch):
+    separator_row = None
+    for row in range(pref._list.count()):
+        if '----' in pref._list.item(row).text():
+            separator_row = row
+            break
+    assert separator_row is not None
+
+    pref._list.setCurrentRow(separator_row)
+    assert not pref._button_restore_page.isEnabled()
+
+    called = []
+    monkeypatch.setattr(
+        QMessageBox, 'question', lambda *a, **k: called.append(True)
+    )
+    pref._restore_page_dialog()
+    assert not called
 
 
 @skip_local_focus
