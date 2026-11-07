@@ -1055,8 +1055,8 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
 
 def path_to_indices(
     mask_shape: npt.ArrayLike, vertices: npt.NDArray
-) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]:
-    """Row and column indices of the pixels along each edge of a path.
+) -> tuple[npt.NDArray[np.intp], ...]:
+    """Indices of the pixels along each edge of a 2D or nD path.
 
     Vertices outside the mask are clipped to its border.
     """
@@ -1068,11 +1068,20 @@ def path_to_indices(
     duplicates = np.concatenate(([False], duplicates))
     vertices = vertices[~duplicates]
 
-    lines = [draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)]
+    # draw.line_nd breaks ties differently than draw.line, so in 2D it picks
+    # other pixels for some lines, and it is several times slower.
+    if len(mask_shape) == 2:
+        lines = [
+            draw.line(*v1, *v2) for v1, v2 in itertools.pairwise(vertices)
+        ]
+    else:
+        lines = [
+            draw.line_nd(v1, v2, endpoint=True)
+            for v1, v2 in itertools.pairwise(vertices)
+        ]
     if not lines:
-        return np.empty(0, np.intp), np.empty(0, np.intp)
-    iis, jjs = zip(*lines, strict=True)
-    return np.concatenate(iis), np.concatenate(jjs)
+        return tuple(np.empty(0, np.intp) for _ in mask_shape)
+    return tuple(np.concatenate(axis) for axis in zip(*lines, strict=True))
 
 
 def poly_to_indices(
