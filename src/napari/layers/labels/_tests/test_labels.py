@@ -2830,3 +2830,19 @@ def test_negative_coord_meaning_follows_axis_role_via_n_edit_dims():
     brush.paint(coord, 1)
     assert np.any(brush.data[0])  # -1 clipped to the near edge
     assert not np.any(brush.data[-1])
+
+
+@pytest.mark.parametrize('shape', [(0, 0), (0, 5), (5, 0), (0, 5, 5)])
+def test_empty_data_raises_clear_error(shape):
+    """Data with a zero-length axis should raise a clear error."""
+    with pytest.raises(ValueError, match='must not be empty'):
+        Labels(np.zeros(shape, dtype=int))
+
+
+def test_set_empty_data_raises_clear_error():
+    """Reject empty data without changing an existing layer."""
+    data = np.zeros((4, 4), dtype=int)
+    layer = Labels(data)
+    with pytest.raises(ValueError, match='must not be empty'):
+        layer.data = np.zeros((0, 0), dtype=int)
+    assert layer.data is data
