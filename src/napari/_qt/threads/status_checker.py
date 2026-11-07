@@ -12,7 +12,7 @@ from qtpy.QtCore import QObject, QThread, Signal
 from napari.utils.notifications import Notification, notification_manager
 
 if TYPE_CHECKING:
-    from napari.components import ViewerModel
+    from napari.viewer import Viewer
 
 
 class StatusChecker(QThread):
@@ -54,9 +54,7 @@ class StatusChecker(QThread):
     # viewer and the status checker thread for cursor events and related status
     status_and_tooltip_changed = Signal(object)
 
-    def __init__(
-        self, viewer: ViewerModel, parent: QObject | None = None
-    ) -> None:
+    def __init__(self, viewer: Viewer, parent: QObject | None = None) -> None:
         super().__init__(parent=parent)
         self.viewer_ref = ref(viewer)
         self._need_status_update = Event()
