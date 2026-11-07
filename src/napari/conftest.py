@@ -39,6 +39,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
+from importlib import import_module
 from importlib.metadata import version
 from itertools import chain
 from multiprocessing.pool import ThreadPool
@@ -1209,6 +1210,72 @@ def _find_dangling_widgets(request, qtbot):
             widget.setObjectName('handled_widget')
 
         raise RuntimeError(f'Found dangling widgets:\n{text}')
+
+
+# With ``--import-mode=importlib`` pytest imports each test module and
+# ``conftest.py`` from its file. If the parent packages of that file are not
+# imported yet, pytest imports them from their files as well. A production
+# package first reached through its ``_tests`` directory (for example
+# ``napari._qt.layer_controls``) then comes from the source tree for the rest
+# of the session instead of from the installed napari, which tox is meant to
+# test. Importing those packages with the regular import system first
+# resolves them through ``napari.__path__``.
+
+_NAPARI_DIR = Path(__file__).parent
+
+
+def _import_installed_package(directory: Path) -> None:
+    """Import the package in ``directory`` with the regular import system."""
+    module_name = '.'.join(directory.relative_to(_NAPARI_DIR.parent).parts)
+    # leave missing optional dependencies (e.g. Qt) to the test collection
+    with suppress(ImportError):
+        import_module(module_name)
+
+
+@pytest.hookimpl
+def pytest_collect_directory(path: Path, parent: pytest.Collector) -> None:
+    """Import a ``_tests`` package before pytest imports its test modules."""
+    if path.name == '_tests' and (path / '__init__.py').is_file():
+        _import_installed_package(path)
+
+
+# A ``conftest.py`` on the path to a test given on the command line is
+# imported before collection starts, so ``pytest_collect_directory`` is too
+# late for the packages that contain one.
+for _conftest_path in _NAPARI_DIR.glob('**/_tests/conftest.py'):
+    _import_installed_package(_conftest_path.parent)
+
+
+def pytest_collection_finish(session: pytest.Session) -> None:
+    """Fail if napari code was imported from the source tree.
+
+    Only test modules and ``conftest.py`` files may come from the source
+    tree when napari is installed elsewhere, as it is in tox environments.
+    """
+    import napari
+
+    if Path(napari.__file__).parent == _NAPARI_DIR:
+        # napari itself is imported from this directory (editable install)
+        return
+
+    src_dir = _NAPARI_DIR.parent
+    from_source = []
+    for name, module in list(sys.modules.items()):
+        if name.partition('.')[0] not in {'napari', 'napari_builtins'}:
+            continue
+        file_name = getattr(module, '__file__', None)
+        if file_name is None or not Path(file_name).is_relative_to(src_dir):
+            continue
+        base_name = Path(file_name).name
+        if base_name == 'conftest.py' or base_name.startswith('test_'):
+            continue
+        from_source.append(name)
+
+    if from_source:
+        raise pytest.UsageError(
+            f'napari is installed in {Path(napari.__file__).parent}, but these '
+            f'modules were imported from {src_dir}: {", ".join(sorted(from_source))}'
+        )
 
 
 @pytest.fixture(autouse=True)
