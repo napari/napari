@@ -231,15 +231,6 @@ def plugin_settings(npe2pm, tmp_path, monkeypatch):
     napari_settings._clear_plugin_settings_cache()
 
 
-@pytest.fixture(autouse=True)
-def _disable_qt_warnings(monkeypatch):
-    try:
-        from napari._qt import qt_main_window
-    except ImportError:
-        return
-    monkeypatch.setattr(qt_main_window, 'SHOW_QT_WARNING', False)
-
-
 @pytest.fixture
 def make_napari_viewer(
     qtbot,

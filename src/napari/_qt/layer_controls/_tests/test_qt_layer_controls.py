@@ -244,29 +244,27 @@ def test_create_layer_controls(
             qcombobox.setCurrentIndex(qcombobox_initial_idx)
 
 
-skip_predicate = sys.version_info >= (3, 11) and (
-    qtpy.API == 'pyqt5' or qtpy.API == 'pyqt6'
-)
+skip_predicate = qtpy.API == 'pyqt6'
 
 
 @pytest.mark.parametrize(
     'layer_type_with_data',
     [
-        # those 2 fail on 3.11 + pyqt5 and pyqt6 with a segfault that can't be caught by
+        # those 2 fail on pyqt6 with a segfault that can't be caught by
         # pytest in qspinbox.setValue(value)
         # See: https://github.com/napari/napari/pull/5439
         pytest.param(
             _LABELS_WITH_DIRECT_COLORMAP,
             marks=pytest.mark.skipif(
                 skip_predicate,
-                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+                reason='segfault on PyQt6',
             ),
         ),
         pytest.param(
             _LABELS,
             marks=pytest.mark.skipif(
                 skip_predicate,
-                reason='segfault on Python 3.11+ and pyqt5 or Pyqt6',
+                reason='segfault on PyQt6',
             ),
         ),
         _IMAGE,
@@ -465,7 +463,7 @@ def test_create_layer_controls_qcolorswatchedit(
         for color, expected_color, expected_array in colors:
             lineedit.clear()
             qtbot.keyClicks(lineedit, color)
-            qtbot.keyClick(lineedit, Qt.Key_Enter)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Enter)
             assert lineedit.text() == expected_color
             assert (colorswatch.color == expected_array).all()
             # capture any output done to sys.stdout or sys.stderr.
@@ -477,7 +475,7 @@ def test_create_layer_controls_qcolorswatchedit(
     for qcheckbox in ctrl.findChildren(QCheckBox):
         if qcheckbox.isVisible():
             qcheckbox_checked = qcheckbox.isChecked()
-            qtbot.mouseClick(qcheckbox, Qt.LeftButton)
+            qtbot.mouseClick(qcheckbox, Qt.MouseButton.LeftButton)
             assert qcheckbox.isChecked() != qcheckbox_checked
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
@@ -489,7 +487,7 @@ def test_create_layer_controls_qcolorswatchedit(
         QRadioButton
     ):
         if button.isVisible():
-            qtbot.mouseClick(button, Qt.LeftButton)
+            qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
@@ -571,14 +569,14 @@ def test_create_layer_controls_transform_mode_button(
     assert ctrl.layer.affine != ctrl.layer._initial_affine
 
     def reset_transform_warning_dialog(*args):
-        return QMessageBox.Yes
+        return QMessageBox.StandardButton.Yes
 
     monkeypatch.setattr(
         'qtpy.QtWidgets.QMessageBox.warning', reset_transform_warning_dialog
     )
     qtbot.mouseClick(
         ctrl.transform_button,
-        Qt.LeftButton,
+        Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.AltModifier,
     )
     assert ctrl.layer.affine == ctrl.layer._initial_affine

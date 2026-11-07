@@ -28,7 +28,7 @@ def _only_when_enabled(callback):
     If 2, 3 are not met, the Labels mode is automatically switched to PAN_ZOOM.
     """
 
-    def decorated_callback(self, layer: Labels, event):
+    def decorated_callback(self, layer: Labels, event) -> None:
         if not self.overlay.enabled:
             return
 
@@ -44,7 +44,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
     layer: Labels
     overlay: LabelsPolygonOverlay
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         points = [(0, 0), (1, 1)]
 
         self._nodes_kwargs = {
@@ -92,7 +92,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.reset()
         self._update_color()
 
-    def _on_completion_radius_settings_change(self, event=None):
+    def _on_completion_radius_settings_change(self, event=None) -> None:
         completion_radius_setting = (
             get_settings().experimental.completion_radius
         )
@@ -102,11 +102,11 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             self.overlay.use_double_click_completion_radius = True
             self.overlay.completion_radius = completion_radius_setting
 
-    def _on_enabled_change(self):
+    def _on_enabled_change(self) -> None:
         if self.overlay.enabled:
             self._on_points_change()
 
-    def _on_points_change(self):
+    def _on_points_change(self) -> None:
         num_points = len(self.overlay.points)
         if num_points:
             # Create full-dimensional points for transformation
@@ -141,7 +141,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             **self._nodes_kwargs,
         )
 
-    def _set_color(self, color):
+    def _set_color(self, color) -> None:
         border_color = tuple(color[:3]) + (1,)  # always opaque
         polygon_color = color
 
@@ -154,7 +154,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self._polygon.border_color = border_color
         self._line.set_data(color=border_color)
 
-    def _update_color(self):
+    def _update_color(self) -> None:
         layer = self.layer
         if layer._selected_label == layer.colormap.background_value:
             self._set_color((1, 0, 0, 0))
@@ -164,7 +164,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             )
 
     @_only_when_enabled
-    def _on_mouse_move(self, layer, event):
+    def _on_mouse_move(self, layer, event) -> None:
         """Continuously redraw the latest polygon point with the current mouse position."""
         if self._num_points == 0:
             return
@@ -173,7 +173,7 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
         self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]  # pyrefly: ignore [missing-attribute]
 
     @_only_when_enabled
-    def _on_mouse_press(self, layer, event):
+    def _on_mouse_press(self, layer, event) -> None:
         pos = self._get_mouse_coordinates(event)
         if pos is None:
             return

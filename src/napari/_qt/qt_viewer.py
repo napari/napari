@@ -63,7 +63,7 @@ from napari.utils.notifications import show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
@@ -201,7 +201,7 @@ class QtViewer(QSplitter):
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer.canvas.size,
-            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            autoswap=get_settings().advanced.autoswap_buffers,  # see #5734
             config={
                 'samples': 4 if get_settings().advanced.multisampling else 0
             },
@@ -987,7 +987,7 @@ class QtViewer(QSplitter):
     @contextlib.contextmanager
     def resize_canvas(
         self, size: tuple[int, int] | None, scale: float
-    ) -> Iterator[None]:
+    ) -> Generator[None]:
         """Temporarily, safely, resize the canvas
 
         Parameters
@@ -1007,6 +1007,8 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
+
+        camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
         try:
             yield
@@ -1359,7 +1361,7 @@ class QtViewer(QSplitter):
         # the AnimationThread before close, otherwise it will cause a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
-        self.dims.stop()  # pyrefly: ignore [missing-argument]
+        self.dims.stop()
         self.canvas.delete()
         if self._console is not None:
             self._console.close()

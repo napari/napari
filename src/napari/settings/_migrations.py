@@ -12,6 +12,10 @@ from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils.triangulation_backend import TriangulationBackend
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from app_model.types import KeyBinding
+
     from napari.settings._napari_settings import NapariSettings
 
 _MIGRATORS: list[Migrator] = []
@@ -26,7 +30,7 @@ class Migrator(NamedTuple):
     run: MigratorF
 
 
-def do_migrations(model: NapariSettings):
+def do_migrations(model: NapariSettings) -> None:
     """Migrate (update) a NapariSettings model in place."""
     for migration in sorted(_MIGRATORS, key=lambda m: m.from_):
         if model.schema_version == migration.from_:
@@ -51,7 +55,7 @@ def do_migrations(model: NapariSettings):
 
 
 @contextmanager
-def mutation_allowed(obj: NapariSettings):
+def mutation_allowed(obj: NapariSettings) -> Generator[None, None, None]:
     """Temporarily allow mutations on an immutable model."""
     config = obj.model_config
     prev, config['frozen'] = config.get('frozen', False), False
@@ -92,7 +96,7 @@ def migrator(from_: str, to_: str) -> Callable[[MigratorF], MigratorF]:
 
 
 @migrator('0.3.0', '0.4.0')
-def v030_v040(model: NapariSettings):
+def v030_v040(model: NapariSettings) -> None:
     """Migrate from v0.3.0 to v0.4.0.
 
     Prior to v0.4.0, npe2 plugins were automatically added to disabled plugins.
@@ -106,7 +110,7 @@ def v030_v040(model: NapariSettings):
 
 
 @migrator('0.4.0', '0.5.0')
-def v040_050(model: NapariSettings):
+def v040_050(model: NapariSettings) -> None:
     """Migrate from v0.4.0 to v0.5.0
 
     Prior to 0.5.0 existing preferences may have reader extensions
@@ -121,7 +125,7 @@ def v040_050(model: NapariSettings):
     model.plugins.extension2reader = new_settings
 
 
-def _swap_ctrl_cmd(keybinding):
+def _swap_ctrl_cmd(keybinding: KeyBinding) -> KeyBinding:
     """Swap the Control and Command/Super/Meta modifiers in a keybinding.
 
     See `v050_060` for motivation.
@@ -138,7 +142,7 @@ def _swap_ctrl_cmd(keybinding):
 
 
 @migrator('0.5.0', '0.6.0')
-def v050_060(model: NapariSettings):
+def v050_060(model: NapariSettings) -> None:
     """Migrate from v0.5.0 to v0.6.0.
 
     In #5103 we went from using our own keybinding model to using app-model's.
@@ -176,7 +180,7 @@ def v050_060(model: NapariSettings):
 
 
 @migrator('0.6.0', '0.7.0')
-def v060_070(model: NapariSettings):
+def v060_070(model: NapariSettings) -> None:
     """Migrate from v0.6.0 to v0.7.0.
 
     In #7627 we updated the default value of the npe2 shim, which bumped the
@@ -196,3 +200,12 @@ def v060_070(model: NapariSettings):
         else TriangulationBackend.fastest_available  # must match default setting
     )
     model.experimental.compiled_triangulation = False  # reset to default
+
+
+@migrator('0.9.1', '0.10.0')
+def v092_0100(model: NapariSettings) -> None:
+    """Migrate from v0.9.2 to v0.10.0.
+
+    autoswap_buffers was moved from experimental to advanced.
+    """
+    model.advanced.autoswap_buffers = model.experimental.autoswap_buffers

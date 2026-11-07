@@ -56,9 +56,6 @@ jobs:
       PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
-      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
-      # different constraints files for Windows. An example with macOS arm64:
-      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
       TOX_TEST_RUNNER: ${{ inputs.coverage == 'cov' && 'coverage run --parallel-mode' || 'python' }}
@@ -89,7 +86,7 @@ jobs:
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
@@ -106,7 +103,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        uses: pyvista/setup-headless-display-action@c103a2ff45650d38cb71684b5dc6cdfeb9442c79 # v5.1.0
         with:
           qt: true
           wm: herbstluftwm
@@ -137,10 +134,10 @@ jobs:
         # This is required as github actions allow setting only one environment variable in
         # a single line (redirection to $GITHUB_ENV).
         #
-        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # For example, if qt_backend is set to "pyqt6,pyside6", then the following four
         # environment variables will be set:
-        # MAIN=pyqt5
-        # SECOND=pyside2
+        # MAIN=pyqt6
+        # SECOND=pyside6
         # THIRD=none
         # FOURTH=none
         shell: bash
