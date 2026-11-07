@@ -3,6 +3,7 @@ from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+from typing_extensions import deprecated
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -101,6 +102,22 @@ class Viewer(ViewerModel):
     @property
     def window(self) -> 'Window':
         return self._window
+
+    @property
+    @deprecated(
+        (
+            'viewer.mouse_over_canvas is a deprecated attribute since 0.10.0. '
+            'This now always returns True, and will be removed later.'
+        ),
+        category=FutureWarning,
+        stacklevel=2,
+    )
+    def mouse_over_canvas(self) -> bool:
+        """Whether the mouse is over the canvas.
+
+        .. deprecated:: 0.10.0
+        """
+        return True
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
