@@ -95,15 +95,21 @@ class PointsProjectionMode(StringEnum):
     """
     Projection mode for aggregating a thick nD slice onto displayed dimensions.
 
-        * NONE: ignore slice thickness, only using the dims point
+        * NONE: ignore slice thickness, only using the Dims `point`
         * ALL: project all points in the slice onto displayed dimensions
         * RESCALE_LINEAR: like ALL, but points are resized linearly based on their distance from the
-            center of the thick slice (size is zero at the edge of the margin)
-        * RESCALE_SPHERICAL: like ALL, but points are resized to match the size of the disc created by
-            a sphere centered on the point when intersecting the center of the thick slice
+            `point` of the Dims slice (size is zero at the edge of the margin)
+        * RESCALE_SPHERICAL: points whose "sperical extent" intersects the `point` of the Dims slice are
+            displayed, resized to match the size of the disc formed by that intersection.
+            Slice margins are ignored.
+        * RESCALE_SPHERICAL_THICK: points whose "sperical extent" intersects the the full Dims slice are
+            displayed. If their coordinate is inside the thick slice, rendered at full size.
+            Otherwise, resized to match the size of the disc created by the intersection with
+            the Dims margin.
     """
 
     NONE = auto()
     ALL = auto()
     RESCALE_LINEAR = auto()
     RESCALE_SPHERICAL = auto()
+    RESCALE_SPHERICAL_THICK = auto()
