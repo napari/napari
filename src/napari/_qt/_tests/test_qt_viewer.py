@@ -920,6 +920,7 @@ def qt_viewer_with_controls(qt_viewer: QtViewer) -> QtViewer:
     'use_selection', [True, False], ids=['selected', 'all']
 )
 @pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int64])
+@pytest.mark.slow
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_auto(
     qtbot: QtBot,

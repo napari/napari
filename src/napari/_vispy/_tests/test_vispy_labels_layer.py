@@ -176,6 +176,7 @@ def test_labels_painting_with_mouse(MouseEvent, qtbot, array_type, qt_viewer):
 
 @skip_local_popups
 @skip_on_win_ci
+@pytest.mark.slow
 def test_labels_iso_gradient_modes(qtbot, qt_viewer):
     """Check that we can set `iso_gradient_mode` with `iso_categorical` rendering (test shader)."""
     # NOTE: this test currently segfaults on Windows CI, but confirmed working locally
