@@ -74,6 +74,8 @@ from napari.utils.status_messages import format_feature_value
 if TYPE_CHECKING:
     import pandas as pd
 
+    from napari.types import Vector1D
+
 __all__ = ('Labels',)
 
 
@@ -1257,7 +1259,7 @@ class Labels(ScalarFieldBase):
 
     def fill(
         self,
-        coord: Sequence[float] | np.ndarray[tuple[int], np.dtype[np.floating]],
+        coord: Vector1D,
         new_label: int,
         refresh: bool = True,
     ) -> None:
@@ -1449,7 +1451,7 @@ class Labels(ScalarFieldBase):
 
     def paint(
         self,
-        coord: Sequence[float] | np.ndarray,
+        coord: Vector1D,
         new_label: int,
         refresh: bool = True,
     ) -> None:

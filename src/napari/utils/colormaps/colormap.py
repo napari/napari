@@ -35,6 +35,8 @@ from napari.utils.migrations import deprecated_class_name
 if TYPE_CHECKING:
     from numba import typed
 
+    from napari.types import Matrix2D, Vector1D
+
 
 __all__ = (
     'Colormap',
@@ -167,15 +169,12 @@ class Colormap(EventedModel):
 
     @overload
     def map(
-        self,
-        values: np.ndarray[tuple[int], np.dtype[np.number]] | Sequence[float],
+        self, values: 'Vector1D'
     ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(
-        self,
-        values: np.ndarray[tuple[int, int], np.dtype[np.number]]
-        | Sequence[Sequence[float]],
+        self, values: 'Matrix2D'
     ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
