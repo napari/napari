@@ -406,14 +406,14 @@ class NapariQtNotification(QDialog):
 
         # after https://github.com/napari/napari/issues/2370,
         # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
+
         if (
             notification.severity
             >= settings.application.gui_notification_level
-            and _QtMainWindow.current()
-            and _QtMainWindow.current().isVisible()
+            and (main_window := _QtMainWindow.current())
+            and main_window.isVisible()
         ):
-            canvas = _QtMainWindow.current()._qt_viewer.canvas.native
-            cls.from_notification(notification, canvas).show()
+            main_window._show_notification_in_main_thread(notification)
 
 
 def _debug_tb(tb):

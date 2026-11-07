@@ -31,6 +31,7 @@ from qtpy.QtCore import (
     QRect,
     QSize,
     Qt,
+    Signal,
     Slot,
 )
 from qtpy.QtGui import QImage, QShortcut
@@ -120,6 +121,8 @@ class _QtMainWindow(QMainWindow):
     # IPython usage. When you activate IPython, it will appear that there are
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[list[_QtMainWindow]] = []
+
+    _show_notification = Signal(Notification)
 
     # `window` is passed through on construction, so it's available to a window
     # provider for dependency injection
@@ -211,6 +214,7 @@ class _QtMainWindow(QMainWindow):
         )
 
         self._command_palette = QCommandPalette(self)
+        self._show_notification.connect(self._show_notification_impl)
 
     def _get_window_icon(self) -> str:
         if hasattr(self, '_window_icon'):
@@ -667,11 +671,20 @@ class _QtMainWindow(QMainWindow):
         self.menuBar().setVisible(not self._toggle_menubar_visibility)
         return self._toggle_menubar_visibility
 
-    @staticmethod
     @Slot(Notification)
     def show_notification(notification: Notification):
         """Show notification coming from a thread."""
         NapariQtNotification.show_notification(notification)
+
+    def _show_notification_in_main_thread(self, notification: Notification):
+        """Show notification in the main thread."""
+        self._show_notification.emit(notification)
+
+    def _show_notification_impl(self, notification: Notification):
+        """Show notification in the main thread."""
+        NapariQtNotification.from_notification(
+            notification, parent=self._qt_viewer.canvas.native
+        ).show()
 
 
 @atexit.register
