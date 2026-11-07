@@ -64,7 +64,7 @@ jobs:
     uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
-    name: Initial test
+    name: Initial headless smoke tests
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
@@ -73,12 +73,12 @@ jobs:
         include:
           - python: "3.11"
             platform: ubuntu-latest
-            backend: pyqt6
+            backend: headless
             coverage: no_cov
             min_req: ""
           - python: "3.14"
             platform: ubuntu-latest
-            backend: pyqt6
+            backend: headless
             coverage: no_cov
             min_req: ""
     with:
@@ -96,27 +96,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ ubuntu-latest ]
-        python: [ "3.14" ]
-        backend: [ "pyqt6" ]
-        coverage: [ cov ]
         include:
           # when changing these, try to keep full coverage of supported
           # python versions so we test at least once everywhere
+
+          # max python version, all platforms
+          - python: "3.14"
+            platform: ubuntu-latest
+            backend: pyqt6
+            coverage: cov
           - python: "3.14"
             platform: windows-latest
             backend: pyqt6
             coverage: cov
-          # test with no numba and on macOS intel
           - python: "3.14"
-            platform: macos-15-intel
-            backend: pyqt6_no_numba
+            platform: ubuntu-24.04-arm
+            backend: pyqt6
             coverage: cov
-            timeout-minutes: 60
           - python: "3.14"
             platform: macos-15
             backend: pyqt6
             coverage: no_cov
+            timeout-minutes: 60
+          - python: "3.14"
+            platform: macos-15-intel
+            backend: pyqt6_no_numba  # numba doesn't work here
+            coverage: cov
             timeout-minutes: 60
           # minimum specified requirements
           - python: "3.11"
@@ -124,19 +129,14 @@ jobs:
             backend: pyqt6
             MIN_REQ: 1
             coverage: cov
-          # [all] extras
+          # [all] extras, intermediate python version
           - python: "3.13"
             platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
-          # test without any Qt backends
+          # test with torch, older version
           - python: "3.12"
-            platform: ubuntu-22.04
-            backend: headless
-            coverage: no_cov
-          # test with torch
-          - python: "3.11"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
@@ -145,11 +145,6 @@ jobs:
           - python: "3.14"
             platform: ubuntu-latest
             backend: pyside6
-            coverage: cov
-          # linux aarch64 test
-          - python: "3.14"
-            platform: ubuntu-24.04-arm
-            backend: pyqt6
             coverage: cov
     with:
       python_version: ${{ matrix.python }}
