@@ -16,25 +16,52 @@ from __future__ import annotations
 
 import weakref
 from functools import cache, partial
-from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    NewType,
+    TypeAlias,
+    TypedDict,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import numpy as np
-from magicgui.widgets import ComboBox, FunctionGui
+from magicgui.widgets import ComboBox, FunctionGui, Widget
 
 from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.notifications import show_info
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from concurrent.futures import Future
 
+    import pint
     from magicgui.widgets.bases import CategoricalWidget
+    from qtpy.QtWidgets import QWidget
+    from typing_extensions import TypeForm
 
     from napari._qt.qthreading import FunctionWorker
+    from napari.components import ViewerModel
     from napari.layers import Layer
-    from napari.viewer import Viewer
+    from napari.types import LayerData, _LayerData
+    from napari.utils.events import Event
+
+    ReturnAnnotation: TypeAlias = TypeForm[Any]
+
+    class SpatialMeta(TypedDict):
+        """Spatial information a new layer inherits from its source layers."""
+
+        scale: np.ndarray[tuple[int], np.dtype[np.number]]
+        translate: np.ndarray[tuple[int], np.dtype[np.number]]
+        rotate: np.ndarray[tuple[int, int], np.dtype[np.floating]]
+        shear: np.ndarray[tuple[int] | tuple[int, int], np.dtype[np.floating]]
+        affine: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+        units: tuple[pint.Unit, ...]
 
 
-def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Layer | None:
+def _get_layer_from_widget(gui: ComboBox, viewer: ViewerModel) -> Layer | None:
     """Retrieve layer used as input to function wrapped into magicgui .
 
     Parameters
@@ -60,7 +87,9 @@ def _get_layer_from_widget(gui: ComboBox, viewer: Viewer) -> Layer | None:
     return viewer.layers[layer_name]
 
 
-def _get_layers_from_widget(gui: FunctionGui, viewer: Viewer) -> list[Layer]:
+def _get_layers_from_widget(
+    gui: FunctionGui, viewer: ViewerModel
+) -> list[Layer]:
     """Retrieve layers used as input to function wrapped into magicgui .
 
     Parameters
@@ -83,8 +112,8 @@ def _get_layers_from_widget(gui: FunctionGui, viewer: Viewer) -> list[Layer]:
     return res
 
 
-def _get_spatial_from_layer(layer, ndim):
-    axis = np.array(range(-ndim, 0))
+def _get_spatial_from_layer(layer: Layer, ndim: int) -> SpatialMeta:
+    axis = list(range(-ndim, 0))
 
     data2physical = layer._transforms['data2physical'].set_slice(axis)
     return {
@@ -97,17 +126,20 @@ def _get_spatial_from_layer(layer, ndim):
     }
 
 
-def _compare_meta(meta1, meta2):
+def _compare_meta(meta1: SpatialMeta, meta2: SpatialMeta) -> bool:
     return (
         np.array_equal(meta1['scale'], meta2['scale'])
         and np.array_equal(meta1['translate'], meta2['translate'])
         and np.array_equal(meta1['rotate'], meta2['rotate'])
         and np.array_equal(meta1['shear'], meta2['shear'])
         and np.array_equal(meta1['affine'], meta2['affine'])
+        and meta1['units'] == meta2['units']
     )
 
 
-def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
+def _calc_affine_from_source_layers(
+    data_ndim: int, source_layers: list[Layer]
+) -> SpatialMeta | None:
     """Calculate affine information for provided data based on source layers.
 
     Parameters
@@ -119,8 +151,8 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
 
     Returns
     -------
-    dict
-        Dictionary with affine information.
+    dict or None
+        Dictionary with affine information, or None if it cannot be inherited.
     """
     lower_dim_layers = [
         layer.name for layer in source_layers if layer.ndim < data_ndim
@@ -135,7 +167,7 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
         )
 
     if not source_layers_:
-        return {}
+        return None
 
     meta = _get_spatial_from_layer(source_layers_[0], data_ndim)
 
@@ -145,44 +177,52 @@ def _calc_affine_from_source_layers(data_ndim, source_layers: list[Layer]):
             show_info(
                 'Cannot inherit spatial information like scale and translation from source layers. New layers may need manual setting of spatial information.'
             )
-            return {}
+            return None
 
     return meta
 
 
-def _get_layer_name_from_annotation(annotation: type) -> str:
+def _get_layer_name_from_annotation(annotation: ReturnAnnotation) -> str:
     if get_origin(annotation) is Union:
-        if len(annotation.__args__) != 2 or annotation.__args__[1] is not type(
-            None
-        ):
+        args = get_args(annotation)
+        if len(args) != 2 or args[1] is not type(None):
             # this case should be impossible, but we'll check anyway.
             raise TypeError(
                 f'napari supports only Optional[<layer_data_type>], not {annotation}'
             )
-        annotation = annotation.__args__[0]
+        annotation = args[0]
+    if not isinstance(annotation, NewType):
+        # this case should be impossible
+        raise TypeError(
+            f'napari supports only the napari.types layer data types, not {annotation}'
+        )
     return annotation.__name__.replace('Data', '').lower()
 
 
-def _get_ndim_from_data(data, layer_type_name: str) -> int:
+def _get_ndim_from_data(data: _LayerData, layer_type_name: str) -> int:
     from napari.layers.image._image_utils import guess_rgb
 
-    if isinstance(data, list):
-        data = data[0]
+    if layer_type_name == 'surface' and isinstance(data, tuple):
+        # surface data is (vertices, faces, values)
+        return data[0].shape[-1]
+    array = data[0] if isinstance(data, (list, tuple)) else data
 
     if layer_type_name == 'labels':
-        return data.ndim
+        return array.ndim
     if layer_type_name == 'image':
-        if guess_rgb(data.shape):
-            return data.ndim - 1
-        return data.ndim
-    if layer_type_name == 'surface':
-        return data[0].shape[-1]
+        if guess_rgb(array.shape):
+            return array.ndim - 1
+        return array.ndim
     if layer_type_name == 'tracks':
-        return data[0].shape[-1] - 1
-    return data.shape[-1]
+        return array[0].shape[-1] - 1
+    return array.shape[-1]
 
 
-def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
+def add_layer_data_to_viewer(
+    gui: FunctionGui,
+    result: _LayerData | None,
+    return_type: ReturnAnnotation,
+) -> None:
     """Show a magicgui result in the viewer.
 
     This function will be called when a magicgui-decorated function has a
@@ -192,13 +232,13 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : one of the `napari.types.<layer_name>Data` types, or None
         The result of the function call. For this function, this should be
         *just* the data part of the corresponding layer type.
-    return_type : type
+    return_type : ReturnAnnotation
         The return annotation that was used in the decorated function.
 
     Examples
@@ -215,7 +255,7 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
     )
 
     if result is not None and (viewer := find_viewer_ancestor(gui)):
-        meta = {}
+        meta: SpatialMeta | None = None
         if isinstance(gui, FunctionGui):
             layers = _get_layers_from_widget(gui, viewer)
             layer_type_name = _get_layer_name_from_annotation(return_type)
@@ -232,7 +272,11 @@ def add_layer_data_to_viewer(gui: FunctionGui, result: Any, return_type: type):
         )
 
 
-def add_layer_data_tuples_to_viewer(gui, result, return_type):
+def add_layer_data_tuples_to_viewer(
+    gui: FunctionGui,
+    result: LayerData | list[LayerData],
+    return_type: ReturnAnnotation,
+) -> None:
     """Show a magicgui result in the viewer.
 
     This function will be called when a magicgui-decorated function has a
@@ -242,13 +286,13 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : LayerData or list of LayerData
         The result of the function call. For this function, this should be
         *just* the data part of the corresponding layer type.
-    return_type : type
+    return_type : ReturnAnnotation
         The return annotation that was used in the decorated function.
 
     Examples
@@ -275,8 +319,11 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 
 
 def add_worker_data(
-    widget, worker: FunctionWorker, return_type, _from_tuple=True
-):
+    widget: FunctionGui,
+    worker: FunctionWorker[_LayerData | LayerData | list[LayerData]],
+    return_type: ReturnAnnotation,
+    _from_tuple: bool = True,
+) -> None:
     """Handle a thread_worker object returned from a magicgui widget.
 
     This allows someone annotate their magicgui with a return type of
@@ -287,13 +334,13 @@ def add_worker_data(
 
     Parameters
     ----------
-    widget : MagicGui
+    widget : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    worker : WorkerBase
-        An instance of `napari._qt.qthreading.WorkerBase`, on worker.returned,
+    worker : FunctionWorker
+        An instance of `napari._qt.qthreading.FunctionWorker`, on worker.returned,
         the result will be added to the viewer.
-    return_type : type
+    return_type : ReturnAnnotation
         The return annotation that was used in the decorated function.
     _from_tuple : bool, optional
         (only for internal use). True if the worker returns `LayerDataTuple`,
@@ -326,7 +373,12 @@ def add_worker_data(
     )
 
 
-def add_future_data(gui, future: Future, return_type, _from_tuple=True):
+def add_future_data(
+    gui: FunctionGui,
+    future: Future[_LayerData | LayerData | list[LayerData]],
+    return_type: ReturnAnnotation,
+    _from_tuple: bool = True,
+) -> None:
     """Process a Future object from a magicgui widget.
 
     This function will be called when a magicgui-decorated function has a
@@ -344,7 +396,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         with the same interface, that provides `add_done_callback` and `result`
         methods.  When the future is `done()`, the `result()` will be added
         to the viewer.
-    return_type : type
+    return_type : ReturnAnnotation
         The return annotation that was used in the decorated function.
     _from_tuple : bool, optional
         (only for internal use). True if the future returns `LayerDataTuple`,
@@ -362,7 +414,7 @@ def add_future_data(gui, future: Future, return_type, _from_tuple=True):
         )
 
 
-def find_viewer_ancestor(widget) -> Viewer | None:
+def find_viewer_ancestor(widget: Widget | QWidget) -> ViewerModel | None:
     """Return the closest parent Viewer of ``widget``.
 
     Priority is given to `Viewer` ancestors of ``widget``.
@@ -371,19 +423,17 @@ def find_viewer_ancestor(widget) -> Viewer | None:
 
     Parameters
     ----------
-    widget : QWidget
+    widget : magicgui.widgets.Widget or QWidget
         A widget
 
     Returns
     -------
-    viewer : napari.Viewer or None
+    viewer : napari.components.ViewerModel or None
         Viewer ancestor if it exists, else `napari.current_viewer()`
     """
     from napari._qt.widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-    # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
-    # widget is available at widget.native
-    if hasattr(widget, 'native') and hasattr(widget.native, 'parent'):
+    if isinstance(widget, Widget):
         parent = widget.native.parent()
     else:
         parent = widget.parent()
@@ -401,7 +451,9 @@ def find_viewer_ancestor(widget) -> Viewer | None:
     return current_viewer()
 
 
-def proxy_viewer_ancestor(widget) -> PublicOnlyProxy[Viewer] | None:
+def proxy_viewer_ancestor(
+    widget: Widget,
+) -> PublicOnlyProxy[ViewerModel] | None:
     if viewer := find_viewer_ancestor(widget):
         return PublicOnlyProxy(viewer)
     return None
@@ -467,7 +519,7 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
     from napari import layers
 
     if not (viewer := find_viewer_ancestor(gui.native)):
-        return ()
+        return []
 
     layer_type_name = gui.annotation.__name__.replace('Data', '').title()
     layer_type = getattr(layers, layer_type_name)
@@ -481,7 +533,9 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
 
 
 @cache
-def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
+def _make_choice_data_setter(
+    gui: CategoricalWidget, choice_name: str
+) -> Callable[[Event], None]:
     """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
 
     Note, using lru_cache here so that the **same** function object is returned
@@ -492,7 +546,7 @@ def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     """
     gui_ref = weakref.ref(gui)
 
-    def setter(event):
+    def setter(event: Event) -> None:
         _gui = gui_ref()
         if _gui is not None:
             _gui.set_choice(choice_name, event.value)
@@ -500,15 +554,17 @@ def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     return setter
 
 
-def add_layer_to_viewer(gui, result: Any, return_type: type[Layer]) -> None:
+def add_layer_to_viewer(
+    gui: FunctionGui, result: Layer | None, return_type: type[Layer]
+) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : Layer or None
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.
@@ -526,16 +582,18 @@ def add_layer_to_viewer(gui, result: Any, return_type: type[Layer]) -> None:
 
 
 def add_layers_to_viewer(
-    gui: FunctionGui[Any], result: Any, return_type: type[list[Layer]]
+    gui: FunctionGui,
+    result: list[Layer | None],
+    return_type: type[list[Layer]],
 ) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : Any
+    result : list of Layer or None
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.
