@@ -390,6 +390,7 @@ def test_empty_units(AffineType):
 def test_set_units_constructor(AffineType):
     assert AffineType(ndim=2, units=('mm', 'mm')).units == (REG.mm, REG.mm)
     assert AffineType(ndim=2, units=(REG.m, REG.m)).units == (REG.m, REG.m)
+    assert AffineType(ndim=2, units=REG.m).units == (REG.m, REG.m)
 
     # TODO I think that we should normalize all units of same dimensionality
     # to the same registry, but this is not currently the case.
@@ -423,6 +424,9 @@ def test_set_units(AffineType):
 
     affine.units = (REG.m, REG.m)
     assert affine.units == (REG.m, REG.m)
+
+    affine.units = REG.um
+    assert affine.units == (REG.um, REG.um)
 
 
 @pytest.mark.parametrize('AffineType', affine_type)
