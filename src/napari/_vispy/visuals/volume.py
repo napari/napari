@@ -29,6 +29,13 @@ bool floatEqual(float val1, float val2)
 // the background value for the iso_categorical shader
 const float categorical_bg_value = 0;
 
+float clipDistance(vec3 voxel_loc)
+{
+    // distance to the clipping planes, negative if clipped, of a location in
+    // voxel units; here, as `$clip_with_planes` fails to compile in snippets
+    return $clip_with_planes(voxel_loc / u_shape, u_shape);
+}
+
 int detectAdjacentBackground(float val_neg, float val_pos)
 {
     // determine if the adjacent voxels along an axis are both background
@@ -215,6 +222,69 @@ vec3 calculateGradient(vec3 loc, vec3 step, float current_val) {
 }
 """
 
+# Shared by the categorical rendering methods: at the first sample, walk
+# through every voxel along the rest of the ray (Amanatides & Woo traversal)
+# and stop at the first one with a non-transparent label. Testing only the
+# voxel at each sample misses voxels the ray clips between samples, giving
+# sawtooth edges. `$shade_color` may modify `color`. Positions are in voxel
+# units, where voxel i spans [i, i + 1).
+CATEGORICAL_FIRST_HIT_IN_LOOP = """
+        vec3 ray_origin = start_loc * u_shape;
+        vec3 ray_dir = step * u_shape;
+        vec3 dir_sign = sign(ray_dir);
+        vec3 no_dir = vec3(equal(dir_sign, vec3(0.0)));
+        vec3 t_delta = 1.0 / max(abs(ray_dir), vec3(1e-12));
+        // restrict the ray to the volume, so that every voxel visited is in it
+        vec3 t_a = -ray_origin * dir_sign * t_delta;
+        vec3 t_b = (u_shape - ray_origin) * dir_sign * t_delta;
+        vec3 t_in = mix(min(t_a, t_b), vec3(-1e12), no_dir);
+        vec3 t_out = mix(max(t_a, t_b), vec3(1e12), no_dir);
+        // start one sample back, as the previous sample may have been clipped
+        float t_entry = max(max(float(iter - 1), 0.0), max(max(t_in.x, t_in.y), t_in.z));
+        // shorten the ray slightly at both ends, so that rounding where it starts
+        // or ends on a voxel boundary (as in plane depiction) does not visit the
+        // voxel beyond
+        float t_end = min(float(nsteps), min(min(t_out.x, t_out.y), t_out.z)) - 1e-3;
+        vec3 voxel = clamp(floor(ray_origin + (t_entry + 1e-3) * ray_dir), vec3(0.0), u_shape - 1.0);
+        vec3 t_max = (dir_sign * (voxel - ray_origin) + max(dir_sign, 0.0)) * t_delta;
+        t_max = mix(t_max, vec3(1e12), no_dir);
+        int max_visits = t_entry < t_end
+            ? int(dot(abs(ray_dir), vec3(1.0)) * (t_end - t_entry)) + 4
+            : 0;
+        for (int i = 0; i < max_visits; i++) {
+            float t_exit = min(min(min(t_max.x, t_max.y), t_max.z), t_end);
+            label_id = $get_data((voxel + 0.5) / u_shape);
+            if (floatNotEqual(label_id.r, categorical_bg_value)) {
+                color = sample_label_color(label_id.r);
+                // clipping planes: use the part of the voxel that is not clipped
+                float entry_clip = clipDistance(ray_origin + t_entry * ray_dir);
+                float exit_clip = clipDistance(ray_origin + t_exit * ray_dir);
+                // fully transparent color is considered as background, see napari/napari#5227
+                if (floatNotEqual(color.a, 0) && max(entry_clip, exit_clip) >= 0.0) {
+                    float t_hit = entry_clip < 0.0
+                        ? mix(t_entry, t_exit, entry_clip / (entry_clip - exit_clip))
+                        : t_entry;
+                    vec3 hit_voxel_loc = ray_origin + t_hit * ray_dir;
+                    $shade_color
+                    gl_FragColor = color;
+                    // depth in data coordinates, where voxel centers are at integers
+                    frag_depth_point = hit_voxel_loc - 0.5;
+                    discard_fragment = false;
+                    break;
+                }
+            }
+            if (t_exit >= t_end) {
+                break;
+            }
+            vec3 crossed = vec3(lessThanEqual(t_max, vec3(t_exit)));
+            voxel += crossed * dir_sign;
+            t_max += crossed * t_delta;
+            t_entry = t_exit;
+        }
+        iter = nsteps;
+        break;
+        """
+
 ISO_CATEGORICAL_SNIPPETS = {
     'before_loop': """
         vec4 color3 = vec4(0.0);  // final color
@@ -223,32 +293,12 @@ ISO_CATEGORICAL_SNIPPETS = {
         bool discard_fragment = true;
         vec4 label_id = vec4(0.0);
         """,
-    'in_loop': """
-        // check if value is different from the background value
-        if ( floatNotEqual(val, categorical_bg_value) ) {
-            // Take the last interval in smaller steps
-            vec3 iloc = loc - step;
-            for (int i=0; i<10; i++) {
-                label_id = $get_data(iloc);
-                color = sample_label_color(label_id.r);
-                if (floatNotEqual(color.a, 0) ) {
-                    // fully transparent color is considered as background, see napari/napari#5227
-                    // when the value mapped to non-transparent color is reached
-                    // calculate the shaded color (apply lighting effects)
-                    color = calculateShadedCategoricalColor(color, iloc, dstep);
-                    gl_FragColor = color;
-
-                    // set the variables for the depth buffer
-                    frag_depth_point = iloc * u_shape;
-                    discard_fragment = false;
-
-                    iter = nsteps;
-                    break;
-                }
-                iloc += step * 0.1;
-            }
-        }
-        """,
+    'in_loop': CATEGORICAL_FIRST_HIT_IN_LOOP.replace(
+        '$shade_color',
+        # shade just inside the voxel, so the gradient is that of its label
+        'color = calculateShadedCategoricalColor('
+        'color, clamp(hit_voxel_loc, voxel + 0.01, voxel + 0.99) / u_shape, dstep);',
+    ),
     'after_loop': """
         if (discard_fragment)
             discard;
@@ -262,31 +312,7 @@ TRANSLUCENT_CATEGORICAL_SNIPPETS = {
         bool discard_fragment = true;
         vec4 label_id = vec4(0.0);
         """,
-    'in_loop': """
-        // check if value is different from the background value
-        if ( floatNotEqual(val, categorical_bg_value) ) {
-            // Take the last interval in smaller steps
-            vec3 iloc = loc - step;
-            for (int i=0; i<10; i++) {
-                label_id = $get_data(iloc);
-                color = sample_label_color(label_id.r);
-                if (floatNotEqual(color.a, 0) ) {
-                    // fully transparent color is considered as background, see napari/napari#5227
-                    // when the value mapped to non-transparent color is reached
-                    // calculate the color (apply lighting effects)
-                    gl_FragColor = color;
-
-                    // set the variables for the depth buffer
-                    frag_depth_point = iloc * u_shape;
-                    discard_fragment = false;
-
-                    iter = nsteps;
-                    break;
-                }
-                iloc += step * 0.1;
-            }
-        }
-        """,
+    'in_loop': CATEGORICAL_FIRST_HIT_IN_LOOP.replace('$shade_color', ''),
     'after_loop': """
         if (discard_fragment)
             discard;
