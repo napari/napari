@@ -13,7 +13,7 @@ from typing import (  # noqa
 from pydantic import ConfigDict
 
 
-class NapariConfigDict(ConfigDict):
+class NapariConfigDict(ConfigDict, total=False):
     """Custom ConfigDict for napari models.
 
     add dependencies attribute to track field dependencies
