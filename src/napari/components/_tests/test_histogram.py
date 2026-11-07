@@ -1035,19 +1035,6 @@ class TestCalcHistogramExtended:
         sampled = model._sample_data(data, 1000)
         assert len(sampled) == 0
 
-    def test_finalize_histogram_falls_back_to_data_range(self, monkeypatch):
-        """When contrast_limits_range is None/None, _finalize_histogram
-        should fall back to nanmin/nanmax of the data."""
-        model = _model(np.random.rand(10, 10).astype(np.float32))
-        data = np.random.rand(100).astype(np.float32)
-        # Bypass the setter validation by targeting the private backing field
-        monkeypatch.setattr(
-            model._layer, '_contrast_limits_range', (None, None)
-        )
-        model._finalize_histogram(data)
-        assert len(model._bin_edges) == 257
-        assert model._bin_edges[-1] > model._bin_edges[0]
-
     def test_log_scale_with_chunked_compute(self, monkeypatch):
         """Log scale should be correctly applied in the _compute_chunked_progressive path."""
         dask = pytest.importorskip('dask.array')

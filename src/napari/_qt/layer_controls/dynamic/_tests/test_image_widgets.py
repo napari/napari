@@ -197,11 +197,11 @@ class TestQtImageRenderControl:
         control = QtImageRenderControl([img])
         qt_wrap.add_control(control)
 
-        assert img.contrast_limits_range == [0, 255]
+        assert img.contrast_limits_range == (0, 255)
         assert control.iso_threshold_slider.minimum() == 0
         assert control.iso_threshold_slider.maximum() == 255
 
-        img.contrast_limits_range = [10, 20]
+        img.contrast_limits_range = (10, 20)
         assert control.iso_threshold_slider.minimum() == 10
         assert control.iso_threshold_slider.maximum() == 20
 
