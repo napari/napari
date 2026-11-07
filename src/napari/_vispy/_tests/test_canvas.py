@@ -1,8 +1,8 @@
 import numpy as np
 
 from napari.components.overlays import (
-    BoundingBoxOverlay,
     CanvasOverlay,
+    LayerBoundingBoxOverlay,
     ScaleBarOverlay,
     SceneAxesOverlay,
 )
@@ -109,7 +109,7 @@ def test_layer_overlays(qt_viewer):
 
     old_vispy_overlays = {**canvas._layer_overlay_to_visual[layer]}
 
-    new_overlay = BoundingBoxOverlay(visible=True)
+    new_overlay = LayerBoundingBoxOverlay(visible=True)
     layer._overlays['test'] = new_overlay
 
     assert new_overlay in canvas._layer_overlay_to_visual[layer]
