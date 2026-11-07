@@ -153,6 +153,33 @@ def test_async_slice_multiscale_image_on_zoom(qtbot, make_napari_viewer, rng):
 
 
 @pytest.mark.usefixtures('_enable_async')
+def test_async_first_multiscale_slice_is_coarse_and_centered(
+    make_napari_viewer, qtbot, monkeypatch
+):
+    viewer = make_napari_viewer(show=True)
+    # Only an initialized canvas repaints synchronously on resize.
+    canvas = viewer.window._qt_viewer.canvas._scene_canvas.native
+    qtbot.waitUntil(canvas.isValid)
+
+    submitted = []
+    submit = viewer._layer_slicer.submit
+
+    def record(*, layers, dims, force=False):
+        submitted.append(
+            (dims.current_step, [layer.data_level for layer in layers])
+        )
+        return submit(layers=layers, dims=dims, force=force)
+
+    monkeypatch.setattr(viewer._layer_slicer, 'submit', record)
+
+    data = [np.zeros((8, 256 // 2**i, 256 // 2**i)) for i in range(3)]
+    layer = viewer.add_image(data, multiscale=True)
+    qtbot.waitUntil(lambda: layer.loaded)
+
+    assert submitted[0] == (viewer.dims.current_step, [2])
+
+
+@pytest.mark.usefixtures('_enable_async')
 def test_async_slice_points_on_current_step_change(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
     data = np.array(

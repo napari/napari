@@ -11,6 +11,7 @@ from collections.abc import (
     MutableMapping,
     Sequence,
 )
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -217,6 +218,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
+    # True while dims changes should not slice layers, see _defer_slicing
+    _slicing_deferred: bool = PrivateAttr(default=False)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -783,6 +786,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layers=[event.layer], dims=self.dims, force=True
         )
 
+    @contextmanager
+    def _defer_slicing(self) -> Iterator[None]:
+        """Prevent dims changes from slicing layers.
+
+        The caller is responsible for slicing afterwards.
+        """
+        previous = self._slicing_deferred
+        self._slicing_deferred = True
+        try:
+            yield
+        finally:
+            self._slicing_deferred = previous
+
     def _update_layers(self, *, layers=None):
         """Updates the contained layers.
 
@@ -791,6 +807,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layers : list of napari.layers.Layer, optional
             List of layers to update. If none provided updates all.
         """
+        if self._slicing_deferred:
+            return
         layers = layers or self.layers
         self.dims.units = self.layers.extent.units
         self._layer_slicer.submit(layers=layers, dims=self.dims)
@@ -1108,15 +1126,20 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             layer.events.mode.connect(self._on_layer_mode_change)
         self._layer_help_from_mode(layer)
 
-        # Update dims
-        self._on_layers_change()
+        # For the first layer, set the dims to the middle
+        first_layer_being_added = len(self.layers) == 1
+        if first_layer_being_added:
+            with self._defer_slicing():
+                # Update dims
+                self._on_layers_change()
+                self.dims._go_to_center_step()
+        else:
+            self._on_layers_change()
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
-        if len(self.layers) == 1:
-            # set dims slider to the middle of all dimensions
+        if first_layer_being_added:
             self.reset_view()
-            self.dims._go_to_center_step()
 
     @staticmethod
     def _layer_help_from_mode(layer: Layer):
