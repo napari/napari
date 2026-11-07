@@ -815,11 +815,7 @@ class Window:
         theme.events.current.connect(self._update_theme_no_event)
         theme.events.icon.connect(self._update_theme_no_event)
         theme.events.font_size.connect(self._update_theme_no_event)
-        theme.events.canvas.connect(
-            lambda _: self._qt_viewer.canvas._set_theme_change(
-                get_settings().appearance.theme
-            )
-        )
+        theme.events.canvas.connect(self._update_canvas_theme)
         # connect console-specific attributes only if QtConsole
         # is present. The `console` is called which might slow
         # things down a little.
@@ -840,11 +836,7 @@ class Window:
         theme.events.current.disconnect(self._update_theme_no_event)
         theme.events.icon.disconnect(self._update_theme_no_event)
         theme.events.font_size.disconnect(self._update_theme_no_event)
-        theme.events.canvas.disconnect(
-            lambda _: self._qt_viewer.canvas._set_theme_change(
-                get_settings().appearance.theme
-            )
-        )
+        theme.events.canvas.disconnect(self._update_canvas_theme)
         # disconnect console-specific attributes only if QtConsole
         # is present and they were previously connected
         if self._qt_viewer._console:
@@ -1603,6 +1595,13 @@ class Window:
 
     def _update_theme_no_event(self):
         self._update_theme()
+
+    def _update_canvas_theme(self):
+        # A bound method (not a lambda) so that `_disconnect_theme` can
+        # remove it; a leftover callback keeps the closed Window alive.
+        self._qt_viewer.canvas._set_theme_change(
+            get_settings().appearance.theme
+        )
 
     def _update_theme_font_size(self, event=None):
         settings = get_settings()
