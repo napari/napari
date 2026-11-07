@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any, Literal
@@ -30,9 +32,18 @@ from napari.utils.events.event import WarningEmitter
 from napari.utils.migrations import deprecated_constructor_arg_by_attr
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy.typing as npt
     import pandas as pd
+    import pint
 
     from napari.components.dims import Dims
+    from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
+    from napari.utils.colormaps.categorical_colormap import (
+        CategoricalColormap,
+    )
+    from napari.utils.transforms import Affine
 
 _OUT_SLICE_DISP_WARNING_MSG = (
     'out_of_slice_display is deprecated since 0.9.0 (superseded by projection_mode). '
@@ -196,7 +207,7 @@ class Vectors(Layer):
     """
 
     _projectionclass = VectorsProjectionMode
-    _slicing_state: '_VectorsSlicingState'
+    _slicing_state: _VectorsSlicingState
 
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
@@ -205,35 +216,50 @@ class Vectors(Layer):
     @deprecated_constructor_arg_by_attr('out_of_slice_display')
     def __init__(
         self,
-        data=None,
+        data: npt.ArrayLike | None = None,
         *,
-        affine=None,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        edge_color='red',
-        edge_color_cycle=None,
-        edge_colormap='viridis',
-        edge_contrast_limits=None,
-        edge_width=1,
-        experimental_clipping_planes=None,
-        feature_defaults=None,
-        features=None,
-        length=1,
-        metadata=None,
-        name=None,
-        ndim=None,
-        opacity=0.7,
-        projection_mode='all',
-        properties=None,
-        property_choices=None,
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        vector_style='triangle',
-        visible=True,
+        affine: npt.ArrayLike | Affine | None = None,
+        axis_labels: Sequence[str] | None = None,
+        blending: str = 'translucent',
+        cache: bool = True,
+        edge_color: str | np.ndarray | dict = 'red',
+        edge_color_cycle: CategoricalColormap
+        | dict
+        | list
+        | np.ndarray
+        | None = None,
+        edge_colormap: str | Colormap = 'viridis',
+        edge_contrast_limits: tuple[float, float] | None = None,
+        edge_width: float = 1,
+        experimental_clipping_planes: dict
+        | ClippingPlane
+        | list[ClippingPlane | dict]
+        | ClippingPlaneList
+        | None = None,
+        feature_defaults: dict[str, Any] | pd.DataFrame | None = None,
+        features: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        length: float = 1,
+        metadata: dict | None = None,
+        name: str | None = None,
+        ndim: int | None = None,
+        opacity: float = 0.7,
+        projection_mode: str = 'all',
+        properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        property_choices: dict[str, np.ndarray] | None = None,
+        rotate: float
+        | Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        scale: Sequence[float] | npt.NDArray | None = None,
+        shear: Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        translate: Sequence[float] | npt.NDArray | None = None,
+        units: Sequence[str | pint.Unit | None] | None = None,
+        vector_style: str = 'triangle',
+        visible: bool = True,
     ) -> None:
         if ndim is None and scale is not None:
             ndim = len(scale)
@@ -336,7 +362,7 @@ class Vectors(Layer):
         return self._data
 
     @data.setter
-    def data(self, vectors: np.ndarray) -> None:
+    def data(self, vectors: npt.ArrayLike) -> None:
         previous_n_vectors = len(self.data)
 
         self._data, _ = fix_data_vectors(vectors, self.ndim)
@@ -367,7 +393,7 @@ class Vectors(Layer):
         self._reset_editable()
 
     @property
-    def features(self):
+    def features(self) -> pd.DataFrame:
         """Dataframe-like features table.
 
         It is an implementation detail that this is a `pandas.DataFrame`. In the future,
@@ -387,7 +413,7 @@ class Vectors(Layer):
     @features.setter
     def features(
         self,
-        features: 'dict[str, np.ndarray] | pd.DataFrame',
+        features: dict[str, np.ndarray] | pd.DataFrame,
     ) -> None:
         self._feature_table.set_values(features, num_data=len(self.data))
         if self._edge.color_properties is not None:
@@ -419,7 +445,7 @@ class Vectors(Layer):
         self.features = properties
 
     @property
-    def feature_defaults(self):
+    def feature_defaults(self) -> pd.DataFrame:
         """Dataframe-like with one row of feature default values.
 
         See `features` for more details on the type of this property.
@@ -428,7 +454,7 @@ class Vectors(Layer):
 
     @feature_defaults.setter
     def feature_defaults(
-        self, defaults: 'dict[str, Any] | pd.DataFrame'
+        self, defaults: dict[str, Any] | pd.DataFrame
     ) -> None:
         self._feature_table.set_defaults(defaults)
         self.events.feature_defaults()
@@ -719,7 +745,7 @@ class Vectors(Layer):
 
         return face_color
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         raise NotImplementedError
 
     def _update_thumbnail(self) -> None:
@@ -775,7 +801,7 @@ class Vectors(Layer):
             )
             self.thumbnail = colormapped
 
-    def _get_value(self, position) -> None:
+    def _get_value(self, position: npt.ArrayLike) -> None:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -792,7 +818,7 @@ class Vectors(Layer):
 
     def _get_layer_slicing_state(
         self, data: LayerDataType, cache: bool
-    ) -> '_VectorsSlicingState':
+    ) -> _VectorsSlicingState:
         return _VectorsSlicingState(layer=self, data=data, cache=cache)
 
 
@@ -816,7 +842,7 @@ class _VectorsSlicingState(_LayerSlicingState):
         response = request()
         self._update_slice_response(response)
 
-    def _make_slice_request(self, dims: 'Dims') -> _VectorSliceRequest:
+    def _make_slice_request(self, dims: Dims) -> _VectorSliceRequest:
         """Make a Vectors slice request based on the given dims and these data."""
         slice_input = self.make_slice_input(dims)
         # TODO: [see Image]
