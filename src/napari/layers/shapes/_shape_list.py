@@ -1945,7 +1945,9 @@ class ShapeList:
         except StopIteration:
             return None
 
-    def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
+    def _inside_3d(
+        self, ray_position: np.ndarray, ray_direction: np.ndarray
+    ) -> tuple[int | None, np.ndarray | None]:
         """Determines if any shape is intersected by a ray by looking inside triangle
         meshes. Looks only at displayed shapes.
 
@@ -1990,7 +1992,7 @@ class ShapeList:
             closest_shape_index
         ]
         intersection = intersection_points[closest_shape_index]
-        return shape, intersection
+        return int(shape), intersection
 
     def _triangle_intersection(
         self,
