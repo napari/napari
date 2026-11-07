@@ -50,9 +50,10 @@ jobs:
           python-version: ${{ matrix.python }}
           cache-dependency-path: pyproject.toml
 
-      - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
-        continue-on-error: true
+      - name: Disable ptrace security restrictions
+        if: runner.os == 'Linux'
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
       - name: Set Windows resolution
         if: runner.os == 'Windows'
@@ -92,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: leaked ${{ matrix.platform }} py ${{ matrix.python }} ${{ matrix.backend }}
-          path: ./*leak-backref-graph*.pdf
+          path: ./*leak-backref-graph*.dot
 
       # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
