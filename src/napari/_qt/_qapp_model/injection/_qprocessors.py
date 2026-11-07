@@ -18,6 +18,7 @@ from typing import (
 
 from magicgui.widgets import FunctionGui, Widget
 from qtpy.QtWidgets import QWidget
+from superqt import ensure_main_thread
 
 from napari import layers, types, viewer
 from napari._qt._qapp_model.injection._qproviders import (
@@ -25,6 +26,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer_or_raise,
 )
 from napari.layers._source import layer_source
+from napari.utils.notifications import notification_manager
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -185,24 +187,31 @@ def _add_future_data(
         'source': source,
     }
 
-    def _on_future_ready(f: Future) -> None:
-        if _from_tuple:
-            _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
-        else:
-            _add_layer_data_to_viewer(f.result(), **add_kwargs)
-        _FUTURES.discard(future)
+    # The future may finish in a background thread, but GUI objects
+    # must be created on the main thread.
+    @ensure_main_thread
+    def _add_result(f: Future) -> None:
+        try:
+            if f.cancelled():
+                return
+            # Show the error to the user here. If we let it raise, it
+            # would only be printed to the log, or could crash the app.
+            if (exc := f.exception()) is not None:
+                notification_manager.receive_error(
+                    type(exc), exc, exc.__traceback__
+                )
+                return
+            if _from_tuple:
+                _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
+            else:
+                _add_layer_data_to_viewer(f.result(), **add_kwargs)
+        finally:
+            _FUTURES.discard(future)
 
-    # We need the callback to happen in the main thread...
-    # This still works (no-op) in a headless environment, but
-    # we could be even more granular with it, with a function
-    # that checks if we're actually in a QApp before wrapping.
-    # with suppress(ImportError):
-    #     from superqt.utils import ensure_main_thread
-
-    #     _on_future_ready = ensure_main_thread(_on_future_ready)
-
-    future.add_done_callback(_on_future_ready)
+    # Keep the future first, then add the callback. If the future is
+    # already finished, the callback runs right away and removes it.
     _FUTURES.add(future)
+    future.add_done_callback(_add_result)
 
 
 QPROCESSORS: dict[object, Callable] = {
