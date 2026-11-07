@@ -32,6 +32,7 @@ Notes for using the plugin-related fixtures here:
 from __future__ import annotations
 
 import contextlib
+import gc
 import os
 import sys
 import threading
@@ -62,7 +63,7 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
@@ -670,6 +671,33 @@ def pytest_collection_modifyitems(session, config, items) -> None:
                 index = i
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtestloop(
+    session: pytest.Session,
+) -> Generator[None, bool | None, bool | None]:
+    """Freeze objects created by imports and collection before running tests.
+
+    Each full ``gc.collect()`` (for example, the one done when a layer is
+    removed from the canvas) has to traverse every object tracked by the
+    garbage collector. Imports and test collection create over a million
+    objects that live for the whole session, so moving them to the permanent
+    generation makes these collections about twice as fast.
+
+    Frozen objects are skipped by ``gc.get_objects`` and ``gc.get_referrers``,
+    so this is done only for napari's own test suite and not in the
+    ``napari.utils._testsupport`` plugin used by plugin developers.
+    """
+    # we run gc.collect() before freezing the list of created objects
+    # to remove all leftovers from phase of collecting tests (some temporal objects)
+    # and reduce peak of consumed memory.
+    gc.collect()
+    gc.freeze()
+    try:
+        return (yield)
+    finally:
+        gc.unfreeze()
 
 
 @pytest.fixture(autouse=True)

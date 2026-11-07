@@ -66,6 +66,9 @@ def fail_obj_graph(Klass):  # pragma: no cover
             or shutil.which('dot.exe') is not None
         )
 
+        # objects frozen with gc.freeze() are not reported by gc.get_referrers,
+        # so unfreeze them to get the full graph of references
+        gc.unfreeze()
         gc.collect()
         if graphviz_available:
             file_path = Path(
