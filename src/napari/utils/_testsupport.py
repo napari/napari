@@ -94,8 +94,8 @@ def fail_obj_graph(Klass):  # pragma: no cover
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
         pytest.fail(
-            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
-            f'The object graph is saved in {file_path_dot}{pdf_info}'
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}. '
+            f'The object graph is saved in {file_path_dot}{pdf_info} '
             f'{len(Klass._instances)} objects left after cleanup'
         )
 
