@@ -49,4 +49,4 @@ def fix_graph_data(
             f'The graph nodes dimensions {ndim_} do not match the provided ndim argument {ndim}'
         )
 
-    return graph, ndim
+    return graph, ndim_
