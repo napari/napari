@@ -86,19 +86,18 @@ def test_changing_colormap_updates_colorbox(make_labels_controls):
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
-    np.testing.assert_equal(
-        color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
-    )
+    np.testing.assert_equal(color_box.color, (255, 255, 255, 255))
 
-    layer.colormap = colormap_utils.label_colormap(num_colors=5)
+    new_colormap = colormap_utils.label_colormap(num_colors=5)
+    layer.colormap = new_colormap
 
     # For a paint event, which does not occur in a headless qtbot
     color_box.paintEvent(None)
 
+    # compare with the new colormap, as layer._selected_color may be stale
     np.testing.assert_equal(
         color_box.color,
-        np.round(np.asarray(layer._selected_color) * 255),
+        np.round(np.asarray(new_colormap.map(1)) * 255),
     )
 
 
