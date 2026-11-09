@@ -1,15 +1,15 @@
 import numpy as np
-
 from networkx import Graph as nxGraph
+
+from napari.layers._graph._graph_utils import fix_graph_data
+from napari.layers._graph._slice import _GraphSlicingState
 from napari.layers.base import Layer
 
-from napari.layers._graph._slice import _GraphSlicingState
-from napari.layers._graph._graph_utils import fix_graph_data
 
 class _Graph(Layer):
     _data: nxGraph
 
-    def __init__(self, data: nxGraph | None, ndim: int | None = None):
+    def __init__(self, data: nxGraph | None = None, ndim: int | None = None):
 
         data, ndim = fix_graph_data(data, ndim)
 
@@ -49,7 +49,6 @@ class _Graph(Layer):
         max_coords = np.max(coordinates, axis=0)
 
         return np.vstack([min_coords, max_coords])
-
 
     def _get_layer_slicing_state(self, data, cache) -> _GraphSlicingState:
         return _GraphSlicingState(self, data, cache)
