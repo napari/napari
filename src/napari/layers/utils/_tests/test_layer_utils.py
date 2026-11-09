@@ -8,6 +8,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _resize_to_thumbnail,
     _unique_element,
     calc_data_range,
     coerce_current_properties,
@@ -35,6 +36,88 @@ data_dask_1d_rgb = da.random.random(size=(5_000_000, 3), chunks=(50_000, 3))
 data_dask_plane = da.random.random(
     size=(100_000, 100_000), chunks=(1000, 1000)
 )
+
+
+@pytest.mark.parametrize(
+    ('image_shape', 'thumbnail_shape', 'expected_shape'),
+    [
+        # Downsampling preserves the aspect ratio.
+        ((64, 64), (32, 32), (32, 32)),
+        ((64, 3), (32, 32), (32, 2)),
+        ((64, 5), (32, 32), (32, 2)),
+        ((17, 43), (32, 32), (13, 32)),
+        ((249, 548), (32, 32), (15, 32)),
+        # Fractional sizes are rounded to the nearest integer (halves to even).
+        ((63, 65), (32, 32), (31, 32)),
+        # Single-pixel dimensions are preserved rather than dropped.
+        ((1, 2048), (32, 32), (1, 32)),
+        ((2048, 1), (32, 32), (32, 1)),
+        # Small images are upscaled to fit the thumbnail.
+        ((1, 1), (32, 32), (32, 32)),
+        ((3, 4), (32, 32), (24, 32)),
+        ((7, 11), (1, 2), (1, 2)),
+        # Extra (e.g. channel) dimensions are left untouched.
+        ((45, 60, 3), (32, 32), (24, 32, 3)),
+        ((39, 21, 4), (32, 32), (32, 17, 4)),
+    ],
+)
+def test_resize_to_thumbnail_shape(
+    image_shape, thumbnail_shape, expected_shape
+):
+    image = np.arange(np.prod(image_shape), dtype=np.uint64).reshape(
+        image_shape
+    )
+    result = _resize_to_thumbnail(image, thumbnail_shape)
+    assert result.shape == expected_shape
+
+
+@pytest.mark.parametrize(
+    ('image', 'thumbnail_shape', 'expected'),
+    [
+        (np.arange(16).reshape(4, 4), (2, 2), [[0, 3], [12, 15]]),
+        (
+            np.arange(35).reshape(5, 7),
+            (3, 4),
+            [[0, 2, 4, 6], [14, 16, 18, 20], [28, 30, 32, 34]],
+        ),
+    ],
+)
+def test_resize_to_thumbnail_samples_corners(image, thumbnail_shape, expected):
+    """Output samples include the input's first and last rows and columns."""
+    np.testing.assert_array_equal(
+        _resize_to_thumbnail(image, thumbnail_shape), expected
+    )
+
+
+def test_resize_to_thumbnail_channels_sampled_independently() -> None:
+    """Sampling of the first two dimensions is independent of channels."""
+    image = np.arange(17 * 43 * 2).reshape(17, 43, 2)
+    result = _resize_to_thumbnail(image, (32, 32))
+    for channel in range(image.shape[-1]):
+        np.testing.assert_array_equal(
+            result[..., channel],
+            _resize_to_thumbnail(image[..., channel], (32, 32)),
+        )
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    [
+        np.uint8,
+        np.uint16,
+        np.float16,
+        np.float32,
+        np.dtype(np.uint64).newbyteorder('S'),
+        np.dtype(np.float32).newbyteorder('S'),
+    ],
+)
+def test_resize_to_thumbnail_preserves_dtype(dtype) -> None:
+    """The input dtype is kept, with non-native byte orders normalized."""
+    dtype = np.dtype(dtype)
+    image = np.arange(17 * 43).reshape(17, 43).astype(dtype)
+    result = _resize_to_thumbnail(image, (32, 32))
+    assert result.dtype == dtype.newbyteorder('=')
+    assert result.dtype.isnative
 
 
 def _make_chunked(shape, chunks):
