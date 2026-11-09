@@ -61,6 +61,7 @@ _Blocker = EllipsisType
 _KeymapKey = KeyBinding | _WildcardKey
 _KeymapValue = _KeymapFunction | _Blocker
 Keymap = MutableMapping[_KeymapKey, _KeymapValue]
+# a TypeVar, since Mapping is invariant in its key and rejects dict[str, ...]
 _KeyLike = TypeVar('_KeyLike', bound=KeyBindingLike | _WildcardKey)
 
 _F = TypeVar('_F', bound=_KeymapFunction)
