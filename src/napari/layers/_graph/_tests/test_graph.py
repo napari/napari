@@ -1,3 +1,4 @@
+import pytest
 from networkx import Graph as nxGraph
 
 from napari.layers._graph._graph import _Graph
@@ -23,3 +24,9 @@ def test_ndim_on_empty_and_none_graph():
 
     none_graph_layer = _Graph(data=None, ndim=4)
     assert none_graph_layer.ndim == 4
+
+
+def test_type_error_on_invalid_graph():
+
+    with pytest.raises(TypeError):
+        _Graph(data='not_a_graph')
