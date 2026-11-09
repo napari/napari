@@ -23,12 +23,16 @@ def fix_graph_data(
 
     Raises
     ------
+    TypeError
+        if graph is not a networkx.Graph or None
     ValueError
         if ndim does not match with the dimensions of the graph nodes
     """
 
     if graph is None:
         graph = nxGraph()
+    elif not isinstance(graph, nxGraph):
+        raise TypeError('Data must be a networkx.Graph or None')
 
     nodes = list(graph.nodes(data=True))
 
