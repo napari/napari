@@ -290,8 +290,8 @@ def _vispy2appmodel(event: KeyEvent) -> KeyBinding:
 
     kb: int = KeyCode.from_string(KEY_SUBS.get(key, key))
 
-    for key in filter(lambda key: key in modifiers and cond(key), _VISPY_MODS):
-        kb |= _VISPY_MODS[key]
+    for mod in filter(lambda m: m in modifiers and cond(m), _VISPY_MODS):
+        kb |= _VISPY_MODS[mod]
 
     return coerce_keybinding(kb)
 
