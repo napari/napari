@@ -46,6 +46,9 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
+        # The color last drawn by paintEvent, or None for the checkerboard.
+        # It is set while painting on purpose: tests read it to check what
+        # the widget actually rendered, not what the layer currently holds.
         self.color = None
 
     def _on_selected_label_change(self) -> None:
