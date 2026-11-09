@@ -50,6 +50,8 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
+        self._update_color()
+
     def _update_color(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
         self.color = (
