@@ -9,7 +9,7 @@ from napari.layers._graph._slice import _GraphSlicingState
 class _Graph(Layer):
     _data: Graph
 
-    def __init__(self, graph: Graph, ndim: int | None = None):
+    def __init__(self, graph=None, ndim: int | None = None):
         inferred_ndim: int | None = self._get_graph_ndim(graph)
 
         if (
