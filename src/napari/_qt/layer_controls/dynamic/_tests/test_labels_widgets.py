@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
 import numpy as np
 
@@ -21,8 +20,6 @@ from napari.layers.labels._labels_constants import LabelColorMode
 from napari.utils import CyclicLabelColormap, DirectLabelColormap
 
 if TYPE_CHECKING:
-    import pytest
-
     from napari._qt.layer_controls.dynamic._tests.conftest import QtWrap
 
 
@@ -162,26 +159,26 @@ class TestQtCurrentLabelControls:
         assert control.selection_spinbox.maximum() == 65535
 
     def test_colorbox_update(
-        self, qt_wrap: QtWrap, monkeypatch: pytest.MonkeyPatch
+        self,
+        qt_wrap: QtWrap,
     ) -> None:
-        mock = MagicMock()
         labels = Labels(data=np.zeros((10, 10), dtype=np.uint8))
         control = QtCurrentLabelControls([labels])
+        color_box = control.colorbox
         qt_wrap.add_control(control)
 
-        monkeypatch.setattr(
-            'napari._qt.layer_controls.dynamic.widgets._labels.qt_current_label_controls.QPainter',
-            mock,
-        )
-
         assert labels.selected_label == 1
-        control.colorbox.paintEvent(None)
-        mock.return_value.drawRect.assert_called_once()  # Check that the colorbox is being painted
 
-        mock.reset_mock()
+        np.testing.assert_equal(
+            color_box.color,
+            np.round(np.asarray(labels._selected_color) * 255),
+        )
         labels.selected_label = 0
-        control.colorbox.paintEvent(None)
-        assert mock.return_value.drawRect.call_count == 36
+
+        np.testing.assert_equal(
+            color_box.color,
+            np.round(np.asarray(labels._selected_color) * 255),
+        )
 
 
 class TestQtDisplaySelectedLabelCheckBoxControl:
