@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -5,6 +6,7 @@ import npe2
 import numpy as np
 import pytest
 
+from napari.layers import Image, Labels
 from napari_builtins.io import napari_get_reader
 
 if TYPE_CHECKING:
@@ -70,3 +72,36 @@ def test_get_writer_succeeds(
     assert set(written) == expected
     for expect in expected:
         assert Path(expect).is_file()
+
+
+@pytest.mark.parametrize('layer_class', [Image, Labels])
+def test_save_multiscale_highest_resolution(
+    tmp_path: Path, layer_class: type
+) -> None:
+    """Without a locked level, the highest resolution level is saved."""
+    data = [np.ones((16, 16), dtype=np.uint8), np.ones((8, 8), dtype=np.uint8)]
+    layer = layer_class(data, multiscale=True)
+    path = tmp_path / 'multiscale.tif'
+
+    with pytest.warns(UserWarning, match='highest resolution level'):
+        assert layer.save(str(path))
+
+    [(read_data, *_)] = napari_get_reader(str(path))(str(path))
+    assert read_data.shape == (16, 16)
+
+
+@pytest.mark.parametrize('layer_class', [Image, Labels])
+def test_save_multiscale_locked_level(
+    tmp_path: Path, layer_class: type
+) -> None:
+    """With a locked level, that level is saved, without a warning."""
+    data = [np.ones((16, 16), dtype=np.uint8), np.ones((8, 8), dtype=np.uint8)]
+    layer = layer_class(data, multiscale=True, locked_data_level=1)
+    path = tmp_path / 'multiscale.tif'
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        assert layer.save(str(path))
+
+    [(read_data, *_)] = napari_get_reader(str(path))(str(path))
+    assert read_data.shape == (8, 8)
