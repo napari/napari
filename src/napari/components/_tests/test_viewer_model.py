@@ -166,8 +166,7 @@ def test_add_graph():
 def test_add_empty_graph_to_empty_viewer():
     """Test adding empty graph."""
     viewer = ViewerModel()
-    graph = nx.Graph()
-    layer = viewer._add_graph(graph)
+    layer = viewer._add_graph()
     assert len(viewer.layers) == 1
     assert layer.data is graph
     assert viewer.dims.ndim == 2
