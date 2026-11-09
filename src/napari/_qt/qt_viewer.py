@@ -16,13 +16,12 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl, Signal
 from qtpy.QtGui import (
     QGuiApplication,
     QImage,
 )
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-from superqt import ensure_main_thread
 
 from napari._app_model import get_app_model
 from napari._qt.containers import QtLayerList
@@ -63,7 +62,7 @@ from napari.utils.notifications import show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Generator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
@@ -152,6 +151,8 @@ class QtViewer(QSplitter):
     """
 
     _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
+    # Slice responses, passed from the slicing thread to the main thread.
+    _slice_ready = Signal(object)
 
     def __init__(
         self,
@@ -220,7 +221,8 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Orientation.Vertical)
         self.addWidget(main_widget)
 
-        self.viewer._layer_slicer.events.ready.connect(self._on_slice_ready)  # pyrefly: ignore [bad-argument-type]
+        self._slice_ready.connect(self._on_slice_ready)
+        self.viewer._layer_slicer.events.ready.connect(self._emit_slice_ready)
 
         self._on_active_change()
         self.viewer.layers.events.inserted.connect(self._update_camera_depth)
@@ -603,14 +605,22 @@ class QtViewer(QSplitter):
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
 
-    @ensure_main_thread
-    def _on_slice_ready(self, event: Event) -> None:
+    def _emit_slice_ready(self, event: Event) -> None:
         """Callback connected to `viewer._layer_slicer.events.ready`.
 
-        Provides updates after slicing using the slice response data.
+        Pass the slice response data to the main thread via a Qt signal.
+        Do not use ensure_main_theard on Qt object because it creates
+        temporary objects that result in deadlocks on CI.
+        """
+        self._slice_ready.emit(event.value)
+
+    def _on_slice_ready(
+        self, responses: dict[weakref.ReferenceType[Layer], Any]
+    ) -> None:
+        """Provide updates on the main thread using the slice response data.
+
         This only gets triggered on the async slicing path.
         """
-        responses: dict[weakref.ReferenceType[Layer], Any] = event.value
         logging.getLogger('napari').debug(
             'QtViewer._on_slice_ready: %s', responses
         )
@@ -987,7 +997,7 @@ class QtViewer(QSplitter):
     @contextlib.contextmanager
     def resize_canvas(
         self, size: tuple[int, int] | None, scale: float
-    ) -> Iterator[None]:
+    ) -> Generator[None]:
         """Temporarily, safely, resize the canvas
 
         Parameters
@@ -1007,6 +1017,8 @@ class QtViewer(QSplitter):
         else:
             size_arr = np.asarray(prev_size)
         size_arr = (size_arr * scale).astype(np.int64)
+
+        camera.zoom = old_zoom * scale
         canvas.size = tuple(size_arr)
         try:
             yield

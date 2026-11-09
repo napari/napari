@@ -124,7 +124,12 @@ class QtPerformance(QWidget):
         combo_layout.addWidget(self.thresh_combo)
         combo_layout.addWidget(QLabel('milliseconds'))
         combo_layout.addItem(
-            QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+            QSpacerItem(
+                40,
+                20,
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Minimum,
+            )
         )
         layout.addLayout(combo_layout)
 

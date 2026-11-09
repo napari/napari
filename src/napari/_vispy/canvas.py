@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakSet
 
 import numpy as np
@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from vispy.scene.subscene import SubScene
 
     from napari._vispy.layers.base import VispyBaseLayer
+    from napari._vispy.mouse_event import VectorF64
     from napari._vispy.overlays.base import (
         VispyBaseOverlay,
         VispyCanvasOverlay,
@@ -173,7 +174,7 @@ class VispyCanvas:
         for ignoring mousewheel events with modifiers.
     """
 
-    _instances: WeakSet[VispyCanvas] = WeakSet()
+    _instances: ClassVar[WeakSet[VispyCanvas]] = WeakSet()
 
     def __init__(
         self,
@@ -956,6 +957,9 @@ class VispyCanvas:
                 parent=parent,
                 **kwargs,
             )
+            vispy_overlay.set_default_font_size(
+                get_settings().appearance.font_size
+            )
         else:
             vispy_overlay.node.parent = parent
             if isinstance(overlay, CanvasOverlay):
@@ -1297,8 +1301,8 @@ class VispyCanvas:
             vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
+        self, event_pos: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> VectorF64 | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:

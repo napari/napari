@@ -120,21 +120,24 @@ def color_arrowheads(colors, num_segments):
     )
 
 
+# CMYRGB for 6 axes data in x, y, z, ... ordering
+AXES_COLORS = [
+    [0, 1, 1, 1],
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+    [1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, 0, 1, 1],
+]
+
+
 class Axes(Compound):
     def __init__(
         self,
         font_info: FontInfo,
     ) -> None:
         self._num_segments_arrowhead = 100
-        # CMYRGB for 6 axes data in x, y, z, ... ordering
-        self._default_color = [
-            [0, 1, 1, 1],
-            [1, 0, 1, 1],
-            [1, 1, 0, 1],
-            [1, 0, 0, 1],
-            [0, 1, 0, 1],
-            [0, 0, 1, 1],
-        ]
+        self._default_color = AXES_COLORS
 
         # note order is x, y, z for VisPy
         self._line_data2D = np.array(
