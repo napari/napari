@@ -1,42 +1,28 @@
 import numpy as np
+from networkx import Graph as nxGraph
 
-from networkx import Graph
-from napari.layers.base import Layer
-
+from napari.layers._graph._graph_utils import fix_graph_data
 from napari.layers._graph._slice import _GraphSlicingState
+from napari.layers.base import Layer
 
 
 class _Graph(Layer):
-    _data: Graph
+    _data: nxGraph
 
-    def __init__(self, graph: Graph, ndim: int | None = None):
-        inferred_ndim: int | None = self._get_graph_ndim(graph)
+    def __init__(self, data: nxGraph | None = None, ndim: int | None = None):
 
-        if (
-            ndim is not None
-            and inferred_ndim is not None
-            and inferred_ndim != ndim
-        ):
-            raise ValueError(
-                f'The graph nodes dimensions {inferred_ndim} do not match the provided ndim argument {ndim}'
-            )
+        data, ndim = fix_graph_data(data, ndim)
 
-        ndim = (
-            inferred_ndim
-            if inferred_ndim is not None
-            else (2 if ndim is None else ndim)
-        )
-
-        self._data = graph
-        super().__init__(data=graph, ndim=ndim)
+        self._data = data
+        super().__init__(data=data, ndim=ndim)
         self.set_view_slice()
 
     @property
-    def data(self) -> Graph:
+    def data(self) -> nxGraph:
         return self._data
 
     @data.setter
-    def data(self, data: Graph) -> None:
+    def data(self, data: nxGraph) -> None:
         self._data = data
 
     def _get_ndim(self) -> int:
@@ -63,20 +49,6 @@ class _Graph(Layer):
         max_coords = np.max(coordinates, axis=0)
 
         return np.vstack([min_coords, max_coords])
-
-    @staticmethod
-    def _get_graph_ndim(graph: Graph) -> int | None:
-        nodes = list(graph.nodes(data=True))
-
-        if nodes:
-            if not all('coordinates' in node_attr for _, node_attr in nodes):
-                raise ValueError('All nodes need to have coordinates')
-            if len({len(node[1]['coordinates']) for node in nodes}) != 1:
-                raise ValueError(
-                    'All node coordinates need to have the same ndim'
-                )
-
-        return len(nodes[0][1]['coordinates']) if nodes else None
 
     def _get_layer_slicing_state(self, data, cache) -> _GraphSlicingState:
         return _GraphSlicingState(self, data, cache)
