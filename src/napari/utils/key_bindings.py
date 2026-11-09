@@ -183,7 +183,7 @@ def bind_key(
 
     Parameters
     ----------
-    keymap : dict of str: callable
+    keymap : Keymap
         Keymap to modify.
     key_bind : keybinding-like or ...
         Key combination.
