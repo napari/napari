@@ -4,12 +4,17 @@ from networkx import Graph as nxGraph
 from napari.layers.base import Layer
 
 from napari.layers._graph._slice import _GraphSlicingState
-
+from napari.layers._graph._graph_utils import fix_graph_data
 
 class _Graph(Layer):
     _data: nxGraph
 
-    def __init__(self, graph: nxGraph | None, ndim: int | None = None):
+    def __init__(self, data: nxGraph | None, ndim: int | None = None):
+
+        data, ndim = fix_graph_data(data, ndim)
+
+        self._data = data
+        super().__init__(data=data, ndim=ndim)
         self.set_view_slice()
 
     @property
@@ -45,19 +50,6 @@ class _Graph(Layer):
 
         return np.vstack([min_coords, max_coords])
 
-    @staticmethod
-    def _get_graph_ndim(graph: Graph) -> int | None:
-        nodes = list(graph.nodes(data=True))
-
-        if nodes:
-            if not all('coordinates' in node_attr for _, node_attr in nodes):
-                raise ValueError('All nodes need to have coordinates')
-            if len({len(node[1]['coordinates']) for node in nodes}) != 1:
-                raise ValueError(
-                    'All node coordinates need to have the same ndim'
-                )
-
-        return len(nodes[0][1]['coordinates']) if nodes else None
 
     def _get_layer_slicing_state(self, data, cache) -> _GraphSlicingState:
         return _GraphSlicingState(self, data, cache)
