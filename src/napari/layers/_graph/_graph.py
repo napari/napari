@@ -1,42 +1,23 @@
 import numpy as np
 
-from networkx import Graph
+from networkx import Graph as nxGraph
 from napari.layers.base import Layer
 
 from napari.layers._graph._slice import _GraphSlicingState
 
 
 class _Graph(Layer):
-    _data: Graph
+    _data: nxGraph
 
-    def __init__(self, graph: Graph, ndim: int | None = None):
-        inferred_ndim: int | None = self._get_graph_ndim(graph)
-
-        if (
-            ndim is not None
-            and inferred_ndim is not None
-            and inferred_ndim != ndim
-        ):
-            raise ValueError(
-                f'The graph nodes dimensions {inferred_ndim} do not match the provided ndim argument {ndim}'
-            )
-
-        ndim = (
-            inferred_ndim
-            if inferred_ndim is not None
-            else (2 if ndim is None else ndim)
-        )
-
-        self._data = graph
-        super().__init__(data=graph, ndim=ndim)
+    def __init__(self, graph: nxGraph | None, ndim: int | None = None):
         self.set_view_slice()
 
     @property
-    def data(self) -> Graph:
+    def data(self) -> nxGraph:
         return self._data
 
     @data.setter
-    def data(self, data: Graph) -> None:
+    def data(self, data: nxGraph) -> None:
         self._data = data
 
     def _get_ndim(self) -> int:
