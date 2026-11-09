@@ -39,11 +39,9 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self._layer = layer
-        self._layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
-        self._layer.events.opacity.connect(self._on_opacity_change)
-        self._layer.events.colormap.connect(self._on_colormap_change)
+        self._layer.events.selected_label.connect(self._update_color)
+        self._layer.events.opacity.connect(self._update_color)
+        self._layer.events.colormap.connect(self._update_color)
 
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
@@ -52,19 +50,13 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
-        self.color = None
-
-    def _on_selected_label_change(self) -> None:
+    def _update_color(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
-        self.update()
-
-    def _on_opacity_change(self) -> None:
-        """Receive layer model label selection change event & update colorbox."""
-        self.update()
-
-    def _on_colormap_change(self) -> None:
-        """Receive label colormap change event & update colorbox."""
-        self.update()
+        self.color = (
+            None
+            if self._layer._selected_color is None
+            else np.round(255 * self._layer._selected_color).astype(int)
+        )
 
     def paintEvent(self, event) -> None:
         """Paint the colorbox.  If no color, display a checkerboard pattern.
@@ -75,8 +67,7 @@ class QtColorBox(QWidget):
             Event from the Qt context.
         """
         painter = QPainter(self)
-        if self._layer._selected_color is None:
-            self.color = None
+        if self.color is None:
             for i in range(self._height // 4):
                 for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
@@ -89,11 +80,9 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = np.round(255 * self._layer._selected_color).astype(int)
-            painter.setPen(QColor(*list(color)))
-            painter.setBrush(QColor(*list(color)))
+            painter.setPen(QColor(*list(self.color)))
+            painter.setBrush(QColor(*list(self.color)))
             painter.drawRect(0, 0, self._height, self._height)
-            self.color = tuple(color)
 
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.events, self)
