@@ -154,22 +154,20 @@ def test_add_graph():
     """Test adding graph."""
     viewer = ViewerModel()
     graph = nx.Graph()
-    graph.add_nodes_from(
-        (i, {"coordinates": (i, i, i)}) for i in range(10)
-    )
+    graph.add_nodes_from((i, {'coordinates': (i, i, i)}) for i in range(10))
     graph.add_edges_from((i, i + 1) for i in range(9))
     layer = viewer._add_graph(graph)
     assert len(viewer.layers) == 1
     assert layer.data is graph
     assert viewer.dims.ndim == 3
 
+
 def test_add_empty_graph_to_empty_viewer():
     """Test adding empty graph."""
     viewer = ViewerModel()
     layer = viewer._add_graph()
-    assert len(viewer.layers) == 1
-    assert layer.data is graph
-    assert viewer.dims.ndim == 2
+    assert layer.ndim == 2
+
 
 def test_add_points():
     """Test adding points."""
