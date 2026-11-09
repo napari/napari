@@ -14,6 +14,7 @@ from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari._qt.layer_controls.qt_surface_controls import QtSurfaceControls
 from napari._qt.layer_controls.qt_tracks_controls import QtTracksControls
 from napari._qt.layer_controls.qt_vectors_controls import QtVectorsControls
+from napari._qt.widgets.qt_histogram import QtHistogramWidget
 from napari.layers import (
     Image,
     Labels,
@@ -24,6 +25,7 @@ from napari.layers import (
     Vectors,
 )
 from napari.settings import get_settings
+from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
     from napari._qt.layer_controls.qt_layer_controls_base import (
@@ -114,7 +116,8 @@ class QtLayerControlsContainer(QStackedWidget):
         self.viewer.layers.events.removed.connect(self._remove)
         viewer.layers.selection.events.changed.connect(self._populate)
         viewer.dims.events.ndisplay.connect(self._on_ndisplay_changed)
-        viewer.events.theme.connect(self._on_viewer_theme_changed)
+        get_settings().appearance.events.theme.connect(self._on_theme_changed)
+        viewer.events.theme.connect(self._on_theme_changed)
 
     def _on_ndisplay_changed(self, event: Event) -> None:
         """Responds to a change in the dimensionality displayed in the canvas.
@@ -131,33 +134,14 @@ class QtLayerControlsContainer(QStackedWidget):
         if self.panel is not None:
             self.panel.ndisplay = event.value
 
-    def _on_viewer_theme_changed(self, event: Event | None = None) -> None:
-        """Respond to viewer.theme changes from keybindings (Ctrl+Shift+T).
+    def _on_theme_changed(self, event: Event) -> None:
+        """Update widgets that respond to theme in a way that qss cannot handle.
 
-        The ``toggle_theme`` keybinding sets ``viewer.theme`` directly
-        without updating ``settings.appearance.theme``, so widgets that
-        listen only to settings events miss the change. This bridges
-        the gap by forwarding ``event.value`` (the new theme) to any
-        histogram widgets that have been lazily created.
+        Currently, only updates histogram colors.
         """
-        for widget in self.widgets.values():
-            histogram_control = getattr(widget, '_histogram_control', None)
-            if histogram_control is None:
-                continue
-            hist_widget = getattr(histogram_control, 'histogram_widget', None)
-            if hist_widget is not None:
-                hist_widget._on_theme_change(event)
-
-        if self.panel is not None:
-            for widget in self.panel._controls:
-                histogram_control = getattr(widget, '_histogram_control', None)
-                if histogram_control is None:
-                    continue
-                hist_widget = getattr(
-                    histogram_control, 'histogram_widget', None
-                )
-                if hist_widget is not None:
-                    hist_widget._on_theme_change(event)
+        theme = get_theme(event.value)
+        for hist in self.findChildren(QtHistogramWidget):
+            hist._on_theme_change(theme)
 
     def _populate(self) -> None:
         """Change the displayed controls to be those of the target layer.

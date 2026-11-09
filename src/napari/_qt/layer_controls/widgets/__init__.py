@@ -8,9 +8,6 @@ from napari._qt.layer_controls.widgets.qt_face_color import QtFaceColorControl
 from napari._qt.layer_controls.widgets.qt_gamma_slider import (
     QtGammaSliderControl,
 )
-from napari._qt.layer_controls.widgets.qt_histogram_control import (
-    QtHistogramControl,
-)
 from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
     QtMultiscaleLevelControl,
 )
@@ -32,8 +29,6 @@ __all__ = [
     'QtContrastLimitsControl',
     'QtFaceColorControl',
     'QtGammaSliderControl',
-    'QtHistogramControl',
-    'QtInterpolationComboBoxControl',  # pyrefly: ignore [bad-dunder-all]
     'QtMultiscaleLevelControl',
     'QtOpacityBlendingControls',
     'QtProjectionModeControl',
