@@ -689,5 +689,8 @@ authors:
   family-names: Barbosa Soares
   affiliation: Pontifical Catholic University of Rio de Janeiro (PUC-Rio)
   alias: mlaurabs
+- given-names: Shriraj
+  family-names: Jadhav
+  alias: Shriraj1901
 repository-code: https://github.com/napari/napari
 license: BSD-3-Clause
