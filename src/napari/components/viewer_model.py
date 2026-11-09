@@ -48,6 +48,7 @@ from napari.errors import (
     ReaderPluginError,
 )
 from napari.layers import (
+    _Graph,
     Image,
     Labels,
     Layer,
@@ -2101,6 +2102,7 @@ def valid_add_kwargs() -> dict[str, set[str]]:
 
 
 for _layer in (
+    layers._Graph,
     layers.Labels,
     layers.Points,
     layers.Shapes,

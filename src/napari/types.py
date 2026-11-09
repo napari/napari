@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     # register it as a valid type fom magicgui so is passed as string and requires full qualified name to allow
     # magicgui properly register it.
     import dask.array  # noqa: ICN001
+    import networkx as nx
     import zarr
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
@@ -34,6 +35,7 @@ __all__ = [
     'AugmentedWidget',
     'ExcInfo',
     'FullLayerData',
+    '_GraphData',
     'ImageData',
     'LabelsData',
     'LayerData',
@@ -102,7 +104,7 @@ class SampleDict(TypedDict):
 
 ArrayBase = TypeAliasType('ArrayBase', np.ndarray)
 
-
+_GraphData = NewType('GraphData', 'nx.Graph')
 ImageData = NewType('ImageData', np.ndarray)
 LabelsData = NewType('LabelsData', np.ndarray)
 PointsData = NewType('PointsData', np.ndarray)
@@ -111,6 +113,7 @@ SurfaceData = NewType('SurfaceData', tuple[np.ndarray, np.ndarray, np.ndarray])
 TracksData = NewType('TracksData', np.ndarray)
 VectorsData = NewType('VectorsData', np.ndarray)
 _LayerData = Union[
+    _GraphData,
     ImageData,
     LabelsData,
     PointsData,

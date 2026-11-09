@@ -9,7 +9,7 @@ from napari.layers.base import Layer
 class _Graph(Layer):
     _data: nxGraph
 
-    def __init__(self, data: nxGraph | None = None, ndim: int | None = None):
+    def __init__(self, data=None, ndim: int | None = None):
 
         data, ndim = fix_graph_data(data, ndim)
 
