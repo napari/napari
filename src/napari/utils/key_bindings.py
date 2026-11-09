@@ -122,7 +122,9 @@ _VISPY_MODS: dict[keys.Key, KeyMod] = {
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
-def _coerce_keymap(keymap: Mapping[_KeyLike, _KeymapValue]) -> Keymap:
+def _coerce_keymap(
+    keymap: Mapping[_KeyLike, _KeymapValue],
+) -> dict[_KeymapKey, _KeymapValue]:
     """Copy a keymap, coercing every key but the wildcard to a KeyBinding."""
     return {
         k if isinstance(k, EllipsisType) else coerce_keybinding(k): v
@@ -352,7 +354,9 @@ class KeymapProvider:
     bind_key = KeybindingDescriptor(bind_key)
 
 
-def _bind_keymap(keymap: Keymap, instance: object) -> Keymap:
+def _bind_keymap(
+    keymap: Keymap, instance: object
+) -> dict[_KeymapKey, _KeymapValue]:
     """Bind all functions in a keymap to an instance.
 
     Parameters
@@ -367,7 +371,7 @@ def _bind_keymap(keymap: Keymap, instance: object) -> Keymap:
     bound_keymap : dict
         Keymap with functions bound to the instance.
     """
-    bound_keymap: Keymap = {
+    bound_keymap: dict[_KeymapKey, _KeymapValue] = {
         key: func
         if isinstance(func, EllipsisType)
         else MethodType(func, instance)
