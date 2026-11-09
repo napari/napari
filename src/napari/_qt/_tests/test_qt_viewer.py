@@ -895,7 +895,7 @@ def _update_data(
     layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
-    # QtColorBox.color is set in paintEvent, requested by update() on the change
+    # We need to process events to make a screenshot of canvas 
     QApplication.processEvents()
 
     color_box_color = qt_viewer.controls.widgets[
