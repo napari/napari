@@ -401,7 +401,7 @@ class KeymapHandler:
         self,
     ) -> ChainMap[_KeymapKey, _KeymapValue]:
         """collections.ChainMap: Chain of keymaps from keymap providers."""
-        maps = []
+        maps: list[Keymap] = []
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
