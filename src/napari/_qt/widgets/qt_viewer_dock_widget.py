@@ -247,9 +247,6 @@ class QtViewerDockWidget(QDockWidget):
     def setFeatures(self, features):
         super().setFeatures(features)
         self._features = self.features()
-        title = self.titleBarWidget()
-        if isinstance(title, QtCustomTitleBar):
-            title._update_float_button()
 
     def event(self, event):
         if event.type() == QEvent.Type.LayoutRequest:
@@ -413,7 +410,9 @@ class QtCustomTitleBar(QLabel):
         )
         self.float_button.setObjectName('QTitleBarFloatButton')
         self.float_button.setCursor(Qt.CursorShape.ArrowCursor)
-        self.float_button.clicked.connect(self._toggle_floating)
+        self.float_button.clicked.connect(
+            lambda: self.parent().setFloating(not self.parent().isFloating())
+        )
         self.title: QLabel = QLabel(title, self)
         self.title.setSizePolicy(
             QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
@@ -462,25 +461,7 @@ class QtCustomTitleBar(QLabel):
 
         self.setLayout(layout)
         self.setCursor(Qt.CursorShape.OpenHandCursor)
-        self._update_float_button()
         self._update_font_metrics()
-
-    def _toggle_floating(self) -> None:
-        """Toggle floating, unless the dock disallows it."""
-        dock = self.parent()
-        if dock.features() & QDockWidget.DockWidgetFeature.DockWidgetFloatable:
-            dock.setFloating(not dock.isFloating())
-
-    def _update_float_button(self) -> None:
-        """Show the float button only when the dock is floatable."""
-        dock = self.parent()
-        floatable = bool(
-            dock.features() & QDockWidget.DockWidgetFeature.DockWidgetFloatable
-        )
-        self.float_button.setVisible(floatable)
-        self.float_button.setToolTip(
-            'dock this panel' if dock.isFloating() else 'float this panel'
-        )
 
     def _update_font_metrics(self) -> None:
         """Resize the title bar to fit the current font."""
