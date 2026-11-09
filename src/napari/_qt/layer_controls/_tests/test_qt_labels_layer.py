@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
+from napari._tests.utils import skip_local_popups
 from napari.layers import Labels
 from napari.layers.labels._labels_constants import (
     IsoCategoricalGradientMode,
@@ -76,27 +78,33 @@ def test_rendering_combobox(make_labels_controls):
     assert combo.findText(new_mode) == combo.currentIndex()
 
 
-def test_changing_colormap_updates_colorbox(make_labels_controls):
+@skip_local_popups
+def test_changing_colormap_updates_colorbox(
+    make_labels_controls, qtbot, colorbox_painted_colors
+):
     """Test that changing the colormap on a layer will update color swatch in the combo box"""
     layer, qtctrl = make_labels_controls(colormap=_COLOR)
-    color_box = qtctrl._label_control.colorbox
+
+    # QtColorBox is not painted until its window is exposed
+    with qtbot.waitExposed(qtctrl):
+        qtctrl.show()
 
     layer.selected_label = 1
 
-    # For a paint event, which does not occur in a headless qtbot
-    color_box.paintEvent(None)
+    # QtColorBox only requests a repaint with update(). Run the event loop so
+    # that colorbox_painted_colors holds the color which it really painted.
+    QApplication.processEvents()
 
-    np.testing.assert_equal(color_box.color, (255, 255, 255, 255))
+    np.testing.assert_equal(colorbox_painted_colors[-1], (255, 255, 255, 255))
 
     new_colormap = colormap_utils.label_colormap(num_colors=5)
     layer.colormap = new_colormap
 
-    # For a paint event, which does not occur in a headless qtbot
-    color_box.paintEvent(None)
+    QApplication.processEvents()
 
     # compare with the new colormap, as layer._selected_color may be stale
     np.testing.assert_equal(
-        color_box.color,
+        colorbox_painted_colors[-1],
         np.round(np.asarray(new_colormap.map(1)) * 255),
     )
 

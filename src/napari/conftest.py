@@ -673,6 +673,39 @@ def pytest_collection_modifyitems(session, config, items) -> None:
     items[:] = list(chain(*test_order))
 
 
+@pytest.fixture
+def colorbox_painted_colors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[tuple[int, ...]]:
+    """Record the colors that QtColorBox paints with, in painting order.
+
+    The painter still draws, so this observes real paint events. It lets tests
+    check that a change reached the swatch shown to the user, which needs the
+    event loop to run because QtColorBox only requests a repaint with update().
+    """
+    from qtpy.QtGui import QColor, QPainter
+
+    from napari._qt.layer_controls.widgets._labels import qt_label_color
+
+    colors: list[tuple[int, ...]] = []
+
+    class RecordingPainter(QPainter):
+        def __init__(self, device) -> None:
+            super().__init__(device)
+            self._record = type(device).__name__ == 'QtColorBox'
+
+        def setBrush(self, brush) -> None:
+            if self._record:
+                color = QColor(brush)
+                colors.append(
+                    (color.red(), color.green(), color.blue(), color.alpha())
+                )
+            super().setBrush(brush)
+
+    monkeypatch.setattr(qt_label_color, 'QPainter', RecordingPainter)
+    return colors
+
+
 @pytest.hookimpl(wrapper=True)
 def pytest_runtestloop(
     session: pytest.Session,

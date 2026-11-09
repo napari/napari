@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -47,9 +49,19 @@ class QtColorBox(QWidget):
         self.setToolTip('Selected label color')
 
         # The color last drawn by paintEvent, or None for the checkerboard.
-        # It is set while painting on purpose: tests read it to check what
-        # the widget actually rendered, not what the layer currently holds.
-        self.color = None
+        # Only kept for the deprecated color property.
+        self._color: tuple[int, ...] | None = None
+
+    @property
+    def color(self) -> tuple[int, ...] | None:
+        """The color last drawn by paintEvent, or None for the checkerboard."""
+        warnings.warn(
+            'QtColorBox.color is deprecated and will be removed in a future '
+            'release.',
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._color
 
     def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
@@ -73,7 +85,7 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self._layer._selected_color is None:
-            self.color = None
+            self._color = None
             for i in range(self._height // 4):
                 for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
@@ -90,7 +102,7 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
-            self.color = tuple(color)
+            self._color = tuple(color)
 
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.events, self)

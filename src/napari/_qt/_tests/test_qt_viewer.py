@@ -889,18 +889,22 @@ def _update_data(
     layer: Labels,
     label: int,
     qt_viewer: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     dtype: np.dtype = np.uint64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Change layer data and return color of label and middle pixel of screenshot."""
+) -> tuple[tuple[int, ...], np.ndarray]:
+    """Change layer data and return color of label and middle pixel of screenshot.
+
+    ``colorbox_painted_colors`` comes from the fixture of the same name and is
+    updated on each QtColorBox paintEvent.
+    """
     layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
-    # QtColorBox.color is set in paintEvent, which needs the event loop to run
+    # QtColorBox only requests a repaint with update(). Run the event loop so
+    # that colorbox_painted_colors holds the color which it really painted.
     QApplication.processEvents()
 
-    color_box_color = qt_viewer.controls.widgets[
-        layer
-    ]._label_control.colorbox.color
+    color_box_color = colorbox_painted_colors[-1]
     screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
@@ -925,6 +929,7 @@ def qt_viewer_with_controls(qtbot: QtBot, qt_viewer: QtViewer) -> QtViewer:
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_auto(
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ) -> None:
@@ -951,7 +956,11 @@ def test_label_colors_matching_widget_auto(
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
 
         npt.assert_allclose(
@@ -969,6 +978,7 @@ def test_label_colors_matching_widget_auto(
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_direct(
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ):
@@ -996,14 +1006,18 @@ def test_label_colors_matching_widget_direct(
     layer.show_selected_label = use_selection
 
     color_box_color, middle_pixel = _update_data(
-        layer, 0, qt_viewer_with_controls, dtype
+        layer, 0, qt_viewer_with_controls, colorbox_painted_colors, dtype
     )
     assert np.allclose([0, 0, 0, 255], middle_pixel)
 
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
         npt.assert_almost_equal(
             color_box_color, middle_pixel, err_msg=f'{label=}'
