@@ -37,7 +37,7 @@ from __future__ import annotations
 import inspect
 import time
 from collections import ChainMap
-from collections.abc import Callable, Mapping, MutableMapping
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from types import EllipsisType, MethodType
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, overload
 
@@ -271,7 +271,7 @@ def bind_key(
 
 def _vispy2appmodel(event: KeyEvent) -> KeyBinding:
     key: str = event.key.name
-    modifiers: list[keys.Key] = event.modifiers
+    modifiers: Sequence[keys.Key] = event.modifiers
     cond: Callable[[keys.Key], bool]
 
     if len(key) == 1 and key.isalpha():  # it's a letter
