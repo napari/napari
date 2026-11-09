@@ -59,6 +59,8 @@ class QtColorBox(QWidget):
             if self._layer._selected_color is None
             else np.round(255 * self._layer._selected_color).astype(int)
         )
+        # this update is necessary for the swatch to be in sync with the layer!
+        self.update()
 
     def paintEvent(self, event) -> None:
         """Paint the colorbox.  If no color, display a checkerboard pattern.
