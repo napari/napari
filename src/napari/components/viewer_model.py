@@ -79,7 +79,7 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
-from napari.utils._register import create_func as create_add_method
+from napari.utils._register import create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.camera_orientations import (
     HorizontalAxisOrientation,
@@ -2109,4 +2109,4 @@ for _layer in (
     layers.Vectors,
 ):
     func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]
+    setattr(ViewerModel, func.__name__, func)
