@@ -539,6 +539,10 @@ authors:
   affiliation: Aix Marseille University, CNRS, Fresnel, I2M, IBDM, Turing Centre for Living systems
   orcid: https://orcid.org/0009-0004-6070-2263
   alias: jules-vanaret
+- given-names: Sparsh
+  family-names: Vikas
+  affiliation: Dayananda Sagar College of Engineering
+  alias: TheCreeperrr
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
@@ -685,6 +689,10 @@ authors:
   family-names: El Mouss
   affiliation: Turku University of Applied Sciences
   alias: imaddde867
+- given-names: Maria Laura
+  family-names: Barbosa Soares
+  affiliation: Pontifical Catholic University of Rio de Janeiro (PUC-Rio)
+  alias: mlaurabs
 - given-names: Shriraj
   family-names: Jadhav
   alias: Shriraj1901
