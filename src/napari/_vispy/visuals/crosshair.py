@@ -18,11 +18,15 @@ _VERTEX_SHADER = """
 // infinite. The central gap is then discarded in the fragment shader.
 
 attribute float a_idx;  // int attributes not working, so we use a float
+attribute vec4 a_color;  // one color per axis, repeated for both extremities
 
 varying vec2 v_center;
+varying vec4 v_color;
 
 void main()
 {
+    v_color = a_color;
+
     int axis = int(a_idx) / 2;
     float side = (int(mod(a_idx, 2)) == 0) ? -1.0 : 1.0;
 
@@ -74,6 +78,7 @@ void main()
 
 _FRAGMENT_SHADER = """
 varying vec2 v_center;
+varying vec4 v_color;
 
 void main() {
     // gl_FragCoord is in physical pixels; $canvas_size is logical pixels
@@ -85,7 +90,7 @@ void main() {
     if (dist_from_center < $gap / 2.0) {
         discard;
     }
-    gl_FragColor = $color;
+    gl_FragColor = v_color;
 }
 """
 
@@ -123,8 +128,13 @@ class CrosshairVisual(Visual):
 
     @color.setter
     def color(self, value: np.ndarray) -> None:
+        """A single RGBA color, or one RGBA color per axis (x, y, z)."""
         self._color = np.array(value, dtype=np.float32)
-        self.shared_program.frag['color'] = self._color
+        per_axis = np.broadcast_to(self._color, (3, 4))
+        # 2 vertices per axis
+        self.shared_program['a_color'] = VertexBuffer(
+            np.repeat(per_axis, 2, axis=0).astype(np.float32)
+        )
         self.update()
 
     @property

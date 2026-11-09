@@ -102,11 +102,13 @@ class NapariQtNotification(QDialog):
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
-        self.timer = QTimer()
-        self.opacity = QGraphicsOpacityEffect()
+        self.timer = QTimer(parent=self)
+        self.opacity = QGraphicsOpacityEffect(parent=self)
         self.setGraphicsEffect(self.opacity)
-        self.opacity_anim = QPropertyAnimation(self.opacity, b'opacity', self)
-        self.geom_anim = QPropertyAnimation(self, b'geometry', self)
+        self.opacity_anim = QPropertyAnimation(
+            self.opacity, b'opacity', parent=self
+        )
+        self.geom_anim = QPropertyAnimation(self, b'geometry', parent=self)
         self.move_to_bottom_right()
 
     def _update_icon(self, severity: str):
@@ -133,7 +135,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setDuration(self.FADE_IN_RATE)
         self.geom_anim.setStartValue(geom.translated(0, 20))
         self.geom_anim.setEndValue(geom)
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         # fade in
         self.opacity_anim.setDuration(self.FADE_IN_RATE)
         self.opacity_anim.setStartValue(0)
@@ -179,7 +181,7 @@ class NapariQtNotification(QDialog):
         """Expand the notification on double click."""
         self.toggle_expansion()
 
-    def close(self):
+    def close(self, start_next: bool = True):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
@@ -187,6 +189,8 @@ class NapariQtNotification(QDialog):
         with suppress(ValueError):
             # if show is not called, the element is not in list
             notifications.remove(self)
+        if not start_next:
+            return
         if self.parent() is not None:
             if notifications and not notifications[-1].underMouse():
                 notifications[-1].timer_start()
@@ -230,7 +234,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(curr.x(), curr.y() - delta, curr.width(), new_height)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', True)
         self.style().unpolish(self.expand_button)
@@ -245,7 +249,7 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setEndValue(
             QRect(geom.x(), geom.y() + dlt, geom.width(), geom.height() - dlt)
         )
-        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        self.geom_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self.geom_anim.start()
         self.setProperty('expanded', False)
         self.style().unpolish(self.expand_button)
@@ -276,15 +280,17 @@ class NapariQtNotification(QDialog):
         )
         self.message = QElidingLabel()
         self.message.setWordWrap(True)
-        self.message.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.message.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         self.row1.addWidget(self.message, alignment=Qt.AlignmentFlag.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
         self.expand_button.setObjectName('expand_button')
-        self.expand_button.setCursor(Qt.PointingHandCursor)
+        self.expand_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
 
@@ -293,7 +299,7 @@ class NapariQtNotification(QDialog):
         )
         self.close_button = QPushButton(self.row1_widget)
         self.close_button.setObjectName('close_button')
-        self.close_button.setCursor(Qt.PointingHandCursor)
+        self.close_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
 
