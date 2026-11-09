@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -11,8 +13,12 @@ from napari.utils.validators import _validate_increasing, validate_n_seq
 validate_2_tuple = validate_n_seq(2)
 
 if TYPE_CHECKING:
-    from napari.layers._scalar_field.scalar_field import ScalarFieldBase
-    from napari.layers.surface import Surface
+    from collections.abc import Sequence
+
+    from napari.components.overlays import ColorBarOverlay, Overlay
+    from napari.utils.colormaps import Colormap
+    from napari.utils.colormaps.colormap_utils import ValidColormapArg
+    from napari.utils.events import EmitterGroup, EventedDict
 
 
 class IntensityVisualizationMixin:
@@ -28,7 +34,17 @@ class IntensityVisualizationMixin:
     and `contrast_limits` is the visible range (the set values on the widget)
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    if TYPE_CHECKING:
+        # Provided by the layer class this mixin is combined with.
+        events: EmitterGroup
+        _overlays: EventedDict[str, Overlay]
+
+        @property
+        def dtype(self) -> np.dtype: ...
+
+        def _update_thumbnail(self) -> None: ...
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.events.add(
@@ -41,28 +57,28 @@ class IntensityVisualizationMixin:
         self._gamma = 1.0
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        self._contrast_limits: tuple[float | None, float | None] = (
-            None,
-            None,
-        )
-        self._contrast_limits_range: tuple[float | None, float | None] = (
-            None,
-            None,
-        )
-        self._auto_contrast_source = 'slice'
+        # None until the layer sets its limits in __init__
+        self._contrast_limits: tuple[float, float] | None = None
+        self._contrast_limits_range: tuple[float, float] = (0.0, 1.0)
+        self._auto_contrast_source: Literal['data', 'slice'] = 'slice'
         self._auto_contrast = False
 
         # circular import
         from napari.components.overlays import ColorBarOverlay
 
-        self._overlays.update({'colorbar': ColorBarOverlay()})
+        self._colorbar = ColorBarOverlay()
+        self._overlays.update({'colorbar': self._colorbar})
 
-    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
+    def reset_contrast_limits(
+        self, mode: Literal['data', 'slice'] | None = None
+    ) -> None:
         """Scale contrast limits to data range"""
         mode = mode or self._auto_contrast_source
         self.contrast_limits = self._calc_data_range(mode)
 
-    def _calc_data_range(self, mode):
+    def _calc_data_range(
+        self, mode: Literal['data', 'slice']
+    ) -> tuple[float, float]:
         raise NotImplementedError
 
     def reset_contrast_limits_range(
@@ -85,36 +101,38 @@ class IntensityVisualizationMixin:
             self.contrast_limits_range = self._calc_data_range(mode)
 
     @property
-    def colormap(self):
+    def colormap(self) -> Colormap:
         """napari.utils.Colormap: colormap for luminance images."""
         return self._colormap
 
     @colormap.setter
-    def colormap(self, colormap):
+    def colormap(self, colormap: ValidColormapArg) -> None:
         self._set_colormap(colormap)
 
-    def _set_colormap(self, colormap):
+    def _set_colormap(self, colormap: ValidColormapArg) -> None:
         self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
 
     @property
-    def colormaps(self):
+    def colormaps(self) -> tuple[str, ...]:
         """tuple of str: names of available colormaps."""
         return tuple(AVAILABLE_COLORMAPS.keys())
 
     @property
-    def colorbar(self):
+    def colorbar(self) -> ColorBarOverlay:
         """Color Bar overlay."""
-        return self._overlays['colorbar']
+        return self._colorbar
 
     @property
-    def contrast_limits(self):
+    def contrast_limits(self) -> list[float]:
         """list of float: Limits to use for the colormap."""
+        if self._contrast_limits is None:
+            raise RuntimeError('contrast_limits were read before being set')
         return list(self._contrast_limits)
 
     @contrast_limits.setter
-    def contrast_limits(self, contrast_limits):
+    def contrast_limits(self, contrast_limits: Sequence[float]) -> None:
         validate_2_tuple(contrast_limits)
         _validate_increasing(contrast_limits)
         self._contrast_limits_msg = (
@@ -122,22 +140,23 @@ class IntensityVisualizationMixin:
             + ', '
             + format_float(contrast_limits[1])
         )
-        self._contrast_limits = contrast_limits
+        self._contrast_limits = (contrast_limits[0], contrast_limits[1])
         # make sure range slider is big enough to fit range
-        newrange = list(self.contrast_limits_range)
-        newrange[0] = min(newrange[0], contrast_limits[0])
-        newrange[1] = max(newrange[1], contrast_limits[1])
-        self.contrast_limits_range = newrange
+        low, high = self._contrast_limits_range
+        self.contrast_limits_range = [
+            min(low, contrast_limits[0]),
+            max(high, contrast_limits[1]),
+        ]
         self._update_thumbnail()
         self.events.contrast_limits()
 
     @property
-    def contrast_limits_range(self):
+    def contrast_limits_range(self) -> list[float]:
         """The current valid range of the contrast limits."""
         return list(self._contrast_limits_range)
 
     @contrast_limits_range.setter
-    def contrast_limits_range(self, value):
+    def contrast_limits_range(self, value: Sequence[float | None]) -> None:
         """Set the valid range of the contrast limits.
         If either value is "None", the current range will be preserved.
         If the range overlaps the current contrast limits, the range will be set
@@ -147,45 +166,47 @@ class IntensityVisualizationMixin:
         contrast limits will be reset to the new range.
         """
         validate_2_tuple(value)
-        _validate_increasing(value)
-        if list(value) == self.contrast_limits_range:
+        # if either value is "None", it just preserves the current range
+        current_min, current_max = self._contrast_limits_range
+        new_range = (
+            current_min if value[0] is None else value[0],
+            current_max if value[1] is None else value[1],
+        )
+        _validate_increasing(new_range)
+        if list(new_range) == self.contrast_limits_range:
             return
 
-        # if either value is "None", it just preserves the current range
-        current_range = self.contrast_limits_range
-        value = list(value)  # make sure it is mutable
-        for i in range(2):
-            value[i] = current_range[i] if value[i] is None else value[i]
-        self._contrast_limits_range = value
+        self._contrast_limits_range = new_range
         self.events.contrast_limits_range()
 
         # make sure that the contrast limits fit within the new range
         # this also serves the purpose of emitting events.contrast_limits()
         # and updating the views/controllers
-        if hasattr(self, '_contrast_limits') and any(self._contrast_limits):
-            clipped_limits = np.clip(self.contrast_limits, *value)
+        limits = getattr(self, '_contrast_limits', None)
+        if limits is not None:
+            clipped_limits = np.clip(np.asarray(limits), *new_range)
             if clipped_limits[0] < clipped_limits[1]:
                 self.contrast_limits = tuple(clipped_limits)
             else:
-                self.contrast_limits = tuple(value)
+                self.contrast_limits = new_range
 
     @property
-    def gamma(self):
+    def gamma(self) -> float:
         return self._gamma
 
     @gamma.setter
-    def gamma(self, value):
+    def gamma(self, value: float) -> None:
         self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()
 
     @property
-    def auto_contrast(self):
+    def auto_contrast(self) -> bool:
         """bool: Whether to automatically set contrast limits to the data range of each slice."""
         return self._auto_contrast
 
     @auto_contrast.setter
-    def auto_contrast(self, value):
+    def auto_contrast(self, value: bool) -> None:
         self._auto_contrast = bool(value)
         self.events.auto_contrast()
         if self._auto_contrast:
