@@ -51,19 +51,19 @@ if TYPE_CHECKING:
     from vispy.util.event import Event
 
 KeyBindingLike = KeyBinding | str | int
-KeymapFunction = Callable[..., Any]
+_KeymapFunction = Callable[..., Any]
 
 # ``...`` as a key: catch-all for keys no keymap binds; hides later keymaps.
-WildcardKey = EllipsisType
+_WildcardKey = EllipsisType
 # ``...`` as a value: the key does nothing and later keymaps never see it.
-Blocker = EllipsisType
+_Blocker = EllipsisType
 
-KeymapKey = KeyBinding | WildcardKey
-KeymapValue = KeymapFunction | Blocker
-Keymap = MutableMapping[KeymapKey, KeymapValue]
-_KeyLike = TypeVar('_KeyLike', bound=KeyBindingLike | WildcardKey)
+_KeymapKey = KeyBinding | _WildcardKey
+_KeymapValue = _KeymapFunction | _Blocker
+Keymap = MutableMapping[_KeymapKey, _KeymapValue]
+_KeyLike = TypeVar('_KeyLike', bound=KeyBindingLike | _WildcardKey)
 
-_F = TypeVar('_F', bound=KeymapFunction)
+_F = TypeVar('_F', bound=_KeymapFunction)
 
 KEY_SUBS: dict[str, str] = {
     'Super': 'Meta',
@@ -121,7 +121,7 @@ _VISPY_MODS: dict[keys.Key, KeyMod] = {
 KeyBinding.__hash__ = lambda self: hash(str(self))
 
 
-def _coerce_keymap(keymap: Mapping[_KeyLike, KeymapValue]) -> Keymap:
+def _coerce_keymap(keymap: Mapping[_KeyLike, _KeymapValue]) -> Keymap:
     """Copy a keymap, coercing every key but the wildcard to a KeyBinding."""
     return {
         k if isinstance(k, EllipsisType) else coerce_keybinding(k): v
@@ -152,7 +152,7 @@ def coerce_keybinding(key_bind: KeyBindingLike) -> KeyBinding:
 @overload
 def bind_key(
     keymap: Keymap,
-    key_bind: KeyBindingLike | WildcardKey,
+    key_bind: KeyBindingLike | _WildcardKey,
     func: _UNDEFINED = ...,
     *,
     overwrite: bool = ...,
@@ -162,20 +162,20 @@ def bind_key(
 @overload
 def bind_key(
     keymap: Keymap,
-    key_bind: KeyBindingLike | WildcardKey,
-    func: KeymapValue | None,
+    key_bind: KeyBindingLike | _WildcardKey,
+    func: _KeymapValue | None,
     *,
     overwrite: bool = ...,
-) -> KeymapValue | None: ...
+) -> _KeymapValue | None: ...
 
 
 def bind_key(
     keymap: Keymap,
-    key_bind: KeyBindingLike | WildcardKey,
-    func: KeymapValue | _UNDEFINED | None = _UNDEFINED,
+    key_bind: KeyBindingLike | _WildcardKey,
+    func: _KeymapValue | _UNDEFINED | None = _UNDEFINED,
     *,
     overwrite: bool = False,
-) -> Callable[[_F], _F] | KeymapValue | None:
+) -> Callable[[_F], _F] | _KeymapValue | None:
     """Bind a key combination to a keymap.
 
     Parameters
@@ -245,7 +245,7 @@ def bind_key(
 
         return inner
 
-    key: KeymapKey = (
+    key: _KeymapKey = (
         key_bind
         if isinstance(key_bind, EllipsisType)
         else coerce_keybinding(key_bind)
@@ -304,7 +304,7 @@ class KeybindingDescriptor:
         Function to bind.
     """
 
-    def __init__(self, func: KeymapFunction) -> None:
+    def __init__(self, func: _KeymapFunction) -> None:
         self.__func__ = func
 
     def __get__(
@@ -336,7 +336,7 @@ class KeymapProvider:
         return self._keymap
 
     @keymap.setter
-    def keymap(self, value: Mapping[_KeyLike, KeymapValue]) -> None:
+    def keymap(self, value: Mapping[_KeyLike, _KeymapValue]) -> None:
         self._keymap = _coerce_keymap(value)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -394,7 +394,7 @@ class KeymapHandler:
     @property
     def keymap_chain(
         self,
-    ) -> ChainMap[KeymapKey, KeymapValue]:
+    ) -> ChainMap[_KeymapKey, _KeymapValue]:
         """collections.ChainMap: Chain of keymaps from keymap providers."""
         maps = []
 
@@ -408,7 +408,7 @@ class KeymapHandler:
         return ChainMap(*maps)
 
     @property
-    def active_keymap(self) -> dict[KeymapKey, KeymapFunction]:
+    def active_keymap(self) -> dict[_KeymapKey, _KeymapFunction]:
         """dict: Active keymap, created by resolving the keymap chain."""
         active_keymap = self.keymap_chain
         keymaps = active_keymap.maps
