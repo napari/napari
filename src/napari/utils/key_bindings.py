@@ -48,7 +48,7 @@ from vispy.util import keys
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from vispy.util.event import Event
+    from vispy.app.canvas import KeyEvent
 
 KeyBindingLike = KeyBinding | str | int
 _KeymapFunction = Callable[..., Any]
@@ -269,7 +269,7 @@ def bind_key(
     return unbound
 
 
-def _vispy2appmodel(event: Event) -> KeyBinding:
+def _vispy2appmodel(event: KeyEvent) -> KeyBinding:
     key: str = event.key.name
     modifiers: list[keys.Key] = event.modifiers
     cond: Callable[[keys.Key], bool]
@@ -506,7 +506,7 @@ class KeymapHandler:
             pass
         return True
 
-    def on_key_press(self, event: Event) -> None:
+    def on_key_press(self, event: KeyEvent) -> None:
         """Called whenever key pressed in canvas.
 
         OS auto-repeat is delivered like any other press, so a held key
@@ -519,7 +519,7 @@ class KeymapHandler:
 
         Parameters
         ----------
-        event : vispy.util.event.Event
+        event : vispy.app.canvas.KeyEvent
             The vispy key press event that triggered this method.
         """
         if event.key is None:
@@ -539,12 +539,12 @@ class KeymapHandler:
 
         event.handled = self.press_key(kb)
 
-    def on_key_release(self, event: Event) -> None:
+    def on_key_release(self, event: KeyEvent) -> None:
         """Called whenever key released in canvas.
 
         Parameters
         ----------
-        event : vispy.util.event.Event
+        event : vispy.app.canvas.KeyEvent
             The vispy key release event that triggered this method.
         """
         if event.key is None or (
