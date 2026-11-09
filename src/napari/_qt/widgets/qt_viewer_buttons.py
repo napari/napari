@@ -558,9 +558,9 @@ class QtViewerButtons(QFrame):
         row = grid_layout.rowCount()
         self.camera_synced_checkbox = QCheckBox('Sync 2D/3D camera', popup)
         self.camera_synced_checkbox.setChecked(self.viewer.scene.camera.synced)
-        self.camera_synced_checkbox.stateChanged.connect(
+        self.camera_synced_checkbox.toggled.connect(
             lambda checked: setattr(
-                self.viewer.scene.camera, 'synced', bool(checked)
+                self.viewer.scene.camera, 'synced', checked
             )
         )
         synced_help_symbol = help_tooltip(
