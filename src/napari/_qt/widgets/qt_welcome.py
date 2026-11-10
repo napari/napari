@@ -104,9 +104,6 @@ class QtWelcomeWidget(QWidget):
         self._viewer = viewer
         self._viewer.events.theme.connect(self._update_tip_label)
 
-        # set when a refresh was skipped because the widget was not visible
-        self._refresh_pending = False
-
         self.set_tips(tips)
 
         # setup the shortcuts "table"
@@ -195,12 +192,10 @@ class QtWelcomeWidget(QWidget):
         visible the update is postponed until the widget is shown.
         """
         if not self.isVisible():
-            self._refresh_pending = True
             return
         self._refresh()
 
     def _refresh(self) -> None:
-        self._refresh_pending = False
         self.refresh_shortcuts()
         self._update_tip_label()
 
@@ -214,9 +209,8 @@ class QtWelcomeWidget(QWidget):
         event : qtpy.QtGui.QShowEvent
             Event from the Qt context.
         """
+        self._refresh()
         super().showEvent(event)
-        if self._refresh_pending:
-            self._refresh()
 
     def refresh_shortcuts(self, _event=None) -> None:
         """Update the shortcut table using the current runtime bindings."""
