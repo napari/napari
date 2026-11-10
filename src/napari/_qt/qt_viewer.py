@@ -156,7 +156,7 @@ class QtViewer(QSplitter):
     _slice_ready = Signal(object)
 
     # emitted from any thread when a future is done, handled on the main thread
-    _future_ready = Signal(object)
+    _future_ready = Signal(Future)
 
     def __init__(
         self,
