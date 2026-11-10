@@ -52,7 +52,11 @@ if TYPE_CHECKING:
 
     from napari._qt.qt_viewer import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
-    from napari._vispy.overlays.base import VispyBaseOverlay
+    from napari._vispy.mouse_event import VectorF64
+    from napari._vispy.overlays.base import (
+        VispyBaseOverlay,
+        VispyCanvasOverlay,
+    )
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
@@ -1312,8 +1316,8 @@ class VispyCanvas:
             vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
+        self, event_pos: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> VectorF64 | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:
