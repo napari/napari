@@ -18,7 +18,6 @@ from typing import (
 
 from magicgui.widgets import FunctionGui, Widget
 from qtpy.QtWidgets import QWidget
-from superqt import ensure_main_thread
 
 from napari import layers, types, viewer
 from napari._qt._qapp_model.injection._qproviders import (
@@ -26,10 +25,11 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_viewer_or_raise,
 )
 from napari.layers._source import layer_source
-from napari.utils.notifications import notification_manager
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from napari.components import ViewerModel
 
 
 def _add_plugin_dock_widget(
@@ -47,7 +47,7 @@ def _add_plugin_dock_widget(
 def _add_layer_data_tuples_to_viewer(
     data: tuple | list[tuple],
     return_type: Any | None = None,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     source: dict | None = None,
 ) -> None:
     from napari.utils.misc import ensure_list_of_layer_data_tuple
@@ -73,7 +73,7 @@ def _add_layer_data_tuples_to_viewer(
 def _add_layer_data_to_viewer(
     data: Any,
     return_type: Any,
-    viewer: viewer.Viewer | None = None,
+    viewer: ViewerModel | None = None,
     layer_name: str | None = None,
     source: dict | None = None,
     meta: dict | None = None,
@@ -87,7 +87,7 @@ def _add_layer_data_to_viewer(
         *just* the data part of the corresponding layer type.
     return_type : Any
         The return annotation that was used in the decorated function.
-    viewer : Viewer or None
+    viewer : ViewerModel or None
         An optional viewer to use. Otherwise use current viewer.
     layer_name : str or None
         An optional layer name to use. If a layer with this name exists, it will
@@ -141,10 +141,6 @@ def _add_layer_to_viewer(
         viewer.add_layer(layer)
 
 
-# here to prevent garbage collection of the future object while processing.
-_FUTURES: set[Future] = set()
-
-
 def _add_future_data(
     future: Future,
     return_type: Any,
@@ -172,41 +168,15 @@ def _add_future_data(
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
     """
-
-    # when the future is done, add layer data to viewer, dispatching
-    # to the appropriate method based on the Future data type.
-
-    add_kwargs = {
-        'return_type': return_type,
-        'viewer': viewer,
-        'source': source,
-    }
-
-    # The future may finish in a background thread, but GUI objects
-    # must be created on the main thread.
-    @ensure_main_thread
-    def _add_result(f: Future) -> None:
-        try:
-            if f.cancelled():
-                return
-            # Show the error to the user here. If we let it raise, it
-            # would only be printed to the log, or could crash the app.
-            if (exc := f.exception()) is not None:
-                notification_manager.receive_error(
-                    type(exc), exc, exc.__traceback__
-                )
-                return
-            if _from_tuple:
-                _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
-            else:
-                _add_layer_data_to_viewer(f.result(), **add_kwargs)
-        finally:
-            _FUTURES.discard(future)
-
-    # Keep the future first, then add the callback. If the future is
-    # already finished, the callback runs right away and removes it.
-    _FUTURES.add(future)
-    future.add_done_callback(_add_result)
+    if viewer is None:
+        viewer = _provide_viewer_or_raise(
+            msg='Futures cannot be processed in headless mode.',
+        )
+    # The future may finish in a background thread, but layers must be
+    # added on the main thread. The QtViewer takes care of that.
+    viewer.window._qt_viewer._add_future(
+        future, return_type, _from_tuple, source
+    )
 
 
 QPROCESSORS: dict[object, Callable] = {

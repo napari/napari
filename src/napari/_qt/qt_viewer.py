@@ -16,7 +16,7 @@ from typing import (
 from weakref import WeakSet, ref
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl
+from qtpy.QtCore import QCoreApplication, QObject, Qt, QUrl, Signal
 from qtpy.QtGui import (
     QGuiApplication,
     QImage,
@@ -58,12 +58,13 @@ from napari.utils.io import imsave
 from napari.utils.key_bindings import KeymapHandler
 from napari.utils.misc import in_ipython, in_jupyter
 from napari.utils.naming import CallerFrame
-from napari.utils.notifications import show_info
+from napari.utils.notifications import notification_manager, show_info
 
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
+    from concurrent.futures import Future
     from types import FrameType
 
     from napari_console import QtConsole
@@ -153,6 +154,9 @@ class QtViewer(QSplitter):
 
     _instances: ClassVar[WeakSet[QtViewer]] = WeakSet()
 
+    # emitted from any thread when a future is done, handled on the main thread
+    _future_ready = Signal(object)
+
     def __init__(
         self,
         viewer: ViewerModel,
@@ -179,6 +183,8 @@ class QtViewer(QSplitter):
         self._key_map_handler.keymap_providers = [self.viewer]
         self._console_backlog: list[dict[str, Any]] = []
         self._console: QtConsole | None = None
+        # futures whose result is still to be added, see `_add_future`
+        self._futures: dict[Future, tuple[Any, bool, dict | None]] = {}
 
         self._dockLayerList: QtViewerDockWidget | None = None
         self._dockLayerControls: QtViewerDockWidget | None = None
@@ -233,6 +239,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
+        self._future_ready.connect(self._add_result_from_future)
 
         self.setAcceptDrops(True)
 
@@ -653,6 +660,73 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         self._add_layer(layer)
+
+    def _add_future(
+        self,
+        future: Future,
+        return_type: Any,
+        from_tuple: bool,
+        source: dict | None = None,
+    ) -> None:
+        """Add the result of ``future`` to the viewer once it is done.
+
+        The future may finish in a background thread, but layers must be
+        added on the main thread. The done callback only emits
+        ``_future_ready``, whose slot runs on the main thread.
+
+        Parameters
+        ----------
+        future : Future
+            An instance of `concurrent.futures.Future` (or any third-party)
+            object with the same interface, whose result is layer data.
+        return_type : type
+            The return annotation that was used in the decorated function.
+        from_tuple : bool
+            True if the future returns `LayerDataTuple`, False if it returns
+            one of the `LayerData` types.
+        source : dict or None
+            An optional layer source to use.
+        """
+        # Keep the future first, then add the callback. If the future is
+        # already finished, the callback runs right away and removes it.
+        self._futures[future] = (return_type, from_tuple, source)
+        future.add_done_callback(self._on_future_ready)
+
+    def _on_future_ready(self, future: Future) -> None:
+        """Done callback of a future added with `_add_future`.
+
+        This may run in any thread, so it only emits a signal.
+        """
+        self._future_ready.emit(future)
+
+    def _add_result_from_future(self, future: Future) -> None:
+        """Add the result of a finished future to the viewer."""
+        from napari._qt._qapp_model.injection._qprocessors import (
+            _add_layer_data_to_viewer,
+            _add_layer_data_tuples_to_viewer,
+        )
+
+        return_type, from_tuple, source = self._futures.pop(future)
+        if future.cancelled():
+            return
+        # Show the error to the user. If we let it raise, it would only be
+        # printed to the log.
+        if (exc := future.exception()) is not None:
+            notification_manager.receive_error(
+                type(exc), exc, exc.__traceback__
+            )
+            return
+        add_data = (
+            _add_layer_data_tuples_to_viewer
+            if from_tuple
+            else _add_layer_data_to_viewer
+        )
+        add_data(
+            future.result(),
+            return_type=return_type,
+            viewer=self.viewer,
+            source=source,
+        )
 
     def _update_camera_depth(self) -> None:
         """When the layer extents change, update the camera depth.
