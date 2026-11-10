@@ -11,27 +11,27 @@ from napari.utils.migrations import (
 
 @dataclass
 class DummyClass:
-    """Dummy class to test create_func"""
+    """Dummy class to test create_add_method"""
 
     layers: list = field(default_factory=list)
 
 
 class SimpleClass:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
 
     def __init__(self, a):
         self.a = a
 
 
 class _PrivateClass:
-    """Private class to test create_func"""
+    """Private class to test create_add_method"""
 
     def __init__(self, a):
         self.a = a
 
 
 class SimpleClassDeprecated:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
 
     @deprecated_constructor_arg_by_attr('b')
     @deprecated_constructor_arg_by_attr('c')
@@ -56,7 +56,7 @@ class SimpleClassDeprecated:
 
 
 class SimpleClassRenamed:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
 
     @rename_argument(
         from_name='c',
