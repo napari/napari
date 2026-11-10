@@ -65,6 +65,16 @@ def compute_nice_ticks(
 ) -> tuple[np.ndarray, int]:
     """Compute round tick values spanning a range.
 
+    Parameters
+    ----------
+    min_value : float
+        Lower bound of the range the ticks should span.
+    max_value : float
+        Upper bound of the range the ticks should span.
+    target_ticks : int, optional
+        Desired number of ticks, by default 5. The actual number may
+        differ, since ticks are restricted to round values.
+
     Returns
     -------
     ticks : np.ndarray
