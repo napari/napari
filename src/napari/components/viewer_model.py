@@ -22,9 +22,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-
-# This cannot be condition to TYPE_CHECKING or the stubgen fails
-# with undefined Context.
 from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import deprecated
 
