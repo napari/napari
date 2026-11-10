@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -53,21 +52,6 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
-        # The color last drawn by paintEvent, or None for the checkerboard.
-        # Only kept for the deprecated color property.
-        self._color: tuple[int, ...] | None = None
-
-    @property
-    def color(self) -> tuple[int, ...] | None:
-        """The color last drawn by paintEvent, or None for the checkerboard."""
-        warnings.warn(
-            'QtColorBox.color is deprecated and will be removed in a future '
-            'release.',
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._color
-
     def _on_selected_label_change(self) -> None:
         """Receive layer model label selection change event & update colorbox."""
         self.update()
@@ -90,7 +74,6 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self._layer._selected_color is None:
-            self._color = None
             for i in range(self._height // 4):
                 for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
@@ -107,7 +90,6 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
-            self._color = tuple(color)
 
     def disconnect_widget_controls(self) -> None:
         disconnect_events(self._layer.events, self)
