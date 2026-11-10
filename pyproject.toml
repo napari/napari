@@ -74,7 +74,7 @@ dependencies = [
     "tifffile>=2022.7.28",
     "toolz>=0.12.1",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.12",
+    "typing-extensions>=4.14",
     "vispy>=0.17.0,<0.18",
     "wrapt>=1.14.1",
 ]
@@ -603,7 +603,6 @@ project-excludes = [
     'src/napari/_vispy/canvas.py',
     'src/napari/components/layerlist.py',
     'src/napari/layers/_layer_actions.py',
-    'src/napari/layers/_multiscale_data.py',
     'src/napari/layers/intensity_mixin.py',
     'src/napari/layers/points/points.py',
     'src/napari/layers/shapes/_shapes_mouse_bindings.py',
@@ -615,7 +614,6 @@ project-excludes = [
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',
-    'src/napari/utils/key_bindings.py',
     'src/napari/utils/transforms/transforms.py',
 ]
 
