@@ -221,7 +221,7 @@ def rename_argument(
         )
         if renamed_arguments is None:
             renamed_arguments = []
-            func._rename_argument = renamed_arguments
+            setattr(func, '_rename_argument', renamed_arguments)  # noqa: B010
 
         renamed_arguments.append(
             _RenamedAttribute(
@@ -375,7 +375,11 @@ def deprecated_constructor_arg_by_attr(
         )
         if deprecated_constructor_args is None:
             deprecated_constructor_args = []
-            func._deprecated_constructor_args = deprecated_constructor_args
+            setattr(  # noqa: B010
+                func,
+                '_deprecated_constructor_args',
+                deprecated_constructor_args,
+            )
         deprecated_constructor_args.append(name)
 
         @wraps(func)
