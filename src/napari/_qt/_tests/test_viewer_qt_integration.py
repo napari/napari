@@ -14,6 +14,7 @@ from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
@@ -242,13 +243,13 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         )
 
 
-def test_welcome_widget_defers_refresh_while_hidden(make_napari_viewer):
-    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
-    welcome = viewer.window._qt_viewer._welcome_widget
+def test_welcome_widget_defers_refresh_while_hidden(qtbot, viewer_model):
+    welcome = QtWelcomeWidget(None, viewer_model)
+    qtbot.addWidget(welcome)
+    assert not welcome.isVisible()
     welcome._current_tip = (
         'Open files with {napari.window.file.open_files_dialog}.'
     )
-    welcome.hide()
 
     with (
         patch(

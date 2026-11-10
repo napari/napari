@@ -238,9 +238,7 @@ class QtWelcomeWidget(QWidget):
 
     def set_welcome_visible(self, visible: bool = True) -> None:
         if visible:
-            self.refresh_shortcuts()
             self.show_random_tip()
-            self._refresh_pending = False
             self._sync_to_parent()
             self.show()
             self.raise_()
