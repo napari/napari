@@ -42,6 +42,15 @@ repos:
     entry: python tools/check_citation_authors.py check-order
     pass_filenames: false
     files: ^(CITATION\.cff|tools/check_citation_authors\.py)$
+  # cffconvert's own hook is not in a release yet, so define it locally
+  - id: validate-cff
+    name: validate CITATION.cff schema
+    language: python
+    additional_dependencies:
+    - cffconvert==2.0.0
+    entry: cffconvert --validate
+    pass_filenames: false
+    files: ^CITATION\.cff$
   - id: check-groups-vs-extras
     name: check that all group names in pyproject.toml are in extras
     language: python
