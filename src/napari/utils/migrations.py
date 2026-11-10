@@ -4,10 +4,14 @@ import inspect
 import warnings
 from collections import UserDict
 from functools import wraps
-from typing import TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, Any, NamedTuple, ParamSpec, Self, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+F = TypeVar('F', bound='Callable[..., Any]')
+P = ParamSpec('P')
+R = TypeVar('R')
 
 _UNSET = object()
 
@@ -194,7 +198,7 @@ class _RenamedAttribute(NamedTuple):
 
 def rename_argument(
     from_name: str, to_name: str, version: str, since_version: str = ''
-) -> Callable:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     This is decorator for simple rename function argument
     without break backward compatibility.
@@ -211,11 +215,15 @@ def rename_argument(
         version when new argument was added
     """
 
-    def _wrapper(func):
-        if not hasattr(func, '_rename_argument'):
-            func._rename_argument = []
+    def _wrapper(func: Callable[P, R]) -> Callable[P, R]:
+        renamed_arguments: list[_RenamedAttribute] | None = getattr(
+            func, '_rename_argument', None
+        )
+        if renamed_arguments is None:
+            renamed_arguments = []
+            func._rename_argument = renamed_arguments
 
-        func._rename_argument.append(
+        renamed_arguments.append(
             _RenamedAttribute(
                 from_name=from_name,
                 to_name=to_name,
@@ -225,7 +233,7 @@ def rename_argument(
         )
 
         @wraps(func)
-        def _update_from_dict(*args, **kwargs):
+        def _update_from_dict(*args: Any, **kwargs: Any):
             if from_name in kwargs:
                 if to_name in kwargs:
                     raise ValueError(
@@ -341,7 +349,9 @@ def add_deprecated_property(
     return _func
 
 
-def deprecated_constructor_arg_by_attr(name: str) -> Callable:
+def deprecated_constructor_arg_by_attr(
+    name: str,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator to deprecate a constructor argument and remove it from the signature.
 
@@ -359,13 +369,17 @@ def deprecated_constructor_arg_by_attr(name: str) -> Callable:
         decorated function
     """
 
-    def wrapper(func):
-        if not hasattr(func, '_deprecated_constructor_args'):
-            func._deprecated_constructor_args = []
-        func._deprecated_constructor_args.append(name)
+    def wrapper(func: Callable[P, R]) -> Callable[P, R]:
+        deprecated_constructor_args: list[str] | None = getattr(
+            func, '_deprecated_constructor_args', None
+        )
+        if deprecated_constructor_args is None:
+            deprecated_constructor_args = []
+            func._deprecated_constructor_args = deprecated_constructor_args
+        deprecated_constructor_args.append(name)
 
         @wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: Any, **kwargs: Any):
             value = _UNSET
             if name in kwargs:
                 value = kwargs.pop(name)

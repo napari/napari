@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from inspect import Parameter, getdoc, signature
-from typing import TYPE_CHECKING, Concatenate, cast
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
     from napari.components import ViewerModel
     from napari.layers import Layer
+
+P = ParamSpec('P')
+L = TypeVar('L', bound='Layer')
 
 
 tmpl_path = os.path.join(
@@ -25,8 +28,8 @@ with open(tmpl_path) as f:
 
 
 def create_add_method(
-    cls: type[Layer], name: str | None = None, doc: str | None = None
-) -> Callable[Concatenate[ViewerModel, ...], Layer]:
+    cls: Callable[P, L], name: str | None = None, doc: str | None = None
+) -> Callable[Concatenate[ViewerModel, P], L]:
     """
     Creates a method (such as `add_<layer>`) to add a layer to the viewer
 
@@ -99,9 +102,7 @@ def create_add_method(
     execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
-    func = cast(
-        'Callable[Concatenate[ViewerModel, ...], Layer]', execdict[name]
-    )
+    func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
 
     func.__doc__ = doc
     func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]
