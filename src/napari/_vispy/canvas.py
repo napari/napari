@@ -23,7 +23,11 @@ from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay, TiledCanvasOverlay
+from napari.components.overlays import (
+    CanvasOverlay,
+    SceneOverlay,
+    TiledCanvasOverlay,
+)
 from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
@@ -921,18 +925,19 @@ class VispyCanvas:
     def _defer_tiled_overlay_position_update(self):
         self._needs_overlay_position_update = True
 
-    def _connect_tiled_overlay_events(self, overlay: Overlay) -> None:
+    def _connect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.connect(
             self._update_tiled_overlay_positions, unique=True
         )
         overlay.events.visible.connect(
             self._update_tiled_overlay_positions, unique=True
         )
-        overlay.events.gridded.connect(
-            self._update_viewer_overlays, unique=True
-        )
 
-    def _disconnect_tiled_overlay_events(self, overlay: Overlay) -> None:
+    def _disconnect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.disconnect(
             self._update_tiled_overlay_positions
         )
@@ -984,18 +989,20 @@ class VispyCanvas:
                 continue
             overlay.events.visible.disconnect(self._update_viewer_overlays)
 
-            canvas_overlay = isinstance(overlay, CanvasOverlay)
-            if canvas_overlay:
+            is_tiled_overlay = isinstance(overlay, TiledCanvasOverlay)
+            if is_tiled_overlay:
                 self._connect_tiled_overlay_events(overlay)
 
             vispy_overlays = self._viewer_overlay_to_visual.setdefault(
                 overlay, []
             )
 
-            # NOTE: scene overlays and nontiling canvas ones are always gridded!
+            # NOTE: scene overlays are always "gridded",
+            #       meaning they are always duplicated in each grid view!
+            is_scene_overlay = isinstance(overlay, SceneOverlay)
             gridded = (
                 self.viewer.canvas.grid.enabled
-                and (not canvas_overlay or overlay.gridded)
+                and (is_scene_overlay or overlay.gridded)
                 and len(self.viewer.layers)
             )
 
@@ -1023,7 +1030,7 @@ class VispyCanvas:
                     vispy_overlay = self._create_or_update_vispy_overlay(
                         overlay=overlay,
                         vispy_overlay=vispy_overlay,
-                        parent=viewbox if canvas_overlay else viewbox.scene,
+                        parent=viewbox if is_tiled_overlay else viewbox.scene,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -1033,7 +1040,7 @@ class VispyCanvas:
                 vispy_overlay = self._create_or_update_vispy_overlay(
                     overlay=overlay,
                     vispy_overlay=vispy_overlay,
-                    parent=viewbox if canvas_overlay else viewbox.scene,
+                    parent=viewbox.scene if is_scene_overlay else viewbox,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
