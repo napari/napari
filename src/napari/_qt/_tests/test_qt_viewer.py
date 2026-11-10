@@ -30,6 +30,10 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer, Points
 from napari.settings import get_settings
+from napari.utils.camera_orientations import (
+    AxesOrientation2D,
+    AxesOrientation3D,
+)
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 
@@ -570,6 +574,95 @@ def test_canvas_to_world_grid_spacing(
         np.testing.assert_allclose(
             viewer_model.canvas_to_world(center_px, (0, col)), expected
         )
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('down', 'right'), (50, 100)),
+        (('up', 'right'), (-50, 100)),
+        (('down', 'left'), (50, -100)),
+        (('up', 'left'), (-50, -100)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_2d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation2D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 2D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 2
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (6, 7)
+    camera.zoom = 2
+    camera.orientation2d = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with zoom=2, the (100, 200) canvas offset maps to (50, 100) before
+    # applying the vertical and horizontal orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('towards', 'down', 'right'), (100, -50)),
+        (('towards', 'up', 'right'), (100, 50)),
+        (('towards', 'down', 'left'), (-100, -50)),
+        (('towards', 'up', 'left'), (-100, 50)),
+        (('away', 'down', 'right'), (100, -50)),
+        (('away', 'up', 'right'), (100, 50)),
+        (('away', 'down', 'left'), (-100, -50)),
+        (('away', 'up', 'left'), (-100, 50)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_3d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation3D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 3D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (5, 6, 7)
+    camera.zoom = 2
+    camera.angles = (90, 0, 0)
+    camera.orientation = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with angles=(90, 0, 0), the (100, 200) canvas offset maps to (100, -50)
+    # before applying the orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison (projected on camera center plane always)
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+def test_canvas_to_world_2d_data_with_3d_viewer(
+    viewer_model: ViewerModel,
+) -> None:
+    """The position should map back onto existing dims."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    middle_of_canvas = (400, 600)
+    middle_of_image = (4.5, 4.5)
+    world_pos = viewer_model.canvas_to_world(middle_of_canvas)
+    # special case that needs special fixing. Before fix, we'd end up
+    # with (0, 4.5) because it embedded as `(0, 4.5, 4.5)` and then dropped
+    # the last dim
+    np.testing.assert_allclose(world_pos, middle_of_image)
 
 
 @pytest.mark.usefixtures(

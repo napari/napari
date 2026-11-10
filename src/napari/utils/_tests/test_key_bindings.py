@@ -546,3 +546,16 @@ def test_release_clears_pending_hold_state():
 
     _press(handler, 'A', held_for=2)
     assert len(presses) == 3
+
+
+def test_modifier_key_pressed_with_other_modifiers():
+    """Count a pressed modifier key once when other modifiers are held."""
+    handler, Foo = _handler_with_provider()
+    presses = []
+
+    @Foo.bind_key('Shift+Alt')
+    def _count(x):
+        presses.append(1)
+
+    _press(handler, 'Alt', held_for=0, modifiers=[keys.SHIFT, keys.ALT])
+    assert len(presses) == 1
