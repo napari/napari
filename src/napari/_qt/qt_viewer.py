@@ -62,7 +62,7 @@ from napari.utils.notifications import notification_manager, show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Generator, Sequence
+    from collections.abc import Generator, Sequence
     from concurrent.futures import Future
     from types import FrameType
 
