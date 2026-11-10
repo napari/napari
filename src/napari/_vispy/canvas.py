@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 from weakref import WeakSet
 
 import numpy as np
@@ -1137,7 +1137,9 @@ class VispyCanvas:
         free-floating (such as the cursor overlay), so those are skipped
         """
 
-        def is_visible_tileable(overlay):
+        def is_visible_tileable(
+            overlay: Overlay,
+        ) -> TypeGuard[TiledCanvasOverlay]:
             return overlay.visible and isinstance(overlay, TiledCanvasOverlay)
 
         def is_gridded(overlay: CanvasOverlay) -> bool:
