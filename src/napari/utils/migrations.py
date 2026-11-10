@@ -212,7 +212,12 @@ def rename_argument(
     version : str
         version when old argument will be removed
     since_version : str
-        version when new argument was added
+        Version in which the old argument name was deprecated.
+
+    Returns
+    -------
+    function
+        a wrapper function that will handle the rename and issue a warning when the old argument is used.
     """
 
     def _wrapper(func: Callable[P, R]) -> Callable[P, R]:
@@ -366,7 +371,8 @@ def deprecated_constructor_arg_by_attr(
     Returns
     -------
     function
-        decorated function
+        a decorator function that will handle the deprecation and remove the argument from
+        the arguments passed by name if provided.
     """
 
     def wrapper(func: Callable[P, R]) -> Callable[P, R]:
