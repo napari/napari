@@ -14,9 +14,9 @@ class SurfaceVisual(ClippingPlanesMixin, Mesh):
 
     def __init__(self, *args, **kwargs) -> None:
         self.wireframe_filter = WireframeFilter()
-        self.face_normals = None
-        self.vertex_normals = None
+        self.face_normals = MeshNormals(primitive='face')
+        self.vertex_normals = MeshNormals(primitive='vertex')
         super().__init__(*args, **kwargs)
-        self.face_normals = MeshNormals(primitive='face', parent=self)
-        self.vertex_normals = MeshNormals(primitive='vertex', parent=self)
         self.attach(self.wireframe_filter)
+        self.face_normals.parent = self
+        self.vertex_normals.parent = self

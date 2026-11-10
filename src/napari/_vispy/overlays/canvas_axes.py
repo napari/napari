@@ -7,7 +7,7 @@ from vispy.util.quaternion import Quaternion
 
 from napari._vispy.camera import (
     MouseToggledArcballCamera,
-    get_vispy_flipped_axes,
+    _get_vispy_flipped_axes,
     napari_angles_to_vispy_quat,
 )
 from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
@@ -51,6 +51,7 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.labels.connect(self._on_labels_text_change)
         self.overlay.events.arrows.connect(self._on_data_change)
         self.overlay.events.size.connect(self._on_size_change)
+        self.overlay.events.font_size.connect(self._on_font_size_change)
 
         self.viewer.events.theme.connect(self._on_data_change)
         self.viewer.dims.events.order.connect(self._on_data_change)
@@ -105,13 +106,20 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
         self.node.axes.text.text = axis_labels
         self.node.axes.text.visible = self.overlay.labels
 
+    def _on_font_size_change(self) -> None:
+        self.node.axes.text.font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else self._default_font_size
+        )
+
     def _on_angles_change(self) -> None:
         """Update rotation from camera angles."""
 
         # ensure camera flip is the same as napari camera
         ndisplay = self.viewer.dims.ndisplay
-        flipped_axes = get_vispy_flipped_axes(
-            self.viewer.scene.camera, ndisplay=ndisplay
+        flipped_axes = _get_vispy_flipped_axes(
+            self.viewer.scene.camera.orientation, ndisplay=ndisplay
         )
         self.node.camera.flip = list(flipped_axes)
 
@@ -126,7 +134,8 @@ class VispyCanvasAxesOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
             )
         else:
             quat = napari_angles_to_vispy_quat(
-                self.viewer.scene.camera.angles, flipped_axes
+                self.viewer.scene.camera.angles,
+                self.viewer.scene.camera.orientation,
             )
             self.node.camera.set_state(
                 _quaternion=quat,

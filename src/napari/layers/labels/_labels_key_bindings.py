@@ -129,10 +129,7 @@ def increase_label_id(layer: Labels) -> None:
         show_warning(f'{e.text}\n{CONVERT_TEXT}')
 
 
-@register_label_action(
-    'Decrease the paint brush size by one',
-    repeatable=True,
-)
+@register_label_action('Decrease the paint brush size by one')
 def decrease_brush_size(layer: Labels) -> None:
     """Decrease the brush size"""
     if (
@@ -142,10 +139,7 @@ def decrease_brush_size(layer: Labels) -> None:
         layer.brush_size -= 1
 
 
-@register_label_action(
-    'Increase the paint brush size by one',
-    repeatable=True,
-)
+@register_label_action('Increase the paint brush size by one')
 def increase_brush_size(layer: Labels) -> None:
     """Increase the brush size"""
     layer.brush_size += 1
@@ -193,7 +187,7 @@ def reset_polygon(layer: Labels) -> None:
 )
 def complete_polygon(layer: Labels) -> None:
     """Complete the drawing of the current polygon."""
-    # Because layer._overlays has type Overlay, mypy doesn't know that
+    # Because layer._overlays has type Overlay, pyrefly doesn't know that
     # ._overlays["polygon"] has type LabelsPolygonOverlay, so type ignore for now
     # TODO: Improve typing of layer._overlays to fix this
     from napari.components.overlays.labels_polygon import (

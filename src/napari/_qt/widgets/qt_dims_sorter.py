@@ -18,7 +18,7 @@ def set_dims_order(dims: Dims, order: tuple[int, ...]) -> None:
         New dimension order.
     """
     if type(order[0]) is AxisModel:
-        order = tuple(a.axis for a in order)
+        order = tuple(a.axis for a in order)  # pyrefly: ignore [missing-attribute]
     dims.order = order
 
 

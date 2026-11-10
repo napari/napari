@@ -8,6 +8,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     _FeatureTable,
+    _unique_element,
     calc_data_range,
     coerce_current_properties,
     compute_multiscale_level,
@@ -165,13 +166,96 @@ def test_calc_data_range():
     np.testing.assert_array_equal(clim, (0, 255))
 
 
+def test_calc_data_range_percentiles_ignore_outliers():
+    data = np.arange(101, dtype=float)  # 0, 1, ..., 100
+    data[-1] = 60_000  # one outlier
+    assert calc_data_range(data) == (0, 60_000)
+    assert calc_data_range(data, percentiles=(1, 99)) == (1, 99)
+
+
+@pytest.mark.parametrize('shape', [(20, 30), (5, 20, 30)])
+def test_calc_data_range_percentiles_0_100_is_min_max(shape):
+    data = np.arange(np.prod(shape), dtype=float).reshape(shape)
+    assert calc_data_range(data, percentiles=(0, 100)) == calc_data_range(data)
+
+
+def test_calc_data_range_percentiles_ignore_non_finite():
+    data = np.array([np.nan, np.inf, -np.inf, *range(101)], dtype=float)
+    assert calc_data_range(data, percentiles=(1, 99)) == (1, 99)
+    # no finite values at all: same fallback as without percentiles
+    all_nan = np.full(10, np.nan)
+    assert calc_data_range(all_nan, percentiles=(1, 99)) == (0, 1)
+
+
+def test_calc_data_range_percentiles_uint8():
+    """uint8 data always uses the full (0, 255) range, as without percentiles."""
+    data = np.full((10, 10), 20, dtype=np.uint8)
+    np.testing.assert_array_equal(
+        calc_data_range(data, percentiles=(1, 99)), (0, 255)
+    )
+
+
+@pytest.mark.parametrize('dtype', [float, np.uint8])
+@pytest.mark.parametrize(
+    'percentiles', [(99, 1), (50, 50), (-1, 99), (1, 101)]
+)
+def test_calc_data_range_invalid_percentiles(percentiles, dtype):
+    with pytest.raises(ValueError, match='percentiles'):
+        calc_data_range(
+            np.zeros((10, 10), dtype=dtype), percentiles=percentiles
+        )
+
+
+def test_calc_data_range_percentiles_bool():
+    data = np.eye(4, dtype=bool)
+    assert calc_data_range(data, percentiles=(1, 99)) == (0, 1)
+
+
+@pytest.mark.parametrize(
+    ('data', 'expected'),
+    [
+        # one -30_000 among 30_000s: the low percentile is interpolated
+        (
+            np.array([-30_000] + [30_000] * 99, dtype=np.int16),
+            (29_400, 30_000),
+        ),
+        (np.array([-60_000, 60_000], dtype=np.float16), (-58_800, 58_800)),
+    ],
+    ids=['int16', 'float16'],
+)
+def test_calc_data_range_percentiles_no_overflow(data, expected):
+    """The percentile interpolation must not overflow in small dtypes."""
+    np.testing.assert_allclose(
+        calc_data_range(data, percentiles=(1, 99)), expected
+    )
+
+
+def test_calc_data_range_percentiles_pooled_samples():
+    """For large data, percentiles are computed on all the samples together."""
+    data = da.arange(20_000_000, dtype=float, chunks=1_000_000)
+    center = 10_000_000
+    # the samples used for large 1D data: start, middle and end
+    samples = np.concatenate(
+        [
+            np.arange(0, 4096),
+            np.arange(center - 2048, center + 2048),
+            np.arange(20_000_000 - 4096, 20_000_000),
+        ]
+    )
+    expected = np.percentile(samples, (1, 99))
+    np.testing.assert_allclose(
+        calc_data_range(data, percentiles=(1, 99)), expected
+    )
+
+
+@pytest.mark.parametrize('percentiles', [None, (1, 99)])
 @pytest.mark.parametrize(
     'data',
     [data_dask_8b, data_dask, data_dask_1d, data_dask_1d_rgb, data_dask_plane],
 )
-def test_calc_data_range_fast(data):
+def test_calc_data_range_fast(data, percentiles):
     now = time.monotonic()
-    val = calc_data_range(data)
+    val = calc_data_range(data, percentiles=percentiles)
     assert len(val) > 0
     elapsed = time.monotonic() - now
     assert elapsed < 5, 'test took too long, computation was likely not lazy'
@@ -243,6 +327,81 @@ def test_segment_normal_3d():
 
     unit_norm = segment_normal(a, b, p)
     np.testing.assert_array_equal(unit_norm, np.array([0, 0, -1]))
+
+
+@pytest.mark.parametrize(
+    ('array', 'expected'),
+    [
+        (np.array([]), None),
+        (np.array([1]), 1),
+        (np.array([1, 1, 1]), 1),
+        (np.array([1, 2, 1]), None),
+    ],
+)
+def test_unique_element_scalar(array, expected):
+    result = _unique_element(array)
+    if expected is None:
+        assert result is None
+    else:
+        assert result == expected
+
+
+def test_unique_element_single_list_valued_element():
+    # https://github.com/napari/napari/issues/9379
+    # A single selected point has no ambiguity: its list-valued feature
+    # is trivially "unique" and should be returned, not treated as
+    # unknown.
+    array = np.empty(1, dtype=object)
+    array[0] = [1, 2, 3]
+    assert _unique_element(array) == [1, 2, 3]
+
+
+def test_unique_element_multiple_identical_list_valued_elements():
+    array = np.empty(3, dtype=object)
+    array[:] = [[1, 2], [1, 2], [1, 2]]
+    assert _unique_element(array) == [1, 2]
+
+
+def test_unique_element_multiple_differing_list_valued_elements():
+    array = np.empty(3, dtype=object)
+    array[:] = [[1, 2], [3, 4], [1, 2]]
+    assert _unique_element(array) is None
+
+
+def test_unique_element_single_ndarray_valued_element():
+    # e.g. a single selected point's RGBA color, stored as an object
+    # array of 1D arrays.
+    array = np.empty(1, dtype=object)
+    array[0] = np.array([1.0, 0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(_unique_element(array), [1.0, 0.0, 0.0, 1.0])
+
+
+def test_unique_element_multiple_identical_ndarray_valued_elements():
+    array = np.empty(2, dtype=object)
+    array[0] = np.array([1.0, 0.0, 0.0, 1.0])
+    array[1] = np.array([1.0, 0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(_unique_element(array), [1.0, 0.0, 0.0, 1.0])
+
+
+def test_unique_element_multiple_ragged_ndarray_valued_elements():
+    # Differently-shaped elements must not raise a broadcasting error;
+    # they are simply not unique.
+    array = np.empty(2, dtype=object)
+    array[0] = np.array([1.0, 0.0])
+    array[1] = np.array([1.0, 0.0, 0.0])
+    assert _unique_element(array) is None
+
+
+def test_unique_element_2d_array_rows():
+    # The common real case: border_color/face_color stored directly as
+    # an (N, 4) float array, not an object array of sub-arrays.
+    identical = np.array([[1.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
+    np.testing.assert_array_equal(
+        _unique_element(identical), [1.0, 0.0, 0.0, 1.0]
+    )
+
+    differing = np.array([[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0]])
+    assert _unique_element(differing) is None
 
 
 def test_dataframe_to_properties():

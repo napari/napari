@@ -29,7 +29,7 @@ class ContextMapping(collections.abc.Mapping):
     `ContextMapping` object.
     """
 
-    def __init__(self, initial_values: collections.abc.Mapping | None):
+    def __init__(self, initial_values: collections.abc.Mapping | None) -> None:
         self._initial_context_mapping = initial_values or {}
         self._evaluated_context_mapping: dict[str, Any] = {}
 
@@ -44,10 +44,10 @@ class ContextMapping(collections.abc.Mapping):
         self._evaluated_context_mapping[key] = value
         return value
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         return item in self._initial_context_mapping
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._initial_context_mapping)
 
     def __iter__(self):
@@ -69,10 +69,10 @@ class SettingsAwareContext(Context):
         self._settings = get_settings()
         self._settings.events.changed.connect(self._update_key)
 
-    def _update_key(self, event: Event):
+    def _update_key(self, event: Event) -> None:
         self.changed.emit({f'{self._PREFIX}{event.key}'})
 
-    def __del__(self):
+    def __del__(self) -> None:
         self._settings.events.changed.disconnect(self._update_key)
 
     def __missing__(self, key: str) -> Any:
@@ -87,13 +87,13 @@ class SettingsAwareContext(Context):
                 return val
         return super().__missing__(key)
 
-    def new_child(self, m: dict | None = None) -> Context:  # type: ignore
+    def new_child(self, m: dict | None = None) -> Context:  # pyrefly: ignore [bad-override]
         """New ChainMap with a new map followed by all previous maps.
 
         If no map is provided, an empty dict is used.
         """
         # important to use self, not *self.maps
-        return Context(m or {}, self)  # type: ignore
+        return Context(m or {}, self)
 
     def __setitem__(self, k: str, v: Any) -> None:
         if k.startswith(self._PREFIX):
@@ -101,7 +101,7 @@ class SettingsAwareContext(Context):
 
         return super().__setitem__(k, v)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         # settings mappings are always populated, so we can always return True
         return True
 

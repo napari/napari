@@ -17,9 +17,9 @@ class QtWrap:
 
     def add_control(self, control: T) -> T:
         self._controls.append(control)
-        for label, widget in control.get_widget_controls():
-            self._qtbot.add_widget(widget)
-            self._qtbot.add_widget(label)
+        for widgets in control.get_widget_controls():
+            for widget in widgets:
+                self._qtbot.add_widget(widget)
         return control
 
     def clear(self):

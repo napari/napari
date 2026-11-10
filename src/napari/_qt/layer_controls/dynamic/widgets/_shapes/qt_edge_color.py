@@ -70,5 +70,7 @@ class QtEdgeColorControl(QtWidgetControlsBase, metaclass=_QtABCMeta):
         )
         self.edge_color_label = QtWrappedLabel('edge color:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.edge_color_label, self.edge_color_edit)]

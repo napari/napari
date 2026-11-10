@@ -62,12 +62,12 @@ class PolygonBase(Shape):
         self.data = data
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         """np.ndarray: NxD array of vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -127,6 +127,4 @@ class PolygonBase(Shape):
         bbox = self._bounding_box[:, self.dims_displayed]
         self._box = create_box_from_bounding(bbox)
 
-        self.slice_key = np.rint(
-            self._bounding_box[:, self.dims_not_displayed]
-        ).astype(int)
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)

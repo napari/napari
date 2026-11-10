@@ -9,6 +9,7 @@ from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     NamedTuple,
     TypeVar,
 )
@@ -116,7 +117,8 @@ def register_layer_action(
         The description of the action, this will typically be translated and
         will be what will be used in tooltips.
     repeatable : bool
-        A flag indicating whether the action autorepeats when key is held
+        Deprecated and ignored. Key auto-repeat is delivered to every binding
+        by default; hold-semantics bindings suppress it automatically.
     shortcuts : str | List[str]
         Shortcut to bind by default to the action we are registering.
 
@@ -194,19 +196,20 @@ def register_layer_attr_action(
             ) from e
 
         @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args, **kwargs) -> Callable[[], None]:
             obj = args[0] if args else kwargs[first_variable_name]
             prev_mode = getattr(obj, attribute_name)
             func(*args, **kwargs)
 
-            def _callback():
+            def _callback() -> None:
                 setattr(obj, attribute_name, prev_mode)
 
             return _callback
 
-        repeatable = False  # attribute actions are always non-repeatable
+        # _wrapper returns a release callback, so held-key auto-repeat is
+        # suppressed automatically while the hold is pending
         register_layer_action(
-            keymapprovider, description, repeatable, shortcuts
+            keymapprovider, description, shortcuts=shortcuts
         )(_wrapper)
         return func
 
@@ -239,8 +242,29 @@ def _nanmax(array):
     return max_value
 
 
+def _nanpercentile(
+    array: npt.ArrayLike, percentiles: tuple[float, float]
+) -> tuple[float, float]:
+    """
+    call np.percentile on the finite values of the array, (0, 1) if there are none
+    """
+    array = np.asarray(array)
+    finite = array[np.isfinite(array)]
+    if finite.size == 0:
+        return 0, 1
+    # promote to float64: the interpolation can overflow in small dtypes
+    # (e.g. int16, float16), and np.percentile does not support bool
+    low, high = np.percentile(
+        finite.astype(np.float64, copy=False), percentiles
+    )
+    return low, high
+
+
 def calc_data_range(
-    data: LayerDataProtocol, rgb: bool = False, dtype: np.dtype | None = None
+    data: LayerDataProtocol,
+    rgb: bool = False,
+    dtype: np.dtype | None = None,
+    percentiles: tuple[float, float] | None = None,
 ) -> tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
@@ -252,6 +276,10 @@ def calc_data_range(
         Flag if data is rgb.
     dtype : np.dtype, optional
         Dtype of the layer data. If None, the dtype of the data is used.
+    percentiles : pair of floats, optional
+        Lower and upper percentiles (between 0 and 100) to use instead of the
+        minimum and maximum, e.g. ``(1, 99)``. This makes the range robust to
+        a few outlier values. If None, the minimum and maximum are used.
 
     Returns
     -------
@@ -261,21 +289,33 @@ def calc_data_range(
     Notes
     -----
     If the data type is uint8, no calculation is performed, and 0-255 is
-    returned.
+    returned, even if percentiles are given.
+
+    For large data, only a sample of the data is used. With percentiles, the
+    percentiles are computed on all the sampled values together.
     """
+    if percentiles is not None:
+        low, high = percentiles
+        if not 0 <= low < high <= 100:
+            raise ValueError(
+                f'percentiles must satisfy 0 <= low < high <= 100, got {percentiles!r}'
+            )
+
     if (dtype is not None and dtype == np.uint8) or data.dtype == np.uint8:
         return (0, 255)
 
     if isinstance(data, np.ndarray) and data.ndim < 3:
-        min_val = _nanmin(data)
-        max_val = _nanmax(data)
+        if percentiles is None:
+            min_val, max_val = _nanmin(data), _nanmax(data)
+        else:
+            min_val, max_val = _nanpercentile(data, percentiles)
         if min_val == max_val:
             min_val = min(min_val, 0)
             max_val = max(max_val, 1)
         return float(min_val), float(max_val)
 
     center: int | list[int]
-    reduced_data: list | LayerDataProtocol
+    samples: list | None = None
     if data.size > 1e7 and (data.ndim == 1 or (rgb and data.ndim == 2)):
         # If data is very large take the average of start, middle and end.
         center = int(data.shape[0] // 2)
@@ -284,10 +324,7 @@ def calc_data_range(
             slice(center - 2048, center + 2048),
             slice(-4096, None),
         ]
-        reduced_data = [
-            [_nanmax(data[sl]) for sl in slices],
-            [_nanmin(data[sl]) for sl in slices],
-        ]
+        samples = [data[sl] for sl in slices]
     elif data.size > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
@@ -295,7 +332,10 @@ def calc_data_range(
         bottom_plane_idx = (0,) * (data.ndim - offset)
         middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
         top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
-        idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
+        # dict.fromkeys removes duplicates (e.g. when there is a single plane)
+        idxs = list(
+            dict.fromkeys([bottom_plane_idx, middle_plane_idx, top_plane_idx])
+        )
         # If each plane is also very large, look only at a subset of the image
         if (
             np.prod(data.shape[-offset:]) > 1e7
@@ -305,22 +345,25 @@ def calc_data_range(
             # Find a central patch of the image to take
             center = [int(s // 2) for s in data.shape[-offset:]]
             central_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
-            reduced_data = [
-                [_nanmax(data[idx + central_slice]) for idx in idxs],
-                [_nanmin(data[idx + central_slice]) for idx in idxs],
-            ]
+            samples = [data[idx + central_slice] for idx in idxs]
         else:
-            reduced_data = [
-                [_nanmax(data[idx]) for idx in idxs],
-                [_nanmin(data[idx]) for idx in idxs],
-            ]
-        # compute everything in one go
-        reduced_data = dask.compute(*reduced_data)
-    else:
-        reduced_data = data
+            samples = [data[idx] for idx in idxs]
 
-    min_val = _nanmin(reduced_data)
-    max_val = _nanmax(reduced_data)
+    if percentiles is not None:
+        # pool all the sampled values before computing the percentiles
+        computed = dask.compute(*(samples if samples is not None else [data]))
+        pooled = np.concatenate([np.ravel(s) for s in computed])
+        min_val, max_val = _nanpercentile(pooled, percentiles)
+    elif samples is not None:
+        # compute everything in one go
+        reduced_data = dask.compute(
+            [_nanmax(s) for s in samples], [_nanmin(s) for s in samples]
+        )
+        min_val = _nanmin(reduced_data)
+        max_val = _nanmax(reduced_data)
+    else:
+        min_val = _nanmin(data)
+        max_val = _nanmax(data)
 
     if min_val == max_val:
         min_val = min(min_val, 0)
@@ -348,7 +391,7 @@ def segment_normal(a, b, p=(0, 0, 1)) -> np.ndarray:
     """
     d = b - a
 
-    norm: Any  # float or array or float, mypy has some difficulties.
+    norm: Any  # float or array or float, pyrefly has some difficulties.
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]]) if len(d) == 2 else np.cross(d, p)
@@ -384,7 +427,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
     Float images are multiplied by 255 and then cast to uint8.
     """
-    out_dtype = np.dtype(np.uint8)
+    out_dtype: np.dtype = np.dtype(np.uint8)
     out_max = np.iinfo(out_dtype).max
     if data.dtype == out_dtype:
         return data
@@ -560,7 +603,7 @@ def coerce_current_properties(
 
 def compute_multiscale_level(
     requested_shape, shape_threshold, downsample_factors
-):
+) -> int:
     """Computed desired level of the multiscale given requested field of view.
 
     The level of the multiscale should be the lowest resolution such that
@@ -610,7 +653,7 @@ def compute_multiscale_level(
 
 def compute_multiscale_level_and_corners(
     corner_pixels, shape_threshold, downsample_factors
-):
+) -> tuple[int, np.ndarray[tuple[Literal[2], int], np.dtype[np.int_]]]:
     """Computed desired level and corners of a multiscale view.
 
     The level of the multiscale should be the lowest resolution such that
@@ -674,7 +717,7 @@ def _chunk_boundaries(axis_chunks: Any, axis_size: int) -> np.ndarray | None:
     # zarr/tensorstore: a single regular chunk size for the axis, e.g. 4. The
     # edge chunk may be smaller than this size.
     try:
-        chunk_size = operator.index(axis_chunks)
+        chunk_size = operator.index(axis_chunks)  # pyrefly: ignore [bad-argument-type]
     except TypeError:
         return None
     if chunk_size <= 0:
@@ -1256,6 +1299,19 @@ def _unique_element(array: Array) -> Any | None:
     if len(array) == 0:
         return None
     el = array[0]
+    if len(array) == 1:
+        return el
+    if isinstance(el, (list, tuple, np.ndarray)):
+        # Container-valued elements (e.g. list-valued features, or a 2D
+        # array of per-point RGBA colors) can't be safely compared via
+        # numpy broadcasting: `array[1:] != el` raises on ragged/differently
+        # shaped elements, and `np.equal(array[1:], array[:1])` raises
+        # "ambiguous truth value" once any element has more than one entry.
+        # Compare them individually with np.array_equal instead, which
+        # returns False rather than raising on a shape mismatch.
+        if all(np.array_equal(x, el) for x in array[1:]):
+            return el
+        return None
     if np.any(array[1:] != el):
         return None
     return el

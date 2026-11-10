@@ -32,7 +32,6 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-.dmypy.json
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -113,9 +112,6 @@ venv.bak/
 
 # mkdocs documentation
 /site
-
-# mypy
-.mypy_cache/
 
 # Pycharm files
 .idea

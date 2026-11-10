@@ -409,7 +409,7 @@ def test_save_layers(
         (
             # Save Screenshot with Viewer...
             'napari.window.file.save_viewer_screenshot_dialog',
-            'napari._qt.dialogs.screenshot_dialog.ScreenshotDialog.exec_',
+            'napari._qt.dialogs.screenshot_dialog.ScreenshotDialog.exec',
             False,
         ),
     ],

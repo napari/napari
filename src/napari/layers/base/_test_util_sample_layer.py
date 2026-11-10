@@ -15,7 +15,7 @@ class SampleLayerSlicingState(_LayerSlicingState):
 
 
 class SampleLayer(Layer):
-    def __init__(  # type: ignore [no-untyped-def]
+    def __init__(
         self,
         data: np.ndarray,
         ndim=None,

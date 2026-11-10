@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from qtpy.QtCore import Qt
 
+from napari._qt.qt_resources import get_stylesheet
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
 
@@ -294,6 +295,21 @@ def test_update_dims_labels(qtbot):
     assert first_label._elidedText() == view.dims.axis_labels[0]
 
 
+def test_slice_labels_scale_with_font_size(qtbot):
+    """Slice labels get wider when the font size increases."""
+    view = QtDims(Dims(ndim=3))
+    qtbot.addWidget(view)
+    slice_label = view.slider_widgets[0].totslice_label
+    original_width = slice_label.width()
+
+    view.setStyleSheet(
+        get_stylesheet('dark', extra_variables={'font_size': '20pt'})
+    )
+    view._on_font_changed()
+
+    assert slice_label.width() > original_width
+
+
 def test_model_axis_label_updates_do_not_write_back(qtbot):
     """Programmatic model updates should not re-enter through QLineEdit signals."""
     dims = Dims(ndim=4)
@@ -359,6 +375,17 @@ def test_last_used_style_property_set_at_creation(qtbot):
     assert [
         widg.slider.property('last_used') for widg in view.slider_widgets
     ] == [False, True, False, False]
+
+
+def test_frame_request_that_moves_nothing_keeps_playback_armed(qtbot):
+    dims = Dims(ndim=3, range=((0, 10, 1),) * 3)
+    view = QtDims(dims)
+    qtbot.addWidget(view)
+
+    dims._play_ready = True
+    view._set_frame(0, dims.current_step[0])
+
+    assert dims._play_ready
 
 
 @pytest.mark.skipif(

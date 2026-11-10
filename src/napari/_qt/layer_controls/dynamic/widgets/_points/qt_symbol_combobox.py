@@ -78,5 +78,7 @@ class QtSymbolComboBoxControl(QtWidgetControlsBase):
                 Symbol(self._layers[0].current_symbol)
             )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.symbol_combobox_label, self.symbol_combobox)]

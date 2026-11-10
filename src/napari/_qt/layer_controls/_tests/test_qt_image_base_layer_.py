@@ -55,7 +55,7 @@ def test_clim_right_click_shows_popup(qtbot, layer, monkeypatch):
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(
         qtctrl._contrast_limits_control.contrast_limits_slider,
-        Qt.RightButton,
+        Qt.MouseButton.RightButton,
     )
     assert hasattr(qtctrl._contrast_limits_control, 'clim_popup')
     # this mock doesn't seem to be working on cirrus windows
@@ -94,7 +94,7 @@ def test_range_popup_clim_buttons(qtbot, qapp, layer, monkeypatch):
     layer.contrast_limits = (20, 40)
     qtbot.mousePress(
         qtctrl._contrast_limits_control.contrast_limits_slider,
-        Qt.RightButton,
+        Qt.MouseButton.RightButton,
     )
 
     # pressing the reset button returns the clims to the default values

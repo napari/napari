@@ -77,7 +77,7 @@ class AppearanceSettings(EventedModel):
                 values['font_size'] = int(new_theme.font_size[:-2])
         super().update(values, recurse)
 
-    def __setattr__(self, key: str, value: Theme) -> None:
+    def __setattr__(self, key: str, value: Theme) -> None:  # pyrefly: ignore [bad-override-param-name]
         # Check if a font_size change is needed when changing theme:
         # If the font_size setting doesn't correspond to the default value
         # of the current theme no change is done, otherwise

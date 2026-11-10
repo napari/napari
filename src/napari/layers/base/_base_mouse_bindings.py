@@ -34,7 +34,8 @@ def highlight_box_handles(layer: Layer, event: Event) -> None:
     )
     pos = np.array(world_to_data(event.position))[event.dims_displayed]
     handle_coords = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     # TODO: dynamically set tolerance based on canvas size so it's not hard to pick small layer
     nearby_handle = get_nearby_handle(pos, handle_coords)
@@ -187,7 +188,8 @@ def transform_with_box(
     initial_mouse_pos_data = initial_world_to_data(initial_mouse_pos)
 
     initial_handle_coords_data = generate_transform_box_from_layer(
-        layer, layer._slice_input.displayed
+        layer,
+        layer._slice_input.displayed,  # pyrefly: ignore [bad-argument-type]
     )
     nearby_handle = get_nearby_handle(
         initial_mouse_pos_data, initial_handle_coords_data

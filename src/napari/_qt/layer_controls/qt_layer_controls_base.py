@@ -27,7 +27,9 @@ class LayerFormLayout(QFormLayout):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
-        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
 
 
 class QtLayerControls(QFrame):
@@ -137,8 +139,8 @@ class QtLayerControls(QFrame):
         """
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     def changeProjectionMode(self, text):
         with self.layer.events.blocker(self._on_projection_mode_change):
@@ -277,28 +279,28 @@ class QtLayerControls(QFrame):
         """
         if (
             qobject == self.transform_button
-            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.type() == QMouseEvent.Type.MouseButtonRelease
             and event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             result = QMessageBox.warning(
                 self,
                 'Reset transform',
                 'Are you sure you want to reset transforms?',
-                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
-            if result == QMessageBox.Yes:
+            if result == QMessageBox.StandardButton.Yes:
                 self.layer._reset_affine()
                 return True
         return super().eventFilter(qobject, event)
 
-    def deleteLater(self):
+    def deleteLater(self) -> None:
         disconnect_events(self.layer.events, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
-    def close(self):
+    def close(self) -> bool:
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
         for child in self.children():

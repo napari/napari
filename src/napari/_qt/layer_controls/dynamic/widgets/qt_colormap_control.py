@@ -79,7 +79,7 @@ class ColorStyledDelegate(QStyledItemDelegate):
             cbar,
             cbar.shape[1],
             cbar.shape[0],
-            QImage.Format_RGBA8888,
+            QImage.Format.Format_RGBA8888,
         )
         painter.drawImage(cbar_rect, image)
 
@@ -223,5 +223,7 @@ class QtColormapControl(QtWidgetControlsBase):
             for layer in self._layers:
                 layer.colormap = colormap
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.colormap_widget_label, self.colormapWidget)]

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from vispy.scene.visuals import Text as BaseText
 
 from napari._vispy.utils.text import (
-    get_text_metrics,
+    get_text_line_height,
     get_text_width_height,
 )
 
@@ -14,6 +14,8 @@ from napari._vispy.utils.text import (
 _FONT_FAMILY = 'OpenSans'
 
 if TYPE_CHECKING:
+    from vispy.visuals.visual import Visual
+
     from napari._vispy.utils.qt_font import FontInfo
 
 
@@ -33,18 +35,23 @@ class Text(BaseText):
         return width * self._vispy_dpi_ratio, height * self._vispy_dpi_ratio
 
     def get_line_height(self) -> float:
-        metrics = get_text_metrics(self)
-        return metrics.height() * self._vispy_dpi_ratio
+        return get_text_line_height(self) * self._vispy_dpi_ratio
 
     @property
     def font_size(self) -> float:
-        return self._font_size * self.dpi_ratio
+        return self._logical_font_size
 
     @font_size.setter
     def font_size(self, size: float) -> None:
-        adjusted_font_size = size / self.dpi_ratio
-        self._font_size = max(0.0, adjusted_font_size)
+        # store the dpi-independent size; the dpi adjustment happens at draw
+        # time, since dpi is unknown until the node is attached to a canvas
+        self._logical_font_size = max(0.0, float(size))
+        self._font_size = self._logical_font_size / self.dpi_ratio
         self.update()
+
+    def _prepare_draw(self, view: Visual) -> bool | None:
+        self._font_size = self._logical_font_size / self.dpi_ratio
+        return super()._prepare_draw(view)
 
     @property
     def _vispy_dpi_ratio(self) -> float:
