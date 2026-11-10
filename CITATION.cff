@@ -123,12 +123,17 @@ authors:
   affiliation: Chan Zuckerberg Initiative
   orcid: https://orcid.org/0000-0002-7237-1973
   alias: kephale
-# Community contributors, alphabetized by family-names.
 - given-names: Jacopo
   family-names: Abramo
   affiliation: Leibniz-IPHT, Jena, Germany
   orcid: https://orcid.org/0000-0001-9293-2179
   alias: jacopoabramo
+- given-names: Aniket Singh
+  family-names: Yadav
+  affiliation: Galgotias University
+  orcid: https://orcid.org/0009-0004-4883-3797
+  alias: Aniketsy
+# Community contributors, alphabetized by family-names.
 - given-names: Jannis
   family-names: Ahlers
   affiliation: Monash University
@@ -183,6 +188,10 @@ authors:
   affiliation: University of California, Santa Cruz
   orcid: https://orcid.org/0000-0002-4172-4676
   alias: FilBalza
+- given-names: Maria Laura
+  family-names: Barbosa Soares
+  affiliation: Pontifical Catholic University of Rio de Janeiro (PUC-Rio)
+  alias: mlaurabs
 - given-names: Job
   family-names: Becht
   affiliation: Netherlands Forensic Institute
@@ -257,6 +266,11 @@ authors:
 - given-names: Sara
   family-names: Czasak
   alias: sara-czasak
+- given-names: Joost
+  family-names: de Folter
+  affiliation: The Francis Crick Institute
+  orcid: https://orcid.org/0000-0001-9704-2925
+  alias: folterj
 - given-names: Arne
   family-names: Defauw
   affiliation: Flemish Institute for Biotechnology
@@ -338,6 +352,9 @@ authors:
   family-names: Hutchings
   affiliation: University College London
   alias: katherine-hutchings
+- given-names: Shriraj
+  family-names: Jadhav
+  alias: Shriraj1901
 - given-names: Aditi
   family-names: Juneja
   affiliation: Independent
@@ -640,6 +657,10 @@ authors:
   family-names: Venugopal
   affiliation: Synopsys, Inc.
   alias: revathyvenugopal162
+- given-names: Sparsh
+  family-names: Vikas
+  affiliation: Dayananda Sagar College of Engineering
+  alias: TheCreeperrr
 - given-names: Pam
   family-names: Wadhwa
   affiliation: Quansight Labs
@@ -663,11 +684,6 @@ authors:
   affiliation: Data Science Lab, University of Bern, Switzerland
   orcid: https://orcid.org/0000-0003-1562-4265
   alias: guiwitz
-- given-names: Aniket Singh
-  family-names: Yadav
-  affiliation: Galgotias University
-  orcid: https://orcid.org/0009-0004-4883-3797
-  alias: Aniketsy
 - given-names: Qin
   family-names: Yu
   affiliation: European Molecular Biology Laboratory (EMBL)
