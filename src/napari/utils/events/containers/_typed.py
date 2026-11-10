@@ -74,14 +74,14 @@ class TypedMutableSequence(MutableSequence[_T]):
         return id(self)
 
     @overload
-    def __setitem__(self, key: int, value: _T): ...  # pragma: no cover
+    def __setitem__(self, key: int, value: _T) -> None: ...  # pragma: no cover
 
     @overload
     def __setitem__(
         self, key: slice, value: Iterable[_T]
-    ): ...  # pragma: no cover
+    ) -> None: ...  # pragma: no cover
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')

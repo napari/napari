@@ -284,12 +284,9 @@ class _ScalarFieldSliceRequest:
             ndim=self.slice_input.ndim,
         )
 
-        # slice displayed dimensions to get the right tile data
-        data = data[tuple(disp_slice)]
-
-        # project the thick slice
+        # project the thick slice, cropped to the displayed tile in one index
         data_slice = self._thick_slice_at_level(self.data_level)
-        data = self._project_thick_slice(data, data_slice)
+        data = self._project_thick_slice(data, data_slice, disp_slice)
 
         order = self._get_order()
         data = np.transpose(data, order)
@@ -321,26 +318,40 @@ class _ScalarFieldSliceRequest:
         return _ThickNDSlice.from_array(slice_arr)
 
     def _project_thick_slice(
-        self, data: ArrayLike, data_slice: _ThickNDSlice
+        self,
+        data: ArrayLike,
+        data_slice: _ThickNDSlice,
+        disp_slice: list[slice] | None = None,
     ) -> np.ndarray:
         """
         Slice the given data with the given data slice and project the extra dims.
 
         This is also responsible for materializing the data if it is backed
         by a lazy store or compute graph (e.g. dask).
+
+        ``disp_slice`` optionally crops the displayed dimensions to the
+        visible tile.
         """
+        if self.projection_mode == 'none':
+            slices = self._point_to_slices(data_slice.point)
+        else:
+            slices = self._data_slice_to_slices(
+                data_slice, self.slice_input.displayed
+            )
+
+        if disp_slice is not None:
+            slices = list(slices)
+            for d in self.slice_input.displayed:
+                slices[d] = disp_slice[d]
+
+        data = np.asarray(data[tuple(slices)])
 
         if self.projection_mode == 'none':
             # early return with only the dims point being used
-            slices = self._point_to_slices(data_slice.point)
-            return np.asarray(data[slices])
-
-        slices = self._data_slice_to_slices(
-            data_slice, self.slice_input.displayed
-        )
+            return data
 
         return self._project_slice(
-            data=np.asarray(data[slices]),
+            data=data,
             axis=tuple(self.slice_input.not_displayed),
             mode=self.projection_mode,
         )

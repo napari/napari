@@ -4,17 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-import numpy as np
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 
 from napari._qt.qthreading import GeneratorWorker, create_worker
 from napari._vispy.visuals.histogram import HistogramVisual
 from napari.settings import get_settings
+from napari.utils.colormaps.colormap_utils import _representative_color
 from napari.utils.events.event_utils import disconnect_events
 from napari.utils.theme import get_theme
 
 if TYPE_CHECKING:
+    import numpy as np
     from pydantic_extra_types.color import Color
 
     from napari.layers import Image
@@ -218,12 +219,8 @@ class QtHistogramWidget(QWidget):
         return (red / 255, green / 255, blue / 255, alpha)
 
     def _layer_bar_color(self) -> tuple[float, float, float, float]:
-        """Use end of colormap for histogram bars.
-
-        Picking the almost highest end (``map([0.8])``) avoids invisibility on
-        dark canvas with reversed colormaps like ``gray_r``.
-        """
-        rgba = np.atleast_2d(self.layer.colormap.map([0.8]))[0].astype(float)
+        """Use the colormap's representative color for histogram bars."""
+        rgba = _representative_color(self.layer.colormap)
         alpha = max(float(rgba[3]), 0.8)
         return (float(rgba[0]), float(rgba[1]), float(rgba[2]), alpha)
 
