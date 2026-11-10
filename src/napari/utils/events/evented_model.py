@@ -1,25 +1,29 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
+from types import TracebackType
 from typing import Any, ClassVar, Union
 
 import numpy as np
 from app_model.types import KeyBinding
 from pydantic import (
     BaseModel,
-    ConfigDict,
     PrivateAttr,
 )
 from pydantic._internal._model_construction import ModelMetaclass
 
-from napari._pydantic_util import get_inner_type, get_outer_type
+from napari._pydantic_util import (
+    NapariConfigDict,
+    get_inner_type,
+    get_outer_type,
+)
 from napari.utils.events.event import EmitterGroup, Event
 from napari.utils.misc import pick_equality_operator
 
 # encoders for non-napari specific field types.  To declare a custom encoder
 # for a napari type, add a `_json_encode` method to the class itself.
 # it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
-_BASE_JSON_ENCODERS = {
+_BASE_JSON_ENCODERS: dict[type[object], Callable[[Any], Any]] = {
     np.ndarray: lambda arr: arr.tolist(),
     KeyBinding: lambda v: str(v),
 }
@@ -39,8 +43,14 @@ class EventedMetaclass(ModelMetaclass):
     when each instance of an ``EventedModel`` is instantiated).
     """
 
-    def __new__(mcs, name, bases, namespace, **kwargs):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type:
+        cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
         non_evented_properties = getattr(
             cls, '__non_evented_properties__', set()
         )
@@ -59,9 +69,11 @@ class EventedMetaclass(ModelMetaclass):
                 # also add it to the base config
                 # required for pydantic>=1.8.0 due to:
                 # https://github.com/samuelcolvin/pydantic/pull/2064
-                EventedModel.model_config['json_encoders'][field_type] = (
-                    encoder
+                base_json_encoders = (
+                    EventedModel.model_config.get('json_encoders') or {}
                 )
+                base_json_encoders[field_type] = encoder
+                EventedModel.model_config['json_encoders'] = base_json_encoders
         # check for properties defined on the class, so we can allow them
         # in EventedModel.__setattr__ and create events
         # Current implementation ignores properties defined in mixins
@@ -88,12 +100,19 @@ class EventedMetaclass(ModelMetaclass):
 
 
 def _update_dependents_from_property_code(
-    cls, prop_name, prop, deps, visited=()
-):
+    cls: 'type[EventedModel]',
+    prop_name: str,
+    prop: property,
+    deps: dict[str, set[str]],
+    visited: tuple[str, ...] = (),
+) -> None:
     """Recursively find all the dependents of a property by inspecting the code object.
 
     Update the given deps dictionary with the new findings.
     """
+    if prop.fget is None:
+        # write-only property, nothing to inspect
+        return
     for name in prop.fget.__code__.co_names:
         if name in cls.model_fields:
             deps.setdefault(name, set()).add(prop_name)
@@ -107,7 +126,7 @@ def _update_dependents_from_property_code(
             )
 
 
-def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
+def _get_field_dependents(cls: 'type[EventedModel]') -> dict[str, set[str]]:
     """Return mapping of field name -> dependent set of property names.
 
     Dependencies will be guessed by inspecting the code of each property
@@ -141,7 +160,7 @@ def _get_field_dependents(cls: 'EventedModel') -> dict[str, set[str]]:
             def d(self, val: int):
                 self.c = [val // 2, val // 2]
 
-            model_config = ConfigDict(
+            model_config = NapariConfigDict(
                 dependencies={
                     'c': ['a', 'b'],
                     'd': ['a', 'b']
@@ -199,7 +218,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
-    model_config = ConfigDict(
+    model_config: ClassVar[NapariConfigDict] = NapariConfigDict(
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
         # False, RuntimeError will be raised on model declaration
@@ -212,7 +231,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         json_encoders=_BASE_JSON_ENCODERS,
     )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self._events.source = self
@@ -270,7 +289,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             self._primary_changes[name] = None
             self._setattr_impl(name, value)
 
-    def _check_if_values_changed_and_emit_if_needed(self):
+    def _check_if_values_changed_and_emit_if_needed(self) -> None:
         """
         Check if field values changed and emit events if needed.
 
@@ -361,7 +380,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def events(self) -> EmitterGroup:
         return self._events
 
-    def _reset_event_source(self):
+    def _reset_event_source(self) -> None:
         """
         set the event sources of self and all the children to the correct values
         """
@@ -380,7 +399,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _defaults(self) -> dict[str, Any]:
         return get_defaults(self)
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset the state of the model to default values."""
         for name, value in self._defaults.items():
             if isinstance(getattr(self, name), EventedModel):
@@ -422,9 +441,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
                     setattr(self, key, value)
 
         if block.count:
-            self.events(Event(self))
+            self.events(Event(value=self, type_name='update'))
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check equality with another object.
 
         We override the pydantic approach (which just checks
@@ -445,7 +464,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         return True
 
     @contextmanager
-    def enums_as_values(self, as_values: bool = True):
+    def enums_as_values(
+        self, as_values: bool = True
+    ) -> Generator[None, None, None]:
         """Temporarily override how enums are retrieved.
 
         Parameters
@@ -454,13 +475,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             Whether enums should be shown as values (or as enum objects),
             by default `True`
         """
-        null = object()
-        before = self.model_config.get('use_enum_values', null)
+        was_set = 'use_enum_values' in self.model_config
+        before = self.model_config.get('use_enum_values', False)
         self.model_config['use_enum_values'] = as_values
         try:
             yield
         finally:
-            if before is not null:
+            if was_set:
                 self.model_config['use_enum_values'] = before
             else:
                 del self.model_config['use_enum_values']
@@ -468,8 +489,8 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Generate a JSON schema for this model.
 
@@ -494,7 +515,9 @@ def get_defaults(obj: BaseModel | type[BaseModel]) -> dict[str, Any]:
         d = v.get_default()
         field_type = get_inner_type(v.annotation)
         if d is None:
-            if isinstance(field_type, ModelMetaclass):
+            if isinstance(field_type, type) and issubclass(
+                field_type, BaseModel
+            ):
                 d = get_defaults(field_type)
             else:
                 try:
@@ -516,9 +539,14 @@ class ComparisonDelayer:
     def __init__(self, target: EventedModel):
         self._target = target
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self._target._delay_check_semaphore += 1
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self._target._delay_check_semaphore -= 1
         self._target._check_if_values_changed_and_emit_if_needed()

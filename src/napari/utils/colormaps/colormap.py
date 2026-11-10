@@ -17,13 +17,13 @@ from warnings import warn
 import numpy as np
 import numpy.typing as npt
 from pydantic import (
-    ConfigDict,
     Field,
     PrivateAttr,
     ValidationInfo,
     field_validator,
 )
 
+from napari._pydantic_util import NapariConfigDict
 from napari.utils.color import ColorArray, ColorValue
 from napari.utils.colormaps import _accelerated_cmap as _accel_cmap
 from napari.utils.colormaps.colorbars import make_colorbar
@@ -261,7 +261,7 @@ class LabelColormapBase(Colormap):
         default_factory=_RebuildableCache
     )
 
-    model_config = EventedModel.model_config | ConfigDict(
+    model_config = EventedModel.model_config | NapariConfigDict(
         # this config is to avoid deepcopy of cached_property
         # see https://github.com/pydantic/pydantic/issues/2763
         # it is required until we drop Pydantic 1 or Python 3.11 and older
