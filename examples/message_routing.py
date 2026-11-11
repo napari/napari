@@ -54,7 +54,7 @@ def python_warning() -> None:
             'warnings.warn(): repeated identical warning; it will appear '
             'as a napari popup once hooks are installed'
         ),
-        stacklevel=2,
+        stacklevel=1,
     )
 
 
@@ -65,7 +65,7 @@ def python_warning_unique() -> None:
             f'warnings.warn(): unique warning #{count_value}; it may also '
             'appear as a napari popup once hooks are installed'
         ),
-        stacklevel=2,
+        stacklevel=1,
     )
 
 
@@ -105,7 +105,7 @@ def uncaught_error() -> None:
 def worker_warning() -> None:
     warnings.warn(
         'thread_worker warning: forwarded from a worker thread',
-        stacklevel=2,
+        stacklevel=1,
     )
 
 
