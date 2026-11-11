@@ -8,25 +8,18 @@ from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-
     from pytestqt.qtbot import QtBot
 
 
 @pytest.fixture
-def qt_dims(qtbot: QtBot) -> Generator[QtDims, None, None]:
-    """Fixture that provides a QtDims and ensures
-    that animation is stopped after the test failed.
+def qt_dims(qtbot: QtBot) -> QtDims:
+    """Fixture that provides a QtDims registered with qtbot.
 
-    The test itself should ensure that the animation is stopped,
-    but in case of a failure before the end of the test,
-    this fixture will take care of stopping it
-    to avoid segfaults in following tests.
+    pytest-qt closes the widget during test teardown and
+    ``QtDims.closeEvent`` stops any running animation, so a test that fails
+    while playing cannot leave the animation thread running when the
+    widget is deleted.
     """
-    dims = Dims(ndim=2)
-    qt_dims = QtDims(dims)
+    qt_dims = QtDims(Dims(ndim=2))
     qtbot.addWidget(qt_dims)
-    yield qt_dims
-    if qt_dims.is_playing:
-        qt_dims.stop()
-        qtbot.waitUntil(lambda: not qt_dims.is_playing)
+    return qt_dims

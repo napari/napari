@@ -404,11 +404,21 @@ def test_play_button(qtbot, mock_qt_method_ctx, qt_dims):
     assert slider.loop_mode == 'loop'
     assert not qt_dims.is_playing
 
+    # `is_playing` changes in the animation thread, while the button only
+    # learns about it from the queued `started`/`finished` signals. Wait for
+    # both, otherwise the second click starts playback again instead of
+    # stopping it.
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: qt_dims.is_playing)
+    qtbot.waitUntil(
+        lambda: qt_dims.is_playing and button.property('playing') == 'True'
+    )
 
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(lambda: not qt_dims.is_playing)
+    qtbot.waitUntil(
+        lambda: (
+            not qt_dims.is_playing and button.property('playing') == 'False'
+        )
+    )
 
     with mock_qt_method_ctx(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.MouseButton.RightButton)
