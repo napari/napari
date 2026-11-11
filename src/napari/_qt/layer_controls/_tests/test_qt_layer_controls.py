@@ -463,7 +463,7 @@ def test_create_layer_controls_qcolorswatchedit(
         for color, expected_color, expected_array in colors:
             lineedit.clear()
             qtbot.keyClicks(lineedit, color)
-            qtbot.keyClick(lineedit, Qt.Key_Enter)
+            qtbot.keyClick(lineedit, Qt.Key.Key_Enter)
             assert lineedit.text() == expected_color
             assert (colorswatch.color == expected_array).all()
             # capture any output done to sys.stdout or sys.stderr.
@@ -475,7 +475,7 @@ def test_create_layer_controls_qcolorswatchedit(
     for qcheckbox in ctrl.findChildren(QCheckBox):
         if qcheckbox.isVisible():
             qcheckbox_checked = qcheckbox.isChecked()
-            qtbot.mouseClick(qcheckbox, Qt.LeftButton)
+            qtbot.mouseClick(qcheckbox, Qt.MouseButton.LeftButton)
             assert qcheckbox.isChecked() != qcheckbox_checked
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
@@ -487,7 +487,7 @@ def test_create_layer_controls_qcolorswatchedit(
         QRadioButton
     ):
         if button.isVisible():
-            qtbot.mouseClick(button, Qt.LeftButton)
+            qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
             # capture any output done to sys.stdout or sys.stderr.
             captured = capsys.readouterr()
             assert not captured.out
@@ -569,14 +569,14 @@ def test_create_layer_controls_transform_mode_button(
     assert ctrl.layer.affine != ctrl.layer._initial_affine
 
     def reset_transform_warning_dialog(*args):
-        return QMessageBox.Yes
+        return QMessageBox.StandardButton.Yes
 
     monkeypatch.setattr(
         'qtpy.QtWidgets.QMessageBox.warning', reset_transform_warning_dialog
     )
     qtbot.mouseClick(
         ctrl.transform_button,
-        Qt.LeftButton,
+        Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.AltModifier,
     )
     assert ctrl.layer.affine == ctrl.layer._initial_affine
@@ -672,6 +672,22 @@ def test_set_text_then_set_visible_updates_checkbox(
     layer.text.visible = True
 
     assert ctrl._text_visibility_control.text_disp_checkbox.isChecked()
+
+
+@pytest.mark.parametrize('layer_type_with_data', [_POINTS, _SHAPES])
+def test_text_set_scaling_updates_checkbox(qtbot, layer_type_with_data):
+    layer = layer_type_with_data.type(layer_type_with_data.data)
+    ctrl = create_qt_layer_controls(layer)
+    qtbot.addWidget(ctrl)
+    assert not ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
+
+    layer.text.scaling = True
+
+    assert ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
+
+    layer.text.scaling = False
+
+    assert not ctrl._text_visibility_control.text_scaling_checkbox.isChecked()
 
 
 @pytest.mark.parametrize(('ndim', 'editable_after'), [(2, False), (3, True)])

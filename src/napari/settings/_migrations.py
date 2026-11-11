@@ -12,6 +12,8 @@ from napari.settings._shortcuts import ShortcutsSettings
 from napari.utils.triangulation_backend import TriangulationBackend
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from app_model.types import KeyBinding
 
     from napari.settings._napari_settings import NapariSettings
@@ -53,7 +55,7 @@ def do_migrations(model: NapariSettings) -> None:
 
 
 @contextmanager
-def mutation_allowed(obj: NapariSettings):
+def mutation_allowed(obj: NapariSettings) -> Generator[None, None, None]:
     """Temporarily allow mutations on an immutable model."""
     config = obj.model_config
     prev, config['frozen'] = config.get('frozen', False), False
@@ -123,7 +125,7 @@ def v040_050(model: NapariSettings) -> None:
     model.plugins.extension2reader = new_settings
 
 
-def _swap_ctrl_cmd(keybinding) -> KeyBinding:
+def _swap_ctrl_cmd(keybinding: KeyBinding) -> KeyBinding:
     """Swap the Control and Command/Super/Meta modifiers in a keybinding.
 
     See `v050_060` for motivation.
@@ -198,3 +200,12 @@ def v060_070(model: NapariSettings) -> None:
         else TriangulationBackend.fastest_available  # must match default setting
     )
     model.experimental.compiled_triangulation = False  # reset to default
+
+
+@migrator('0.9.1', '0.10.0')
+def v092_0100(model: NapariSettings) -> None:
+    """Migrate from v0.9.2 to v0.10.0.
+
+    autoswap_buffers was moved from experimental to advanced.
+    """
+    model.advanced.autoswap_buffers = model.experimental.autoswap_buffers
