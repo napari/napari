@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from collections.abc import MutableMapping, Sequence
 from enum import StrEnum
@@ -169,12 +171,12 @@ class Colormap(EventedModel):
 
     @overload
     def map(
-        self, values: 'Vector1D'
+        self, values: Vector1D
     ) -> np.ndarray[tuple[int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
     def map(
-        self, values: 'Matrix2D'
+        self, values: Matrix2D
     ) -> np.ndarray[tuple[int, int, Literal[4]], np.dtype[np.floating]]: ...
 
     @overload
@@ -219,7 +221,7 @@ class Colormap(EventedModel):
     def colorbar(self):
         return make_colorbar(self)
 
-    def same_colors(self, other: 'Colormap') -> bool:
+    def same_colors(self, other: Colormap) -> bool:
         return bool(
             np.array_equal(self.controls, other.controls)
             and np.array_equal(self.colors, other.colors)
@@ -741,7 +743,7 @@ class DirectLabelColormap(LabelColormapBase):
 
         return labels_to_new_labels, new_color_dict
 
-    def _get_typed_dict_mapping(self, data_dtype: np.dtype) -> 'typed.Dict':
+    def _get_typed_dict_mapping(self, data_dtype: np.dtype) -> typed.Dict:
         """Create mapping from label values to texture values of smaller dtype.
 
         In https://github.com/napari/napari/issues/6397, we noticed that using
