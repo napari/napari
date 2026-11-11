@@ -51,4 +51,4 @@ if __name__ == '__main__':
 
     worker.start()
 
-    app.exec_()
+    app.exec()

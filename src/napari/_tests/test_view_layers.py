@@ -9,6 +9,7 @@ import re
 
 import numpy as np
 import pytest
+import xarray as xr
 from docstring_parser.numpydoc import parse as parse_docstring
 
 import napari
@@ -166,6 +167,82 @@ def test_imshow_multichannel(qtbot):
     # Run a full garbage collection here so that any remaining viewer
     # and related instances are removed for future tests that may use
     # make_napari_viewer.
+    gc.collect()
+
+
+def test_imshow_honors_xarray_metadata(qtbot):
+    """imshow keeps axis_labels, scale, translate, units from DataArray."""
+    scale = np.array([5.0, 1.0, 1.0])
+    translate = np.array([10.0, 100.0, 200.0])
+    data = xr.DataArray(
+        np.zeros((3, 10, 15)),
+        dims=['z', 'y', 'x'],
+        coords={
+            'z': (
+                'z',
+                np.arange(3) * scale[0] + translate[0],
+                {'units': 'microns'},
+            ),
+            'y': (
+                'y',
+                np.arange(10) * scale[1] + translate[1],
+                {'units': 'mm'},
+            ),
+            'x': ('x', np.arange(15) * scale[2] + translate[2]),
+        },
+    )
+    viewer, layer = napari.imshow(data, show=False)
+    assert viewer.dims.axis_labels == layer.axis_labels == ('z', 'y', 'x')
+    np.testing.assert_allclose(layer.scale, scale)
+    np.testing.assert_allclose(layer.translate, translate)
+    assert [str(u) for u in layer.units] == [
+        'micron',
+        'millimeter',
+        'pixel',
+    ]
+    viewer.close()
+    gc.collect()
+
+
+def test_imshow_explicitly_overrides_xarray_metadata(qtbot):
+    """imshow overrides xarray metadata when arguments are explicitly given."""
+    scale = np.array([5.0, 1.0, 1.0])
+    translate = np.array([10.0, 100.0, 200.0])
+    data = xr.DataArray(
+        np.zeros((3, 10, 15)),
+        dims=['z', 'y', 'x'],
+        coords={
+            'z': (
+                'z',
+                np.arange(3) * scale[0] + translate[0],
+                {'units': 'microns'},
+            ),
+            'y': (
+                'y',
+                np.arange(10) * scale[1] + translate[1],
+                {'units': 'mm'},
+            ),
+            'x': ('x', np.arange(15) * scale[2] + translate[2]),
+        },
+    )
+
+    viewer, layer = napari.imshow(
+        data,
+        scale=scale * 2,
+        translate=translate * 0.5,
+        axis_labels=('k', 'j', 'i'),
+        units=['cm', None, 'mm'],
+        show=False,
+    )
+    assert viewer.dims.axis_labels == layer.axis_labels == ('k', 'j', 'i')
+    np.testing.assert_allclose(layer.scale, scale * 2)
+    np.testing.assert_allclose(layer.translate, translate * 0.5)
+    assert [str(u) for u in layer.units] == [
+        'centimeter',
+        'pixel',
+        'millimeter',
+    ]
+    viewer.close()
     gc.collect()
 
 

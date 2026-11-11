@@ -669,7 +669,7 @@ class ShapeList:
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        n_shapes = len(self.data)
+        n_shapes = len(self.shapes)
         if not np.array_equal(colors.shape, (n_shapes, 4)):
             raise ValueError(
                 f'{attribute}_color must have shape ({n_shapes}, 4)'
@@ -1233,6 +1233,7 @@ class ShapeList:
                     self._mesh.triangles_colors[triangles_slice.stop :],
                 ]
             )
+            # Callers that only change geometry rely on this.
             self._update_z_order()
 
     def remove(self, index: int, renumber: bool = True) -> None:
@@ -1434,6 +1435,7 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
         self._update_displayed()
 
+    @_batch_dec
     def edit(
         self, index, data, face_color=None, edge_color=None, new_type=None
     ) -> None:
@@ -1467,6 +1469,7 @@ class ShapeList:
                 edge_width=cur_shape.edge_width,
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
+                ndisplay=cur_shape.ndisplay,
             )
             self.shapes[index] = shape
         else:
@@ -1609,6 +1612,26 @@ class ShapeList:
         self._z_index[index] = z_index
         self._update_z_order()
 
+    @_batch_dec
+    def update_z_indices(
+        self, indices: Iterable[int], z_indices: int | Iterable[int]
+    ) -> None:
+        """same as update_z_index() but for multiple indices/z_indices at once
+
+        A single int is broadcast to every index. The z order is rebuilt once
+        for the whole batch instead of once per shape, which is what makes
+        this cheaper than a loop over `update_z_index`.
+        """
+        pairs: Iterable[tuple[int, int]]
+        if isinstance(z_indices, (int, np.integer)):
+            pairs = zip(indices, repeat(int(z_indices)), strict=False)
+        else:
+            pairs = zip(indices, z_indices, strict=True)
+        for index, z_index in pairs:
+            self.shapes[index].z_index = z_index
+            self._z_index[index] = z_index
+        self._update_z_order()
+
     def shift(self, index, shift) -> None:
         """Performs a 2D shift on a single shape located at index
 
@@ -1636,7 +1659,6 @@ class ShapeList:
         """
         self.shapes[index].scale(scale, center=center)
         self.update(index)
-        self._update_z_order()
 
     def rotate(self, index, angle, center=None) -> None:
         """Performs a rotation on a single shape located at index
@@ -1681,7 +1703,6 @@ class ShapeList:
         """
         self.shapes[index].transform(transform)
         self.update(index)
-        self._update_z_order()
         self._clear_cache()
 
     def outline(
@@ -2053,13 +2074,12 @@ class ShapeList:
         if mask_shape is None:
             mask_shape = self.displayed_vertices.max(axis=0).astype('int')
 
-        masks = np.array(
-            [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
-                for s in self.shapes
-            ]
-        )
-
+        if not self.shapes:
+            # an empty list has always returned an empty 1D array
+            return np.array([])
+        masks = np.zeros((len(self.shapes), *mask_shape), dtype=bool)
+        for mask, shape in zip(masks, self.shapes, strict=True):
+            mask[shape._mask_index(mask_shape, zoom_factor, offset)] = True
         return masks
 
     def to_labels(
@@ -2094,10 +2114,10 @@ class ShapeList:
         labels = np.zeros(labels_shape, dtype=int)
 
         for ind in self._z_order[::-1]:
-            mask = self.shapes[ind].to_mask(
-                labels_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                labels_shape, zoom_factor, offset
             )
-            labels[mask] = ind + 1
+            labels[index] = ind + 1
 
         return labels
 
@@ -2150,14 +2170,14 @@ class ShapeList:
             z_order_in_view = z_order_in_view[-max_shapes:]
 
         for ind in z_order_in_view:
-            mask = self.shapes[ind].to_mask(
-                colors_shape, zoom_factor=zoom_factor, offset=offset
+            index = self.shapes[ind]._mask_index(
+                colors_shape, zoom_factor, offset
             )
             if type(self.shapes[ind]) in [Path, Line]:
                 col = self._edge_color[ind]
             else:
                 col = self._face_color[ind]
-            colors[mask, :] = col
+            colors[index] = col
 
         return colors
 

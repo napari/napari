@@ -70,12 +70,12 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
     Key concepts and references:
         - Qt `Model/View Programming
-          <https://doc.qt.io/qt-5/model-view-programming.html>`_
+          <https://doc.qt.io/qt-6/model-view-programming.html>`_
         - Qt `Model Subclassing Reference
-          <https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference>`_
-        - `Model Index <https://doc.qt.io/qt-5/model-view-programming.html#model-indexes>`_
+          <https://doc.qt.io/qt-6/model-view-programming.html#model-subclassing-reference>`_
+        - `Model Index <https://doc.qt.io/qt-6/model-view-programming.html#model-indexes>`_
         - `Simple Tree Model Example
-          <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>`_
+          <https://doc.qt.io/qt-6/qtwidgets-itemviews-simpletreemodel-example.html>`_
     """
 
     _root: SelectableEventedList[ItemType]
@@ -117,7 +117,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         want to customize this method (and likely `setData` as well) for
         different data roles.
 
-        see: https://doc.qt.io/qt-5/qt.html#ItemDataRole-enum
+        see: https://doc.qt.io/qt-6/qt.html#ItemDataRole-enum
 
         """
         if role == Qt.ItemDataRole.DisplayRole:
@@ -137,7 +137,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         (for optimization). Editable models must return a value containing
         `Qt.ItemIsEditable`.
 
-        See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+        See Qt.ItemFlag https://doc.qt.io/qt-6/qt.html#ItemFlag-enum
         """
         if not index.isValid() or index.model() is not self:
             # we allow drops outside the items
@@ -254,7 +254,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Begins a row insertion operation.
 
         See Qt documentation:
-        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginInsertRows
+        https://doc.qt.io/qt-6/qabstractitemmodel.html#beginInsertRows
         """
         par, idx = self._split_nested_index(event.index)
         self.beginInsertRows(par, idx, idx)
@@ -267,7 +267,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Begins a row removal operation.
 
         See Qt documentation:
-        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginRemoveRows
+        https://doc.qt.io/qt-6/qabstractitemmodel.html#beginRemoveRows
         """
         par, idx = self._split_nested_index(event.index)
         self.beginRemoveRows(par, idx, idx)
@@ -280,7 +280,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Begins a row move operation.
 
         See Qt documentation:
-        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginMoveRows
+        https://doc.qt.io/qt-6/qabstractitemmodel.html#beginMoveRows
         """
         src_par, src_idx = self._split_nested_index(event.index)
         dest_par, dest_idx = self._split_nested_index(event.new_index)
