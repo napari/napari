@@ -30,6 +30,10 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer, Points
 from napari.settings import get_settings
+from napari.utils.camera_orientations import (
+    AxesOrientation2D,
+    AxesOrientation3D,
+)
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 
@@ -427,14 +431,14 @@ def test_screenshot_dialog(
         mock.patch('napari._qt._qt_viewer.QMessageBox') as mocker2,
     ):
         mocker.getSaveFileName.return_value = mock_return
-        mocker2.warning.return_value = QMessageBox.Yes
+        mocker2.warning.return_value = QMessageBox.StandardButton.Yes
         qt_viewer._screenshot_dialog()
 
     # Assert behaviour is correct
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
-    expected_data = qt_viewer.screenshot(flash=False)
+    expected_data = qt_viewer.screenshot(flash=False, size=[400, 400])
     assert np.allclose(output_data, expected_data)
 
 
@@ -492,13 +496,29 @@ def test_process_mouse_event(
         np.testing.assert_array_equal(event.dims_displayed, [1, 2, 3])
         assert event.dims_point[0] == data.shape[0] // 2
 
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     viewer_model.dims.ndisplay = 3
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+def test_process_mouse_event_over_empty_grid_viewbox(
+    qt_viewer: QtViewer, viewer_model: ViewerModel
+) -> None:
+    viewer_model.add_image(np.zeros((20, 20)))
+    viewer_model.canvas.grid.enabled = True
+    # any position outside the populated viewboxes resolves to an empty one
+    pos = np.array([-1.0, -1.0])
+    assert qt_viewer.canvas._get_viewbox_at(pos) == (None, None)
+
+    qt_viewer.canvas._process_mouse_event(
+        mouse_press_callbacks, MouseEvent(type='mouse_press', pos=pos)
+    )
+
+    assert viewer_model.cursor.viewbox is None
+    viewer_model.mouse_over_canvas = True
+    assert viewer_model._calc_status_from_cursor() == (' » [empty]', '')
 
 
 def test_process_mouse_event_2d_layer_3d_viewer(
@@ -521,9 +541,7 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     @image.mouse_drag_callbacks.append
     def on_click(layer, event):
-        expected_position = qt_viewer.canvas._map_canvas2world(
-            new_pos, qt_viewer.canvas.view
-        )
+        expected_position = viewer_model.canvas_to_world(new_pos)
         np.testing.assert_almost_equal(expected_position, list(event.position))
 
     assert viewer_model.dims.ndisplay == 2
@@ -531,6 +549,120 @@ def test_process_mouse_event_2d_layer_3d_viewer(
 
     viewer_model.dims.ndisplay = 3
     qt_viewer.canvas._process_mouse_event(mouse_press_callbacks, mouse_event)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_canvas_to_world_grid_spacing(
+    viewer_model: ViewerModel, ndisplay: int
+) -> None:
+    """The center of every grid viewbox maps to the camera center."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = ndisplay
+    viewer_model.canvas.size = (800, 1200)
+    viewer_model.canvas.grid.enabled = True
+    viewer_model.canvas.grid.spacing = 45
+    spacing = viewer_model.canvas.grid._compute_canvas_spacing(
+        viewer_model.canvas.size, viewer_model.layers
+    )
+    assert spacing > 0
+    height, width = viewer_model.canvas.viewbox_size(viewer_model.layers)
+    expected = viewer_model.canvas_to_world((height / 2, width / 2), (0, 0))
+
+    for col in range(2):
+        center_px = (height / 2, col * (width + spacing) + width / 2)
+        np.testing.assert_allclose(
+            viewer_model.canvas_to_world(center_px, (0, col)), expected
+        )
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('down', 'right'), (50, 100)),
+        (('up', 'right'), (-50, 100)),
+        (('down', 'left'), (50, -100)),
+        (('up', 'left'), (-50, -100)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_2d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation2D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 2D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 2
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (6, 7)
+    camera.zoom = 2
+    camera.orientation2d = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with zoom=2, the (100, 200) canvas offset maps to (50, 100) before
+    # applying the vertical and horizontal orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('towards', 'down', 'right'), (100, -50)),
+        (('towards', 'up', 'right'), (100, 50)),
+        (('towards', 'down', 'left'), (-100, -50)),
+        (('towards', 'up', 'left'), (-100, 50)),
+        (('away', 'down', 'right'), (100, -50)),
+        (('away', 'up', 'right'), (100, 50)),
+        (('away', 'down', 'left'), (-100, -50)),
+        (('away', 'up', 'left'), (-100, 50)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_3d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation3D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 3D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (5, 6, 7)
+    camera.zoom = 2
+    camera.angles = (90, 0, 0)
+    camera.orientation = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with angles=(90, 0, 0), the (100, 200) canvas offset maps to (100, -50)
+    # before applying the orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison (projected on camera center plane always)
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+def test_canvas_to_world_2d_data_with_3d_viewer(
+    viewer_model: ViewerModel,
+) -> None:
+    """The position should map back onto existing dims."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    middle_of_canvas = (400, 600)
+    middle_of_image = (4.5, 4.5)
+    world_pos = viewer_model.canvas_to_world(middle_of_canvas)
+    # special case that needs special fixing. Before fix, we'd end up
+    # with (0, 4.5) because it embedded as `(0, 4.5, 4.5)` and then dropped
+    # the last dim
+    np.testing.assert_allclose(world_pos, middle_of_image)
 
 
 @pytest.mark.usefixtures(
@@ -658,12 +790,19 @@ def test_insert_layer_ordering(
     assert pl2_vispy.order == 0
 
 
-def test_create_non_empty_viewer_model(qtbot: QtBot) -> None:
+@pytest.mark.parametrize('grid', [False, True])
+def test_create_non_empty_viewer_model(qtbot: QtBot, grid: bool) -> None:
     viewer_model = ViewerModel()
+    viewer_model.add_image(np.zeros((4, 4)))
     viewer_model.add_points([(1, 2), (2, 3)])
+    viewer_model.canvas.grid.enabled = grid
 
     viewer = QtViewer(viewer=viewer_model)
 
+    assert all(
+        visual.node.parent is not None
+        for visual in viewer.canvas.layer_to_visual.values()
+    )
     viewer.close()
     viewer.deleteLater()
     # try to del local reference for gc.
@@ -720,7 +859,7 @@ def test_qt_viewer_accepts_custom_welcome_tips(
     ):
         viewer._set_welcome_visible(True)
         assert viewer._welcome_widget._tip_label.text() == (
-            'Did you know?\nsecond tip'
+            'Did you know?<br>second tip'
         )
 
 
@@ -762,7 +901,7 @@ def _update_data(
     color_box_color = qt_viewer.controls.widgets[
         layer
     ]._label_control.colorbox.color
-    screenshot = qt_viewer.screenshot(flash=False)
+    screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
 
@@ -883,8 +1022,8 @@ def test_axis_labels(viewer_model: ViewerModel, qt_viewer: QtViewer) -> None:
     layer = viewer_model.add_image(np.zeros((2, 2, 2)), scale=(1, 2, 4))
 
     layer_visual = qt_viewer.layer_to_visual[layer]
-    axes_visual = qt_viewer.canvas._overlay_to_visual[
-        viewer_model._overlays['axes']
+    axes_visual = qt_viewer.canvas._viewer_overlay_to_visual[
+        viewer_model.scene.overlays.axes
     ][0]
 
     layer_visual_size = vispy_image_scene_size(layer_visual)
@@ -935,7 +1074,7 @@ def test_thumbnail_labels(
     QApplication.processEvents()
     qtbot.wait(50)
 
-    canvas_screenshot_ = qt_viewer.screenshot(flash=False)
+    canvas_screenshot_ = qt_viewer.screenshot(flash=False, size=[400, 400])
 
     import imageio
 
@@ -978,7 +1117,7 @@ def test_background_color(
         layer.data = data
         layer.colormap = label_colormap(49, background_value=background)
         qtbot.wait(50)
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         background_pixel = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         color_pixel = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1002,7 +1141,7 @@ def test_rendering_interpolation(
     layer.selected_label = 5
     viewer_model.dims.ndisplay = 3
     QApplication.processEvents()
-    canvas_screenshot = qt_viewer.screenshot(flash=False)
+    canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(canvas_screenshot.shape[:2])
     pixel = canvas_screenshot[tuple((shape * 0.5).astype(int))]
     color = layer.colormap.map(5) * 255
@@ -1031,7 +1170,7 @@ def test_selection_collision(
         layer.data = data.astype(dtype)
         layer.show_selected_label = False
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         pixel_10 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         pixel_59 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1040,7 +1179,7 @@ def test_selection_collision(
 
         layer.show_selected_label = True
 
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         shape = np.array(canvas_screenshot.shape[:2])
         pixel_10_2 = canvas_screenshot[tuple((shape * 0.25).astype(int))]
         pixel_59_2 = canvas_screenshot[tuple((shape * 0.75).astype(int))]
@@ -1060,7 +1199,7 @@ def test_all_supported_dtypes(
         data = np.full((10, 10), i, dtype=dtype)
         layer_.data = data
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1090,7 +1229,7 @@ def test_all_supported_dtypes(
         data = np.full((10, 10), i, dtype=dtype)
         layer_.data = data
         QApplication.processEvents()
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1124,7 +1263,7 @@ def test_more_than_uint16_colors(
     for i in [1, 1000, 100000]:
         data = np.full((10, 10), i, dtype=np.uint32)
         layer.data = data
-        canvas_screenshot = qt_viewer.screenshot(flash=False)
+        canvas_screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         midd_pixel = canvas_screenshot[
             tuple(np.array(canvas_screenshot.shape[:2]) // 2)
         ]
@@ -1138,7 +1277,7 @@ def test_more_than_uint16_colors(
 def test_scale_bar_colored(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.scale_bar
+    scale_bar = viewer_model.canvas.overlays.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))
@@ -1146,14 +1285,14 @@ def test_scale_bar_colored(
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
     def check_all_black():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1164,7 +1303,7 @@ def test_scale_bar_colored(
 
     # Check scale bar is colored (canvas has fuchsia `[1, 0, 1, 255]` and not white in it)
     def check_colored_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 2])
@@ -1175,7 +1314,7 @@ def test_scale_bar_colored(
 
     # Check scale bar is still visible but not colored (canvas has white again but not fuchsia in it)
     def check_only_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1190,7 +1329,7 @@ def test_scale_bar_colored(
 def test_scale_bar_ticks(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot
 ) -> None:
-    scale_bar = viewer_model.scale_bar
+    scale_bar = viewer_model.canvas.overlays.scale_bar
 
     # Add black image
     data = np.zeros((2, 2))
@@ -1198,14 +1337,14 @@ def test_scale_bar_ticks(
 
     # Check scale bar is not visible (all the canvas is black - `[0, 0, 0, 255]`)
     def check_all_black():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
 
     qtbot.waitUntil(check_all_black)
 
     # Check scale bar is visible (canvas has white `[1, 1, 1, 255]` in it)
     def check_white_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         assert not np.all(screenshot == [0, 0, 0, 255], axis=-1).all()
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
@@ -1216,11 +1355,11 @@ def test_scale_bar_ticks(
 
     # Check scale bar has ticks active and take screenshot for later comparison
     assert scale_bar.ticks
-    screenshot_with_ticks = qt_viewer.screenshot(flash=False)
+    screenshot_with_ticks = qt_viewer.screenshot(flash=False, size=[400, 400])
 
     # Check scale bar without ticks (still white present but new screenshot differs from ticks one)
     def check_no_ticks_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])
@@ -1236,7 +1375,7 @@ def test_scale_bar_ticks(
 
     # Check scale bar again has ticks (still white present and new screenshot corresponds with ticks one)
     def check_ticks_scale_bar():
-        screenshot = qt_viewer.screenshot(flash=False)
+        screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
         # antialiasing can make things less saturated
         assert np.all(screenshot[..., 0] == screenshot[..., 1])
         assert np.all(screenshot[..., 1] == screenshot[..., 2])
@@ -1286,13 +1425,15 @@ def test_viewer_drag_to_zoom(
 
     zoom_area_mock = mock.Mock(side_effect=zoom_callback)
 
-    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
+    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+        zoom_area_mock
+    )
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1301,7 +1442,7 @@ def test_viewer_drag_to_zoom(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1315,19 +1456,20 @@ def test_viewer_drag_to_zoom(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model._zoom_box.position == ((0, 0), (100, 100)), (
-        'Zoom box canvas positions should match the drag coordinates'
-    )
+    assert viewer_model.canvas.overlays._zoom_box.position == (
+        (0, 0),
+        (100, 100),
+    ), 'Zoom box canvas positions should match the drag coordinates'
 
     # Simulate release to finish zooming
     canvas._scene_canvas.events.mouse_release(
         pos=(100, 100), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
         'Zoom box should be hidden after release'
     )
 
@@ -1343,13 +1485,15 @@ def test_viewer_drag_to_zoom_with_cancel(
 
     zoom_area_mock = mock.Mock()
 
-    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
+    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+        zoom_area_mock
+    )
 
     # Add an image layer
     data = np.random.default_rng(0).random((10, 20))
     viewer_model.add_image(data)
 
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
         'Zoom box should be hidden initially'
     )
     qtbot.wait(10)
@@ -1358,7 +1502,7 @@ def test_viewer_drag_to_zoom_with_cancel(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is True, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is True, (
         'Zoom box should be visible after press'
     )
 
@@ -1372,12 +1516,13 @@ def test_viewer_drag_to_zoom_with_cancel(
         ),
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
         'Zoom box should remain visible during drag'
     )
-    assert viewer_model._zoom_box.position == ((0, 0), (0, 0)), (
-        'Zoom box canvas positions should match the drag coordinates'
-    )
+    assert viewer_model.canvas.overlays._zoom_box.position == (
+        (0, 0),
+        (0, 0),
+    ), 'Zoom box canvas positions should match the drag coordinates'
     zoom_area_mock.assert_not_called()
 
 
@@ -1394,7 +1539,9 @@ def test_viewer_drag_to_zoom_3d_data(
     canvas = qt_viewer.canvas
 
     zoom_area_mock = mock.Mock()
-    viewer_model._zoom_box.events.zoom_area.connect(zoom_area_mock)
+    viewer_model.canvas.overlays._zoom_box.events.zoom_area.connect(
+        zoom_area_mock
+    )
 
     # 3D data so that event.position will have 3 components
     data = np.random.default_rng(0).random((10, 20, 20))
@@ -1407,7 +1554,7 @@ def test_viewer_drag_to_zoom_3d_data(
         pos=(0, 0), modifiers=('Alt',), button=0
     )
     qtbot.wait(10)
-    assert viewer_model._zoom_box.visible is True
+    assert viewer_model.canvas.overlays._zoom_box.visible is True
 
     canvas._scene_canvas.events.mouse_move(
         pos=(100, 100),
@@ -1425,7 +1572,7 @@ def test_viewer_drag_to_zoom_3d_data(
     )
     qtbot.wait(10)
 
-    assert viewer_model._zoom_box.visible is False, (
+    assert viewer_model.canvas.overlays._zoom_box.visible is False, (
         'Zoom box should be hidden after release'
     )
     # zoom_area should have been set with 2-tuples (last 2 world coords)

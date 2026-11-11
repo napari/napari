@@ -9,7 +9,6 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
 from napari._qt.utils import attr_to_settr
 from napari.layers.base.base import Layer
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtGammaSliderControl(QtWidgetControlsBase):
@@ -34,8 +33,10 @@ class QtGammaSliderControl(QtWidgetControlsBase):
 
     def __init__(self, parent: QWidget, layer: Layer) -> None:
         super().__init__(parent, layer)
-        # Setup widgets
-        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent)
+
+        # Setup gamma slider - exactly like opacity slider
+        sld = QLabeledDoubleSlider(Qt.Orientation.Horizontal, parent=parent)
+        sld.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         sld.setMinimum(0.2)
         sld.setMaximum(2)
         sld.setSingleStep(0.02)
@@ -46,7 +47,9 @@ class QtGammaSliderControl(QtWidgetControlsBase):
         )
         self.gamma_slider = sld
 
-        self.gamma_slider_label = QtWrappedLabel(trans._('gamma:'))
+        self.gamma_slider_label = QtWrappedLabel('gamma:')
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [(self.gamma_slider_label, self.gamma_slider)]

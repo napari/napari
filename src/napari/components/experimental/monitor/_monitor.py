@@ -12,8 +12,6 @@ import logging
 import os
 from pathlib import Path
 
-from napari.utils.translations import trans
-
 LOGGER = logging.getLogger('napari.monitor')
 
 # If False monitor is disabled even if we meet all other requirements.
@@ -37,11 +35,7 @@ def _load_config(path: str) -> dict:
     if not path.exists():
         raise FileNotFoundError(
             errno.ENOENT,
-            trans._(
-                'Monitor: Config file not found: {path}',
-                deferred=True,
-                path=path,
-            ),
+            f'Monitor: Config file not found: {path}',
         )
 
     with path.open() as infile:

@@ -1,30 +1,42 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 
-PRECISION_COUNT = 3
+DEFAULT_PRECISION = 3
 
 
-def format_float(value):
+def format_float(
+    value: Any, precision: int | None = None, format_mode: str = 'g'
+) -> str:
     """Nice float formatting into strings."""
-    return f'{value:0.{PRECISION_COUNT}g}'
+    if precision is None:
+        precision = DEFAULT_PRECISION
+    return f'{value:0.{precision}{format_mode}}'
 
 
-def format_feature_value(value):
+def format_feature_value(value: Any) -> str:
     """Format a single feature value for display in the status bar."""
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
         return format_float(value)
     return str(value)
 
 
-def status_format(value):
+def status_format(
+    value: Any, precision: int | None = None, format_mode: str = 'g'
+) -> str:
     """Return a "nice" string representation of a value.
 
     Parameters
     ----------
     value : Any
         The value to be printed.
+    precision : int, optional
+        The number of significant digits to use when formatting floats.
+    format_mode : str, optional
+        The format mode to use when formatting floats. See:
+        https://docs.python.org/3/library/string.html#format-specification-mini-language
 
     Returns
     -------
@@ -38,25 +50,49 @@ def status_format(value):
     >>> status_format(values)
     '[1, 10, 100, 1e+03, 1e+06, 6.28, 124, 1.12e+03, 6.28, 2.72]'
     """
+    if precision is None:
+        precision = DEFAULT_PRECISION
     if isinstance(value, str):
         return value
     if isinstance(value, Iterable):
         # FIMXE: use an f-string?
-        return '[' + str.join(', ', [status_format(v) for v in value]) + ']'
+        return (
+            '['
+            + str.join(
+                ', ',
+                [
+                    status_format(
+                        v, precision=precision, format_mode=format_mode
+                    )
+                    for v in value
+                ],
+            )
+            + ']'
+        )
     if value is None:
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):
-        return format_float(value)
+        return format_float(
+            value, precision=precision, format_mode=format_mode
+        )
 
     return str(value)
 
 
 def generate_layer_status_strings(
-    position: npt.ArrayLike | None, value: tuple | None
+    position: npt.ArrayLike | None,
+    value: tuple | None,
+    precision: int | None = None,
 ) -> tuple[str, str]:
     if position is not None:
-        full_coord = map(str, np.round(np.array(position)).astype(int))
-        pos_str = f' [{" ".join(full_coord)}]'
+        position = np.asarray(position)
+        # format mode 'd' is for decimal integers, 'f' is for fixed point
+        # (specific number of decimals). See:
+        # https://docs.python.org/3/library/string.html#:~:text=The%20available%20integer%20presentation%20types%20are
+        format_mode = 'd' if np.issubdtype(position.dtype, np.integer) else 'f'
+        pos_str = status_format(
+            position, precision=precision, format_mode=format_mode
+        )
     else:
         pos_str = ''
 
@@ -80,7 +116,9 @@ def generate_layer_coords_status(
     return ': '.join(generate_layer_status_strings(position, value))
 
 
-def generate_layer_status(name, position, value):
+def generate_layer_status(
+    name: str, position: Sequence[float] | None, value: Any
+) -> str:
     """Generate a status message based on the coordinates and value
 
     Parameters

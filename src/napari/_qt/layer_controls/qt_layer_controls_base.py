@@ -18,7 +18,6 @@ from napari.layers.base._base_constants import Mode
 from napari.layers.base.base import Layer
 from napari.utils.action_manager import action_manager
 from napari.utils.events import disconnect_events
-from napari.utils.translations import trans
 
 
 class LayerFormLayout(QFormLayout):
@@ -28,7 +27,9 @@ class LayerFormLayout(QFormLayout):
         super().__init__(QWidget)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(4)
-        self.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
 
 
 class QtLayerControls(QFrame):
@@ -94,10 +95,8 @@ class QtLayerControls(QFrame):
             self.MODE.PAN_ZOOM,
             False,
             self.PAN_ZOOM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\n(or hold Space)\n(hold Shift to pan in 3D)'
-                '\n(hold Alt to zoom via ROI selection)',
-            ),
+            extra_tooltip_text='\n(or hold Space)\n(hold Shift to pan in 3D)'
+            '\n(hold Alt to zoom via ROI selection)',
             checked=True,
         )
         self.transform_button = self._radio_button(
@@ -106,9 +105,7 @@ class QtLayerControls(QFrame):
             self.MODE.TRANSFORM,
             True,
             self.TRANSFORM_ACTION_NAME,
-            extra_tooltip_text=trans._(
-                '\nAlt + Left mouse click over this button to reset'
-            ),
+            extra_tooltip_text='\nAlt + Left mouse click over this button to reset',
         )
         self.transform_button.installEventFilter(self)
         self._on_editable_or_visible_change()
@@ -142,8 +139,8 @@ class QtLayerControls(QFrame):
         """
         controls = wrapper.get_widget_controls()
 
-        for label_text, control_widget in controls:
-            self.layout().addRow(label_text, control_widget)
+        for widgets in controls:
+            self.layout().addRow(*widgets)
 
     def changeProjectionMode(self, text):
         with self.layer.events.blocker(self._on_projection_mode_change):
@@ -225,9 +222,7 @@ class QtLayerControls(QFrame):
         if event.mode in self._MODE_BUTTONS:
             self._MODE_BUTTONS[event.mode].setChecked(True)
         else:
-            raise ValueError(
-                trans._("Mode '{mode}' not recognized", mode=event.mode)
-            )
+            raise ValueError(f"Mode '{event.mode}' not recognized")
 
     def _on_editable_or_visible_change(self):
         """Receive layer model editable/visible change event & enable/disable buttons."""
@@ -284,28 +279,28 @@ class QtLayerControls(QFrame):
         """
         if (
             qobject == self.transform_button
-            and event.type() == QMouseEvent.MouseButtonRelease
+            and event.type() == QMouseEvent.Type.MouseButtonRelease
             and event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             result = QMessageBox.warning(
                 self,
-                trans._('Reset transform'),
-                trans._('Are you sure you want to reset transforms?'),
-                QMessageBox.Yes | QMessageBox.No,
+                'Reset transform',
+                'Are you sure you want to reset transforms?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
-            if result == QMessageBox.Yes:
+            if result == QMessageBox.StandardButton.Yes:
                 self.layer._reset_affine()
                 return True
         return super().eventFilter(qobject, event)
 
-    def deleteLater(self):
+    def deleteLater(self) -> None:
         disconnect_events(self.layer.events, self)
         for child in self.children():
             self._disconnect_child_widget_controls(child)
         super().deleteLater()
 
-    def close(self):
+    def close(self) -> bool:
         """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
         for child in self.children():

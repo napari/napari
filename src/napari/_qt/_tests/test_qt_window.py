@@ -4,12 +4,21 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from magicgui.widgets import Container
-from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QWidget
+from qtpy.QtCore import QEvent, QPoint
+from qtpy.QtGui import QHelpEvent, QImage
+from qtpy.QtWidgets import QToolTip, QWidget
 
-from napari._qt.qt_main_window import Window, _QtMainWindow
+from napari._qt.qt_main_window import (
+    Window,
+    _QtMainWindow,
+    _shutdown_open_windows,
+)
 from napari._qt.utils import QImg2array
+from napari._qt.widgets.qt_viewer_status_bar import (
+    _EXPERIMENTAL_FEATURES_TO_WARN,
+)
 from napari._tests.utils import skip_on_win_ci
+from napari.settings import get_settings
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -52,6 +61,21 @@ def test_current_viewer(make_napari_viewer):
     v1.close()
     assert _QtMainWindow._instances == []
     assert _QtMainWindow.current() is None
+
+
+def test_shutdown_stops_worker_threads(make_napari_viewer):
+    viewer = make_napari_viewer()
+    window = viewer.window._qt_window
+    assert window in _QtMainWindow._instances
+
+    with (
+        patch.object(window.status_thread, 'close_terminate') as stop_status,
+        patch.object(window._qt_viewer.dims, 'stop') as stop_animation,
+    ):
+        _shutdown_open_windows()
+
+    stop_status.assert_called_once_with()
+    stop_animation.assert_called_once_with()
 
 
 def test_set_geometry(make_napari_viewer):
@@ -161,6 +185,26 @@ def test_set_status_and_tooltip(make_napari_viewer):
     assert viewer.status == 'Text1'
     assert viewer.tooltip.text == 'Text2'
 
+    bar = viewer.window._qt_window.statusBar()
+    for name in _EXPERIMENTAL_FEATURES_TO_WARN:
+        assert name in bar._warn_labels
+
+
+@patch.object(QToolTip, 'showText')
+def test_viewer_tooltip_help_event(show_text, make_napari_viewer):
+    """ToolTip events are QHelpEvents, which have globalPos() only."""
+    viewer = make_napari_viewer()
+    viewer.tooltip.visible = True
+    viewer.tooltip.text = 'Tooltip text'
+    qt_window = viewer.window._qt_window
+    event = QHelpEvent(QEvent.Type.ToolTip, QPoint(5, 5), QPoint(105, 205))
+
+    qt_window.event(event)
+
+    show_text.assert_called_once()
+    assert show_text.call_args[0][0] == QPoint(105, 205)
+    assert show_text.call_args[0][1] == 'Tooltip text'
+
 
 @pytest.mark.parametrize('BaseClass', [Container, QWidget])
 def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
@@ -169,7 +213,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     class InnerWidget(BaseClass):
         pass
 
-    mock = MagicMock(return_value=(InnerWidget, 'widget name'))
+    mock = MagicMock(return_value=(InnerWidget, 'widget name', 'bottom', True))
     monkeypatch.setattr('napari.plugins._npe2.get_widget_contribution', mock)
     viewer = make_napari_viewer()
     assert list(viewer.window.dock_widgets.keys()) == []
@@ -177,6 +221,7 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
     docked, widget = viewer.window.add_plugin_dock_widget(
         'sample_plugin', 'sample_widget'
     )
+    assert docked.area == 'bottom'
     assert isinstance(widget, InnerWidget)
     assert docked.inner_widget() is widget
     assert list(viewer.window.dock_widgets.keys()) == [
@@ -191,3 +236,54 @@ def test_add_plugin_dock_widget(make_napari_viewer, monkeypatch, BaseClass):
 
     with pytest.raises(TypeError):
         viewer.window.dock_widgets['widget name (sample_plugin)'] = 1
+
+    # the saved area is looked up by the widget's full name
+    positions = get_settings().application.plugin_widget_positions
+    positions['moved widget (sample_plugin)'] = 'left'
+    mock.return_value = (InnerWidget, 'moved widget', 'bottom', False)
+    docked, _ = viewer.window.add_plugin_dock_widget(
+        'sample_plugin', 'moved widget'
+    )
+    assert docked.area == 'left'
+
+
+@pytest.mark.parametrize(
+    ('saved_area', 'requested_area', 'default_area', 'expected_area'),
+    [
+        # never moved by the user, no area passed: the widget's default
+        # (e.g. a plugin's `default_dock_area`)
+        (None, None, 'bottom', 'bottom'),
+        # ... and with no default either, 'right'
+        (None, None, None, 'right'),
+        # user moved it to the left in an earlier session: their choice wins
+        ('left', None, 'bottom', 'left'),
+        # area passed in code (e.g. `add_dock_widget(..., area=...)`) wins
+        ('left', 'top', 'bottom', 'top'),
+    ],
+    ids=['default', 'fallback', 'saved-beats-default', 'explicit-wins'],
+)
+def test_resolve_dock_area(
+    saved_area, requested_area, default_area, expected_area
+):
+    if saved_area is not None:
+        positions = get_settings().application.plugin_widget_positions
+        positions['test'] = saved_area
+    area = Window._resolve_dock_area('test', requested_area, default_area)
+    assert area == expected_area
+
+
+@pytest.mark.parametrize(
+    ('requested_tabify', 'default_tabify', 'expected_tabify'),
+    [
+        # no tabify passed: the widget's default (e.g. a plugin's `tabify`)
+        (None, True, True),
+        (None, False, False),
+        # tabify passed in code wins over the default
+        (False, True, False),
+        (True, False, True),
+    ],
+    ids=['default-true', 'default-false', 'explicit-false', 'explicit-true'],
+)
+def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
+    tabify = Window._resolve_tabify(requested_tabify, default_tabify)
+    assert tabify is expected_tabify

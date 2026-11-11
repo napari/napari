@@ -5,18 +5,6 @@ from napari._qt.layer_controls.qt_points_controls import QtPointsControls
 from napari.layers import Points
 
 
-def test_out_of_slice_display_checkbox(qtbot):
-    """Changing the model attribute should update the view"""
-    layer = Points(np.random.rand(10, 2))
-    qtctrl = QtPointsControls(layer)
-    qtbot.addWidget(qtctrl)
-    combo = qtctrl._out_slice_checkbox_control.out_of_slice_checkbox
-
-    assert layer.out_of_slice_display is False
-    combo.setChecked(True)
-    assert layer.out_of_slice_display is True
-
-
 def test_current_size_display_in_range(qtbot):
     """Changing the model attribute should update the view"""
     layer = Points(np.random.rand(10, 2))
@@ -117,3 +105,14 @@ def test_size_slider_represents_current_size(qtbot):
     layer.events.current_size()
     assert slider.value() == 5
     assert layer.current_size == 5
+
+
+def test_text_scaling_checkbox(qtbot):
+    layer = Points(np.random.rand(10, 2))
+    qtctrl = QtPointsControls(layer)
+    qtbot.addWidget(qtctrl)
+    assert not layer.text.scaling
+    qtctrl._text_visibility_control.text_scaling_checkbox.setChecked(True)
+    assert layer.text.scaling
+    qtctrl._text_visibility_control.text_scaling_checkbox.setChecked(False)
+    assert not layer.text.scaling

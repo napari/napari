@@ -755,7 +755,7 @@ def test_compute_text_coords(ndim, ndisplay, translation):
     np.testing.assert_equal(text_coords, expected_coords)
 
 
-@pytest.mark.parametrize(('order'), permutations((0, 1, 2)))
+@pytest.mark.parametrize(('order'), list(permutations((0, 1, 2))))
 def test_compute_text_coords_with_3D_data_2D_display(order):
     """See https://github.com/napari/napari/issues/5111"""
     num_points = 3

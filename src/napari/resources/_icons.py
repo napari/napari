@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from napari.utils._platformdirs import user_cache_dir
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -22,12 +21,7 @@ def get_icon_path(name: str) -> str:
     """Return path to an SVG in the theme icons."""
     if name not in ICONS:
         raise ValueError(
-            trans._(
-                'unrecognized icon name: {name!r}. Known names: {icons}',
-                deferred=True,
-                name=name,
-                icons=set(ICONS),
-            )
+            f'unrecognized icon name: {name!r}. Known names: {set(ICONS)}'
         )
     return ICONS[name]
 
@@ -49,9 +43,19 @@ def get_raw_svg(path: str) -> str:
 
 @lru_cache
 def get_colorized_svg(
-    path_or_xml: str | Path, color: str | None = None, opacity=1.0
+    path_or_xml: str | Path, color: str | None = None, opacity: float = 1.0
 ) -> str:
     """Return a colorized version of the SVG XML at ``path``.
+
+    Parameters
+    ----------
+    path_or_xml : str | Path
+        Path to an SVG file, or raw SVG XML string.
+    color : str, optional
+        Color to use for the SVG, by default None. If None, the original SVG
+        is returned.  If a string, it should be a valid SVG color style.
+    opacity : float, optional
+        Opacity to use for the SVG, by default 1.0.
 
     Raises
     ------
@@ -64,13 +68,7 @@ def get_colorized_svg(
         return xml
 
     if not svg_elem.search(xml):
-        raise ValueError(
-            trans._(
-                'Could not detect svg tag in {path_or_xml!r}',
-                deferred=True,
-                path_or_xml=path_or_xml,
-            )
-        )
+        raise ValueError(f'Could not detect svg tag in {path_or_xml!r}')
     # use regex to find the svg tag and insert css right after
     # (the '\\1' syntax includes the matched tag in the output)
     return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)
@@ -146,7 +144,7 @@ def write_colorized_svgs(
     colors: Iterable[str | tuple[str, str]],
     opacities: Iterable[float] = (1.0,),
     theme_override: dict[str, str] | None = None,
-):
+) -> None:
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
     svgs = generate_colorized_svgs(
@@ -164,7 +162,21 @@ def _theme_path(theme_name: str) -> Path:
     return Path(user_cache_dir()) / '_themes' / theme_name
 
 
-def build_theme_svgs(theme_name: str, source) -> str:
+def build_theme_svgs(theme_name: str, source: str) -> str:
+    """Build theme-specific SVGs for a given theme and source.
+
+    Parameters
+    ----------
+    theme_name : str
+        The name of the theme.
+    source : str
+        Name of plugin providing theme.
+
+    Returns
+    -------
+    str
+        The path to the directory containing the generated SVGs.
+    """
     out = _theme_path(theme_name)
     write_colorized_svgs(
         out,

@@ -49,22 +49,21 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-    vkwargs = {
+    viewer_kwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
         if k in _viewer_params
+        # not passing `axis_labels` to viewer kwargs as it inherits from the layer
         if k != 'axis_labels'
     }
-    if 'axis_labels' in kwargs:
-        vkwargs['axis_labels'] = (
-            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
-        )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
+        k: viewer_kwargs.pop(k)
+        for k in list(viewer_kwargs)
+        if k in Dims.model_fields
     }
     if viewer is None:
-        viewer = Viewer(**vkwargs)
+        viewer = Viewer(**viewer_kwargs)
     kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
@@ -81,8 +80,9 @@ def imshow(
     *,
     channel_axis: None = ...,
     affine=...,
-    axis_labels=...,
     attenuation=...,
+    auto_contrast=...,
+    axis_labels=...,
     blending=...,
     cache=...,
     colormap=...,
@@ -94,6 +94,7 @@ def imshow(
     interpolation2d=...,
     interpolation3d=...,
     iso_threshold=...,
+    locked_data_level=...,
     metadata=...,
     multiscale=...,
     name=...,
@@ -122,8 +123,9 @@ def imshow(
     *,
     channel_axis: int,
     affine=...,
-    axis_labels=...,
     attenuation=...,
+    auto_contrast=...,
+    axis_labels=...,
     blending=...,
     cache=...,
     colormap=...,
@@ -135,6 +137,7 @@ def imshow(
     interpolation2d=...,
     interpolation3d=...,
     iso_threshold=...,
+    locked_data_level=...,
     metadata=...,
     multiscale=...,
     name=...,
@@ -162,8 +165,9 @@ def imshow(
     *,
     channel_axis=None,
     affine=None,
-    axis_labels=None,
     attenuation=0.05,
+    auto_contrast=False,
+    axis_labels=None,
     blending=None,
     cache=True,
     colormap=None,
@@ -175,6 +179,7 @@ def imshow(
     interpolation2d='nearest',
     interpolation3d='linear',
     iso_threshold=None,
+    locked_data_level=None,
     metadata=None,
     multiscale=None,
     name=None,
@@ -223,6 +228,10 @@ def imshow(
         top of the provided scale, rotate, and shear values.
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
+    auto_contrast : bool
+        Wether to automatically set contrast limits to the min and max of the
+        currently viewed slice. If True, contrast limits will be updated
+        whenever the slice changes.
     blending : str or list of str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
@@ -265,6 +274,11 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
+    locked_data_level : int, optional
+        Lock the multiscale resolution level to a specific index. When set,
+        forces rendering at the given multiscale level instead of automatic
+        level selection based on the viewport. Set to ``None`` (default) to
+        use automatic selection.
     metadata : dict or list of dict
         Layer metadata.
     multiscale : bool
@@ -347,7 +361,9 @@ def imshow(
         rendering=rendering,
         depiction=depiction,
         iso_threshold=iso_threshold,
+        locked_data_level=locked_data_level,
         attenuation=attenuation,
+        auto_contrast=auto_contrast,
         name=name,
         metadata=metadata,
         scale=scale,

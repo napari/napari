@@ -6,9 +6,10 @@ could serve to define a window Protocol that a backend would need to implement
 to server as a graphical user interface for napari.
 """
 
+from typing import Any, NoReturn
+
 __all__ = ['Window']
 
-from napari.utils.translations import trans
 
 try:
     from napari._qt import Window
@@ -16,16 +17,14 @@ try:
 except ImportError as e:
     err = e
 
-    class Window:  # type: ignore
-        def __init__(self, *args, **kwargs) -> None:
+    class Window:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
 
-        def close(self):
+        def close(self) -> None:
             pass
 
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> NoReturn:
             raise type(err)(
-                trans._(
-                    'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above',
-                )
+                'An error occured when importing Qt dependencies.  Cannot show napari window.  See cause above'
             ) from err

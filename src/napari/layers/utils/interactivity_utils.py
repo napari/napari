@@ -135,7 +135,8 @@ def orient_plane_normal_around_cursor(
         dims_displayed=layer._slice_input.displayed,
     )
     view_direction = layer._world_to_displayed_data_ray(
-        np.asarray(viewer.camera.view_direction), dims_displayed=[-3, -2, -1]
+        np.asarray(viewer.scene.camera.view_direction),
+        dims_displayed=[-3, -2, -1],
     )
     intersection = layer.plane.intersect_with_line(
         line_position=cursor_position, line_direction=view_direction
@@ -146,10 +147,10 @@ def orient_plane_normal_around_cursor(
 
     # update plane position
     if point_in_bounding_box(intersection, bounding_box):
-        layer.plane.position = intersection
+        layer.plane.position = intersection  # pyrefly: ignore [bad-assignment]
 
     # update plane normal
-    layer.plane.normal = layer._world_to_displayed_data_normal(
+    layer.plane.normal = layer._world_to_displayed_data_normal(  # pyrefly: ignore [bad-assignment]
         np.asarray(plane_normal), dims_displayed=layer._slice_input.displayed
     )
 

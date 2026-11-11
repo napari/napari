@@ -1,27 +1,32 @@
 from __future__ import annotations
 
 import csv
-import itertools
 import os
 import re
 import tokenize
 from contextlib import suppress
 from glob import glob
+from itertools import chain, pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 import imageio.v3 as iio
 import numpy as np
+import numpy.typing as npt
 from dask import delayed
 
 from napari.utils.io import execute_python_code
 from napari.utils.misc import abspath_or_url
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
-    from napari.types import FullLayerData, LayerData, ReaderFunction
+    from napari.types import (
+        FullLayerData,
+        LayerData,
+        PathOrPaths,
+        ReaderFunction,
+    )
 
 
 def _alphanumeric_key(s: str) -> list[str | int]:
@@ -148,12 +153,7 @@ def read_zarr_dataset(path: str):
         store = zarr.open(path, mode='r')
     except Exception as e:
         raise ValueError(
-            trans._(
-                'Failed to open zarr store at {path}. Error: {error_message}',
-                deferred=True,
-                path=path,
-                error_message=str(e),
-            )
+            f'Failed to open zarr store at {path}. Error: {e!s}'
         ) from e
 
     # Arrays can be opened directly, local and remote
@@ -163,21 +163,12 @@ def read_zarr_dataset(path: str):
 
     # if we're here, it means the path wasn't a valid array, so we check if it's a valid group
     if not isinstance(store, zarr.Group):
-        raise TypeError(
-            trans._(
-                'Unexpected zarr type: {type_}',
-                deferred=True,
-                type_=type(store).__name__,
-            )
-        )
+        raise TypeError(f'Unexpected zarr type: {type(store).__name__}')
 
     # Remote zarr Groups cannot be traversed over HTTP
     if _is_url(path):
         raise ValueError(
-            trans._(
-                'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.',
-                deferred=True,
-            )
+            'Opening remote zarr Groups is not supported. Please provide a direct URL to a zarr Array.'
         )
 
     group_keys = sorted(store.group_keys())
@@ -190,13 +181,7 @@ def read_zarr_dataset(path: str):
             # if there are multiple groups, inform the user
             other_groups = group_keys[1:]
             show_info(
-                trans._(
-                    'Multiple zarr Groups found in {path}. Opening group "{group}". Other groups: {other_groups}',
-                    deferred=True,
-                    path=path,
-                    group=group_keys[0],
-                    other_groups=', '.join(other_groups),
-                )
+                f'Multiple zarr Groups found in {path}. Opening group "{group_keys[0]}". Other groups: {", ".join(other_groups)}'
             )
     else:
         # the store consists of a single group, so open it
@@ -204,13 +189,7 @@ def read_zarr_dataset(path: str):
 
     array_keys = sorted(group.array_keys())
     if not array_keys:
-        raise ValueError(
-            trans._(
-                'No arrays found in zarr group: {path}',
-                deferred=True,
-                path=path,
-            )
-        )
+        raise ValueError(f'No arrays found in zarr group: {path}')
 
     # Build list of arrays from arrays in the group
     image = [da.from_zarr(group[k]) for k in array_keys]
@@ -279,11 +258,7 @@ def magic_imread(
 
     if not filenames_expanded:
         raise ValueError(
-            trans._(
-                'No files found in {filenames} after removing subdirectories',
-                deferred=True,
-                filenames=filenames,
-            )
+            f'No files found in {filenames} after removing subdirectories'
         )
 
     # then, read in images
@@ -327,10 +302,7 @@ def magic_imread(
                 image = np.stack(images)
             except ValueError as e:
                 if 'input arrays must have the same shape' in str(e):
-                    msg = trans._(
-                        'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
-                        deferred=True,
-                    )
+                    msg = 'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.'
                     raise ValueError(msg) from e
                 raise  # pragma: no cover
     else:
@@ -405,13 +377,11 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0, *transitions] + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError(
-            trans._('Expected number of shapes not found', deferred=True)
-        )
+        raise ValueError('Expected number of shapes not found')
 
     data = []
     shape_type = []
-    for ind_a, ind_b in itertools.pairwise(shape_boundaries):
+    for ind_a, ind_b in pairwise(shape_boundaries):
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
@@ -486,20 +456,11 @@ def read_csv(
         if require_type:
             if not layer_type:
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as valid Layer data',
-                        deferred=True,
-                        filename=filename,
-                    )
+                    f'File "{filename}" not recognized as valid Layer data'
                 )
             if layer_type != require_type and require_type.lower() != 'any':
                 raise ValueError(
-                    trans._(
-                        'File "{filename}" not recognized as {require_type} data',
-                        deferred=True,
-                        filename=filename,
-                        require_type=require_type,
-                    )
+                    f'File "{filename}" not recognized as {require_type} data'
                 )
 
         data = np.array(list(reader))
@@ -568,6 +529,84 @@ def _csv_reader(path: str | Sequence[str]) -> list[LayerData]:
 
 def _magic_imreader(path: str) -> list[LayerData]:
     return [(magic_imread(path),)]
+
+
+def _read_wavefront_obj_lines(
+    lines: Iterable[str],
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.int32]]:
+    vertices = []
+    faces = []
+
+    for line in lines:
+        parts = line.strip().split()
+        # we need at least a type (like 'v' for vertex) and their components, which are separated by whitespace
+        if len(parts) > 1:
+            element_type, *values = parts
+            match element_type:
+                # we are currently only interested in vertices and faces, no other features
+                case 'v':
+                    vertices.append([float(value) for value in values])
+                case 'f':
+                    # we only take the first part of the split, which is the vertex index
+                    # (because we ignore normals and texture coordinates)
+                    indices = [value.split('/')[0] for value in values]
+                    # we only support triangles (for now)
+                    if len(indices) != 3:
+                        raise ValueError('Only triangular faces are supported')
+                    # subtract one for each index, since OBJ uses 1-based indexing
+                    faces.append([int(index) - 1 for index in indices])
+
+    return (
+        np.array(vertices, dtype=np.float64),
+        np.array(faces, dtype=np.int32),
+    )
+
+
+def _read_wavefront_obj(path_or_paths: PathOrPaths) -> list[LayerData]:
+    # if it is a sequence of paths, we process each file separately and return all results
+    if not isinstance(path_or_paths, (str, Path)):
+        return list(
+            chain.from_iterable(
+                _read_wavefront_obj(path) for path in path_or_paths
+            )
+        )
+
+    with open(path_or_paths, encoding='utf-8') as obj_file:
+        vertices, faces = _read_wavefront_obj_lines(obj_file)
+        surface = (vertices, faces)
+
+        add_kwargs = {
+            'blending': 'opaque',
+            # we default to smooth shading for now (in the future we could process the 's' type if necessary)
+            'shading': 'smooth',
+        }
+
+        return [(surface, add_kwargs, 'surface')]
+
+
+def napari_get_obj_reader(path: str) -> ReaderFunction | None:
+    """Return a reader function for Wavefront OBJ files.
+
+    It is used to read the mesh data contained in the OBJ file and
+    convert it to a Surface for internal use.
+
+    Parameters
+    ----------
+    path : str
+        Path to the OBJ file to be read.
+
+    Returns
+    -------
+    callable
+        A function parses the OBJ file and converts it to a Surface.
+    """
+    if not os.path.exists(path):
+        return None
+
+    if os.path.splitext(path)[1] != '.obj':
+        return None
+
+    return _read_wavefront_obj
 
 
 def napari_get_reader(

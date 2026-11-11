@@ -1,3 +1,5 @@
+import numpy as np
+
 from napari.components.overlays.base import SceneOverlay
 from napari.layers.utils.interaction_box import (
     InteractionBoxHandle,
@@ -22,13 +24,16 @@ class SelectionBoxOverlay(SceneOverlay):
         The opacity of the overlay. 0 is fully transparent.
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     bounds: tuple[tuple[float, float], tuple[float, float]] = ((0, 0), (0, 0))
     handles: bool = False
     selected_handle: InteractionBoxHandle | None = None
 
-    def update_from_points(self, points):
+    def update_from_points(self, points: np.ndarray) -> None:
         """Create as a bounding box of the given points"""
         self.bounds = calculate_bounds_from_contained_points(points)
 
@@ -46,6 +51,9 @@ class TransformBoxOverlay(SceneOverlay):
         The opacity of the overlay. 0 is fully transparent.
     order : int
         The rendering order of the overlay: lower numbers get rendered first.
+    blending : Blending
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the overlay get mixed with the visuals below.
     """
 
     selected_handle: InteractionBoxHandle | None = None

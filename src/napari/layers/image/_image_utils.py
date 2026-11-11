@@ -9,7 +9,6 @@ import numpy as np
 
 from napari.layers._data_protocols import LayerDataProtocol
 from napari.layers._multiscale_data import MultiScaleData
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -87,19 +86,11 @@ def guess_multiscale(
         # note: the individual array case should be caught by the first
         # code line in this function, hasattr(ndim) and ndim > 1.
         raise ValueError(
-            trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {size}',
-                deferred=True,
-                size=sizes[0],
-            )
+            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays of single size: {sizes[0]}'
         )
     if not consistent:
         raise ValueError(
-            trans._(
-                'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}',
-                deferred=True,
-                sizes=sizes,
-            )
+            f'Input data should be an array-like object, or a sequence of arrays of decreasing size. Got arrays in incorrect order, sizes: {sizes}'
         )
 
     return True, MultiScaleData(data)

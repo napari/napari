@@ -6,7 +6,6 @@ import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
-from napari.settings import get_settings
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -17,18 +16,18 @@ if TYPE_CHECKING:
 
     from napari._vispy.utils.qt_font import FontInfo
     from napari.components.overlays import ColorBarOverlay
-    from napari.layers import Image, Layer, Surface
+    from napari.layers import Image, Surface
     from napari.layers.utils.color_manager import ColorManager
     from napari.utils.colormaps import Colormap
 
 
 class IntensityLayerWrapper:
-    def __init__(self, layer: Image | Surface):
+    def __init__(self, layer: Image | Surface) -> None:
         self.layer = layer
 
     @property
     def contrast_limits(self) -> tuple[float, float]:
-        return self.layer.contrast_limits
+        return self.layer.contrast_limits  # pyrefly: ignore [bad-return]
 
     @property
     def dtype(self) -> DTypeLike:
@@ -44,7 +43,7 @@ class IntensityLayerWrapper:
 
 
 class ColorManagerWrapper:
-    def __init__(self, color_manager: ColorManager):
+    def __init__(self, color_manager: ColorManager) -> None:
         self.color_manager = color_manager
 
     @property
@@ -67,21 +66,19 @@ class ColorManagerWrapper:
 
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
+    layer: Image | Surface
 
     def __init__(
         self,
         *,
-        layer: Image | Surface,
         font_info: FontInfo,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             node=ColorBar(font_info=font_info),
-            layer=layer,
             font_info=font_info,
             **kwargs,
         )
-        self.layer: Layer
         self.x_size = 50
         self.y_size = 250
 
@@ -109,8 +106,9 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.overlay.events.box_color.connect(self._on_ticks_change)
         self.overlay.events.color.connect(self._on_ticks_change)
 
-        get_settings().appearance.events.theme.connect(self._on_data_change)
-        self.viewer.events.theme.connect(self._on_data_change)
+        self.viewer.canvas.events.background_color.connect(
+            self._on_data_change
+        )
 
         self.reset()
 
@@ -151,10 +149,17 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.node.set_size(self.overlay.size)
         self._on_ticks_change()
 
+    def _on_font_size_change(self) -> None:
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._on_ticks_change()
+
     def _on_ticks_change(self) -> None:
         # set color to the negative of theme background.
         # the reason for using the `as_hex` here is to avoid
         # `UserWarning` which is emitted when RGB values are above 1
+        if not self.node.visible:
+            return
         if self.source_wrapper.contrast_limits is None:
             return
 
@@ -165,9 +170,15 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         else:
             color = self._get_fgcolor()
 
+        font_size = (
+            self.overlay.font_size
+            if self.overlay.font_size is not None
+            else self._default_font_size
+        )
+
         text_width, line_height = self.node.set_ticks_and_get_text_size(
             tick_length=self.overlay.tick_length,
-            font_size=self.overlay.font_size,
+            font_size=font_size,
             clim=_coerce_contrast_limits(
                 self.source_wrapper.contrast_limits
             ).contrast_limits,

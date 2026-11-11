@@ -12,8 +12,7 @@ from napari.utils.misc import ROOT_DIR, formatdoc
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import FrameType, TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
 sep = ' '
 start = 1

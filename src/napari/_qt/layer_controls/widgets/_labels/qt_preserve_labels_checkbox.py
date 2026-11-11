@@ -7,10 +7,9 @@ from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
-from napari._qt.utils import attr_to_settr, checked_to_bool
+from napari._qt.utils import attr_to_settr
 from napari.layers import Labels
 from napari.utils.events.event_utils import connect_setattr
-from napari.utils.translations import trans
 
 
 class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
@@ -38,7 +37,7 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
         # Setup widgets
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
-            trans._('Preserve existing labels while painting')
+            'Preserve existing labels while painting'
         )
         preserve_labels_cb.setChecked(self._layer.preserve_labels)
         self._callbacks.append(
@@ -50,18 +49,19 @@ class QtPreserveLabelsCheckBoxControl(QtWidgetControlsBase):
             )
         )
         connect_setattr(
-            preserve_labels_cb.stateChanged,
+            preserve_labels_cb.toggled,
             layer,
             'preserve_labels',
-            convert_fun=checked_to_bool,
         )
         self.preserve_labels_checkbox = preserve_labels_cb
 
         self.preserve_labels_checkbox_label = QtWrappedLabel(
-            trans._('preserve\nlabels:')
+            'preserve\nlabels:'
         )
 
-    def get_widget_controls(self) -> list[tuple[QtWrappedLabel, QWidget]]:
+    def get_widget_controls(
+        self,
+    ) -> list[tuple[QtWrappedLabel, QWidget] | tuple[QWidget]]:
         return [
             (
                 self.preserve_labels_checkbox_label,

@@ -203,10 +203,10 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
         side_effect=choose_tip,
     ):
         view.set_welcome_tips(tips)
-        assert welcome._tip_label.text() == 'Did you know?\nfirst tip'
+        assert welcome._tip_label.text() == 'Did you know?<br>first tip'
 
         view._set_welcome_visible(True)
-        assert welcome._tip_label.text() == 'Did you know?\nsecond tip'
+        assert welcome._tip_label.text() == 'Did you know?<br>second tip'
 
 
 def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
@@ -223,7 +223,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         welcome.refresh()
         assert (
             welcome._tip_label.text()
-            == 'Did you know?\nOpen files with Ctrl+O.'
+            == 'Did you know?<br>Open files with Ctrl+O.'
         )
 
     with patch(
@@ -237,7 +237,7 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
         )
         assert (
             welcome._tip_label.text()
-            == 'Did you know?\nOpen files with Cmd+O.'
+            == 'Did you know?<br>Open files with Cmd+O.'
         )
 
 
@@ -332,13 +332,18 @@ def test_qt_viewer_console_focus(qtbot, make_napari_viewer):
     view = viewer.window._qt_viewer
     assert not view.console.hasFocus(), 'console has focus before being shown'
 
-    view.toggle_console_visibility(None)
-
     def console_has_focus():
         assert view.console.hasFocus(), (
             'console does not have focus when shown'
         )
 
+    window = viewer.window._qt_window
+    # An exposed window may still belong to an inactive application.
+    window.raise_()
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow, timeout=5000)
+
+    view.toggle_console_visibility(None)
     qtbot.waitUntil(console_has_focus)
 
 

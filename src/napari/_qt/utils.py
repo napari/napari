@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import signal
 import socket
 import weakref
@@ -20,7 +19,15 @@ from qtpy.QtCore import (
     Qt,
     QThread,
 )
-from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtGui import (
+    QColor,
+    QCursor,
+    QDrag,
+    QFont,
+    QImage,
+    QPainter,
+    QPixmap,
+)
 from qtpy.QtWidgets import (
     QColorDialog,
     QGraphicsColorizeEffect,
@@ -34,15 +41,14 @@ from qtpy.QtWidgets import (
 from napari.utils.colormaps.standardize_color import transform_color
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum, is_sequence
-from napari.utils.translations import trans
 
 QBYTE_FLAG = '!QBYTE_'
-RICH_TEXT_PATTERN = re.compile('<[^\n]+>')
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
     from magicgui.widgets import Widget
+    from qtpy.QtGui import QGuiApplication
 
 
 class ColorMode(StringEnum):
@@ -97,10 +103,7 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            trans._(
-                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
-                QBYTE_FLAG=QBYTE_FLAG,
-            )
+            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -123,8 +126,8 @@ def QImg2array(
         upper-left corner of the rendered region.
     """
     # Fix when  image is provided in wrong format (ex. test on Azure pipelines)
-    if img.format() != QImage.Format_ARGB32:
-        img = img.convertToFormat(QImage.Format_ARGB32)
+    if img.format() != QImage.Format.Format_ARGB32:
+        img = img.convertToFormat(QImage.Format.Format_ARGB32)
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 
@@ -155,7 +158,7 @@ def qt_signals_blocked(obj):
 
 @contextmanager
 def event_hook_removed():
-    """Context manager to temporarily remove the PyQt5 input hook"""
+    """Context manager to temporarily remove the PyQt input hook"""
     from qtpy import QtCore
 
     if hasattr(QtCore, 'pyqtRemoveInputHook'):
@@ -207,7 +210,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)
-    ...         drag.exec_(supportedActions, Qt.MoveAction)
+    ...         drag.exec(supportedActions, Qt.DropAction.MoveAction)
 
     """
     drag = QDrag(list_widget)
@@ -253,7 +256,7 @@ def combine_widgets(
     if isinstance(getattr(widgets, 'native', None), QWidget):
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
-        return widgets.native  # type: ignore
+        return widgets.native
     if isinstance(widgets, QWidget):
         return widgets
     if is_sequence(widgets):
@@ -269,10 +272,8 @@ def combine_widgets(
                 container.layout().addWidget(widget)
             return container
     raise TypeError(
-        trans._(
-            '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
-            'such types'
-        )
+        '"widgets" must be a QWidget, a magicgui Widget or a sequence of '
+        'such types'
     )
 
 
@@ -396,15 +397,8 @@ def _maybe_allow_interrupt(qapp):
 
 
 def qt_might_be_rich_text(text) -> bool:
-    """
-    Check if a text might be rich text in a cross-binding compatible way.
-    """
-    from qtpy.QtCore import Qt as Qt_
-
-    try:
-        return Qt_.mightBeRichText(text)
-    except AttributeError:
-        return bool(RICH_TEXT_PATTERN.search(text))
+    """Check if a text might be rich text, using Qt's heuristic."""
+    return Qt.mightBeRichText(text)
 
 
 def in_qt_main_thread() -> bool:
@@ -419,9 +413,30 @@ def in_qt_main_thread() -> bool:
     return QCoreApplication.instance().thread() == QThread.currentThread()
 
 
+def use_tabular_numerals(obj: QWidget | QGuiApplication) -> None:
+    """Render digits in `obj` using tabular numerals, if the font supports it.
+
+    This enables the OpenType `tnum` ("tabular numerals") feature, which uses
+    fixed-width digit glyphs while leaving every other glyph proportional.
+
+    `obj` may be any object with ``font()``/``setFont()``, so this can be
+    applied to a single widget or to the ``QApplication``. When applied to the
+    application, the feature is inherited by every widget and survives theme
+    and font size changes. However, an application-level stylesheet would
+    discard it.
+
+    Important: if the actual font does not support tabular numerals, this
+    will have no effect, because Qt will silently ignore it.
+    """
+    font = QFont(obj.font())
+    font.setFeature(QFont.Tag('tnum'), 1)
+    obj.setFont(font)
+
+
 def get_color(
     color: str | np.ndarray | QColor | None = None,
     mode: ColorMode | Literal['hex', 'qcolor', 'array'] = ColorMode.HEX,
+    parent: QWidget | None = None,
 ) -> np.ndarray | None:
     """
     Helper function to get a color from q QColorDialog.
@@ -432,6 +447,8 @@ def get_color(
         Initial color to display in the dialog. Color will be automatically converted to QColor.
     mode : ColorMode
         Mode to return the color in (hex, array, QColor).
+    parent : QWidget | None
+        Parent widget for the QColorDialog. Allow to inherit stylesheet from parent.
 
     Returns
     -------
@@ -443,10 +460,12 @@ def get_color(
         color = QColor(color)
     elif isinstance(color, np.ndarray):
         color = QColor(*color.astype(int))
+    if color is None:
+        color = QColor('#ffffff')
 
-    dlg = QColorDialog(color)
+    dlg = QColorDialog(color, parent=parent)
     new_color: str | np.ndarray | QColor | None = None
-    if dlg.exec_():
+    if dlg.exec():
         new_color = dlg.currentColor()
         if mode == ColorMode.HEX:
             new_color = new_color.name()
@@ -502,7 +521,3 @@ def attr_to_settr(obj, name: str, q_object: QObject, setter: str) -> Callable:
     getattr(obj.events, name).connect(callback)
 
     return callback
-
-
-def checked_to_bool(value: Qt.CheckState) -> bool:
-    return Qt.CheckState(value) == Qt.CheckState.Checked

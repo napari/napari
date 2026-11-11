@@ -15,7 +15,7 @@ from napari.components.viewer_model import ViewerModel
 from napari.layers import Image
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize('order', list(permutations((0, 1, 2))))
 def test_3d_slice_of_2d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -31,7 +31,7 @@ def test_3d_slice_of_2d_image_with_order(order):
     np.testing.assert_array_equal((4, 4, 1), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize('order', list(permutations((0, 1, 2))))
 def test_2d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -47,7 +47,7 @@ def test_2d_slice_of_3d_image_with_order(order):
     np.testing.assert_array_equal((8, 8, 0), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2)))
+@pytest.mark.parametrize('order', list(permutations((0, 1, 2))))
 def test_3d_slice_of_3d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -63,7 +63,7 @@ def test_3d_slice_of_3d_image_with_order(order):
     np.testing.assert_array_equal((8, 8, 8), scene_size)
 
 
-@pytest.mark.parametrize('order', permutations((0, 1, 2, 3)))
+@pytest.mark.parametrize('order', list(permutations((0, 1, 2, 3))))
 def test_3d_slice_of_4d_image_with_order(order):
     """See https://github.com/napari/napari/issues/4926
 
@@ -321,3 +321,28 @@ def test_world_units_impact_scale():
 
     vispy_image.world_units = None
     assert vispy_image._world_to_layer_units_scale == (1, 1)
+
+
+def test_changing_data_dimensionality_updates_units_scale():
+    """Regression test for https://github.com/napari/napari/issues/9164
+
+    When a layer's data changes dimensionality (e.g., 2D -> 3D), the
+    cached _world_to_layer_units_scale must be updated to match the
+    new ndim before _on_matrix_change tries to index it.
+    """
+    font_info = FontInfo()
+
+    # Start with 2D data
+    image = Image(np.zeros((10, 10)))
+    vispy_image = VispyImageLayer(image, font_info=font_info)
+    assert vispy_image._world_to_layer_units_scale == (1, 1)
+
+    # Changing data to 3D should not cause an IndexError in
+    # _on_matrix_change (called via _on_data_change).
+    image.data = np.zeros((5, 10, 10))
+    assert len(vispy_image._world_to_layer_units_scale) == image.ndim
+    # _on_matrix_change should succeed without IndexError
+
+    # Changing back to 2D should also work
+    image.data = np.zeros((10, 10))
+    assert len(vispy_image._world_to_layer_units_scale) == image.ndim

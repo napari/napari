@@ -14,16 +14,22 @@ from napari._qt.dialogs.preferences_dialog import (
     QMessageBox,
 )
 from napari._tests.utils import skip_local_focus, skip_on_mac_ci
+from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from napari._vendor.qt_json_builder.qt_jsonschema_form.widgets import (
     EnumSchemaWidget,
     FontSizeSchemaWidget,
     HighlightPreviewWidget,
     HorizontalObjectSchemaWidget,
 )
-from napari.settings import NapariSettings, get_settings
+from napari.settings import NapariSettings, get_plugin_settings, get_settings
 from napari.settings._constants import BrushSizeOnMouseModifiers, LabelDTypes
+from napari.settings._plugin_config_generator import (
+    plugin_configuration_generator,
+)
 from napari.utils.interactions import Shortcut
 from napari.utils.key_bindings import KeyBinding
+
+PLUGIN_NAME = 'my-plugin'  # this matches the sample_manifest
 
 
 @pytest.fixture
@@ -64,7 +70,61 @@ def test_prefdialog_populated(pref):
         ),
         NapariSettings.model_fields.values(),
     )
-    assert pref._stack.count() == len(list(subfields))
+    # one page per napari setting, plus a separator page, plus one page
+    # per plugin that contributes a configuration
+    number_of_plugins = len(plugin_configuration_generator())
+    assert pref._stack.count() == len(list(subfields)) + number_of_plugins + 1
+
+
+def test_add_plugin(mock_pm, pref):
+    assert len(get_plugin_settings()) == len(
+        plugin_configuration_generator(mock_pm)
+    )
+
+    with pytest.raises(KeyError):
+        get_plugin_settings('random-plugin')
+
+    get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()
+
+
+def test_plugin_settings_restored_on_cancel(mock_pm, pref):
+    settings = get_plugin_settings('my-plugin')
+    pref._rebuild_dialog()  # snapshot plugin settings (defaults)
+
+    settings.reader.lazy = True
+    assert settings.reader.lazy is True
+
+    pref.reject()
+
+    # Cancel reverts plugin settings, like it reverts napari's own settings
+    assert settings.reader.lazy is False
+
+
+def test_plugin_settings_saved_on_accept(mock_pm, pref, qtbot):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    with qtbot.waitSignal(pref.finished):
+        pref.accept()
+
+    # OK persists plugin settings to their own config file
+    assert 'lazy: true' in settings.config_path.read_text()
+
+
+def test_plugin_settings_restore_defaults(mock_pm, pref, monkeypatch):
+    settings = get_plugin_settings('my-plugin')
+    settings.reader.lazy = True
+
+    monkeypatch.setattr(
+        QMessageBox,
+        'question',
+        lambda *a, **k: QMessageBox.StandardButton.RestoreDefaults,
+    )
+    pref._restore_default_dialog()
+
+    # Restore defaults resets plugin settings, like it resets napari's own
+    assert settings.reader.lazy is False
 
 
 def test_dask_widget(qtbot, pref):
@@ -155,6 +215,24 @@ def test_StrEnum_widgets(qtbot, pref, enum_setting_name, enum_setting_class):
         assert enum_widget.state == enum_value
 
 
+def test_bool_enum_widget(qtbot):
+    # napari has no built-in boolean enum widgets, so construct one directly
+    enum_widget = WidgetBuilder().create_widget(
+        {
+            'type': 'boolean',
+            'enum': [True, False],
+        },
+        {},
+    )
+    qtbot.addWidget(enum_widget)
+
+    assert isinstance(enum_widget, EnumSchemaWidget)
+    assert enum_widget.state is True
+
+    enum_widget.state = False
+    assert enum_widget.state is False
+
+
 def test_highlight_widget(qtbot, pref):
     highlight_widget = (
         pref._stack.widget(1).widget().widget.widgets['highlight']
@@ -230,7 +308,7 @@ def test_preferences_dialog_close(qtbot, pref):
 
 def test_preferences_dialog_escape(qtbot, pref):
     with qtbot.waitSignal(pref.finished):
-        qtbot.keyPress(pref, Qt.Key_Escape)
+        qtbot.keyPress(pref, Qt.Key.Key_Escape)
     assert get_settings().appearance.theme == 'dark'
 
 
@@ -271,7 +349,9 @@ def test_preferences_dialog_restore(qtbot, pref, monkeypatch):
     ) == KeyBinding.from_str('U')
 
     monkeypatch.setattr(
-        QMessageBox, 'question', lambda *a: QMessageBox.RestoreDefaults
+        QMessageBox,
+        'question',
+        lambda *a: QMessageBox.StandardButton.RestoreDefaults,
     )
     pref._restore_default_dialog()
 

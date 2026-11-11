@@ -22,7 +22,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         # Make meshes
         vertices, faces = generate_vector_meshes(
             self.layer._view_data,
@@ -137,7 +137,7 @@ def generate_vector_meshes_2D(
             vectors, width, length, p
         )
 
-    return vertices, triangles
+    return vertices, triangles  # pyrefly: ignore [unbound-name]
 
 
 def generate_meshes_line_2D(vectors, width, length, p):

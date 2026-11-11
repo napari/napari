@@ -1,4 +1,4 @@
-from napari.utils.compat import StrEnum
+from enum import StrEnum
 
 
 def test_str_enum():

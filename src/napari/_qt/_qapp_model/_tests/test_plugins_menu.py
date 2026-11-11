@@ -13,7 +13,6 @@ from napari._app_model.constants import MenuId
 from napari._qt._qapp_model.qactions import _plugins, init_qactions
 from napari._qt._qplugins._qnpe2 import _toggle_or_get_widget
 from napari._tests.utils import skip_local_popups
-from napari.plugins._tests.test_npe2 import mock_pm  # noqa: F401
 
 if TYPE_CHECKING:
     from npe2 import DynamicPlugin
@@ -270,7 +269,7 @@ def test_no_plugin_manager(monkeypatch, make_napari_viewer):
 
 
 def test_plugins_menu_sorted(
-    mock_pm,  # noqa: F811
+    mock_pm,
     mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):

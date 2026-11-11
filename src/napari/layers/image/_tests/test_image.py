@@ -403,6 +403,29 @@ def test_contrast_limits():
     assert layer.contrast_limits_range == contrast_limits
 
 
+def test_reset_contrast_limits_percentiles():
+    data = np.arange(101, dtype=float).reshape(1, 101)  # 0, 1, ..., 100
+    data[0, -1] = 60_000  # one outlier
+    layer = Image(data)
+    assert layer.contrast_limits == [0, 60_000]
+
+    layer.reset_contrast_limits(percentiles=(1, 99))
+    assert layer.contrast_limits == [1, 99]
+
+    # without percentiles, the full data range is used again
+    layer.reset_contrast_limits()
+    assert layer.contrast_limits == [0, 60_000]
+
+
+def test_reset_contrast_limits_percentiles_int16():
+    """The percentile interpolation must not overflow for int16 data."""
+    data = np.full((10, 10), 30_000, dtype=np.int16)
+    data[0, 0] = -30_000
+    layer = Image(data)
+    layer.reset_contrast_limits(percentiles=(1, 99))
+    np.testing.assert_allclose(layer.contrast_limits, [29_400, 30_000])
+
+
 def test_contrast_limits_range():
     """Test setting color limits range."""
     np.random.seed(0)
@@ -575,7 +598,7 @@ def test_value():
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'translucent', 0),
         # not quite as expected for additive
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'additive', 2),
-        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'iso', None),
+        ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'iso', 1),
         ((2, 2, 2), [1, 0, 0], [0, 1, 2], False, 'attenuated_mip', 0),
         ((0, 2, 2, 2), [0, 1, 0, 0], [1, 2, 3], False, 'mip', 1),
     ],
@@ -960,6 +983,57 @@ def test_thick_slice():
     )
 
 
+@pytest.mark.parametrize('scale', [2, -1, -2])
+@pytest.mark.parametrize('translate', [0, 10])
+@pytest.mark.parametrize('transform', ['scale', 'affine'])
+@pytest.mark.parametrize(
+    ('point', 'left', 'right', 'positive_bounds', 'negative_bounds'),
+    [
+        (1.5, 0.125, 0.125, (1, 2), (1, 2)),
+        (2, 1, 0, (1, 3), (2, 4)),
+        (2, 0, 1, (2, 4), (1, 3)),
+        (0, 1, 1, (0, 2), (0, 2)),
+        (4, 1, 1, (3, 5), (3, 5)),
+    ],
+)
+def test_thick_slice_transformed_margins(
+    scale,
+    translate,
+    transform,
+    point,
+    left,
+    right,
+    positive_bounds,
+    negative_bounds,
+):
+    data = np.arange(125).reshape(5, 5, 5)
+    if transform == 'scale':
+        layer = Image(
+            data,
+            scale=(scale, 1, 1),
+            translate=(translate, 0, 0),
+            projection_mode='mean',
+        )
+    else:
+        affine = np.diag([scale, 1, 1, 1])
+        affine[0, -1] = translate
+        layer = Image(data, affine=affine, projection_mode='mean')
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=tuple((low, high, 1) for low, high in layer.extent.world.T),
+            point=(translate + scale * point, 0, 0),
+            margin_left=(abs(scale) * left, 0, 0),
+            margin_right=(abs(scale) * right, 0, 0),
+        )
+    )
+    bounds = positive_bounds if scale > 0 else negative_bounds
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, data[slice(*bounds)].mean(axis=0)
+    )
+
+
 def test_thick_slice_maintains_contrast_limits():
     data = np.ones((5, 5, 5)) * np.arange(5).reshape(-1, 1, 1)
     layer = Image(data.astype(np.uint8))
@@ -991,12 +1065,26 @@ def test_adjust_contrast_out_of_range():
 def test_adjust_contrast_limits_range_set_data():
     arr = np.linspace(1, 9, 5 * 5, dtype=np.float64).reshape((5, 5))
     img_lay = Image(arr)
-    img_lay._keep_auto_contrast = True
+    img_lay.auto_contrast = True
     npt.assert_array_equal(img_lay._slice.image.view, img_lay._slice.image.raw)
     img_lay.data = arr * 1e39
     assert not np.array_equal(
         img_lay._slice.image.view, img_lay._slice.image.raw
     )
+
+
+def test_ndisplay_3_auto_contrast():
+    """Ensure toggle to 3D display with with continuous contrast.
+
+    Regression test for https://github.com/napari/napari/issues/7152
+    """
+    data = np.ones((10, 20, 20))
+    layer = Image(data)
+    layer.auto_contrast = True
+
+    layer._slice_dims(Dims(ndim=3, ndisplay=2))
+    # switch to ndisplay=3
+    layer._slice_dims(Dims(ndim=3, ndisplay=3))
 
 
 def test_thick_slice_multiscale():

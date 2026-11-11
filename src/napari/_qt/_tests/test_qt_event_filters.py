@@ -9,15 +9,19 @@ pytest.importorskip('qtpy', reason='Cannot test event filters without qtpy.')
     ('tooltip', 'is_qt_tag_present'),
     [
         (
-            '<html>'
-            '<p>A widget to test that a rich text tooltip might be detected '
-            'and therefore not changed to include a qt tag</p>'
-            '</html>',
+            (
+                '<html>'
+                '<p>A widget to test that a rich text tooltip might be detected '
+                'and therefore not changed to include a qt tag</p>'
+                '</html>'
+            ),
             False,
         ),
         (
-            'A widget to test that a non-rich text tooltip might '
-            'be detected and therefore changed',
+            (
+                'A widget to test that a non-rich text tooltip might '
+                'be detected and therefore changed'
+            ),
             True,
         ),
     ],

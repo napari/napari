@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QWidget
 
 from napari._qt.layer_controls.qt_image_controls import QtImageControls
 from napari._qt.layer_controls.qt_labels_controls import QtLabelsControls
 from napari._qt.layer_controls.widgets.qt_multiscale_level_control import (
+    QtMultiscaleLevelControl,
     _format_level_label,
 )
 from napari.layers import Image, Labels
@@ -63,7 +65,7 @@ def test_combobox_populated(multiscale_controls):
     _layer, qtctrl = multiscale_controls
     combo = qtctrl._multiscale_level_control.level_combobox
     assert combo.count() == 1 + len(_MULTISCALE_DATA)
-    assert combo.itemText(0) == 'Auto'
+    assert combo.itemText(0) == f'Auto ({_layer.data_level})'
     assert combo.itemData(0) is None
     for i in range(len(_MULTISCALE_DATA)):
         assert combo.itemData(i + 1) == i
@@ -127,6 +129,27 @@ def test_combobox_updates_on_data_change(multiscale_controls):
     assert combo.count() == 1 + len(new_data)
     for i in range(len(new_data)):
         assert combo.itemData(i + 1) == i
+
+
+def test_auto_label_shows_data_level(multiscale_controls):
+    """The 'Auto' entry should display the current data_level."""
+    layer, qtctrl = multiscale_controls
+    combo = qtctrl._multiscale_level_control.level_combobox
+    assert combo.itemText(0) == f'Auto ({layer.data_level})'
+
+    layer._data_level = 1
+    layer.events.set_data()
+    assert combo.itemText(0) == 'Auto (1)'
+
+
+def test_label_is_not_a_window(qtbot):
+    """The label is shown before it is added to a layout, so needs a parent
+    to not briefly show as a separate window."""
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    layer = Image(_MULTISCALE_DATA, multiscale=True)
+    ctrl = QtMultiscaleLevelControl(parent, layer)
+    assert not ctrl.level_label.isWindow()
 
 
 def test_not_multiscale_is_hidden(qtbot):

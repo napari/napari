@@ -17,7 +17,7 @@ from napari.layers.utils.interactivity_utils import (
 def test_orient_plane_normal_around_cursor(make_napari_viewer, layer):
     viewer = make_napari_viewer()
     viewer.dims.ndisplay = 3
-    viewer.camera.angles = (0, 0, 90)
+    viewer.scene.camera.angles = (0, 0, 90)
     viewer.cursor.position = [14] * layer._ndim
 
     viewer.add_layer(layer)

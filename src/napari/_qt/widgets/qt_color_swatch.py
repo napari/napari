@@ -22,7 +22,6 @@ from napari.utils.colormaps.standardize_color import (
     rgb_to_hex,
     transform_color,
 )
-from napari.utils.translations import trans
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.
@@ -153,7 +152,7 @@ class QColorSwatch(QFrame):
     ) -> None:
         super().__init__(parent)
         self.setObjectName('colorSwatch')
-        self.setToolTip(tooltip or trans._('click to set color'))
+        self.setToolTip(tooltip or 'click to set color')
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.color_changed.connect(self._update_swatch_style)
@@ -216,7 +215,9 @@ class QColorLineEdit(QLineEdit):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._compl = QCompleter([*get_color_dict(), 'transparent'])
-        self._compl.setCompletionMode(QCompleter.InlineCompletion)
+        self._compl.setCompletionMode(
+            QCompleter.CompletionMode.InlineCompletion
+        )
         self.setCompleter(self._compl)
         self.setTextMargins(2, 2, 2, 2)
 
@@ -279,7 +280,8 @@ class QColorPopup(QtPopup):
         # native dialog doesn't get added to the QtPopup frame
         # so more would need to be done to use it
         self.color_dialog.setOptions(
-            QColorDialog.DontUseNativeDialog | QColorDialog.ShowAlphaChannel
+            QColorDialog.ColorDialogOption.DontUseNativeDialog
+            | QColorDialog.ColorDialogOption.ShowAlphaChannel
         )
         layout = QVBoxLayout()
         self.frame.setLayout(layout)

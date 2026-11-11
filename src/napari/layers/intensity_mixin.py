@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from napari.utils._dtype import normalize_dtype
-from napari.utils.colormaps import ensure_colormap
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, ensure_colormap
 from napari.utils.events import Event
 from napari.utils.status_messages import format_float
 from napari.utils.validators import _validate_increasing, validate_n_seq
@@ -36,6 +36,7 @@ class IntensityVisualizationMixin:
             contrast_limits_range=Event,
             gamma=Event,
             colormap=Event,
+            auto_contrast=Event,
         )
         self._gamma = 1.0
         self._colormap_name = ''
@@ -49,19 +50,40 @@ class IntensityVisualizationMixin:
             None,
         )
         self._auto_contrast_source = 'slice'
-        self._keep_auto_contrast = False
+        self._auto_contrast = False
 
         # circular import
         from napari.components.overlays import ColorBarOverlay
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
-    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
-        """Scale contrast limits to data range"""
-        mode = mode or self._auto_contrast_source
-        self.contrast_limits = self._calc_data_range(mode)
+    def reset_contrast_limits(
+        self: 'ScalarFieldBase | Surface',
+        mode: Literal['data', 'slice'] | None = None,
+        percentiles: tuple[float, float] | None = None,
+    ) -> None:
+        """Scale contrast limits to data range
 
-    def _calc_data_range(self, mode):
+        Parameters
+        ----------
+        mode : 'data' or 'slice', optional
+            If the range should be calculated on the whole data, or only the
+            visible slice.
+        percentiles : pair of floats, optional
+            Lower and upper percentiles (between 0 and 100) to use instead of
+            the minimum and maximum, e.g. ``(1, 99)``, to ignore a few outlier
+            values.
+        """
+        mode = mode or self._auto_contrast_source
+        self.contrast_limits = self._calc_data_range(
+            mode, percentiles=percentiles
+        )
+
+    def _calc_data_range(
+        self,
+        mode: Literal['data', 'slice'],
+        percentiles: tuple[float, float] | None = None,
+    ) -> tuple[float, float]:
         raise NotImplementedError
 
     def reset_contrast_limits_range(
@@ -100,7 +122,7 @@ class IntensityVisualizationMixin:
     @property
     def colormaps(self):
         """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
+        return tuple(AVAILABLE_COLORMAPS.keys())
 
     @property
     def colorbar(self):
@@ -177,3 +199,15 @@ class IntensityVisualizationMixin:
         self._gamma = float(value)
         self._update_thumbnail()
         self.events.gamma()
+
+    @property
+    def auto_contrast(self):
+        """bool: Whether to automatically set contrast limits to the data range of each slice."""
+        return self._auto_contrast
+
+    @auto_contrast.setter
+    def auto_contrast(self, value):
+        self._auto_contrast = bool(value)
+        self.events.auto_contrast()
+        if self._auto_contrast:
+            self.reset_contrast_limits()

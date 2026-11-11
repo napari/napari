@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     cast,
 )
 
@@ -10,10 +12,8 @@ from app_model.types import SubmenuItem
 from npe2 import io_utils, plugin_manager as pm
 from npe2.manifest import contributions
 
-from napari.utils.translations import trans
-
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Generator, Iterator, Sequence
 
     from app_model import Action
     from npe2.manifest import PluginManifest
@@ -23,23 +23,26 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QMenu
 
     from napari.layers import Layer
-    from napari.types import SampleDict
+    from napari.types import PathLike, SampleDict
 
 
 def read(
-    paths: Sequence[str], plugin: str | None = None, *, stack: bool
+    paths: Sequence[PathLike], plugin: str | None = None, *, stack: bool
 ) -> tuple[list[LayerData], str]:
     """Try to return data for `path`, from reader plugins using a manifest."""
 
     assert stack is not None
+    # npe2 still requires str paths at runtime; normalise Path here
+    str_paths = [os.fspath(p) for p in paths]
     # the goal here would be to make read_get_reader of npe2 aware of "stack",
     # and not have this conditional here.
     # this would also allow the npe2-npe1 shim to do this transform as well
+    npe1_path: str | list[str]
     if stack:
-        npe1_path = paths
+        npe1_path = str_paths
     else:
-        assert len(paths) == 1
-        npe1_path = paths[0]
+        assert len(str_paths) == 1
+        npe1_path = str_paths[0]
     layer_data, reader = io_utils.read_get_reader(
         npe1_path, plugin_name=plugin
     )
@@ -47,7 +50,7 @@ def read(
 
 
 def write_layers(
-    path: str,
+    path: PathLike,
     layers: list[Layer],
     plugin_name: str | None = None,
     writer: WriterContribution | None = None,
@@ -57,7 +60,7 @@ def write_layers(
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         The path (file, directory, url) to write.
     layers : list of Layers
         The layers to write.
@@ -78,12 +81,16 @@ def write_layers(
     writer name: str
         Name of the plugin selected to write the data.
     """
+    # npe2 still requires str paths at runtime; normalise Path here
+    path = os.fspath(path)
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
 
     if writer is None:
         try:
             paths, writer = io_utils.write_get_writer(
-                path=path, layer_data=layer_data, plugin_name=plugin_name
+                path=path,
+                layer_data=layer_data,  # pyrefly: ignore [bad-argument-type]
+                plugin_name=plugin_name,
             )
         except ValueError:
             return [], ''
@@ -102,31 +109,38 @@ def write_layers(
 
 def get_widget_contribution(
     plugin_name: str, widget_name: str | None = None
-) -> tuple[WidgetCreator, str] | None:
+) -> tuple[WidgetCreator, str, str, bool]:
     widgets_seen = set()
+    if plugin_name not in pm.instance():
+        msg = f'Plugin {plugin_name!r} not found.'
+        raise KeyError(msg)
     for contrib in pm.iter_widgets():
         if contrib.plugin_name == plugin_name:
             if not widget_name or contrib.display_name == widget_name:
-                return contrib.get_callable(), contrib.display_name
+                return (
+                    contrib.get_callable(),
+                    contrib.display_name,
+                    contrib.default_dock_area,
+                    contrib.tabify,
+                )
             widgets_seen.add(contrib.display_name)
     if widget_name and widgets_seen:
-        msg = trans._(
-            'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {seen}',
-            plugin_name=plugin_name,
-            widget_name=widget_name,
-            seen=widgets_seen,
-            deferred=True,
-        )
+        msg = f'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}. It does provide: {widgets_seen}'
         raise KeyError(msg)
-    return None
+    if not widgets_seen:
+        msg = f'Plugin {plugin_name!r} does not provide any widgets.'
+        raise KeyError(msg)
+    raise RuntimeError(
+        'Unreachable. Something went wrong with getting widget contributions.'
+    )
 
 
-def populate_qmenu(menu: QMenu, menu_key: str):
+def populate_qmenu(menu: QMenu, menu_key: str) -> None:
     """Populate `menu` from a `menu_key` offering in the manifest."""
     # TODO: declare somewhere what menu_keys are valid.
 
-    def _wrap(cmd_):
-        def _wrapped(*args):
+    def _wrap(cmd_: contributions.CommandContribution) -> Callable[..., None]:
+        def _wrapped(*args: Any) -> None:
             cmd_.exec(args=args)
 
         return _wrapped
@@ -166,7 +180,7 @@ def file_extensions_string_for_layers(
     layer_types = [layer._type_string for layer in layers]
     writers = list(pm.iter_compatible_writers(layer_types))
 
-    def _items():
+    def _items() -> Generator[tuple[str, list[str]], None, None]:
         """Lookup the command name and its supported extensions."""
         for writer in writers:
             name = pm.get_manifest(writer.command).display_name
@@ -180,7 +194,7 @@ def file_extensions_string_for_layers(
     # extension strings are in the format:
     #   "<name> (*<ext1> *<ext2> *<ext3>);;+"
 
-    def _fmt_exts(es):
+    def _fmt_exts(es: list[str]) -> str:
         return ' '.join(f'*{e}' for e in es if e) if es else '*.*'
 
     return (
@@ -189,7 +203,7 @@ def file_extensions_string_for_layers(
     )
 
 
-def get_readers(path: str | None = None) -> dict[str, str]:
+def get_readers(path: PathLike | None = None) -> dict[str, str]:
     """Get valid reader plugin_name:display_name mapping given path.
 
     Iterate through compatible readers for the given path and return
@@ -198,7 +212,7 @@ def get_readers(path: str | None = None) -> dict[str, str]:
 
     Parameters
     ----------
-    path : str
+    path : str or pathlib.Path
         path for which to find compatible readers
 
     Returns
@@ -208,6 +222,8 @@ def get_readers(path: str | None = None) -> dict[str, str]:
     """
 
     if path:
+        # npe2 still requires str paths at runtime; normalise Path here
+        path = os.fspath(path)
         return {
             reader.plugin_name: pm.get_manifest(reader.command).display_name
             for reader in pm.iter_compatible_readers([path])
@@ -276,12 +292,12 @@ def get_sample_data(
     return None, avail
 
 
-def index_npe1_adapters():
+def index_npe1_adapters() -> None:
     """Tell npe2 to import and index any discovered npe1 plugins."""
     pm.index_npe1_adapters()
 
 
-def on_plugin_enablement_change(enabled: set[str], disabled: set[str]):
+def on_plugin_enablement_change(enabled: set[str], disabled: set[str]) -> None:
     """Callback when any npe2 plugins are enabled or disabled.
 
     'Disabled' means the plugin remains installed, but it cannot be activated,
@@ -304,7 +320,7 @@ def on_plugin_enablement_change(enabled: set[str], disabled: set[str]):
             _safe_register_qt_actions(pm.get_manifest(plugin_name))
 
 
-def on_plugins_registered(manifests: set[PluginManifest]):
+def on_plugins_registered(manifests: set[PluginManifest]) -> None:
     """Callback when any npe2 plugins are registered.
 
     'Registered' means that a manifest has been provided or discovered.
@@ -380,8 +396,16 @@ def _npe2_manifest_to_actions(
     }
     # Filter widgets as are registered via `_safe_register_qt_actions`
     widget_ids = {widget.command for widget in mf.contributions.widgets or ()}
+    # Readers and writers need a path and data, which the palette can't give
+    io_ids = {
+        contrib.command
+        for contrib in [
+            *(mf.contributions.readers or ()),
+            *(mf.contributions.writers or ()),
+        ]
+    }
 
-    # We want to register all `Actions` so they appear in the command palette
+    # Register the other commands as `Actions`, most of them in the palette
     actions: list[Action] = []
     for cmd in mf.contributions.commands or ():
         if cmd.id not in sample_data_ids | widget_ids:
@@ -396,6 +420,7 @@ def _npe2_manifest_to_actions(
                     callback=cmd.python_name or '',
                     menus=menu_cmds.get(cmd.id),
                     keybindings=[],
+                    palette=cmd.id not in io_ids,
                 )
             )
 

@@ -56,21 +56,18 @@ jobs:
       PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       UV_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
       # Above we calculate path to constraints file based on python version and platform
-      # Because there is no single PyQt5-Qt5 package version available for all platforms we was forced to use
-      # different constraints files for Windows. An example with macOS arm64:
-      # ${{ (((inputs.platform == 'macos-latest') && '_macos_arm') || '') }} - if platform is macOS-latest then add '_macos_arm' to constraints file name, else add nothing
       # ${{ inputs.min_req && '_min_req' }} - if min_req is set then add '_min_req' to constraints file name, else add nothing
       #  ${{ inputs.constraints_suffix }} - additional suffix for constraints file name (used for example testing).
-      COVERAGE: ${{ inputs.coverage }}
+      TOX_TEST_RUNNER: ${{ inputs.coverage == 'cov' && 'coverage run --parallel-mode' || 'python' }}
       TOX_WORK_DIR: .tox
       TOX_EXTRAS: ${{ inputs.tox_extras }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Cache pooch downloads
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ${{ github.workspace }}/.cache/scikit-image
@@ -89,13 +86,14 @@ jobs:
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
 
       - name: Setup Graphviz
+        if : inputs.platform != 'macos-15-intel'
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
 
@@ -105,7 +103,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@5bc8de3bc71fcda7a96439571287a554901541a0 # v4.3
+        uses: pyvista/setup-headless-display-action@c103a2ff45650d38cb71684b5dc6cdfeb9442c79 # v5.1.0
         with:
           qt: true
           wm: herbstluftwm
@@ -136,10 +134,10 @@ jobs:
         # This is required as github actions allow setting only one environment variable in
         # a single line (redirection to $GITHUB_ENV).
         #
-        # For example, if qt_backend is set to "pyqt5,pyside2", then the following four
+        # For example, if qt_backend is set to "pyqt6,pyside6", then the following four
         # environment variables will be set:
-        # MAIN=pyqt5
-        # SECOND=pyside2
+        # MAIN=pyqt6
+        # SECOND=pyside6
         # THIRD=none
         # FOURTH=none
         shell: bash
@@ -209,7 +207,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
-          path: ./*leak-backref-graph*.pdf
+          path: |
+            ./*leak-backref-graph*.pdf
+            ./*leak-backref-graph*.dot
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

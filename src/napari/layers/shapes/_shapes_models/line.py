@@ -1,8 +1,9 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
 from napari.layers.shapes._shapes_utils import create_box
-from napari.utils.translations import trans
 
 
 class Line(Shape):
@@ -41,12 +42,14 @@ class Line(Shape):
         self.name = 'line'
 
     @property
-    def data(self):
+    def data(
+        self,
+    ) -> np.ndarray[tuple[Literal[2], int], np.dtype[np.float32]]:
         """(2, D) array: line vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -54,11 +57,7 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                trans._(
-                    'Data shape does not match a line. A line expects two end vertices, {number} provided.',
-                    deferred=True,
-                    number=len(data),
-                )
+                f'Data shape does not match a line. A line expects two end vertices, {len(data)} provided.'
             )
 
         self._data = data
@@ -77,8 +76,6 @@ class Line(Shape):
         self._clean_cache()
         self._set_meshes(self.data_displayed, face=False, closed=False)
         # in this case we have only 2D data (based on docstring)
-        self._box = create_box(self.data_displayed)  # type: ignore[arg-type]
+        self._box = create_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
-        self.slice_key = np.round(
-            self._bounding_box[:, self.dims_not_displayed]
-        ).astype('int')
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)

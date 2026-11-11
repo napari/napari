@@ -101,13 +101,15 @@ viewer.add_vectors(
   properties={'disp_norm': lengths_all},
   edge_colormap='plasma',
   edge_width=3,
-  out_of_slice_display=True,
 )
 
-viewer.camera.angles = (0,0,-97)
-viewer.camera.orientation = ('away','up','right')
+viewer.scene.camera.angles = (0,0,-97)
+viewer.scene.camera.orientation = ('away','up','right')
 viewer.dims.current_step = (11,199, 124, 124)
 viewer.fit_to_view()
+
+# enable thick slicing on spatial dims so vectors are visible in 2D
+viewer.dims.thickness = (0, 50, 50, 50)
 
 if __name__ == '__main__':
     napari.run()

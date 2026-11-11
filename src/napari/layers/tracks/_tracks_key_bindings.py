@@ -8,7 +8,6 @@ from napari.layers.utils.layer_utils import (
     register_layer_action,
     register_layer_attr_action,
 )
-from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,12 +25,12 @@ def register_tracks_mode_action(
     return register_layer_attr_action(Tracks, description, 'mode')
 
 
-@register_tracks_mode_action(trans._('Transform'))
+@register_tracks_mode_action('Transform')
 def activate_tracks_transform_mode(layer: Tracks) -> None:
     layer.mode = str(Mode.TRANSFORM)
 
 
-@register_tracks_mode_action(trans._('Move camera'))
+@register_tracks_mode_action('Move camera')
 def activate_tracks_pan_zoom_mode(layer: Tracks) -> None:
     layer.mode = str(Mode.PAN_ZOOM)
 

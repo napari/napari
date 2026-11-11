@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import logging
 import pickle
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from qtpy.QtCore import QMimeData, QModelIndex, Qt
+from qtpy.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, Qt
 
 from napari._qt.containers._base_item_model import _BaseEventedItemModel
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = 'application/x-list-index'
@@ -34,7 +34,9 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         """
         return [ListIndexMIMEType, 'text/plain']
 
-    def mimeData(self, indices: list[QModelIndex]) -> Optional[QMimeData]:
+    def mimeData(  # pyrefly: ignore[bad-override]
+        self, indices: Iterable[QModelIndex]
+    ) -> QMimeData | None:
         """Return an object containing serialized data from `indices`.
 
         If the list of indexes is empty, or there are no supported MIME types,
@@ -49,11 +51,11 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
     def dropMimeData(
         self,
-        data: QMimeData,
+        data: QMimeData | None,
         action: Qt.DropAction,
         destRow: int,
         col: int,
-        parent: QModelIndex,
+        parent: QModelIndex | QPersistentModelIndex,
     ) -> bool:
         """Handles `data` from a drag and drop operation ending with `action`.
 
@@ -94,7 +96,7 @@ class ItemMimeData(QMimeData):
         self, items: Sequence[ItemType], indices: Sequence[int]
     ) -> None:
         super().__init__()
-        self.items = items
+        self.items = items  # pyrefly: ignore [invalid-type-var]
         self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))

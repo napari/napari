@@ -4,11 +4,11 @@ import contextlib
 import json
 import logging
 import os
-import warnings
 from collections.abc import Mapping
+from enum import StrEnum
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
 
 from pydantic import (
@@ -28,10 +28,8 @@ from pydantic_settings import (
 
 from napari._pydantic_util import get_inner_type, get_origin
 from napari.settings._yaml import PydanticYamlMixin
-from napari.utils.compat import StrEnum
 from napari.utils.events import EmitterGroup, EventedModel
 from napari.utils.misc import StringEnum, deep_update
-from napari.utils.translations import trans
 
 _logger = logging.getLogger(__name__)
 
@@ -93,12 +91,7 @@ class EventedSettings(BaseSettings, EventedModel):
 
     @staticmethod
     def _warn_restart(*_: Event) -> None:
-        warn(
-            trans._(
-                'Restart required for this change to take effect.',
-                deferred=True,
-            )
-        )
+        warn('Restart required for this change to take effect.')
 
     def _connect(self, model: EventedModel, prefix: str = '') -> None:
         """Recursively connect and re-emit to all sub-fields."""
@@ -114,7 +107,7 @@ class EventedSettings(BaseSettings, EventedModel):
                 emitter = getattr(model.events, name)
                 emitter.connect(self._warn_restart)
 
-    def _on_sub_event(self, event: Event, field=None):
+    def _on_sub_event(self, event: Event, field: str | None = None) -> None:
         """emit the field.attr name and new value"""
         if field:
             field += '.'
@@ -165,10 +158,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 # we warn, since this would have been user provided.
                 if path_ != default_cfg:
                     _logger.warning(
-                        trans._(
-                            'Requested config path is not a file: {path}',
-                            path=path_,
-                        )
+                        'Requested config path is not a file: %s', path_
                     )
                 continue
                 # get loader for yaml/json
@@ -177,12 +167,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
             elif path_.suffix == '.json':
                 load = __import__('json').load
             else:
-                warn(
-                    trans._(
-                        'Unrecognized file extension for config_path: {path}',
-                        path=path,
-                    )
-                )
+                warn(f'Unrecognized file extension for config_path: {path}')
                 continue
 
             try:
@@ -190,11 +175,10 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 new_data = load(path_.read_text()) or {}
             except Exception as err:  # noqa: BLE001
                 _logger.warning(
-                    trans._(
-                        'The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}',
-                        deferred=True,
-                        err=err,
-                    )
+                    'The content of the napari settings file could not be read\n\n'
+                    'The default settings will be used and the content of the file '
+                    'will be replaced the next time settings are changed.\n\nError:\n%s',
+                    err,
                 )
                 continue
             assert isinstance(new_data, dict), path_.read_text()
@@ -220,11 +204,7 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
 
             # if errors occur, we still want to boot, so we just remove bad keys
             errors = err.errors()
-            msg = trans._(
-                'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n',
-                deferred=True,
-                errors=errors,  # TODO: is this good enough?
-            )
+            msg = f'Validation errors in config file(s).\nThe following fields have been reset to the default value:\n\n{errors}\n'
             with contextlib.suppress(Exception):
                 # we're about to nuke some settings, so just in case... try backup
                 backup_path = path_.parent / f'{path_.stem}.BAK{path_.suffix}'
@@ -235,16 +215,14 @@ class FileConfigSettingsSource(PydanticBaseSettingsSource):
                 _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
             except KeyError:  # pragma: no cover
                 _logger.warning(
-                    trans._(
-                        'Failed to remove validation errors from config file. Using defaults.'
-                    )
+                    'Failed to remove validation errors from config file. Using defaults.'
                 )
                 data = {}
         return data
 
 
 class NapariEnvSettingsSource(EnvSettingsSource):
-    def __call__(self):
+    def __call__(self) -> dict[str, Any]:
         res = super().__call__()
         env_lower = {k.lower(): v for k, v in os.environ.items()}
         self.scan_env_aliases(res, self.settings_cls, [], env_lower)
@@ -258,7 +236,7 @@ class NapariEnvSettingsSource(EnvSettingsSource):
         class_: type[BaseSettings],
         path: list[str],
         env_dkt: dict[str, str],
-    ):
+    ) -> None:
         for field_name, field in class_.model_fields.items():
             if field.exclude:
                 continue
@@ -320,7 +298,11 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     )
 
     # provide config_path=None to prevent reading from disk.
-    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
+    def __init__(
+        self,
+        config_path: str | Path | _NotSetType | None = _NOT_SET,
+        **values: Any,
+    ) -> None:
         cfg = (
             config_path
             if config_path is not _NOT_SET
@@ -334,46 +316,13 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             raise ValueError('env_settings is a reserved field name')
         super().__init__(config_path=cfg, **values)
 
-    def _maybe_save(self):
+    def _maybe_save(self) -> None:
         if self._save_on_change and self.config_path:
             self.save()
 
-    def _on_sub_event(self, event, field=None):
+    def _on_sub_event(self, event: Event, field: str | None = None) -> None:
         super()._on_sub_event(event, field)
         self._maybe_save()
-
-    def dict(
-        self,
-        *,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_env: bool = False,
-    ) -> DictStrAny:
-        """Return dict representation of the model.
-
-        May optionally specify which fields to include or exclude.
-
-        .. deprecated:: 0.7.0
-              `dict` will be removed in napari 0.8.0 it is replaced by
-              `model_dump` following pydantic 1 to 2 changes.
-        """
-        warnings.warn(
-            'method `dict` is deprecated in 0.7.0 and will be removed in napari 0.8.0, use `model_dump` instead.',
-            category=FutureWarning,
-        )
-        return self.model_dump(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_env=exclude_env,
-        )
 
     def model_dump(
         self,
@@ -432,8 +381,10 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         return data
 
     def save(
-        self, path: str | Path | _NotSetType | None = None, **dict_kwargs
-    ):
+        self,
+        path: str | Path | _NotSetType | None = None,
+        **dict_kwargs: Any,
+    ) -> None:
         """Save current settings to path.
 
         By default, this will exclude settings values that match the default
@@ -441,14 +392,9 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
         variables.  (see `_save_dict` method.)
         """
         path = path or self.config_path
-        # use insinstance so mypy is happy
+        # use insinstance so pyrefly is happy
         if not path or isinstance(path, _NotSetType):
-            raise ValueError(
-                trans._(
-                    'No path provided in config or save argument.',
-                    deferred=True,
-                )
-            )
+            raise ValueError('No path provided in config or save argument.')
 
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
@@ -460,20 +406,19 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
             data_ = self._yaml_dump(data)
         elif str(path).endswith('.json'):
             data_ = json.dumps(
-                data, default=_json_encode(self.model_config['json_encoders'])
+                data,
+                default=_json_encode(
+                    self.model_config.get('json_encoders') or {}
+                ),
             )
         else:
             raise NotImplementedError(
-                trans._(
-                    'Can only currently dump to `.json` or `.yaml`, not {path!r}',
-                    deferred=True,
-                    path=path,
-                )
+                f'Can only currently dump to `.json` or `.yaml`, not {path!r}'
             )
         with open(path, 'w') as target:
             target.write(data_)
 
-    def _remove_env_settings(self, data):
+    def _remove_env_settings(self, data: dict[str, Any]) -> None:
         """Remove key:values from `data` that match settings from env vars.
 
         This is handy when we want to persist settings to disk without
@@ -506,7 +451,7 @@ class EventedConfigFileSettings(EventedSettings, PydanticYamlMixin):
     )
 
 
-def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
+def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]) -> None:
     """Remove list of keys (as string tuples) from dict (in place).
 
     Parameters
@@ -531,7 +476,7 @@ def _remove_bad_keys(data: dict, keys: list[tuple[int | str, ...]]):
             continue  # pragma: no cover
         d = data
         while True:
-            base, *key = key  # type: ignore
+            base, *key = key
             if not key:
                 break
             # since no pydantic fields will be integers, integers usually
@@ -560,7 +505,7 @@ def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
     return dct
 
 
-def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
+def _remove_empty_dicts(dct: dict, recurse: bool = True) -> dict:
     """Remove all (nested) keys with empty dict values from `dct`"""
     for k, v in list(dct.items()):
         if isinstance(v, Mapping) and recurse:

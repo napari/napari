@@ -10,13 +10,13 @@ import warnings
 from ast import literal_eval
 from pathlib import Path
 from textwrap import wrap
+from types import ModuleType
 from typing import Any
 
 from napari import Viewer
 from napari.errors import ReaderPluginError
 from napari.utils._startup_script import _run_configured_startup_script
 from napari.utils.misc import maybe_patch_conda_exe
-from napari.utils.translations import trans
 
 
 class InfoAction(argparse.Action):
@@ -39,7 +39,7 @@ class PluginInfoAction(argparse.Action):
         cli.list_(
             fields='name,version,npe2,contributions',
             sort='name',
-            format='table',
+            format='table',  # pyrefly: ignore [bad-argument-type]
         )
         sys.exit()
 
@@ -277,8 +277,7 @@ def _build_viewer() -> Viewer:
     # but in the meantime if the garbage collector runs;
     # in a way that is machine, os, time (and likely weather dependant).
     # it will collect it and hang napari at start time.
-    # don't show viewer until we've processed all the args
-    viewer = Viewer(show=False)
+    viewer = Viewer()
     _run_configured_startup_script()
 
     # For backwards compatibility
@@ -286,9 +285,7 @@ def _build_viewer() -> Viewer:
     # just set stack to True similar to the previous store_true action
     if args.stack and len(args.stack) == 1 and len(args.stack[0]) == 0:
         warnings.warn(
-            trans._(
-                "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
-            ),
+            "The usage of the --stack option as a boolean is deprecated. Please use '--stack file1 file2 .. fileN' instead. It is now also possible to specify multiple stacks of files to stack '--stack file1 file2 --stack file3 file4 file5 --stack ..'. This warning will become an error in version 0.5.0.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -315,7 +312,7 @@ def _build_viewer() -> Viewer:
                 for name, (
                     _pname,
                     wnames_collection,
-                ) in _npe2.widget_iterator():
+                ) in _npe2.widget_iterator():  # pyrefly: ignore [unbound-name]
                     if name == 'dock' and pname == _pname:
                         wnames = wnames_collection
                         break
@@ -342,8 +339,6 @@ def _build_viewer() -> Viewer:
     if running_as_constructor_app():
         install_certifi_opener()
         maybe_patch_conda_exe()
-    # now that we've processed all the args, show viewer
-    viewer.show()
     return viewer
 
 
@@ -354,7 +349,7 @@ def _run() -> None:
     run(gui_exceptions=True)
 
 
-def _run_plugin_module(mod, plugin_name):
+def _run_plugin_module(mod: ModuleType, plugin_name: str) -> None:
     """Register `mod` as a plugin, find/create viewer, and run napari."""
     from napari import Viewer, run
 
