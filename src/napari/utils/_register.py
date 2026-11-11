@@ -1,9 +1,22 @@
+from __future__ import annotations
+
 import os
 import sys
 from inspect import Parameter, getdoc, signature
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from napari.components import ViewerModel
+    from napari.layers import Layer
+
+P = ParamSpec('P')
+L = TypeVar('L', bound='Layer')
+
 
 tmpl_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
@@ -14,9 +27,11 @@ with open(tmpl_path) as f:
     template = f.read()
 
 
-def create_func(cls, name=None, doc=None):
+def create_add_method(
+    cls: Callable[P, L], name: str | None = None, doc: str | None = None
+) -> Callable[Concatenate[ViewerModel, P], L]:
     """
-    Creates a function (such as `add_<layer>`) to add a layer to the viewer
+    Creates a method (such as `add_<layer>`) to add a layer to the viewer
 
     The functionality is inherited from the corresponding `<layer>` class.
     If the class name starts with an underscore, the generated function is
@@ -87,7 +102,7 @@ def create_func(cls, name=None, doc=None):
     execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
-    func = execdict[name]
+    func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
 
     func.__doc__ = doc
     func.__signature__ = sig.replace(  # pyrefly: ignore [missing-attribute]

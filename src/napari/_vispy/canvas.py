@@ -1352,9 +1352,10 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        # ensure on_draw is run to bring everything up to date
-        # needed for some Ubuntu py3.11 pyqt5 tests, but likely inconsistent behavior for other OS.
-        # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
+        # Run on_draw before grabbing the frame. grabFramebuffer does fire the draw
+        # event, but on_draw is connected last, so it runs after vispy has rendered
+        # and its updates (e.g. overlay positions, multiscale level)
+        # would miss this frame.
         self.on_draw(None)
         return self.native.grabFramebuffer()
 

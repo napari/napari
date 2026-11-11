@@ -74,7 +74,7 @@ dependencies = [
     "tifffile>=2022.7.28",
     "toolz>=0.12.1",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.12",
+    "typing-extensions>=4.14",
     "vispy>=0.17.0,<0.18",
     "wrapt>=1.14.1",
 ]
@@ -368,7 +368,6 @@ ignore = [
   "tools/minreq.py",
   "tox.ini",
   "src/napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
@@ -614,7 +613,6 @@ project-excludes = [
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',
-    'src/napari/utils/key_bindings.py',
     'src/napari/utils/transforms/transforms.py',
 ]
 

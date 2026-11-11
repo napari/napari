@@ -1,7 +1,4 @@
-.PHONY: typestubs pre watch dist settings-schema
-
-typestubs:
-	tox -e typestub
+.PHONY: pre watch dist settings-schema
 
 # run the pyrefly type checker via tox
 typecheck:
@@ -10,7 +7,7 @@ typecheck:
 check-manifest:
 	tox -e check-manifest
 
-dist: typestubs check-manifest
+dist: check-manifest
 	pip install -U build
 	python -m build
 
