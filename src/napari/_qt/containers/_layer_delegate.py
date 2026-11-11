@@ -248,7 +248,7 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
                 if model.flags(index) & Qt.ItemFlag.ItemIsUserTristate:
                     state = Qt.CheckState((cur_state + 1) % 3)
@@ -275,7 +275,7 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 return self._show_on_alt_click_hide_others(model, index)
 
         # on regular click of visibility icon, clear alt-click state
@@ -289,7 +289,7 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 self._alt_click_layer = lambda: None
 
         # refer all other events to the QStyledItemDelegate
