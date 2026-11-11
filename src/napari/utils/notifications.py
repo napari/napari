@@ -205,7 +205,7 @@ class WarningNotification(Notification):
 
     def __str__(self) -> str:
         category = type(self.warning).__name__
-        return f'{self.filename}:{self.lineno}: {category}: {self.warning}!'
+        return f'{self.filename}:{self.lineno}: {category}: {self.warning}'
 
 
 class NotificationManager:

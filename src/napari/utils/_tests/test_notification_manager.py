@@ -7,6 +7,7 @@ import pytest
 from napari._tests.utils import DEFAULT_TIMEOUT_SECS
 from napari.utils.notifications import (
     Notification,
+    WarningNotification,
     notification_manager,
     show_debug,
     show_error,
@@ -32,6 +33,13 @@ def test_notification_repr_has_message():
     assert "='this is the message'" in repr(
         Notification('this is the message')
     )
+
+
+def test_warning_notification_str():
+    notification = WarningNotification(
+        UserWarning('the message'), filename='file.py', lineno=3
+    )
+    assert str(notification) == 'file.py:3: UserWarning: the message'
 
 
 def test_notification_manager_no_gui(monkeypatch):
