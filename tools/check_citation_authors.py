@@ -4,36 +4,24 @@
 #     "PyYAML>=6.0",
 # ]
 # ///
-"""Utilities for maintaining napari's CITATION.cff author list.
+"""Check and fix the author order in napari's CITATION.cff.
 
 Usage (``python`` needs PyYAML installed; ``uv run`` in place of ``python``
-installs it from the inline script metadata):
+installs it from the inline script metadata)::
+
     python tools/check_citation_authors.py check-order
-        Validate that community contributors remain alphabetized by
-        ``family-names`` after the core-team section marker.
-
     python tools/check_citation_authors.py write-order
-        Rewrite only the community-contributor section into the expected
-        alphabetical order. The core-team block is preserved as-is.
 
-    python tools/check_citation_authors.py audit-missing [--repo ...] [--org ...] [--issue-body]
-        Compare GitHub contributors across one or more repos (or an entire
-        GitHub org) against the ``alias`` values in ``CITATION.cff`` and
-        print either the missing usernames or a ready-to-paste issue body
-        with ``@mentions``.
-
-Notes:
-    - The top block in ``CITATION.cff`` is an explicitly maintained core-team
-      section. This script does not alphabetize or otherwise reorder that block.
-    - The boundary between the core-team block and the community block is the
-      comment line ``# Community contributors, alphabetized by family-names.``.
+The authors list is split in two by the comment line
+``# Community contributors, alphabetized by family-names.``. The core-team
+section above it is maintained by hand and kept as is. The community section
+below it must be sorted by family-names, then given-names, which
+``write-order`` does for you. ``check-order`` also flags duplicate aliases.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-import subprocess
 import sys
 import unicodedata
 from collections import Counter
@@ -42,105 +30,84 @@ from pathlib import Path
 
 import yaml
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-CITATION_CFF = REPO_ROOT / 'CITATION.cff'
-DEFAULT_REPO = 'napari/napari'
-CORE_TEAM_COMMENT = 'Current and emeritus core team members.'
-COMMUNITY_COMMENT = 'Community contributors, alphabetized by family-names.'
-KNOWN_BOT_LOGINS = {
-    'app/dependabot',
-    'dependabot[bot]',
-    'github-actions[bot]',
-    'napari-bot',
-    'pre-commit-ci[bot]',
-    'renovate[bot]',
-}
+CITATION_CFF = Path(__file__).resolve().parent.parent / 'CITATION.cff'
+CORE_TEAM_COMMENT = '# Current and emeritus core team members.\n'
+COMMUNITY_COMMENT = '# Community contributors, alphabetized by family-names.\n'
 
 
-def configure_stdio() -> None:
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, 'reconfigure', None)
-        if reconfigure is not None:
-            reconfigure(encoding='utf-8', errors='backslashreplace')
+def normalize(value: str) -> str:
+    """Casefold, collapse whitespace and strip accents, for sorting."""
+    value = unicodedata.normalize('NFKD', ' '.join(value.split()).casefold())
+    return ''.join(char for char in value if not unicodedata.combining(char))
 
 
-def load_citation_data(path: Path = CITATION_CFF) -> dict:
-    return yaml.safe_load(path.read_text(encoding='utf-8'))
-
-
-def normalize_sort_value(value: str) -> str:
-    collapsed = ' '.join(value.split())
-    decomposed = unicodedata.normalize('NFKD', collapsed.casefold())
-    return ''.join(
-        char for char in decomposed if not unicodedata.combining(char)
+def sort_key(author: dict) -> tuple[str, ...]:
+    return tuple(
+        normalize(author.get(key, ''))
+        for key in ('family-names', 'given-names', 'alias')
     )
 
 
-def author_label(author: dict) -> str:
-    given_names = author.get('given-names', '').strip()
-    family_names = author.get('family-names', '').strip()
-    alias = author.get('alias', '').strip()
-    return f'{family_names}, {given_names} ({alias})'
-
-
-def author_sort_key(author: dict) -> tuple[str, str, str]:
+def label(author: dict) -> str:
     return (
-        normalize_sort_value(author.get('family-names', '')),
-        normalize_sort_value(author.get('given-names', '')),
-        normalize_sort_value(author.get('alias', '')),
+        f'{author.get("family-names", "")}, {author.get("given-names", "")} '
+        f'({author.get("alias", "")})'
     )
 
 
-def get_authors(data: dict) -> list[dict]:
-    authors = data.get('authors')
-    if not isinstance(authors, list):
-        raise TypeError('CITATION.cff must contain an authors list.')
-    return authors
-
-
-def find_duplicate_aliases(authors: list[dict]) -> list[str]:
-    counts = Counter(
-        github_login_key(author['alias'])
-        for author in authors
-        if isinstance(author.get('alias'), str) and author['alias'].strip()
+def read_sections(path: Path) -> tuple[str, list[dict], list[dict], str]:
+    """Split CITATION.cff into its text before and after the authors list,
+    and the core-team and community authors in between."""
+    text = path.read_text(encoding='utf-8')
+    before, found, rest = text.partition('\nauthors:\n')
+    if not found:
+        raise ValueError('CITATION.cff has no authors list.')
+    lines = rest.splitlines(keepends=True)
+    # the authors list ends at the next top-level key
+    end = next(
+        (i for i, line in enumerate(lines) if line[:1].isalpha()), len(lines)
     )
-    return [
-        author_label(author)
-        for author in authors
-        if counts[github_login_key(author.get('alias') or '')] > 1
+    authors_text = ''.join(lines[:end])
+    core_text, found, community_text = authors_text.partition(
+        COMMUNITY_COMMENT
+    )
+    if not found:
+        raise ValueError(
+            f'CITATION.cff is missing the line: {COMMUNITY_COMMENT}'
+        )
+    return (
+        before + '\nauthors:\n',
+        yaml.safe_load(core_text) or [],
+        yaml.safe_load(community_text) or [],
+        ''.join(lines[end:]),
+    )
+
+
+def check_order(path: Path) -> int:
+    _, core, community, _ = read_sections(path)
+
+    counts = Counter(normalize(a.get('alias', '')) for a in core + community)
+    duplicates = [
+        a
+        for a in core + community
+        if counts[normalize(a.get('alias', ''))] > 1
     ]
-
-
-def check_order(path: Path = CITATION_CFF) -> int:
-    _, core, community, _ = split_citation_author_sections(path)
-
-    duplicates = find_duplicate_aliases(core + community)
     if duplicates:
         print(
             'CITATION.cff lists the same alias more than once:',
             file=sys.stderr,
         )
-        for label in duplicates:
-            print(f'  {label}', file=sys.stderr)
+        for author in duplicates:
+            print(f'  {label(author)}', file=sys.stderr)
         return 1
 
-    for index, (current, following) in enumerate(
-        pairwise(community),
-        start=1,
-    ):
-        if author_sort_key(current) > author_sort_key(following):
+    for index, (current, following) in enumerate(pairwise(community), start=1):
+        if sort_key(current) > sort_key(following):
             print(
                 'Community contributors in CITATION.cff must be alphabetized '
-                'by family-names after the core-team section marker.',
-                file=sys.stderr,
-            )
-            print(
+                'by family-names after the core-team section marker.\n'
                 f'Out-of-order community pair #{index} and #{index + 1}: '
-                f'{author_label(current)} should sort after '
-                f'{author_label(following)}.',
-                file=sys.stderr,
-            )
-            print(
+                f'{label(current)} should sort after {label(following)}.\n'
                 'Run `python tools/check_citation_authors.py write-order` '
                 'to fix the ordering.',
                 file=sys.stderr,
@@ -151,347 +118,50 @@ def check_order(path: Path = CITATION_CFF) -> int:
     return 0
 
 
-def load_author_from_block(block: str) -> dict:
-    payload = yaml.safe_load(block)
-    if not isinstance(payload, list) or len(payload) != 1:
-        raise ValueError(
-            'Each author block in CITATION.cff must contain one author.'
-        )
-    author = payload[0]
-    if not isinstance(author, dict):
-        raise TypeError(
-            'Each author block in CITATION.cff must parse as a mapping.'
-        )
-    return author
-
-
-def _split_author_blocks(lines: list[str]) -> list[str]:
-    blocks: list[str] = []
-    current_block: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
-        if line.startswith('- '):
-            if current_block:
-                blocks.append(''.join(current_block))
-            current_block = [line]
-            continue
-        if not current_block:
-            raise ValueError(
-                'Found non-author content inside the authors section.'
-            )
-        current_block.append(line)
-
-    if current_block:
-        blocks.append(''.join(current_block))
-    return blocks
-
-
-def split_citation_author_sections(
-    path: Path,
-) -> tuple[list[str], list[dict], list[dict], list[str]]:
-    lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
-
-    try:
-        authors_index = next(
-            index
-            for index, line in enumerate(lines)
-            if line.startswith('authors:')
-        )
-    except StopIteration as error:
-        raise ValueError(
-            'CITATION.cff does not contain an authors section.'
-        ) from error
-
-    suffix_index = len(lines)
-    for index in range(authors_index + 1, len(lines)):
-        line = lines[index]
-        if line.strip() and not line.startswith((' ', '-', '\t', '#')):
-            suffix_index = index
-            break
-
-    prefix_lines = lines[: authors_index + 1]
-    author_lines = lines[authors_index + 1 : suffix_index]
-    suffix_lines = lines[suffix_index:]
-
-    try:
-        community_index = next(
-            index
-            for index, line in enumerate(author_lines)
-            if line.strip() == f'# {COMMUNITY_COMMENT}'
-        )
-    except StopIteration as error:
-        raise ValueError(
-            'CITATION.cff must contain a community section marker line: '
-            f'# {COMMUNITY_COMMENT}'
-        ) from error
-
-    core_lines = author_lines[:community_index]
-    community_lines = author_lines[community_index + 1 :]
-    core_authors = [
-        load_author_from_block(block)
-        for block in _split_author_blocks(core_lines)
-    ]
-    community_authors = [
-        load_author_from_block(block)
-        for block in _split_author_blocks(community_lines)
-    ]
-    return prefix_lines, core_authors, community_authors, suffix_lines
-
-
-def build_author_block(author: dict) -> str:
+def dump(authors: list[dict]) -> str:
+    if not authors:
+        return ''
+    # never wrap long values (e.g. affiliations) onto continuation lines
     return yaml.safe_dump(
-        [author],
-        allow_unicode=True,
-        sort_keys=False,
-        default_flow_style=False,
-        # never wrap long values (e.g. affiliations) onto continuation lines
-        width=sys.maxsize,
+        authors, allow_unicode=True, sort_keys=False, width=sys.maxsize
     )
 
 
-def write_order(path: Path = CITATION_CFF) -> int:
-    prefix_lines, core_authors, community_authors, suffix_lines = (
-        split_citation_author_sections(path)
-    )
-    sorted_community = sorted(community_authors, key=author_sort_key)
+def write_order(path: Path) -> int:
+    before, core, community, after = read_sections(path)
     new_text = (
-        ''.join(prefix_lines)
-        + f'# {CORE_TEAM_COMMENT}\n'
-        + ''.join(build_author_block(author) for author in core_authors)
-        + f'# {COMMUNITY_COMMENT}\n'
-        + ''.join(build_author_block(author) for author in sorted_community)
-        + ''.join(suffix_lines)
+        before
+        + CORE_TEAM_COMMENT
+        + dump(core)
+        + COMMUNITY_COMMENT
+        + dump(sorted(community, key=sort_key))
+        + after
     )
-
     if path.read_text(encoding='utf-8') == new_text:
         print('CITATION.cff author order already matches the project policy.')
-        return 0
-
-    path.write_text(new_text, encoding='utf-8', newline='\n')
-    print(f'Reordered community contributors in {path}.')
+    else:
+        path.write_text(new_text, encoding='utf-8', newline='\n')
+        print(f'Reordered community contributors in {path}.')
     return 0
 
 
-def github_login_key(login: str) -> str:
-    return normalize_sort_value(login)
-
-
-def is_bot_login(login: str) -> bool:
-    return login in KNOWN_BOT_LOGINS or login.endswith('[bot]')
-
-
-def fetch_github_contributors(repo: str) -> list[str]:
-    result = subprocess.run(
-        [
-            'gh',
-            'api',
-            f'repos/{repo}/contributors',
-            '--paginate',
-            '--slurp',
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-    )
-    if result.returncode != 0:
-        stderr = result.stderr.strip() or 'Unknown gh api error.'
-        raise RuntimeError(f'Failed to fetch GitHub contributors: {stderr}')
-
-    payload = json.loads(result.stdout)
-    if not isinstance(payload, list):
-        raise TypeError('Unexpected GitHub API response for contributors.')
-
-    seen: set[str] = set()
-    contributors: list[str] = []
-    for page in payload:
-        if not isinstance(page, list):
-            raise TypeError(
-                'Unexpected GitHub API page while reading contributors.'
-            )
-        for item in page:
-            login = item.get('login') if isinstance(item, dict) else None
-            if not isinstance(login, str):
-                continue
-            if is_bot_login(login):
-                continue
-            normalized = github_login_key(login)
-            if normalized in seen:
-                continue
-            seen.add(normalized)
-            contributors.append(login)
-    return contributors
-
-
-def fetch_org_repos(org: str) -> list[str]:
-    """Fetch all non-archived, non-fork repos in a GitHub organization."""
-    result = subprocess.run(
-        ['gh', 'api', f'/orgs/{org}/repos', '--paginate', '--slurp'],
-        check=False,
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-    )
-    if result.returncode != 0:
-        stderr = result.stderr.strip() or 'Unknown gh api error.'
-        raise RuntimeError(f'Failed to fetch org repos: {stderr}')
-
-    payload = json.loads(result.stdout)
-    if not isinstance(payload, list):
-        raise TypeError('Unexpected GitHub API response for org repos.')
-
-    repos: list[str] = []
-    for page in payload:
-        if not isinstance(page, list):
-            continue
-        for item in page:
-            if not isinstance(item, dict):
-                continue
-            if item.get('archived') or item.get('fork'):
-                continue
-            full_name = item.get('full_name')
-            if isinstance(full_name, str):
-                repos.append(full_name)
-    return sorted(repos)
-
-
-def missing_contributors(path: Path, repos: list[str]) -> list[str]:
-    authors = get_authors(load_citation_data(path))
-    aliases = {
-        github_login_key(author.get('alias', ''))
-        for author in authors
-        if isinstance(author.get('alias'), str)
-        and author.get('alias', '').strip()
-    }
-    seen: set[str] = set()
-    missing: list[str] = []
-    for repo in repos:
-        for login in fetch_github_contributors(repo):
-            key = github_login_key(login)
-            if key in seen:
-                continue
-            seen.add(key)
-            if key not in aliases:
-                missing.append(login)
-    return missing
-
-
-def format_issue_body(logins: list[str], repos: list[str]) -> str:
-    repos_str = ', '.join(repos)
-    mentions = ' '.join(f'@{login}' for login in logins)
-    lines = [
-        (
-            'The following GitHub contributors appear to have commits in '
-            f'{repos_str} but do not currently have an `alias` entry in '
-            '`CITATION.cff`.'
-        ),
-        '',
-        (
-            'If you would like to be included, please open a PR that adds '
-            'your entry in alphabetical order by `family-names` within the '
-            'community contributor section.'
-        ),
-        '',
-        mentions or '(No missing contributors found.)',
-    ]
-    return '\n'.join(lines)
-
-
-def audit_missing(
-    path: Path, repos: list[str], org: str | None, issue_body: bool
-) -> int:
-    try:
-        if org:
-            # Deduplicate while preserving order: org repos first, then extras
-            repos = list(dict.fromkeys(fetch_org_repos(org) + repos))
-            print(
-                f'Scanning {len(repos)} repos from org "{org}"...',
-                file=sys.stderr,
-            )
-        logins = missing_contributors(path, repos)
-    except RuntimeError as error:
-        print(str(error), file=sys.stderr)
-        return 1
-
-    if issue_body:
-        print(format_issue_body(logins, repos))
-        return 0
-
-    if not logins:
-        print('All GitHub contributors are represented in CITATION.cff.')
-        return 0
-
-    print('GitHub contributors missing from CITATION.cff:')
-    for login in logins:
-        print(login)
-    return 1
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         '--citation-path',
         type=Path,
         default=CITATION_CFF,
         help='Path to the CITATION.cff file to inspect.',
     )
-    subparsers = parser.add_subparsers(dest='command', required=True)
-
-    subparsers.add_parser('check-order', help='Validate author ordering.')
-    subparsers.add_parser(
-        'write-order',
-        help='Rewrite community contributors into the expected sorted order.',
-    )
-
-    audit_parser = subparsers.add_parser(
-        'audit-missing',
-        help='Report GitHub contributors missing from CITATION.cff aliases.',
-    )
-    audit_parser.add_argument(
-        '--repo',
-        action='append',
-        dest='repos',
-        default=[],
-        help=(
-            'GitHub repository in owner/name format; may be given multiple '
-            f'times. Defaults to {DEFAULT_REPO} when neither --repo nor '
-            '--org is given.'
-        ),
-    )
-    audit_parser.add_argument(
-        '--org',
-        help=(
-            'GitHub organization name; scans all non-archived, non-fork '
-            'repos (e.g. --org napari). Can be combined with --repo.'
-        ),
-    )
-    audit_parser.add_argument(
-        '--issue-body',
-        action='store_true',
-        help='Print a ready-to-paste GitHub issue body with @mentions.',
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    configure_stdio()
-    parser = build_parser()
+    parser.add_argument('command', choices=['check-order', 'write-order'])
     args = parser.parse_args(argv)
+    # print non-ASCII names on Windows consoles
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding='utf-8', errors='backslashreplace')
 
     if args.command == 'check-order':
         return check_order(args.citation_path)
-    if args.command == 'write-order':
-        return write_order(args.citation_path)
-    if args.command == 'audit-missing':
-        repos = args.repos or ([] if args.org else [DEFAULT_REPO])
-        return audit_missing(
-            args.citation_path, repos, args.org, args.issue_body
-        )
-
-    parser.error(f'Unsupported command: {args.command}')
-    return 2
+    return write_order(args.citation_path)
 
 
 if __name__ == '__main__':
