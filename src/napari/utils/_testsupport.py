@@ -78,6 +78,9 @@ def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
             or shutil.which('dot.exe') is not None
         )
 
+        # objects frozen with gc.freeze() are not reported by gc.get_referrers,
+        # so unfreeze them to get the full graph of references
+        gc.unfreeze()
         gc.collect()
         pdf_info = '.'
         if graphviz_available:

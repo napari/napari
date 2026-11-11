@@ -368,7 +368,6 @@ ignore = [
   "tools/minreq.py",
   "tox.ini",
   "src/napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
