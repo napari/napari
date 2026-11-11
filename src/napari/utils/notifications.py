@@ -326,7 +326,7 @@ class NotificationManager:
         file: TextIO | None = None,
         line: str | None = None,
     ) -> None:
-        msg = message if isinstance(message, str) else message.args[0]
+        msg = str(message)
         if (msg, category, filename, lineno) in self._seen_warnings:
             return
         self._seen_warnings.add((msg, category, filename, lineno))

@@ -181,3 +181,14 @@ def test_notification_manager_no_warning_duplication():
 
         fun()
         assert len(notification_manager.records) == 1
+
+
+@pytest.mark.parametrize('message', [UserWarning(), 'a plain string'])
+def test_notification_manager_warning_without_args(message):
+    """Warnings with no arguments, or given as a string, are shown."""
+    with notification_manager:
+        notification_manager.records.clear()
+        warnings.showwarning(
+            message, category=UserWarning, filename=__file__, lineno=1
+        )
+        assert len(notification_manager.records) == 1
