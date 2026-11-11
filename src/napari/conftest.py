@@ -656,6 +656,9 @@ def pytest_collection_modifyitems(
         # so failures there stop the run early. The last matching prefix wins.
         os.path.join('napari', '_qt', '_qapp_model'),
         os.path.join('napari', '_qt', '_tests'),
+        # `test_trace_on_start` starts napari in a subprocess, which on macOS
+        # may leave the test app inactive; run it after focus-dependent tests.
+        os.path.join('napari', '_qt', 'perf'),
         os.path.join('napari', 'qt'),
         os.path.join('napari', '_tests'),
         os.path.join('napari', '_tests', 'test_examples.py'),
