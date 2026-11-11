@@ -10,11 +10,13 @@ Needs an authenticated GitHub CLI (``gh``). Usage (``uv run`` installs
 PyYAML from the inline script metadata)::
 
     uv run tools/find_missing_citation_authors.py [--repo OWNER/NAME ...]
-        [--org ORG] [--issue-body]
+        [--org ORG] [--milestone TITLE] [--issue-body]
 
 Contributors are matched case-insensitively against the ``alias`` values
 in CITATION.cff. Without ``--repo`` or ``--org``, napari/napari is checked.
-``--issue-body`` prints a ready-to-paste issue body with ``@mentions``.
+``--milestone`` only checks the authors of PRs merged in that milestone,
+e.g. to find who to ask before a release. ``--issue-body`` prints a
+ready-to-paste issue body with ``@mentions``.
 """
 
 from __future__ import annotations
@@ -29,8 +31,8 @@ import yaml
 
 CITATION_CFF = Path(__file__).resolve().parent.parent / 'CITATION.cff'
 DEFAULT_REPO = 'napari/napari'
-# bots whose login doesn't end in [bot]
-BOT_LOGINS = {'app/dependabot', 'napari-bot'}
+# bots whose login doesn't end in [bot] or start with app/
+BOT_LOGINS = {'napari-bot'}
 
 
 def gh(*args: str) -> str:
@@ -57,17 +59,29 @@ def org_repos(org: str) -> list[str]:
     )
 
 
-def contributors(repo: str) -> list[str]:
+def contributors(repo: str, milestone: str | None = None) -> list[str]:
+    if milestone:
+        return gh(
+            'pr', 'list', '--repo', repo, '--state', 'merged',
+            '--search', f'milestone:"{milestone}"', '--limit', '10000',
+            '--json', 'author', '--jq', '.[].author.login',
+        ).split()  # fmt: skip
     return [
         user['login'] for user in gh_api_list(f'repos/{repo}/contributors')
     ]
 
 
 def is_bot(login: str) -> bool:
-    return login in BOT_LOGINS or login.endswith('[bot]')
+    return (
+        login in BOT_LOGINS
+        or login.endswith('[bot]')
+        or login.startswith('app/')
+    )
 
 
-def missing_logins(citation_path: Path, repos: list[str]) -> list[str]:
+def missing_logins(
+    citation_path: Path, repos: list[str], milestone: str | None = None
+) -> list[str]:
     citation = yaml.safe_load(citation_path.read_text(encoding='utf-8'))
     aliases = {
         author['alias'].strip().casefold()
@@ -76,7 +90,7 @@ def missing_logins(citation_path: Path, repos: list[str]) -> list[str]:
     }
     missing: dict[str, str] = {}
     for repo in repos:
-        for login in contributors(repo):
+        for login in contributors(repo, milestone):
             if not is_bot(login) and login.casefold() not in aliases:
                 missing.setdefault(login.casefold(), login)
     return list(missing.values())
@@ -116,6 +130,10 @@ def main(argv: list[str] | None = None) -> int:
         'repos. Can be combined with --repo.',
     )
     parser.add_argument(
+        '--milestone',
+        help='Only check authors of PRs merged in this milestone.',
+    )
+    parser.add_argument(
         '--issue-body',
         action='store_true',
         help='Print a ready-to-paste GitHub issue body with @mentions.',
@@ -131,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     repos = repos or [DEFAULT_REPO]
 
-    logins = missing_logins(args.citation_path, repos)
+    logins = missing_logins(args.citation_path, repos, args.milestone)
     if args.issue_body:
         print(format_issue_body(logins, repos))
         return 0
