@@ -30,17 +30,22 @@ wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
 
 
 class _NotifyingMixin:
+    """Relay warnings from the worker thread to the notification manager.
+
+    Errors are not relayed here: unless ignored, they are re-raised in the
+    main thread by `create_worker`, which already notifies.
+    """
+
     def __init__(self: _qthreading.WorkerBase, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.errored.connect(self._relay_error)
         self.warned.connect(self._relay_warning)
 
-    def _relay_error(self, exc: Exception):
-        from napari.utils.notifications import notification_manager
-
-        notification_manager.receive_error(type(exc), exc, exc.__traceback__)
-
-    def _relay_warning(self, show_warn_args: tuple):
+    # `warned` is emitted in the worker thread and the slot runs later in
+    # the main thread. By then the thread pool may have deleted the worker,
+    # and PyQt silently skips slots that are methods of a deleted worker.
+    # A staticmethod isn't tied to the worker, so it always runs.
+    @staticmethod
+    def _relay_warning(show_warn_args: tuple):
         from napari.utils.notifications import notification_manager
 
         notification_manager.receive_warning(*show_warn_args)
@@ -51,11 +56,13 @@ _S = TypeVar('_S')
 _R = TypeVar('_R')
 
 
-class FunctionWorker(_qthreading.FunctionWorker[_R], _NotifyingMixin): ...
+# The mixin must come first: superqt's __init__ chain ends in Qt's, which
+# doesn't call super().__init__, so a mixin listed after it never runs.
+class FunctionWorker(_NotifyingMixin, _qthreading.FunctionWorker[_R]): ...
 
 
 class GeneratorWorker(
-    _qthreading.GeneratorWorker[_Y, _S, _R], _NotifyingMixin
+    _NotifyingMixin, _qthreading.GeneratorWorker[_Y, _S, _R]
 ): ...
 
 
