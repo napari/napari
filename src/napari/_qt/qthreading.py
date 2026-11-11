@@ -213,21 +213,27 @@ def create_worker(
         )
         worker.errored.connect(
             partial(
-                lambda task_status_id, function: window._update_task_status(
-                    task_status_id,
-                    Status.FAILED,
-                    description=f'{function} execution failed',
+                lambda task_status_id, function, _exc: (
+                    window._update_task_status(
+                        task_status_id,
+                        Status.FAILED,
+                        description=f'{function} execution failed',
+                    )
                 ),
                 worker_status_id,
                 func,
             )
         )
-        worker.finished.connect(
+        # `returned` rather than `finished`: `finished` also comes after
+        # `errored` and `aborted`, and would overwrite those statuses.
+        worker.returned.connect(
             partial(
-                lambda task_status_id, function: window._update_task_status(
-                    task_status_id,
-                    Status.COMPLETED,
-                    description=f'{function} execution completed',
+                lambda task_status_id, function, _result: (
+                    window._update_task_status(
+                        task_status_id,
+                        Status.COMPLETED,
+                        description=f'{function} execution completed',
+                    )
                 ),
                 worker_status_id,
                 func,
