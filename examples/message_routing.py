@@ -116,7 +116,9 @@ def worker_error() -> None:
 
 def _button(text: str, callback) -> QPushButton:
     button = QPushButton(text)
-    button.clicked.connect(callback)
+    # `clicked` sends a `checked` argument; a thread_worker would pass it on
+    # to the function, so call the callback without arguments.
+    button.clicked.connect(lambda: callback())
     return button
 
 
