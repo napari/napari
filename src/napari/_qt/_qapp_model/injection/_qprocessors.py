@@ -172,15 +172,27 @@ def _add_future_data(
     _from_tuple : bool, optional
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
+    viewer : Viewer or None
+        An optional viewer to use. Otherwise use current viewer.
+    source : dict or None
+        An optional layer source to use.
     """
     if viewer is None:
         viewer = _provide_viewer_or_raise(
             msg='Futures cannot be processed in headless mode.',
         )
+    add_data = (
+        _add_layer_data_tuples_to_viewer
+        if _from_tuple
+        else _add_layer_data_to_viewer
+    )
     # The future may finish in a background thread, but layers must be
     # added on the main thread. The QtViewer takes care of that.
     viewer.window._qt_viewer._add_future(
-        future, return_type, _from_tuple, source
+        future,
+        partial(
+            add_data, return_type=return_type, viewer=viewer, source=source
+        ),
     )
 
 

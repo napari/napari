@@ -6,6 +6,7 @@ import sys
 import traceback
 import warnings
 import weakref
+from concurrent.futures import Future
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -62,8 +63,7 @@ from napari.utils.notifications import notification_manager, show_info
 from napari._vispy import VispyCanvas, create_vispy_layer  # isort:skip
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Sequence
-    from concurrent.futures import Future
+    from collections.abc import Callable, Generator, Sequence
     from types import FrameType
 
     from napari_console import QtConsole
@@ -185,7 +185,7 @@ class QtViewer(QSplitter):
         self._console_backlog: list[dict[str, Any]] = []
         self._console: QtConsole | None = None
         # futures whose result is still to be added, see `_add_future`
-        self._futures: dict[Future, tuple[Any, bool, dict | None]] = {}
+        self._futures: dict[Future, Callable[[Any], None]] = {}
 
         self._dockLayerList: QtViewerDockWidget | None = None
         self._dockLayerControls: QtViewerDockWidget | None = None
@@ -672,11 +672,7 @@ class QtViewer(QSplitter):
         self._add_layer(layer)
 
     def _add_future(
-        self,
-        future: Future,
-        return_type: Any,
-        from_tuple: bool,
-        source: dict | None = None,
+        self, future: Future, add_result: Callable[[Any], None]
     ) -> None:
         """Add the result of ``future`` to the viewer once it is done.
 
@@ -689,17 +685,13 @@ class QtViewer(QSplitter):
         future : Future
             An instance of `concurrent.futures.Future` (or any third-party)
             object with the same interface, whose result is layer data.
-        return_type : type
-            The return annotation that was used in the decorated function.
-        from_tuple : bool
-            True if the future returns `LayerDataTuple`, False if it returns
-            one of the `LayerData` types.
-        source : dict or None
-            An optional layer source to use.
+        add_result : callable
+            Called on the main thread with the result of ``future`` once it
+            is done.
         """
         # Keep the future first, then add the callback. If the future is
         # already finished, the callback runs right away and removes it.
-        self._futures[future] = (return_type, from_tuple, source)
+        self._futures[future] = add_result
         future.add_done_callback(self._on_future_ready)
 
     def _on_future_ready(self, future: Future) -> None:
@@ -711,12 +703,7 @@ class QtViewer(QSplitter):
 
     def _add_result_from_future(self, future: Future) -> None:
         """Add the result of a finished future to the viewer."""
-        from napari._qt._qapp_model.injection._qprocessors import (
-            _add_layer_data_to_viewer,
-            _add_layer_data_tuples_to_viewer,
-        )
-
-        return_type, from_tuple, source = self._futures.pop(future)
+        add_result = self._futures.pop(future)
         if future.cancelled():
             return
         # Show the error to the user. If we let it raise, it would only be
@@ -726,17 +713,7 @@ class QtViewer(QSplitter):
                 type(exc), exc, exc.__traceback__
             )
             return
-        add_data = (
-            _add_layer_data_tuples_to_viewer
-            if from_tuple
-            else _add_layer_data_to_viewer
-        )
-        add_data(
-            future.result(),
-            return_type=return_type,
-            viewer=self.viewer,
-            source=source,
-        )
+        add_result(future.result())
 
     def _update_camera_depth(self) -> None:
         """When the layer extents change, update the camera depth.

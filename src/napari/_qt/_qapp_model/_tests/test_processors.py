@@ -115,9 +115,15 @@ def test_add_future_data():
     with pytest.raises(RuntimeError, match='No current `Viewer` found'):
         _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
-    viewer.window._qt_viewer._add_future.assert_called_once_with(
-        future, Union[ImageData, LabelsData], True, None
-    )
+    viewer.window._qt_viewer._add_future.assert_called_once()
+    added, add_result = viewer.window._qt_viewer._add_future.call_args.args
+    assert added is future
+    assert add_result.func is _add_layer_data_tuples_to_viewer
+    assert add_result.keywords == {
+        'return_type': Union[ImageData, LabelsData],
+        'viewer': viewer,
+        'source': None,
+    }
 
 
 @pytest.mark.parametrize('outcome', ['result', 'cancelled', 'error'])
