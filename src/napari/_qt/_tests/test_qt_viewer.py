@@ -28,6 +28,10 @@ from napari._vispy._tests.utils import vispy_image_scene_size
 from napari.components.viewer_model import ViewerModel
 from napari.layers import Labels, Layer, Points
 from napari.settings import get_settings
+from napari.utils.camera_orientations import (
+    AxesOrientation2D,
+    AxesOrientation3D,
+)
 from napari.utils.colormaps import DirectLabelColormap, label_colormap
 from napari.utils.interactions import mouse_press_callbacks
 
@@ -569,6 +573,79 @@ def test_canvas_to_world_grid_spacing(
         )
 
 
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('down', 'right'), (50, 100)),
+        (('up', 'right'), (-50, 100)),
+        (('down', 'left'), (50, -100)),
+        (('up', 'left'), (-50, -100)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_2d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation2D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 2D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10)))
+    viewer_model.dims.ndisplay = 2
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (6, 7)
+    camera.zoom = 2
+    camera.orientation2d = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with zoom=2, the (100, 200) canvas offset maps to (50, 100) before
+    # applying the vertical and horizontal orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('towards', 'down', 'right'), (100, -50)),
+        (('towards', 'up', 'right'), (100, 50)),
+        (('towards', 'down', 'left'), (-100, -50)),
+        (('towards', 'up', 'left'), (-100, 50)),
+        (('away', 'down', 'right'), (100, -50)),
+        (('away', 'up', 'right'), (100, 50)),
+        (('away', 'down', 'left'), (-100, -50)),
+        (('away', 'up', 'left'), (-100, 50)),
+    ],
+)
+def test_canvas_to_world_camera_orientation_3d(
+    viewer_model: ViewerModel,
+    orientation: AxesOrientation3D,
+    expected_delta: tuple[float, float],
+) -> None:
+    """Camera orientation flips are reflected in the 3D canvas/world mapping."""
+    viewer_model.add_image(np.zeros((10, 10, 10)))
+    viewer_model.dims.ndisplay = 3
+    viewer_model.canvas.size = (800, 1200)
+    camera = viewer_model.scene.camera
+    camera.center = (5, 6, 7)
+    camera.zoom = 2
+    camera.angles = (90, 0, 0)
+    camera.orientation = orientation
+
+    center_px = np.array(viewer_model.canvas.size) / 2
+    # with angles=(90, 0, 0), the (100, 200) canvas offset maps to (100, -50)
+    # before applying the orientation flips.
+    world_delta = viewer_model.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer_model.canvas_to_world(center_px)
+
+    # ignore depth component in comparison (projected on camera center plane always)
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
 def test_canvas_to_world_2d_data_with_3d_viewer(
     viewer_model: ViewerModel,
 ) -> None:
@@ -786,19 +863,23 @@ def test_create_non_empty_viewer_model_initializes_world_units(
 def _update_data(
     layer: Labels,
     label: int,
-    qtbot: QtBot,
     qt_viewer: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     dtype: np.dtype = np.uint64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Change layer data and return color of label and middle pixel of screenshot."""
+) -> tuple[tuple[int, ...], np.ndarray]:
+    """Change layer data and return color of label and middle pixel of screenshot.
+
+    ``colorbox_painted_colors`` comes from the fixture of the same name and is
+    updated on each QtColorBox paintEvent.
+    """
     layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
-    qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
+    # QtColorBox only requests a repaint with update(). Run the event loop so
+    # that colorbox_painted_colors holds the color which it really painted.
+    QApplication.processEvents()
 
-    color_box_color = qt_viewer.controls.widgets[
-        layer
-    ]._label_control.colorbox.color
+    color_box_color = colorbox_painted_colors[-1]
     screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
@@ -807,8 +888,10 @@ def _update_data(
 
 
 @pytest.fixture
-def qt_viewer_with_controls(qt_viewer: QtViewer) -> QtViewer:
-    qt_viewer.controls.show()
+def qt_viewer_with_controls(qtbot: QtBot, qt_viewer: QtViewer) -> QtViewer:
+    # QtColorBox is not painted until its window is exposed
+    with qtbot.waitExposed(qt_viewer.controls):
+        qt_viewer.controls.show()
     return qt_viewer
 
 
@@ -820,8 +903,8 @@ def qt_viewer_with_controls(qt_viewer: QtViewer) -> QtViewer:
 @pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int64])
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_auto(
-    qtbot: QtBot,
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ) -> None:
@@ -848,7 +931,11 @@ def test_label_colors_matching_widget_auto(
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
 
         npt.assert_allclose(
@@ -865,8 +952,8 @@ def test_label_colors_matching_widget_auto(
 @pytest.mark.parametrize('dtype', [np.uint64, np.uint16, np.uint8, np.int16])
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_direct(
-    qtbot: QtBot,
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ):
@@ -894,14 +981,18 @@ def test_label_colors_matching_widget_direct(
     layer.show_selected_label = use_selection
 
     color_box_color, middle_pixel = _update_data(
-        layer, 0, qtbot, qt_viewer_with_controls, dtype
+        layer, 0, qt_viewer_with_controls, colorbox_painted_colors, dtype
     )
     assert np.allclose([0, 0, 0, 255], middle_pixel)
 
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
         npt.assert_almost_equal(
             color_box_color, middle_pixel, err_msg=f'{label=}'
