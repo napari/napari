@@ -65,7 +65,7 @@ def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
 
     Returns
     -------
-    Tuple[NestedIndex, Index]
+    Tuple[ParentIndex, Index]
         A tuple of ``parent_index``, ``row``
 
     Raises
@@ -274,7 +274,7 @@ class NestableEventedList(EventedList[_T]):
     def _move_plan(  # pyrefly: ignore [bad-override]
         self,
         sources: Iterable[int] | Iterable[tuple[int, ...]],
-        dest_index: NestedIndex,
+        dest_index: int | NestedIndex,
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
 
@@ -293,7 +293,7 @@ class NestableEventedList(EventedList[_T]):
             Indices that should be moved to ``dest_index``. They are sorted,
             so all must be ints or all must be tuples.
             (Note: currently, the order of ``sources`` will NOT be maintained.)
-        dest_index : NestedIndex
+        dest_index : int or NestedIndex
             The destination for sources.
 
         Yields
@@ -303,7 +303,7 @@ class NestableEventedList(EventedList[_T]):
 
         Raises
         ------
-        ValueError
+        TypeError
             If any source terminal or the destination terminal index is a slice
         IndexError
             If any of the sources are the root object: ``()``.
@@ -387,8 +387,9 @@ class NestableEventedList(EventedList[_T]):
         Raises
         ------
         ValueError
-            If the terminal source is a slice, or if the source is this root
-            object
+            If the source is this root object
+        TypeError
+            If the terminal source or the destination index is a slice
         """
         logger.debug(
             'move(src_index=%s, dest_index=%s)',
