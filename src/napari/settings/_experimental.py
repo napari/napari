@@ -10,6 +10,7 @@ from napari.utils.colormap_backend import (
 from napari.utils.events import Event
 from napari.utils.triangulation_backend import (
     TriangulationBackend,
+    get_backend as get_triangulation_backend,
     set_backend as set_triangulation_backend,
 )
 
@@ -154,6 +155,9 @@ def _update_triangulation_backend(event: Event) -> None:
     experimental: ExperimentalSettings = event.source
 
     set_triangulation_backend(experimental.triangulation_backend)
+    backend = get_triangulation_backend()
+    if backend != experimental.triangulation_backend:
+        experimental.triangulation_backend = backend
 
 
 def _update_colormap_backend(event: Event) -> None:
