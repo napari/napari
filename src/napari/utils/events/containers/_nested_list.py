@@ -396,7 +396,7 @@ class NestableEventedList(EventedList[_T]):
             src_index,
             dest_index,
         )
-        if ensure_tuple_index(src_index) == ():
+        if len(ensure_tuple_index(src_index)) == 0:
             raise ValueError('Group cannot move itself')
 
         src_par_i, src_i = split_nested_index(src_index)
