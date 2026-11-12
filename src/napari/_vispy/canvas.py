@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard, cast
 from weakref import WeakSet
 
 import numpy as np
@@ -47,16 +47,12 @@ if TYPE_CHECKING:
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
     from vispy.scene import Node
-    from vispy.scene.subscene import SubScene
     from vispy.util.event import EmitterGroup
 
     from napari._qt.qt_viewer import QtViewer
     from napari._vispy.layers.base import VispyBaseLayer
     from napari._vispy.mouse_event import VectorF64
-    from napari._vispy.overlays.base import (
-        VispyBaseOverlay,
-        VispyCanvasOverlay,
-    )
+    from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
     from napari.components.overlays import Overlay
     from napari.layers import Layer
@@ -468,7 +464,7 @@ class VispyCanvas:
         self.viewer.scene.camera.center = box_center_world
 
     def _get_viewbox_at(
-        self, position: tuple[float, float]
+        self, position: np.ndarray[tuple[int], np.dtype[np.number]]
     ) -> tuple[ViewBox, tuple[int, int]] | tuple[None, None]:
         """Get the viewbox and its grid coordinates from the mouse position.
 
@@ -618,8 +614,8 @@ class VispyCanvas:
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
 
         Returns
         -------
@@ -964,7 +960,7 @@ class VispyCanvas:
         self,
         overlay: Overlay,
         vispy_overlay: VispyBaseOverlay | None,
-        parent: ViewBox | SubScene,
+        parent: Node,
         **kwargs: Any,
     ) -> VispyBaseOverlay:
         if vispy_overlay is None:
@@ -1141,7 +1137,7 @@ class VispyCanvas:
 
     def _get_ordered_visible_canvas_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyBaseOverlay, int | None]]:
+    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, int | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1175,7 +1171,9 @@ class VispyCanvas:
                 and is_visible_tileable(overlay)
                 and not is_gridded(overlay)
             ):
-                yield overlay, vispy_overlays[0], None
+                # the visual of a CanvasOverlay is always a VispyCanvasOverlay
+                canvas_visual = cast(VispyCanvasOverlay, vispy_overlays[0])
+                yield overlay, canvas_visual, None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
@@ -1202,13 +1200,17 @@ class VispyCanvas:
                     and is_visible_tileable(overlay)
                     and is_gridded(overlay)
                 ):
-                    yield overlay, vispy_overlays[viewbox_idx], view
+                    canvas_visual = cast(
+                        VispyCanvasOverlay, vispy_overlays[viewbox_idx]
+                    )
+                    yield overlay, canvas_visual, view
 
             # we want to ensure that the tiling of layer overlays always looks
             # the same as the llayerlist order, so we reverse the direction for
             # some cases
             overlays_by_tiling_order: dict[
-                str, list[tuple[CanvasOverlay, VispyBaseOverlay, int | None]]
+                str,
+                list[tuple[CanvasOverlay, VispyCanvasOverlay, int | None]],
             ] = {'direct': [], 'reversed': []}
 
             # layer overlays are always "gridded"
@@ -1222,6 +1224,7 @@ class VispyCanvas:
                     if not isinstance(overlay, CanvasOverlay):
                         continue
                     if layer.visible and is_visible_tileable(overlay):
+                        canvas_visual = cast(VispyCanvasOverlay, vispy_overlay)
                         if (
                             '_left' in overlay.position
                             and getattr(
@@ -1241,7 +1244,7 @@ class VispyCanvas:
                         else:
                             direction = 'direct'
                         overlays_by_tiling_order[direction].append(
-                            (overlay, vispy_overlay, view)
+                            (overlay, canvas_visual, view)
                         )
 
             yield from reversed(overlays_by_tiling_order['reversed'])

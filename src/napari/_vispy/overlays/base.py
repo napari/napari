@@ -33,8 +33,6 @@ class VispyBaseOverlay:
     """
 
     overlay: Overlay
-    x_size: float = 0.0
-    y_size: float = 0.0
 
     def __init__(
         self,
