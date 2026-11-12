@@ -2,10 +2,8 @@
 name: PR Test
 
 on:
-  pull_request:
-    branches:
-      - main
-      - "v*x"
+  # TEMPORARY (macOS 26 debugging): PR trigger disabled
+  workflow_dispatch:
 
 concurrency:
   group: test-${{ github.ref }}
