@@ -93,7 +93,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Setup Graphviz
-        if : inputs.platform != 'macos-15-intel'
+        if: ${{ !endsWith(inputs.platform, '-intel') }}
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
         continue-on-error: true
 
