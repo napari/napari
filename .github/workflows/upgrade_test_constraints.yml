@@ -245,6 +245,8 @@ jobs:
           git remote add napari-bot https://github.com/napari-bot/napari.git
           git remote -v
           git config --local credential.https://github.com/napari-bot/napari.git.helper ''
+          # The helper must reach git unexpanded; git evaluates it at push time.
+          # shellcheck disable=SC2016
           git config --local --add credential.https://github.com/napari-bot/napari.git.helper \
             '!f() { if [ "$1" = get ]; then printf "%s\n" "username=x-access-token" "password=${GHA_TOKEN_BOT_REPO}"; fi; }; f'
 
