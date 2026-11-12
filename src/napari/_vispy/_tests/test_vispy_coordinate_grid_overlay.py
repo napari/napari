@@ -36,3 +36,26 @@ def test_scene_axes_dimensions_properly_detected(y_scale):
                 range_.start, range_.stop, coordinate_grid_model.n_ticks
             )[0],
         )
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_2d_data_draws_single_grid_plane(ndisplay):
+    viewer = ViewerModel()
+    coordinate_grid_vispy = VispyCoordinateGridOverlay(
+        viewer=viewer, overlay=CoordinateGridOverlay(), font_info=FontInfo()
+    )
+    viewer.add_image(np.zeros((10, 20)))
+    viewer.dims.ndisplay = ndisplay
+
+    grids = coordinate_grid_vispy.node.grids
+    # the grid in the plane of the data
+    x0, x1, y0, y1 = grids[0].grid_bounds
+    assert x1 > x0
+    assert y1 > y0
+    # the second grid is perpendicular to the data, so it would float
+    # outside it when the camera rotates in 3D: it must not draw any area
+    x0, x1, y0, y1 = grids[1].grid_bounds
+    assert x1 <= x0 or y1 <= y0
+    # but it still holds the second axis' labels, which must show
+    assert grids[1].visible
+    assert coordinate_grid_vispy.node.tick_labels[1].visible
