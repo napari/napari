@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
     from napari.utils.transforms._units import UnitsLike
 
-    # TODO: use ``Vector1D`` and ``Matrix2D`` from ``napari.utils._typing``
+    # TODO: use ``Vector1D`` and ``Matrix2D`` from ``napari.types``
     # instead of ``_Vector1D`` and ``_Matrix2D`` once #9782 is merged.
     # A 1D vector of numbers, e.g. a per-axis ``scale`` or ``translate``.
     _Vector1D: TypeAlias = (
@@ -357,7 +357,7 @@ class ScaleTranslate(Transform):
 
         Returns
         -------
-        Transform
+        ScaleTranslate
             Resulting transform.
         """
         return ScaleTranslate(
@@ -376,7 +376,7 @@ class ScaleTranslate(Transform):
 
         Returns
         -------
-        Transform
+        ScaleTranslate
             Resulting transform.
         """
         n = len(axes) + len(self.scale)
@@ -443,6 +443,12 @@ class Affine(Transform):
         other parameters.
     name : string
         A string name for the transform.
+    axis_labels : sequence of str, optional
+        One label per axis. If None, the axes are labelled ``-ndim`` to
+        ``-1``.
+    units : str, pint.Unit or sequence of them, optional
+        Units of the axes. A single value is used for every axis. If None,
+        pixels are used.
 
     References
     ----------
@@ -462,7 +468,7 @@ class Affine(Transform):
         linear_matrix: _Matrix2D | None = None,
         name: str | None = None,
         ndim: int | None = None,
-        rotate: float | _Vector1D | _Matrix2D | None = None,
+        rotate: float | np.number | _Vector1D | _Matrix2D | None = None,
         shear: _Vector1D | _Matrix2D | None = None,
         units: UnitsLike = None,
     ) -> None:
@@ -606,7 +612,9 @@ class Affine(Transform):
         return self._cache_dict['decompose_linear_matrix'][0]
 
     @rotate.setter
-    def rotate(self, rotate: float | _Vector1D | _Matrix2D) -> None:
+    def rotate(
+        self, rotate: float | np.number | _Vector1D | _Matrix2D
+    ) -> None:
         """Set the rotation of the transform."""
         self._linear_matrix = compose_linear_matrix(
             rotate, self.scale, self._shear_cache
@@ -788,7 +796,7 @@ class Affine(Transform):
 
         Returns
         -------
-        Transform
+        Affine
             Resulting transform.
         """
         n = len(axes) + len(self.scale)
@@ -852,6 +860,12 @@ class CompositeAffine(Affine):
         other parameters.
     name : string
         A string name for the transform.
+    axis_labels : sequence of str, optional
+        One label per axis. If None, the axes are labelled ``-ndim`` to
+        ``-1``.
+    units : str, pint.Unit or sequence of them, optional
+        Units of the axes. A single value is used for every axis. If None,
+        pixels are used.
     """
 
     def __init__(
@@ -860,7 +874,7 @@ class CompositeAffine(Affine):
         translate: _Vector1D | None = (0, 0),
         *,
         axis_labels: Sequence[str] | None = None,
-        rotate: float | _Vector1D | _Matrix2D | None = None,
+        rotate: float | np.number | _Vector1D | _Matrix2D | None = None,
         shear: _Vector1D | _Matrix2D | None = None,
         ndim: int | None = None,
         name: str | None = None,
@@ -904,7 +918,9 @@ class CompositeAffine(Affine):
         return self._rotate
 
     @rotate.setter
-    def rotate(self, rotate: float | _Vector1D | _Matrix2D) -> None:
+    def rotate(
+        self, rotate: float | np.number | _Vector1D | _Matrix2D
+    ) -> None:
         """Set the rotation of the transform."""
         self._rotate = rotate_to_matrix(rotate, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
