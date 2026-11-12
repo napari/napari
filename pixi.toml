@@ -46,10 +46,10 @@ qt6-main = "!=6.11.0,!=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizi
 # ref. https://github.com/prefix-dev/pixi/issues/4764#issuecomment-4781239118
 # keep in sync with `project.optional-dependencies` in `pyproject.toml`
 [package.extra-dependencies.pyqt6]
-pyqt6 = ">6.5,!=6.6.1"  # 6.6.1 is excluded only on macOS in pyproject.toml
+pyqt6 = ">=6.7"
 
 [package.extra-dependencies.pyside6]
-pyside6 = ">6.7"
+pyside6 = ">=6.8.3,!=6.11.0,!=6.11.1"
 
 [feature.py313.dependencies]
 python = "3.13.*"
@@ -92,7 +92,7 @@ tensorstore = ">=0.1.43"
 virtualenv = ">=20.24.7"
 xarray = ">=2023.5.0"
 ipython = ">=7.25.0"
-qtconsole-base = ">=4.5.1"
+qtconsole-base = ">=5.4.0"
 rich = ">=14.0.0"
 # additional test dependencies from tox.ini
 pytest-json-report = "*"
