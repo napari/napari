@@ -1133,9 +1133,7 @@ def test_renamed_nested_dependency_tracks_child_replacement():
 
     with pytest.warns(FutureWarning, match='Model.old_value is deprecated'):
         model.doubled = 16
-    assert (
-        callback.call_count == 1
-    )  # TODO check if we could reduce this to 1 call
+    assert callback.call_count == 1
     assert callback.call_args.args[0].value == 16
     assert model.child.value == 8
 
