@@ -36,7 +36,7 @@ def test_screenshot_save(qtbot, tmp_path, filename):
         save_function, directory=str(tmp_path), history=[]
     )
     qtbot.addWidget(dialog)
-    dialog.setOptions(QFileDialog.DontUseNativeDialog)
+    dialog.setOptions(QFileDialog.Option.DontUseNativeDialog)
     dialog.show()
 
     # check dialog and set filename
@@ -69,10 +69,13 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
         assert title == 'Confirm overwrite'
         assert 'test.png' in text
         assert 'already exists. Do you want to replace it?' in text
-        assert buttons == QMessageBox.Yes | QMessageBox.No
-        assert default == QMessageBox.No
+        assert (
+            buttons
+            == QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        assert default == QMessageBox.StandardButton.No
 
-        return QMessageBox.Yes
+        return QMessageBox.StandardButton.Yes
 
     # monkeypath custom overwrite QMessageBox usage
     monkeypatch.setattr(QMessageBox, 'warning', overwrite_qmessagebox_warning)
@@ -81,7 +84,7 @@ def test_screenshot_overwrite_save(qtbot, tmp_path, monkeypatch):
         save_function, directory=str(tmp_path), history=[]
     )
     qtbot.addWidget(dialog)
-    dialog.setOptions(QFileDialog.DontUseNativeDialog)
+    dialog.setOptions(QFileDialog.Option.DontUseNativeDialog)
     dialog.show()
 
     # check dialog, set filename and trigger accept logic

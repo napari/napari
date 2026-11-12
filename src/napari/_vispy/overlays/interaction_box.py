@@ -22,17 +22,17 @@ class _VispyBoundingBoxOverlay(LayerOverlayMixin, VispySceneOverlay):
         super().__init__(node=InteractionBox(), **kwargs)
         self.layer.events.set_data.connect(self._on_visible_change)
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         pass
 
-    def _on_visible_change(self):
+    def _on_visible_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             super()._on_visible_change()
             self._on_bounds_change()
         else:
             self.node.visible = False
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self._on_bounds_change()
 
@@ -48,7 +48,7 @@ class VispySelectionBoxOverlay(_VispyBoundingBoxOverlay):
 
         self.reset()
 
-    def _on_bounds_change(self):
+    def _on_bounds_change(self) -> None:
         if self.layer._slice_input.ndisplay == 2:
             top_left, bot_right = self.overlay.bounds
             self.node.set_data(

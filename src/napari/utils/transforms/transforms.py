@@ -179,9 +179,10 @@ class TransformChain(Transform, EventedList[Transform], Generic[_T]):
         return self._cache_dict[f'getitem_{key}']
 
     def __setitem__(self, key: int, value: Transform) -> None:
-        if key in self and hasattr(self[key], 'changed'):
-            self[key].changed.disconnect(self._clean_cache)
+        val = self[key]
         super().__setitem__(key, value)
+        if hasattr(val, 'changed'):
+            val.changed.disconnect(self._clean_cache)
         if hasattr(value, 'changed'):
             value.changed.connect(self._clean_cache)
         self._clean_cache()

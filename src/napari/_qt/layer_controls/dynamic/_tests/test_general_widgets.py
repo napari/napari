@@ -297,6 +297,20 @@ class TestQtTextVisibilityControl:
         points.text.visible = True
         assert control.text_disp_checkbox.isChecked() is True
 
+    def test_text_scaling_toggle(self, qt_wrap: QtWrap) -> None:
+        points = Points(np.random.rand(10, 2))
+        control = QtTextVisibilityControl([points])
+        qt_wrap.add_control(control)
+
+        assert points.text.scaling is False
+        assert control.text_scaling_checkbox.isChecked() is False
+
+        control.text_scaling_checkbox.setChecked(True)
+        assert points.text.scaling is True
+
+        points.text.scaling = False
+        assert control.text_scaling_checkbox.isChecked() is False
+
 
 class TestQtProjectionModeControl:
     def test_init(self, qt_wrap: QtWrap) -> None:
@@ -378,6 +392,15 @@ class TestQtMultiscaleLevelControl:
 
         image.locked_data_level = None
         assert control.level_combobox.currentIndex() == 0
+
+    def test_label_is_not_a_window(self, qtbot: QtBot) -> None:
+        """The label is shown before it is added to a layout, so needs a
+        parent to not briefly show as a separate window."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        image = Image([np.zeros((10, 10)), np.zeros((5, 5))])
+        control = QtMultiscaleLevelControl([image], parent)
+        assert not control.level_label.isWindow()
 
     def test_mismatched_multiscale_shapes(self, qt_wrap: QtWrap) -> None:
         image1 = Image([np.zeros((10, 10)), np.zeros((5, 5))])

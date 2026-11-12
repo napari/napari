@@ -3,11 +3,8 @@ import runpy
 import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
-import skimage.data
 from pooch import core
-from qtpy import API_NAME
 
 import napari
 from napari._qt.qt_main_window import Window
@@ -17,7 +14,8 @@ from napari.utils.notifications import notification_manager
 fpath = os.path.join(*__file__.split(os.path.sep)[-4:])
 if '--test-examples' not in sys.argv and fpath not in sys.argv:
     pytest.skip(
-        'Use `napari/_tests/test_examples.py` to test examples.', allow_module_level=True
+        'Use `napari/_tests/test_examples.py` to test examples.',
+        allow_module_level=True,
     )
 
 # not testing these examples
@@ -38,21 +36,19 @@ skip = [
 skip_dev = ['leaking_check.py', 'demo_shape_creation.py']
 
 EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples/'
-DEV_EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+DEV_EXAMPLE_DIR = (
+    Path(__file__).parent.parent.parent.parent / 'examples' / 'dev'
+)
 # using f.name here and re-joining at `run_path()` for test key presentation
 # (works even if the examples list is empty, as opposed to using an ids lambda)
 examples = [f.name for f in EXAMPLE_DIR.glob('*.py') if f.name not in skip]
-dev_examples = [f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev]
+dev_examples = [
+    f.name for f in DEV_EXAMPLE_DIR.glob('*.py') if f.name not in skip_dev
+]
 
-
-# still some CI segfaults, but only on windows with pyqt5
-if os.getenv('CI') and os.name == 'nt' and API_NAME == 'PyQt5':
-    examples = []
 
 if os.getenv('CI') and os.name == 'nt' and 'to_screenshot.py' in examples:
     examples.remove('to_screenshot.py')
-
-
 
 
 @pytest.fixture(autouse=True)
@@ -62,6 +58,16 @@ def _mock_pooch(monkeypatch):
     monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
 
 
+@pytest.fixture(autouse=True)
+def _mock_nilearn(monkeypatch):
+    try:
+        from nilearn import datasets
+    except ImportError:
+        return
+    from napari.utils._examples_data import nilearn_download_factory
+
+    monkeypatch.setattr(datasets, 'fetch_surf_nki_enhanced', nilearn_download_factory(datasets.fetch_surf_nki_enhanced))
+
 
 @pytest.fixture
 def _example_monkeypatch(monkeypatch):
@@ -69,12 +75,6 @@ def _example_monkeypatch(monkeypatch):
     monkeypatch.setattr(Window, 'show', lambda *a: None)
     # prevent running the event loop
     monkeypatch.setattr(napari, 'run', lambda *a, **k: None)
-    # Prevent downloading example data because this sometimes fails.
-    monkeypatch.setattr(
-        skimage.data,
-        'cells3d',
-        lambda: np.zeros((60, 2, 256, 256), dtype=np.uint16),
-    )
 
     # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):
