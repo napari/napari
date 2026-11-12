@@ -56,8 +56,6 @@ _S = TypeVar('_S')
 _R = TypeVar('_R')
 
 
-# The mixin must come first: superqt's __init__ chain ends in Qt's, which
-# doesn't call super().__init__, so a mixin listed after it never runs.
 class FunctionWorker(_NotifyingMixin, _qthreading.FunctionWorker[_R]): ...
 
 
