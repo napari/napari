@@ -245,7 +245,7 @@ class NotificationManager:
         self._originals_except_hooks: list[Callable] = []
         self._original_showwarnings_hooks: list[Callable] = []
         self._originals_thread_except_hooks: list[Callable] = []
-        self._seen_warnings: set[tuple[str, type, str, int]] = set()
+        self._seen_warnings: set[tuple[type, str, int]] = set()
 
     def __enter__(self) -> Self:
         self.install_hooks()
@@ -326,10 +326,12 @@ class NotificationManager:
         file: TextIO | None = None,
         line: str | None = None,
     ) -> None:
-        msg = str(message)
-        if (msg, category, filename, lineno) in self._seen_warnings:
+        # show each warning call site once, so a warning raised in a loop
+        # with a different message on each pass does not flood the GUI
+        key = (category, filename, lineno)
+        if key in self._seen_warnings:
             return
-        self._seen_warnings.add((msg, category, filename, lineno))
+        self._seen_warnings.add(key)
         self.dispatch(
             Notification.from_warning(
                 message, filename=filename, lineno=lineno
