@@ -170,6 +170,7 @@ class VispyCanvas:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
+        self._closing = False
         self.max_texture_sizes = None
         self._last_theme_color = None
 
@@ -856,6 +857,12 @@ class VispyCanvas:
         self._clean_and_update_scenegraph()
 
     def _clean_and_update_scenegraph(self):
+        if self._closing:
+            # The canvas is deleted together with the viewer window, so there
+            # is no scene graph to update. This also skips the full garbage
+            # collection below, which is slow when many objects are alive.
+            return
+
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.

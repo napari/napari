@@ -59,6 +59,9 @@ def test_project_point_to_plane(
         (np.array([10, 0]), np.array([0, 5])),
         (np.array([0, 5]), np.array([0, 5])),
         (np.array([0, 5]), np.array([0, -5])),
+        (np.array([0, 5]), np.array([10, 0])),
+        (np.array([3, 4]), np.array([-4, 3])),
+        (np.array([1, 2]), np.array([2, 1])),
     ],
 )
 def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
