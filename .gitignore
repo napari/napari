@@ -1,4 +1,5 @@
 uv.lock
+.pixi
 *leak-backref-graph*
 docs
 tmp

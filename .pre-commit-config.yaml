@@ -39,3 +39,10 @@ repos:
     language: python
     entry: python tools/check_groups_vs_extras.py
     files: ^pyproject.toml$
+  - id: check-pixi-vs-pyproject
+    name: check that pixi.toml dependencies are in sync with pyproject.toml
+    language: python
+    entry: python tools/check_pixi_vs_pyproject.py
+    additional_dependencies: [packaging]
+    files: ^(pyproject|pixi)\.toml$
+    pass_filenames: false
