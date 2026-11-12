@@ -88,12 +88,14 @@ def missing_logins(
         for author in citation['authors']
         if author.get('alias')
     }
-    missing: dict[str, str] = {}
-    for repo in repos:
-        for login in contributors(repo, milestone):
-            if not is_bot(login) and login.casefold() not in aliases:
-                missing.setdefault(login.casefold(), login)
-    return list(missing.values())
+    missing = [
+        login
+        for repo in repos
+        for login in contributors(repo, milestone)
+        if not is_bot(login) and login.casefold() not in aliases
+    ]
+    # GitHub returns each login with the same casing, so this dedupes
+    return list(dict.fromkeys(missing))
 
 
 def format_issue_body(logins: list[str], repos: list[str]) -> str:
