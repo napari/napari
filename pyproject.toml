@@ -74,7 +74,7 @@ dependencies = [
     "tifffile>=2022.7.28",
     "toolz>=0.12.1",
     "tqdm>=4.56.0",
-    "typing_extensions>=4.12",
+    "typing-extensions>=4.14",
     "vispy>=0.17.0,<0.18",
     "wrapt>=1.14.1",
 ]
@@ -95,7 +95,7 @@ Documentation = "https://napari.org"
 
 [project.optional-dependencies]
 pyside6 = [
-    "PySide6 >= 6.7, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
+    "PySide6 >= 6.8.3, !=6.11.0, !=6.11.1"  # Qt 6.11.1 causes dock widget and layout resizing problems
 ]
 pyqt6 = [
     "PyQt6 >= 6.7",
@@ -161,7 +161,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=5.3.0",
+    "qtconsole>=5.4.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
@@ -251,7 +251,7 @@ testing = [
     "virtualenv>=20.24.7",
     "xarray>=2023.5.0",
     "IPython>=7.25.0",
-    "qtconsole>=5.3.0",
+    "qtconsole>=5.4.0",
     "rich>=14.0.0",
     "napari[optional-base, bermuda]",
 ]
@@ -368,7 +368,6 @@ ignore = [
   "tools/minreq.py",
   "tox.ini",
   "src/napari/_qt/qt_resources/_qt_resources_*.py",
-  "*.pyi",  # added by make typestubs
   "binder/*",
   ".env_sample",
   ".devcontainer/*",
@@ -500,7 +499,6 @@ filterwarnings = [
   "error:::napari", # turn warnings from napari into errors
   "error:::test_.*", # turn warnings in our own tests into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
-  "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:tensorstore",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
@@ -599,26 +597,21 @@ project-excludes = [
     'src/napari/_qt/widgets/qt_dims.py',
     'src/napari/_qt/widgets/qt_dims_slider.py',
     'src/napari/_qt/widgets/qt_extension2reader.py',
-    'src/napari/_qt/widgets/qt_highlight_preview.py',
     'src/napari/_qt/widgets/qt_keyboard_settings.py',
-    'src/napari/_qt/widgets/qt_scrollbar.py',
     'src/napari/_qt/widgets/qt_viewer_dock_widget.py',
     'src/napari/_vispy/canvas.py',
     'src/napari/components/layerlist.py',
     'src/napari/layers/_layer_actions.py',
-    'src/napari/layers/_multiscale_data.py',
     'src/napari/layers/intensity_mixin.py',
     'src/napari/layers/points/points.py',
     'src/napari/layers/shapes/_shapes_mouse_bindings.py',
     'src/napari/layers/shapes/shapes.py',
     'src/napari/layers/utils/stack_utils.py',
     'src/napari/layers/utils/text_manager.py',
-    'src/napari/utils/_testsupport.py',
     'src/napari/utils/events/containers/_evented_list.py',
     'src/napari/utils/events/containers/_nested_list.py',
     'src/napari/utils/events/event.py',
     'src/napari/utils/events/evented_model.py',
-    'src/napari/utils/key_bindings.py',
     'src/napari/utils/transforms/transforms.py',
 ]
 
