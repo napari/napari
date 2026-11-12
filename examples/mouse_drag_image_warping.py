@@ -7,8 +7,8 @@ napari.
 
 Derived from scikit-image example: https://scikit-image.org/docs/stable/auto_examples/transform/plot_tps_deformation.html
 
-This example is fully explained in the following tutorial from SciPy 2025:
-https://napari.org/napari-scipy2025-workshop/notebooks/image_warping.html
+A walkthrough adapted from the SciPy 2025 workshop explains this example:
+https://napari.org/workshops/extend/widgets/#extend-block3-events
 
 Credit to Lars Grüter for the original idea and first attempts at implementation at SciPy 2024.
 
