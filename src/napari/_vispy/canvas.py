@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakSet
 
 import numpy as np
@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from vispy.scene.subscene import SubScene
 
     from napari._vispy.layers.base import VispyBaseLayer
+    from napari._vispy.mouse_event import VectorF64
     from napari._vispy.overlays.base import (
         VispyBaseOverlay,
         VispyCanvasOverlay,
@@ -173,7 +174,7 @@ class VispyCanvas:
         for ignoring mousewheel events with modifiers.
     """
 
-    _instances: WeakSet[VispyCanvas] = WeakSet()
+    _instances: ClassVar[WeakSet[VispyCanvas]] = WeakSet()
 
     def __init__(
         self,
@@ -187,6 +188,7 @@ class VispyCanvas:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
+        self._closing = False
         self.max_texture_sizes = None
         self._last_theme_color = None
 
@@ -321,10 +323,10 @@ class VispyCanvas:
         )
 
         self.viewer.canvas.events.size.connect(self._on_model_size_change)
-        self.destroyed.connect(self._disconnect_events)
         get_settings().appearance.events.font_size.connect(
-            self._update_overlay_font_sizes
+            self._update_font_sizes
         )
+        self.destroyed.connect(self._disconnect_events)
 
     @property
     def events(self):
@@ -360,6 +362,7 @@ class VispyCanvas:
         disconnect_events(self.viewer.layers.events, self)
         disconnect_events(self.viewer.cursor.events, self)
         disconnect_events(self._scene_canvas.events, self)
+        disconnect_events(get_settings().appearance.events, self)
 
     @property
     def central_widget(self) -> Widget:
@@ -534,6 +537,18 @@ class VispyCanvas:
             return
 
         canvas_position = tuple(event.pos[::-1])
+
+        if (
+            event.type == 'mouse_press'
+            and event.last_event is not None
+            and event.last_event.type != 'mouse_release'
+            and event.buttons == event.last_event.buttons
+        ):
+            # something went wrong and we lost the mouse release. Make an artificial one here
+            # based on this same event, which will go through this whole machinery first.
+            # We use the native event so that the whole vispy machinery tracking previous
+            # events kicks in properly. Ideally this should be done by us eventually.
+            self._scene_canvas.native.mouseReleaseEvent(event.native)
 
         napari_event = NapariMouseEvent(
             event=event,
@@ -777,6 +792,7 @@ class VispyCanvas:
         # also make sure we communicate update the view direction of the new layer
         # (needed e.g for lighting by mesh)
         self._on_view_direction_change()
+        self._update_font_sizes()
         self._update_scenegraph()
 
     def _on_view_direction_change(self) -> None:
@@ -807,10 +823,10 @@ class VispyCanvas:
             )
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.world_units = units
-        for vispy_scale_bar_overlay in self._viewer_overlay_to_visual.get(
-            self.viewer.canvas.overlays.scale_bar, []
-        ):
-            vispy_scale_bar_overlay._on_unit_change()
+        for vispy_overlays in self._viewer_overlay_to_visual.values():
+            for vispy_overlay in vispy_overlays:
+                if hasattr(vispy_overlay, '_on_unit_change'):
+                    vispy_overlay._on_unit_change()
 
     def _remove_layer(self, event: Event) -> None:
         """Upon receiving event closes the Vispy visual, deletes it and reorders the still existing layers.
@@ -848,6 +864,12 @@ class VispyCanvas:
         self._clean_and_update_scenegraph()
 
     def _clean_and_update_scenegraph(self):
+        if self._closing:
+            # The canvas is deleted together with the viewer window, so there
+            # is no scene graph to update. This also skips the full garbage
+            # collection below, which is slow when many objects are alive.
+            return
+
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -941,6 +963,9 @@ class VispyCanvas:
                 viewer=self.viewer,
                 parent=parent,
                 **kwargs,
+            )
+            vispy_overlay.set_default_font_size(
+                get_settings().appearance.font_size
             )
         else:
             vispy_overlay.node.parent = parent
@@ -1270,7 +1295,7 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _update_overlay_font_sizes(self, *, font_size: float | None = None):
+    def _update_font_sizes(self, *, font_size: float | None = None):
         if font_size is None:
             font_size = get_settings().appearance.font_size
         for vispy_overlays in self._viewer_overlay_to_visual.values():
@@ -1279,10 +1304,12 @@ class VispyCanvas:
         for overlay_to_visual in self._layer_overlay_to_visual.values():
             for vispy_overlay in overlay_to_visual.values():
                 vispy_overlay.set_default_font_size(font_size)
+        for vispy_layer in self.layer_to_visual.values():
+            vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
+        self, event_pos: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> VectorF64 | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:
@@ -1325,9 +1352,10 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        # ensure on_draw is run to bring everything up to date
-        # needed for some Ubuntu py3.11 pyqt5 tests, but likely inconsistent behavior for other OS.
-        # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
+        # Run on_draw before grabbing the frame. grabFramebuffer does fire the draw
+        # event, but on_draw is connected last, so it runs after vispy has rendered
+        # and its updates (e.g. overlay positions, multiscale level)
+        # would miss this frame.
         self.on_draw(None)
         return self.native.grabFramebuffer()
 

@@ -246,11 +246,11 @@ def test_settings_env_variables_alias(monkeypatch):
 
 def test_two_env_variable_settings(monkeypatch):
     assert NapariSettings(None).experimental.async_ is False
-    assert NapariSettings(None).experimental.autoswap_buffers is False
+    assert NapariSettings(None).advanced.autoswap_buffers is False
     monkeypatch.setenv('NAPARI_EXPERIMENTAL_ASYNC_', '1')
-    monkeypatch.setenv('NAPARI_EXPERIMENTAL_AUTOSWAP_BUFFERS', '1')
+    monkeypatch.setenv('NAPARI_ADVANCED_AUTOSWAP_BUFFERS', '1')
     assert NapariSettings(None).experimental.async_ is True
-    assert NapariSettings(None).experimental.autoswap_buffers is True
+    assert NapariSettings(None).advanced.autoswap_buffers is True
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -309,7 +309,9 @@ def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
 def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     # create a settings file with async_ = true
-    data = 'experimental:\n   async_: true\n   autoswap_buffers: true'
+    data = (
+        'experimental:\n   async_: true\nadvanced:\n   autoswap_buffers: true'
+    )
     fake_path = tmp_path / 'fake_path.yml'
     fake_path.write_text(data)
 
@@ -319,7 +321,7 @@ def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     assert 'autoswap_buffers: true' in disk_settings
     # make sure they load correctly
     assert NapariSettings(fake_path).experimental.async_ is True
-    assert NapariSettings(fake_path).experimental.autoswap_buffers is True
+    assert NapariSettings(fake_path).advanced.autoswap_buffers is True
 
     # now load settings again with an Env-var override
     monkeypatch.setenv('NAPARI_ASYNC', '0')
@@ -327,7 +329,7 @@ def test_settings_env_variables_override_file(tmp_path, monkeypatch):
     settings = NapariSettings(fake_path)
     # make sure the override worked, and save again
     assert settings.experimental.async_ is False
-    assert settings.experimental.autoswap_buffers is False
+    assert settings.advanced.autoswap_buffers is False
 
 
 def test_settings_only_saves_non_default_values(monkeypatch, tmp_path):

@@ -118,6 +118,7 @@ class Viewer(ViewerModel):
         if self.window._qt_viewer._console is None:
             self.window._qt_viewer.add_to_console_backlog(variables)
             return
+        assert self.window._qt_viewer.console is not None
         self.window._qt_viewer.console.push(variables)
 
     def export_figure(
@@ -270,6 +271,11 @@ class Viewer(ViewerModel):
         # Disconnect changes to dims before removing layers one-by-one
         # to avoid any unnecessary slicing.
         disconnect_events(self.dims.events, self)
+        # The canvas is deleted with the window, so it does not need to
+        # update its scene graph after the layers are removed. The window is
+        # gone if the viewer was already closed.
+        if hasattr(self.window, '_qt_window'):
+            self.window._qt_viewer.canvas._closing = True
         # Remove all the layers from the viewer
         self.layers.clear()
         # Close the main window

@@ -62,12 +62,12 @@ class PolygonBase(Shape):
         self.data = data
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray[tuple[int, int], np.dtype[np.float32]]:
         """np.ndarray: NxD array of vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import uuid
 from enum import auto
 from typing import TYPE_CHECKING, Optional
@@ -36,7 +36,7 @@ class TaskStatusItem:
         self._cancel_callback = cancel_callback
 
     def _timestap(self) -> str:
-        return datetime.datetime.now().isoformat()
+        return dt.datetime.now().isoformat()
 
     def __str__(self) -> str:
         return f'TaskStatusItem: ({self._provider}, {self.id}, {self._timestamp[-1]}, {self._status[-1]}, {self._description[-1]})'

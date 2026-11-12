@@ -78,6 +78,57 @@ def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
     )
 
 
+class _RecordingArray:
+    """Eager array-like that records every index it is asked for."""
+
+    def __init__(self, array):
+        self._array = array
+        self.keys = []
+        # LayerDataProtocol requires these as concrete attributes
+        self.shape, self.dtype = array.shape, array.dtype
+        self.ndim, self.size = array.ndim, array.size
+
+    def __getitem__(self, key):
+        self.keys.append(key)
+        return self._array[key]
+
+
+def test_multiscale_slice_reads_only_the_visible_tile():
+    """An eager store must read the visible tile with a single index.
+
+    Indexing the displayed and non-displayed dims separately made eager
+    stores materialize every plane before the crop was applied (#9515).
+    """
+    levels = [
+        _RecordingArray(np.zeros((2, 3, 32 // 2**i, 32 // 2**i), np.uint8))
+        for i in range(2)
+    ]
+    layer = Image(levels, multiscale=True)
+    # set the private attribute: the public setter refreshes, which slices
+    layer._data_level = 0
+    corner_pixels = np.zeros((2, 4), dtype=int)
+    corner_pixels[0, 2:] = 8
+    corner_pixels[1, 2:] = 15
+    layer.corner_pixels = corner_pixels
+
+    dims = Dims(
+        ndim=4,
+        ndisplay=2,
+        range=tuple((0, s - 1, 1) for s in levels[0].shape),
+    )
+    dims.set_point(0, 1)
+    dims.set_point(1, 2)
+
+    levels[0].keys.clear()  # drop reads made while constructing the layer
+    response = layer._slicing_state._make_slice_request(dims)()
+
+    assert response.image.view.shape == (8, 8)
+    # one read: the two sliced dims and the tile crop in a single index
+    assert levels[0].keys == [
+        (slice(1, 2), slice(2, 3), slice(8, 16, 1), slice(8, 16, 1))
+    ]
+
+
 def test_thumbnail_level_data_refreshed_on_data_replacement():
     """Replacing layer.data must bind a fresh materializer for the new data
     so slices never read from the old dataset."""
