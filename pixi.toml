@@ -12,6 +12,7 @@
 # `XDG_CACHE_HOME=.pixi/cache pixi run -e test-py313-pyside6 test`.
 [workspace]
 name = "napari"
+requires-pixi = ">=0.77.1"
 authors = ["napari team <napari-steering-council@googlegroups.com>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
