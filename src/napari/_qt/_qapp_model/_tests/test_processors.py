@@ -121,7 +121,6 @@ def test_add_future_data():
     assert add_result.func is _add_layer_data_tuples_to_viewer
     assert add_result.keywords == {
         'return_type': Union[ImageData, LabelsData],
-        'viewer': viewer,
         'source': None,
     }
 

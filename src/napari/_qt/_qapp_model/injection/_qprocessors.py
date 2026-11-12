@@ -190,9 +190,7 @@ def _add_future_data(
     # added on the main thread. The QtViewer takes care of that.
     viewer.window._qt_viewer._add_future(
         future,
-        partial(
-            add_data, return_type=return_type, viewer=viewer, source=source
-        ),
+        partial(add_data, return_type=return_type, source=source),
     )
 
 

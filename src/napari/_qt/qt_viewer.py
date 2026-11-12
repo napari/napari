@@ -185,7 +185,7 @@ class QtViewer(QSplitter):
         self._console_backlog: list[dict[str, Any]] = []
         self._console: QtConsole | None = None
         # futures whose result is still to be added, see `_add_future`
-        self._futures: dict[Future, Callable[[Any], None]] = {}
+        self._futures: dict[Future, Callable[..., None]] = {}
 
         self._dockLayerList: QtViewerDockWidget | None = None
         self._dockLayerControls: QtViewerDockWidget | None = None
@@ -672,7 +672,7 @@ class QtViewer(QSplitter):
         self._add_layer(layer)
 
     def _add_future(
-        self, future: Future, add_result: Callable[[Any], None]
+        self, future: Future, add_result: Callable[..., None]
     ) -> None:
         """Add the result of ``future`` to the viewer once it is done.
 
@@ -686,8 +686,8 @@ class QtViewer(QSplitter):
             An instance of `concurrent.futures.Future` (or any third-party)
             object with the same interface, whose result is layer data.
         add_result : callable
-            Called on the main thread with the result of ``future`` once it
-            is done.
+            Called on the main thread with the result of ``future`` and
+            the viewer as ``viewer`` keyword, once the future is done.
         """
         # Keep the future first, then add the callback. If the future is
         # already finished, the callback runs right away and removes it.
@@ -713,7 +713,7 @@ class QtViewer(QSplitter):
                 type(exc), exc, exc.__traceback__
             )
             return
-        add_result(future.result())
+        add_result(future.result(), viewer=self.viewer)
 
     def _update_camera_depth(self) -> None:
         """When the layer extents change, update the camera depth.
