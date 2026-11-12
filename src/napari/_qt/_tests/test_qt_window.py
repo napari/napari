@@ -23,6 +23,7 @@ from napari.utils.theme import (
     _themes,
     get_theme,
     register_theme,
+    unregister_theme,
 )
 
 
@@ -103,7 +104,7 @@ def test_update_theme(
     mock_add_theme.assert_called()
     mock_remove_theme.assert_not_called()
 
-    _themes.pop('blue')
+    unregister_theme('blue')
     # triggered when theme was removed
     mock_remove_theme.assert_called()
 
