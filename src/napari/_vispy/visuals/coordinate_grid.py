@@ -115,6 +115,14 @@ class CoordinateGrid(Node):
             self.axis_labels[i].pos = (rng0.stop, 0)
             self.axis_labels[i].text = str(i)
 
+        if ndisplay == 2:
+            # 2D data has a single plane. The second grid is perpendicular to
+            # it, so it floats outside the data when the 3D camera rotates.
+            # It can't be hidden because the second axis' labels are its
+            # children, so give it empty bounds (start > stop), which makes
+            # its shader discard every fragment.
+            bounds[1] = (ranges[1].start, ranges[1].stop, 0, -1)
+
         for grid, bound in zip(self.grids, bounds, strict=False):
             grid.grid_bounds = bound
 
