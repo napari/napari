@@ -283,7 +283,10 @@ class QtViewer(QSplitter):
     def _update_dask_cache_settings(
         dask_setting: DaskSettings | Event | None = None,
     ) -> None:
-        """Update dask cache and chunk size to match settings."""
+        """Update dask cache and chunk size to match settings.
+
+        The chunk size is only applied when the dask settings are enabled.
+        """
         if not dask_setting:
             return
         if not isinstance(dask_setting, DaskSettings):
@@ -293,9 +296,12 @@ class QtViewer(QSplitter):
         size = dask_setting.cache
         resize_dask_cache(int(int(enabled) * size * 1e9))
 
-        from dask import config as dask_config
+        if enabled:
+            from dask import config as dask_config
 
-        dask_config.set({'array.chunk-size': f'{dask_setting.chunk_size}MiB'})
+            dask_config.set(
+                {'array.chunk-size': f'{dask_setting.chunk_size}MiB'}
+            )
 
     @property
     def controls(self) -> QtLayerControlsContainer:
