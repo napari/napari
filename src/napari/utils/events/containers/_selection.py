@@ -38,7 +38,7 @@ class Selection(EventedSet[_T]):
     for example, requires a current item.
 
     This pattern mimics current/selected items from Qt:
-    https://doc.qt.io/qt-5/model-view-programming.html#current-item-and-selected-items
+    https://doc.qt.io/qt-6/model-view-programming.html#current-item-and-selected-items
 
     Parameters
     ----------

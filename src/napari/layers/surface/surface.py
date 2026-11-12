@@ -394,8 +394,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     def _view_texcoords(self) -> np.ndarray | None:
         return self._slicing_state._view_texcoords
 
-    def _calc_data_range(self, mode='data'):
-        return calc_data_range(self.vertex_values)  # pyrefly: ignore [bad-argument-type]
+    def _calc_data_range(
+        self, mode='data', percentiles: tuple[float, float] | None = None
+    ) -> tuple[float, float]:
+        return calc_data_range(
+            self.vertex_values,  # pyrefly: ignore[bad-argument-type]
+            percentiles=percentiles,
+        )
 
     @property
     def dtype(self) -> np.dtype:
@@ -406,7 +411,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return (self.vertices, self.faces, self.vertex_values)
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         if len(data) not in (2, 3):
             raise ValueError(
                 f'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {len(data)}.'
@@ -429,7 +434,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         return self._vertices
 
     @vertices.setter
-    def vertices(self, vertices):
+    def vertices(self, vertices) -> None:
         """Array of vertices of mesh triangles."""
 
         self._vertices = vertices
@@ -806,7 +811,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 class _SurfaceSlicingState(_LayerSlicingState):
     layer: Surface
 
-    def __init__(self, layer: Surface, data, cache: bool):
+    def __init__(self, layer: Surface, data, cache: bool) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
         # Data containing vectors in the currently viewed slice
         self._view_vertices = np.zeros((0, self._slice_input.ndisplay))

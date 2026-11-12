@@ -18,7 +18,8 @@ def update_text(
     *,
     node: Text,
     layer: Points | Shapes,
-):
+    default_font_size: float = 9,
+) -> None:
     """Update the vispy text node with a layer's text parameters.
 
     Parameters
@@ -66,8 +67,14 @@ def update_text(
     text_manager = layer.text
     node.rotation = text_manager.rotation
     node.color = colors
-
-    node.font_size = text_manager._get_scaled_size(layer.scale_factor)
+    size = text_manager.size or default_font_size
+    # vispy scales text in data units (through the layer transform); divide
+    # by the layer scale so scaled text size stays in world units
+    # (last-axis scale, same convention as point sizes)
+    node.scaling = text_manager.scaling
+    node.font_size = (
+        size / abs(layer.scale[-1]) if text_manager.scaling else size
+    )
 
 
 def _has_visible_text(layer: Points | Shapes) -> bool:
@@ -85,7 +92,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 @lru_cache(maxsize=128)
 def _get_qt_font_metrics(
     face: str, size: int, bold: bool = False, italic: bool = False
-):
+) -> QFontMetricsF:
     """Get cached Qt font metrics for the given font properties.
 
     Parameters

@@ -90,8 +90,8 @@ class _LayerSlicer:
         to slice response. Note that this may be emitted on the main or
         a non-main thread. If usage of this event relies on something happening
         on the main thread, actions should be taken to ensure that the callback
-        is also executed on the main thread (e.g. by decorating the callback
-        with `@ensure_main_thread`).
+        is also executed on the main thread (e.g. by emitting a Qt signal from
+        the callback, as `QtViewer._emit_slice_ready` does).
     """
 
     def __init__(self) -> None:

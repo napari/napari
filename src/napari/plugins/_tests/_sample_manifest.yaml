@@ -1,3 +1,4 @@
+# Kept for compatibility with npe2<0.9.1
 name: my-plugin
 display_name: My Plugin
 contributions:
