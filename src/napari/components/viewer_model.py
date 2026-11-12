@@ -22,9 +22,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import numpy as np
-
-# This cannot be condition to TYPE_CHECKING or the stubgen fails
-# with undefined Context.
 from pydantic import Field, PrivateAttr, field_validator
 from typing_extensions import deprecated
 
@@ -79,7 +76,7 @@ from napari.types import (
     PathOrPaths,
     SampleData,
 )
-from napari.utils._register import create_func as create_add_method
+from napari.utils._register import create_add_method
 from napari.utils.action_manager import action_manager
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
@@ -2093,6 +2090,13 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             ) from exc
         return layer if isinstance(layer, list) else [layer]
 
+    add_labels = create_add_method(Labels)
+    add_points = create_add_method(Points)
+    add_shapes = create_add_method(Shapes)
+    add_surface = create_add_method(Surface)
+    add_tracks = create_add_method(Tracks)
+    add_vectors = create_add_method(Vectors)
+
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
@@ -2255,15 +2259,3 @@ def valid_add_kwargs() -> dict[str, set[str]]:
         params = inspect.signature(getattr(ViewerModel, meth)).parameters
         valid[meth[4:]] = set(params) - {'self', 'kwargs'}
     return valid
-
-
-for _layer in (
-    layers.Labels,
-    layers.Points,
-    layers.Shapes,
-    layers.Surface,
-    layers.Tracks,
-    layers.Vectors,
-):
-    func = create_add_method(_layer)
-    setattr(ViewerModel, func.__name__, func)  # pyrefly: ignore [missing-attribute]

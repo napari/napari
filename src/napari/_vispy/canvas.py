@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from vispy.scene.subscene import SubScene
 
     from napari._vispy.layers.base import VispyBaseLayer
+    from napari._vispy.mouse_event import VectorF64
     from napari._vispy.overlays.base import (
         VispyBaseOverlay,
         VispyCanvasOverlay,
@@ -187,6 +188,7 @@ class VispyCanvas:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
+        self._closing = False
         self.max_texture_sizes = None
         self._last_theme_color = None
 
@@ -862,6 +864,12 @@ class VispyCanvas:
         self._clean_and_update_scenegraph()
 
     def _clean_and_update_scenegraph(self):
+        if self._closing:
+            # The canvas is deleted together with the viewer window, so there
+            # is no scene graph to update. This also skips the full garbage
+            # collection below, which is slow when many objects are alive.
+            return
+
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -955,6 +963,9 @@ class VispyCanvas:
                 viewer=self.viewer,
                 parent=parent,
                 **kwargs,
+            )
+            vispy_overlay.set_default_font_size(
+                get_settings().appearance.font_size
             )
         else:
             vispy_overlay.node.parent = parent
@@ -1297,8 +1308,8 @@ class VispyCanvas:
             vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
+        self, event_pos: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> VectorF64 | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:
@@ -1341,9 +1352,10 @@ class VispyCanvas:
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        # ensure on_draw is run to bring everything up to date
-        # needed for some Ubuntu py3.11 pyqt5 tests, but likely inconsistent behavior for other OS.
-        # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
+        # Run on_draw before grabbing the frame. grabFramebuffer does fire the draw
+        # event, but on_draw is connected last, so it runs after vispy has rendered
+        # and its updates (e.g. overlay positions, multiscale level)
+        # would miss this frame.
         self.on_draw(None)
         return self.native.grabFramebuffer()
 
