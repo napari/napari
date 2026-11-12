@@ -402,6 +402,19 @@ class ScalarFieldBase(Layer, ABC):
         self.events.data(value=self.data)
         self._reset_editable()
 
+    @property
+    def multiscale_data(self) -> MultiScaleData:
+        """Data in the multiscale wrapper.
+
+        Raises
+        ------
+        TypeError
+            If the layer is not multiscale.
+        """
+        if not isinstance(self._data, MultiScaleData):
+            raise TypeError(f'Layer {self.name!r} is not multiscale')
+        return self._data
+
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
