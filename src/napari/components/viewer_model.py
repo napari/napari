@@ -78,6 +78,10 @@ from napari.types import (
 )
 from napari.utils._register import create_add_method
 from napari.utils.action_manager import action_manager
+from napari.utils.camera_orientations import (
+    HorizontalAxisOrientation,
+    VerticalAxisOrientation,
+)
 from napari.utils.colormaps import ensure_colormap
 from napari.utils.events import (
     Event,
@@ -298,6 +302,9 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         self.scene.camera.events.center.connect(self._update_viewbox_to_world)
         self.scene.camera.events.zoom.connect(self._update_viewbox_to_world)
         self.scene.camera.events.angles.connect(self._update_viewbox_to_world)
+        self.scene.camera.events.orientation.connect(
+            self._update_viewbox_to_world
+        )
         self.canvas.events.size.connect(self._update_viewbox_to_world)
         self.canvas.grid.events.connect(self._update_viewbox_to_world)
         self.dims.events.ndisplay.connect(self._update_viewbox_to_world)
@@ -1077,10 +1084,21 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         )
         half = viewbox_size / 2
 
+        # Orientation flips. Only x and y matter, not z, because in 3D we
+        # project onto the camera-center plane.
+        vertical, horizontal = self.scene.camera.orientation2d
+        flip_map = np.diag(
+            [
+                1,
+                -1 if vertical == VerticalAxisOrientation.UP else 1,
+                -1 if horizontal == HorizontalAxisOrientation.LEFT else 1,
+            ]
+        )
+
         if ndisplay == 2:
-            center = np.asarray(self.scene.camera.center[-2:], dtype=float)
-            linear_matrix = np.eye(2) / zoom
-            translate = center - half / zoom
+            center = np.asarray(self.scene.camera.center[1:], dtype=float)
+            linear_matrix = flip_map[1:, 1:] / zoom
+            translate = center - linear_matrix @ half
         else:
             # note that while we call napari axes "zyx", in terms of angles to
             # rot conversion we need to treat them as normal xyz for internal
@@ -1093,8 +1111,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             center = np.asarray(
                 self.scene.camera.center[-ndisplay:], dtype=float
             )
-            linear_matrix = rot_matrix.T / zoom
-            translate = center - rot_matrix.T @ np.array([0.0, *half]) / zoom
+            linear_matrix = (rot_matrix.T / zoom) @ flip_map
+            translate = center - linear_matrix @ np.array([0.0, *half])
 
         affine = self._viewbox_to_world
         if affine.ndim != ndisplay:
