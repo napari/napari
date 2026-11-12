@@ -84,7 +84,7 @@ class QtPointsControls(QtLayerControls):
             'delete_shape',
         )
         action_manager.bind_button(
-            'napari:delete_selected_points', self.delete_button
+            'napari.delete_selected_points', self.delete_button
         )
         self._EDIT_BUTTONS += (self.delete_button,)
         self._on_editable_or_visible_change()

@@ -24,6 +24,7 @@ from typing import Final
 from urllib.parse import urlparse
 
 from napari.utils.interactions import Shortcut
+from napari.utils.shortcuts import _normalize_action_name
 
 _URL_PATTERN = re.compile(r'(https?://[^\s()<>"\']+)')
 
@@ -35,7 +36,7 @@ NAPARI_TIPS: Final[tuple[str, ...]] = (
     'If you select multiple layers in the layer list, then right click and select "Link Layers", their parameters will be synced.',
     'You can press {Ctrl} and scroll the mouse wheel to move the dimension sliders.',
     'To zoom in on a specific area, hold {Alt} and draw a rectangle around it.',
-    'Hold {napari:hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting).',
+    'Hold {napari.hold_for_pan_zoom} to pan/zoom in any mode (e.g. while painting).',
     'While painting labels, hold {Alt} and move the cursor left/right to quickly decrease/increase the brush size.',
     'If you have questions, you can reach out on our community chat at https://napari.zulipchat.com!',
     'New to napari? Open Help → Take a tour for a quick walkthrough of the viewer.',
@@ -51,6 +52,7 @@ def _get_command_shortcut_and_description(
     from napari.settings import get_settings
     from napari.utils.action_manager import action_manager
 
+    command_id = _normalize_action_name(command_id)
     app = get_app_model()
 
     if app_model_keybinding := app.keybindings.get_keybinding(command_id):

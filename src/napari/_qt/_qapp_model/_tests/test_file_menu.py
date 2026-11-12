@@ -187,7 +187,7 @@ def test_sample_menu_sorted(
 def test_show_shortcuts_actions(make_napari_viewer):
     viewer = make_napari_viewer()
     assert viewer.window._pref_dialog is None
-    action_manager.trigger('napari:show_shortcuts')
+    action_manager.trigger('napari.show_shortcuts')
     assert viewer.window._pref_dialog is not None
     assert viewer.window._pref_dialog._list.currentItem().text() == 'Shortcuts'
     viewer.window._pref_dialog.close()
