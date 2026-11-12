@@ -137,6 +137,8 @@ class LayerDelegate(QStyledItemDelegate):
         # an async paint event was queued).
         if not index.isValid():
             return
+        # PySide6 stubs type the QStyleOption fields with ``# type:`` comments,
+        # which pyrefly does not read, hence we need ignores on them .
         # update the icon based on layer type
         option.textElideMode = Qt.TextElideMode.ElideMiddle  # pyrefly: ignore[bad-assignment]
         self.get_layer_icon(option, index)
