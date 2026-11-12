@@ -324,3 +324,53 @@ def test_ellipse_rotate():
     npt.assert_array_almost_equal(
         shape.bounding_box, np.array([[-2.5, -1.5], [2.5, 1.5]])
     )
+
+
+SQUARE = [[10, 10], [10, 50], [50, 50], [50, 10]]
+
+
+@pytest.mark.parametrize('z', [5, 5.6])
+@pytest.mark.parametrize(
+    ('shape_class', 'data'),
+    [
+        (Polygon, SQUARE),
+        (Rectangle, SQUARE),
+        (Ellipse, SQUARE),
+        (Path, [[10, 10], [30, 50], [50, 20]]),
+        (Line, [[10, 10], [50, 50]]),
+    ],
+)
+def test_to_mask_independent_of_ndisplay(shape_class, data, z):
+    shape = shape_class(np.array([[z, *p] for p in data], dtype=float))
+    mask_2d = shape.to_mask((10, 60, 60))
+    assert mask_2d.any()
+
+    shape.ndisplay = 3
+    npt.assert_array_equal(shape.to_mask((10, 60, 60)), mask_2d)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+@pytest.mark.parametrize(
+    ('dims_order', 'vertices', 'expected_slice'),
+    [
+        ([1, 0, 2], [[p[0], 5, p[1]] for p in SQUARE], (slice(None), 5)),
+        (
+            [0, 2, 1, 3],
+            [[1, p[0], 7, p[1]] for p in SQUARE],
+            (1, slice(None), 7),
+        ),
+    ],
+)
+def test_to_mask_with_reordered_dims(
+    dims_order, vertices, expected_slice, ndisplay
+):
+    shape = Polygon(np.array(vertices, dtype=float), dims_order=dims_order)
+    shape.ndisplay = ndisplay
+    mask_shape = (60, 10, 60) if len(dims_order) == 3 else (3, 60, 10, 60)
+    mask = shape.to_mask(mask_shape)
+
+    expected = np.zeros(mask_shape, dtype=bool)
+    expected[expected_slice] = Polygon(np.array(SQUARE, dtype=float)).to_mask(
+        (60, 60)
+    )
+    npt.assert_array_equal(mask, expected)

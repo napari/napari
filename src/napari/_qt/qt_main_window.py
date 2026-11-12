@@ -23,7 +23,6 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qtpy import QT5
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -34,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QImage
+from qtpy.QtGui import QImage, QShortcut
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -42,7 +41,6 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
     QMenu,
-    QShortcut,
     QToolTip,
     QWidget,
 )
@@ -73,6 +71,7 @@ from napari._qt.widgets.qt_viewer_dock_widget import (
 )
 from napari._qt.widgets.qt_viewer_status_bar import ViewerStatusBar
 from napari.plugins import (
+    _npe2,
     menu_item_template as plugin_menu_item_template,
 )
 from napari.plugins._npe2 import index_npe1_adapters
@@ -87,7 +86,7 @@ from napari.utils.misc import (
     in_python_repl,
     running_as_constructor_app,
 )
-from napari.utils.notifications import Notification, show_warning
+from napari.utils.notifications import Notification
 from napari.utils.task_status import Status, TaskStatusManager
 from napari.utils.theme import _themes, get_system_theme
 
@@ -104,11 +103,6 @@ if TYPE_CHECKING:
     from napari.viewer import Viewer
 
 _sentinel = object()
-
-SHOW_QT_WARNING = QT5
-# a variable to check if we run with PyQt5 backend. As we dropped PySide it is enough to check Qt version
-
-del QT5
 
 MenuStr = Literal[
     'file_menu',
@@ -234,8 +228,6 @@ class _QtMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
-        global SHOW_QT_WARNING
-
         settings = get_settings()
         # if event loop is not running, we don't want to start the thread
         # If event loop is running, the loopLevel will be above 0
@@ -244,13 +236,6 @@ class _QtMainWindow(QMainWindow):
             and QApplication.instance().thread().loopLevel()
         ):
             self.status_thread.start()
-
-        if SHOW_QT_WARNING:
-            show_warning(
-                'napari support for the PyQt5 backend is deprecated and will be removed in fall of 2026'
-            )
-
-            SHOW_QT_WARNING = False
 
         super().showEvent(event)
 
@@ -298,13 +283,8 @@ class _QtMainWindow(QMainWindow):
             e.type() == QEvent.Type.ToolTip
             and self._qt_viewer.viewer.tooltip.visible
         ):
-            # globalPos is for Qt5 e.globalPosition().toPoint() is for QT6
-            # https://doc-snapshots.qt.io/qt6-dev/qmouseevent-obsolete.html#globalPos
-            pnt = (
-                e.globalPosition().toPoint()
-                if hasattr(e, 'globalPosition')
-                else e.globalPos()
-            )
+            # ToolTip events are QHelpEvent, which only provides globalPos()
+            pnt = e.globalPos()
             rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
             QToolTip.showText(
                 pnt, self._qt_viewer.viewer.tooltip.text, self, rect
@@ -359,14 +339,14 @@ class _QtMainWindow(QMainWindow):
                     rect = self.geometry()
                     # set mouse-sensitive zone to trigger showing the menubar
                     rect.setHeight(25)
-                    if rect.contains(event.globalPos()):
+                    if rect.contains(event.globalPosition().toPoint()):
                         self.menuBar().show()
                 else:
                     rect = QRect(
                         self.menuBar().mapToGlobal(QPoint(0, 0)),
                         self.menuBar().size(),
                     )
-                    if not rect.contains(event.globalPos()):
+                    if not rect.contains(event.globalPosition().toPoint()):
                         self.menuBar().hide()
             elif event.type() == QEvent.Type.Leave and source is self:
                 self.menuBar().hide()
@@ -494,7 +474,7 @@ class _QtMainWindow(QMainWindow):
         if (
             not confirm_need_local
             or not get_settings().application.confirm_close_window
-            or ConfirmCloseDialog(self, quit_app).exec_()
+            or ConfirmCloseDialog(self, quit_app).exec()
             == QDialog.DialogCode.Accepted
         ):
             self._quit_app = quit_app
@@ -610,14 +590,14 @@ class _QtMainWindow(QMainWindow):
                 close_app=False,
                 extra_info='\n'.join(task_status),
                 display_checkbox=False,
-            ).exec_()
-            != QDialog.Accepted
+            ).exec()
+            != QDialog.DialogCode.Accepted
         ) or (
             event.spontaneous()
             and get_settings().application.confirm_close_window
             and self._qt_viewer.viewer.layers
-            and ConfirmCloseDialog(self, close_app=False).exec_()
-            != QDialog.Accepted
+            and ConfirmCloseDialog(self, close_app=False).exec()
+            != QDialog.DialogCode.Accepted
         ):
             event.ignore()
             return
@@ -634,6 +614,16 @@ class _QtMainWindow(QMainWindow):
         for dock in self.findChildren(QtViewerDockWidget):
             if isinstance(dock, QWidget) and dock.isFloating():
                 dock.setFloating(False)
+
+        canvas_native = self._qt_viewer.canvas.native
+        for notification in list(NapariQtNotification._instances):
+            try:
+                parent = notification.parent()
+            except RuntimeError:
+                NapariQtNotification._instances.remove(notification)
+                continue
+            if parent is canvas_native:
+                notification.close(start_next=False)
 
         self._save_current_window_settings()
 
@@ -1087,7 +1077,8 @@ class Window:
         self,
         plugin_name: str,
         widget_name: str | None = None,
-        tabify: bool = False,
+        tabify: bool | None = None,
+        area: str | None = None,
     ) -> tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
@@ -1099,8 +1090,14 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
-        tabify : bool
-            Flag to tabify dock widget or not.
+        tabify : bool or None, optional
+            Flag to tabify dock widget or not. If `None` (default), use the
+            plugin manifest's `tabify` value for this widget.
+        area : str or None, optional
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
+            If `None` (default), use the plugin manifest's `default_area`
+            value for this widget.
 
         Returns
         -------
@@ -1108,15 +1105,16 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
-        from napari.plugins import _npe2
 
-        widget_class = None
-        dock_kwargs = {}
-
-        if result := _npe2.get_widget_contribution(plugin_name, widget_name):
-            widget_class, widget_name = result
-
+        widget_class, widget_name, default_area, default_tabify = (
+            _npe2.get_widget_contribution(plugin_name, widget_name)
+        )
         full_name = plugin_menu_item_template.format(plugin_name, widget_name)
+        area = self._resolve_dock_area(
+            name=full_name, area=area, default_area=default_area
+        )
+        tabify = self._resolve_tabify(tabify, default_tabify)
+
         if full_name in self._wrapped_dock_widgets:
             dock_widget = self._wrapped_dock_widgets[full_name]
             return dock_widget, dock_widget.inner_widget()
@@ -1126,11 +1124,40 @@ class Window:
         )
 
         # Add dock widget
-        dock_kwargs.pop('name', None)
         dock_widget = self.add_dock_widget(
-            wdg, name=full_name, tabify=tabify, **dock_kwargs
+            wdg,
+            name=full_name,
+            tabify=tabify,
+            area=area,
         )
         return dock_widget, wdg
+
+    @staticmethod
+    def _resolve_tabify(tabify: bool | None, default_tabify: bool) -> bool:
+        """Return whether a dock widget should be tabified.
+
+        An explicitly requested `tabify` wins, then `default_tabify` (e.g. a
+        plugin's manifest `tabify`).
+        """
+        return default_tabify if tabify is None else tabify
+
+    @staticmethod
+    def _resolve_dock_area(
+        name: str,
+        area: str | None = None,
+        default_area: str | None = None,
+    ) -> str:
+        """Return the area a dock widget called `name` should be added to.
+
+        An explicitly requested `area` wins, then the position the widget was
+        last moved to, then `default_area`, then 'right'.
+        """
+        if area is not None:
+            return area
+        settings = get_settings()
+        return settings.application.plugin_widget_positions.get(
+            name, default_area or 'right'
+        )
 
     def add_dock_widget(
         self,
@@ -1191,11 +1218,7 @@ class Window:
 
             self._unnamed_dockwidget_count += 1
 
-        if area is None:
-            settings = get_settings()
-            area = settings.application.plugin_widget_positions.get(
-                name, 'right'
-            )
+        area = self._resolve_dock_area(name=name, area=area)
 
         if shortcut is not _sentinel:
             warnings.warn(
@@ -1449,10 +1472,13 @@ class Window:
 
         widget = magicgui(function, **magic_kwargs or {})
 
-        if area is None:
-            area = 'right' if str(widget.layout) == 'vertical' else 'bottom'
-        if allowed_areas is None:
-            allowed_areas = [area]
+        area = self._resolve_dock_area(
+            name=name,
+            area=area,
+            default_area='right'
+            if str(widget.layout) == 'vertical'
+            else 'bottom',
+        )
         if shortcut is not _sentinel:
             return self.add_dock_widget(
                 widget,
@@ -1609,6 +1635,7 @@ class Window:
             self._qt_viewer.setStyleSheet(style_sheet)
             if self._qt_viewer._console:
                 self._qt_viewer._console._update_theme(style_sheet=style_sheet)
+            self._qt_viewer.dims._on_font_changed()
 
     def _update_logo(self):
         get_qapp().setWindowIcon(
@@ -1902,7 +1929,7 @@ class Window:
         dial = ScreenshotDialog(
             self.screenshot, self._qt_viewer, hist[0], hist
         )
-        if dial.exec_():
+        if dial.exec():
             update_save_history(dial.selectedFiles()[0])
 
 

@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -47,17 +49,18 @@ class Ellipse(Shape):
         )
 
         self._closed = True
-        self._use_face_vertices = True
         self.data = data
         self.name = 'ellipse'
 
     @property
-    def data(self):
+    def data(
+        self,
+    ) -> np.ndarray[tuple[Literal[4], int], np.dtype[np.float32]]:
         """(4, D) array: ellipse vertices."""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -80,6 +83,9 @@ class Ellipse(Shape):
         )
         self._update_displayed_data()
 
+    def _vertices_for_mask(self, plane) -> np.ndarray:
+        return triangulate_ellipse(self.data[:, plane])[0]
+
     def _update_displayed_data(self) -> None:
         """Update the data that is to be displayed."""
         # Build boundary vertices with num_segments
@@ -91,11 +97,9 @@ class Ellipse(Shape):
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(self.data_displayed)  # pyrefly: ignore [bad-argument-type]
 
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)
 
-    def transform(self, transform):
+    def transform(self, transform) -> None:
         """Performs a linear transform on the shape
 
         Parameters

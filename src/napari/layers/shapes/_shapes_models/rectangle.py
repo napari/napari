@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 from napari.layers.shapes._shapes_models.shape import Shape
@@ -44,12 +46,14 @@ class Rectangle(Shape):
         self.name = 'rectangle'
 
     @property
-    def data(self) -> np.ndarray:
+    def data(
+        self,
+    ) -> np.ndarray[tuple[Literal[4], int], np.dtype[np.float32]]:
         """(4, D) array: rectangle vertices."""
         return self._data
 
     @data.setter
-    def data(self, data: ArrayLike):
+    def data(self, data: ArrayLike) -> None:
         data = np.array(data).astype(np.float32)
 
         if len(self.dims_order) != data.shape[1]:
@@ -82,6 +86,4 @@ class Rectangle(Shape):
         self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         # The data displayed are in this case the four corners
         self._box = rectangle_to_box(data_displayed)  # pyrefly: ignore [bad-argument-type]
-        self.slice_key = self._bounding_box[:, self.dims_not_displayed].astype(
-            'int'
-        )
+        self.slice_key = self._slice_key_of(self.dims_not_displayed)

@@ -403,6 +403,29 @@ def test_contrast_limits():
     assert layer.contrast_limits_range == contrast_limits
 
 
+def test_reset_contrast_limits_percentiles():
+    data = np.arange(101, dtype=float).reshape(1, 101)  # 0, 1, ..., 100
+    data[0, -1] = 60_000  # one outlier
+    layer = Image(data)
+    assert layer.contrast_limits == [0, 60_000]
+
+    layer.reset_contrast_limits(percentiles=(1, 99))
+    assert layer.contrast_limits == [1, 99]
+
+    # without percentiles, the full data range is used again
+    layer.reset_contrast_limits()
+    assert layer.contrast_limits == [0, 60_000]
+
+
+def test_reset_contrast_limits_percentiles_int16():
+    """The percentile interpolation must not overflow for int16 data."""
+    data = np.full((10, 10), 30_000, dtype=np.int16)
+    data[0, 0] = -30_000
+    layer = Image(data)
+    layer.reset_contrast_limits(percentiles=(1, 99))
+    np.testing.assert_allclose(layer.contrast_limits, [29_400, 30_000])
+
+
 def test_contrast_limits_range():
     """Test setting color limits range."""
     np.random.seed(0)
@@ -957,6 +980,57 @@ def test_thick_slice():
     layer.projection_mode = 'max'
     np.testing.assert_array_equal(
         layer._slice.image.raw, np.max(data[2:4], axis=0)
+    )
+
+
+@pytest.mark.parametrize('scale', [2, -1, -2])
+@pytest.mark.parametrize('translate', [0, 10])
+@pytest.mark.parametrize('transform', ['scale', 'affine'])
+@pytest.mark.parametrize(
+    ('point', 'left', 'right', 'positive_bounds', 'negative_bounds'),
+    [
+        (1.5, 0.125, 0.125, (1, 2), (1, 2)),
+        (2, 1, 0, (1, 3), (2, 4)),
+        (2, 0, 1, (2, 4), (1, 3)),
+        (0, 1, 1, (0, 2), (0, 2)),
+        (4, 1, 1, (3, 5), (3, 5)),
+    ],
+)
+def test_thick_slice_transformed_margins(
+    scale,
+    translate,
+    transform,
+    point,
+    left,
+    right,
+    positive_bounds,
+    negative_bounds,
+):
+    data = np.arange(125).reshape(5, 5, 5)
+    if transform == 'scale':
+        layer = Image(
+            data,
+            scale=(scale, 1, 1),
+            translate=(translate, 0, 0),
+            projection_mode='mean',
+        )
+    else:
+        affine = np.diag([scale, 1, 1, 1])
+        affine[0, -1] = translate
+        layer = Image(data, affine=affine, projection_mode='mean')
+
+    layer._slice_dims(
+        Dims(
+            ndim=3,
+            range=tuple((low, high, 1) for low, high in layer.extent.world.T),
+            point=(translate + scale * point, 0, 0),
+            margin_left=(abs(scale) * left, 0, 0),
+            margin_right=(abs(scale) * right, 0, 0),
+        )
+    )
+    bounds = positive_bounds if scale > 0 else negative_bounds
+    np.testing.assert_array_equal(
+        layer._slice.image.raw, data[slice(*bounds)].mean(axis=0)
     )
 
 

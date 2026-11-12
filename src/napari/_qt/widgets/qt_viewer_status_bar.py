@@ -8,9 +8,16 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 from superqt import QElidingLabel
 
 from napari._qt.dialogs.qt_activity_dialog import ActivityToggleItem
+from napari._qt.utils import use_tabular_numerals
+from napari.settings import get_settings
 
 if TYPE_CHECKING:
     from napari._qt.qt_main_window import _QtMainWindow
+
+_EXPERIMENTAL_FEATURES_TO_WARN: dict[str, str] = {
+    'async_': 'A',
+    'dynamic_layer_controls': 'D',
+}
 
 
 class ViewerStatusBar(QStatusBar):
@@ -57,6 +64,8 @@ class ViewerStatusBar(QStatusBar):
         )
         self.addWidget(main_widget, 1)
 
+        use_tabular_numerals(self)
+
         self._activity_item = ActivityToggleItem()
         self._activity_item._activityBtn.clicked.connect(
             self._toggle_activity_dock
@@ -65,6 +74,28 @@ class ViewerStatusBar(QStatusBar):
         parent._activity_dialog._toggleButton = self._activity_item
         self.addPermanentWidget(self._activity_item)
 
+        self._warn_labels = {}
+        self.update_warning_icons()
+        get_settings().experimental.events.connect(self.update_warning_icons)
+
+    def update_warning_icons(self) -> None:
+        exp_settings = get_settings().experimental
+        for setting_id, letter in _EXPERIMENTAL_FEATURES_TO_WARN.items():
+            if setting_id not in self._warn_labels:
+                label = QLabel(letter)
+                self._warn_labels[setting_id] = label
+                self.addPermanentWidget(label)
+                field = exp_settings.__class__.model_fields[setting_id]
+                label.setToolTip(
+                    f'The experimental feature "{field.title}" is enabled.\n'
+                    f'{field.description}'
+                )
+                # TODO: add click to open settings
+            else:
+                label = self._warn_labels[setting_id]
+
+            label.setVisible(getattr(exp_settings, setting_id))
+
     def setHelpText(self, text: str) -> None:
         self._help.setText(text)
 
@@ -72,7 +103,7 @@ class ViewerStatusBar(QStatusBar):
         self,
         text: str = '',
         layer_base: str = '',
-        source_type=None,
+        source_type: str | None = None,
         plugin: str = '',
         coordinates: str = '',
     ) -> None:
@@ -94,7 +125,7 @@ class ViewerStatusBar(QStatusBar):
         self._coordinates.setVisible(bool(coordinates))
         self._coordinates.setText(coordinates)
 
-    def _toggle_activity_dock(self, visible: bool | None = None):
+    def _toggle_activity_dock(self, visible: bool | None = None) -> None:
         par = cast('_QtMainWindow', self.parent())
         if visible is None:
             visible = not par._activity_dialog.isVisible()
@@ -118,7 +149,7 @@ class StatusBarWidget(QWidget):
         plugin_label: QLabel,
         coordinates_label: QLabel,
         help_label: QLabel,
-        parent: QWidget = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent=parent)
         self._status_label = status_label
@@ -161,7 +192,7 @@ class StatusBarWidget(QWidget):
             else 0
         )
 
-    def do_layout(self):
+    def do_layout(self) -> None:
         width = self.width()
         height = self.height()
 

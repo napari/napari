@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from napari._qt.containers.qt_axis_model import AxisList, QtAxisListModel
 from napari.components.layerlist import LayerList
@@ -10,10 +10,37 @@ from napari.utils.tree import Group
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
+    from napari._qt.containers import (
+        QtLayerList,
+        QtLayerListModel,
+        QtListModel,
+        QtListView,
+        QtNodeTreeModel,
+        QtNodeTreeView,
+    )
+
+
+@overload
+def create_view(
+    obj: LayerList, parent: QWidget | None = None
+) -> QtLayerList: ...
+
+
+@overload
+def create_view(
+    obj: Group, parent: QWidget | None = None
+) -> QtNodeTreeView: ...
+
+
+@overload
+def create_view(
+    obj: SelectableEventedList, parent: QWidget | None = None
+) -> QtListView: ...
+
 
 def create_view(
     obj: SelectableEventedList | Group, parent: QWidget | None = None
-):
+) -> QtLayerList | QtNodeTreeView | QtListView:
     """Create a `QtListView`, or `QtNodeTreeView` for `obj`.
 
     Parameters
@@ -39,9 +66,33 @@ def create_view(
     raise TypeError(f'Cannot create Qt view for obj: {obj}')
 
 
+@overload
+def create_model(
+    obj: LayerList, parent: QWidget | None = None
+) -> QtLayerListModel: ...
+
+
+@overload
+def create_model(
+    obj: Group, parent: QWidget | None = None
+) -> QtNodeTreeModel: ...
+
+
+@overload
+def create_model(
+    obj: AxisList, parent: QWidget | None = None
+) -> QtAxisListModel: ...
+
+
+@overload
+def create_model(
+    obj: SelectableEventedList, parent: QWidget | None = None
+) -> QtListModel: ...
+
+
 def create_model(
     obj: SelectableEventedList | Group, parent: QWidget | None = None
-):
+) -> QtLayerListModel | QtListModel | QtNodeTreeModel:
     """Create a `QtListModel`, or `QtNodeTreeModel` for `obj`.
 
     Parameters

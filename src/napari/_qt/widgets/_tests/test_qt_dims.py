@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from qtpy.QtCore import Qt
 
+from napari._qt.qt_resources import get_stylesheet
 from napari._qt.widgets.qt_dims import QtDims
 from napari.components import Dims
 
@@ -292,6 +293,21 @@ def test_update_dims_labels(qtbot):
     view.setFixedWidth(250)
     assert first_label.text() == view.dims.axis_labels[0]
     assert first_label._elidedText() == view.dims.axis_labels[0]
+
+
+def test_slice_labels_scale_with_font_size(qtbot):
+    """Slice labels get wider when the font size increases."""
+    view = QtDims(Dims(ndim=3))
+    qtbot.addWidget(view)
+    slice_label = view.slider_widgets[0].totslice_label
+    original_width = slice_label.width()
+
+    view.setStyleSheet(
+        get_stylesheet('dark', extra_variables={'font_size': '20pt'})
+    )
+    view._on_font_changed()
+
+    assert slice_label.width() > original_width
 
 
 def test_model_axis_label_updates_do_not_write_back(qtbot):

@@ -30,7 +30,7 @@ General rendering flow:
        and ``drawControl``.  These can be overridden for very fine control.
 6. It is hard to use stylesheets with custom ``QStyles``... but it's possible
    to style sub-controls in ``QAbstractItemView`` (such as ``QTreeView``):
-   https://doc.qt.io/qt-5/stylesheet-reference.html#list-of-sub-controls
+   https://doc.qt.io/qt-6/stylesheet-reference.html#list-of-sub-controls
 
 """
 
@@ -67,10 +67,10 @@ class LayerDelegate(QStyledItemDelegate):
     """A QItemDelegate specialized for painting Layer objects.
 
     In Qt's `Model/View architecture
-    <https://doc.qt.io/qt-5/model-view-programming.html>`_. A *delegate* is an
+    <https://doc.qt.io/qt-6/model-view-programming.html>`_. A *delegate* is an
     object that controls the visual rendering (and editing widgets) of an item
     in a view. For more, see:
-    https://doc.qt.io/qt-5/model-view-programming.html#delegate-classes
+    https://doc.qt.io/qt-6/model-view-programming.html#delegate-classes
 
     This class provides the logic required to paint a Layer item in the
     :class:`napari._qt.containers.QtLayerList`.  The `QStyledItemDelegate`
@@ -230,21 +230,17 @@ class LayerDelegate(QStyledItemDelegate):
         This can be used to customize how the delegate handles mouse/key events
         """
         if (
-            event.type() == QMouseEvent.MouseButtonRelease
+            event.type() == QMouseEvent.Type.MouseButtonRelease
             and event.button() == Qt.MouseButton.RightButton
         ):
-            pnt = (
-                event.globalPosition().toPoint()
-                if hasattr(event, 'globalPosition')
-                else event.globalPos()
-            )
+            pnt = event.globalPosition().toPoint()
 
             self.show_context_menu(index, model, pnt, option.widget)
 
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
-        if event.type() == QMouseEvent.MouseButtonDblClick:
+        if event.type() == QMouseEvent.Type.MouseButtonDblClick:
             self.initStyleOption(option, index)
             style = option.widget.style()
             check_rect = style.subElementRect(
@@ -252,7 +248,7 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 cur_state = index.data(Qt.ItemDataRole.CheckStateRole)
                 if model.flags(index) & Qt.ItemFlag.ItemIsUserTristate:
                     state = Qt.CheckState((cur_state + 1) % 3)
@@ -268,9 +264,9 @@ class LayerDelegate(QStyledItemDelegate):
 
         # catch alt-click on the vis checkbox and hide *other* layer visibility
         # on second alt-click, restore the visibility state of the layers
-        if event.type() == QMouseEvent.MouseButtonRelease and (
+        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.AltModifier
+            and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
             self.initStyleOption(option, index)
             style = option.widget.style()
@@ -279,11 +275,11 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 return self._show_on_alt_click_hide_others(model, index)
 
         # on regular click of visibility icon, clear alt-click state
-        if event.type() == QMouseEvent.MouseButtonRelease and (
+        if event.type() == QMouseEvent.Type.MouseButtonRelease and (
             event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
@@ -293,7 +289,7 @@ class LayerDelegate(QStyledItemDelegate):
                 option,
                 option.widget,
             )
-            if check_rect.contains(event.pos()):
+            if check_rect.contains(event.position().toPoint()):
                 self._alt_click_layer = lambda: None
 
         # refer all other events to the QStyledItemDelegate
@@ -350,4 +346,4 @@ class LayerDelegate(QStyledItemDelegate):
         layer_list: LayerList = model.sourceModel()._root
         ctx = get_context(layer_list)
         self._context_menu.update_from_context(ctx)
-        self._context_menu.exec_(pos)
+        self._context_menu.exec(pos)

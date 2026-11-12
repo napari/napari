@@ -16,17 +16,18 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     from app_model.types import KeyBinding
+    from qtpy.QtWidgets import QAbstractButton
 
     from napari.utils.events import Event
     from napari.utils.key_bindings import KeymapProvider
 
     class SignalInstance(Protocol):
-        def connect(self, callback: Callable) -> None: ...
+        def connect(self, callback: Callable, /) -> object: ...
 
     class Button(Protocol):
         clicked: SignalInstance
 
-        def setToolTip(self, text: str) -> None: ...
+        def setToolTip(self, text: str, /) -> None: ...
 
     class ShortcutEvent(Event):
         name: str
@@ -39,7 +40,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: type[KeymapProvider] | None  # subclass, or None if unbound
-    repeatable: bool = False
+    repeatable: bool = False  # deprecated, ignored: auto-repeat is the default
 
     @cached_property
     def injected(self) -> Callable[..., Future]:
@@ -89,10 +90,10 @@ class ActionManager:
         self._tooltip_include_action_name = False
         self.events = EmitterGroup(source=self, shortcut_changed=None)
 
-    def _debug(self, val):
+    def _debug(self, val) -> None:
         self._tooltip_include_action_name = val
 
-    def _validate_action_name(self, name):
+    def _validate_action_name(self, name) -> None:
         if len(name.split(':')) != 2:
             raise ValueError(
                 f'Action names need to be in the form `package:name`, got {name!r}'
@@ -105,7 +106,7 @@ class ActionManager:
         description: str,
         keymapprovider: type[KeymapProvider] | None,
         repeatable: bool = False,
-    ):
+    ) -> None:
         """
         Register an action for future usage
 
@@ -113,8 +114,6 @@ class ActionManager:
          - a name (unique), usually `packagename:name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
-         - a boolean repeatability flag indicating whether it can be auto-
-           repeated (i.e. when a key is held down); defaults to False
 
         Actions can then be later bound/unbound from button elements, and
         shortcuts; and the action manager will take care of modifying the keymap
@@ -137,8 +136,10 @@ class ActionManager:
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
         repeatable : bool
-            a boolean flag indicating whether the action can be autorepeated.
-            Defaults to False.
+            Deprecated and ignored. Key auto-repeat is now delivered to every
+            binding by default; only hold-semantics bindings (generators and
+            bindings returning a release callback) suppress it, which is
+            derived from the bound callable rather than declared here.
 
 
         Notes
@@ -156,6 +157,15 @@ class ActionManager:
 
         """
 
+        if repeatable:
+            warnings.warn(
+                'The `repeatable` flag is deprecated and ignored: key '
+                'auto-repeat is now delivered to every binding by default, '
+                'and hold-semantics bindings suppress it automatically. '
+                'Stop passing `repeatable`.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._validate_action_name(name)
         self._actions[name] = Action(
             command, description, keymapprovider, repeatable
@@ -163,7 +173,7 @@ class ActionManager:
         if keymapprovider:
             self._update_shortcut_bindings(name)
 
-    def _update_shortcut_bindings(self, name: str):
+    def _update_shortcut_bindings(self, name: str) -> None:
         """
         Update the key mappable for given action name
         to trigger the action within the given context and
@@ -185,7 +195,10 @@ class ActionManager:
                 km_provider.bind_key(shortcut, action.injected, overwrite=True)
 
     def bind_button(
-        self, name: str, button: Button, extra_tooltip_text=''
+        self,
+        name: str,
+        button: Button | QAbstractButton,
+        extra_tooltip_text='',
     ) -> None:
         """
         Bind `button` to trigger Action `name` on click.
@@ -221,7 +234,7 @@ class ActionManager:
                 '`bind_button` cannot be used with generator functions'
             )
 
-        def _trigger():
+        def _trigger() -> None:
             self.trigger(name)
 
         button.clicked.connect(_trigger)
@@ -306,7 +319,7 @@ class ActionManager:
         self._emit_shortcut_change(name)
         return shortcuts
 
-    def _emit_shortcut_change(self, name: str, shortcut=''):
+    def _emit_shortcut_change(self, name: str, shortcut='') -> None:
         tt = self._build_tooltip(name) if name in self._actions else ''
         self.events.shortcut_changed(name=name, shortcut=shortcut, tooltip=tt)
 
@@ -371,7 +384,7 @@ class ActionManager:
             if action and provider == action.keymapprovider
         }
 
-    def _get_active_shortcuts(self, active_keymap):
+    def _get_active_shortcuts(self, active_keymap) -> dict[str, str]:
         """
         Get active shortcuts for the given active keymap.
 
@@ -394,33 +407,6 @@ class ActionManager:
                     active_shortcuts[str(shortcut)] = action.description
 
         return active_shortcuts
-
-    def _get_repeatable_shortcuts(self, active_keymap) -> list:
-        """
-        Get active, repeatable shortcuts for the given active keymap.
-
-        Parameters
-        ----------
-        active_keymap : KeymapProvider
-            The active keymap provider.
-
-        Returns
-        -------
-        list
-            List of shortcuts that are repeatable.
-        """
-        active_func_names = {i[1].__name__ for i in active_keymap.items()}
-        active_repeatable_shortcuts = []
-        for name, shortcuts in self._shortcuts.items():
-            action = self._actions.get(name, None)
-            if (
-                action
-                and action.command.__name__ in active_func_names
-                and action.repeatable
-            ):
-                active_repeatable_shortcuts.extend(shortcuts)
-
-        return active_repeatable_shortcuts
 
     def trigger(self, name: str) -> Any:
         """Trigger the action `name`."""

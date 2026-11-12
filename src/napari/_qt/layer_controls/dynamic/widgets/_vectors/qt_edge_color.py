@@ -126,7 +126,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
         with qt_signals_blocked(self.color_mode_combobox):
             mode = self._layers[0]._edge.color_mode
             index = self.color_mode_combobox.findText(
-                mode, Qt.MatchFixedString
+                mode, Qt.MatchFlag.MatchFixedString
             )
             self.color_mode_combobox.setCurrentIndex(index)
 
@@ -147,7 +147,7 @@ class QtEdgeColorFeatureControl(QtWidgetControlsBase):
             with qt_signals_blocked(self.color_feature_box):
                 prop = self._layers[0]._edge.color_properties.name
                 index = self.color_feature_box.findText(
-                    prop, Qt.MatchFixedString
+                    prop, Qt.MatchFlag.MatchFixedString
                 )
                 self.color_feature_box.setCurrentIndex(index)
 
