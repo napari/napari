@@ -86,12 +86,9 @@ def read_sections(path: Path) -> tuple[str, list[dict], list[dict], str]:
 def check_order(path: Path) -> int:
     _, core, community, _ = read_sections(path)
 
-    counts = Counter(normalize(a.get('alias', '')) for a in core + community)
-    duplicates = [
-        a
-        for a in core + community
-        if counts[normalize(a.get('alias', ''))] > 1
-    ]
+    with_alias = [a for a in core + community if a.get('alias')]
+    counts = Counter(normalize(a['alias']) for a in with_alias)
+    duplicates = [a for a in with_alias if counts[normalize(a['alias'])] > 1]
     if duplicates:
         print(
             'CITATION.cff lists the same alias more than once:',
