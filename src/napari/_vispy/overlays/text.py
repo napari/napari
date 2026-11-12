@@ -189,3 +189,16 @@ class VispyCurrentSliceOverlay(_VispyViewerTextOverlay):
 
         self.node.text = '\n'.join(lines)
         self._on_position_change()
+
+
+class VispyDimsDisplayedOverlay(_VispyViewerTextOverlay):
+    def _connect_events(self) -> None:
+        dims_events = self.viewer.dims.events
+        dims_events.order.connect(self._on_text_change)
+        dims_events.ndisplay.connect(self._on_text_change)
+        dims_events.axis_labels.connect(self._on_text_change)
+
+    def _on_text_change(self) -> None:
+        dims = self.viewer.dims
+        self.node.text = ' '.join(dims.axis_labels[d] for d in dims.displayed)
+        self._on_position_change()
