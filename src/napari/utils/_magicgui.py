@@ -34,7 +34,7 @@ from napari.utils._proxies import PublicOnlyProxy
 from napari.utils.notifications import show_info
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from concurrent.futures import Future
 
     import pint
@@ -68,6 +68,8 @@ def _get_layer_from_widget(gui: ComboBox, viewer: ViewerModel) -> Layer | None:
     ----------
     gui : magicgui.widgets.ComboBox
         The instantiated ComboBox widget.
+    viewer : ViewerModel
+        The viewer holding the layers to look up.
 
     Returns
     -------
@@ -96,6 +98,8 @@ def _get_layers_from_widget(
     ----------
     gui : magicgui.widgets.FunctionGui
         The instantiated FunctionGui widget.
+    viewer : ViewerModel
+        The viewer holding the layers to look up.
 
     Returns
     -------
@@ -144,8 +148,8 @@ def _calc_affine_from_source_layers(
 
     Parameters
     ----------
-    data : array
-        Data to be added to the viewer.
+    data_ndim : int
+        Dimensionality of the data to be added to the viewer.
     source_layers : list
         List of layers used to calculate affine information.
 
@@ -502,8 +506,9 @@ def get_layers_data(gui: CategoricalWidget) -> list[tuple[str, Any]]:
 
     Returns
     -------
-    tuple
-        Tuple of layer.data from layers of type ``gui.annotation``
+    list
+        List of ``(name, layer.data)`` tuples from layers of type
+        ``gui.annotation``
 
     Examples
     --------
@@ -583,7 +588,7 @@ def add_layer_to_viewer(
 
 def add_layers_to_viewer(
     gui: FunctionGui,
-    result: list[Layer | None],
+    result: Sequence[Layer | None],
     return_type: type[list[Layer]],
 ) -> None:
     """Show a magicgui result in the viewer.
@@ -593,7 +598,7 @@ def add_layers_to_viewer(
     gui : FunctionGui
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    result : list of Layer or None
+    result : sequence of Layer or None
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.

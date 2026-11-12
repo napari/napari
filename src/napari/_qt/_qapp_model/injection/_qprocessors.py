@@ -99,7 +99,7 @@ def _add_layer_data_to_viewer(
         be updated.
     source : dict or None
         An optional layer source to use.
-    meta: dict or None
+    meta : Mapping or None
         An optional dict pased as keyword arguments to the layer constructor.
         Currently used to pass information like a scale, units, etc.
 
