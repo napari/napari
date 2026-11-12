@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard, cast
 from weakref import WeakSet
 
 import numpy as np
@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import DrawEvent, MouseEvent, ResizeEvent
-    from vispy.scene import Node
     from vispy.scene.subscene import SubScene
 
     from napari._vispy.layers.base import VispyBaseLayer
@@ -1136,7 +1135,7 @@ class VispyCanvas:
 
     def _get_ordered_visible_canvas_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, Node | None]]:
+    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, int | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1168,7 +1167,8 @@ class VispyCanvas:
                 and is_visible_tileable(overlay)
                 and not is_gridded(overlay)
             ):
-                yield overlay, vispy_overlays[0], None
+                vispy_overlay = cast('VispyCanvasOverlay', vispy_overlays[0])
+                yield overlay, vispy_overlay, None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
@@ -1195,10 +1195,17 @@ class VispyCanvas:
                     and is_visible_tileable(overlay)
                     and is_gridded(overlay)
                 ):
-                    yield overlay, vispy_overlays[viewbox_idx], view
+                    if viewbox_idx >= len(vispy_overlays):
+                        # this can happen if this method gets called with incomplete scenegraph.
+                        # Simply skip those overlays that are not yet created
+                        continue
+                    vispy_overlay = cast(
+                        'VispyCanvasOverlay', vispy_overlays[viewbox_idx]
+                    )
+                    yield overlay, vispy_overlay, view
 
             # we want to ensure that the tiling of layer overlays always looks
-            # the same as the llayerlist order, so we reverse the direction for
+            # the same as the layerlist order, so we reverse the direction for
             # some cases
             overlays_by_tiling_order = {'direct': [], 'reversed': []}
 
