@@ -2,7 +2,6 @@ import inspect
 import warnings
 from collections.abc import Callable
 from contextlib import contextmanager
-from types import FunctionType
 from typing import Any, ClassVar, NotRequired, TypedDict, Union
 
 import numpy as np
@@ -238,9 +237,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     # mapping of name -> property obj for methods that are properties
     __properties__: ClassVar[dict[str, property]]
     __non_evented_properties__: ClassVar[set[str]] = {'events', '_defaults'}
+    # mapping of property name -> set of child attribute paths it depends on
+    __child_dependencies__: ClassVar[dict[str, set[str]]]
     # mapping of field name -> dependent set of property names
     # when field is changed, an event for dependent properties will be emitted.
-    __child_dependencies__: ClassVar[dict[str, set[str]]]
     __field_dependents__: ClassVar[dict[str, set[str]]]
     __eq_operators__: ClassVar[dict[str, Callable[[Any, Any], bool]]]
     _changes_queue: dict[str, Any] = PrivateAttr(default_factory=dict)
@@ -598,7 +598,7 @@ class _DeprecatedParam(TypedDict):
     category: NotRequired[type[Warning]]
 
 
-def _get_deprecated_params(function: FunctionType) -> _DeprecatedParam:
+def _get_deprecated_params(function: Callable[[Any], Any]) -> _DeprecatedParam:
     message = getattr(function, '__deprecated__', '')
     if (
         closure := getattr(function, '__closure__', None)
