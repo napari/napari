@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from napari.utils._register import create_func
+from napari.utils._register import create_add_method
 from napari.utils.migrations import (
     deprecated_constructor_arg_by_attr,
     rename_argument,
@@ -11,20 +11,27 @@ from napari.utils.migrations import (
 
 @dataclass
 class DummyClass:
-    """Dummy class to test create_func"""
+    """Dummy class to test create_add_method"""
 
     layers: list = field(default_factory=list)
 
 
 class SimpleClass:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
+
+    def __init__(self, a):
+        self.a = a
+
+
+class _PrivateClass:
+    """Private class to test create_add_method"""
 
     def __init__(self, a):
         self.a = a
 
 
 class SimpleClassDeprecated:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
 
     @deprecated_constructor_arg_by_attr('b')
     @deprecated_constructor_arg_by_attr('c')
@@ -49,7 +56,7 @@ class SimpleClassDeprecated:
 
 
 class SimpleClassRenamed:
-    """Simple class to test create_func"""
+    """Simple class to test create_add_method"""
 
     @rename_argument(
         from_name='c',
@@ -69,14 +76,21 @@ class SimpleClassRenamed:
 
 
 def test_create_func():
-    DummyClass.add_simple_class = create_func(SimpleClass)
+    DummyClass.add_simple_class = create_add_method(SimpleClass)
     dc = DummyClass()
     dc.add_simple_class(a=1)
     assert dc.layers[0].a == 1
 
 
+def test_create_func_private():
+    new_method = create_add_method(_PrivateClass)
+    assert new_method.__name__ == '_add_private_class'
+
+
 def test_create_func_deprecated():
-    DummyClass.add_simple_class_deprecated = create_func(SimpleClassDeprecated)
+    DummyClass.add_simple_class_deprecated = create_add_method(
+        SimpleClassDeprecated
+    )
     dc = DummyClass()
     dc.add_simple_class_deprecated(b=4)
     assert dc.layers[0].a == 2
@@ -85,7 +99,7 @@ def test_create_func_deprecated():
 
 
 def test_create_func_renamed():
-    DummyClass.add_simple_class_renamed = create_func(SimpleClassRenamed)
+    DummyClass.add_simple_class_renamed = create_add_method(SimpleClassRenamed)
     dc = DummyClass()
     with pytest.warns(FutureWarning, match="Argument 'c' is deprecated"):
         dc.add_simple_class_renamed(c=4)
@@ -103,4 +117,4 @@ def test_create_func_class_outside_napari_namespace():
         """Class not reachable from the napari namespace"""
 
     OutsideClass.__module__ = '__main__'  # mimics a user script
-    create_func(OutsideClass)
+    create_add_method(OutsideClass)

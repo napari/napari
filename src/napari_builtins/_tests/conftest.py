@@ -1,3 +1,4 @@
+from functools import cache
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,13 +19,22 @@ def mock_npe2_pm():
         yield _pm
 
 
-@pytest.fixture(autouse=True)
-def use_builtins(mock_npe2_pm: PluginManager):
-    plugin = DynamicPlugin('napari', plugin_manager=mock_npe2_pm)
-    mf = PluginManifest.from_file(
+@cache
+def _builtins_manifest() -> PluginManifest:
+    return PluginManifest.from_file(
         Path(napari_builtins.__file__).parent / 'builtins.yaml'
     )
-    plugin.manifest = mf
+
+
+@pytest.fixture(autouse=True)
+def use_builtins(mock_npe2_pm: PluginManager):
+    # Parsing the manifest is much slower than copying it, so parse it once.
+    # Each test gets its own copy, as tests may add contributions to it.
+    plugin = DynamicPlugin(
+        'napari',
+        plugin_manager=mock_npe2_pm,
+        manifest=_builtins_manifest().model_copy(deep=True),
+    )
     with plugin:
         yield plugin
 
