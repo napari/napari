@@ -41,7 +41,6 @@ from weakref import WeakKeyDictionary, ref
 
 from qtpy.QtCore import (
     QAbstractProxyModel,
-    QEvent,
     QPoint,
     QRect,
     QSize,
@@ -58,7 +57,7 @@ from qtpy.QtWidgets import (
 from napari._app_model.constants import MenuId
 from napari._app_model.context import get_context
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt.containers._base_item_model import ItemRole, ModelIndex
+from napari._qt.containers._base_item_model import ItemRole
 from napari._qt.containers.qt_layer_model import (
     LoadedRole,
     LockedRole,
@@ -72,10 +71,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from app_model.backends.qt import QModelMenu
-    from qtpy.QtCore import QAbstractItemModel, QObject
+    from qtpy.QtCore import QAbstractItemModel, QEvent, QObject
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QTreeView, QWidget
 
+    from napari._qt.containers._base_item_model import ModelIndex
     from napari.layers import Layer
 
 
@@ -94,6 +94,13 @@ def _layer_list_model(model: QAbstractItemModel | None) -> QtLayerListModel:
             f'LayerDelegate expects a QtLayerListModel, got {type(model)!r}'
         )
     return model
+
+
+def _guess_theme(option: QStyleOptionViewItem) -> str:
+    """Guess the theme (``'dark'`` or ``'light'``) from the palette."""
+    palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
+    bg = palette.color(QPalette.ColorRole.Window).red()
+    return 'dark' if bg < 128 else 'light'
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -169,10 +176,7 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources(icon_name)
         except ValueError:
             return
-        # guessing theme rather than passing it through.
-        palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
-        bg = palette.color(QPalette.ColorRole.Window).red()
-        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')  # pyrefly: ignore[bad-assignment]
+        option.icon = icon.colored(theme=_guess_theme(option))  # pyrefly: ignore[bad-assignment]
         option.decorationSize = QSize(18, 18)  # pyrefly: ignore[bad-assignment]
         option.decorationPosition = QStyleOptionViewItem.Position.Right  # pyrefly: ignore[bad-assignment]
         # put icon on the right
@@ -237,15 +241,11 @@ class LayerDelegate(QStyledItemDelegate):
             icon = QColoredSVGIcon.from_resources('lock')
         except (ValueError, FileNotFoundError):
             return
-        palette: QPalette = option.palette  # pyrefly: ignore[bad-assignment]
-        bg = palette.color(QPalette.ColorRole.Window).red()
-        colored_icon = icon.colored(theme='dark' if bg < 128 else 'light')
-        lock_rect = self._lock_icon_rect(option, index)
+        colored_icon = icon.colored(theme=_guess_theme(option))
+        lock_rect = self._lock_icon_rect(option)
         painter.drawPixmap(lock_rect, colored_icon.pixmap(lock_rect.size()))
 
-    def _lock_icon_rect(
-        self, option: QStyleOptionViewItem, index: ModelIndex
-    ) -> QRect:
+    def _lock_icon_rect(self, option: QStyleOptionViewItem) -> QRect:
         """Return the QRect for the lock icon."""
 
         rect: QRect = option.rect  # pyrefly: ignore[bad-assignment]
@@ -283,10 +283,11 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
+        if not isinstance(event, QMouseEvent):
+            return super().editorEvent(event, model, option, index)
         widget: QWidget = option.widget  # pyrefly: ignore[bad-assignment]
         if (
             event.type() == QMouseEvent.Type.MouseButtonRelease
-            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.RightButton
         ):
             pnt = event.globalPosition().toPoint()
@@ -296,9 +297,7 @@ class LayerDelegate(QStyledItemDelegate):
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibility
         # to simply be toggled.
-        if event.type() == QMouseEvent.Type.MouseButtonDblClick and isinstance(
-            event, QMouseEvent
-        ):
+        if event.type() == QMouseEvent.Type.MouseButtonDblClick:
             self.initStyleOption(option, index)
             style = widget.style()
             check_rect = style.subElementRect(
@@ -324,7 +323,6 @@ class LayerDelegate(QStyledItemDelegate):
         # on second alt-click, restore the visibility state of the layers
         if (
             event.type() == QMouseEvent.Type.MouseButtonRelease
-            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() == Qt.KeyboardModifier.AltModifier
         ):
@@ -341,7 +339,6 @@ class LayerDelegate(QStyledItemDelegate):
         # on regular click of visibility icon, clear alt-click state
         if (
             event.type() == QMouseEvent.Type.MouseButtonRelease
-            and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.LeftButton
         ):
             self.initStyleOption(option, index)
