@@ -19,7 +19,7 @@ class VispyZoomOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
     overlay: ZoomOverlay
     node: InteractionBox
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(node=InteractionBox(), **kwargs)
 
         self.overlay.events.position.connect(self._on_position_change)

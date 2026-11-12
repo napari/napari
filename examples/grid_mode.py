@@ -32,6 +32,9 @@ viewer.canvas.overlays.scale_bar.visible = True
 viewer.canvas.overlays.scale_bar.box = True
 # show scalebar in each grid instead of just once
 viewer.canvas.overlays.scale_bar.gridded = True
+
+# show the crosshair overlay
+viewer.scene.overlays.crosshair.visible = True
 viewer.fit_to_view()
 
 if __name__ == '__main__':

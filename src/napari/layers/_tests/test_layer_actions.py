@@ -3,6 +3,7 @@ import pint
 import pytest
 import zarr
 
+from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels, Points, Shapes
 from napari.layers._layer_actions import (
@@ -16,6 +17,7 @@ from napari.layers._layer_actions import (
     _link_selected_layers,
     _merge_stack,
     _project,
+    _project_points,
     _show_selected,
     _show_unselected,
     _split_rgb,
@@ -305,6 +307,56 @@ def test_projections(mode):
     assert ll[-1].axis_labels == ('y', 'x')
 
 
+def test_project_points():
+    ll = LayerList()
+    data = np.array([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
+    ll.append(
+        Points(
+            data,
+            size=7,
+            symbol='cross',
+            features={'label': ['a', 'b']},
+            scale=(3, 2, 2),
+            translate=(10, 5, 5),
+            units=('nm', 'um', 'um'),
+            axis_labels=('z', 'y', 'x'),
+        )
+    )
+    assert len(ll) == 1
+    assert ll[-1].ndim == 3
+
+    _project_points(ll)
+
+    assert len(ll) == 2
+    new = ll[-1]
+    # the leading (z) axis is dropped; every point is kept
+    assert new.ndim == 2
+    np.testing.assert_array_equal(new.data, data[:, 1:])
+    # transforms/units/labels drop the projected axis
+    assert tuple(new.scale) == (2, 2)
+    assert tuple(new.translate) == (5, 5)
+    assert new.units == (REG.um, REG.um)
+    assert new.axis_labels == ('y', 'x')
+    # per-point state is preserved
+    np.testing.assert_array_equal(new.size, [7, 7])
+    assert list(new.symbol) == list(ll[0].symbol)
+    assert list(new.features['label']) == ['a', 'b']
+
+
+def test_project_points_rejects_non_points():
+    ll = LayerList()
+    ll.append(Image(np.random.rand(4, 5, 5)))
+    with pytest.raises(NotImplementedError):
+        _project_points(ll)
+
+
+def test_project_points_no_active_layer():
+    # with nothing selected the action is a no-op, matching image projection
+    ll = LayerList()
+    _project_points(ll)
+    assert len(ll) == 0
+
+
 @pytest.mark.parametrize(
     'mode',
     ['int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'],
@@ -407,6 +459,35 @@ def test_convert_warns_with_projection_mode():
     with pytest.warns(UserWarning, match='projection mode'):
         _convert(ll, 'labels')
     assert isinstance(ll['Image [1]'], Labels)
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_in_any_ndisplay(ndisplay):
+    polygon = np.array([[5, 10, 10], [5, 10, 50], [5, 50, 50], [5, 50, 10]])
+    ll = LayerList([Image(np.zeros((20, 100, 100))), Shapes([polygon])])
+    ll.selection = {ll[1]}
+    ll[1]._slice_dims(Dims(ndim=3, ndisplay=ndisplay))
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels.shape == (20, 100, 100)
+    assert labels[5, 30, 30] == 1
+    assert np.count_nonzero(labels[:5]) == 0
+    assert np.count_nonzero(labels[6:]) == 0
+
+
+@pytest.mark.parametrize('ndisplay', [2, 3])
+def test_convert_shapes_to_labels_with_rolled_dims(ndisplay):
+    shapes = Shapes(ndim=3)
+    shapes._slice_dims(Dims(ndim=3, ndisplay=ndisplay, order=(2, 0, 1)))
+    shapes.add_polygons(
+        [np.array([[5, 10, 7], [5, 50, 7], [50, 50, 7], [50, 10, 7]])]
+    )
+    ll = LayerList([Image(np.zeros((60, 60, 20))), shapes])
+    ll.selection = {shapes}
+    _convert(ll, 'labels')
+    labels = ll[2].data
+    assert labels[30, 30, 7] == 1
+    assert np.count_nonzero(labels) == np.count_nonzero(labels[:, :, 7])
 
 
 def make_three_layer_layerlist():

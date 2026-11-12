@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -46,6 +46,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from napari.components import Dims
+
+    PixelValue: TypeAlias = (
+        np.number
+        | np.bool_
+        | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
+    )
 
 
 __all__ = ('ScalarFieldBase',)
@@ -233,7 +239,7 @@ class ScalarFieldBase(Layer, ABC):
         translate=None,
         units=None,
         visible=True,
-    ):
+    ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
 
@@ -348,11 +354,11 @@ class ScalarFieldBase(Layer, ABC):
         connect_no_arg(self.plane.events, self.events, 'plane')
         self.custom_interpolation_kernel_2d = custom_interpolation_kernel_2d
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         # Trigger generation of view slice and thumbnail
         self.refresh()
 
-    def _slice_dtype(self):
+    def _slice_dtype(self) -> np.dtype:
         """Return the dtype of the slice view.
 
         Overridden in Labels subclass to properly handle the
@@ -370,7 +376,7 @@ class ScalarFieldBase(Layer, ABC):
         return self._slicing_state._slice
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return normalize_dtype(self._data.dtype)  # pyrefly: ignore [missing-attribute]
 
     @property
@@ -491,7 +497,7 @@ class ScalarFieldBase(Layer, ABC):
 
     def _update_level_and_corners(
         self, data_bbox_int, shape_threshold, displayed_axes
-    ):
+    ) -> None:
         """Update the data level and corner pixels for the current viewport.
 
         For multiscale layers, selects the appropriate resolution level
@@ -600,7 +606,7 @@ class ScalarFieldBase(Layer, ABC):
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
-    def depiction(self):
+    def depiction(self) -> str:
         """The current 3D depiction mode.
 
         Selects a preset depiction mode in vispy
@@ -618,12 +624,12 @@ class ScalarFieldBase(Layer, ABC):
         self._update_plane_callbacks()
         self.events.depiction()
 
-    def _reset_plane_parameters(self):
+    def _reset_plane_parameters(self) -> None:
         """Set plane attributes to something valid."""
         self.plane.position = np.array(self.data.shape) / 2  # pyrefly: ignore [bad-assignment]
         self.plane.normal = (1, 0, 0)
 
-    def _update_plane_callbacks(self):
+    def _update_plane_callbacks(self) -> None:
         """Set plane callbacks depending on depiction mode."""
         plane_drag_callback_connected = (
             plane_drag_callback in self.mouse_drag_callbacks
@@ -647,7 +653,7 @@ class ScalarFieldBase(Layer, ABC):
                 )
 
     @property
-    def plane(self):
+    def plane(self) -> SlicingPlane:
         return self._plane
 
     @plane.setter
@@ -660,7 +666,7 @@ class ScalarFieldBase(Layer, ABC):
         return self._custom_interpolation_kernel_2d
 
     @custom_interpolation_kernel_2d.setter
-    def custom_interpolation_kernel_2d(self, value):
+    def custom_interpolation_kernel_2d(self, value) -> None:
         if value is None:
             value = [[1]]
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
@@ -687,7 +693,9 @@ class ScalarFieldBase(Layer, ABC):
     def _set_view_slice(self):
         raise NotImplementedError
 
-    def _get_value(self, position):
+    def _get_value(
+        self, position
+    ) -> PixelValue | tuple[int, PixelValue | None] | None:
         """Value of the data at a position in data coordinates.
 
         Parameters
@@ -873,7 +881,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
 
     def __init__(
         self, layer: ScalarFieldBase, data: LayerDataType, cache: bool
-    ):
+    ) -> None:
         super().__init__(layer, data, cache)
         self.transforms = Affine(
             np.ones(self.ndim), np.zeros(self.ndim), name='tile2data'
@@ -884,7 +892,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             dtype=self.layer._slice_dtype(),
         )
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         if (
             self.layer.multiscale
             and self._slice_input.ndisplay == 3

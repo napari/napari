@@ -4,9 +4,9 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qtpy.QtCore import QRectF, Qt
-from qtpy.QtGui import QFont, QFontMetricsF, QGuiApplication
+from qtpy.QtGui import QFontMetricsF, QGuiApplication
 
+from napari._vispy.utils.qt_font import SDF_FONT_SIZE, make_qfont
 from napari.layers import Points, Shapes
 from napari.layers.utils.string_encoding import ConstantStringEncoding
 
@@ -18,7 +18,8 @@ def update_text(
     *,
     node: Text,
     layer: Points | Shapes,
-):
+    default_font_size: float = 9,
+) -> None:
     """Update the vispy text node with a layer's text parameters.
 
     Parameters
@@ -66,8 +67,14 @@ def update_text(
     text_manager = layer.text
     node.rotation = text_manager.rotation
     node.color = colors
-
-    node.font_size = text_manager._get_scaled_size(layer.scale_factor)
+    size = text_manager.size or default_font_size
+    # vispy scales text in data units (through the layer transform); divide
+    # by the layer scale so scaled text size stays in world units
+    # (last-axis scale, same convention as point sizes)
+    node.scaling = text_manager.scaling
+    node.font_size = (
+        size / abs(layer.scale[-1]) if text_manager.scaling else size
+    )
 
 
 def _has_visible_text(layer: Points | Shapes) -> bool:
@@ -85,7 +92,7 @@ def _has_visible_text(layer: Points | Shapes) -> bool:
 @lru_cache(maxsize=128)
 def _get_qt_font_metrics(
     face: str, size: int, bold: bool = False, italic: bool = False
-):
+) -> QFontMetricsF:
     """Get cached Qt font metrics for the given font properties.
 
     Parameters
@@ -104,21 +111,31 @@ def _get_qt_font_metrics(
     QFontMetricsF
         Qt font metrics object.
     """
-    qfont = QFont(face, size)
-    qfont.setBold(bold)
-    qfont.setItalic(italic)
-    return QFontMetricsF(qfont)
+    return QFontMetricsF(make_qfont(face, size, bold=bold, italic=italic))
 
 
-def get_text_metrics(text: Text) -> QFontMetricsF:
-    """Get qt font metrics from a text visual."""
+def _get_scaled_metrics(text: Text) -> tuple[QFontMetricsF, float]:
+    """Get high-res Qt font metrics for a text visual and their scale factor.
+
+    Glyphs are rendered from a high-res font scaled down (see QtTextureFont),
+    so measure at that same size and scale the result: at small point sizes
+    Qt rounds each glyph advance up, which made measured text wider than the
+    rendered one.
+    """
     face = (
         text.face if hasattr(text, 'face') else QGuiApplication.font().family()
     )
     bold = text.bold if hasattr(text, 'bold') else False
     italic = text.italic if hasattr(text, 'italic') else False
 
-    return _get_qt_font_metrics(face, int(text.font_size), bold, italic)
+    metrics = _get_qt_font_metrics(face, SDF_FONT_SIZE, bold, italic)
+    return metrics, text.font_size / SDF_FONT_SIZE
+
+
+def get_text_line_height(text: Text) -> float:
+    """Get the line height of a vispy text visual, like get_text_width_height."""
+    metrics, scale = _get_scaled_metrics(text)
+    return metrics.height() * scale
 
 
 def get_text_width_height(text: Text) -> tuple[float, float]:
@@ -134,17 +151,7 @@ def get_text_width_height(text: Text) -> tuple[float, float]:
     else:
         raise TypeError('Text should either be a string or a list of strings')
 
-    # Get font properties from the text visual
-    face = (
-        text.face if hasattr(text, 'face') else QGuiApplication.font().family()
-    )
-    bold = text.bold if hasattr(text, 'bold') else False
-    italic = text.italic if hasattr(text, 'italic') else False
+    metrics, scale = _get_scaled_metrics(text)
+    size = metrics.size(0, string)
 
-    metrics = _get_qt_font_metrics(face, int(text.font_size), bold, italic)
-
-    size = metrics.boundingRect(
-        QRectF(0, 0, 1000, 1000), Qt.AlignmentFlag.AlignLeft, string
-    ).size()
-
-    return size.width(), size.height()
+    return size.width() * scale, size.height() * scale

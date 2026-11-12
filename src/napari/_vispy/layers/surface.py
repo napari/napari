@@ -62,7 +62,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self) -> None:
         vertices = None
         faces = None
         vertex_values = None
@@ -114,7 +114,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
 
-    def _on_texture_change(self):
+    def _on_texture_change(self) -> None:
         """Update or apply the texture filter"""
         # texture images need to be flipped (np.flipud) because of how OpenGL
         # expects the texture data to be ordered in memory we flip them here
@@ -140,7 +140,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._texture_filter.enabled = has_tex
             self.node.update()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self) -> None:
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
@@ -156,13 +156,13 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self):
+    def _on_contrast_limits_change(self) -> None:
         self.node.clim = self.layer.contrast_limits
 
-    def _on_gamma_change(self):
+    def _on_gamma_change(self) -> None:
         self._on_colormap_change()
 
-    def _on_shading_change(self):
+    def _on_shading_change(self) -> None:
         shading = (
             None
             if self.layer.shading == 'none'
@@ -174,19 +174,19 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._on_view_direction_change()
         self.node.update()
 
-    def _on_wireframe_visible_change(self):
+    def _on_wireframe_visible_change(self) -> None:
         self.node.wireframe_filter.enabled = self.layer.wireframe.visible
         self.node.update()
 
-    def _on_wireframe_width_change(self):
+    def _on_wireframe_width_change(self) -> None:
         self.node.wireframe_filter.width = self.layer.wireframe.width
         self.node.update()
 
-    def _on_wireframe_color_change(self):
+    def _on_wireframe_color_change(self) -> None:
         self.node.wireframe_filter.color = self.layer.wireframe.color
         self.node.update()
 
-    def _on_face_normals_change(self):
+    def _on_face_normals_change(self) -> None:
         self.node.face_normals.visible = self.layer.normals.face.visible
         if self.node.face_normals.visible:
             self.node.face_normals.set_data(
@@ -197,7 +197,7 @@ class VispySurfaceLayer(VispyBaseLayer):
                 primitive='face',
             )
 
-    def _on_vertex_normals_change(self):
+    def _on_vertex_normals_change(self) -> None:
         self.node.vertex_normals.visible = self.layer.normals.vertex.visible
         if self.node.vertex_normals.visible:
             self.node.vertex_normals.set_data(
@@ -210,7 +210,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def _on_view_direction_change(
         self, view: Vector3 | None = None, up: Vector3 | None = None
-    ):
+    ) -> None:
         if view is not None and up is not None:
             # TODO: this is not working well with axis flip, something is afoot
             # combine to get light behind the camera on the top right
@@ -221,7 +221,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         ):
             self.node.shading_filter.light_dir = self._light_direction
 
-    def reset(self, event=None):
+    def reset(self, event=None) -> None:
         super().reset()
         self._on_colormap_change()
         self._on_contrast_limits_change()

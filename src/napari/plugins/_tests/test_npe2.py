@@ -117,7 +117,7 @@ def test_write_pathlib(mock_pm: 'TestPluginManager'):
 
 def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
     # calling with plugin alone
-    (_, display_name) = _npe2.get_widget_contribution(PLUGIN_NAME)
+    (_, display_name, _, _) = _npe2.get_widget_contribution(PLUGIN_NAME)
     mock_pm.commands.get.assert_called_once_with('my-plugin.some_widget')
     assert display_name == 'My Widget'
 
@@ -129,10 +129,10 @@ def test_get_widget_contribution(mock_pm: 'TestPluginManager'):
         in str(e.value)
     )
 
-    # calling with a non-existent plugin just returns None
-    mock_pm.commands.get.reset_mock()
-    assert not _npe2.get_widget_contribution('not-a-thing')
-    mock_pm.commands.get.assert_not_called()
+    # calling with a non-existent plugin raises
+    with pytest.raises(KeyError) as e:
+        _npe2.get_widget_contribution('not-a-thing')
+    assert "Plugin 'not-a-thing' not found" in str(e.value)
 
 
 def test_get_widget_contribution_no_widgets(tmp_plugin: DynamicPlugin):
@@ -241,3 +241,24 @@ def test_plugin_actions(mock_pm: 'TestPluginManager', mock_app_model):
     menus_items4 = list(app.menus.get_menu('napari/file/new_layer'))
     assert len(menus_items4) == 5
     assert 'my-plugin.hello_world' in app.commands
+
+
+def test_reader_and_writer_commands_not_in_palette(
+    mock_pm: 'TestPluginManager', mock_app_model
+):
+    from app_model.types import MenuItem
+
+    from napari._app_model import get_app_model
+    from napari.plugins import _initialize_plugins
+
+    app = get_app_model()
+    _initialize_plugins()
+    palette = {
+        item.command.id
+        for item in app.menus.get_menu(app.menus.COMMAND_PALETTE_ID)
+        if isinstance(item, MenuItem)
+    }
+    assert 'my-plugin.hello_world' in palette
+    for command in ('my-plugin.some_reader', 'my-plugin.my_writer'):
+        assert command in app.commands
+        assert command not in palette

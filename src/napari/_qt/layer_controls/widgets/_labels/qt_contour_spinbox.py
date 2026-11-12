@@ -34,6 +34,8 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         Label for the layer contour thickness chooser widget.
     """
 
+    _layer: Labels
+
     def __init__(self, parent: QWidget, layer: Labels) -> None:
         super().__init__(parent, layer)
         # Setup widgets
@@ -67,7 +69,9 @@ class QtContourSpinBoxControl(QtWidgetControlsBase):
         """
         self._layer.contour = value
         self.contour_spinbox.clearFocus()
-        self.parent().setFocus()
+        parent = self.parent()
+        if isinstance(parent, QWidget):
+            parent.setFocus()
 
     def get_widget_controls(
         self,

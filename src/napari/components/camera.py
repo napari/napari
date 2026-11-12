@@ -114,7 +114,7 @@ class Camera(EventedModel):
 
     @field_validator('center', 'angles', mode='before')
     @classmethod
-    def _ensure_3_tuple(cls, v):
+    def _ensure_3_tuple(cls, v: tuple) -> tuple:
         return ensure_n_tuple(v, n=3)
 
     @property
@@ -145,7 +145,7 @@ class Camera(EventedModel):
         self,
         view_direction: tuple[float, float, float],
         up_direction: tuple[float, float, float] = (0, -1, 0),
-    ):
+    ) -> None:
         """Set camera angles from direction vectors.
 
         Both the view direction and the up direction are specified in 3D scene
