@@ -92,7 +92,7 @@ def rotation_matrix_from_vectors_2d(
 
     # calculate the rotation matrix
     diagonal_1 = (vec_1[0] * vec_2[0]) + (vec_1[1] * vec_2[1])
-    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_2[0] * vec_1[0])
+    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_1[1] * vec_2[0])
     rotation_matrix = np.array(
         [[diagonal_1, -1 * diagonal_2], [diagonal_2, diagonal_1]]
     )
