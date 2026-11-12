@@ -198,57 +198,34 @@ def create_worker(
             f'{func} execution pending',
             cancel_callback=worker.quit,
         )
+
+        def task_status_slot(
+            status: Status, description: str
+        ) -> Callable[..., None]:
+            """Return a slot that sets this worker's task status."""
+
+            def slot(*_signal_args) -> None:
+                window._update_task_status(
+                    worker_status_id, status, description
+                )
+
+            return slot
+
         worker.started.connect(
-            partial(
-                lambda task_status_id, function: window._update_task_status(
-                    task_status_id,
-                    Status.BUSY,
-                    description=f'Executing {function}',
-                ),
-                worker_status_id,
-                func,
-            )
+            task_status_slot(Status.BUSY, f'Executing {func}')
         )
         worker.errored.connect(
-            partial(
-                lambda task_status_id, function, _exc: (
-                    window._update_task_status(
-                        task_status_id,
-                        Status.FAILED,
-                        description=f'{function} execution failed',
-                    )
-                ),
-                worker_status_id,
-                func,
-            )
+            task_status_slot(Status.FAILED, f'{func} execution failed')
         )
         # `returned` rather than `finished`: `finished` also comes after
         # `errored` and `aborted`, and would overwrite those statuses.
         worker.returned.connect(
-            partial(
-                lambda task_status_id, function, _result: (
-                    window._update_task_status(
-                        task_status_id,
-                        Status.COMPLETED,
-                        description=f'{function} execution completed',
-                    )
-                ),
-                worker_status_id,
-                func,
-            )
+            task_status_slot(Status.COMPLETED, f'{func} execution completed')
         )
-        if hasattr(worker.signals, 'aborted'):
+        if isinstance(worker, _qthreading.GeneratorWorker):
             worker.aborted.connect(
-                partial(
-                    lambda task_status_id, function: (
-                        window._update_task_status(
-                            task_status_id,
-                            Status.CANCELLED,
-                            description=f'{function} execution cancelled',
-                        )
-                    ),
-                    worker_status_id,
-                    func,
+                task_status_slot(
+                    Status.CANCELLED, f'{func} execution cancelled'
                 )
             )
 
