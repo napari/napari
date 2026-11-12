@@ -118,8 +118,8 @@ def _update_dependents_from_property_code(
     prop_name: str,
     prop: property,
     deps: dict[str, set[str]],
-    visited=(),
-):
+    visited: tuple[str, ...] = (),
+) -> None:
     """Recursively find all the dependents of a property by inspecting the code object.
 
     Update the given deps dictionary with the new findings.
