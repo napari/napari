@@ -98,7 +98,7 @@ class ActionManager:
         self._tooltip_include_action_name = val
 
     def _validate_action_name(self, name) -> None:
-        if ':' in name or '.' not in name or not all(name.split('.')):
+        if ':' in name or '.' not in name:
             raise ValueError(
                 f'Action names need to be in the form `package.name`, got {name!r}'
             )

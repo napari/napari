@@ -105,12 +105,17 @@ def test_dotted_action_names(action_manager, name):
     assert name in action_manager._actions
 
 
-@pytest.mark.parametrize(
-    'name', ['run', '.run', 'example.', 'example..run', 'example:layer:run']
-)
+@pytest.mark.parametrize('name', ['run', 'example:layer:run'])
 def test_invalid_action_names(action_manager, name):
     with pytest.raises(ValueError, match=r'package\.name'):
         action_manager.register_action(name, lambda: None, 'Run', None)
+
+
+@pytest.mark.parametrize('name', ['napari:', 'napari.'])
+def test_bind_placeholder_action(action_manager, name):
+    button = Mock()
+    action_manager.bind_button(name, button)
+    button.clicked.connect.assert_called_once()
 
 
 def test_default_shortcuts_are_registered():
