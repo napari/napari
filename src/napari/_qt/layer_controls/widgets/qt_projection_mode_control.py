@@ -1,12 +1,20 @@
-from qtpy.QtWidgets import QComboBox, QWidget
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from qtpy.QtWidgets import QComboBox
 
 from napari._qt.layer_controls.widgets.qt_widget_controls_base import (
     QtWidgetControlsBase,
     QtWrappedLabel,
 )
 from napari._qt.utils import qt_signals_blocked
-from napari.layers import Image, Points, Vectors
 from napari.utils.events.event_utils import connect_setattr
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+    from napari.layers import Image, Points, Vectors
 
 
 class QtProjectionModeControl(QtWidgetControlsBase):
@@ -64,6 +72,14 @@ class QtProjectionModeControl(QtWidgetControlsBase):
             self.projection_combobox.setCurrentText(
                 str(self._layer.projection_mode)
             )
+
+    def _change_is_thick(self, is_thick) -> None:
+        if self._layer._type_string == 'points':
+            # points are special, the projection mode has effects even
+            # when slice thickness is 0
+            return
+        self.projection_combobox_label.setVisible(is_thick)
+        self.projection_combobox.setVisible(is_thick)
 
     def get_widget_controls(
         self,
