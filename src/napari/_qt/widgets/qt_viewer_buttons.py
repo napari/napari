@@ -5,7 +5,7 @@ from enum import StrEnum
 from functools import wraps
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QEvent, Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -345,18 +345,22 @@ class QtViewerButtons(QFrame):
         """Position the popup so that it remains with the viewer.
 
         Use the location of the button as a reference and place the popup
-        above it. move_to will adjust the position if the popup is too close
-        to the edge of the screen.
+        above it, horizontally centered on the button. The popup is shifted
+        horizontally to stay within the viewer window, and move_to will
+        adjust the position if the popup is too close to the edge of the
+        screen.
         """
+        width = popup.sizeHint().width()
+        height = popup.sizeHint().height()
         button_rect = button.rect()
-        button_pos = button.mapToGlobal(button_rect.topLeft())
+        button_top_center = button.mapToGlobal(
+            QPoint(button_rect.center().x(), button_rect.top())
+        )
+        left = button_top_center.x() - width // 2
+        window_rect = button.window().geometry()
+        left = max(min(left, window_rect.right() - width), window_rect.left())
         popup.move_to(
-            (
-                button_pos.x(),
-                button_pos.y() - popup.sizeHint().height() - 5,
-                popup.sizeHint().width(),
-                popup.sizeHint().height(),
-            )
+            (left, button_top_center.y() - height - 5, width, height)
         )
         popup.show()
 
@@ -670,8 +674,7 @@ class QtViewerButtons(QFrame):
         layout.addWidget(dim_sorter)
         pop.frame.setLayout(layout)
 
-        # show popup
-        pop.show_above_mouse()
+        self._position_popup_inside_viewer(pop, self.rollDimsButton)
 
     def _update_grid_button(self, event) -> None:
         self.gridViewButton.setChecked(event.value)
@@ -776,7 +779,7 @@ class QtViewerButtons(QFrame):
         grid_layout.addWidget(spacing_help_symbol, 3, 2)
 
         popup.frame.setLayout(grid_layout)
-        popup.show_above_mouse()
+        self._position_popup_inside_viewer(popup, self.gridViewButton)
 
     def _update_grid_width(self, value) -> None:
         """Update the width value in grid shape.

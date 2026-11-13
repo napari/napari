@@ -116,6 +116,29 @@ def test_grid_view_button_popup(qt_viewer_buttons, qtbot):
     )
 
 
+def test_popup_centered_on_button_inside_viewer(qt_viewer_buttons, qtbot):
+    """Button popups are centered on the button, but kept inside the viewer."""
+    viewer_buttons = qt_viewer_buttons[1]
+    window = viewer_buttons.window()
+    window.setGeometry(200, 200, 600, 400)
+    button = viewer_buttons.gridViewButton
+    button.setGeometry(300, 300, 30, 30)
+
+    popup = QtPopup(viewer_buttons)
+    popup.frame.setFixedSize(100, 50)
+    viewer_buttons._position_popup_inside_viewer(popup, button)
+
+    button_center = button.mapToGlobal(button.rect().center())
+    assert abs(popup.geometry().center().x() - button_center.x()) <= 1
+    assert popup.geometry().bottom() < button.mapToGlobal(QPoint()).y()
+
+    # near the viewer edge, the popup is shifted to stay inside the viewer
+    # rather than centered on the button
+    button.setGeometry(0, 300, 30, 30)
+    viewer_buttons._position_popup_inside_viewer(popup, button)
+    assert popup.geometry().left() == window.geometry().left()
+
+
 def test_ndisplay_button_popup(qt_viewer_buttons, qtbot):
     """
     Make sure the QtViewerButtons.ndisplayButton popup works.
