@@ -12,7 +12,10 @@ from qtpy.QtWidgets import QApplication
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
-from napari._qt._qapp_model._tests.utils import get_submenu_action
+from napari._qt._qapp_model._tests.utils import (
+    get_submenu_action,
+    register_qactions_and_plugins,
+)
 from napari.layers import Image
 from napari.utils.action_manager import action_manager
 
@@ -79,7 +82,7 @@ def test_plugin_display_name_use_for_multiple_samples(
 
 
 def test_sample_menu_plugin_state_change(
-    make_napari_viewer,
+    mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
     """Check samples submenu correct after plugin changes state."""
@@ -102,8 +105,7 @@ def test_sample_menu_plugin_state_change(
     )
     tmp_plugin.manifest.contributions.sample_data = [sample1, sample2]
 
-    # Configures `app`, registers actions and initializes plugins
-    make_napari_viewer()
+    register_qactions_and_plugins()
 
     samples_menu = app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert len(samples_menu) == 1
@@ -129,7 +131,7 @@ def test_sample_menu_plugin_state_change(
 
 
 def test_sample_menu_single_data(
-    make_napari_viewer,
+    mock_app_model,
     tmp_plugin: DynamicPlugin,
 ):
     """Checks sample submenu correct when plugin has single sample data."""
@@ -140,8 +142,7 @@ def test_sample_menu_single_data(
         uri='some-file.tif',
     )
     tmp_plugin.manifest.contributions.sample_data = [sample]
-    # Configures `app`, registers actions and initializes plugins
-    make_napari_viewer()
+    register_qactions_and_plugins()
 
     samples_menu = app.menus.get_menu(MenuId.FILE_SAMPLES)
     assert isinstance(samples_menu[0], MenuItem)

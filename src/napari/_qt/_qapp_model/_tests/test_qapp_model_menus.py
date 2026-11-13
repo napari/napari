@@ -1,14 +1,32 @@
 import numpy as np
 import pytest
+from app_model.expressions import Context
 from app_model.types import Action, SubmenuItem
 
 from napari._app_model import get_app_model
 from napari._app_model.constants import MenuId
 from napari._app_model.context import LayerListContextKeys as LLCK
 from napari._qt._qapp_model import build_qmodel_menu
-from napari._qt._qapp_model._tests.utils import get_submenu_action
+from napari._qt._qapp_model._tests.utils import (
+    get_submenu_action,
+    register_qactions_and_plugins,
+)
+from napari._qt._qapp_model.qactions import add_dummy_actions
 from napari._qt._qapp_model.qactions._layers_actions import LAYERS_SUBMENUS
 from napari.layers import Image
+
+
+def _has_toggle_action(app, menu_id) -> bool:
+    """Return True if the menu, or one of its submenus, has a toggle action."""
+    if menu_id not in app.menus:
+        return False
+    for item in app.menus.get_menu(menu_id):
+        if isinstance(item, SubmenuItem):
+            if _has_toggle_action(app, item.submenu):
+                return True
+        elif item.command.toggled is not None:
+            return True
+    return False
 
 
 # `builtins` required so there are samples registered, so samples menu exists
@@ -17,8 +35,12 @@ def test_build_qmodel_menu(builtins, make_napari_viewer, qtbot, menu_id):
     """Test that we can build qmenus for all registered menu IDs."""
     app = get_app_model()
 
-    # Configures `app`, registers actions and initializes plugins
-    make_napari_viewer()
+    register_qactions_and_plugins()
+    # The window registers placeholder actions so that empty submenus exist
+    add_dummy_actions(Context())
+    if _has_toggle_action(app, menu_id):
+        # The check state of toggle actions is read from the current viewer
+        make_napari_viewer()
 
     menu = build_qmodel_menu(menu_id)
     qtbot.addWidget(menu)
@@ -78,10 +100,12 @@ def test_update_menu_state_context(make_napari_viewer):
     ],
 )
 def test_layers_menu_has_declared_submenus(
-    make_napari_viewer, submenu_id, submenu_title
+    mock_app_model, submenu_id, submenu_title
 ):
     app = get_app_model()
-    make_napari_viewer()
+    register_qactions_and_plugins()
+    # The window registers placeholder actions so that empty submenus exist
+    add_dummy_actions(Context())
     layers_menu = app.menus.get_menu(MenuId.MENUBAR_LAYERS)
     submenus = [
         item
