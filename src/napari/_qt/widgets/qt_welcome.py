@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         QDragLeaveEvent,
         QDropEvent,
         QPaintEvent,
+        QShowEvent,
     )
 
     from napari.components.viewer_model import ViewerModel
@@ -184,8 +185,32 @@ class QtWelcomeWidget(QWidget):
         return QSize(100, 100)
 
     def refresh(self, _event=None) -> None:
+        """Update the shortcut table and the tip text.
+
+        ``QtViewer`` rebinds every shortcut when it is created, which emits
+        ``shortcut_changed`` once per shortcut. While the widget is not
+        visible the update is postponed until the widget is shown.
+        """
+        if not self.isVisible():
+            return
+        self._refresh()
+
+    def _refresh(self) -> None:
         self.refresh_shortcuts()
         self._update_tip_label()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Override Qt method.
+
+        Apply a refresh postponed while the widget was not visible.
+
+        Parameters
+        ----------
+        event : qtpy.QtGui.QShowEvent
+            Event from the Qt context.
+        """
+        self._refresh()
+        super().showEvent(event)
 
     def refresh_shortcuts(self, _event=None) -> None:
         """Update the shortcut table using the current runtime bindings."""
@@ -213,7 +238,6 @@ class QtWelcomeWidget(QWidget):
 
     def set_welcome_visible(self, visible: bool = True) -> None:
         if visible:
-            self.refresh_shortcuts()
             self.show_random_tip()
             self._sync_to_parent()
             self.show()

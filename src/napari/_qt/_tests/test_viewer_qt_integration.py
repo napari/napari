@@ -14,6 +14,7 @@ from qtpy.QtGui import QEnterEvent, QGuiApplication, QKeyEvent
 from qtpy.QtWidgets import QApplication
 
 from napari._qt._tests.test_qt_viewer import qt_viewer
+from napari._qt.widgets.qt_welcome import QtWelcomeWidget
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari.settings import get_settings
 from napari.utils.action_manager import action_manager
@@ -210,8 +211,9 @@ def test_welcome_widget_shows_random_tip(make_napari_viewer):
 
 
 def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
-    viewer = make_napari_viewer(show=False, show_welcome_screen=True)
+    viewer = make_napari_viewer(show=True, show_welcome_screen=True)
     welcome = viewer.window._qt_viewer._welcome_widget
+    assert welcome.isVisible()
     welcome._current_tip = (
         'Open files with {napari.window.file.open_files_dialog}.'
     )
@@ -235,6 +237,40 @@ def test_welcome_widget_refreshes_tip_on_shortcut_change(make_napari_viewer):
             shortcut='Cmd+O',
             tooltip='',
         )
+        assert (
+            welcome._tip_label.text()
+            == 'Did you know?<br>Open files with Cmd+O.'
+        )
+
+
+def test_welcome_widget_defers_refresh_while_hidden(qtbot, viewer_model):
+    welcome = QtWelcomeWidget(None, viewer_model)
+    qtbot.addWidget(welcome)
+    assert not welcome.isVisible()
+    welcome._current_tip = (
+        'Open files with {napari.window.file.open_files_dialog}.'
+    )
+
+    with (
+        patch(
+            'napari.utils.tips._get_command_shortcut_and_description',
+            return_value=('Cmd+O', 'Open File(s)...'),
+        ) as tip_lookup,
+        patch(
+            'napari._qt.widgets.qt_welcome._get_command_shortcut_and_description',
+            return_value=('Cmd+O', 'Open File(s)...'),
+        ) as shortcut_lookup,
+    ):
+        action_manager.events.shortcut_changed(
+            name='napari.window.file.open_files_dialog',
+            shortcut='Cmd+O',
+            tooltip='',
+        )
+        tip_lookup.assert_not_called()
+        shortcut_lookup.assert_not_called()
+
+        welcome.show()
+        assert shortcut_lookup.called
         assert (
             welcome._tip_label.text()
             == 'Did you know?<br>Open files with Cmd+O.'
