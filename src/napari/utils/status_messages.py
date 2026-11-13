@@ -81,7 +81,7 @@ def status_format(
 
 def generate_layer_status_strings(
     position: npt.ArrayLike | None,
-    value: tuple | None,
+    value: object,
     precision: int | None = None,
 ) -> tuple[str, str]:
     if position is not None:
@@ -111,7 +111,7 @@ def generate_layer_status_strings(
 
 
 def generate_layer_coords_status(
-    position: npt.ArrayLike | None, value: tuple | None
+    position: npt.ArrayLike | None, value: object
 ) -> str:
     return ': '.join(generate_layer_status_strings(position, value))
 

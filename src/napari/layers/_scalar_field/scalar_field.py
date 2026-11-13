@@ -47,11 +47,12 @@ if TYPE_CHECKING:
 
     from napari.components import Dims
 
-    PixelValue: TypeAlias = (
-        np.number
-        | np.bool_
-        | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
-    )
+# needed at runtime, it is used in the class line of ScalarFieldBase
+PixelValue: TypeAlias = (
+    np.number
+    | np.bool_
+    | np.ndarray[tuple[Literal[3, 4]], np.dtype[np.number]]
+)
 
 
 __all__ = ('ScalarFieldBase',)
@@ -79,7 +80,7 @@ def _make_level_materializer(
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class ScalarFieldBase(Layer, ABC):
+class ScalarFieldBase(Layer[PixelValue | tuple[int, PixelValue | None]], ABC):
     """Base class for volumetric layers.
 
     Parameters
@@ -744,7 +745,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | None:
+    ) -> PixelValue | None:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -758,7 +759,7 @@ class ScalarFieldBase(Layer, ABC):
 
         Returns
         -------
-        value : Optional[int]
+        value : PixelValue or None
             The first non-background value encountered along the ray. If none
             was encountered or the viewer is in 2D mode, returns None.
         """
@@ -812,7 +813,7 @@ class ScalarFieldBase(Layer, ABC):
         start_point: np.ndarray | None,
         end_point: np.ndarray | None,
         dims_displayed: list[int],
-    ) -> int | tuple[int, int | None] | None:
+    ) -> PixelValue | tuple[int, PixelValue | None] | None:
         """Get the first non-background value encountered along a ray.
 
         Parameters
@@ -826,7 +827,7 @@ class ScalarFieldBase(Layer, ABC):
 
         Returns
         -------
-        value : int or tuple
+        value : PixelValue or tuple
             The first non-zero value encountered along the ray. If a
             non-zero value is not encountered, returns None.
             If multiscale is True, returns a tuple of (data_level, value).

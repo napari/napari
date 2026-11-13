@@ -41,7 +41,7 @@ _OUT_SLICE_DISP_WARNING_MSG = (
 )
 
 
-class Vectors(Layer):
+class Vectors(Layer[None]):
     """
     Vectors layer renders lines onto the canvas.
 
