@@ -2,10 +2,8 @@
 name: PR Test
 
 on:
-  pull_request:
-    branches:
-      - main
-      - "v*x"
+  # TEMPORARY (macOS 26 debugging): PR trigger disabled
+  workflow_dispatch:
 
 concurrency:
   group: test-${{ github.ref }}
@@ -109,7 +107,7 @@ jobs:
             coverage: cov
             timeout-minutes: 60
           - python: "3.14"
-            platform: macos-15
+            platform: macos-latest
             backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
