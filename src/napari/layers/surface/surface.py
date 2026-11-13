@@ -40,7 +40,9 @@ if TYPE_CHECKING:
 
 
 # Mixin must come before Layer
-class Surface(IntensityVisualizationMixin, Layer):
+class Surface(
+    IntensityVisualizationMixin, Layer[tuple[float | int | None, int | None]]
+):
     """
     Surface layer renders meshes onto the canvas.
 

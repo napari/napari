@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numbers
-import typing
 import warnings
 from copy import copy, deepcopy
 from typing import (
@@ -87,7 +86,7 @@ _OUT_SLICE_DISP_WARNING_MSG = (
 )
 
 
-class Points(Layer):
+class Points(Layer[int]):
     """Points layer.
 
     Parameters
@@ -1678,25 +1677,6 @@ class Points(Layer):
         )
         # update highlight only if scale has changed, otherwise causes a cycle
         self._set_highlight(force=(prev_scale != self.scale_factor))
-
-    def _get_value_(
-        self,
-        position: npt.ArrayLike,
-        *,
-        view_direction: npt.ArrayLike | None = None,
-        dims_displayed: list[int] | None = None,
-        world: bool = False,
-    ) -> int | None:
-        """Workaround for inconsistency in real return type of get_value"""
-        return typing.cast(
-            int,
-            self.get_value(
-                position,
-                view_direction=view_direction,
-                dims_displayed=dims_displayed,
-                world=world,
-            ),
-        )
 
     def _get_value(self, position) -> int | None:
         """Index of the point at a given 2D position in data coordinates.

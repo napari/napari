@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-class Tracks(Layer):
+class Tracks(Layer[int]):
     """Tracks layer.
 
     Parameters

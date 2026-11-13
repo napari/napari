@@ -14,7 +14,7 @@ class SampleLayerSlicingState(_LayerSlicingState):
         pass
 
 
-class SampleLayer(Layer):
+class SampleLayer(Layer[np.ndarray | np.generic]):
     def __init__(
         self,
         data: np.ndarray,
@@ -94,7 +94,7 @@ class SampleLayer(Layer):
     def _update_thumbnail(self) -> None:
         pass
 
-    def _get_value(self, position: tuple[int, ...]) -> np.ndarray:
+    def _get_value(self, position: tuple[int, ...]) -> np.ndarray | np.generic:
         return self.data[position]
 
     def _post_init(self) -> None:

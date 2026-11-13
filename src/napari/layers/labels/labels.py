@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 import warnings
 from collections import deque
 from collections.abc import Callable, Generator, Sequence
@@ -2356,13 +2355,12 @@ class Labels(ScalarFieldBase):
         if value is None:
             return []
 
-        label_value: int = typing.cast(
-            int, value[1] if self.multiscale else value
-        )
-        if label_value not in self._label_index:
+        # multiscale values are (data_level, value)
+        label_value = value[1] if isinstance(value, tuple) else value
+        if label_value is None or label_value not in self._label_index:
             return ['[No Properties]']
 
-        idx = self._label_index[label_value]
+        idx = self._label_index[int(label_value)]
         return [
             f'{k}: {format_feature_value(v[idx])}'
             for k, v in self.features.items()

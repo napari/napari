@@ -87,7 +87,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-class Shapes(Layer):
+class Shapes(Layer[tuple[int | None, int | None]]):
     """Shapes layer.
 
     Parameters
