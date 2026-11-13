@@ -3,7 +3,10 @@ from napari.components.overlays.base import (
     Overlay,
     SceneOverlay,
 )
-from napari.components.overlays.bounding_box import BoundingBoxOverlay
+from napari.components.overlays.bounding_box import (
+    LayerBoundingBoxOverlay,
+    ViewerBoundingBoxOverlay,
+)
 from napari.components.overlays.brush_circle import BrushCircleOverlay
 from napari.components.overlays.canvas_axes import CanvasAxesOverlay
 from napari.components.overlays.colorbar import ColorBarOverlay
@@ -27,7 +30,6 @@ from napari.components.overlays.text import (
 from napari.components.overlays.zoom import ZoomOverlay
 
 __all__ = [
-    'BoundingBoxOverlay',
     'BrushCircleOverlay',
     'CanvasAxesOverlay',
     'CanvasOverlay',
@@ -37,6 +39,7 @@ __all__ = [
     'CurrentSliceOverlay',
     'LabelsBrushStrokeOverlay',
     'LabelsPolygonOverlay',
+    'LayerBoundingBoxOverlay',
     'LayerNameOverlay',
     'Overlay',
     'ScaleBarOverlay',
@@ -45,5 +48,6 @@ __all__ = [
     'SelectionBoxOverlay',
     'TextOverlay',
     'TransformBoxOverlay',
+    'ViewerBoundingBoxOverlay',
     'ZoomOverlay',
 ]
