@@ -14,6 +14,7 @@ from napari._tests.utils import (
     skip_local_popups,
     skip_on_win_ci,
 )
+from napari.components import ViewerModel
 from napari.settings import get_settings
 from napari.utils._tests.test_naming import eval_with_filename
 from napari.utils.action_manager import action_manager
@@ -46,12 +47,12 @@ def _assert_shortcuts_exist_for_each_action(type_):
 viewer_actions = _get_provider_actions(Viewer)
 
 
-def test_all_viewer_actions_are_accessible_via_shortcut(make_napari_viewer):
+# instantiate to make sure everything is initialized correctly
+@pytest.mark.usefixtures('viewer_model')
+def test_all_viewer_actions_are_accessible_via_shortcut():
     """
     Make sure we do find all the actions attached to a viewer via keybindings
     """
-    # instantiate to make sure everything is initialized correctly
-    _ = make_napari_viewer()
     _assert_shortcuts_exist_for_each_action(Viewer)
 
 
@@ -135,11 +136,11 @@ def test_all_layer_actions_are_accessible_via_shortcut(
     ('layer_class', 'a_unique_name', 'ndim'), layer_test_data
 )
 def test_add_layer_magic_name(
-    make_napari_viewer, layer_class, a_unique_name, ndim, tmp_path
+    viewer_model, layer_class, a_unique_name, ndim, tmp_path
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
-    viewer = make_napari_viewer()  # noqa: F841
+    viewer = viewer_model  # noqa: F841
     layer = eval_with_filename(
         'add_layer_by_type(viewer, layer_class, a_unique_name)',
         str(tmp_path / 'somefile.py'),
@@ -297,21 +298,19 @@ def test_toggling_scale_bar(make_napari_viewer):
     assert not viewer.canvas.overlays.scale_bar.visible
 
 
-def test_removing_points_data(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_removing_points_data(viewer_model):
     points = np.random.random((4, 2)) * 4
 
-    pts_layer = viewer.add_points(points)
+    pts_layer = viewer_model.add_points(points)
     pts_layer.data = np.zeros([0, 2])
 
     assert len(pts_layer.data) == 0
 
 
-def test_deleting_points(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_deleting_points(viewer_model):
     points = np.random.random((4, 2)) * 4
 
-    pts_layer = viewer.add_points(points)
+    pts_layer = viewer_model.add_points(points)
     pts_layer.selected_data = {0}
     pts_layer.remove_selected()
 
@@ -441,15 +440,14 @@ def test_running_status_thread(make_napari_viewer, qtbot, monkeypatch):
     start_mock.assert_called_once()
 
 
-def test_negative_translate(make_napari_viewer, qtbot):
+def test_negative_translate(viewer_model):
     """Check that negative translation behaves as expected.
 
     See https://github.com/napari/napari/issues/7248
     """
     data = np.random.random((1, 3, 10, 12, 12))
-    viewer = make_napari_viewer()
-    _ = viewer.add_image(data, translate=(-1, 0, 0))
-    assert viewer.dims.range[2].start == -1
+    _ = viewer_model.add_image(data, translate=(-1, 0, 0))
+    assert viewer_model.dims.range[2].start == -1
 
 
 @pytest.mark.parametrize(
@@ -463,8 +461,6 @@ def test_negative_translate(make_napari_viewer, qtbot):
     ],
 )
 def test_axis_labels(
-    make_napari_viewer,
-    qtbot,
     axis_labels: tuple[str, ...],
     expected_labels: tuple[str, ...],
     expected_ndim: int,
@@ -472,17 +468,17 @@ def test_axis_labels(
     """
     Check that axis labels are set properly.
     """
-    viewer = make_napari_viewer(axis_labels=axis_labels)
+    viewer = ViewerModel(axis_labels=axis_labels)
     assert viewer.dims.axis_labels == expected_labels
     assert viewer.dims.ndim == expected_ndim
 
 
-def test_axis_labels_after_data(make_napari_viewer, qtbot):
+def test_axis_labels_after_data():
     """
     Check that axis labels persist after adding data in different ways.
     """
     original_labels = ('z', 'y', 'x')
-    viewer = make_napari_viewer(axis_labels=original_labels)
+    viewer = ViewerModel(axis_labels=original_labels)
     assert viewer.dims.ndim == 3
     assert viewer.dims.axis_labels == original_labels
 
@@ -502,19 +498,20 @@ def test_axis_labels_after_data(make_napari_viewer, qtbot):
     assert viewer.dims.axis_labels == ('z', 'i', 'j')
 
 
-def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
+def test_dims_axis_labels_match_layerlist(viewer_model):
     """
     Check viewer.dims.axis_labels reflect layers.axis_labels."""
-    viewer = make_napari_viewer()
 
     # Default indices on empty viewer
-    assert viewer.dims.axis_labels == viewer.layers.axis_labels
-    assert viewer.dims.axis_labels == ('-2', '-1')
+    assert viewer_model.dims.axis_labels == viewer_model.layers.axis_labels
+    assert viewer_model.dims.axis_labels == ('-2', '-1')
 
     # Annotated layer propagates to dims
-    viewer.add_image(np.random.random((3, 4, 5)), axis_labels=('z', 'y', 'x'))
-    assert viewer.dims.axis_labels == viewer.layers.axis_labels
-    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+    viewer_model.add_image(
+        np.random.random((3, 4, 5)), axis_labels=('z', 'y', 'x')
+    )
+    assert viewer_model.dims.axis_labels == viewer_model.layers.axis_labels
+    assert viewer_model.dims.axis_labels == ('z', 'y', 'x')
 
     # Lower-dim, annotated layer doesn't override the longer labels
     # This is different from test_axis_labels_after_data because in that
@@ -522,11 +519,11 @@ def test_dims_axis_labels_match_layerlist(make_napari_viewer, qtbot):
     # `viewer.dims.axis_labels = ('z', 'y', 'x')`, whereas in this case
     # `viewer.dims.axis_labels` is only ever set dynamically from the layer
     # list.
-    viewer.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
-    assert viewer.dims.axis_labels == viewer.layers.axis_labels
-    assert viewer.dims.axis_labels == ('z', 'y', 'x')
+    viewer_model.add_image(np.random.random((4, 5)), axis_labels=('i', 'j'))
+    assert viewer_model.dims.axis_labels == viewer_model.layers.axis_labels
+    assert viewer_model.dims.axis_labels == ('z', 'y', 'x')
 
     # Higher-dim, unannotated layer doesn't override the annotated labels
-    viewer.add_image(np.random.random((2, 3, 4, 5)))
-    assert viewer.dims.axis_labels == viewer.layers.axis_labels
-    assert viewer.dims.axis_labels == ('-4', 'z', 'y', 'x')
+    viewer_model.add_image(np.random.random((2, 3, 4, 5)))
+    assert viewer_model.dims.axis_labels == viewer_model.layers.axis_labels
+    assert viewer_model.dims.axis_labels == ('-4', 'z', 'y', 'x')

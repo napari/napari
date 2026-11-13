@@ -276,16 +276,15 @@ def test_changing_display_surface(make_napari_viewer):
         viewer.dims.set_point(0, s)
 
 
-def test_labels_undo_redo(make_napari_viewer):
+def test_labels_undo_redo(viewer_model):
     """Test undoing/redoing on the labels layer."""
-    viewer = make_napari_viewer()
 
     data = np.zeros((50, 50), dtype=np.uint8)
     data[:5, :5] = 1
     data[5:10, 5:10] = 2
     data[25:, 25:] = 3
 
-    labels = viewer.add_labels(data)
+    labels = viewer_model.add_labels(data)
 
     l1 = labels.data.copy()
 
