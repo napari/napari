@@ -26,11 +26,34 @@ from napari._qt.widgets.qt_viewer_tour import (
 
 @pytest.mark.parametrize('url', HELP_URLS.keys())
 def test_help_urls(url):
+    """Check that Help menu entries point at URLs that exist.
+
+    A 4xx means the link is broken, which is should fail the test.
+    Server issues (5xx, 408, 425, 429) or network errors should
+    not cause test fails, so skip but note the issue.
+    """
     if url == 'release_notes':
         pytest.skip('No release notes for dev version')
 
-    r = requests.head(HELP_URLS[url])
-    r.raise_for_status()
+    target = HELP_URLS[url]
+    try:
+        # Without a timeout an unresponsive server can block the test forever.
+        response = requests.head(target, timeout=30, allow_redirects=True)
+    except (
+        requests.exceptions.InvalidURL,
+        requests.exceptions.InvalidSchema,
+        requests.exceptions.MissingSchema,
+        requests.exceptions.URLRequired,
+        requests.exceptions.InvalidHeader,
+    ):
+        raise
+    except requests.RequestException as exc:
+        pytest.skip(f'{target} unreachable: {type(exc).__name__}: {exc}')
+    if response.status_code >= 500 or response.status_code in (408, 425, 429):
+        pytest.skip(
+            f'{target} returned {response.status_code} {response.reason}'
+        )
+    response.raise_for_status()
 
 
 @pytest.mark.parametrize(
