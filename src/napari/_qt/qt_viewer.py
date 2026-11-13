@@ -923,6 +923,7 @@ class QtViewer(QSplitter):
         size: tuple[int, int] | None = None,
         scale: float = 1.0,
         fit_to_data_extent: bool = False,
+        margin: float = 0,
     ) -> QImage:
         """Take currently displayed screen and convert to an image array.
 
@@ -940,6 +941,9 @@ class QtViewer(QSplitter):
             Tightly fit the canvas around the data to prevent margins from
             showing in the screenshot. If False, a screenshot of the currently
             visible canvas will be generated.
+        margin : float in [0, 1)
+            Only used if ``fit_to_data_extent`` is True. Blank space around
+            the data, as a fraction of the screenshot. Default is 0.
 
         Returns
         -------
@@ -962,6 +966,8 @@ class QtViewer(QSplitter):
             ) from e
 
         if fit_to_data_extent:
+            # also checks that the margin is valid
+            scale_factor = self.viewer._get_scale_factor(margin)
             # Use the same scene parameter calculations as in viewer_model.fit_to_view
             ndisplay = self.viewer.dims.ndisplay
             extent, scene_size, _ = self.viewer._get_scene_parameters()
@@ -978,11 +984,14 @@ class QtViewer(QSplitter):
             grid_shape = self.viewer.canvas.grid.actual_shape(
                 self.viewer.layers
             )
-            size = np.ceil(scene_size / extent_scale * grid_shape).astype(int)
+            # enlarge the canvas so the data keeps the same resolution
+            size = np.ceil(
+                scene_size / extent_scale * grid_shape / scale_factor
+            ).astype(int)
 
         with self.resize_canvas(size, scale):
             if fit_to_data_extent:
-                self.viewer.fit_to_view(margin=0)
+                self.viewer.fit_to_view(margin=margin)
             if self._welcome_widget.isVisible():
                 img = self.canvas.native.grab().toImage()
             else:
@@ -1473,6 +1482,7 @@ class QtViewer(QSplitter):
         path: str | None = None,
         scale: float = 1,
         flash: bool = True,
+        margin: float = 0,
     ) -> np.ndarray:
         """Export an image of the full extent of the displayed layer data.
 
@@ -1492,6 +1502,9 @@ class QtViewer(QSplitter):
             Flag to indicate whether flash animation should be shown after
             the screenshot was captured.
             By default, True.
+        margin : float in [0, 1)
+            Blank space around the data, as a fraction of the exported image.
+            By default, 0.
 
         Returns
         -------
@@ -1507,6 +1520,7 @@ class QtViewer(QSplitter):
                 scale=scale,
                 flash=flash,
                 fit_to_data_extent=True,
+                margin=margin,
             )
         )
         if path is not None:
