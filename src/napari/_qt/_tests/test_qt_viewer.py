@@ -1424,6 +1424,51 @@ def test_dask_cache():
     )
 
 
+@pytest.mark.usefixtures('qt_viewer')
+def test_dask_chunk_size():
+    da = pytest.importorskip('dask.array')
+    dask_config = pytest.importorskip('dask.config')
+    dask_settings = get_settings().application.dask
+    initial_chunk_size = dask_settings.chunk_size
+
+    try:
+        # check that changing the chunk size setting updates the dask config
+        dask_settings.chunk_size = 64
+        assert dask_config.get('array.chunk-size') == '64MiB'
+
+        # and that dask actually uses it when it chunks an array automatically
+        arr = da.zeros((2048, 2048, 64), dtype=np.float64, chunks='auto')
+        chunk_nbytes = np.prod(arr.chunksize) * arr.dtype.itemsize
+        assert chunk_nbytes <= 64 * 2**20
+    finally:
+        dask_settings.chunk_size = initial_chunk_size
+
+    assert dask_config.get('array.chunk-size') == f'{initial_chunk_size}MiB'
+
+
+@pytest.mark.usefixtures('qt_viewer')
+def test_dask_chunk_size_not_applied_when_disabled():
+    dask_config = pytest.importorskip('dask.config')
+    dask_settings = get_settings().application.dask
+    initial_enabled = dask_settings.enabled
+    initial_chunk_size = dask_settings.chunk_size
+
+    # a chunk size set by the user in their own code
+    with dask_config.set({'array.chunk-size': '10MiB'}):
+        try:
+            # when disabled, napari should not touch the dask config
+            dask_settings.enabled = False
+            dask_settings.chunk_size = 64
+            assert dask_config.get('array.chunk-size') == '10MiB'
+
+            # enabling them again applies the chunk size setting
+            dask_settings.enabled = True
+            assert dask_config.get('array.chunk-size') == '64MiB'
+        finally:
+            dask_settings.enabled = initial_enabled
+            dask_settings.chunk_size = initial_chunk_size
+
+
 @pytest.mark.show_qt_viewer
 def test_viewer_drag_to_zoom(
     qt_viewer: QtViewer, viewer_model: ViewerModel, qtbot: QtBot
