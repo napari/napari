@@ -195,7 +195,7 @@ def _get_layer_name_from_annotation(annotation: ReturnAnnotation) -> str:
                 f'napari supports only Optional[<layer_data_type>], not {annotation}'
             )
         annotation = args[0]
-    if not isinstance(annotation, NewType):  # pragma: no cover 
+    if not isinstance(annotation, NewType):  # pragma: no cover
         # this case should be impossible
         raise TypeError(
             f'napari supports only the napari.types layer data types, not {annotation}'
