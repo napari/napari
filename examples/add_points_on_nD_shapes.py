@@ -51,7 +51,7 @@ for shape_type, mult in {('ellipse', 1), ('rectangle', -1)}:
         shape_type=shape_type,
     )
 
-    @shapes_layer.mouse_drag_callbacks.append
+    @shapes_layer.mouse_click_callbacks.append
     def on_click(layer, event):
 
         shape_index, intersection_point = layer.get_index_and_intersection(

@@ -31,7 +31,7 @@ viewer.window.add_dock_widget(FigureCanvas(mpl_fig))
 
 # connect a callback that updates the line plot when
 # the user clicks on the image
-@layer.mouse_drag_callbacks.append
+@layer.mouse_click_callbacks.append
 def profile_lines_drag(layer, event):
     try:
         line.set_ydata(layer.data[int(event.position[0])])

@@ -50,7 +50,7 @@ volume_layer = viewer.add_image(volume, blending='additive')
 
 
 # callback function, called on mouse click when volume layer is active
-@volume_layer.mouse_drag_callbacks.append
+@volume_layer.mouse_click_callbacks.append
 def on_click(layer, event):
     near_point, far_point = layer.get_ray_intersections(
         event.position,
