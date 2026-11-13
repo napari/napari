@@ -44,6 +44,10 @@ def draw(layer, event):
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)
+    if coordinates is not None and not layer._non_painted_coords_in_bounds(
+        coordinates, notify=True
+    ):
+        return
     if layer._mode == Mode.ERASE:
         new_label = layer.colormap.background_value
     else:

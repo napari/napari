@@ -164,3 +164,47 @@ def test_click_during_stroke_pans_then_resumes():
     mouse_release_callbacks(layer, release)
     assert layer.mouse_pan is False
     assert overlay.active is True
+
+
+@pytest.mark.usefixtures('qapp')
+def test_brush_stroke_outside_slice_extent_is_noop():
+    """Right-clicking out of slice extent must not raise or leave stroke active."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((32, 64, 64)))
+    data = np.zeros((16, 64, 64), dtype=np.uint8)
+    data[15, :, :] = 2
+    original = data.copy()
+    layer = viewer.add_labels(data, translate=(10, 0, 0))
+    overlay = layer._overlays['brush_stroke']
+    VispyLabelsBrushStrokeOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=overlay,
+    )
+    layer.mode = 'paint'
+    layer.selected_label = 3
+
+    for world_z in (39.0, 9.0):  # data slice 29 and -1
+        viewer.dims.point = (world_z, 32.0, 32.0)
+        press = read_only_mouse_event(
+            type='mouse_press',
+            button=2,
+            position=(world_z, 32.0, 32.0),
+            dims_displayed=[1, 2],
+            dims_point=(world_z, 32.0, 32.0),
+        )
+        mouse_press_callbacks(layer, press)
+        move = read_only_mouse_event(
+            type='mouse_move',
+            position=(world_z, 40.0, 40.0),
+            dims_displayed=[1, 2],
+            dims_point=(world_z, 32.0, 32.0),
+        )
+        mouse_move_callbacks(layer, move)
+
+        assert overlay.active is False
+        assert layer._block_history is False
+
+    np.testing.assert_array_equal(layer.data, original)
+    assert len(layer._undo_history) == 0

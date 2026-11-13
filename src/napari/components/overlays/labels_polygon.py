@@ -57,6 +57,8 @@ class LabelsPolygonOverlay(SceneOverlay):
     completion_radius: int = 20
 
     def add_polygon_to_labels(self, layer: Labels) -> None:
-        if len(self.points) > 2:
+        if len(self.points) > 2 and layer._non_painted_coords_in_bounds(
+            self.points[0], notify=True
+        ):
             layer.paint_polygon(self.points, layer.selected_label)
         self.points = []
