@@ -33,6 +33,15 @@ class Blending(StringEnum):
                 Useful for creating overlays with inverted colormaps. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_equation='min'.
+            Blending.MULTIPLICATIVE
+                Allows for multiple layers to be blended together such that
+                the color of each pixel of the upper layer is multiplied by
+                the color of the pixel below it, and their alpha values are
+                added. Useful for overlays with inverted colormaps, where
+                white leaves the layer below unchanged.
+                It corresponds to depth_test=False, cull_face=False,
+                blend=True, blend_func=('dst_color', 'zero', 'one', 'one'),
+                blend_equation='func_add'.
     """
 
     TRANSLUCENT = auto()
