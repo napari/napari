@@ -6,7 +6,7 @@ import pytest
 from magicgui.widgets import Container
 from qtpy.QtCore import QEvent, QPoint
 from qtpy.QtGui import QHelpEvent, QImage
-from qtpy.QtWidgets import QToolTip, QWidget
+from qtpy.QtWidgets import QDialog, QToolTip, QWidget
 
 from napari._qt.qt_main_window import (
     Window,
@@ -19,6 +19,7 @@ from napari._qt.widgets.qt_viewer_status_bar import (
 )
 from napari._tests.utils import skip_on_win_ci
 from napari.settings import get_settings
+from napari.utils.task_status import Status
 from napari.utils.theme import (
     _themes,
     get_theme,
@@ -287,3 +288,56 @@ def test_resolve_dock_area(
 def test_resolve_tabify(requested_tabify, default_tabify, expected_tabify):
     tabify = Window._resolve_tabify(requested_tabify, default_tabify)
     assert tabify is expected_tabify
+
+
+def test_menu_close_shows_task_status(
+    make_napari_viewer, monkeypatch, mock_qt_method_ctx
+):
+    viewer = make_napari_viewer()
+    qt_window = viewer.window._qt_window
+    viewer.window._register_task_status(
+        'test-provider', Status.PENDING, 'saving results'
+    )
+    with (
+        patch('napari._qt.qt_main_window.ConfirmCloseDialog') as dialog,
+        mock_qt_method_ctx('qtpy.QtWidgets.QMainWindow.close') as qt_close,
+    ):
+        dialog.return_value.exec.return_value = QDialog.DialogCode.Rejected
+        for confirm_close_window in (False, True):
+            monkeypatch.setattr(
+                get_settings().application,
+                'confirm_close_window',
+                confirm_close_window,
+            )
+            for quit_app in (False, True):
+                dialog.reset_mock()
+                qt_window.close(quit_app=quit_app, confirm_need=True)
+                dialog.assert_called_once_with(
+                    qt_window,
+                    close_app=quit_app,
+                    extra_info='test-provider: saving results',
+                    display_checkbox=False,
+                )
+    qt_close.assert_not_called()
+
+
+def test_title_bar_close_with_task_status_asks_once(
+    make_napari_viewer, monkeypatch
+):
+    viewer = make_napari_viewer()
+    viewer.add_points()
+    viewer.window._register_task_status(
+        'test-provider', Status.PENDING, 'saving results'
+    )
+    monkeypatch.setattr(
+        get_settings().application, 'confirm_close_window', True
+    )
+    event = MagicMock()
+    event.spontaneous.return_value = True
+
+    with patch('napari._qt.qt_main_window.ConfirmCloseDialog') as dialog:
+        dialog.return_value.exec.return_value = QDialog.DialogCode.Accepted
+        viewer.window._qt_window.closeEvent(event)
+
+    dialog.assert_called_once()
+    event.accept.assert_called_once()
