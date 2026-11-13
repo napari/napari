@@ -64,9 +64,9 @@ def _make_level_materializer(
 
     The returned callable accepts a ``level`` integer and returns
     ``np.asarray(data[level])``, caching the last result so repeated slice
-    requests at the same level avoid redundant data fetches.  Replacing
-    ``data`` by constructing a new materializer automatically abandons the old
-    cache without an explicit ``cache_clear()``.
+    requests at the same level avoid redundant data fetches. Replacing
+    ``data`` creates a new materializer with its own cache; existing slice
+    requests retain the materializer for their original data.
     """
 
     @lru_cache(maxsize=1)
@@ -574,16 +574,16 @@ class ScalarFieldBase(Layer, ABC):
         """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
 
         Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Single-scale and 3D multiscale layers set ``_level_materializer`` to
-        ``None``; only 2D multiscale layers cache the thumbnail level.
+        Only multiscale layers with a single plane per level, including RGB and
+        those with singleton leading dimensions, cache the thumbnail level.
+        Other layers set ``_level_materializer`` to ``None``.
         """
         data = self._data
         if isinstance(data, MultiScaleData):
             self._thumbnail_level = len(data) - 1
+            single_plane = all(s == 1 for s in self.level_shapes[0][:-2])
             self._level_materializer = (
-                _make_level_materializer(data)
-                if self._get_ndim() == 2
-                else None
+                _make_level_materializer(data) if single_plane else None
             )
         else:
             self._thumbnail_level = 0
@@ -974,31 +974,10 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         else:
             data_level = 0
 
-        thumbnail_level = self.layer._thumbnail_level
-        data_at_thumbnail_level: (
-            LayerDataProtocol | MultiScaleData | np.ndarray
-        )
-        if self.layer._level_materializer:
-            data_at_thumbnail_level = self.layer._level_materializer(
-                thumbnail_level
-            )
-        elif self.layer.multiscale:
-            data_at_thumbnail_level = data[thumbnail_level]
-        else:
-            data_at_thumbnail_level = data
-
-        data_at_data_level: LayerDataProtocol | MultiScaleData | np.ndarray
-        if not self.layer.multiscale:
-            data_at_data_level = data
-        elif data_level == thumbnail_level:
-            data_at_data_level = data_at_thumbnail_level
-        else:
-            data_at_data_level = data[data_level]
-
         return self._slice_request_class(
             slice_input=slice_input,
-            data_at_data_level=data_at_data_level,
-            data_at_thumbnail_level=data_at_thumbnail_level,
+            data=data,
+            level_materializer=self.layer._level_materializer,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,
@@ -1007,7 +986,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
             corner_pixels=self.layer.corner_pixels,
             rgb=len(self.layer.data.shape) != self.ndim,
             data_level=data_level,
-            thumbnail_level=thumbnail_level,
+            thumbnail_level=self.layer._thumbnail_level,
             level_shapes=self.layer.level_shapes,
             downsample_factors=self.layer.downsample_factors,
         )
