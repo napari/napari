@@ -104,11 +104,7 @@ class EventedMetaclass(ModelMetaclass):
             k: set(v)
             for k, v in cls.model_config.get('child_dependencies', {}).items()
         }
-        cls.__child_dependencies__ = {
-            **getattr(cls, '__properties_dependence__', {}),
-            **child_dependencies,
-        }
-
+        cls.__child_dependencies__ = child_dependencies
         cls.__field_dependents__ = _get_field_dependents(cls)
         return cls
 
