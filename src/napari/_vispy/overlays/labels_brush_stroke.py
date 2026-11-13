@@ -117,7 +117,9 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     def _start_stroke(self, layer, event) -> None:
         coord = mouse_event_to_labels_coordinate(layer, event)
-        if coord is None:
+        if coord is None or not layer._non_painted_coords_in_bounds(
+            coord, notify=True
+        ):
             return
         self._reset_stroke_state()
         # hold history open across all the discrete events of this stroke
@@ -132,7 +134,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         if not self.overlay.active or event.button == 1:
             return
         coord = mouse_event_to_labels_coordinate(layer, event)
-        if coord is None:
+        if coord is None or not layer._non_painted_coords_in_bounds(coord):
             return
         self._paint_to(layer, coord)
         if self._is_at_start(layer, coord):
@@ -162,7 +164,9 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
         # outline closes cleanly instead of leaving a notch where the cursor
         # re-entered the stop radius
         self._paint_to(layer, np.array(self.overlay.center, dtype=float))
-        if len(self._stroke_points) > 2:
+        if len(
+            self._stroke_points
+        ) > 2 and layer._non_painted_coords_in_bounds(self._stroke_points[0]):
             layer.paint_polygon(self._stroke_points, layer.selected_label)
         layer._commit_stroke()
         self.overlay.active = False  # hides the circle

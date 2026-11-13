@@ -170,12 +170,16 @@ class VispyLabelsPolygonOverlay(LayerOverlayMixin, VispySceneOverlay):
             return
 
         pos = self._get_mouse_coordinates(event)
+        if pos is None or not layer._non_painted_coords_in_bounds(pos):
+            return
         self.overlay.points = self.overlay.points[:-1] + [pos.tolist()]  # pyrefly: ignore [missing-attribute]
 
     @_only_when_enabled
     def _on_mouse_press(self, layer, event) -> None:
         pos = self._get_mouse_coordinates(event)
-        if pos is None:
+        if pos is None or not layer._non_painted_coords_in_bounds(
+            pos, notify=(event.button == 1)
+        ):
             return
         dims_displayed = self._dims_displayed
 

@@ -69,6 +69,7 @@ from napari.utils.events import EmitterGroup, Event
 from napari.utils.events.custom_types import Array
 from napari.utils.misc import StringEnum
 from napari.utils.naming import magic_name
+from napari.utils.notifications import show_info
 from napari.utils.status_messages import format_feature_value
 
 if TYPE_CHECKING:
@@ -815,6 +816,28 @@ class Labels(ScalarFieldBase):
                 )
             slice_coord[i] = resolved
 
+    def _non_painted_coords_in_bounds(
+        self,
+        coord: Sequence[float] | npt.NDArray[Any],
+        *,
+        notify: bool = False,
+    ) -> bool:
+        """Return True if non-painted coords lie within data extent."""
+        if isinstance(self.data, MultiScaleData):
+            return False
+        dims_to_paint = self._get_dims_to_paint()
+        for i, val in enumerate(coord):
+            if i in dims_to_paint:
+                continue
+            if not (0 <= np.round(val) < self.data.shape[i]):
+                if notify:
+                    show_info(
+                        'Cannot edit labels outside the slice extent '
+                        'of the layer.'
+                    )
+                return False
+        return True
+
     @property
     def selected_label(self) -> int:
         """int: Index of selected label."""
@@ -1439,7 +1462,10 @@ class Labels(ScalarFieldBase):
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size
         )
+        drew = False
         for c in interp_coord:
+            if not self._non_painted_coords_in_bounds(c):
+                continue
             if (
                 self._slice_input.ndisplay == 3
                 and self.data[tuple(np.round(c).astype(int))] == 0
@@ -1447,9 +1473,12 @@ class Labels(ScalarFieldBase):
                 continue
             if self._mode in [Mode.PAINT, Mode.ERASE]:
                 self.paint(c, new_label, refresh=False)
+                drew = True
             elif self._mode == Mode.FILL:
                 self.fill(c, new_label, refresh=False)
-        self._partial_labels_refresh()
+                drew = True
+        if drew:
+            self._partial_labels_refresh()
 
     def paint(
         self,
