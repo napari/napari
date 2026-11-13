@@ -84,7 +84,9 @@ def calc_changed_packages(
     command = [
         'git',
         'diff',
+        '--end-of-options',
         base_branch,
+        '--',
         str(
             src_dir
             / 'resources'
