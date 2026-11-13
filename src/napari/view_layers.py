@@ -70,7 +70,8 @@ def _make_viewer_then(
     if isinstance(added, list):
         added = tuple(added)
     for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
+        if arg_val is not None:
+            setattr(viewer.dims, arg_name, arg_val)
     return viewer, added
 
 
@@ -196,8 +197,8 @@ def imshow(
     visible=True,
     viewer=None,
     title='napari',
-    ndisplay=2,
-    order=(),
+    ndisplay=None,
+    order=None,
     show=True,
 ) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
@@ -327,11 +328,13 @@ def imshow(
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. By default 2.
+        Number of displayed dimensions. By default None for default Viewer object
+        behavior or keep the ndisplay of an existing viewer.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. By default None
+        ndisplay is 2 or 3. By default None for default Viewer object behavior or keep
+        the order of an existing viewer.
     axis_labels : list of str, optional
         Dimension names. By default they are labeled with sequential numbers
     show : bool, optional

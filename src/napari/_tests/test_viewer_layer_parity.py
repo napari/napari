@@ -31,5 +31,9 @@ def test_imshow_signature_consistency():
         # data is a required for imshow, but optional for add_image
         if name == 'data':
             continue
+        # ndisplay and order default to None for imshow, but default to 2 and () for
+        # Viewer.__init__
+        if name in ('ndisplay', 'order'):
+            continue
         fail_msg = f'Signature mismatch on {parameter}'
         assert imshow_parameters[name].default == parameter.default, fail_msg
