@@ -15,10 +15,16 @@ from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any
+    from typing import Any, TypeAlias
 
     from napari.layers._data_protocols import LayerDataProtocol
-    from napari.types import FullLayerData
+    from napari.layers._multiscale_data import MultiScaleData
+    from napari.types import ArrayLike, FullLayerData
+
+    # how images_to_stack calls np.stack or dask.array.stack
+    Stacker: TypeAlias = Callable[
+        [Sequence[LayerDataProtocol | MultiScaleData], int], ArrayLike
+    ]
 
 logger = logging.getLogger(__name__)
 
@@ -373,18 +379,16 @@ def images_to_stack(
         )
     else:
         # cast because np.stack is not typed for LayerDataProtocol
-        stacker = cast('Callable[..., Any]', np.stack)
+        stacker = cast('Stacker', np.stack)
 
     if all(multiscale_flags):
         n_scales = len(images[0].multiscale_data)
         new_data = [
-            stacker(
-                [image.multiscale_data[level] for image in images], axis=axis
-            )
+            stacker([image.multiscale_data[level] for image in images], axis)
             for level in range(n_scales)
         ]
     else:
-        new_data = stacker([image.data for image in images], axis=axis)
+        new_data = stacker([image.data for image in images], axis)
 
     # RGB images do not need extra dimensions inserted into metadata
     # They can use the meta dict from one of the source image layers
