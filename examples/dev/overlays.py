@@ -4,15 +4,18 @@ import numpy as np
 from vispy.scene.visuals import Text
 
 import napari
-from napari._vispy.overlays.base import ViewerOverlayMixin, VispyCanvasOverlay
+from napari._vispy.overlays.base import (
+    ViewerOverlayMixin,
+    VispyTiledCanvasOverlay,
+)
 from napari._vispy.utils.visual import overlay_to_visual
-from napari.components.overlays import CanvasOverlay
+from napari.components.overlays import TiledCanvasOverlay
 
 
 # the overlay model should inherit from either CanvasOverlay or SceneOverlay
 # depending on whether it needs to live in "screen space" or "scene space"
 # (i.e: if it should be affected by camera, dims, ndisplay, ...)
-class OrientationOverlay(CanvasOverlay):
+class OrientationOverlay(TiledCanvasOverlay):
     """Orientation marker at one of the cardinal directions of the canvas."""
     text: str
     size: int = 10
@@ -20,7 +23,7 @@ class OrientationOverlay(CanvasOverlay):
 # the vispy overlay class should handle connecting the model to the vispy
 # visual we use the ViewerOverlayMixin because this overlay is attached to the
 # viewer, and not a specific layer
-class VispyOrientationOverlay(ViewerOverlayMixin, VispyCanvasOverlay):
+class VispyOrientationOverlay(ViewerOverlayMixin, VispyTiledCanvasOverlay):
     """Orientation marker at one of the cardinal directions of the canvas."""
     # all arguments are keyword-only. viewer, overlay and parent should always
     # be present.
