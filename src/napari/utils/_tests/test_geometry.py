@@ -65,7 +65,15 @@ def test_project_point_to_plane(
     ],
 )
 def test_rotation_matrix_from_vectors_2d(vec_1, vec_2):
-    rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
+    with pytest.warns(
+        FutureWarning,
+        match='rotation_matrix_from_vectors_2d is deprecated '
+        'and may be removed as early as 2027-Q1',
+    ) as record:
+        rotation_matrix = rotation_matrix_from_vectors_2d(vec_1, vec_2)
+
+    assert len(record) == 1
+    assert record[0].filename == __file__
 
     rotated_1 = rotation_matrix.dot(vec_1)
     unit_rotated_1 = rotated_1 / np.linalg.norm(rotated_1)
