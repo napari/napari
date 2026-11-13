@@ -1,8 +1,17 @@
+from collections.abc import Sequence
+from typing import Any, Literal, TypeAlias, overload
+
 import numpy as np
 import numpy.typing as npt
 
+_VectorF64: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
+_MatrixF64: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+_Matrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[Any]]
 
-def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
+
+def compose_linear_matrix(
+    rotate: npt.ArrayLike, scale: npt.ArrayLike, shear: npt.ArrayLike
+) -> _MatrixF64:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
@@ -17,7 +26,7 @@ def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+        An empty vector implies no scaling.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
@@ -40,8 +49,13 @@ def compose_linear_matrix(rotate, scale, shear) -> npt.NDArray:
 
 
 def infer_ndim(
-    *, scale=None, translate=None, rotate=None, shear=None, linear_matrix=None
-):
+    *,
+    scale: Sequence[float] | npt.NDArray | None = None,
+    translate: Sequence[float] | npt.NDArray | None = None,
+    rotate: npt.ArrayLike | None = None,
+    shear: npt.ArrayLike | None = None,
+    linear_matrix: npt.ArrayLike | None = None,
+) -> int:
     """Infer the dimensionality of a transformation from its input components.
 
     This is most useful when the dimensions of the inputs do not match, either
@@ -66,7 +80,7 @@ def infer_ndim(
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+        An empty vector implies no scaling.
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
@@ -88,7 +102,9 @@ def infer_ndim(
     return ndim
 
 
-def translate_to_vector(translate, *, ndim):
+def translate_to_vector(
+    translate: Sequence[float] | npt.NDArray | None, *, ndim: int
+) -> _VectorF64:
     """Convert a translate input into an n-dimensional transform component.
 
     Parameters
@@ -112,7 +128,9 @@ def translate_to_vector(translate, *, ndim):
     return translate_arr
 
 
-def scale_to_vector(scale, *, ndim):
+def scale_to_vector(
+    scale: Sequence[float] | npt.NDArray | None, *, ndim: int
+) -> _VectorF64:
     """Convert a scale input into an n-dimensional transform component.
 
     Parameters
@@ -136,7 +154,7 @@ def scale_to_vector(scale, *, ndim):
     return scale_arr
 
 
-def rotate_to_matrix(rotate, *, ndim):
+def rotate_to_matrix(rotate: npt.ArrayLike | None, *, ndim: int) -> _MatrixF64:
     """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
@@ -163,21 +181,24 @@ def rotate_to_matrix(rotate, *, ndim):
     return full_rotate_mat
 
 
-def _make_rotate_mat(rotate):
+def _make_rotate_mat(rotate: npt.ArrayLike) -> _Matrix:
+    rotate_arr = np.array(rotate)
     if np.isscalar(rotate):
-        return _make_2d_rotation(rotate)
-    if np.array(rotate).ndim == 1 and len(rotate) == 3:
-        return _make_3d_rotation(*rotate)
-    return np.array(rotate)
+        return _make_2d_rotation(rotate_arr.item())
+    if rotate_arr.ndim == 1 and len(rotate_arr) == 3:
+        return _make_3d_rotation(*rotate_arr)
+    return rotate_arr
 
 
-def _make_2d_rotation(theta_degrees):
+def _make_2d_rotation(theta_degrees: float) -> _MatrixF64:
     """Makes a 2D rotation matrix from an angle in degrees."""
     cos_theta, sin_theta = _cos_sin_degrees(theta_degrees)
     return np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
 
 
-def _make_3d_rotation(alpha_degrees, beta_degrees, gamma_degrees):
+def _make_3d_rotation(
+    alpha_degrees: float, beta_degrees: float, gamma_degrees: float
+) -> _MatrixF64:
     """Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
 
     For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
@@ -212,12 +233,12 @@ def _make_3d_rotation(alpha_degrees, beta_degrees, gamma_degrees):
     return R_alpha @ R_beta @ R_gamma
 
 
-def _cos_sin_degrees(angle_degrees):
+def _cos_sin_degrees(angle_degrees: float) -> tuple[float, float]:
     angle_radians = np.deg2rad(angle_degrees)
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def shear_to_matrix(shear, *, ndim):
+def shear_to_matrix(shear: npt.ArrayLike | None, *, ndim: int) -> _MatrixF64:
     """Convert a shear input into an n-dimensional transform component.
 
     Parameters
@@ -241,24 +262,27 @@ def shear_to_matrix(shear, *, ndim):
     return full_shear_mat
 
 
-def _make_shear_mat(shear):
+def _make_shear_mat(shear: npt.ArrayLike) -> _Matrix:
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
         raise ValueError(
             'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.'
         )
-    if np.array(shear).ndim == 1:
-        return expand_upper_triangular(shear)
+    shear_arr = np.array(shear)
+    if shear_arr.ndim == 1:
+        return expand_upper_triangular(shear_arr)
 
-    if not is_matrix_triangular(shear):
+    if not is_matrix_triangular(shear_arr):
         raise ValueError(
             f'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.'
         )
-    return np.array(shear)
+    return shear_arr
 
 
-def expand_upper_triangular(vector):
+def expand_upper_triangular(
+    vector: Sequence[float] | npt.NDArray,
+) -> _MatrixF64:
     """Expand a vector into an upper triangular matrix.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -287,7 +311,7 @@ def expand_upper_triangular(vector):
     return upper_tri
 
 
-def embed_in_identity_matrix(matrix, ndim):
+def embed_in_identity_matrix(matrix: npt.NDArray, ndim: int) -> _Matrix:
     """Embed an MxM matrix bottom right of larger NxN identity matrix.
 
     Parameters
@@ -313,9 +337,27 @@ def embed_in_identity_matrix(matrix, ndim):
     return full_matrix
 
 
+@overload
 def decompose_linear_matrix(
-    matrix, upper_triangular=True
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    matrix: npt.NDArray, upper_triangular: Literal[True] = ...
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64]: ...
+
+
+@overload
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: Literal[False]
+) -> tuple[_MatrixF64, _VectorF64, _MatrixF64]: ...
+
+
+@overload
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: bool
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64 | _MatrixF64]: ...
+
+
+def decompose_linear_matrix(
+    matrix: npt.NDArray, upper_triangular: bool = True
+) -> tuple[_MatrixF64, _VectorF64, _VectorF64 | _MatrixF64]:
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -332,17 +374,10 @@ def decompose_linear_matrix(
 
     Returns
     -------
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angles are
-        assumed to be in degrees. They can be converted from radians with
-        np.degrees if needed.
-    scale : 1-D array
-        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
-        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
-        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+    rotate : np.array shape (N, N)
+        The rotation matrix.
+    scale : np.array shape (N,)
+        The scale factor of each axis.
     shear : 1-D array or n-D array
         1-D array of upper triangular values or an n-D matrix if lower
         triangular.
@@ -376,7 +411,9 @@ def decompose_linear_matrix(
     return rotate, scale, shear
 
 
-def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
+def shear_matrix_from_angle(
+    angle: float, ndim: int = 3, axes: tuple[int, int] = (-1, 0)
+) -> _MatrixF64:
     """Create a shear matrix from an angle.
 
     Parameters
@@ -399,12 +436,12 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     return matrix
 
 
-def is_matrix_upper_triangular(matrix):
+def is_matrix_upper_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is upper triangular.
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -415,12 +452,12 @@ def is_matrix_upper_triangular(matrix):
     return np.allclose(matrix, np.triu(matrix))
 
 
-def is_matrix_lower_triangular(matrix):
+def is_matrix_lower_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is lower triangular.
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -431,12 +468,12 @@ def is_matrix_lower_triangular(matrix):
     return np.allclose(matrix, np.tril(matrix))
 
 
-def is_matrix_triangular(matrix):
+def is_matrix_triangular(matrix: npt.ArrayLike) -> bool:
     """Check if a matrix is triangular.
 
     Parameters
     ----------
-    matrix : np.ndarray
+    matrix : array-like
         Matrix to be checked.
 
     Returns
@@ -449,7 +486,7 @@ def is_matrix_triangular(matrix):
     )
 
 
-def is_diagonal(matrix, tol: float = 1e-8) -> bool:
+def is_diagonal(matrix: npt.NDArray, tol: float = 1e-8) -> bool:
     """Determine whether a matrix is diagonal up to some tolerance.
 
     Parameters
@@ -470,4 +507,4 @@ def is_diagonal(matrix, tol: float = 1e-8) -> bool:
     if tol == 0:
         return np.count_nonzero(non_diag) == 0
 
-    return np.max(np.abs(non_diag)) <= tol
+    return bool(np.max(np.abs(non_diag)) <= tol)
