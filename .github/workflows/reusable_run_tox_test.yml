@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: ""
+      pytest_addopts:
+        required: false
+        type: string
+        default: ""
       coverage:
         required: false
         type: string
@@ -51,6 +55,7 @@ jobs:
       TOXENV: ${{ inputs.toxenv }}
       NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
       PYVISTA_OFF_SCREEN: True
+      PYTEST_ADDOPTS: ${{ inputs.pytest_addopts }}
       MIN_REQ: ${{ inputs.min_req }}
       FORCE_COLOR: 1
       PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/constraints_py${{ inputs.python_version }}${{ inputs.min_req && '_min_req' }}${{ inputs.constraints_suffix }}.txt
