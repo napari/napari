@@ -50,19 +50,19 @@ class PlaneNormalButtons(QWidget):
         self.z_button = QPushButton('z')
         self.oblique_button = QPushButton('oblique')
         action_manager.bind_button(
-            'napari:orient_plane_normal_along_z',
+            'napari.orient_plane_normal_along_z',
             self.z_button,
         )
         action_manager.bind_button(
-            'napari:orient_plane_normal_along_y',
+            'napari.orient_plane_normal_along_y',
             self.y_button,
         )
         action_manager.bind_button(
-            'napari:orient_plane_normal_along_x',
+            'napari.orient_plane_normal_along_x',
             self.x_button,
         )
         action_manager.bind_button(
-            'napari:orient_plane_normal_along_view_direction_no_gen',
+            'napari.orient_plane_normal_along_view_direction_no_gen',
             self.oblique_button,
         )
 

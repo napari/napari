@@ -83,13 +83,13 @@ def center_cross_on_mouse(
 
 
 action_manager.register_action(
-    name='napari:move_point',
+    name='napari.move_point',
     command=center_cross_on_mouse,
     description='Move dims point to mouse position',
     keymapprovider=ViewerModel,
 )
 
-action_manager.bind_shortcut('napari:move_point', 'C')
+action_manager.bind_shortcut('napari.move_point', 'C')
 
 
 class own_partial:

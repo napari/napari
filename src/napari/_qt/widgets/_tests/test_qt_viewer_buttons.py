@@ -325,7 +325,7 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
         Qt.MouseButton.LeftButton,
         modifiers,
     )
-    action_manager_mock.trigger.assert_called_with('napari:rotate_layers')
+    action_manager_mock.trigger.assert_called_with('napari.rotate_layers')
 
     trigger_mock = Mock()
     monkeypatch.setattr(
@@ -334,7 +334,7 @@ def test_transpose_rotate_button(monkeypatch, qt_viewer_buttons, qtbot):
     qtbot.mouseClick(
         viewer_buttons.transposeDimsButton, Qt.MouseButton.LeftButton
     )
-    trigger_mock.assert_called_with('napari:transpose_axes')
+    trigger_mock.assert_called_with('napari.transpose_axes')
 
 
 @pytest.fixture

@@ -188,7 +188,7 @@ class QtLayerControls(QFrame):
         When shortcuts are modifed/added/removed via the action manager, the
         tooltip will be updated to reflect the new shortcut.
         """
-        action_name = f'napari:{action_name}'
+        action_name = f'napari.{action_name}'
         btn = QtModeRadioButton(layer, btn_name, mode, **kwargs)
         action_manager.bind_button(
             action_name,

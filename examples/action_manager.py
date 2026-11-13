@@ -60,7 +60,7 @@ def register_action():
     # By convention (may be enforced later), we do give an action name which is prefixed
     # by the name of the package it is defined in, here napari,
     action_manager.register_action(
-        name='napari:rotate45',
+        name='napari.rotate45',
         command=rotate45,
         description='Rotate layer 0 by 45deg',
         keymapprovider=ViewerModel,
@@ -70,12 +70,12 @@ def register_action():
 def bind_shortcut():
     # note that the tooltip of the corresponding button will be updated to
     # remove the shortcut.
-    action_manager.unbind_shortcut('napari:reset_view')  # Control-R
-    action_manager.bind_shortcut('napari:rotate45', 'Control-R')
+    action_manager.unbind_shortcut('napari.reset_view')  # Control-R
+    action_manager.bind_shortcut('napari.rotate45', 'Control-R')
 
 
 def bind_button():
-    action_manager.bind_button('napari:rotate45', rot_button)
+    action_manager.bind_button('napari.rotate45', rot_button)
 
 
 # we can all bind_shortcut or register_action or bind_button in any order;
@@ -104,8 +104,8 @@ action_manager._debug(True)
 # allow toggling between many keymaps.
 
 settings = {
-        'napari:activate_points_add_mode' : '=',
-        'napari:activate_points_select_mode': '-',
+        'napari.activate_points_add_mode' : '=',
+        'napari.activate_points_select_mode': '-',
 }
 
 

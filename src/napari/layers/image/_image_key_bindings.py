@@ -102,7 +102,7 @@ def orient_plane_normal_along_view_direction_no_gen(
 # register the non-generator without a keybinding
 # this way the generator version owns the keybinding
 action_manager.register_action(
-    name='napari:orient_plane_normal_along_view_direction_no_gen',
+    name='napari.orient_plane_normal_along_view_direction_no_gen',
     command=orient_plane_normal_along_view_direction_no_gen,
     description='Orient plane normal along view direction button',
     keymapprovider=None,

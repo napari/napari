@@ -1136,7 +1136,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         for fun, mode_ in layer_to_func_and_mode.get(layer.__class__, []):
             if mode_ == layer.mode:
                 continue
-            action_name = f'napari:{fun.__name__}'
+            action_name = f'napari.{fun.__name__}'
             desc = action_manager._actions[action_name].description.lower()
             if not shortcuts.get(action_name, []):
                 continue
