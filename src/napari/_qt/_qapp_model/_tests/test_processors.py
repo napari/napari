@@ -1,3 +1,4 @@
+from concurrent.futures import Future
 from typing import Optional, Union
 from unittest.mock import MagicMock
 
@@ -15,6 +16,7 @@ from napari._qt._qapp_model.injection._qprocessors import (
 from napari.components import ViewerModel
 from napari.layers import Image
 from napari.types import ImageData, LabelsData
+from napari.utils.notifications import notification_manager
 
 
 def test_add_plugin_dock_widget(qtbot):
@@ -110,6 +112,46 @@ def test_add_layer_to_viewer():
 def test_add_future_data():
     future = MagicMock()
     viewer = MagicMock()
-    _add_future_data(future, Union[ImageData, LabelsData])
+    with pytest.raises(RuntimeError, match='No current `Viewer` found'):
+        _add_future_data(future, Union[ImageData, LabelsData])
     _add_future_data(future, Union[ImageData, LabelsData], viewer=viewer)
-    assert future.add_done_callback.call_count == 2
+    viewer.window._qt_viewer._add_future.assert_called_once()
+    added, add_result = viewer.window._qt_viewer._add_future.call_args.args
+    assert added is future
+    assert add_result.func is _add_layer_data_tuples_to_viewer
+    assert add_result.keywords == {
+        'return_type': Union[ImageData, LabelsData],
+        'source': None,
+    }
+
+
+@pytest.mark.parametrize('outcome', ['result', 'cancelled', 'error'])
+def test_add_future_data_already_done(
+    make_napari_viewer, monkeypatch, caplog, outcome
+):
+    """A finished future adds a layer, does nothing, or shows the error."""
+    receive_error = MagicMock()
+    monkeypatch.setattr(notification_manager, 'receive_error', receive_error)
+    viewer = make_napari_viewer()
+    future = Future()
+    error = ValueError('boom')
+    if outcome == 'result':
+        future.set_result(np.zeros((10, 10)))
+    elif outcome == 'cancelled':
+        future.cancel()
+    else:
+        future.set_exception(error)
+
+    _add_future_data(
+        future, Optional[ImageData], _from_tuple=False, viewer=viewer
+    )
+
+    assert len(viewer.layers) == (1 if outcome == 'result' else 0)
+    if outcome == 'error':
+        receive_error.assert_called_once_with(
+            ValueError, error, error.__traceback__
+        )
+    else:
+        receive_error.assert_not_called()
+    assert 'exception calling callback' not in caplog.text
+    assert future not in viewer.window._qt_viewer._futures
