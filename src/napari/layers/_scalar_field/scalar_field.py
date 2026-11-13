@@ -4,7 +4,7 @@ import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from functools import lru_cache
-from typing import TYPE_CHECKING, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -45,7 +45,10 @@ from napari.utils.transforms import Affine
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    import pint
+
     from napari.components import Dims
+    from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
 
     PixelValue: TypeAlias = (
         np.number
@@ -216,29 +219,40 @@ class ScalarFieldBase(Layer, ABC):
 
     def __init__(
         self,
-        data,
+        data: Any,
         *,
-        affine=None,
-        axis_labels=None,
-        blending='translucent',
-        cache=True,
-        custom_interpolation_kernel_2d=None,
-        depiction='volume',
-        experimental_clipping_planes=None,
-        metadata=None,
-        multiscale=None,
-        name=None,
-        ndim=None,
-        opacity=1.0,
-        plane=None,
-        projection_mode='none',
-        rendering='mip',
-        rotate=None,
-        scale=None,
-        shear=None,
-        translate=None,
-        units=None,
-        visible=True,
+        affine: npt.ArrayLike | Affine | None = None,
+        axis_labels: Sequence[str] | None = None,
+        blending: str = 'translucent',
+        cache: bool = True,
+        custom_interpolation_kernel_2d: npt.ArrayLike | None = None,
+        depiction: str = 'volume',
+        experimental_clipping_planes: dict
+        | ClippingPlane
+        | list[ClippingPlane | dict]
+        | ClippingPlaneList
+        | None = None,
+        metadata: dict | None = None,
+        multiscale: bool | None = None,
+        name: str | None = None,
+        ndim: int | None = None,
+        opacity: float = 1.0,
+        plane: dict | SlicingPlane | None = None,
+        projection_mode: str = 'none',
+        rendering: str = 'mip',
+        rotate: float
+        | Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        scale: Sequence[float] | npt.NDArray | None = None,
+        shear: Sequence[float]
+        | Sequence[Sequence[float]]
+        | npt.NDArray
+        | None = None,
+        translate: Sequence[float] | npt.NDArray | None = None,
+        units: Sequence[str | pint.Unit | None] | None = None,
+        visible: bool = True,
     ) -> None:
         if name is None and data is not None:
             name = magic_name(data)
@@ -496,7 +510,10 @@ class ScalarFieldBase(Layer, ABC):
             self._data_level = 0
 
     def _update_level_and_corners(
-        self, data_bbox_int, shape_threshold, displayed_axes
+        self,
+        data_bbox_int: np.ndarray,
+        shape_threshold: tuple[int, ...],
+        displayed_axes: list[int],
     ) -> None:
         """Update the data level and corner pixels for the current viewport.
 
@@ -662,11 +679,13 @@ class ScalarFieldBase(Layer, ABC):
         self.events.plane()
 
     @property
-    def custom_interpolation_kernel_2d(self):
+    def custom_interpolation_kernel_2d(self) -> npt.NDArray[np.float32]:
         return self._custom_interpolation_kernel_2d
 
     @custom_interpolation_kernel_2d.setter
-    def custom_interpolation_kernel_2d(self, value) -> None:
+    def custom_interpolation_kernel_2d(
+        self, value: npt.ArrayLike | None
+    ) -> None:
         if value is None:
             value = [[1]]
         self._custom_interpolation_kernel_2d = np.array(value, np.float32)
@@ -690,11 +709,11 @@ class ScalarFieldBase(Layer, ABC):
         """
         raise NotImplementedError
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         raise NotImplementedError
 
     def _get_value(
-        self, position
+        self, position: npt.ArrayLike
     ) -> PixelValue | tuple[int, PixelValue | None] | None:
         """Value of the data at a position in data coordinates.
 
@@ -713,7 +732,7 @@ class ScalarFieldBase(Layer, ABC):
             # the tile
             coord = self._transforms['tile2data'].inverse(position)
         else:
-            coord = position
+            coord = np.asarray(position)
 
         coord = np.round(coord).astype(int)
 
@@ -804,7 +823,7 @@ class ScalarFieldBase(Layer, ABC):
         return None
 
     @abstractmethod
-    def _calculate_value_from_ray(self, values):
+    def _calculate_value_from_ray(self, values: npt.NDArray) -> Any:
         raise NotImplementedError
 
     def _get_value_3d(
