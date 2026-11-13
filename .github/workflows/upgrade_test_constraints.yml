@@ -37,6 +37,11 @@
 #     Changes will not be pushed to the `napari/napari` repository.
 #     If pull_request triggers this workflow, then this will contain a PR branch.
 #     Changes will be only accessible as artifacts.
+# - The work splits into two jobs. The `upgrade` job checks out the target
+#   branch and compiles the constraints. It holds no secrets. The `push` job
+#   runs only code from this workflow's own checkout. It takes the compiled
+#   files from the artifact, copies them into a fresh checkout of the target
+#   branch, and pushes them with the bot tokens.
 # - If a comment triggers this workflow,
 #   then we add eyes reaction to the comment to show that the workflow has started.
 #   (add_eyes job in constraints_comment_trigger.yml)
@@ -57,60 +62,71 @@ on:
     paths:
       - '.github/workflows/upgrade_test_constraints.yml'
       - 'tools/compile_constraints.sh'
-      - 'tools/create_pr_or_update_existing_one.py'
 
 jobs:
   upgrade:
+    name: Compile constraints
+    # This job checks out the target branch, so it holds no secrets.
     permissions:
-      pull-requests: write
-      issues: write
-    name: Upgrade & Open Pull Request
+      contents: read
     runs-on: ubuntu-latest
+    outputs:
+      full_name: ${{ steps.target.outputs.repository }}
+      branch: ${{ steps.target.outputs.branch }}
+      head_sha: ${{ steps.target.outputs.sha }}
     steps:
-      - name: Get PR details
-        # extract PR number and branch name from issue_comment event
-        if: github.event_name == 'issue_comment'
-        run: |
-          PR_number=${{ github.event.issue.number }}
-          PR_data=$(curl \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_number" \
-          )
-
-          FULL_NAME=$(echo "${PR_data}"  | jq -r .head.repo.full_name)
-          echo "FULL_NAME=$FULL_NAME" >> "$GITHUB_ENV"
-
-          BRANCH=$(echo "${PR_data}"  | jq -r .head.ref)
-          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
-
+      - name: Resolve target revision
+        # jq -e fails the step when the pull request's head repository is
+        # gone. The token raises the API rate limit.
+        id: target
+        if: github.event_name != 'pull_request'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get repo info
-        # when schedule or workflow_dispatch triggers workflow, then we need to get info about which branch to use
-        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
+          PR_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          echo "FULL_NAME=${{ github.repository }}" >> "$GITHUB_ENV"
-          echo "BRANCH=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          set -o pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "issue_comment" ]]; then
+            PR_DATA=$(curl --fail --silent --show-error \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+            jq -e '.head.repo.full_name' > /dev/null <<< "$PR_DATA"
+            jq -r '.head | "repository=\(.repo.full_name)\nbranch=\(.ref)\nsha=\(.sha)"' <<< "$PR_DATA" >> "$GITHUB_OUTPUT"
+          else
+            echo "repository=$GITHUB_REPOSITORY" >> "$GITHUB_OUTPUT"
+            echo "branch=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Disable symlinks
+        # A symlink in the target tree could point a file read or write at a
+        # file outside it. git now checks a symlink out as a plain file.
+        run: git config --global core.symlinks false
+
       - name: Clone target repo (remote)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: github.event_name == 'issue_comment'
+        if: github.event_name != 'pull_request'
         with:
           path: napari_repo  # place in a named directory
-          repository: ${{ env.FULL_NAME }}
-          ref: ${{ env.BRANCH }}
-          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
-          # Set credentials explicity to 'true'
-          # In this scenario, push changes to the bot repo to allow a user, who is not a collaborator,
-          # to get the changes without access to artifacts.
-          # This allows a contributor to manually open a PR to their fork.
-          persist-credentials: 'true'
+          repository: ${{ steps.target.outputs.repository }}
+          ref: ${{ steps.target.outputs.branch }}
+          persist-credentials: 'false'
+
+      - name: Check the target commit
+        if: github.event_name != 'pull_request'
+        env:
+          HEAD_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          cd napari_repo
+          if [[ "$(git rev-parse HEAD)" != "${HEAD_SHA}" ]]; then
+            echo "::error::the target branch moved since it was resolved"
+            exit 1
+          fi
 
       - name: Clone target repo (pull request)
         # we need separate step as passing empty token to actions/checkout@v4 will not work
@@ -120,17 +136,14 @@ jobs:
           path: napari_repo  # place in a named directory
           persist-credentials: 'false'  # Can be set to false as cloning the repo on a pull_request trigger does not require a push/change
 
-      - name: Clone target repo (main)
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: github.event_name != 'issue_comment' && github.event_name != 'pull_request'
-        with:
-          path: napari_repo  # place in a named directory
-          repository: ${{ env.FULL_NAME }}
-          ref: ${{ env.BRANCH }}
-          token: ${{ secrets.GHA_TOKEN_BOT_REPO }}
-          # Explicitly persist credentials and set to 'true'
-          # This action pushes changes to the bot repo and then opens a PR to the napari repo.
-          persist-credentials: 'true'
+      - name: Refuse symlinks in the target tree
+        # The upload step follows a symlink to its target.
+        run: |
+          cd napari_repo
+          if git ls-files --stage | grep -q '^120000 '; then
+            echo "::error::the target branch tracks symlinks, which this workflow does not support"
+            exit 1
+          fi
 
       - name: Clone napari/napari
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -139,16 +152,11 @@ jobs:
           path: napari_main
           persist-credentials: 'false'
 
-      - name: Add napari-bot/napari to napari_repo upstreams
-        run: |
-          cd napari_repo
-          git remote -v
-          git remote add napari-bot https://github.com/napari-bot/napari.git
-          git remote -v
       - name: Set up Python 3.12
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
+          enable-cache: false
 
 
       - name: Upgrade Python dependencies
@@ -156,11 +164,15 @@ jobs:
         # there is no risk of leaking tokens as pull_request triggered job
         # do not have access to secrets
         run: |
-          if [[ "${{ github.event.name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             bash napari_repo/tools/compile_constraints.sh napari_repo/
           else
             bash napari_main/tools/compile_constraints.sh napari_repo/
           fi
+        env:
+          # uv settings in the target tree are ignored, so uv may not fetch
+          # an interpreter that such settings would name.
+          UV_PYTHON_DOWNLOADS: never
 
       - name: Upload constraints
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -175,10 +187,103 @@ jobs:
         env:
           UV_CONSTRAINT: napari_repo/resources/constraints/constraints_py3.12.txt
 
-      - name: Create commit
+  push:
+    name: Push constraints & open pull request
+    # This job runs only code from this workflow's own checkout, never from
+    # the target branch. The target branch is data here: the job copies the
+    # compiled files into it and commits them.
+    needs: upgrade
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+    env:
+      FULL_NAME: ${{ needs.upgrade.outputs.full_name }}
+      BRANCH: ${{ needs.upgrade.outputs.branch }}
+      HEAD_SHA: ${{ needs.upgrade.outputs.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Disable symlinks
+        # A symlink in the target tree could point a file read or write at a
+        # file outside it. git now checks a symlink out as a plain file.
+        run: git config --global core.symlinks false
+
+      - name: Clone target repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: napari_repo  # place in a named directory
+          repository: ${{ env.FULL_NAME }}
+          ref: ${{ env.BRANCH }}
+          persist-credentials: 'false'
+
+      - name: Check the target tree
+        # The compile job recorded the commit it used. A branch that moved
+        # since then stops the run. Tracked symlinks stop it too.
         run: |
-          uv run tools/create_pr_or_update_existing_one.py
+          cd napari_repo
+          if [[ "$(git rev-parse HEAD)" != "${HEAD_SHA}" ]]; then
+            echo "::error::the target branch moved since the constraints were compiled"
+            exit 1
+          fi
+          if git ls-files --stage | grep -q '^120000 '; then
+            echo "::error::the target branch tracks symlinks, which this workflow does not support"
+            exit 1
+          fi
+
+      - name: Add napari-bot/napari to napari_repo upstreams
+        # The credential helper holds no token. git runs it at push time,
+        # and it reads the bot token from the environment of that step. The
+        # empty first value drops every helper that the runner configures.
+        run: |
+          cd napari_repo
+          git remote -v
+          git remote add napari-bot https://github.com/napari-bot/napari.git
+          git remote -v
+          git config --local credential.https://github.com/napari-bot/napari.git.helper ''
+          # The helper must reach git unexpanded; git evaluates it at push time.
+          # shellcheck disable=SC2016
+          git config --local --add credential.https://github.com/napari-bot/napari.git.helper \
+            '!f() { if [ "$1" = get ]; then printf "%s\n" "username=x-access-token" "password=${GHA_TOKEN_BOT_REPO}"; fi; }; f'
+
+      - name: Download constraints
+        # The artifact root is resources/, the common parent of the upload
+        # patterns. The download stays outside both checkouts.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: constraints
+          path: ${{ runner.temp }}/constraints
+
+      - name: Copy constraints into the target tree
+        # Only files that this checkout tracks are copied. A new constraints
+        # file needs a tracked placeholder here before the bot can update it.
+        run: |
+          find "${RUNNER_TEMP}/constraints" -type f | while read -r source; do
+            file="resources/${source#"${RUNNER_TEMP}/constraints/"}"
+            if git ls-files --error-unmatch "${file}" > /dev/null 2>&1; then
+              install -m 0644 "${source}" "napari_repo/${file}"
+            else
+              echo "skip ${file}: not tracked"
+            fi
+          done
+
+      - name: Set up Python 3.12
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: false
+
+      - name: Create commit
+        # The push step alone receives the bot token. The credential helper
+        # of napari_repo reads it from the process environment, so it never
+        # lands in a file on the runner.
+        run: uv run tools/create_pr_or_update_existing_one.py
         env:
+            GHA_TOKEN_BOT_REPO: ${{ secrets.GHA_TOKEN_BOT_REPO }}
             GHA_TOKEN_MAIN_REPO: ${{ secrets.GHA_TOKEN_NAPARI_BOT_MAIN_REPO }}
             PR_NUMBER: ${{ github.event.issue.number }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

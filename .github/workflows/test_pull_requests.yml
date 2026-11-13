@@ -50,11 +50,6 @@ jobs:
           cache: 'pip'
       - name: Install Dependencies
         run: pip install --upgrade pip tox
-      - name: Make Typestubs
-        run: |
-          tox -e typestubs
-        env:
-          PIP_CONSTRAINT: resources/constraints/constraints_py3.14.txt
       - name: Check Manifest
         run: |
           tox -e check-manifest

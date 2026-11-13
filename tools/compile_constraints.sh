@@ -105,6 +105,19 @@ else
   fi
 fi
 
+# uv builds an editable requirement even with --no-build, so no input file
+# may carry a requirement option.
+for input_file in \
+  resources/constraints/version_denylist.txt \
+  resources/constraints/version_denylist_examples.txt \
+  resources/constraints/napari_exclude.txt \
+  resources/requirements_pyrefly.in; do
+  if grep -qE '^[[:space:]]*-' "${input_file}"; then
+    echo "Error: ${input_file} contains a requirement option line" >&2
+    exit 1
+  fi
+done
+
 set -x
 
 # Explanation of below commands
@@ -116,7 +129,10 @@ set -x
 # --extra pyqt6 etc - names of extra sections from pyproject.toml that should be checked for the dependencies list (maybe we could create a super extra section to collect them all in)
 pyproject_toml="pyproject.toml"
 constraints="resources/constraints"
-flags=(--quiet --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude ${constraints}/napari_exclude.txt)
+# --no-build: uv reads metadata from wheels and static files only and runs
+# no build backend. --no-config and --no-sources ignore uv settings in the
+# tree under compilation.
+flags=(--quiet --no-build --no-config --no-sources --extra pyqt6 --extra pyside6 --extra testing --group testing_extra --extra all_optional --exclude ${constraints}/napari_exclude.txt)
 
 for pyv in 3.11 3.12 3.13 3.14; do
   uv pip compile --python-version ${pyv} --output-file ${constraints}/constraints_py${pyv}.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt "${flags[@]}"
@@ -124,4 +140,4 @@ done
 
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_examples.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group gallery "${flags[@]}"
 uv pip compile --python-version 3.12 --output-file ${constraints}/constraints_py3.12_docs.txt "${upgrade_flag[@]}" ${pyproject_toml} ${constraints}/version_denylist.txt ${constraints}/version_denylist_examples.txt --group docs "${flags[@]}"
-uv pip compile --python-version 3.12 --output-file resources/requirements_pyrefly.txt "${upgrade_flag[@]}" resources/requirements_pyrefly.in
+uv pip compile --python-version 3.12 --no-build --no-config --no-sources --output-file resources/requirements_pyrefly.txt "${upgrade_flag[@]}" resources/requirements_pyrefly.in
