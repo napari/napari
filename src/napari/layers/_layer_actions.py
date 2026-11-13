@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from collections.abc import Collection
 
     from napari.components import LayerList
-    from napari.layers._data_protocols import LayerDataProtocol
     from napari.types import ArrayLike
 
 
@@ -193,7 +192,7 @@ def _convert_dtype(ll: LayerList, mode: str = 'int64') -> None:
             'Data type conversion only implemented for non-multiscale labels'
         )
 
-    # non-multiscale labels data is always array-like
+    # np.min and astype are typed for arrays, not for LayerDataProtocol
     data = cast('npt.NDArray', layer.data)
     target_info = np.iinfo(mode)
     if np.min(data) < target_info.min or np.max(data) > target_info.max:
@@ -201,7 +200,7 @@ def _convert_dtype(ll: LayerList, mode: str = 'int64') -> None:
             'Labeling contains values outside of the target data type range.'
         )
 
-    layer.data = cast('LayerDataProtocol', data.astype(mode))
+    layer.data = data.astype(mode)
 
 
 def _project_data(data: ArrayLike, *, axis: int, mode: str) -> ArrayLike:

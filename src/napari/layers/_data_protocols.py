@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import EllipsisType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,17 +15,8 @@ _OBJ_NAMES = set(dir(Protocol))
 _OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 
 if TYPE_CHECKING:
-    from enum import Enum
-
-    from numpy.typing import DTypeLike
-
-    # https://github.com/python/typing/issues/684#issuecomment-548203158
-    class ellipsis(Enum):
-        Ellipsis = '...'
-
-    Ellipsis = ellipsis.Ellipsis  # noqa: A001
-else:
-    ellipsis = type(Ellipsis)
+    import numpy as np
+    import numpy.typing as npt
 
 
 def _raise_protocol_error(obj: Any, protocol: type) -> None:
@@ -36,7 +28,7 @@ def _raise_protocol_error(obj: Any, protocol: type) -> None:
     raise TypeError(message)
 
 
-Index = Union[int, slice, ellipsis]
+Index = Union[int, slice, EllipsisType]
 
 
 @runtime_checkable
@@ -60,7 +52,7 @@ class LayerDataProtocol(Protocol):
     """
 
     @property
-    def dtype(self) -> DTypeLike:
+    def dtype(self) -> np.dtype[Any]:
         """Data type of the array elements."""
 
     @property
@@ -68,7 +60,9 @@ class LayerDataProtocol(Protocol):
         """Array dimensions."""
 
     def __getitem__(
-        self, key: Index | tuple[Index, ...] | LayerDataProtocol
+        self,
+        key: Index | tuple[Index, ...] | npt.NDArray[np.integer | np.bool_],
+        /,
     ) -> LayerDataProtocol:
         """Returns self[key]."""
 

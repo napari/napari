@@ -327,7 +327,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if contrast_limits is not None:
             self._contrast_limits_range = contrast_limits
         else:
-            self._contrast_limits_range = calc_data_range(self._vertex_values)  # pyrefly: ignore [bad-argument-type]
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
 
         self._contrast_limits = self._contrast_limits_range
         self.colormap = colormap
@@ -398,7 +398,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self, mode='data', percentiles: tuple[float, float] | None = None
     ) -> tuple[float, float]:
         return calc_data_range(
-            self.vertex_values,  # pyrefly: ignore[bad-argument-type]
+            self.vertex_values,
             percentiles=percentiles,
         )
 
