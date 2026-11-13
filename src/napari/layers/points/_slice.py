@@ -99,6 +99,12 @@ class _PointSliceRequest:
     def _get_slice_data(
         self, not_disp: list[int]
     ) -> tuple[npt.NDArray, npt.NDArray]:
+        if not self.shown.size:
+            # shortcut if no points are shown
+            return (
+                np.empty(0, dtype=int),
+                np.empty(0, dtype=float),
+            )
 
         point, m_left, m_right = self.data_slice[not_disp].as_array()
 
@@ -115,66 +121,78 @@ class _PointSliceRequest:
         low[too_thin_slice] -= 0.5
         high[too_thin_slice] += 0.5
 
-        data_not_disp = self.data[:, not_disp]
-        inside_slice = np.all(
-            (data_not_disp >= low) & (data_not_disp <= high), axis=1
-        )
-        visible = np.where(inside_slice & self.shown)[0].astype(int)
+        # only operate on points that are shown
+        data_not_disp = self.data[self.shown][:, not_disp]
+        dist_from_point = data_not_disp - point
+        dist_from_low = data_not_disp - low
+        dist_from_high = data_not_disp - high
+        below_low = dist_from_low <= 0
+        above_high = dist_from_high >= 0
+        inside_slice = np.all(~below_low & ~above_high, axis=1)
 
-        if not visible.size:
+        if not inside_slice.size and self.projection_mode in (
+            PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK,
+        ):
+            # nothing is inside the slice and nothing will be recovered by the spherical spills
             return (
                 np.empty(0, dtype=int),
                 np.empty(0, dtype=float),
             )
 
-        size = self.size[visible]
+        size = self.size[self.shown]
 
         if self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
-            PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.NONE,
+            PointsProjectionMode.ALL,
         ):
-            # our rescaling is relative to the center of the slice, in each dimension
-            dist_from_point = data_not_disp[visible] - point
-            if self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
-                # linear rescaling, closest to the old out_of_slice_display implementation
+            size = size[inside_slice]
+        elif self.projection_mode == PointsProjectionMode.RESCALE_LINEAR:
+            dist = dist_from_point[inside_slice]
+            # margins can be different, so we need to treat low/high distance independently
+            slice_end = np.where(dist < 0, low - point, high - point)
+            # we multiply the scales from each dimension into a single one
+            scale = np.prod(1 - (dist / slice_end), axis=1)
+            size = size[inside_slice] * scale
+        elif self.projection_mode in (
+            PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK,
+        ):
+            # we include points whose spherical extent "spills" into the slice
+            radius = size / 2
 
-                # margins can be different, so we need to treat low/high distance independently
-                slice_end = np.where(
-                    dist_from_point < 0, low - point, high - point
-                )
-                # we multiply the scales from each dimension into a single one
-                scale = np.prod(1 - dist_from_point / slice_end, axis=1)
-                size = size * scale
-            elif (
-                self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL
-            ):
-                # This follows a spherical decay, meaning that while a point's poisition
-                # may be in the slice, if the sphere centered on it does not intersect
-                # the center of the slice, it will be discarded
-
-                # the length of the radius segment cut by the intersection with the
-                # slice center (per dimension) is dist_from_point. When bigger than size
-                # in any dimension, then there is no intersection!
-                radius = size / 2
+            if self.projection_mode == PointsProjectionMode.RESCALE_SPHERICAL:
                 radius_segment = np.abs(dist_from_point)
-
-                # discard points whose radius is bigger than the distance to the slice
-                # (no intersection between the sphere and the slice center)
-                valid = np.all(radius_segment < radius[:, None], axis=1)
-                radius_segment = radius_segment[valid]
-                radius = radius[valid]
-
-                # reduce to one dimension by getting the ndimensional "in slice portion"
-                # of the point, and multiplying them together
-                out_of_slice_portion = np.prod(
-                    1 - (radius_segment / radius[:, None]), axis=1
+            elif (
+                self.projection_mode
+                == PointsProjectionMode.RESCALE_SPHERICAL_THICK
+            ):
+                radius_segment = np.where(
+                    below_low,
+                    np.abs(dist_from_low),
+                    np.where(above_high, np.abs(dist_from_high), 0),
                 )
-                radius_segment = (1 - out_of_slice_portion) * radius
 
-                # radius of the "disc"
-                disc_radius = np.sqrt(radius**2 - radius_segment**2)
-                size = disc_radius * 2
+            # only work on points intersecting the point or margins to calculate the rescaled size
+            inside_slice = np.all(radius_segment < radius[:, None], axis=1)
+            radius_segment = radius_segment[inside_slice]
+            radius = radius[inside_slice]
 
-                visible = visible[valid]
+            # reduce to one dimension by getting the ndimensional "in slice portion"
+            # of the point, and multiplying them together
+            out_of_slice_portion = np.prod(
+                1 - (radius_segment / radius[:, None]), axis=1
+            )
+            radius_segment = (1 - out_of_slice_portion) * radius
 
-        return visible, size
+            # radius of the "disc"
+            disc_radius = np.sqrt(radius**2 - radius_segment**2)
+            size = disc_radius * 2
+        else:
+            raise NotImplementedError(
+                f'projection mode {self.projection_mode} is not implemented'
+            )
+
+        idx_visible = np.where(inside_slice)[0].astype(int)
+
+        return idx_visible, size

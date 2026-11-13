@@ -82,7 +82,7 @@ _OUT_SLICE_DISP_WARNING_MSG = (
     'out_of_slice_display (previously "n_dimensional") is deprecated since 0.9.0 (superseded by projection_mode). '
     'To imitate the previous behaviour, use thick slices by right-clicking on the dims scroll bar '
     '(see https://napari.org/stable/guides/rendering.html#margins-and-thick-slicing). '
-    'Setting projection_mode to rescale_spherical may be more physically accurate '
+    'Setting projection_mode to `spherical` may be more physically accurate '
     'if your points correspond directly to objects with a physical size. '
 )
 
@@ -874,8 +874,8 @@ class Points(Layer):
             stacklevel=2,
         )
         return self._projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
             PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK,
         )
 
     @out_of_slice_display.setter
@@ -887,17 +887,17 @@ class Points(Layer):
                 stacklevel=2,
             )
         old = self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
             PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK,
         )
         self.projection_mode = (
-            PointsProjectionMode.RESCALE_LINEAR
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK
             if out_of_slice_display
             else PointsProjectionMode.ALL
         )
         new = self.projection_mode in (
-            PointsProjectionMode.RESCALE_LINEAR,
             PointsProjectionMode.RESCALE_SPHERICAL,
+            PointsProjectionMode.RESCALE_SPHERICAL_THICK,
         )
         if old != new:
             self.events.out_of_slice_display()
