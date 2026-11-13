@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import threading
+from typing import TYPE_CHECKING, Any
 
 from qtpy import QtCore
 from qtpy.QtWidgets import (
@@ -13,6 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import ensure_main_thread
 
 from napari.utils.progress import cancelable_progress, progress
 
@@ -53,6 +55,10 @@ class QtLabeledProgressBar(QWidget):
 
         self.setLayout(base_layout)
 
+        self._pending_updates: dict[str, Any] = {}
+        self._pending_lock = threading.Lock()
+        self._applying_updates = False
+
     def setRange(self, min_val: int, max_val: int) -> None:
         self.qt_progress_bar.setRange(min_val, max_val)
 
@@ -67,22 +73,63 @@ class QtLabeledProgressBar(QWidget):
         QApplication.processEvents()
 
     def _set_value(self, event: Event) -> None:
-        self.setValue(event.value)
+        self._queue_update('value', event.value)
 
     def _get_value(self) -> int:
         return self.qt_progress_bar.value()
 
     def _set_description(self, event: Event) -> None:
-        self.setDescription(event.value)
+        self._queue_update('description', event.value)
 
     def _make_indeterminate(self, event: Event) -> None:
-        self.setRange(0, 0)
+        self._queue_update('range', (0, 0))
 
     def _set_eta(self, event: Event) -> None:
-        self.eta_label.setText(event.value)
+        self._queue_update('eta', event.value)
 
     def _set_total(self, event: Event) -> None:
-        self.setRange(0, event.value)
+        self._queue_update('range', (0, event.value))
+
+    def _queue_update(self, kind: str, value: Any) -> None:
+        # Updates may come fast from a background thread. Keep only the
+        # latest ones and apply them together on the main thread.
+        with self._pending_lock:
+            needs_apply = not self._pending_updates
+            self._pending_updates[kind] = value
+        if needs_apply:
+            self._apply_pending_updates()
+
+    @ensure_main_thread
+    def _apply_pending_updates(self) -> None:
+        # Qt events processed in `setValue` can call this again. Let the
+        # running call do the work, so calls never pile up.
+        if self._applying_updates:
+            return
+        self._applying_updates = True
+        try:
+            while True:
+                with self._pending_lock:
+                    updates, self._pending_updates = self._pending_updates, {}
+                if not updates:
+                    break
+                self._apply_updates(updates)
+        except RuntimeError as e:
+            # A last update (e.g. the ETA sent when `progress` closes) can
+            # arrive after the bar was closed and deleted. Ignore it.
+            if 'C++ object' not in str(e):
+                raise
+        finally:
+            self._applying_updates = False
+
+    def _apply_updates(self, updates: dict[str, Any]) -> None:
+        if 'range' in updates:
+            self.setRange(*updates['range'])
+        if 'value' in updates:
+            self.setValue(updates['value'])
+        if 'description' in updates:
+            self.setDescription(updates['description'])
+        if 'eta' in updates:
+            self.eta_label.setText(updates['eta'])
 
     def _cancel(self) -> None:
         if self.progress is None:
