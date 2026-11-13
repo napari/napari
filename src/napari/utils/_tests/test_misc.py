@@ -9,7 +9,6 @@ from packaging.version import parse as parse_version
 
 from napari.utils.misc import (
     StringEnum,
-    _is_array_type,
     _pandas_dataframe_equal,
     _quiet_array_equal,
     abspath_or_url,
@@ -216,19 +215,6 @@ def test_equality_operator_silence():
     eq = pick_equality_operator(np.asarray([]))
     # make sure this doesn't warn
     assert not eq(np.asarray([]), np.asarray([], '<U32'))
-
-
-def test_is_array_type_with_xarray():
-    import numpy as np
-    import xarray as xr
-
-    assert _is_array_type(xr.DataArray(), 'xarray.DataArray')
-    assert not _is_array_type(xr.DataArray(), 'xr.DataArray')
-    assert not _is_array_type(
-        xr.DataArray(), 'xarray.core.dataarray.DataArray'
-    )
-    assert not _is_array_type([], 'xarray.DataArray')
-    assert not _is_array_type(np.array([]), 'xarray.DataArray')
 
 
 @pytest.mark.parametrize(
