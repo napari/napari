@@ -22,6 +22,7 @@ from napari.layers._multiscale_data import MultiScaleData
 from napari.layers._scalar_field.scalar_field import (
     ScalarFieldBase,
     ScalarFieldSlicingState,
+    _check_data_not_empty,
 )
 from napari.layers.base import Layer, no_op
 from napari.layers.base._base_mouse_bindings import (
@@ -407,6 +408,7 @@ class Labels(ScalarFieldBase):
         self._show_selected_label = False
         self._contour = 0
 
+        _check_data_not_empty(data)
         data = self._ensure_int_labels(data)
 
         super().__init__(
@@ -663,6 +665,7 @@ class Labels(ScalarFieldBase):
 
     @ScalarFieldBase.data.setter
     def data(self, data: LayerDataProtocol | MultiScaleData) -> None:
+        _check_data_not_empty(data)
         data = self._ensure_int_labels(data)  # pyrefly: ignore [bad-assignment]
         ScalarFieldBase.data.fset(self, data)  # pyrefly: ignore [not-callable]
         self.events.features()
