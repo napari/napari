@@ -6,7 +6,7 @@ This module provides the `imshow` function.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
@@ -17,11 +17,15 @@ if TYPE_CHECKING:
 
     import numpy.typing as npt
 
-    from napari.layers.utils.plane import SlicingPlane
+    from napari.layers.image._image_constants import InterpolationStr
+    from napari.layers.utils.plane import ClippingPlane, SlicingPlane
     from napari.types import ArrayLike
     from napari.utils.colormaps.colormap_utils import ValidColormapArg
     from napari.utils.transforms import Affine
     from napari.utils.transforms._units import UnitsLike
+
+    # the clipping planes of one layer
+    ClippingPlanes: TypeAlias = dict | Sequence[dict | ClippingPlane]
 
 __all__ = ['imshow']
 
@@ -98,16 +102,18 @@ def imshow(
     axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
     blending: str | Sequence[str] | None = ...,
     cache: bool | Sequence[bool] = ...,
-    colormap: ValidColormapArg | None = ...,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = ...,
     contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = ...,
     custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
     depiction: str | Sequence[str] = ...,
-    experimental_clipping_planes: dict | Sequence[Any] | None = ...,
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = ...,
     gamma: float | Sequence[float] = ...,
-    interpolation2d: str | Sequence[str] = ...,
-    interpolation3d: str | Sequence[str] = ...,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = ...,
     iso_threshold: float | Sequence[float] | None = ...,
-    locked_data_level: int | None = ...,
+    locked_data_level: int | Sequence[int | None] | None = ...,
     metadata: dict | Sequence[dict] | None = ...,
     multiscale: bool | None = ...,
     name: str | Sequence[str] | None = ...,
@@ -141,16 +147,18 @@ def imshow(
     axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
     blending: str | Sequence[str] | None = ...,
     cache: bool | Sequence[bool] = ...,
-    colormap: ValidColormapArg | None = ...,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = ...,
     contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = ...,
     custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
     depiction: str | Sequence[str] = ...,
-    experimental_clipping_planes: dict | Sequence[Any] | None = ...,
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = ...,
     gamma: float | Sequence[float] = ...,
-    interpolation2d: str | Sequence[str] = ...,
-    interpolation3d: str | Sequence[str] = ...,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = ...,
     iso_threshold: float | Sequence[float] | None = ...,
-    locked_data_level: int | None = ...,
+    locked_data_level: int | Sequence[int | None] | None = ...,
     metadata: dict | Sequence[dict] | None = ...,
     multiscale: bool | None = ...,
     name: str | Sequence[str] | None = ...,
@@ -183,16 +191,18 @@ def imshow(
     axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
     blending: str | Sequence[str] | None = None,
     cache: bool | Sequence[bool] = True,
-    colormap: ValidColormapArg | None = None,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = None,
     contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = None,
     custom_interpolation_kernel_2d: npt.ArrayLike | None = None,
     depiction: str | Sequence[str] = 'volume',
-    experimental_clipping_planes: dict | Sequence[Any] | None = None,
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = None,
     gamma: float | Sequence[float] = 1.0,
-    interpolation2d: str | Sequence[str] = 'nearest',
-    interpolation3d: str | Sequence[str] = 'linear',
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = 'nearest',
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = 'linear',
     iso_threshold: float | Sequence[float] | None = None,
-    locked_data_level: int | None = None,
+    locked_data_level: int | Sequence[int | None] | None = None,
     metadata: dict | Sequence[dict] | None = None,
     multiscale: bool | None = None,
     name: str | Sequence[str] | None = None,
@@ -241,7 +251,7 @@ def imshow(
         top of the provided scale, rotate, and shear values.
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
-    auto_contrast : bool
+    auto_contrast : bool or list of bool
         Wether to automatically set contrast limits to the min and max of the
         currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
@@ -287,7 +297,7 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
-    locked_data_level : int, optional
+    locked_data_level : int or list of int, optional
         Lock the multiscale resolution level to a specific index. When set,
         forces rendering at the given multiscale level instead of automatic
         level selection based on the viewport. Set to ``None`` (default) to
@@ -310,7 +320,7 @@ def imshow(
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    projection_mode : str
+    projection_mode : str or list of str
         How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass
     rendering : str or list of str
