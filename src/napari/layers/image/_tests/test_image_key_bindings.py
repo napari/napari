@@ -9,4 +9,4 @@ def test_auto_contrast_once_sets_clims():
     # change to something else first
     layer.contrast_limits = (1, 2)
     key_bindings.auto_contrast_once(layer)
-    assert layer.contrast_limits == [0.0, 10.0]
+    assert layer.contrast_limits == (0.0, 10.0)

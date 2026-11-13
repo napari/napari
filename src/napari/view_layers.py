@@ -247,7 +247,7 @@ def imshow(
         colormap and the second item must be a Colormap. If a dict, the key must
         be a string to assign as a name to a colormap and the value must be a
         Colormap.
-    contrast_limits : list (2,)
+    contrast_limits : tuple (2,) of float
         Intensity value limits to be used for determining the minimum and maximum colormap bounds for
         luminance images. If not passed, they will be calculated as the min and max intensity value of
         the image.

@@ -22,7 +22,13 @@ blue_cmap = AVAILABLE_COLORMAPS['blue']
 cmap_tuple = ('my_colormap', Colormap(['g', 'm', 'y']))
 cmap_dict = {'your_colormap': Colormap(['g', 'r', 'y'])}
 
-MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
+MULTI_TUPLES = [
+    (0.3, 0.7),
+    (0.1, 0.9),
+    (0.3, 0.9),
+    (0.4, 0.9),
+    (0.2, 0.9),
+]
 
 # data shape is (15, 10, 5) unless otherwise set
 # channel_axis = -1 is implied unless otherwise set
@@ -42,7 +48,7 @@ multi_channel_test_data = [
     # Test adding multichannel image with custom names.
     ((), {'name': ['multi ' + str(i + 3) for i in range(5)]}),
     # Test adding multichannel image with custom contrast limits.
-    ((), {'contrast_limits': [0.3, 0.7]}),
+    ((), {'contrast_limits': (0.3, 0.7)}),
     ((), {'contrast_limits': MULTI_TUPLES}),
     ((), {'gamma': 0.5}),
     ((), {'gamma': [0.3, 0.4, 0.5, 0.6, 0.7]}),
