@@ -66,15 +66,35 @@ def test_non_existing_bindings():
     assert 'toggle_fullscreen' in [func.__name__ for func in viewer_actions]
 
 
-@pytest.mark.parametrize('func', viewer_actions)
-def test_viewer_actions(make_napari_viewer, func):
-    viewer = make_napari_viewer()
+# These actions use the main window. The others change the viewer model,
+# and the Qt viewer reacts to the changes.
+_WINDOW_ACTIONS = {'show_shortcuts', 'toggle_console_visibility'}
 
+
+@pytest.mark.parametrize(
+    'func',
+    sorted(
+        (f for f in viewer_actions if f.__name__ not in _WINDOW_ACTIONS),
+        key=lambda f: f.__name__,
+    ),
+)
+def test_viewer_actions(qt_viewer, func):
     if func.__name__ == 'toggle_fullscreen' and not os.getenv('CI'):
         pytest.skip('Fullscreen cannot be tested in CI')
     if func.__name__ == 'play':
         pytest.skip('Play cannot be tested with Pytest')
-    func(viewer)
+    func(qt_viewer.viewer)
+
+
+@pytest.mark.parametrize(
+    'func',
+    sorted(
+        (f for f in viewer_actions if f.__name__ in _WINDOW_ACTIONS),
+        key=lambda f: f.__name__,
+    ),
+)
+def test_viewer_window_actions(make_napari_viewer, func):
+    func(make_napari_viewer())
 
 
 def test_viewer(make_napari_viewer):
@@ -227,9 +247,9 @@ def test_changing_theme(make_napari_viewer):
 
 
 @pytest.mark.parametrize(('layer_class', 'data', 'ndim'), layer_test_data)
-def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
+def test_roll_transpose_update(qt_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     np.random.seed(0)
 
@@ -247,20 +267,20 @@ def test_roll_transpose_update(make_napari_viewer, layer_class, data, ndim):
         transf_dict['translate'] -= transf_dict['scale'] / 2
 
     # Check consistency:
-    check_view_transform_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, qt_viewer, transf_dict)
 
     # Roll dims and check again:
     viewer.dims.roll()
-    check_view_transform_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, qt_viewer, transf_dict)
 
     # Transpose and check again:
     viewer.dims.transpose()
-    check_view_transform_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, qt_viewer, transf_dict)
 
 
-def test_toggling_axes(make_napari_viewer):
+def test_toggling_axes(qt_viewer):
     """Test toggling axes."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     # Check axes are not visible
     assert not viewer.scene.overlays.axes.visible
@@ -278,9 +298,9 @@ def test_toggling_axes(make_napari_viewer):
     assert not viewer.scene.overlays.axes.visible
 
 
-def test_toggling_scale_bar(make_napari_viewer):
+def test_toggling_scale_bar(qt_viewer):
     """Test toggling scale bar."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     # Check scale bar is not visible
     assert not viewer.canvas.overlays.scale_bar.visible
@@ -319,14 +339,15 @@ def test_deleting_points(viewer_model):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_custom_layer(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_custom_layer(qt_viewer):
     """Make sure that custom layers subclasses can be added to the viewer."""
 
     class NewLabels(layers.Labels):
         """'Empty' extension of napari Labels layer."""
 
     # Make a viewer and add the custom layer
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
 
 
@@ -366,9 +387,10 @@ def test_emitting_data_doesnt_change_cursor_position(
 
 @skip_local_popups
 @skip_on_win_ci
-def test_empty_shapes_dims(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_empty_shapes_dims(qt_viewer):
     """make sure an empty shapes layer can render in 3D"""
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
     viewer.add_shapes(None)
     viewer.dims.ndisplay = 3
 

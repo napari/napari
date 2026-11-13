@@ -24,23 +24,20 @@ def _expected_multiscale_vertices(layer, displayed):
     return np.roll(vertices, shift=-1, axis=1).astype('float')
 
 
-def _bounding_box_world_vertices(viewer, layer):
+def _bounding_box_world_vertices(qt_viewer, layer):
     """Map the bounding box marker vertices into scene (world) coordinates."""
-    bb = viewer.window._qt_viewer.canvas._layer_overlay_to_visual[layer][
-        layer.bounding_box
-    ]
+    bb = qt_viewer.canvas._layer_overlay_to_visual[layer][layer.bounding_box]
     vertices = bb.node.markers._data['a_position'].astype(float)
-    transform = bb.node.node_transform(
-        viewer.window._qt_viewer.canvas.view.scene
-    )
+    transform = bb.node.node_transform(qt_viewer.canvas.view.scene)
     return transform.map(vertices)
 
 
 @pytest.mark.skipif(
     sys.platform == 'win32', reason='This new test is flaky on windows'
 )
-def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
-    viewer = make_napari_viewer(show=True)
+@pytest.mark.show_qt_viewer
+def test_bounding_box_multiscale_3D(qt_viewer, qtbot):
+    viewer = qt_viewer.viewer
 
     data = np.ones((2, 200, 200))
     layer = viewer.add_image(
@@ -50,8 +47,8 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
     assert viewer.dims.ndisplay == 2
 
     # Set canvas size to target amount
-    viewer.window._qt_viewer.canvas.size = (200, 200)
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    qt_viewer.canvas.size = (200, 200)
+    qt_viewer.canvas.on_draw(None)
     viewer.scene.camera.zoom = 2
 
     assert viewer.layers[0].data_level == 0
@@ -60,9 +57,7 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
 
     qtbot.waitUntil(lambda: viewer.layers[-1].loaded)
     # get the actual bounding box vertices
-    bb = viewer.window._qt_viewer.canvas._layer_overlay_to_visual[layer][
-        layer.bounding_box
-    ]
+    bb = qt_viewer.canvas._layer_overlay_to_visual[layer][layer.bounding_box]
     displayed_bbox_vertices = bb.node.markers._data['a_position'].astype(
         'float'
     )
@@ -80,14 +75,15 @@ def test_bounding_box_multiscale_3D(make_napari_viewer, qtbot):
 @pytest.mark.skipif(
     sys.platform == 'win32', reason='This new test is flaky on windows'
 )
-def test_bounding_box_multiscale_2D_zoom_stable(make_napari_viewer, qtbot):
+@pytest.mark.show_qt_viewer
+def test_bounding_box_multiscale_2D_zoom_stable(qt_viewer, qtbot):
     """The box must stay at the full dataset extent while zooming.
 
     Zooming a 2D multiscale layer changes the displayed data level and the
     corner pixels; the bounding box previously drifted/contracted because
     the corner offset was compensated twice (napari/napari#9142).
     """
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
 
     data = np.ones((800, 800))
     layer = viewer.add_image(
@@ -95,7 +91,7 @@ def test_bounding_box_multiscale_2D_zoom_stable(make_napari_viewer, qtbot):
     )
     layer.bounding_box.visible = True
 
-    viewer.window._qt_viewer.canvas.size = (200, 200)
+    qt_viewer.canvas.size = (200, 200)
 
     # the full level-0 extent, from pixel edge to pixel edge
     expected_range = (-0.5, 799.5)
@@ -104,13 +100,13 @@ def test_bounding_box_multiscale_2D_zoom_stable(make_napari_viewer, qtbot):
     for zoom in (0.2, 1.0, 4.0):
         viewer.scene.camera.zoom = zoom
         viewer.scene.camera.center = (0.0, 300.0, 300.0)
-        viewer.window._qt_viewer.canvas.on_draw(None)
+        qt_viewer.canvas.on_draw(None)
         qtbot.waitUntil(lambda: layer.loaded)
-        viewer.window._qt_viewer.canvas.on_draw(None)
+        qt_viewer.canvas.on_draw(None)
 
         seen_states.add((layer.data_level, tuple(layer.corner_pixels.ravel())))
 
-        world = _bounding_box_world_vertices(viewer, layer)
+        world = _bounding_box_world_vertices(qt_viewer, layer)
         for axis in range(2):
             np.testing.assert_allclose(
                 (world[:, axis].min(), world[:, axis].max()),

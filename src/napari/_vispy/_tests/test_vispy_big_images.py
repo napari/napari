@@ -8,14 +8,14 @@ from vispy.visuals.filters import Alpha
 from napari._vispy.layers.tiled_image import TiledImageNode
 
 
-def test_big_2D_image(make_napari_viewer):
+def test_big_2D_image(qt_viewer):
     """Test big 2D image with axis exceeding max texture size."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     shape = (20_000, 10)
     data = np.random.random(shape)
     layer = viewer.add_image(data, multiscale=False)
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
     assert visual.node is not None
     if (
         visual.MAX_TEXTURE_SIZE_2D is not None
@@ -27,14 +27,15 @@ def test_big_2D_image(make_napari_viewer):
         )
 
 
-def test_big_3D_image(make_napari_viewer):
+def test_big_3D_image(qt_viewer):
     """Test big 3D image with axis exceeding max texture size."""
-    viewer = make_napari_viewer(ndisplay=3)
+    viewer = qt_viewer.viewer
+    viewer.dims.ndisplay = 3
 
     shape = (5, 10, 3_000)
     data = np.random.random(shape)
     layer = viewer.add_image(data, multiscale=False)
-    visual = viewer.window._qt_viewer.canvas.layer_to_visual[layer]
+    visual = qt_viewer.canvas.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_3D is not None:
         s = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_3D)).astype(int)
@@ -45,9 +46,9 @@ def test_big_3D_image(make_napari_viewer):
     'shape',
     [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
-def test_downsample_value(make_napari_viewer, shape):
+def test_downsample_value(qt_viewer, shape):
     """Test getting correct value for downsampled data."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     data = np.zeros(shape)
     data[shape[0] // 2 :, shape[1] // 2 :] = 1

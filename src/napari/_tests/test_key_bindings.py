@@ -6,11 +6,11 @@ from vispy import keys
 
 
 @pytest.mark.key_bindings
-def test_viewer_key_bindings(make_napari_viewer):
+def test_viewer_key_bindings(qt_viewer):
     """Test adding key bindings to the viewer"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     mock_press = Mock()
     mock_release = Mock()
@@ -79,11 +79,11 @@ def test_viewer_key_bindings(make_napari_viewer):
 
 
 @pytest.mark.key_bindings
-def test_layer_key_bindings(make_napari_viewer):
+def test_layer_key_bindings(qt_viewer):
     """Test adding key bindings to a layer"""
     np.random.seed(0)
-    viewer = make_napari_viewer()
-    canvas = viewer.window._qt_viewer.canvas
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
 
     layer = viewer.add_image(np.random.random((10, 20)))
     viewer.layers.selection.add(layer)

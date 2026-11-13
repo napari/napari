@@ -1,11 +1,12 @@
 import numpy as np
+import pytest
 
 from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
 
-def test_multiscale(make_napari_viewer):
+def test_multiscale(qt_viewer):
     """Test rendering of multiscale data."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
@@ -14,8 +15,8 @@ def test_multiscale(make_napari_viewer):
     layer = viewer.layers[0]
 
     # Set canvas size to target amount
-    viewer.window._qt_viewer.canvas.size = (800, 600)
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    qt_viewer.canvas.size = (800, 600)
+    qt_viewer.canvas.on_draw(None)
 
     # Check that current level is first large enough to fill the canvas with
     # a greater than one pixel depth
@@ -43,32 +44,32 @@ def test_multiscale(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_zoom_in_within_level_does_not_refresh(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_multiscale_zoom_in_within_level_does_not_refresh(qt_viewer):
     """Ensure zooming in within the same level does not trigger a refresh."""
-    viewer = make_napari_viewer(show=True)
-    view = viewer.window._qt_viewer
+    viewer = qt_viewer.viewer
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
     layer = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
-    view.canvas.view.canvas.size = (800, 600)
-    view.canvas.view.camera.rect = [1000, 1000, 200, 150]
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    qt_viewer.canvas.view.canvas.size = (800, 600)
+    qt_viewer.canvas.view.camera.rect = [1000, 1000, 200, 150]
+    qt_viewer.canvas.on_draw(None)
 
     assert layer.data_level == 0
     initial_corners = layer.corner_pixels.copy()
 
-    view.canvas.view.camera.rect = [1000, 1000, 100, 75]
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    qt_viewer.canvas.view.camera.rect = [1000, 1000, 100, 75]
+    qt_viewer.canvas.on_draw(None)
 
     assert layer.data_level == 0
     np.testing.assert_array_equal(layer.corner_pixels, initial_corners)
 
 
-def test_3D_multiscale_image(make_napari_viewer):
+def test_3D_multiscale_image(qt_viewer):
     """Test rendering of 3D multiscale image uses lowest resolution."""
-    viewer = make_napari_viewer()
+    viewer = qt_viewer.viewer
 
     data = [np.random.random((128,) * 3), np.random.random((64,) * 3)]
     viewer.add_image(data)
@@ -77,8 +78,8 @@ def test_3D_multiscale_image(make_napari_viewer):
     viewer.dims.ndisplay = 3
 
     # Set canvas size to target amount
-    viewer.window._qt_viewer.canvas.size = (800, 600)
-    viewer.window._qt_viewer.canvas.on_draw(None)
+    qt_viewer.canvas.size = (800, 600)
+    qt_viewer.canvas.on_draw(None)
 
     # Check lowest resolution is used
     assert viewer.layers[0].data_level == 1
@@ -184,15 +185,15 @@ def test_image_screenshot_zoomed(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_zoomed_out(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_multiscale_zoomed_out(qt_viewer):
     """See https://github.com/napari/napari/issues/4781"""
     # Need to show viewer to ensure that pixel_scale and physical_size
     # get set appropriately.
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
     shapes = [(3200, 3200), (1600, 1600), (800, 800)]
     data = [np.zeros(s, dtype=np.uint8) for s in shapes]
     layer = viewer.add_image(data, multiscale=True)
-    qt_viewer = viewer.window._qt_viewer
     # Canvas size is in screen pixels.
     qt_viewer.canvas.size = (1600, 1600)
     # The camera rect is (left, top, width, height) in scene coordinates.
@@ -217,10 +218,11 @@ def test_multiscale_zoomed_out(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_5D_multiscale(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_5D_multiscale(qt_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
@@ -232,12 +234,13 @@ def test_5D_multiscale(make_napari_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_flipped_axes(make_napari_viewer):
+@pytest.mark.show_qt_viewer
+def test_multiscale_flipped_axes(qt_viewer):
     """Check rendering of multiscale images with negative scale values.
 
     See https://github.com/napari/napari/issues/3057
     """
-    viewer = make_napari_viewer(show=True)
+    viewer = qt_viewer.viewer
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
