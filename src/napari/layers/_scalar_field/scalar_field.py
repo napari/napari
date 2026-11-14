@@ -402,7 +402,6 @@ class ScalarFieldBase(Layer, ABC):
         self.events.data(value=self.data)
         self._reset_editable()
 
-    @property
     def multiscale_data(self) -> MultiScaleData:
         """Data in the multiscale wrapper.
 

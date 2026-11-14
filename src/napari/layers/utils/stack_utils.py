@@ -102,7 +102,7 @@ def split_channels(
 
     # Determine if data is a multiscale
     multiscale = kwargs.get('multiscale')
-    if not multiscale:
+    if multiscale is None:
         multiscale, data = guess_multiscale(data)
         kwargs['multiscale'] = multiscale
 
@@ -354,12 +354,12 @@ def images_to_stack(
 
     if all(multiscale_flags):
         # Check that all multiscale images have the same number of levels
-        n_scales_list = [len(image.multiscale_data) for image in images]
+        n_scales_list = [len(image.multiscale_data()) for image in images]
         if len(set(n_scales_list)) != 1:
             raise ValueError(
                 f'All multiscale images must have the same number of levels to be stacked.\nGot: {n_scales_list}'
             )
-        arrays_to_check = [img.multiscale_data[0] for img in images]
+        arrays_to_check = [img.multiscale_data()[0] for img in images]
     else:
         arrays_to_check = [img.data for img in images]
 
@@ -382,9 +382,9 @@ def images_to_stack(
         stacker = cast('Stacker', np.stack)
 
     if all(multiscale_flags):
-        n_scales = len(images[0].multiscale_data)
+        n_scales = len(images[0].multiscale_data())
         new_data = [
-            stacker([image.multiscale_data[level] for image in images], axis)
+            stacker([image.multiscale_data()[level] for image in images], axis)
             for level in range(n_scales)
         ]
     else:
