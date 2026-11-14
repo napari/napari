@@ -3,12 +3,29 @@
 This module provides the `imshow` function.
 """
 
+from __future__ import annotations
+
 import inspect
-from typing import Any, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 from napari.components.dims import Dims
 from napari.layers import Image
 from napari.viewer import Viewer
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy.typing as npt
+
+    from napari.layers.image._image_constants import InterpolationStr
+    from napari.layers.utils.plane import ClippingPlane, SlicingPlane
+    from napari.types import ArrayLike
+    from napari.utils.colormaps.colormap_utils import ValidColormapArg
+    from napari.utils.transforms import Affine
+    from napari.utils.transforms._units import UnitsLike
+
+    # the clipping planes of one layer
+    ClippingPlanes: TypeAlias = dict | Sequence[dict | ClippingPlane]
 
 __all__ = ['imshow']
 
@@ -18,9 +35,9 @@ _viewer_params = inspect.signature(Viewer).parameters
 def _make_viewer_then(
     add_method: str,
     /,
-    *args,
+    *args: Any,
     viewer: Viewer | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> tuple[Viewer, Any]:
     """Create a viewer, call given add_* method, then return viewer and layer.
 
@@ -76,129 +93,133 @@ def _make_viewer_then(
 
 @overload
 def imshow(
-    data,
+    data: ArrayLike | Sequence[ArrayLike],
     *,
     channel_axis: None = ...,
-    affine=...,
-    attenuation=...,
-    auto_contrast=...,
-    axis_labels=...,
-    blending=...,
-    cache=...,
-    colormap=...,
-    contrast_limits=...,
-    custom_interpolation_kernel_2d=...,
-    depiction=...,
-    experimental_clipping_planes=...,
-    gamma=...,
-    interpolation2d=...,
-    interpolation3d=...,
-    iso_threshold=...,
-    locked_data_level=...,
-    metadata=...,
-    multiscale=...,
-    name=...,
-    opacity=...,
-    plane=...,
-    projection_mode=...,
-    rendering=...,
-    rgb=...,
-    rotate=...,
-    scale=...,
-    shear=...,
-    translate=...,
-    units=...,
-    visible=...,
-    viewer=...,
-    title=...,
-    ndisplay=...,
-    order=...,
-    show=...,
+    affine: npt.ArrayLike | Affine | None = ...,
+    attenuation: float = ...,
+    auto_contrast: bool = ...,
+    axis_labels: Sequence[str] | None = ...,
+    blending: str | None = ...,
+    cache: bool = ...,
+    colormap: ValidColormapArg | None = ...,
+    contrast_limits: Sequence[float] | None = ...,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
+    depiction: str = ...,
+    experimental_clipping_planes: ClippingPlanes | None = ...,
+    gamma: float = ...,
+    interpolation2d: InterpolationStr = ...,
+    interpolation3d: InterpolationStr = ...,
+    iso_threshold: float | None = ...,
+    locked_data_level: int | None = ...,
+    metadata: dict | None = ...,
+    multiscale: bool | None = ...,
+    name: str | None = ...,
+    opacity: float = ...,
+    plane: dict | SlicingPlane | None = ...,
+    projection_mode: str = ...,
+    rendering: str = ...,
+    rgb: bool | None = ...,
+    rotate: npt.ArrayLike | None = ...,
+    scale: npt.ArrayLike | None = ...,
+    shear: npt.ArrayLike | None = ...,
+    translate: npt.ArrayLike | None = ...,
+    units: UnitsLike = ...,
+    visible: bool = ...,
+    viewer: Viewer | None = ...,
+    title: str = ...,
+    ndisplay: int = ...,
+    order: Sequence[int] = ...,
+    show: bool = ...,
 ) -> tuple[Viewer, Image]: ...
 
 
 @overload
 def imshow(
-    data,
+    data: ArrayLike | Sequence[ArrayLike],
     *,
     channel_axis: int,
-    affine=...,
-    attenuation=...,
-    auto_contrast=...,
-    axis_labels=...,
-    blending=...,
-    cache=...,
-    colormap=...,
-    contrast_limits=...,
-    custom_interpolation_kernel_2d=...,
-    depiction=...,
-    experimental_clipping_planes=...,
-    gamma=...,
-    interpolation2d=...,
-    interpolation3d=...,
-    iso_threshold=...,
-    locked_data_level=...,
-    metadata=...,
-    multiscale=...,
-    name=...,
-    opacity=...,
-    plane=...,
-    projection_mode=...,
-    rendering=...,
-    rgb=...,
-    rotate=...,
-    scale=...,
-    shear=...,
-    translate=...,
-    units=...,
-    visible=...,
-    viewer=...,
-    title=...,
-    ndisplay=...,
-    order=...,
-    show=...,
+    affine: npt.ArrayLike | Affine | Sequence[Affine] | None = ...,
+    attenuation: float | Sequence[float] = ...,
+    auto_contrast: bool | Sequence[bool] = ...,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = ...,
+    blending: str | Sequence[str] | None = ...,
+    cache: bool | Sequence[bool] = ...,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = ...,
+    contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = ...,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = ...,
+    depiction: str | Sequence[str] = ...,
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = ...,
+    gamma: float | Sequence[float] = ...,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = ...,
+    iso_threshold: float | Sequence[float] | None = ...,
+    locked_data_level: int | Sequence[int | None] | None = ...,
+    metadata: dict | Sequence[dict] | None = ...,
+    multiscale: bool | None = ...,
+    name: str | Sequence[str] | None = ...,
+    opacity: float | Sequence[float] = ...,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = ...,
+    projection_mode: str | Sequence[str] = ...,
+    rendering: str | Sequence[str] = ...,
+    rgb: bool | None = ...,
+    rotate: npt.ArrayLike | None = ...,
+    scale: npt.ArrayLike | None = ...,
+    shear: npt.ArrayLike | None = ...,
+    translate: npt.ArrayLike | None = ...,
+    units: UnitsLike | Sequence[UnitsLike] = ...,
+    visible: bool | Sequence[bool] = ...,
+    viewer: Viewer | None = ...,
+    title: str = ...,
+    ndisplay: int = ...,
+    order: Sequence[int] = ...,
+    show: bool = ...,
 ) -> tuple[Viewer, tuple[Image, ...]]: ...
 
 
 def imshow(
-    data,
+    data: ArrayLike | Sequence[ArrayLike],
     *,
-    channel_axis=None,
-    affine=None,
-    attenuation=0.05,
-    auto_contrast=False,
-    axis_labels=None,
-    blending=None,
-    cache=True,
-    colormap=None,
-    contrast_limits=None,
-    custom_interpolation_kernel_2d=None,
-    depiction='volume',
-    experimental_clipping_planes=None,
-    gamma=1.0,
-    interpolation2d='nearest',
-    interpolation3d='linear',
-    iso_threshold=None,
-    locked_data_level=None,
-    metadata=None,
-    multiscale=None,
-    name=None,
-    opacity=1.0,
-    plane=None,
-    projection_mode='mean',
-    rendering='mip',
-    rgb=None,
-    rotate=None,
-    scale=None,
-    shear=None,
-    translate=None,
-    units=None,
-    visible=True,
-    viewer=None,
-    title='napari',
-    ndisplay=2,
-    order=(),
-    show=True,
+    channel_axis: int | None = None,
+    affine: npt.ArrayLike | Affine | Sequence[Affine] | None = None,
+    attenuation: float | Sequence[float] = 0.05,
+    auto_contrast: bool | Sequence[bool] = False,
+    axis_labels: Sequence[str] | Sequence[Sequence[str]] | None = None,
+    blending: str | Sequence[str] | None = None,
+    cache: bool | Sequence[bool] = True,
+    colormap: ValidColormapArg | Sequence[ValidColormapArg] | None = None,
+    contrast_limits: Sequence[float] | Sequence[Sequence[float]] | None = None,
+    custom_interpolation_kernel_2d: npt.ArrayLike | None = None,
+    depiction: str | Sequence[str] = 'volume',
+    experimental_clipping_planes: ClippingPlanes
+    | Sequence[ClippingPlanes]
+    | None = None,
+    gamma: float | Sequence[float] = 1.0,
+    interpolation2d: InterpolationStr | Sequence[InterpolationStr] = 'nearest',
+    interpolation3d: InterpolationStr | Sequence[InterpolationStr] = 'linear',
+    iso_threshold: float | Sequence[float] | None = None,
+    locked_data_level: int | Sequence[int | None] | None = None,
+    metadata: dict | Sequence[dict] | None = None,
+    multiscale: bool | None = None,
+    name: str | Sequence[str] | None = None,
+    opacity: float | Sequence[float] = 1.0,
+    plane: dict | SlicingPlane | Sequence[dict | SlicingPlane] | None = None,
+    projection_mode: str | Sequence[str] = 'mean',
+    rendering: str | Sequence[str] = 'mip',
+    rgb: bool | None = None,
+    rotate: npt.ArrayLike | None = None,
+    scale: npt.ArrayLike | None = None,
+    shear: npt.ArrayLike | None = None,
+    translate: npt.ArrayLike | None = None,
+    units: UnitsLike | Sequence[UnitsLike] = None,
+    visible: bool | Sequence[bool] = True,
+    viewer: Viewer | None = None,
+    title: str = 'napari',
+    ndisplay: int = 2,
+    order: Sequence[int] = (),
+    show: bool = True,
 ) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
 
@@ -228,7 +249,7 @@ def imshow(
         top of the provided scale, rotate, and shear values.
     attenuation : float or list of float
         Attenuation rate for attenuated maximum intensity projection.
-    auto_contrast : bool
+    auto_contrast : bool or list of bool
         Wether to automatically set contrast limits to the min and max of the
         currently viewed slice. If True, contrast limits will be updated
         whenever the slice changes.
@@ -274,7 +295,7 @@ def imshow(
         Same as 'interpolation2d' but for 3D rendering.
     iso_threshold : float or list of float
         Threshold for isosurface.
-    locked_data_level : int, optional
+    locked_data_level : int or list of int, optional
         Lock the multiscale resolution level to a specific index. When set,
         forces rendering at the given multiscale level instead of automatic
         level selection based on the viewport. Set to ``None`` (default) to
@@ -293,11 +314,11 @@ def imshow(
         Name of the layer.
     opacity : float or list
         Opacity of the layer visual, between 0.0 and 1.0.
-    plane : dict or SlicingPlane
+    plane : dict or SlicingPlane, or list of these
         Properties defining plane rendering in 3D. Properties are defined in
         data coordinates. Valid dictionary keys are
         {'position', 'normal', 'thickness', and 'enabled'}.
-    projection_mode : str
+    projection_mode : str or list of str
         How data outside the viewed dimensions, but inside the thick Dims slice will
         be projected onto the viewed dimensions. Must fit to cls._projectionclass
     rendering : str or list of str
@@ -321,6 +342,8 @@ def imshow(
         A vector of shear values for an upper triangular n-D shear matrix.
     translate : tuple of float or list of tuple of float
         Translation values for the layer.
+    units : tuple of str or pint.Unit, optional
+        Units of the layer data in world coordinates.
     visible : bool or list of bool
         Whether the layer visual is currently being displayed.
     viewer : Viewer object, optional, by default None.
@@ -332,8 +355,9 @@ def imshow(
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3. By default None
-    axis_labels : list of str, optional
-        Dimension names. By default they are labeled with sequential numbers
+    axis_labels : list of str or list of list of str, optional
+        Dimension names. With ``channel_axis``, one list per channel can be
+        given. By default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. By default True.
 
