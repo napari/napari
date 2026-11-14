@@ -356,6 +356,9 @@ napari_builtins = [
 write_to = "src/napari/_version.py"
 fallback_version = "0.7.1.dev0"
 
+[tool.uv]
+python-preference = "system"
+
 [tool.check-manifest]
 ignore = [
   ".circleci/continue_config.yml",
