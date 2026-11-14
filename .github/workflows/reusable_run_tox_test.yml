@@ -76,7 +76,7 @@ jobs:
           key: pooch
 
       - name: Download packages needed for testing
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: Packages
           path: dist
@@ -86,7 +86,7 @@ jobs:
         shell: bash
 
       - name: Set up Python ${{ inputs.python_version }}
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ inputs.python_version }}
           cache: "pip"
@@ -103,7 +103,7 @@ jobs:
         shell: powershell
 
       - name: Setup headless display
-        uses: pyvista/setup-headless-display-action@c103a2ff45650d38cb71684b5dc6cdfeb9442c79 # v5.1.0
+        uses: pyvista/setup-headless-display-action@10e6efb97af3cd1523828f0e22c39f0e4567f3e4 # v5.2.0
         with:
           qt: true
           wm: herbstluftwm
@@ -196,7 +196,7 @@ jobs:
 
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test artifacts ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: .pytest_tmp
@@ -204,7 +204,7 @@ jobs:
 
       - name: Upload leaked viewer graph
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: leaked ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
           path: |
@@ -212,14 +212,14 @@ jobs:
             ./*leak-backref-graph*.dot
 
       - name: Upload pytest timing reports as json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: upload pytest timing json ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.tox_extras }} ${{ inputs.artifacts_suffix }}
           path: |
             ./report-*.json
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ inputs.coverage == 'cov' }}
         with:
           name: coverage reports ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.artifacts_suffix }}
