@@ -173,9 +173,12 @@ jobs:
         coverage: cov
 
   coverage_report:
-    if: ${{ always() }}
+    # Upload partial coverage even if some test jobs fail, but skip when
+    # test_initial failed: then no coverage-producing job ran.
+    if: ${{ always() && needs.test_initial.result == 'success' }}
     secrets: inherit
     needs:
+      - test_initial
       - test
       - test_examples
     uses: napari/shared-workflows/.github/workflows/upload_coverage.yml@main
