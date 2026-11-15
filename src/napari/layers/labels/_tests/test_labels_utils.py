@@ -104,6 +104,31 @@ def test_mouse_event_to_labels_coordinate_2d(MouseEvent):
     np.testing.assert_array_equal(coord, [5, 5])
 
 
+def test_mouse_event_to_labels_coordinate_2d_out_of_bounds_slice(MouseEvent):
+    data = np.zeros((16, 64, 64), dtype=int)
+    layer = Labels(data)
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 32, 1), (0, 64, 1), (0, 64, 1)),
+        point=(29, 0, 0),
+    )
+    layer._slice_dims(dims)
+
+    event = ReadOnlyWrapper(
+        MouseEvent(
+            type='mouse_press',
+            is_dragging=False,
+            position=(29, 32, 32),
+            view_direction=None,
+            dims_displayed=(1, 2),
+            dims_point=(29, 0, 0),
+        )
+    )
+    coord = mouse_event_to_labels_coordinate(layer, event)
+    assert coord is None
+
+
 def test_mouse_event_to_labels_coordinate_3d(MouseEvent):
     data = np.zeros((11, 11, 11), dtype=int)
     data[4:7, 4:7, 4:7] = 1

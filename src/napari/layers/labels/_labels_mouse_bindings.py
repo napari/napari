@@ -1,6 +1,7 @@
 from napari.layers.labels._labels_constants import Mode
 from napari.layers.labels._labels_utils import mouse_event_to_labels_coordinate
 from napari.settings import get_settings
+from napari.utils.notifications import show_info
 
 BRUSH_SIZE_ON_MOUSE_MOVE_MODIFIERS_PARTS = ('Alt',)
 
@@ -41,6 +42,14 @@ def draw(layer, event):
     # brush_stroke overlay.
     brush_stroke = layer._overlays['brush_stroke']
     if brush_stroke.active or (brush_stroke.enabled and event.button == 2):
+        return
+
+    if layer._slice_input.ndisplay == 2 and getattr(
+        layer._slice, 'empty', False
+    ):
+        show_info(
+            f'Cannot paint: layer "{layer.name}" has no data on this slice.'
+        )
         return
 
     coordinates = mouse_event_to_labels_coordinate(layer, event)

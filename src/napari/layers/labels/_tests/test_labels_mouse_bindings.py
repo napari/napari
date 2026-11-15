@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from scipy import ndimage as ndi
 
 from napari.components.dims import Dims
@@ -438,4 +439,55 @@ def test_erase_3d_undo_empty():
     mouse_release_callbacks(layer, event)
 
     # Undo queue should be empty
+    assert len(layer._undo_history) == 0
+
+
+@pytest.mark.parametrize('mode', ['paint', 'erase', 'fill'])
+def test_paint_erase_fill_outside_slice_extent(mode, monkeypatch):
+    """Regression test for #9881: interactive painting outside slice extent must not raise IndexError."""
+    data = np.zeros((16, 64, 64), dtype=np.uint8)
+    layer = Labels(data)
+    layer.mode = mode
+    layer.selected_label = 2
+    # Slice at z=29, outside the layer's 16 slices
+    dims = Dims(
+        ndim=3,
+        ndisplay=2,
+        range=((0, 32, 1), (0, 64, 1), (0, 64, 1)),
+        point=(29, 0, 0),
+    )
+    layer._slice_dims(dims)
+    assert layer._slice.empty
+
+    notifications = []
+    monkeypatch.setattr(
+        'napari.layers.labels._labels_mouse_bindings.show_info',
+        notifications.append,
+    )
+
+    event = read_only_mouse_event(
+        type='mouse_press',
+        position=(29, 32, 32),
+        view_direction=(1, 0, 0),
+        dims_displayed=(1, 2),
+        dims_point=(29, 32, 32),
+    )
+    # Must not raise IndexError
+    mouse_press_callbacks(layer, event)
+
+    event_rel = read_only_mouse_event(
+        type='mouse_release',
+        position=(29, 32, 32),
+        view_direction=(1, 0, 0),
+        dims_displayed=(1, 2),
+        dims_point=(29, 32, 32),
+    )
+    mouse_release_callbacks(layer, event_rel)
+
+    # Notification must have been displayed informing user
+    assert len(notifications) == 1
+    assert 'has no data on this slice' in notifications[0]
+    # Layer data must not be modified
+    assert not np.any(layer.data != 0)
+    # Undo queue must remain empty
     assert len(layer._undo_history) == 0

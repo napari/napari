@@ -1434,7 +1434,7 @@ class Labels(ScalarFieldBase):
             new cursor coordinates
         """
         assert not isinstance(self.data, MultiScaleData)
-        if coordinates is None:
+        if coordinates is None or getattr(self._slice, 'empty', False):
             return
         interp_coord = interpolate_coordinates(
             last_cursor_coord, coordinates, self.brush_size

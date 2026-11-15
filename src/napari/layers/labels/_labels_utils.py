@@ -204,7 +204,13 @@ def mouse_event_to_labels_coordinate(
     """
     ndim = len(layer._slice_input.displayed)
     if ndim == 2:
+        if getattr(layer._slice, 'empty', False):
+            return None
         coordinates = layer.world_to_data(event.position)
+        for d in layer._slice_input.not_displayed:
+            coord = int(np.round(coordinates[d]))
+            if not 0 <= coord < layer.data.shape[d]:
+                return None
     else:  # 3d
         start, end = layer.get_ray_intersections(
             position=event.position,
