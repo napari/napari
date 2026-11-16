@@ -302,7 +302,9 @@ def check_test_feature(pyproject: dict, pixi: dict, environments) -> list[str]:
 def main():
     base_dir = Path(__file__).parent.parent
     pyproject = tomllib.loads((base_dir / 'pyproject.toml').read_text())
-    pixi = tomllib.loads((base_dir / 'pixi.toml').read_text())
+    pixi = tomllib.loads(
+        (base_dir / 'tools' / 'conda-forge' / 'pixi.toml').read_text()
+    )
     environments = marker_environments(pixi)
 
     errors = [

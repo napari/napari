@@ -6,4 +6,4 @@
 napari_gui/_version.py export-subst
 
 # pixi lock file is generated, see upgrade_test_constraints.yml workflow
-pixi.lock merge=binary linguist-language=YAML linguist-generated=true
+tools/conda-forge/pixi.lock merge=binary linguist-language=YAML linguist-generated=true

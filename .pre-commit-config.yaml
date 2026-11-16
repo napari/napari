@@ -44,5 +44,5 @@ repos:
     language: python
     entry: python tools/check_pixi_vs_pyproject.py
     additional_dependencies: [packaging]
-    files: ^(pyproject|pixi)\.toml$
+    files: ^(pyproject\.toml|tools/conda-forge/pixi\.toml)$
     pass_filenames: false

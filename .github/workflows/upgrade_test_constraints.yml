@@ -63,7 +63,7 @@ on:
       - '.github/workflows/upgrade_test_constraints.yml'
       - 'tools/compile_constraints.sh'
       - 'tools/create_pr_or_update_existing_one.py'
-      - 'pixi.toml'
+      - 'tools/conda-forge/pixi.toml'
 
 jobs:
   compute:
@@ -143,11 +143,11 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
         with:
-          manifest-path: napari_repo/pixi.toml
+          manifest-path: napari_repo/tools/conda-forge/pixi.toml
           run-install: false
 
       - name: Upgrade conda dependencies
-        run: pixi update --no-install --manifest-path napari_repo/pixi.toml
+        run: pixi update --no-install --manifest-path napari_repo/tools/conda-forge/pixi.toml
 
       - name: Upload constraints
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -156,7 +156,7 @@ jobs:
           path: |
             napari_repo/resources/constraints/constraints*.txt
             napari_repo/resources/*pyrefly.txt
-            napari_repo/pixi.lock
+            napari_repo/tools/conda-forge/pixi.lock
 
   publish:
     # This job has access to secrets, so it must not run any code from the target branch.
@@ -252,7 +252,7 @@ jobs:
           find . -type f \( \
               -path './resources/constraints/constraints*.txt' \
               -o -path './resources/requirements_pyrefly.txt' \
-              -o -path './pixi.lock' \
+              -o -path './tools/conda-forge/pixi.lock' \
             \) -print0 | while IFS= read -r -d '' file; do
             if git -C "${GITHUB_WORKSPACE}/napari_repo" ls-files --error-unmatch "${file}" > /dev/null 2>&1; then
               cp -v "${file}" "${GITHUB_WORKSPACE}/napari_repo/${file}"

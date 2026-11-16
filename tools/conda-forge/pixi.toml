@@ -1,7 +1,11 @@
 # Configuration for testing napari against packages from conda-forge using pixi.
 #
-# Usage:
-#   pixi run -e test-py313-pyside6 test
+# Usage (from the repository root):
+#   pixi run --manifest-path tools/conda-forge -e test-py313-pyside6 test
+#
+# This file is placed outside the repository root because a root `pixi.toml`
+# takes precedence over `[tool.pixi]` in `pyproject.toml`. The napari sources
+# are pointed by `[package.build.source]` and tasks are run from the repository root.
 #
 # The lock file (pixi.lock) is committed to the repository and updated
 # by the `.github/workflows/upgrade_test_constraints.yml` workflow (`pixi update`).
@@ -9,7 +13,7 @@
 # If tests segfault inside `libfontconfig` when run locally, the font cache created
 # by the system fontconfig (in `~/.cache/fontconfig`) is incompatible with
 # the conda-forge one. Run tests with a separate cache directory, e.g.
-# `XDG_CACHE_HOME=.pixi/cache pixi run -e test-py313-pyside6 test`.
+# `XDG_CACHE_HOME=tools/conda-forge/.pixi/cache pixi run --manifest-path tools/conda-forge -e test-py313-pyside6 test`.
 [workspace]
 name = "napari"
 requires-pixi = ">=0.77.1"
@@ -27,6 +31,10 @@ version = "0.10.0.dev0"
 [package.build]
 backend.name = "pixi-build-python"
 config.ignore-pypi-mapping = false
+
+# napari sources (and `pyproject.toml` used for dependencies mapping) are in the repository root
+[package.build.source]
+path = "../.."
 
 [package.host-dependencies]
 setuptools = ">=77.0.1"
@@ -105,7 +113,8 @@ objgraph = "*"
 pywin32 = "*"
 
 [feature.test.tasks]
-test = "python -m pytest --color=yes --ignore tools --maxfail=5 --json-report --json-report-file=report-pixi.json --save-leaked-object-graph --import-mode=importlib"
+# tasks are run from the directory of this file by default, so set the repository root
+test = { cmd = "python -m pytest --color=yes --ignore tools --maxfail=5 --json-report --json-report-file=report-pixi.json --save-leaked-object-graph --import-mode=importlib", cwd = "../.." }
 
 [environments]
 default = { features = ["py313", "pyside6", "test"] }
