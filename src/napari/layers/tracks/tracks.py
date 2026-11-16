@@ -11,7 +11,8 @@ from napari.layers.base import Layer, _LayerSlicingState
 from napari.layers.tracks._track_utils import TrackManager
 from napari.types import LayerDataType
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
-from napari.utils.events import Event
+from napari.utils.events import Event, RenamedWarningEmitter
+from napari.utils.migrations import RenamedProperty, rename_argument
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -96,8 +97,6 @@ class Tracks(Layer):
         ones along the main diagonal.
     tail_length : float
         Length of the positive (backward in time) tails in units of time.
-    tail_width : float
-        Width of the track tails in pixels.
     translate : tuple of float
         Translation values for the layer.
     units : tuple of str or pint.Unit, optional
@@ -105,6 +104,8 @@ class Tracks(Layer):
         If not provided, the default units are assumed to be pixels.
     visible : bool
         Whether the layer visual is currently being displayed.
+    width : float
+        Width of the tracks in pixels.
     """
 
     # The max number of tracks that will ever be used to render the thumbnail
@@ -112,6 +113,16 @@ class Tracks(Layer):
     _max_tracks_thumbnail = 1024
     _slicing_state: '_TracksSlicingState'
 
+    tail_width = RenamedProperty(
+        new_name='width', since_version='0.11.0', due_date='2027-Q1'
+    )
+
+    @rename_argument(
+        from_name='tail_width',
+        to_name='width',
+        version='2027-Q1',
+        since_version='0.11.0',
+    )
     def __init__(
         self,
         data,
@@ -137,10 +148,10 @@ class Tracks(Layer):
         scale=None,
         shear=None,
         tail_length: int = 30,
-        tail_width: int = 2,
         translate=None,
         units=None,
         visible=True,
+        width: int = 2,
     ) -> None:
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
@@ -170,7 +181,12 @@ class Tracks(Layer):
         )
 
         self.events.add(
-            tail_width=Event,
+            width=Event,
+            tail_width=RenamedWarningEmitter(
+                type_name='tail_width',
+                new_path='width',
+                message=Tracks.tail_width.event_message,
+            ),
             tail_length=Event,
             head_length=Event,
             display_id=Event,
@@ -200,7 +216,7 @@ class Tracks(Layer):
         self._max_width = 20
 
         # track display properties
-        self.tail_width = tail_width
+        self.width = width
         self.tail_length = tail_length
         self.head_length = head_length
         self.hide_completed_tracks = hide_completed_tracks
@@ -264,7 +280,7 @@ class Tracks(Layer):
                 'color_by': self.color_by,
                 'colormap': self.colormap,
                 'colormaps_dict': self.colormaps_dict,
-                'tail_width': self.tail_width,
+                'width': self.width,
                 'tail_length': self.tail_length,
                 'head_length': self.head_length,
                 'features': self.features,
@@ -456,14 +472,14 @@ class Tracks(Layer):
         self.events.rebuild_graph()
 
     @property
-    def tail_width(self) -> float:
+    def width(self) -> float:
         """float: Width for all vectors in pixels."""
-        return self._tail_width
+        return self._width
 
-    @tail_width.setter
-    def tail_width(self, tail_width: float) -> None:
-        self._tail_width: float = np.clip(tail_width, 0.5, self._max_width)
-        self.events.tail_width()
+    @width.setter
+    def width(self, width: float) -> None:
+        self._width: float = np.clip(width, 0.5, self._max_width)
+        self.events.width()
 
     @property
     def hide_completed_tracks(self) -> bool:

@@ -20,7 +20,7 @@ class VispyTracksLayer(VispyBaseLayer):
         node = TracksVisual(font_info=font_info)
         super().__init__(layer, node, font_info=font_info)
 
-        self.layer.events.tail_width.connect(self._on_appearance_change)
+        self.layer.events.width.connect(self._on_appearance_change)
         self.layer.events.tail_length.connect(self._on_appearance_change)
         self.layer.events.head_length.connect(self._on_appearance_change)
         self.layer.events.display_id.connect(self._on_appearance_change)
@@ -86,11 +86,11 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # set the width of the track tails
         self.node._subvisuals[0].set_data(
-            width=self.layer.tail_width,
+            width=self.layer.width,
             color=self.layer.track_colors,
         )
         self.node._subvisuals[2].set_data(
-            width=self.layer.tail_width,
+            width=self.layer.width,
         )
 
     def _on_tracks_change(self) -> None:
@@ -107,7 +107,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[0].set_data(
             pos=self.layer._view_data,
             connect=self.layer.track_connex,
-            width=self.layer.tail_width,
+            width=self.layer.width,
             color=self.layer.track_colors,
         )
 
@@ -134,7 +134,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[2].set_data(
             pos=self.layer._view_graph,
             connect=self.layer.graph_connex,
-            width=self.layer.tail_width,
+            width=self.layer.width,
             color='white',
         )
 
