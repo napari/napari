@@ -1,6 +1,7 @@
 # Test napari against packages from conda-forge using pixi.
-# The environments are defined in tools/conda-forge/pixi.toml and locked in tools/conda-forge/pixi.lock.
-# The pixi.lock file is updated by the upgrade_test_constraints.yml workflow.
+# The environments are defined in tools/conda-forge/pixi.toml.
+# The pixi.lock file is not committed, so environments are solved on each run
+# and the resulting lock file is uploaded as an artifact.
 name: Test using dependencies from conda-forge via pixi
 
 on:
@@ -70,11 +71,16 @@ jobs:
         with:
           manifest-path: tools/conda-forge/pixi.toml
           environments: ${{ env.PIXI_ENV }}
-          # Do not fail if pixi.lock is outdated (for example, when PR changes dependencies in pyproject.toml).
-          # In such case, pixi will update the lock file in place.
-          locked: false
-          cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          # There is no committed pixi.lock, so the environment is solved on each run
+          # and setup-pixi does not cache it (the cache key is based on the lock file).
+
+      - name: Upload pixi.lock
+        # Upload always, to allow reproducing the environment locally, also when tests pass.
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pixi lock ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.qt_backend }}
+          path: tools/conda-forge/pixi.lock
 
       - name: List environment packages
         run: pixi list --manifest-path tools/conda-forge -e "${PIXI_ENV}"

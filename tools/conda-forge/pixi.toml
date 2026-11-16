@@ -7,8 +7,9 @@
 # takes precedence over `[tool.pixi]` in `pyproject.toml`. The napari sources
 # are pointed by `[package.build.source]` and tasks are run from the repository root.
 #
-# The lock file (pixi.lock) is committed to the repository and updated
-# by the `.github/workflows/upgrade_test_constraints.yml` workflow (`pixi update`).
+# The lock file (pixi.lock) is not committed to the repository (it is in .gitignore),
+# so the environments are solved against the latest conda-forge packages on each CI run.
+# The lock file used in CI is uploaded as an artifact of the `reusable_pixi_test.yml` workflow.
 #
 # If tests segfault inside `libfontconfig` when run locally, the font cache created
 # by the system fontconfig (in `~/.cache/fontconfig`) is incompatible with
