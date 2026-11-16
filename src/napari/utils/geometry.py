@@ -885,7 +885,7 @@ def iter_all_triangle_intersections(
     # find the intersection closest to the start point of the ray and return
     start_to_intersection = intersection_points - ray_position
     distances = np.linalg.norm(start_to_intersection, axis=1)
-    sorted_inside_indices = np.argsort(distances)
+    sorted_inside_indices = np.argsort(distances, kind='stable')
     input_indices = np.flatnonzero(inside)
     for idx in sorted_inside_indices:
         yield input_indices[idx], intersection_points[idx]
