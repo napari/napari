@@ -1092,7 +1092,17 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
     @property
     def _viewbox_to_world(self) -> Affine:
+        """Viewbox to world affine transform.
+
+        This affine describe the non-projective component of the transform
+        between a viewbox's scene and the global world coordinates.
+
+        The projective component is handled by canvas_to_world separately,
+        since it's not reversible and requires custom handling in the two
+        directions.
+        """
         if self._needs_viewbox_to_world_update:
+            # deferred calculation to only when needed
             self._update_viewbox_to_world()
         return self.__viewbox_to_world
 
@@ -1141,6 +1151,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             linear_matrix = (rot_matrix.T / zoom) @ flip_map
             translate = center - linear_matrix @ np.array([0.0, *half])
 
+        # get the Affine object, which is our own fancy transform machinery
         affine = self.__viewbox_to_world
         if affine.ndim != ndisplay:
             affine_matrix = np.eye(ndisplay + 1)
