@@ -215,7 +215,8 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
     _layer_list_scroll_progress: float = 0
     # True if any layer had custom axis labels the last time layers changed
     _layers_had_custom_axis_labels: bool = PrivateAttr(default=False)
-    _viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    __viewbox_to_world: Affine = PrivateAttr(default_factory=Affine)
+    _needs_viewbox_to_world_update: bool = PrivateAttr(default=True)
 
     def __init__(
         self, title='napari', ndisplay=2, order=(), axis_labels=()
@@ -298,19 +299,35 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
 
         self.events.theme.connect(self.canvas._update_bgcolor_from_viewer)
 
+        # initialize the affine
         self._update_viewbox_to_world()
-        self.scene.camera.events.center.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.zoom.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.angles.connect(self._update_viewbox_to_world)
-        self.scene.camera.events.orientation.connect(
-            self._update_viewbox_to_world
+
+        self.scene.camera.events.center.connect(
+            self._update_viewbox_to_world_deferred
         )
-        self.canvas.events.size.connect(self._update_viewbox_to_world)
-        self.canvas.grid.events.connect(self._update_viewbox_to_world)
-        self.dims.events.ndisplay.connect(self._update_viewbox_to_world)
-        self.layers.events.inserted.connect(self._update_viewbox_to_world)
-        self.layers.events.removed.connect(self._update_viewbox_to_world)
-        self.layers.events.reordered.connect(self._update_viewbox_to_world)
+        self.scene.camera.events.zoom.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.angles.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.scene.camera.events.orientation.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.canvas.events.size.connect(self._update_viewbox_to_world_deferred)
+        self.canvas.grid.events.connect(self._update_viewbox_to_world_deferred)
+        self.dims.events.ndisplay.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.inserted.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.removed.connect(
+            self._update_viewbox_to_world_deferred
+        )
+        self.layers.events.reordered.connect(
+            self._update_viewbox_to_world_deferred
+        )
 
     # simple properties exposing overlays for backward compatibility and easy access
     # NOTE: the type ignore comments are needed because the EventedDictNamespace does not
@@ -1073,8 +1090,18 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             viewbox_position, dtype=float
         ) + self._viewbox_origin(viewbox)
 
-    def _update_viewbox_to_world(self, event=None) -> None:
-        """Recompute the persistent viewbox-local -> world affine."""
+    @property
+    def _viewbox_to_world(self) -> Affine:
+        if self._needs_viewbox_to_world_update:
+            self._update_viewbox_to_world()
+        return self.__viewbox_to_world
+
+    def _update_viewbox_to_world_deferred(self, event=None) -> None:
+        """Defer recomputation of the persistent viewbox -> world affine."""
+        self._needs_viewbox_to_world_update = True
+
+    def _update_viewbox_to_world(self) -> None:
+        """Update the persisstent viewbox -> world affine."""
         from scipy.spatial.transform import Rotation as R
 
         ndisplay = self.dims.ndisplay
@@ -1114,16 +1141,19 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
             linear_matrix = (rot_matrix.T / zoom) @ flip_map
             translate = center - linear_matrix @ np.array([0.0, *half])
 
-        affine = self._viewbox_to_world
+        affine = self.__viewbox_to_world
         if affine.ndim != ndisplay:
             affine_matrix = np.eye(ndisplay + 1)
             affine_matrix[:-1, :-1] = linear_matrix
             affine_matrix[:-1, -1] = translate
-            self._viewbox_to_world = Affine(affine_matrix=affine_matrix)
+            self.__viewbox_to_world = Affine(affine_matrix=affine_matrix)
         else:
             affine.linear_matrix = linear_matrix
             affine.translate = translate
+
         affine.name = 'viewbox_to_world'
+
+        self._needs_viewbox_to_world_update = False
 
     def canvas_to_world(
         self,
@@ -1277,7 +1307,7 @@ class ViewerModel(KeymapProvider, MousemapProviderPydantic, EventedModel):
         layer.events.reload.connect(self._on_layer_reload)
         if hasattr(layer.events, 'mode'):
             layer.events.mode.connect(self._on_layer_mode_change)
-        layer.events.visible.connect(self._update_viewbox_to_world)
+        layer.events.visible.connect(self._update_viewbox_to_world_deferred)
         self._layer_help_from_mode(layer)
 
         # Update dims
