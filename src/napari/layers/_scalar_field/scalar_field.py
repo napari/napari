@@ -592,10 +592,10 @@ class ScalarFieldBase(Layer, ABC):
     def _recreate_data_materializers(self) -> None:
         """Recreates the data materializers after data was changed."""
         data = self._data
-        self._data_materializer = _make_data_materializer(data)
+        self._data_materializer = _make_data_materializer(data)  # pyrefly: ignore [bad-argument-type]
         # separate one for thumbnail to ensure cache is not cleaned
         # by the one above
-        self._thumbnail_materializer = _make_data_materializer(data)
+        self._thumbnail_materializer = _make_data_materializer(data)  # pyrefly: ignore [bad-argument-type]
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
