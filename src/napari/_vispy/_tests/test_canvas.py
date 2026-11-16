@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 
 from napari.components.overlays import (
@@ -369,3 +371,24 @@ def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
 
     assert viewer.layers.extent.units == (reg.nm, reg.nm)
     assert canvas.layer_to_visual[image_um].world_units == (reg.nm, reg.nm)
+
+
+def test_scene_graph_cleanup_skipped_on_viewer_close(
+    make_napari_viewer, monkeypatch
+):
+    """Removing layers runs the GPU resource cleanup, closing the viewer does not."""
+    gc_mock = MagicMock()
+    monkeypatch.setattr('napari._vispy.canvas.gc', gc_mock)
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((10, 10)))
+    viewer.add_image(np.zeros((10, 10)))
+
+    viewer.layers.pop()
+    assert gc_mock.collect.call_count == 1
+
+    viewer.layers.clear()
+    assert gc_mock.collect.call_count == 2
+
+    viewer.add_image(np.zeros((10, 10)))
+    viewer.close()
+    assert gc_mock.collect.call_count == 2
