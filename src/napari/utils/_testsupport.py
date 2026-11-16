@@ -82,11 +82,7 @@ def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
         # so unfreeze them to get the full graph of references
         gc.unfreeze()
         gc.collect()
-        file_path_dot = Path(
-            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
-        ).absolute()
-        # report the dot file unless a pdf gets rendered below
-        file_path = file_path_dot
+        pdf_info = '.'
         if graphviz_available:
             file_path = Path(
                 f'{Klass.__name__}-leak-backref-graph-{COUNTER}.pdf'
@@ -96,6 +92,10 @@ def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
                 max_depth=20,
                 filename=str(file_path),
             )
+            pdf_info = f' and in PDF version in {file_path}.'
+        file_path_dot = Path(
+            f'{Klass.__name__}-leak-backref-graph-{COUNTER}.dot'
+        ).absolute()
         objgraph.show_backrefs(
             list(Klass._instances),
             max_depth=20,
@@ -104,13 +104,13 @@ def fail_obj_graph(Klass: type[QtViewer]) -> None:  # pragma: no cover
 
         Klass._instances.clear()
 
-        assert file_path.exists()
+        assert file_path_dot.exists()
 
         # DO not remove len, this can break as C++ obj are gone, but python objects
         # still hang around and _repr_ would crash.
         pytest.fail(
-            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}.'
-            f'The object graph is saved in {file_path}.'
+            f'Test run fail with leaked {leaked_objects_count} instances of {Klass}. '
+            f'The object graph is saved in {file_path_dot}{pdf_info} '
             f'{len(Klass._instances)} objects left after cleanup'
         )
 

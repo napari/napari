@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Generator
 from typing import Literal, TypeAlias, overload
 
@@ -75,6 +76,10 @@ def rotation_matrix_from_vectors_2d(
 ) -> np.ndarray:
     """Calculate the 2D rotation matrix to rotate vec_1 onto vec_2
 
+    .. deprecated:: 2026-Q4
+        This function may be removed as early as 2027-Q1.
+        There is no direct replacement in napari.
+
     Parameters
     ----------
     vec_1 : np.ndarray
@@ -87,13 +92,20 @@ def rotation_matrix_from_vectors_2d(
     rotation_matrix : np.ndarray
         The (2, 2) tranformation matrix that rotates vec_1 to vec_2.
     """
+    warnings.warn(
+        'napari.utils.geometry.rotation_matrix_from_vectors_2d is deprecated '
+        'and may be removed as early as 2027-Q1. '
+        'There is no direct replacement in napari.',
+        FutureWarning,
+        stacklevel=2,
+    )
     # ensure unit vectors
     vec_1 = vec_1 / np.linalg.norm(vec_1)
     vec_2 = vec_2 / np.linalg.norm(vec_2)
 
     # calculate the rotation matrix
     diagonal_1 = (vec_1[0] * vec_2[0]) + (vec_1[1] * vec_2[1])
-    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_2[0] * vec_1[0])
+    diagonal_2 = (vec_1[0] * vec_2[1]) - (vec_1[1] * vec_2[0])
     rotation_matrix = np.array(
         [[diagonal_1, -1 * diagonal_2], [diagonal_2, diagonal_1]]
     )
