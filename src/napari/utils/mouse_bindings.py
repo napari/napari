@@ -10,6 +10,20 @@ if TYPE_CHECKING:
     from napari.utils._proxies import ReadOnlyWrapper
 
 
+class CallbackList(list):
+    """List container for mouse callbacks that returns the appended callable.
+
+    Returning the appended callable allows `@callbacks.append` to be used as a
+    decorator without rebinding the decorated function symbol to `None`.
+
+    # FIXME: Replace decorator-via-append pattern with an explicit connect/disconnect API.
+    """
+
+    def append(self, item: Any) -> Any:
+        super().append(item)
+        return item
+
+
 class MousemapProvider:
     """Mix-in to add mouse binding functionality.
 
@@ -33,13 +47,13 @@ class MousemapProvider:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
-        self.mouse_move_callbacks: list[Callable] = []
+        self.mouse_move_callbacks: list[Callable] = CallbackList()
         # Hold callbacks for when mouse is pressed, dragged, and released
-        self.mouse_drag_callbacks: list[Callable] = []
+        self.mouse_drag_callbacks: list[Callable] = CallbackList()
         # hold callbacks for when mouse is double clicked
-        self.mouse_double_click_callbacks: list[Callable] = []
+        self.mouse_double_click_callbacks: list[Callable] = CallbackList()
         # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks: list[Callable] = []
+        self.mouse_wheel_callbacks: list[Callable] = CallbackList()
 
         self._persisted_mouse_event: dict[
             Generator[object, Never, object], ReadOnlyWrapper[NapariMouseEvent]
@@ -64,10 +78,12 @@ class MousemapProviderPydantic(BaseModel):
         Callbacks from when mouse wheel is scrolled.
     """
 
-    mouse_move_callbacks: list[Callable] = Field(default_factory=list)
-    mouse_wheel_callbacks: list[Callable] = Field(default_factory=list)
-    mouse_drag_callbacks: list[Callable] = Field(default_factory=list)
-    mouse_double_click_callbacks: list[Callable] = Field(default_factory=list)
+    mouse_move_callbacks: list[Callable] = Field(default_factory=CallbackList)
+    mouse_wheel_callbacks: list[Callable] = Field(default_factory=CallbackList)
+    mouse_drag_callbacks: list[Callable] = Field(default_factory=CallbackList)
+    mouse_double_click_callbacks: list[Callable] = Field(
+        default_factory=CallbackList
+    )
     _persisted_mouse_event: dict = PrivateAttr(default_factory=dict)
     _mouse_drag_gen: dict = PrivateAttr(default_factory=dict)
     _mouse_move_gen: dict = PrivateAttr(default_factory=dict)

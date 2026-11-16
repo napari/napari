@@ -299,3 +299,30 @@ def test_transform_box():
     next(transform_with_box(layer, event))
     # no interaction has been done so affine should be the same as the initial
     assert layer.affine == layer._initial_affine
+
+
+def test_mouse_callback_decorator_return_and_remove():
+    """Verify that adding a mouse callback via decorator returns the function and allows removal (Issue #8066)."""
+    layer = Image(np.empty((10, 10)))
+
+    @layer.mouse_drag_callbacks.append
+    def on_mouse_drag(layer_, event):
+        pass
+
+    assert on_mouse_drag is not None
+    assert callable(on_mouse_drag)
+    assert on_mouse_drag in layer.mouse_drag_callbacks
+
+    # Should be removable without ValueError
+    layer.mouse_drag_callbacks.remove(on_mouse_drag)
+    assert on_mouse_drag not in layer.mouse_drag_callbacks
+
+    @layer.mouse_move_callbacks.append
+    def on_mouse_move(layer_, event):
+        pass
+
+    assert on_mouse_move is not None
+    assert callable(on_mouse_move)
+    assert on_mouse_move in layer.mouse_move_callbacks
+    layer.mouse_move_callbacks.remove(on_mouse_move)
+    assert on_mouse_move not in layer.mouse_move_callbacks
