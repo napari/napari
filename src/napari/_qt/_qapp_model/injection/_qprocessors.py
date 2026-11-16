@@ -31,6 +31,8 @@ if TYPE_CHECKING:
 
     from napari.components import ViewerModel
 
+    from napari.components import ViewerModel
+
 
 def _add_plugin_dock_widget(
     widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str, str, bool],
@@ -146,10 +148,6 @@ def _add_layer_to_viewer(
         viewer.add_layer(layer)
 
 
-# here to prevent garbage collection of the future object while processing.
-_FUTURES: set[Future] = set()
-
-
 def _add_future_data(
     future: Future,
     return_type: Any,
@@ -176,35 +174,26 @@ def _add_future_data(
     _from_tuple : bool, optional
         (only for internal use). True if the future returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
+    viewer : Viewer or None
+        An optional viewer to use. Otherwise use current viewer.
+    source : dict or None
+        An optional layer source to use.
     """
-
-    # when the future is done, add layer data to viewer, dispatching
-    # to the appropriate method based on the Future data type.
-
-    add_kwargs = {
-        'return_type': return_type,
-        'viewer': viewer,
-        'source': source,
-    }
-
-    def _on_future_ready(f: Future) -> None:
-        if _from_tuple:
-            _add_layer_data_tuples_to_viewer(f.result(), **add_kwargs)
-        else:
-            _add_layer_data_to_viewer(f.result(), **add_kwargs)
-        _FUTURES.discard(future)
-
-    # We need the callback to happen in the main thread...
-    # This still works (no-op) in a headless environment, but
-    # we could be even more granular with it, with a function
-    # that checks if we're actually in a QApp before wrapping.
-    # with suppress(ImportError):
-    #     from superqt.utils import ensure_main_thread
-
-    #     _on_future_ready = ensure_main_thread(_on_future_ready)
-
-    future.add_done_callback(_on_future_ready)
-    _FUTURES.add(future)
+    if viewer is None:
+        viewer = _provide_viewer_or_raise(
+            msg='Futures cannot be processed in headless mode.',
+        )
+    add_data = (
+        _add_layer_data_tuples_to_viewer
+        if _from_tuple
+        else _add_layer_data_to_viewer
+    )
+    # The future may finish in a background thread, but layers must be
+    # added on the main thread. The QtViewer takes care of that.
+    viewer.window._qt_viewer._add_future(
+        future,
+        partial(add_data, return_type=return_type, source=source),
+    )
 
 
 QPROCESSORS: dict[object, Callable] = {
