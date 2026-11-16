@@ -8,10 +8,7 @@ on:
     - cron: '0 */12 * * *'  # every 12 hours
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '.github/workflows/test_prereleases.yml'
-      - 'resources/constraints/version_denylist.txt'
+  # TEMPORARY (macOS 26 debugging): PR trigger disabled
 
 env:
   COLUMNS: 120
@@ -28,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-latest, macos-15, ubuntu-latest]
+        platform: [windows-latest, macos-latest, ubuntu-latest]
         python: [3.13, 3.14]
         backend: [pyqt6, pyside6]
         include:

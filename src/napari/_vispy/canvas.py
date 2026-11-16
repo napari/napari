@@ -102,6 +102,17 @@ class NapariSceneCanvas(SceneCanvas_):
             return
         super()._process_mouse_event(event)
 
+    def on_draw(self, event):
+        # vispy sets the GL viewport only on resize and assumes it persists.
+        # When Qt cannot composite OpenGL widgets (e.g. macOS 26 VMs with
+        # software GL, or QT_QPA_PLATFORM=offscreen), QOpenGLWidget renders
+        # through a 1x1 QOffscreenSurface, and the makeCurrent() call in
+        # vispy's paintGL resets the viewport to 1x1. Every frame after the
+        # first one following a resize is then drawn into a single pixel.
+        if not self._vp_stack:
+            self.context.set_viewport(0, 0, *self.physical_size)
+        super().on_draw(event)
+
     def draw_visual(self, visual, event=None):
         try:
             super().draw_visual(visual, event=event)
