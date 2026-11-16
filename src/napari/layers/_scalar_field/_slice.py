@@ -196,7 +196,7 @@ class _ScalarFieldSliceRequest:
     data_materializer: MaterializerProtocol
         The cached materializer callable for the main data, responsible for
         the final materialization of the data in at specific level and slice.
-    data_materializer: MaterializerProtocol
+    thumbnail_materializer: MaterializerProtocol
         The cached materializer callable for the thumbnail data, responsible for
         the final materialization of the data in at specific level and slice.
     dtype : DTypeLike
