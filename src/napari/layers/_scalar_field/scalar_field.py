@@ -67,6 +67,32 @@ if TYPE_CHECKING:
 __all__ = ('ScalarFieldBase',)
 
 
+def _hashable_index(index: Any) -> Any:
+    """Return a hashable representation of a numpy-compatible index.
+
+    Slices are converted to (start, stop, step) tuples because they are
+    only hashable from python 3.12. Once we drop 3.11, we can drop this.
+    """
+    if isinstance(index, slice):
+        return ('slice', index.start, index.stop, index.step)
+    if isinstance(index, tuple):
+        return tuple(_hashable_index(item) for item in index)
+    return index
+
+
+class _HashableIndex:
+    """Hashable wrapper around a numpy-compatible index (see _hashable_index)."""
+
+    __slots__ = ('_key', 'index')
+
+    def __init__(self, index: Any) -> None:
+        self.index = index
+        self._key = _hashable_index(index)
+
+    def __hash__(self) -> int:
+        return hash(self._key)
+
+
 def _make_data_materializer(
     data: LayerDataProtocol | MultiScaleData,
 ) -> MaterializerProtocol:
@@ -83,13 +109,18 @@ def _make_data_materializer(
     if isinstance(data, MultiScaleData):
 
         @lru_cache(maxsize=1)
-        def _materializer(level: int, data_slice: Any) -> np.ndarray:
-            return np.asarray(data[level][data_slice])
+        def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
+            return np.asarray(data[level][index.index])
     else:
 
         @lru_cache(maxsize=1)
-        def _materializer(level: int, data_slice: Any) -> np.ndarray:
-            return np.asarray(data[data_slice])
+        def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
+            return np.asarray(data[index.index])
+
+    # needed only because `slice` is not hashable in python 3.11
+    # after we drop it, we can just return `_materialize` and ditch hashableindex
+    def _materializer(level: int, data_slice: Any) -> np.ndarray:
+        return _materialize(level, _HashableIndex(data_slice))
 
     return _materializer
 
