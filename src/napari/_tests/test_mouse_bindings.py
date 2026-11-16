@@ -326,3 +326,18 @@ def test_mouse_callback_decorator_return_and_remove():
     assert on_mouse_move in layer.mouse_move_callbacks
     layer.mouse_move_callbacks.remove(on_mouse_move)
     assert on_mouse_move not in layer.mouse_move_callbacks
+
+    # Test Pydantic model provider as well
+    from napari.utils.mouse_bindings import MousemapProviderPydantic
+
+    pydantic_provider = MousemapProviderPydantic()
+
+    @pydantic_provider.mouse_drag_callbacks.append
+    def on_pydantic_drag(provider, event):
+        pass
+
+    assert on_pydantic_drag is not None
+    assert callable(on_pydantic_drag)
+    assert on_pydantic_drag in pydantic_provider.mouse_drag_callbacks
+    pydantic_provider.mouse_drag_callbacks.remove(on_pydantic_drag)
+    assert on_pydantic_drag not in pydantic_provider.mouse_drag_callbacks

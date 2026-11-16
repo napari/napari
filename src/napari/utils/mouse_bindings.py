@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Generator
-from typing import TYPE_CHECKING, Any, Never
+from typing import TYPE_CHECKING, Any, Never, TypeVar
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -9,8 +9,10 @@ if TYPE_CHECKING:
     from napari._vispy.mouse_event import NapariMouseEvent
     from napari.utils._proxies import ReadOnlyWrapper
 
+_T = TypeVar('_T')
 
-class CallbackList(list):
+
+class CallbackList(list[_T]):
     """List container for mouse callbacks that returns the appended callable.
 
     Returning the appended callable allows `@callbacks.append` to be used as a
@@ -19,7 +21,7 @@ class CallbackList(list):
     # FIXME: Replace decorator-via-append pattern with an explicit connect/disconnect API.
     """
 
-    def append(self, item: Any) -> Any:
+    def append(self, item: _T) -> _T:
         super().append(item)
         return item
 
