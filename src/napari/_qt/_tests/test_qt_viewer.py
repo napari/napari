@@ -888,19 +888,23 @@ def test_create_non_empty_viewer_model_initializes_world_units(
 def _update_data(
     layer: Labels,
     label: int,
-    qtbot: QtBot,
     qt_viewer: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     dtype: np.dtype = np.uint64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Change layer data and return color of label and middle pixel of screenshot."""
+) -> tuple[tuple[int, ...], np.ndarray]:
+    """Change layer data and return color of label and middle pixel of screenshot.
+
+    ``colorbox_painted_colors`` comes from the fixture of the same name and is
+    updated on each QtColorBox paintEvent.
+    """
     layer.data = np.full((2, 2), label, dtype=dtype)
     layer.selected_label = label
 
-    qtbot.wait(50)  # wait for .update() to be called on QtColorBox from Qt
+    # QtColorBox only requests a repaint with update(). Run the event loop so
+    # that colorbox_painted_colors holds the color which it really painted.
+    QApplication.processEvents()
 
-    color_box_color = qt_viewer.controls.widgets[
-        layer
-    ]._label_control.colorbox.color
+    color_box_color = colorbox_painted_colors[-1]
     screenshot = qt_viewer.screenshot(flash=False, size=[400, 400])
     shape = np.array(screenshot.shape[:2])
     middle_pixel = screenshot[tuple(shape // 2)]
@@ -909,8 +913,10 @@ def _update_data(
 
 
 @pytest.fixture
-def qt_viewer_with_controls(qt_viewer: QtViewer) -> QtViewer:
-    qt_viewer.controls.show()
+def qt_viewer_with_controls(qtbot: QtBot, qt_viewer: QtViewer) -> QtViewer:
+    # QtColorBox is not painted until its window is exposed
+    with qtbot.waitExposed(qt_viewer.controls):
+        qt_viewer.controls.show()
     return qt_viewer
 
 
@@ -922,8 +928,8 @@ def qt_viewer_with_controls(qt_viewer: QtViewer) -> QtViewer:
 @pytest.mark.parametrize('dtype', [np.int8, np.int16, np.int64])
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_auto(
-    qtbot: QtBot,
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ) -> None:
@@ -950,7 +956,11 @@ def test_label_colors_matching_widget_auto(
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
 
         npt.assert_allclose(
@@ -967,8 +977,8 @@ def test_label_colors_matching_widget_auto(
 @pytest.mark.parametrize('dtype', [np.uint64, np.uint16, np.uint8, np.int16])
 @pytest.mark.show_qt_viewer
 def test_label_colors_matching_widget_direct(
-    qtbot: QtBot,
     qt_viewer_with_controls: QtViewer,
+    colorbox_painted_colors: list[tuple[int, ...]],
     use_selection: bool,
     dtype: np.dtype,
 ):
@@ -996,14 +1006,18 @@ def test_label_colors_matching_widget_direct(
     layer.show_selected_label = use_selection
 
     color_box_color, middle_pixel = _update_data(
-        layer, 0, qtbot, qt_viewer_with_controls, dtype
+        layer, 0, qt_viewer_with_controls, colorbox_painted_colors, dtype
     )
     assert np.allclose([0, 0, 0, 255], middle_pixel)
 
     for label in test_colors:
         # Change color & selected color to the same label
         color_box_color, middle_pixel = _update_data(
-            layer, label, qtbot, qt_viewer_with_controls, dtype
+            layer,
+            label,
+            qt_viewer_with_controls,
+            colorbox_painted_colors,
+            dtype,
         )
         npt.assert_almost_equal(
             color_box_color, middle_pixel, err_msg=f'{label=}'
