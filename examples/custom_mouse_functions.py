@@ -20,16 +20,16 @@ blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=2)
 labeled = ndi.label(blobs)[0]
 labels_layer = viewer.add_labels(labeled, name='blob ID')
 
-@viewer.mouse_drag_callbacks.append
+@viewer.mouse_click_callbacks.append
 def get_event(viewer, event):
     print(event)
 
-@viewer.mouse_drag_callbacks.append
+@viewer.mouse_click_callbacks.append
 def get_ndisplay(viewer, event):
     if 'Alt' in event.modifiers:
         print('viewer display ', viewer.dims.ndisplay)
 
-@labels_layer.mouse_drag_callbacks.append
+@labels_layer.mouse_click_callbacks.append
 def get_connected_component_shape(layer, event):
     data_coordinates = layer.world_to_data(event.position)
     cords = np.round(data_coordinates).astype(int)
