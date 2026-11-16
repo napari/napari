@@ -32,8 +32,22 @@ repos:
     exclude: .*\.py|.*\.md
   - id: mixed-line-ending
     exclude: .*\.py
+# pinned to a commit because the hook was added after the last release
+# (2.0.0), so autoupdate can't move it to a tag and leaves it as is
+- repo: https://github.com/citation-file-format/cffconvert
+  rev: 054bda51dbe278b3e86f27c890e3f3ac877d616c
+  hooks:
+  - id: validate-cff
 - repo: local
   hooks:
+  - id: check-citation-author-order
+    name: check CITATION.cff author ordering
+    language: python
+    additional_dependencies:
+    - PyYAML>=6.0
+    entry: python tools/check_citation_authors.py check-order
+    pass_filenames: false
+    files: ^(CITATION\.cff|tools/check_citation_authors\.py)$
   - id: check-groups-vs-extras
     name: check that all group names in pyproject.toml are in extras
     language: python

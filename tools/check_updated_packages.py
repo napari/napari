@@ -84,7 +84,9 @@ def calc_changed_packages(
     command = [
         'git',
         'diff',
+        '--end-of-options',
         base_branch,
+        '--',
         str(
             src_dir
             / 'resources'
@@ -102,8 +104,8 @@ def calc_changed_packages(
     except subprocess.CalledProcessError as e:
         raise ValueError(
             f'git diff failed with return code {e.returncode}'
-            ' stderr: {e.stderr.decode()!r}'
-            ' stdout: {e.stdout.decode()!r}'
+            f' stderr: {e.stderr.decode()!r}'
+            f' stdout: {e.stdout.decode()!r}'
         ) from e
 
     return [
