@@ -26,7 +26,7 @@ from napari._qt._qapp_model.injection._qproviders import (
     _provide_window_or_raise,
 )
 from napari.layers._source import layer_source
-from src.napari.viewer import Viewer
+from napari.viewer import Viewer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
