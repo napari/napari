@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import DTypeLike
+
+    class MaterializerProtocol(Protocol):
+        def __call__(self, level: int, data_slice: Any) -> np.ndarray: ...
 
 
 @dataclass(frozen=True)
@@ -190,10 +193,12 @@ class _ScalarFieldSliceRequest:
     ----------
     slice_input : _SliceInput
         Describes the slicing plane or bounding box in the layer's dimensions.
-    data_at_data_level : Any
-        The pre-selected data source accounting for the current data level.
-    data_at_thumbnail_level : Any
-        The pre-selected data source for the thumbnail.
+    data_materializer: MaterializerProtocol
+        The cached materializer callable for the main data, responsible for
+        the final materialization of the data in at specific level and slice.
+    data_materializer: MaterializerProtocol
+        The cached materializer callable for the thumbnail data, responsible for
+        the final materialization of the data in at specific level and slice.
     dtype : DTypeLike
         The dtype of the layer's data.
     data_slice : _ThickNDSlice
@@ -205,8 +210,8 @@ class _ScalarFieldSliceRequest:
     """
 
     slice_input: _SliceInput
-    data_at_data_level: Any = field(repr=False)
-    data_at_thumbnail_level: Any = field(repr=False)
+    data_materializer: MaterializerProtocol = field(repr=False)
+    thumbnail_materializer: MaterializerProtocol = field(repr=False)
     dtype: DTypeLike = field(repr=False)
     dask_indexer: DaskIndexer
     data_slice: _ThickNDSlice
@@ -215,7 +220,6 @@ class _ScalarFieldSliceRequest:
     corner_pixels: np.ndarray
     rgb: bool = field(repr=False)
     data_level: int = field(repr=False)
-    thumbnail_level: int = field(repr=False)
     level_shapes: np.ndarray = field(repr=False)
     downsample_factors: np.ndarray = field(repr=False)
     id: int = field(default_factory=_next_request_id)
@@ -238,7 +242,8 @@ class _ScalarFieldSliceRequest:
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
         order = self._get_order()
         data = self._project_thick_slice(
-            self.data_at_data_level, self.data_slice
+            self.data_materializer,
+            self.data_slice,
         )
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
@@ -262,10 +267,9 @@ class _ScalarFieldSliceRequest:
         for d in self.slice_input.displayed:
             scale[d] = self.downsample_factors[self.data_level][d]
 
-        data = self.data_at_data_level
-
         translate = np.zeros(self.slice_input.ndim)
-        disp_slice = [slice(None) for _ in data.shape]
+        level_shape = self.level_shapes[self.data_level]
+        disp_slice = [slice(None) for _ in level_shape]
         if self.slice_input.ndisplay == 2:
             for d in self.slice_input.displayed:
                 disp_slice[d] = slice(
@@ -286,15 +290,22 @@ class _ScalarFieldSliceRequest:
 
         # project the thick slice, cropped to the displayed tile in one index
         data_slice = self._thick_slice_at_level(self.data_level)
-        data = self._project_thick_slice(data, data_slice, disp_slice)
+        data = self._project_thick_slice(
+            self.data_materializer,
+            data_slice,
+            disp_slice,
+            level=self.data_level,
+        )
 
         order = self._get_order()
         data = np.transpose(data, order)
         image = _ScalarFieldView.from_view(data)
 
-        thumbnail_data_slice = self._thick_slice_at_level(self.thumbnail_level)
+        thumbnail_data_slice = self._thick_slice_at_level(-1)
         thumbnail_data = self._project_thick_slice(
-            self.data_at_thumbnail_level, thumbnail_data_slice
+            self.thumbnail_materializer,
+            thumbnail_data_slice,
+            level=-1,
         )
         thumbnail_data = np.transpose(thumbnail_data, order)
         thumbnail = _ScalarFieldView.from_view(thumbnail_data)
@@ -319,9 +330,10 @@ class _ScalarFieldSliceRequest:
 
     def _project_thick_slice(
         self,
-        data: ArrayLike,
+        data_materializer: MaterializerProtocol,
         data_slice: _ThickNDSlice,
         disp_slice: list[slice] | None = None,
+        level: int = 0,
     ) -> np.ndarray:
         """
         Slice the given data with the given data slice and project the extra dims.
@@ -344,7 +356,7 @@ class _ScalarFieldSliceRequest:
             for d in self.slice_input.displayed:
                 slices[d] = disp_slice[d]
 
-        data = np.asarray(data[tuple(slices)])
+        data = data_materializer(level=level, data_slice=tuple(slices))
 
         if self.projection_mode == 'none':
             # early return with only the dims point being used
