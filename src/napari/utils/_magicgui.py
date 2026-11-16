@@ -407,8 +407,10 @@ def add_future_data(
         False if it returns one of the `LayerData` types.
     """
     from napari._qt._qapp_model.injection._qprocessors import _add_future_data
+    from napari.viewer import Viewer
 
-    if viewer := find_viewer_ancestor(gui):
+    viewer = find_viewer_ancestor(gui)
+    if isinstance(viewer, Viewer):
         _add_future_data(
             future,
             return_type=get_args(return_type)[0],
