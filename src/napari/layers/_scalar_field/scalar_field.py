@@ -3,7 +3,6 @@ from __future__ import annotations
 import types
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
-from functools import lru_cache
 from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 import numpy as np
@@ -46,6 +45,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from napari.components import Dims
+    from napari.layers._scalar_field._slice import _ThumbnailCache
 
     PixelValue: TypeAlias = (
         np.number
@@ -57,23 +57,28 @@ if TYPE_CHECKING:
 __all__ = ('ScalarFieldBase',)
 
 
-def _make_level_materializer(
-    data: MultiScaleData,
-) -> Callable[[int], np.ndarray]:
-    """Return a cached function that materializes one level of *data* at a time.
+def _make_thumbnail_cache() -> _ThumbnailCache:
+    """Return a one-entry cache for the multiscale thumbnail plane.
 
-    The returned callable accepts a ``level`` integer and returns
-    ``np.asarray(data[level])``, caching the last result so repeated slice
-    requests at the same level avoid redundant data fetches. Replacing
-    ``data`` creates a new materializer with its own cache; existing slice
-    requests retain the materializer for their original data.
+    The returned ``cache(key, read)`` returns the stored value if ``key``
+    equals the stored key, otherwise it calls ``read()`` and stores the
+    result. Pan and zoom only change the displayed tile, not the plane, so
+    they hit. Keys contain slices, which are only hashable from Python 3.12,
+    so they are compared with ``==`` rather than hashed.
     """
+    entry: tuple[tuple, np.ndarray] | None = None
 
-    @lru_cache(maxsize=1)
-    def _materializer(level: int) -> np.ndarray:
-        return np.asarray(data[level])
+    def _cached(key: tuple, read: Callable[[], np.ndarray]) -> np.ndarray:
+        nonlocal entry
+        # read the shared entry once, so another thread can't swap it mid-call
+        last = entry
+        if last is not None and last[0] == key:
+            return last[1]
+        value = read()
+        entry = (key, value)
+        return value
 
-    return _materializer
+    return _cached
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -211,7 +216,7 @@ class ScalarFieldBase(Layer, ABC):
 
     _interpolation2d: Interpolation
     _interpolation3d: Interpolation
-    _level_materializer: Callable[[int], np.ndarray] | None
+    _thumbnail_cache: _ThumbnailCache
     _slicing_state: ScalarFieldSlicingState
 
     def __init__(
@@ -571,23 +576,17 @@ class ScalarFieldBase(Layer, ABC):
                 self.refresh(extent=False, thumbnail=False)
 
     def _reset_thumbnail_level_data(self) -> None:
-        """Set ``_thumbnail_level`` and ``_level_materializer`` for the current data.
+        """Set ``_thumbnail_level`` and ``_thumbnail_cache`` for the current data.
 
         Called once during ``__init__`` and again whenever ``data`` is replaced.
-        Only multiscale layers with a single plane per level, including RGB and
-        those with singleton leading dimensions, cache the thumbnail level.
-        Other layers set ``_level_materializer`` to ``None``.
+        Only multiscale slicing uses the cache: a single-scale image is
+        always its own thumbnail.
         """
         data = self._data
-        if isinstance(data, MultiScaleData):
-            self._thumbnail_level = len(data) - 1
-            single_plane = all(s == 1 for s in self.level_shapes[0][:-2])
-            self._level_materializer = (
-                _make_level_materializer(data) if single_plane else None
-            )
-        else:
-            self._thumbnail_level = 0
-            self._level_materializer = None
+        self._thumbnail_level = (
+            len(data) - 1 if isinstance(data, MultiScaleData) else 0
+        )
+        self._thumbnail_cache = _make_thumbnail_cache()
 
     def _get_level_shapes(self) -> Sequence[tuple[int, ...]]:
         data = self.data
@@ -977,7 +976,7 @@ class ScalarFieldSlicingState(_LayerSlicingState):
         return self._slice_request_class(
             slice_input=slice_input,
             data=data,
-            level_materializer=self.layer._level_materializer,
+            thumbnail_cache=self.layer._thumbnail_cache,
             dtype=self.layer.dtype,
             dask_indexer=dask_indexer,
             data_slice=data_slice,

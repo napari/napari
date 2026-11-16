@@ -29,33 +29,6 @@ def test_docstring():
     )
 
 
-@pytest.mark.parametrize('prefix', [(), (1, 1, 1)], ids=['2d', 'singletons'])
-def test_multiscale_thumbnail_level_prematerialized(prefix):
-    """Thumbnail level materializes as numpy via the level materializer.
-
-    Singleton leading dims (e.g. OME's TCZ) still mean one plane per level.
-    """
-    rng = np.random.default_rng(0)
-    data = [rng.random(prefix + (128, 128)), rng.random(prefix + (64, 64))]
-    layer = Image(data, multiscale=True)
-    result = layer._level_materializer(layer._thumbnail_level)
-    assert isinstance(result, np.ndarray)
-    np.testing.assert_array_equal(result, data[layer._thumbnail_level])
-
-
-def test_3d_multiscale_thumbnail_not_prematerialized():
-    """3D multiscale images should not create a level materializer: volumes can be too large."""
-    data = [np.random.random((16, 128, 128)), np.random.random((8, 64, 64))]
-    layer = Image(data, multiscale=True)
-    assert layer._level_materializer is None
-
-
-def test_single_scale_no_prematerialization():
-    """Single-scale images should not materialize and cache."""
-    layer = Image(np.random.random((32, 32)))
-    assert layer._level_materializer is None
-
-
 def test_single_scale_request_keeps_data_after_replacement():
     data = np.zeros((32, 32))
     layer = Image(data)
@@ -68,44 +41,27 @@ def test_single_scale_request_keeps_data_after_replacement():
     assert response.thumbnail is response.image
 
 
-def test_multiscale_slice_request_captures_data_and_materializer():
-    """Slice requests capture the original data and existing materializer."""
-    data = [np.random.random((64, 64)), np.random.random((32, 32))]
-    layer = Image(data, multiscale=True)
-    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
-    assert request.data is layer.data
-    assert request.level_materializer is layer._level_materializer
-    assert request.data_level == request.thumbnail_level
-
-
-def test_multiscale_slice_request_keeps_non_thumbnail_image_source():
-    """Non-thumbnail views should keep their own level."""
-    data = [np.random.random((64, 64)), np.random.random((32, 32))]
-    layer = Image(data, multiscale=True)
-    layer.data_level = 0
-    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
-    assert request.data is layer.data
-    assert request.data[request.data_level] is data[0]
-    assert request._thumbnail_source() is data[-1]
-
-
 class _RecordingArray:
-    """Eager array-like that records indices and array-conversion threads."""
+    """Eager store that records indices and the threads of all reads.
+
+    Like zarr or dask, indexing returns a copy, not a view of the store.
+    """
 
     def __init__(self, array):
         self._array = array
         self.keys = []
-        self.materialization_threads = []
+        self.read_threads = []
         # LayerDataProtocol requires these as concrete attributes
         self.shape, self.dtype = array.shape, array.dtype
         self.ndim, self.size = array.ndim, array.size
 
     def __getitem__(self, key):
         self.keys.append(key)
-        return self._array[key]
+        self.read_threads.append(current_thread())
+        return np.array(self._array[key])
 
     def __array__(self, dtype=None, copy=None):
-        self.materialization_threads.append(current_thread())
+        self.read_threads.append(current_thread())
         array = np.asarray(self._array, dtype=dtype)
         return array.copy() if copy else array
 
@@ -147,74 +103,77 @@ def test_multiscale_slice_reads_only_the_visible_tile():
 
 
 @pytest.mark.usefixtures('_enable_async')
-def test_thumbnail_materialization_deferred_to_slice_execution():
+@pytest.mark.parametrize('prefix', [(), (3,)], ids=['2d', 'nd'])
+def test_thumbnail_read_deferred_to_slice_execution(prefix):
     data = [
-        _RecordingArray(np.zeros((64, 64), dtype=np.uint8)),
-        _RecordingArray(np.ones((32, 32), dtype=np.uint8)),
+        _RecordingArray(np.zeros(prefix + (64, 64), dtype=np.uint8)),
+        _RecordingArray(np.ones(prefix + (32, 32), dtype=np.uint8)),
     ]
     layer = Image(data, multiscale=True)
-    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+    dims = Dims(ndim=layer.ndim)
+    request = layer._slicing_state._make_slice_request(dims)
 
-    assert not data[-1].materialization_threads
-    assert not data[-1].keys
+    assert not data[-1].read_threads
 
     with ThreadPoolExecutor(max_workers=1) as executor:
         response = executor.submit(request).result(timeout=5)
-        next_request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+        next_request = layer._slicing_state._make_slice_request(dims)
         executor.submit(next_request).result(timeout=5)
 
-    assert len(data[-1].materialization_threads) == 1
-    assert data[-1].materialization_threads[0] is not main_thread()
-    assert not data[0].materialization_threads
-    assert not data[0].keys
-    np.testing.assert_array_equal(response.image.raw, data[-1]._array)
-
-
-@pytest.mark.usefixtures('_enable_async')
-def test_nd_thumbnail_source_stays_lazy():
-    data = [
-        _RecordingArray(np.zeros((3, 64, 64), dtype=np.uint8)),
-        _RecordingArray(np.ones((3, 32, 32), dtype=np.uint8)),
-    ]
-    layer = Image(data, multiscale=True)
-    request = layer._slicing_state._make_slice_request(Dims(ndim=3))
-
-    assert request._thumbnail_source() is data[-1]
-    for level in data:
-        assert not level.materialization_threads
-        assert not level.keys
+    assert len(data[-1].read_threads) == 1
+    assert data[-1].read_threads[0] is not main_thread()
+    assert not data[0].read_threads
+    np.testing.assert_array_equal(
+        response.image.raw, data[-1]._array[(0,) * len(prefix)]
+    )
 
 
 @pytest.mark.usefixtures('_enable_async')
 @pytest.mark.parametrize(
-    ('shape', 'rgb', 'ndisplay', 'order'),
+    ('shape', 'rgb', 'ndisplay', 'order', 'projection_mode', 'expected'),
     [
-        ((32, 40), False, 2, (0, 1)),
-        ((3, 32, 40), False, 2, (0, 1, 2)),
-        ((2, 3, 32, 40), False, 2, (0, 1, 2, 3)),
-        ((32, 40, 3), True, 2, (0, 1)),
-        ((3, 32, 40), False, 3, (0, 1, 2)),
-        ((3, 32, 40), False, 2, (2, 0, 1)),
+        ((32, 40), False, 2, (0, 1), 'none', lambda a: a),
+        ((32, 40, 3), True, 2, (0, 1), 'none', lambda a: a),
+        ((5, 32, 40), False, 2, (0, 2, 1), 'none', lambda a: a[2].T),
+        # point 2 with margins of 1 projects planes 1 to 3
+        ((5, 32, 40), False, 2, (0, 1, 2), 'max', lambda a: a[1:4].max(0)),
+        ((5, 32, 40), False, 3, (0, 1, 2), 'none', lambda a: a),
     ],
+    ids=['2d', 'rgb', 'nd-transposed', 'nd-thick-max', 'volume'],
 )
-@pytest.mark.parametrize('projection_mode', ['none', 'mean', 'max'])
 @pytest.mark.parametrize('data_level', [0, 1])
 def test_full_extent_image_reused_as_thumbnail(
-    shape, rgb, ndisplay, order, projection_mode, data_level
+    shape, rgb, ndisplay, order, projection_mode, expected, data_level
 ):
-    fine_shape = tuple(2 * s for s in shape)
-    if rgb:
-        fine_shape = fine_shape[:-1] + (shape[-1],)
+    """A tile covering its whole level is read once and is the thumbnail."""
+    # only the last two spatial dims are downsampled, so the levels share
+    # the dims point
+    spatial = len(shape) - rgb
+    fine_shape = (
+        shape[: spatial - 2]
+        + tuple(2 * s for s in shape[spatial - 2 : spatial])
+        + shape[spatial:]
+    )
+    rng = np.random.default_rng(0)
     data = [
-        _RecordingArray(np.full(fine_shape, 2, dtype=np.uint8)),
-        _RecordingArray(np.ones(shape, dtype=np.uint8)),
+        _RecordingArray(rng.integers(0, 256, s, dtype=np.uint8))
+        for s in (fine_shape, shape)
     ]
     layer = Image(
         data, multiscale=True, rgb=rgb, projection_mode=projection_mode
     )
     # Locking selects the level in 3D display too.
     layer._locked_data_level = data_level
-    dims = Dims(ndim=len(order), ndisplay=ndisplay, order=order)
+    ndim = len(order)
+    dims = Dims(
+        ndim=ndim,
+        ndisplay=ndisplay,
+        order=order,
+        range=tuple((0, s - 1, 1) for s in fine_shape[:ndim]),
+    )
+    if ndim == 3:
+        dims.set_point(0, 2)
+        dims.margin_left = dims.margin_right = (1, 0, 0)
     displayed = list(dims.displayed)
     layer.corner_pixels = np.zeros((2, layer.ndim), dtype=int)
     # 3D bounds intentionally remain zero: volume display ignores them.
@@ -224,50 +183,45 @@ def test_full_extent_image_reused_as_thumbnail(
         )
     response = layer._slicing_state._make_slice_request(dims)()
 
-    level_shape = data[data_level].shape
-    expected_shape = tuple(level_shape[d] for d in displayed)
-    if rgb:
-        expected_shape += (shape[-1],)
-    assert response.thumbnail is response.image
-    assert response.image.raw.shape == expected_shape
-    assert np.all(response.image.raw == 2 - data_level)
     source, other = data[data_level], data[1 - data_level]
-    assert len(source.keys) + len(source.materialization_threads) == 1
-    assert not other.keys
-    assert not other.materialization_threads
+    assert response.thumbnail is response.image
+    np.testing.assert_array_equal(response.image.raw, expected(source._array))
+    assert len(source.read_threads) == 1
+    assert not other.read_threads
 
 
-@pytest.mark.parametrize('ndim', [2, 3])
+@pytest.mark.parametrize(
+    'order', [(0, 1), (0, 2, 1)], ids=['2d', 'nd-transposed']
+)
 @pytest.mark.parametrize('data_level', [0, 1])
-def test_cropped_multiscale_image_keeps_full_thumbnail(ndim, data_level):
-    prefix = (3,) if ndim == 3 else ()
+def test_cropped_multiscale_image_keeps_full_thumbnail(order, data_level):
+    ndim = len(order)
+    prefix = (3,) * (ndim - 2)
+    plane = (1,) * (ndim - 2)
     data = [
-        np.arange(np.prod(prefix + (64, 64)), dtype=np.uint16).reshape(
-            prefix + (64, 64)
-        ),
-        np.arange(np.prod(prefix + (32, 32)), dtype=np.uint16).reshape(
-            prefix + (32, 32)
-        ),
+        np.arange(np.prod(prefix + s), dtype=np.uint16).reshape(prefix + s)
+        for s in ((64, 80), (32, 40))
     ]
     layer = Image(data, multiscale=True)
     layer._data_level = data_level
     layer.corner_pixels = np.zeros((2, ndim), dtype=int)
-    layer.corner_pixels[0, -2:] = 4
-    layer.corner_pixels[1, -2:] = 11
-    dims = Dims(ndim=ndim, point=(1, 0, 0) if ndim == 3 else (0, 0))
+    layer.corner_pixels[0, -2:] = (4, 6)
+    layer.corner_pixels[1, -2:] = (11, 19)
+    dims = Dims(ndim=ndim, order=order, point=plane + (0, 0))
     response = layer._slicing_state._make_slice_request(dims)()
-    expected_image = data[data_level][1] if ndim == 3 else data[data_level]
-    expected_thumbnail = data[-1][1] if ndim == 3 else data[-1]
+    expected_image = data[data_level][plane][4:12, 6:20]
+    expected_thumbnail = data[-1][plane]
+    if order == (0, 2, 1):  # the displayed dims are transposed
+        expected_image = expected_image.T
+        expected_thumbnail = expected_thumbnail.T
 
     assert response.thumbnail is not response.image
-    np.testing.assert_array_equal(
-        response.image.raw, expected_image[4:12, 4:12]
-    )
+    np.testing.assert_array_equal(response.image.raw, expected_image)
     np.testing.assert_array_equal(response.thumbnail.raw, expected_thumbnail)
 
 
 @pytest.mark.parametrize('ndim', [2, 3])
-def test_thumbnail_source_keeps_request_data_after_replacement(ndim):
+def test_multiscale_request_keeps_data_after_replacement(ndim):
     prefix = (3,) if ndim == 3 else ()
     data1 = [np.zeros(prefix + (64, 64)), np.ones(prefix + (32, 32))]
     data2 = [np.zeros(prefix + (64, 64)), np.full(prefix + (32, 32), 2)]
@@ -284,76 +238,63 @@ def test_thumbnail_source_keeps_request_data_after_replacement(ndim):
     np.testing.assert_array_equal(new_request().image.raw, expected_new)
 
 
-def test_thumbnail_level_data_refreshed_on_data_replacement():
-    """Replacing layer.data must bind a fresh materializer for the new data
-    so slices never read from the old dataset."""
+def test_thumbnail_level_refreshed_on_data_replacement():
+    """Replacing layer.data with a different number of levels moves the
+    thumbnail to the new coarsest level."""
     data1 = [np.zeros((64, 64)), np.zeros((32, 32))]
     data2 = [np.ones((90, 90)), np.ones((45, 45)), np.ones((22, 22))]
 
     layer = Image(data1, multiscale=True)
     assert layer._thumbnail_level == 1
-    np.testing.assert_array_equal(
-        layer._level_materializer(layer._thumbnail_level), data1[1]
-    )
 
     layer.data = data2
     assert layer._thumbnail_level == 2  # new last level
-    np.testing.assert_array_equal(
-        layer._level_materializer(layer._thumbnail_level), data2[2]
-    )
+    request = layer._slicing_state._make_slice_request(Dims(ndim=2))
+    np.testing.assert_array_equal(request._thumbnail_plane(), data2[2])
 
 
-def test_thumbnail_level_data_uses_new_data_ndim_2d_to_3d():
-    """Replacing 2D data with 3D should set materializer to None — 3D volumes
-    are left as lazy data-array references."""
-    from napari.layers._multiscale_data import MultiScaleData
+def test_3d_display_does_not_cache_volume():
+    """Volumes are never cached: the thumbnail cache only holds 2D planes."""
+    levels = [
+        np.zeros((8, 64, 64), np.uint8),
+        _RecordingArray(np.ones((4, 32, 32), np.uint8)),
+    ]
+    layer = Image(levels, multiscale=True)
+    dims = Dims(ndim=3, ndisplay=3)
+    levels[1].read_threads.clear()  # drop reads made while constructing
 
-    data2d = [np.zeros((64, 64)), np.zeros((32, 32))]
-    data3d = [np.ones((16, 64, 64)), np.ones((8, 32, 32))]
+    for _ in range(2):
+        response = layer._slicing_state._make_slice_request(dims)()
+        assert response.thumbnail is response.image
 
-    layer = Image(data2d, multiscale=True)
-    assert layer._level_materializer is not None  # 2D: materializer present
+    assert len(levels[1].read_threads) == 2
 
-    layer._data = MultiScaleData(data3d)
+
+@pytest.mark.parametrize('prefix', [(), (1,)], ids=['2d', 'singleton'])
+def test_3d_display_caches_single_plane(prefix):
+    """Planes shown in 3D (2D data, singleton dims) are cached, so slider
+    moves of other layers don't re-read them."""
+    levels = [
+        np.zeros(prefix + (64, 64), np.uint8),
+        _RecordingArray(np.ones(prefix + (32, 32), np.uint8)),
+    ]
+    layer = Image(levels, multiscale=True)
+    dims = Dims(ndim=3, ndisplay=3)
+    # drop the cache and reads from construction, which slices in 2D
     layer._reset_thumbnail_level_data()
+    levels[1].read_threads.clear()
 
-    assert layer._level_materializer is None  # 3D: no materializer
+    for _ in range(2):
+        response = layer._slicing_state._make_slice_request(dims)()
+        np.testing.assert_array_equal(response.image.raw, levels[1]._array)
 
-
-def test_thumbnail_level_data_uses_new_data_ndim_3d_to_2d():
-    """Replacing 3D data with 2D should produce a fresh materializer for
-    the new 2D data."""
-    from napari.layers._multiscale_data import MultiScaleData
-
-    data3d = [np.zeros((16, 64, 64)), np.zeros((8, 32, 32))]
-    data2d = [np.ones((64, 64)), np.ones((32, 32))]
-
-    layer = Image(data3d, multiscale=True)
-    old_materializer = layer._level_materializer
-
-    layer._data = MultiScaleData(data2d)
-    layer._reset_thumbnail_level_data()
-    assert layer._level_materializer is not old_materializer
-    np.testing.assert_array_equal(
-        layer._level_materializer(layer._thumbnail_level),
-        data2d[layer._thumbnail_level],
-    )
+    assert len(levels[1].read_threads) == 1
 
 
-def test_rgb_2d_multiscale_prematerialized():
-    """RGB (H, W, 3) multiscale images materialise correctly via the closure."""
-    data = [np.ones((128, 128, 3)), np.ones((64, 64, 3))]
-    layer = Image(data, multiscale=True, rgb=True)
-
-    assert layer.ndim == 2  # spatial dims only
-    tld = layer._level_materializer(layer._thumbnail_level)
-    assert isinstance(tld, np.ndarray)
-    assert tld.shape == (64, 64, 3)
-    np.testing.assert_array_equal(tld, data[1])
-
-
-@pytest.mark.parametrize('prefix', [(), (1, 1, 1)], ids=['2d', 'singletons'])
-def test_cropped_thumbnail_level_materialized_once(prefix):
+@pytest.mark.parametrize(
+    'prefix', [(), (1, 1, 1), (3,)], ids=['2d', 'singletons', 'nd']
+)
+def test_cropped_thumbnail_level_read_once(prefix):
     """Panning a cropped tile must not re-read the thumbnail level."""
     levels = [
         _RecordingArray(np.ones(prefix + (128, 128), np.uint8)),
@@ -377,8 +318,37 @@ def test_cropped_thumbnail_level_materialized_once(prefix):
         assert response.thumbnail is not response.image
         assert response.thumbnail.view.shape == (64, 64)
 
-    # one materialization in total, none per pan
-    assert len(levels[1].materialization_threads) == 1
+    # one read in total, none per pan
+    assert len(levels[1].read_threads) == 1
+
+
+# 'none' keys on ints for the not-displayed dims, 'max' on slices
+@pytest.mark.parametrize('projection_mode', ['none', 'max'])
+def test_thumbnail_plane_reread_on_dims_change(projection_mode):
+    """Moving the dims point reads the new thumbnail plane."""
+    levels = [
+        np.arange(3 * 64 * 64, dtype=np.uint16).reshape(3, 64, 64),
+        _RecordingArray(
+            np.arange(3 * 32 * 32, dtype=np.uint16).reshape(3, 32, 32)
+        ),
+    ]
+    layer = Image(levels, multiscale=True, projection_mode=projection_mode)
+    # a cropped level-0 tile, so the thumbnail is read separately
+    layer._data_level = 0
+    corner_pixels = np.zeros((2, 3), dtype=int)
+    corner_pixels[1, 1:] = 31
+    layer.corner_pixels = corner_pixels
+    dims = Dims(ndim=3, range=((0, 2, 1), (0, 63, 1), (0, 63, 1)))
+
+    thumbnails = []
+    for point in (0, 0, 2):
+        dims.set_point(0, point)
+        response = layer._slicing_state._make_slice_request(dims)()
+        thumbnails.append(response.thumbnail.raw)
+
+    assert len(levels[1].read_threads) == 2
+    np.testing.assert_array_equal(thumbnails[0], levels[1]._array[0])
+    np.testing.assert_array_equal(thumbnails[2], levels[1]._array[2])
 
 
 @pytest.mark.parametrize('Layer', [Image, Labels])
