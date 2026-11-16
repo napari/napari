@@ -31,8 +31,6 @@ if TYPE_CHECKING:
 
     from napari.components import ViewerModel
 
-    from napari.components import ViewerModel
-
 
 def _add_plugin_dock_widget(
     widget_name_tuple: tuple[FunctionGui | QWidget | Widget, str, str, bool],
