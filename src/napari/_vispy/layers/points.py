@@ -45,7 +45,6 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.canvas_size_limits.connect(
             self._on_canvas_size_limits_change
         )
-        self.layer.events.scale_factor.connect(self._update_text)
 
         self._on_data_change()
 
@@ -116,20 +115,19 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._view_size[self.layer._highlight_index]
-            border_width = self.layer.border_width[data_indices]
-            if self.layer.border_width_is_relative:
-                border_width = border_width * size
+            # size including the (capped) border, as used for hit-testing
+            size = self.layer._view_size_with_border[
+                self.layer._highlight_index
+            ]
             symbol = self.layer.symbol[data_indices]
         else:
             data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            border_width = np.empty(0)
 
         scale = abs(self.layer.scale[-1])
         highlight_thickness = settings.appearance.highlight.highlight_thickness
-        scaled_size = (size + border_width) * scale
+        scaled_size = size * scale
         # cap scaled_highlight to the marker size, cause otherwise we get strange effects
         # in the shaders which result in unbound growth of highlights)
         scaled_highlight = np.minimum(
@@ -166,6 +164,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         self.node.update()
 
+    def _on_font_size_change(self):
+        # this reroute needs to exist cause the base class uses
+        # _on_font_size_change as well to connect to the settings
+        self._update_text()
+
     def _update_text(self, *, update_node=True) -> None:
         """Function to update the text node properties
 
@@ -174,7 +177,11 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        update_text(node=self.node.text, layer=self.layer)
+        update_text(
+            node=self.node.text,
+            layer=self.layer,
+            default_font_size=self._default_font_size,
+        )
         if update_node:
             self.node.update()
 

@@ -21,6 +21,7 @@ from napari.layers.shapes.shape_types import (
     CoordinateArray3D,
     EdgeArray,
     TriangleArray,
+    TriangleDtype,
 )
 
 if TYPE_CHECKING:
@@ -234,32 +235,6 @@ def triangle_edges_intersect_box(
             all_intersects |= intersects
 
     return all_intersects
-
-
-def lines_intersect(p1, q1, p2, q2):
-    """Determines if line segment p1q1 intersects line segment p2q2
-
-    Parameters
-    ----------
-    p1 : (2,) array
-        Array of first point of first line segment
-    q1 : (2,) array
-        Array of second point of first line segment
-    p2 : (2,) array
-        Array of first point of second line segment
-    q2 : (2,) array
-        Array of second point of second line segment
-
-    Returns
-    -------
-    intersects : bool
-        Bool indicating if line segment p1q1 intersects line segment p2q2
-    """
-    # Wrap inputs into (1, 2) arrays to use the vectorized function
-    p1_arr = np.array([p1])
-    q1_arr = np.array([q1])
-
-    return vectorized_lines_intersect(p1_arr, q1_arr, p2, q2)[0]
 
 
 def vectorized_lines_intersect(
@@ -631,7 +606,7 @@ def triangulate_ellipse(
     ).T * np.array([0, 1, 1])
     triangles[-1, 2] = 1
 
-    return vertices, triangles
+    return vertices, triangles.astype(TriangleDtype)
 
 
 def _cull_triangles_not_in_poly(vertices, triangles, poly):
@@ -1082,30 +1057,6 @@ def poly_to_indices(
         vertices[:, 0], vertices[:, 1], tuple(mask_shape)
     )
     return rows, cols
-
-
-def grid_points_in_poly(shape, vertices):
-    """Converts a polygon to a boolean mask with `True` for points
-    lying inside the shape. Loops through all indices in the grid
-
-    Parameters
-    ----------
-    shape : np.ndarray | tuple
-        1x2 array of shape of mask to be generated.
-    vertices : np.ndarray
-        Nx2 array of the vertices of the polygon.
-
-    Returns
-    -------
-    mask : np.ndarray
-        Boolean array with `True` for points inside the polygon
-    """
-    points = np.array(
-        [(x, y) for x in range(shape[0]) for y in range(shape[1])], dtype=int
-    )
-    inside = points_in_poly(points, vertices)
-    mask = inside.reshape(shape)
-    return mask
 
 
 def points_in_poly(

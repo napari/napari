@@ -49,22 +49,21 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-    vkwargs = {
+    viewer_kwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
         if k in _viewer_params
+        # not passing `axis_labels` to viewer kwargs as it inherits from the layer
         if k != 'axis_labels'
     }
-    if 'axis_labels' in kwargs:
-        vkwargs['axis_labels'] = (
-            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
-        )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
+        k: viewer_kwargs.pop(k)
+        for k in list(viewer_kwargs)
+        if k in Dims.model_fields
     }
     if viewer is None:
-        viewer = Viewer(**vkwargs)
+        viewer = Viewer(**viewer_kwargs)
     kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)

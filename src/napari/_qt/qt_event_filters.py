@@ -15,7 +15,7 @@ class QtToolTipEventFilter(QObject):
     """
 
     def eventFilter(self, qobject: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.ToolTipChange and isinstance(
+        if event.type() == QEvent.Type.ToolTipChange and isinstance(
             qobject, QWidget
         ):
             tooltip = qobject.toolTip()

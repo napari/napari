@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
+    QMainWindow,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
@@ -10,7 +11,10 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.utils import combine_widgets
-from napari._qt.widgets.qt_viewer_dock_widget import QtCustomTitleBar
+from napari._qt.widgets.qt_viewer_dock_widget import (
+    QtCustomTitleBar,
+    QtViewerDockWidget,
+)
 
 
 def test_add_dock_widget(make_napari_viewer):
@@ -243,6 +247,30 @@ def test_dock_area_change_updates_custom_title_bar(make_napari_viewer):
         dw.features()
         & QDockWidget.DockWidgetFeature.DockWidgetVerticalTitleBar
     )
+
+
+def test_dock_area_saved_only_when_moved(qtbot):
+    """Only areas the user chose are saved, so a widget that was never moved
+    keeps following its default (e.g. a plugin's `default_dock_area`)."""
+    from napari.settings import get_settings
+
+    positions = get_settings().application.plugin_widget_positions
+    qt_window = QMainWindow()
+    qtbot.addWidget(qt_window)
+    # the dock widget only keeps a weak reference to its viewer
+    dw = QtViewerDockWidget(QWidget(), QPushButton(), name='test')
+
+    # opening the widget does not save its area
+    qt_window.addDockWidget(dw.qt_area, dw)
+    assert 'test' not in positions
+
+    # moving the widget to another area, like a user dragging it, saves it
+    qt_window.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dw)
+    assert positions['test'] == 'left'
+
+    # moving it back to where it opened is a choice too, and is saved
+    qt_window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dw)
+    assert positions['test'] == 'right'
 
 
 def test_combine_widgets_error():
