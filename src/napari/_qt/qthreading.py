@@ -11,7 +11,7 @@ from typing import (
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
-from napari.utils.task_status import Status
+from napari.utils.task_status import Status, TaskStatusItem
 from napari.viewer import current_viewer
 
 if TYPE_CHECKING:
@@ -29,39 +29,46 @@ __all__ = [
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
 
 
-class _NotifyingMixin:
-    """Relay warnings from the worker thread to the notification manager.
-
-    Errors are not relayed here: unless ignored, they are re-raised in the
-    main thread by `create_worker`, which already notifies.
-    """
-
-    def __init__(self: _qthreading.WorkerBase, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.warned.connect(self._relay_warning)
-
-    # `warned` is emitted in the worker thread and the slot runs later in
-    # the main thread. By then the thread pool may have deleted the worker,
-    # and PyQt silently skips slots that are methods of a deleted worker.
-    # A staticmethod isn't tied to the worker, so it always runs.
-    @staticmethod
-    def _relay_warning(show_warn_args: tuple):
-        from napari.utils.notifications import notification_manager
-
-        notification_manager.receive_warning(*show_warn_args)
-
-
 _Y = TypeVar('_Y')
 _S = TypeVar('_S')
 _R = TypeVar('_R')
 
 
-class FunctionWorker(_NotifyingMixin, _qthreading.FunctionWorker[_R]): ...
+class FunctionWorker(_qthreading.FunctionWorker[_R]): ...
 
 
-class GeneratorWorker(
-    _NotifyingMixin, _qthreading.GeneratorWorker[_Y, _S, _R]
-): ...
+class GeneratorWorker(_qthreading.GeneratorWorker[_Y, _S, _R]): ...
+
+
+class _WorkerTaskStatus(TaskStatusItem):
+    """Task status of a worker, updated by the worker's signals.
+
+    The signals connect straight to these methods. The task status manager
+    keeps this item alive, so the connections hold no reference to the
+    window, and they don't depend on the worker, which the thread pool
+    deletes as soon as it finishes. The methods ignore signal arguments.
+    """
+
+    def __init__(self, func: Callable, worker: _qthreading.WorkerBase):
+        super().__init__(
+            'napari-worker',
+            Status.PENDING,
+            f'{func} execution pending',
+            cancel_callback=worker.quit,
+        )
+        self._func = func
+
+    def set_busy(self, *_signal_args) -> None:
+        self.update(Status.BUSY, f'Executing {self._func}')
+
+    def set_failed(self, *_signal_args) -> None:
+        self.update(Status.FAILED, f'{self._func} execution failed')
+
+    def set_completed(self, *_signal_args) -> None:
+        self.update(Status.COMPLETED, f'{self._func} execution completed')
+
+    def set_cancelled(self, *_signal_args) -> None:
+        self.update(Status.CANCELLED, f'{self._func} execution cancelled')
 
 
 # these are re-implemented from superqt just to provide progress
@@ -191,43 +198,15 @@ def create_worker(
 
     # signals connection for status handling
     if viewer := current_viewer():
-        window = viewer.window
-        worker_status_id = window._register_task_status(
-            'napari-worker',
-            Status.PENDING,
-            f'{func} execution pending',
-            cancel_callback=worker.quit,
-        )
-
-        def task_status_slot(
-            status: Status, description: str
-        ) -> Callable[..., None]:
-            """Return a slot that sets this worker's task status."""
-
-            def slot(*_signal_args) -> None:
-                window._update_task_status(
-                    worker_status_id, status, description
-                )
-
-            return slot
-
-        worker.started.connect(
-            task_status_slot(Status.BUSY, f'Executing {func}')
-        )
-        worker.errored.connect(
-            task_status_slot(Status.FAILED, f'{func} execution failed')
-        )
+        task_status = _WorkerTaskStatus(func, worker)
+        viewer.window._task_status_manager.add_task_status(task_status)
+        worker.started.connect(task_status.set_busy)
+        worker.errored.connect(task_status.set_failed)
         # `returned` rather than `finished`: `finished` also comes after
         # `errored` and `aborted`, and would overwrite those statuses.
-        worker.returned.connect(
-            task_status_slot(Status.COMPLETED, f'{func} execution completed')
-        )
+        worker.returned.connect(task_status.set_completed)
         if isinstance(worker, _qthreading.GeneratorWorker):
-            worker.aborted.connect(
-                task_status_slot(
-                    Status.CANCELLED, f'{func} execution cancelled'
-                )
-            )
+            worker.aborted.connect(task_status.set_cancelled)
 
     if _start_thread is None:
         _start_thread = _connect is not None

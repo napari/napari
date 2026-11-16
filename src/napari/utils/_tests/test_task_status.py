@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from napari.utils.task_status import Status, TaskStatusManager
+from napari.utils.task_status import Status, TaskStatusItem, TaskStatusManager
 
 
 def test_task_status():
@@ -42,4 +42,15 @@ def test_task_status():
     task_status_manager.cancel_all()
     cancel_callback_mock.assert_called_once()
     assert task_status_manager.get_status() == []
+    assert not task_status_manager.is_busy()
+
+
+def test_add_task_status():
+    """An item created outside the manager can be added and updated."""
+    task_status_manager = TaskStatusManager()
+    item = TaskStatusItem('test-task-status', Status.BUSY, 'Added busy')
+    task_status_id = task_status_manager.add_task_status(item)
+    assert task_status_id == item.id
+    assert task_status_manager.get_status() == ['test-task-status: Added busy']
+    item.update(Status.COMPLETED, 'Added completed')
     assert not task_status_manager.is_busy()
