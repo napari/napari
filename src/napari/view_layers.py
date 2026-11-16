@@ -328,13 +328,11 @@ def imshow(
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. By default None for default Viewer object
-        behavior or keep the ndisplay of an existing viewer.
+        Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. By default None for default Viewer object behavior or keep
-        the order of an existing viewer.
+        ndisplay is 2 or 3.
     axis_labels : list of str, optional
         Dimension names. By default they are labeled with sequential numbers
     show : bool, optional
