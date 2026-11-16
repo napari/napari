@@ -42,7 +42,7 @@ repos:
   - id: check-pixi-vs-pyproject
     name: check that pixi.toml dependencies are in sync with pyproject.toml
     language: python
-    entry: python tools/check_pixi_vs_pyproject.py
+    entry: python tools/conda-forge/check_pixi_vs_pyproject.py
     additional_dependencies: [packaging]
-    files: ^(pyproject\.toml|tools/conda-forge/pixi\.toml)$
+    files: ^(pyproject\.toml|tools/conda-forge/(pixi\.toml|check_pixi_vs_pyproject\.py))$
     pass_filenames: false
