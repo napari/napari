@@ -17,11 +17,26 @@
 # `XDG_CACHE_HOME=tools/conda-forge/.pixi/cache pixi run --manifest-path tools/conda-forge -e test-py313-pyside6 test`.
 [workspace]
 name = "napari"
-requires-pixi = ">=0.77.1"
+# exemptions in `exclude-newer` require pixi 0.83.0
+requires-pixi = ">=0.83.0"
 authors = ["napari team <napari-steering-council@googlegroups.com>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
+
+# Use only packages released at least 7 days ago, so a broken release on conda-forge
+# could be fixed or marked as broken before it reaches CI.
+# Packages from the napari ecosystem are exempt to test against their latest releases.
+[workspace.exclude-newer]
+cutoff = "7d"
+
+[workspace.exclude-newer.exemptions]
+app-model = "*"
+magicgui = "*"
+napari-plugin-manager = "*"
+npe2 = "*"
+superqt = "*"
+vispy = "*"
 
 [package]
 # The version in pyproject.toml is dynamic (setuptools_scm), but pixi-build requires
