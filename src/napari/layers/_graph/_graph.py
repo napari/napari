@@ -121,6 +121,7 @@ class _Graph(Layer):
     @data.setter
     def data(self, data: nxGraph) -> None:
         self._data = data
+        self._update_dims()
 
     def _get_ndim(self) -> int:
         nodes = self.data.nodes(data=True)
