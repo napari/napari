@@ -1,6 +1,8 @@
 import numpy as np
+import pytest
 from scipy import ndimage as ndi
 
+from napari.components import ViewerModel
 from napari.components.dims import Dims
 from napari.layers import Labels
 from napari.utils._test_utils import read_only_mouse_event
@@ -299,6 +301,107 @@ def test_fill_nD_all():
     assert np.unique(layer.data[:5, -5:, -5:]) == 5
     assert np.unique(layer.data[-5:, :5, -5:]) == 5
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
+
+
+@pytest.mark.parametrize('mode', ['paint', 'erase', 'fill'])
+def test_edit_outside_slice_extent_is_noop(mode):
+    """Painting, erasing, and filling beyond slice bounds must not crash."""
+    from napari.utils.notifications import notification_manager
+
+    data = np.zeros((16, 64, 64), dtype=np.uint8)
+    data[5, 32, 32] = 2
+    original = data.copy()
+
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((32, 64, 64)))
+    layer = viewer.add_labels(data)
+    layer.mode = mode
+    layer.selected_label = 3
+    viewer.dims.current_step = (29, 32, 32)
+
+    notifications = []
+    notification_manager.notification_ready.connect(notifications.append)
+    try:
+        press = read_only_mouse_event(
+            type='mouse_press',
+            button=1,
+            position=(29.0, 32.0, 32.0),
+            dims_displayed=[1, 2],
+            dims_point=(29.0, 32.0, 32.0),
+        )
+        mouse_press_callbacks(layer, press)
+        move = read_only_mouse_event(
+            type='mouse_move',
+            is_dragging=True,
+            position=(29.0, 40.0, 40.0),
+            dims_displayed=[1, 2],
+            dims_point=(29.0, 32.0, 32.0),
+        )
+        mouse_move_callbacks(layer, move)
+        release = read_only_mouse_event(
+            type='mouse_release',
+            button=1,
+            position=(29.0, 40.0, 40.0),
+            dims_displayed=[1, 2],
+            dims_point=(29.0, 32.0, 32.0),
+        )
+        mouse_release_callbacks(layer, release)
+    finally:
+        notification_manager.notification_ready.disconnect(
+            notifications.append
+        )
+
+    np.testing.assert_array_equal(layer.data, original)
+    assert len(layer._undo_history) == 0
+    assert len(notifications) == 1
+
+
+@pytest.mark.parametrize('mode', ['paint', 'erase', 'fill'])
+def test_edit_negative_non_painted_slice_is_noop(mode):
+    """Negative non-painted slice coordinates must not wrap around to last slice."""
+    data = np.zeros((16, 64, 64), dtype=np.uint8)
+    data[15, :, :] = 2
+    original = data.copy()
+
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((32, 64, 64)))
+    layer = viewer.add_labels(data, translate=(10, 0, 0))
+    layer.mode = mode
+    layer.selected_label = 3
+    viewer.dims.point = (9.0, 32.0, 32.0)
+
+    press = read_only_mouse_event(
+        type='mouse_press',
+        button=1,
+        position=(9.0, 32.0, 32.0),
+        dims_displayed=[1, 2],
+        dims_point=(9.0, 32.0, 32.0),
+    )
+    mouse_press_callbacks(layer, press)
+    mouse_release_callbacks(layer, press)
+
+    np.testing.assert_array_equal(layer.data, original)
+    assert len(layer._undo_history) == 0
+
+
+def test_drag_across_slice_extent_skips_out_of_bounds():
+    """Dragging across a slice boundary skips out-of-bounds interpolated steps."""
+    data = np.zeros((16, 32, 32), dtype=np.uint8)
+    layer = Labels(data)
+    layer._slice_dims(Dims(ndim=3, ndisplay=2, point=(15, 16, 16)))
+    layer.mode = 'paint'
+    layer.selected_label = 4
+    layer.brush_size = 1
+
+    with layer.block_history():
+        layer._draw(
+            4,
+            np.array([15.0, 16.0, 16.0]),
+            np.array([20.0, 16.0, 16.0]),
+        )
+
+    assert layer.data[15, 16, 16] == 4
+    assert np.all(layer.data[:15] == 0)
 
 
 def test_paint_3d():

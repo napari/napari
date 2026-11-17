@@ -6,6 +6,7 @@ from napari._vispy.utils.qt_font import FontInfo
 from napari.components import ViewerModel
 from napari.layers.labels._labels_key_bindings import complete_polygon
 from napari.utils.interactions import (
+    mouse_double_click_callbacks,
     mouse_move_callbacks,
     mouse_press_callbacks,
 )
@@ -246,3 +247,65 @@ def test_labels_polygon_with_downsampling(monkeypatch):
             '(data coordinates divided by downsample factor) when downsampling is active'
         ),
     )
+
+
+@pytest.mark.usefixtures('patch_gloo_set_state')
+def test_polygon_outside_slice_extent_is_noop(MouseEvent):
+    """Polygon drawing and completion out of slice extent must not raise."""
+    viewer = ViewerModel()
+    viewer.add_image(np.zeros((32, 64, 64)))
+    data = np.zeros((16, 64, 64), dtype=np.uint8)
+    data[15, :, :] = 2
+    original = data.copy()
+    layer = viewer.add_labels(data, translate=(10, 0, 0))
+    overlay = layer._overlays['polygon']
+    VispyLabelsPolygonOverlay(
+        layer=layer,
+        font_info=FontInfo(),
+        viewer=viewer,
+        overlay=overlay,
+    )
+    layer.mode = 'polygon'
+    layer.selected_label = 3
+
+    for world_z in (39.0, 9.0):  # data slice 29 and -1
+        viewer.dims.point = (world_z, 32.0, 32.0)
+        for pos in [
+            (world_z, 10.0, 10.0),
+            (world_z, 10.0, 20.0),
+            (world_z, 20.0, 20.0),
+        ]:
+            press = MouseEvent(
+                type='mouse_press',
+                button=1,
+                position=pos,
+                dims_displayed=[1, 2],
+            )
+            mouse_press_callbacks(layer, press)
+            move = MouseEvent(
+                type='mouse_move',
+                position=(world_z, 25.0, 25.0),
+                dims_displayed=[1, 2],
+            )
+            mouse_move_callbacks(layer, move)
+
+        assert overlay.points == []
+        dbl = MouseEvent(
+            type='mouse_double_click',
+            button=1,
+            position=(world_z, 10.0, 10.0),
+            dims_displayed=[1, 2],
+        )
+        mouse_double_click_callbacks(layer, dbl)
+
+    # Guard direct add_polygon_to_labels/complete_polygon as well.
+    overlay.points = [
+        [29.0, 10.0, 10.0],
+        [29.0, 10.0, 20.0],
+        [29.0, 20.0, 20.0],
+    ]
+    complete_polygon(layer)
+    assert overlay.points == []
+
+    np.testing.assert_array_equal(layer.data, original)
+    assert len(layer._undo_history) == 0
