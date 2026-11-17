@@ -590,3 +590,60 @@ def test_z_order_consistent_after_transform(seed):
         assert len(shape_list._mesh.displayed_triangles) == len(
             shape_list._mesh.triangles
         )
+
+
+def _assert_mesh_matches_shapes(shape_list):
+    """Each shape's mesh triangles resolve to that shape's own geometry."""
+    mesh = shape_list._mesh
+    for index, shape in enumerate(shape_list.shapes):
+        face = mesh.triangles[shape_list._mesh_triangles_face_slice(index)]
+        npt.assert_array_equal(
+            mesh.vertices[face],
+            shape._face_vertices[shape._face_triangles],
+        )
+        edge = mesh.triangles[shape_list._mesh_triangles_edge_slice(index)]
+        edge_vertices = (
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets
+        )
+        npt.assert_allclose(
+            mesh.vertices[edge],
+            edge_vertices[shape._edge_triangles],
+        )
+
+
+@pytest.mark.parametrize(
+    ('method', 'arg'), [('rotate', 15), ('flip', 0), ('flip', 1)]
+)
+def test_mesh_consistent_after_vertex_count_change(method, arg):
+    """Rotate and flip re-triangulate the edge, which may change the number
+    of its vertices and triangles; the mesh of the following shapes must not
+    be corrupted by it.
+    """
+    # polygon with a hole: the edge connecting outer and inner ring is
+    # traversed twice
+    polygon_with_hole = (
+        np.array(
+            [
+                [0, 0],
+                [10, 0],
+                [10, 10],
+                [0, 10],
+                [0, 0],
+                [2, 5],
+                [5, 8],
+                [8, 5],
+                [5, 2],
+                [2, 5],
+            ]
+        )
+        * 1.5
+    )
+    shape_list = ShapeList()
+    shape_list.add([Polygon(polygon_with_hole), Polygon(polygon_with_hole)])
+    _assert_mesh_matches_shapes(shape_list)
+    vertices_count_before = shape_list.shapes[0].vertices_count
+
+    getattr(shape_list, method)(0, arg)
+
+    assert shape_list.shapes[0].vertices_count != vertices_count_before
+    _assert_mesh_matches_shapes(shape_list)
