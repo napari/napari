@@ -6,6 +6,8 @@ import numpy as np
 
 from napari._vispy.overlays.base import LayerOverlayMixin, VispyCanvasOverlay
 from napari._vispy.visuals.colorbar import ColorBar
+from napari.layers import Tracks
+from napari.utils.colormaps import AVAILABLE_COLORMAPS
 from napari.utils.colormaps.colormap_utils import (
     _coerce_contrast_limits,
     _napari_cmap_to_vispy,
@@ -64,9 +66,38 @@ class ColorManagerWrapper:
         return self.color_manager.continuous_colormap
 
 
+class TracksWrapper:
+    def __init__(self, layer: Tracks) -> None:
+        self.layer = layer
+
+    @property
+    def contrast_limits(self) -> tuple[float, float]:
+        layer = self.layer
+        # colormaps from colormaps_dict get the values without normalization
+        if layer.color_by in layer.colormaps_dict:
+            return 0.0, 1.0
+        values = layer.properties[layer.color_by]
+        return float(np.min(values)), float(np.max(values))
+
+    @property
+    def dtype(self) -> DTypeLike:
+        return np.float32
+
+    @property
+    def gamma(self) -> float:
+        return 1
+
+    @property
+    def colormap(self) -> Colormap:
+        layer = self.layer
+        if layer.color_by in layer.colormaps_dict:
+            return layer.colormaps_dict[layer.color_by]
+        return AVAILABLE_COLORMAPS[layer.colormap]
+
+
 class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
     overlay: ColorBarOverlay
-    layer: Image | Surface
+    layer: Image | Surface | Tracks
 
     def __init__(
         self,
@@ -82,8 +113,20 @@ class VispyColorBarOverlay(LayerOverlayMixin, VispyCanvasOverlay):
         self.x_size = 50
         self.y_size = 250
 
-        self.source_wrapper: IntensityLayerWrapper | ColorManagerWrapper
-        if self.overlay.colormanager_attribute is not None:
+        self.source_wrapper: (
+            IntensityLayerWrapper | ColorManagerWrapper | TracksWrapper
+        )
+        if isinstance(self.layer, Tracks):
+            self.source_wrapper = TracksWrapper(self.layer)
+            # changing color_by can also change the colormap
+            for event in (
+                self.layer.events.color_by,
+                self.layer.events.colormap,
+                self.layer.events.properties,
+            ):
+                event.connect(self._on_colormap_change)
+                event.connect(self._on_data_change)
+        elif self.overlay.colormanager_attribute is not None:
             color_manager = getattr(
                 self.layer, self.overlay.colormanager_attribute
             )

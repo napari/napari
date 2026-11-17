@@ -5,7 +5,7 @@ import zarr
 
 from napari.components.dims import Dims
 from napari.components.layerlist import LayerList
-from napari.layers import Image, Labels, Points, Shapes
+from napari.layers import Image, Labels, Points, Shapes, Tracks
 from napari.layers._layer_actions import (
     _convert,
     _convert_dtype,
@@ -22,6 +22,7 @@ from napari.layers._layer_actions import (
     _show_unselected,
     _split_rgb,
     _split_stack,
+    _toggle_colorbar,
     _toggle_lock,
     _toggle_visibility,
 )
@@ -123,6 +124,17 @@ def test_toggle_visibility():
     _toggle_visibility(layer_list)
 
     assert layer_list[0].visible is True
+
+
+def test_toggle_colorbar_tracks():
+    """Tracks layers have a colorbar that can be toggled."""
+    layer_list = LayerList()
+    layer_list.append(Tracks(np.array([[0, 0, 0, 0], [0, 1, 1, 1]])))
+    layer_list.selection.active = layer_list[0]
+    assert not layer_list[0].colorbar.visible
+
+    _toggle_colorbar(layer_list)
+    assert layer_list[0].colorbar.visible
 
 
 def test_toggle_lock():
