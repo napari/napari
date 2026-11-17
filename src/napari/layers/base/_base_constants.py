@@ -1,6 +1,16 @@
 from enum import Flag, IntEnum, auto
+from typing import Literal
 
 from napari.utils.misc import StringEnum
+
+BlendingStr = Literal[
+    'translucent',
+    'translucent_no_depth',
+    'additive',
+    'minimum',
+    'opaque',
+    'multiplicative',
+]
 
 
 class Blending(StringEnum):
@@ -41,6 +51,8 @@ class Blending(StringEnum):
     MINIMUM = auto()
     OPAQUE = auto()
     MULTIPLICATIVE = auto()
+
+    value: BlendingStr
 
 
 class Mode(StringEnum):

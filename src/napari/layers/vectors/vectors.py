@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     import pint
 
     from napari.components.dims import Dims
+    from napari.layers.base._base_constants import BlendingStr
     from napari.layers.utils.plane import ClippingPlane, ClippingPlaneList
     from napari.utils.colormaps.categorical_colormap import (
         CategoricalColormap,
@@ -80,12 +81,12 @@ class Vectors(Layer):
     cache : bool
         Whether slices of out-of-core datasets should be cached upon retrieval.
         Currently, this only applies to dask arrays.
-    edge_color : str
+    edge_color : str, array-like, dict
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, napari.utils.Colormap
+    edge_colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to set vector color if a continuous attribute is used to set edge_color.
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
@@ -172,8 +173,8 @@ class Vectors(Layer):
             Vectors are displayed as arrows.
     length : float
         Multiplicative factor on projections for length of all vectors.
-    edge_color : str
-        Color of all of the vectors.
+    edge_color : Nx4 numpy array
+        Array of edge color RGBA values, one for each vector.
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
@@ -220,15 +221,15 @@ class Vectors(Layer):
         *,
         affine: npt.ArrayLike | Affine | None = None,
         axis_labels: Sequence[str] | None = None,
-        blending: str = 'translucent',
+        blending: BlendingStr = 'translucent',
         cache: bool = True,
-        edge_color: str | np.ndarray | dict = 'red',
+        edge_color: ColorType | dict = 'red',
         edge_color_cycle: CategoricalColormap
         | dict
         | list
         | np.ndarray
         | None = None,
-        edge_colormap: str | Colormap = 'viridis',
+        edge_colormap: ValidColormapArg = 'viridis',
         edge_contrast_limits: tuple[float, float] | None = None,
         edge_width: float = 1,
         experimental_clipping_planes: dict
@@ -237,26 +238,26 @@ class Vectors(Layer):
         | ClippingPlaneList
         | None = None,
         feature_defaults: dict[str, Any] | pd.DataFrame | None = None,
-        features: dict[str, np.ndarray] | pd.DataFrame | None = None,
+        features: dict[str, npt.NDArray[Any]] | pd.DataFrame | None = None,
         length: float = 1,
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
         name: str | None = None,
         ndim: int | None = None,
         opacity: float = 0.7,
         projection_mode: str = 'all',
-        properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
-        property_choices: dict[str, np.ndarray] | None = None,
+        properties: dict[str, npt.NDArray[Any]] | pd.DataFrame | None = None,
+        property_choices: dict[str, npt.NDArray[Any]] | None = None,
         rotate: float
         | Sequence[float]
         | Sequence[Sequence[float]]
-        | npt.NDArray
+        | npt.NDArray[Any]
         | None = None,
-        scale: Sequence[float] | npt.NDArray | None = None,
+        scale: Sequence[float] | npt.NDArray[Any] | None = None,
         shear: Sequence[float]
         | Sequence[Sequence[float]]
-        | npt.NDArray
+        | npt.NDArray[Any]
         | None = None,
-        translate: Sequence[float] | npt.NDArray | None = None,
+        translate: Sequence[float] | npt.NDArray[Any] | None = None,
         units: Sequence[str | pint.Unit | None] | None = None,
         vector_style: str = 'triangle',
         visible: bool = True,
@@ -340,7 +341,7 @@ class Vectors(Layer):
     @property
     def _view_data(
         self,
-    ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]]:
+    ) -> np.ndarray[tuple[int, Literal[2], Literal[2]], np.dtype[np.number]]:
         """(M, 2, 2) array: start point and projections of M vectors in 2D."""
         return self._slicing_state._view_data
 
@@ -830,7 +831,7 @@ class _VectorsSlicingState(_LayerSlicingState):
 
         # Data containing vectors in the currently viewed slice
         self._view_data: np.ndarray[
-            tuple[int, Literal[2], Literal[2]], np.dtype[np.floating]
+            tuple[int, Literal[2], Literal[2]], np.dtype[np.number]
         ] = np.empty((0, 2, 2))
         self._view_indices = np.array([], dtype=int)
         self._view_alphas: float | np.ndarray = 1.0
