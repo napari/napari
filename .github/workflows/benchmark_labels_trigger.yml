@@ -12,4 +12,3 @@ jobs:
   trigger-benchmarks:
     if: github.event.label.name == 'run-benchmarks'
     uses: ./.github/workflows/benchmarks.yml
-    secrets: inherit

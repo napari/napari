@@ -15,6 +15,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   COLUMNS: 120
 
@@ -105,7 +108,8 @@ jobs:
 
   coverage_report:
     if: ${{ always() }}
-    secrets: inherit
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
     needs:
       - test
       - test_examples

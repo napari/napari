@@ -1,0 +1,12 @@
+# Configuration for zizmor (https://docs.zizmor.sh/configuration/),
+# run by .github/workflows/zizmor.yml.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # napari controls these repositories, so following their main branch
+        # avoids reviewing the same change twice.
+        napari/shared-workflows/*: ref-pin
+        napari/packaging/*: ref-pin
+        # Everything else must be pinned to a commit SHA (zizmor's default).
+        "*": hash-pin

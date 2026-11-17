@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/**'
 
+permissions:
+  contents: read
+
 jobs:
   actionlint:
     name: Action lint

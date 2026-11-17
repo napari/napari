@@ -17,10 +17,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build_docs:
     uses: napari/shared-workflows/.github/workflows/build_docs.yml@main
-    secrets: inherit
+    secrets:
+      GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+      GOOGLE_CALENDAR_API_KEY: ${{ secrets.GOOGLE_CALENDAR_API_KEY }}
     with:
       main-repo: ${{ github.repository }}
       main-ref: ${{ github.sha }}

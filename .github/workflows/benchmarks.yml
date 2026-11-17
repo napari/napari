@@ -31,6 +31,9 @@ env:
   # --attribute timeout=300 -> override timeout attribute (default=60s) to allow slow tests to run
   # see https://asv.readthedocs.io/en/stable/commands.html#asv-continuous for more details!
 
+permissions:
+  contents: read
+
 jobs:
   benchmark:
     name: ${{ matrix.benchmark-name }}
@@ -102,6 +105,14 @@ jobs:
           # they are probably just documentation PNGs not needed here anyway
           GIT_LFS_SKIP_SMUDGE: 1
           HEAD_LABEL: ${{ github.event.pull_request.head.label }}
+          BASE_LABEL: ${{ github.event.pull_request.base.label }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LATEST_RELEASE_COMMIT: ${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}
+          LATEST_RELEASE_TAG: ${{ fromJSON(steps.latest_release.outputs.data).tag_name }}
+          INPUT_BASE_REF: ${{ github.event.inputs.base_ref }}
+          INPUT_CONTENDER_REF: ${{ github.event.inputs.contender_ref }}
+          SELECTION_REGEX: ${{ matrix.selection-regex }}
           PIP_CONSTRAINT: ${{ github.workspace }}/resources/constraints/benchmark.txt
           TMPDIR: ${{ github.workspace }}/tmp
         run: |
@@ -114,21 +125,21 @@ jobs:
           asv machine --yes
 
           if [[ $GITHUB_EVENT_NAME == pull_request ]]; then
-            EVENT_NAME="PR #${{ github.event.pull_request.number }}"
-            BASE_REF=${{ github.event.pull_request.base.sha }}
+            EVENT_NAME="PR #${PR_NUMBER}"
+            BASE_REF="${PR_BASE_SHA}"
             CONTENDER_REF=${GITHUB_SHA}
-            echo "Baseline:  ${BASE_REF} (${{ github.event.pull_request.base.label }})"
+            echo "Baseline:  ${BASE_REF} (${BASE_LABEL})"
             echo "Contender: ${CONTENDER_REF} ($HEAD_LABEL)"
           elif [[ $GITHUB_EVENT_NAME == schedule ]]; then
             EVENT_NAME="cronjob"
-            BASE_REF="${{ fromJSON(steps.latest_release.outputs.data).target_commitish }}"
+            BASE_REF="${LATEST_RELEASE_COMMIT}"
             CONTENDER_REF="${GITHUB_SHA}"
-            echo "Baseline:  ${BASE_REF} (${{ fromJSON(steps.latest_release.outputs.data).tag_name }})"
+            echo "Baseline:  ${BASE_REF} (${LATEST_RELEASE_TAG})"
             echo "Contender: ${CONTENDER_REF} (current main)"
           elif [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
             EVENT_NAME="manual trigger"
-            BASE_REF="${{ github.event.inputs.base_ref }}"
-            CONTENDER_REF="${{ github.event.inputs.contender_ref }}"
+            BASE_REF="${INPUT_BASE_REF}"
+            CONTENDER_REF="${INPUT_CONTENDER_REF}"
             echo "Baseline:  ${BASE_REF} (workflow input)"
             echo "Contender: ${CONTENDER_REF} (workflow input)"
           fi
@@ -138,7 +149,7 @@ jobs:
           echo "CONTENDER_REF=$CONTENDER_REF" >> "$GITHUB_ENV"
 
           # Run benchmarks for current commit against base
-          asv continuous "${cmd_options[@]}" -b "${{ matrix.selection-regex }}" "${BASE_REF}" "${CONTENDER_REF}" \
+          asv continuous "${cmd_options[@]}" -b "${SELECTION_REGEX}" "${BASE_REF}" "${CONTENDER_REF}" \
           | sed -E "/Traceback | failed$|PERFORMANCE DECREASED/ s/^/::error:: /" \
           | tee asv_continuous.log
 
