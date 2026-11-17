@@ -263,12 +263,14 @@ def _nanpercentile(
 def _resize_to_thumbnail(
     image: np.ndarray, thumbnail_shape: tuple[int, int]
 ) -> np.ndarray:
-    """Nearest-neighbor resizeof ``image`` to fit ``thumbnail_shape``.
+    """Nearest-neighbor resize of ``image`` to fit ``thumbnail_shape``.
 
     Preserves aspect ratio (each side at least 1 pixel) and trailing dims.
     Equivalent to ``scipy.ndimage.zoom(image, ..., order=0, prefilter=False)``,
     except that the last output pixel along each axis always comes from the
     last input pixel (scipy's can land just outside ``image`` and become 0).
+
+    Note: this reimplementation was done to avoid costly scipy import.
     """
     in_shape = np.array(image.shape[:2])
     scale = np.min(np.divide(thumbnail_shape, in_shape))
