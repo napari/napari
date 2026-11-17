@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
@@ -75,7 +75,7 @@ class Tracks(Layer):
         case of track splitting, or more than one (the track has multiple
         parents, but only one child) in the case of track merging.
         See examples/tracks_3d_with_graph.py
-    head_length : float
+    head_length : int
         Length of the positive (forward in time) tails in units of time.
     hide_completed_tracks : bool
         If True, tracks that have completed before the current time point are not
@@ -103,7 +103,7 @@ class Tracks(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    tail_length : float
+    tail_length : int
         Length of the positive (backward in time) tails in units of time.
     tail_width : float
         Width of the track tails in pixels.
@@ -145,7 +145,7 @@ class Tracks(Layer):
         name: str | None = None,
         opacity: float = 1.0,
         projection_mode: str = 'none',
-        properties: dict[str, np.ndarray] | None = None,
+        properties: dict[str, np.ndarray] | pd.DataFrame | None = None,
         rotate: float
         | Sequence[float]
         | Sequence[Sequence[float]]
@@ -157,7 +157,7 @@ class Tracks(Layer):
         | npt.NDArray
         | None = None,
         tail_length: int = 30,
-        tail_width: int = 2,
+        tail_width: float = 2,
         translate: Sequence[float] | npt.NDArray | None = None,
         units: Sequence[str | pint.Unit | None] | None = None,
         visible: bool = True,
@@ -374,7 +374,7 @@ class Tracks(Layer):
         return self._slicing_state._view_graph
 
     @property
-    def current_time(self) -> int | None:
+    def current_time(self) -> float | None:
         """current time according to the first dimension"""
         # TODO(arl): get the correct index here
         time_step = self._data_slice.point[0]
@@ -499,7 +499,7 @@ class Tracks(Layer):
 
     @property
     def tail_length(self) -> int:
-        """float: Width for all vectors in pixels."""
+        """int: Length of the tails backward in time, in units of time."""
         return self._tail_length
 
     @tail_length.setter
@@ -659,7 +659,9 @@ class Tracks(Layer):
         return self._manager.graph_times
 
     @property
-    def track_labels(self) -> tuple:
+    def track_labels(
+        self,
+    ) -> tuple[None, tuple[None, None]] | tuple[list[str], np.ndarray | None]:
         """return track labels at the current time"""
         assert self.current_time is not None
         labels, positions = self._manager.track_labels(self.current_time)
@@ -693,7 +695,7 @@ class _TracksSlicingState(_LayerSlicingState):
         self, layer: Tracks, data: LayerDataType, cache: bool
     ) -> None:
         super().__init__(layer=layer, data=data, cache=cache)
-        self._current_displayed_dims: Optional[list[int]] = None
+        self._current_displayed_dims: list[int] | None = None
 
     def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""

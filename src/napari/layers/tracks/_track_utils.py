@@ -63,7 +63,7 @@ class TrackManager:
     hide_completed_tracks : bool
         Whether to hide track segments that have completed before the current
         time point, regardless of tail_length value.
-    current_time : int, optional
+    current_time : float, optional
         Current time point for determining which tracks have completed. Required
         when hide_completed_tracks is enabled.
     track_end_times : array (M,)
@@ -94,7 +94,7 @@ class TrackManager:
 
         # Parameters for hide_completed_tracks functionality
         self._hide_completed_tracks: bool = False
-        self._current_time: int | None = None
+        self._current_time: float | None = None
         self._track_end_times: np.ndarray | None = (
             None  # Cache for track end times (1D array ordered by unique_track_ids)
         )
@@ -225,12 +225,12 @@ class TrackManager:
         self._hide_completed_tracks = value
 
     @property
-    def current_time(self) -> int | None:
+    def current_time(self) -> float | None:
         """Current time point for determining completed tracks"""
         return self._current_time
 
     @current_time.setter
-    def current_time(self, value: int | None) -> None:
+    def current_time(self, value: float | None) -> None:
         """Set current time point"""
         self._current_time = value
 
@@ -468,7 +468,7 @@ class TrackManager:
         return None
 
     def track_labels(
-        self, current_time: int
+        self, current_time: float
     ) -> tuple[None, None] | tuple[list[str], np.ndarray]:
         """return track labels at the current time"""
         if self._points_id is None:
