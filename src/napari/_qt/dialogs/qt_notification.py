@@ -102,11 +102,13 @@ class NapariQtNotification(QDialog):
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
-        self.timer = QTimer()
-        self.opacity = QGraphicsOpacityEffect()
+        self.timer = QTimer(parent=self)
+        self.opacity = QGraphicsOpacityEffect(parent=self)
         self.setGraphicsEffect(self.opacity)
-        self.opacity_anim = QPropertyAnimation(self.opacity, b'opacity', self)
-        self.geom_anim = QPropertyAnimation(self, b'geometry', self)
+        self.opacity_anim = QPropertyAnimation(
+            self.opacity, b'opacity', parent=self
+        )
+        self.geom_anim = QPropertyAnimation(self, b'geometry', parent=self)
         self.move_to_bottom_right()
 
     def _update_icon(self, severity: str):
@@ -179,7 +181,7 @@ class NapariQtNotification(QDialog):
         """Expand the notification on double click."""
         self.toggle_expansion()
 
-    def close(self):
+    def close(self, start_next: bool = True):
         self.timer_stop()
         self.opacity_anim.stop()
         self.geom_anim.stop()
@@ -187,6 +189,8 @@ class NapariQtNotification(QDialog):
         with suppress(ValueError):
             # if show is not called, the element is not in list
             notifications.remove(self)
+        if not start_next:
+            return
         if self.parent() is not None:
             if notifications and not notifications[-1].underMouse():
                 notifications[-1].timer_start()

@@ -121,3 +121,12 @@ def test_mutate_item_invalidates_cache():
 
     npt.assert_array_equal(chain((1, 1)), (4, -5))
     npt.assert_array_equal(chain.inverse((1, 1)), (1 / 4, -1 / 5))
+
+
+def test_setitem_disconnects_old_transform():
+    old = Affine(scale=(2, 2))
+    chain = TransformChain([old])
+    assert len(old.changed) == 1
+
+    chain[0] = Affine(scale=(3, 3))
+    assert len(old.changed) == 0

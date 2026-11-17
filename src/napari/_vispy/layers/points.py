@@ -115,20 +115,19 @@ class VispyPointsLayer(VispyBaseLayer):
             ]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._view_size[self.layer._highlight_index]
-            border_width = self.layer.border_width[data_indices]
-            if self.layer.border_width_is_relative:
-                border_width = border_width * size
+            # size including the (capped) border, as used for hit-testing
+            size = self.layer._view_size_with_border[
+                self.layer._highlight_index
+            ]
             symbol = self.layer.symbol[data_indices]
         else:
             data = np.empty((0, self.layer._slice_input.ndisplay))
             size = 0
             symbol = ['o']
-            border_width = np.empty(0)
 
         scale = abs(self.layer.scale[-1])
         highlight_thickness = settings.appearance.highlight.highlight_thickness
-        scaled_size = (size + border_width) * scale
+        scaled_size = size * scale
         # cap scaled_highlight to the marker size, cause otherwise we get strange effects
         # in the shaders which result in unbound growth of highlights)
         scaled_highlight = np.minimum(
