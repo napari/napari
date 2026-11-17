@@ -357,7 +357,11 @@ write_to = "src/napari/_version.py"
 fallback_version = "0.7.1.dev0"
 
 [tool.uv]
-python-preference = "system"
+environments = [
+    "sys_platform == 'linux'",
+    "sys_platform == 'win32'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
 
 [tool.check-manifest]
 ignore = [
