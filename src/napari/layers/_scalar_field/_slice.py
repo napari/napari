@@ -315,8 +315,12 @@ class _ScalarFieldSliceRequest:
         )
 
     def _materialize_and_project_slice(
-        self, *, data_materializer, disp_slice, level
-    ):
+        self,
+        *,
+        data_materializer: MaterializerProtocol,
+        disp_slice: list[slice] | None,
+        level: int,
+    ) -> _ScalarFieldView:
         data_slice = self._thick_slice_at_level(level)
         # project the thick slice, cropped to the displayed tile in one index
         data = self._project_thick_slice(
