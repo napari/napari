@@ -38,7 +38,7 @@ if typing.TYPE_CHECKING:
     import pint
 
     from napari.components.histogram import HistogramModel
-    from napari.types import ArrayLike
+    from napari.types import ArrayLike, Matrix2D, Vector1D
     from napari.utils.transforms import Affine
 
 __all__ = ('Image',)
@@ -289,9 +289,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         projection_mode: str = 'mean',
         rendering: str = 'mip',
         rgb: bool | None = None,
-        rotate: float | Sequence[float] | npt.NDArray | None = None,
+        rotate: float | Vector1D | Matrix2D | None = None,
         scale: Sequence[float] | None = None,
-        shear: Sequence[float] | npt.NDArray | None = None,
+        shear: Vector1D | Matrix2D | None = None,
         translate: Sequence[float] | None = None,
         units: Sequence[str | pint.Unit] | None = None,
         visible: bool = True,
@@ -597,7 +597,9 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
         self.thumbnail = colormapped
 
     def _calc_data_range(
-        self, mode: Literal['data', 'slice'] = 'data'
+        self,
+        mode: Literal['data', 'slice'] = 'data',
+        percentiles: tuple[float, float] | None = None,
     ) -> tuple[float, float]:
         """
         Calculate the range of the data values in the currently viewed slice
@@ -613,7 +615,10 @@ class Image(IntensityVisualizationMixin, ScalarFieldBase):
                 f"mode must be either 'data' or 'slice', got {mode!r}"
             )
         return calc_data_range(
-            cast(LayerDataProtocol, input_data), rgb=self.rgb, dtype=self.dtype
+            cast(LayerDataProtocol, input_data),
+            rgb=self.rgb,
+            dtype=self.dtype,
+            percentiles=percentiles,
         )
 
     def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:

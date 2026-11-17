@@ -1,16 +1,23 @@
+from __future__ import annotations
+
 import os
 import sys
 from collections.abc import Callable
 from inspect import Parameter, getdoc, signature
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
 
 from napari.utils.migrations import rename_argument
 from napari.utils.misc import camel_to_snake
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from napari.components import ViewerModel
     from napari.layers import Layer
 
-_L = TypeVar('_L', bound='Layer')
+P = ParamSpec('P')
+L = TypeVar('L', bound='Layer')
+
 
 tmpl_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'add_layer.py_tmpl'
@@ -21,23 +28,31 @@ with open(tmpl_path) as f:
     template = f.read()
 
 
-def create_func(
-    cls: type[_L], name: str | None = None, doc: str | None = None
-) -> Callable[..., _L]:
+def create_add_method(
+    cls: Callable[P, L], name: str | None = None, doc: str | None = None
+) -> Callable[Concatenate[ViewerModel, P], L]:
     """
-    Creates a function (such as `add_<layer>`) to add a layer to the viewer
+    Creates a method (such as `add_<layer>`) to add a layer to the viewer
 
     The functionality is inherited from the corresponding `<layer>` class.
+    If the class name starts with an underscore, the generated function is
+    private too: ``_PrivateClass`` -> ``_add_private_class``. If ``name`` is
+    given, its own leading underscore decides this instead.
     """
     cls_name = cls.__name__
 
     if name is None:
-        name = camel_to_snake(cls_name)
+        is_private = cls_name.startswith('_')
+        name = camel_to_snake(cls_name.lstrip('_'))
+    else:
+        is_private = name.startswith('_')
+        name = name.lstrip('_')
 
     if 'layer' in name:
         raise ValueError(f"name {name} should not include 'layer'")
 
-    name = 'add_' + name
+    prefix = '_add_' if is_private else 'add_'
+    name = prefix + name
 
     if doc is None:
         # While the original class may have Attributes in its docstring, the
@@ -92,7 +107,7 @@ def create_func(
     }
     code = compile(src, filename=tmpl_path, mode='exec')
     exec(code, execdict)
-    func = execdict[name]
+    func = cast('Callable[Concatenate[ViewerModel, P], L]', execdict[name])
 
     func.__doc__ = doc
     func.__signature__ = sig.replace(
