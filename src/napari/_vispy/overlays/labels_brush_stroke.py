@@ -129,7 +129,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
 
     @_only_when_overlay_enabled
     def _on_mouse_move(self, layer, event) -> None:
-        if not self.overlay.active:
+        if not self.overlay.active or event.button == 1:
             return
         coord = mouse_event_to_labels_coordinate(layer, event)
         if coord is None:
@@ -155,7 +155,7 @@ class VispyLabelsBrushStrokeOverlay(LayerOverlayMixin, VispySceneOverlay):
             if dist > radius:
                 self._has_left = True
             return False
-        return dist <= radius
+        return bool(dist <= radius)
 
     def _complete(self, layer) -> None:
         # continue the stroke all the way back to the start point so the drawn

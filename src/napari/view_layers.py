@@ -49,29 +49,29 @@ def _make_viewer_then(
         ``add_image`` is called with a ``channel_axis=`` keyword
         argument.
     """
-    vkwargs = {
+    viewer_kwargs = {
         k: kwargs.pop(k)
         for k in list(kwargs)
         if k in _viewer_params
+        # not passing `axis_labels` to viewer kwargs as it inherits from the layer
         if k != 'axis_labels'
     }
-    if 'axis_labels' in kwargs:
-        vkwargs['axis_labels'] = (
-            kwargs['axis_labels'] if kwargs['axis_labels'] is not None else ()
-        )
     # separate dims kwargs because we want to set those after adding data
     dims_kwargs = {
-        k: vkwargs.pop(k) for k in list(vkwargs) if k in Dims.model_fields
+        k: viewer_kwargs.pop(k)
+        for k in list(viewer_kwargs)
+        if k in Dims.model_fields
     }
     if viewer is None:
-        viewer = Viewer(**vkwargs)
+        viewer = Viewer(**viewer_kwargs)
     kwargs.update(kwargs.pop('kwargs', {}))
     method = getattr(viewer, add_method)
     added = method(*args, **kwargs)
     if isinstance(added, list):
         added = tuple(added)
     for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
+        if arg_val is not None:
+            setattr(viewer.dims, arg_name, arg_val)
     return viewer, added
 
 
@@ -197,8 +197,8 @@ def imshow(
     visible=True,
     viewer=None,
     title='napari',
-    ndisplay=2,
-    order=(),
+    ndisplay=None,
+    order=None,
     show=True,
 ) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
@@ -328,11 +328,11 @@ def imshow(
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. By default 2.
+        Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. By default None
+        ndisplay is 2 or 3.
     axis_labels : list of str, optional
         Dimension names. By default they are labeled with sequential numbers
     show : bool, optional

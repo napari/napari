@@ -32,6 +32,7 @@ Notes for using the plugin-related fixtures here:
 from __future__ import annotations
 
 import contextlib
+import gc
 import os
 import sys
 import threading
@@ -39,6 +40,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from functools import partial
+from importlib.metadata import version
 from itertools import chain
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -61,7 +63,7 @@ from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.utils.misc import ROOT_DIR
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
     from npe2._pytest_plugin import TestPluginManager
     from pytestqt.qtbot import QtBot
@@ -325,15 +327,36 @@ def npe2pm_(npe2pm, monkeypatch):
     return npe2pm
 
 
-@pytest.fixture
-def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
-    from napari.plugins import _initialize_plugins
+if parse_version(version('npe2')) < parse_version('0.10.0'):
 
-    _initialize_plugins.cache_clear()
-    mock_reg = MagicMock()
-    npe2pm._command_registry = mock_reg
-    with npe2pm.tmp_plugin(manifest=manifest_path):
-        yield npe2pm
+    @pytest.fixture
+    def manifest_path() -> str:
+        path_to = (
+            Path(__file__)
+            .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
+            .resolve()
+        )
+        assert path_to.exists(), f'Manifest path {path_to} does not exist.'
+        return str(path_to)
+
+    @pytest.fixture
+    def mock_pm(npe2pm: TestPluginManager, manifest_path: str):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        mock_reg = MagicMock()
+        npe2pm._command_registry = mock_reg
+        with npe2pm.tmp_plugin(manifest=manifest_path):
+            yield npe2pm
+
+else:
+
+    @pytest.fixture
+    def mock_pm(npe2pm_w_plugin: TestPluginManager):
+        from napari.plugins import _initialize_plugins
+
+        _initialize_plugins.cache_clear()
+        return npe2pm_w_plugin
 
 
 @pytest.fixture(autouse=True)
@@ -362,17 +385,6 @@ def tmp_plugin(npe2pm_: TestPluginManager):
         )
         plugin.manifest.display_name = 'Temp Plugin'
         yield plugin
-
-
-@pytest.fixture
-def manifest_path() -> str:
-    path_to = (
-        Path(__file__)
-        .parent.joinpath('plugins', '_tests', '_sample_manifest.yaml')
-        .resolve()
-    )
-    assert path_to.exists(), f'Manifest path {path_to} does not exist.'
-    return str(path_to)
 
 
 @pytest.fixture
@@ -624,7 +636,13 @@ def pytest_generate_tests(metafunc) -> None:
         metafunc.parametrize('event_define_check,obj', res, ids=ids)
 
 
-def pytest_collection_modifyitems(session, config, items) -> None:
+# used to store the section of a test in pytest.Item.stash
+_TEST_SECTION_KEY = pytest.StashKey[str]()
+
+
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+) -> None:
     test_subset = os.environ.get('NAPARI_TEST_SUBSET')
 
     test_order_prefix = [
@@ -635,6 +653,13 @@ def pytest_collection_modifyitems(session, config, items) -> None:
         os.path.join('napari', 'plugins'),
         os.path.join('napari', '_vispy'),
         os.path.join('napari', '_qt'),
+        # Slowest `_qt` folders in separate sections after the rest of `_qt`,
+        # so failures there stop the run early. The last matching prefix wins.
+        os.path.join('napari', '_qt', '_qapp_model'),
+        os.path.join('napari', '_qt', '_tests'),
+        # `test_trace_on_start` starts napari in a subprocess, which on macOS
+        # may leave the test app inactive; run it after focus-dependent tests.
+        os.path.join('napari', '_qt', 'perf'),
         os.path.join('napari', 'qt'),
         os.path.join('napari', '_tests'),
         os.path.join('napari', '_tests', 'test_examples.py'),
@@ -657,8 +682,105 @@ def pytest_collection_modifyitems(session, config, items) -> None:
         for i, prefix in enumerate(test_order_prefix):
             if prefix in str(item.fspath):
                 index = i
+        item.stash[_TEST_SECTION_KEY] = (
+            test_order_prefix[index] if index >= 0 else '<other>'
+        )
         test_order[index].append(item)
     items[:] = list(chain(*test_order))
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_protocol(
+    item: pytest.Item, nextitem: pytest.Item | None
+) -> Generator[None, object, object]:
+    """Stop the run once a test section that had failures is finished.
+
+    ``pytest_collection_modifyitems`` groups tests into sections ordered
+    from low-level to high-level code. Failures in an early section usually
+    cascade into later ones, so running them only wastes CI time. When the
+    ``CI`` environment variable is set to ``1`` (or ``true``, as set by
+    GitHub Actions), stop after the last test of a section that had
+    failures, even if the ``--maxfail`` limit is not reached.
+    """
+    result = yield
+    if nextitem is None or os.environ.get('CI', '').lower() not in {
+        '1',
+        'true',
+    }:
+        return result
+    session = item.session
+    section = item.stash.get(_TEST_SECTION_KEY, None)
+    if nextitem.stash.get(_TEST_SECTION_KEY, None) == section:
+        return result
+    # `item` was the last test of its section. A failure in an earlier
+    # section would already have stopped the run, so any failure counted
+    # so far happened in this section.
+    if session.testsfailed and not session.shouldfail:
+        session.shouldfail = (
+            f'stopping after {session.testsfailed} failure(s) '
+            f'in test section {section!r}'
+        )
+    return result
+
+
+@pytest.fixture
+def colorbox_painted_colors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[tuple[int, ...]]:
+    """Record the colors that QtColorBox paints with, in painting order.
+
+    The painter still draws, so this observes real paint events. It lets tests
+    check that a change reached the swatch shown to the user, which needs the
+    event loop to run because QtColorBox only requests a repaint with update().
+    """
+    from qtpy.QtGui import QColor, QPainter
+
+    from napari._qt.layer_controls.widgets._labels import qt_label_color
+
+    colors: list[tuple[int, ...]] = []
+
+    class RecordingPainter(QPainter):
+        def __init__(self, device) -> None:
+            super().__init__(device)
+            self._record = type(device).__name__ == 'QtColorBox'
+
+        def setBrush(self, brush) -> None:
+            if self._record:
+                color = QColor(brush)
+                colors.append(
+                    (color.red(), color.green(), color.blue(), color.alpha())
+                )
+            super().setBrush(brush)
+
+    monkeypatch.setattr(qt_label_color, 'QPainter', RecordingPainter)
+    return colors
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtestloop(
+    session: pytest.Session,
+) -> Generator[None, bool | None, bool | None]:
+    """Freeze objects created by imports and collection before running tests.
+
+    Each full ``gc.collect()`` (for example, the one done when a layer is
+    removed from the canvas) has to traverse every object tracked by the
+    garbage collector. Imports and test collection create over a million
+    objects that live for the whole session, so moving them to the permanent
+    generation makes these collections about twice as fast.
+
+    Frozen objects are skipped by ``gc.get_objects`` and ``gc.get_referrers``,
+    so this is done only for napari's own test suite and not in the
+    ``napari.utils._testsupport`` plugin used by plugin developers.
+    """
+    # we run gc.collect() before freezing the list of created objects
+    # to remove all leftovers from phase of collecting tests (some temporal objects)
+    # and reduce peak of consumed memory.
+    gc.collect()
+    gc.freeze()
+    try:
+        return (yield)
+    finally:
+        gc.unfreeze()
 
 
 @pytest.fixture(autouse=True)
@@ -962,8 +1084,9 @@ def _dangling_qtimers(monkeypatch, request):
     dangling_timers = []
 
     for timer, calling in chain(timer_dkt.items(), single_shot_list):
-        if timer.isActive():
-            dangling_timers.append((timer, calling))
+        with contextlib.suppress(RuntimeError):
+            if timer.isActive():
+                dangling_timers.append((timer, calling))
 
     for timer, _ in dangling_timers:
         with suppress(RuntimeError):
@@ -1044,7 +1167,7 @@ def _dangling_qanimations(monkeypatch, request):
     dangling_animations = []
 
     for animation, calling in animation_dkt.items():
-        if animation.state() == QPropertyAnimation.Running:  # pyrefly: ignore [missing-attribute]
+        if animation.state() == QPropertyAnimation.State.Running:
             dangling_animations.append((animation, calling))
 
     for animation, _ in dangling_animations:

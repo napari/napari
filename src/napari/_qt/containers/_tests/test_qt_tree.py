@@ -74,7 +74,7 @@ def test_nested_move_multiple(qapp, sources, dest, expectation):
     dest_mi = qt_tree.nestedIndex(dest)
     qt_tree.dropMimeData(
         mime_data,
-        Qt.MoveAction,
+        Qt.DropAction.MoveAction,
         dest_mi.row(),
         dest_mi.column(),
         dest_mi.parent(),
