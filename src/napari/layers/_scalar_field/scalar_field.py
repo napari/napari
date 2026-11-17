@@ -108,17 +108,12 @@ def _make_data_materializer(
     (e.g: thumbnail and rendered data).
     """
 
-    # TODO: better way to indicate numpy-compatible index than "Any"?
     if isinstance(data, MultiScaleData):
+        data_multiscale = [data]
 
-        @lru_cache(maxsize=1)
-        def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
-            return np.asarray(data[level][index.index])
-    else:
-
-        @lru_cache(maxsize=1)
-        def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
-            return np.asarray(data[index.index])
+    @lru_cache(maxsize=1)
+    def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
+        return np.asarray(data_multiscale[level][index.index])
 
     # needed only because `slice` is not hashable in python 3.11
     # after we drop it, we can just return `_materialize` and ditch hashableindex

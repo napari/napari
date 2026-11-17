@@ -240,13 +240,12 @@ class _ScalarFieldSliceRequest:
             )
 
     def _call_single_scale(self) -> _ScalarFieldSliceResponse:
-        order = self._get_order()
-        data = self._project_thick_slice(
-            self.data_materializer,
-            self.data_slice,
+        image = self._materialize_and_project_slice(
+            data_materializer=self.data_materializer,
+            disp_slice=None,
+            level=-1,  # actually needed by materializer
         )
-        data = np.transpose(data, order)
-        image = _ScalarFieldView.from_view(data)
+
         # `Layer.multiscale` is mutable so we need to pass back the identity
         # transform to ensure `tile2data` is properly set on the layer.
         ndim = self.slice_input.ndim
