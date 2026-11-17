@@ -288,27 +288,23 @@ class _ScalarFieldSliceRequest:
             ndim=self.slice_input.ndim,
         )
 
-        # project the thick slice, cropped to the displayed tile in one index
-        data_slice = self._thick_slice_at_level(self.data_level)
-        data = self._project_thick_slice(
-            self.data_materializer,
-            data_slice,
-            disp_slice,
-            level=self.data_level,
-        )
-
-        order = self._get_order()
-        data = np.transpose(data, order)
-        image = _ScalarFieldView.from_view(data)
-
-        thumbnail_data_slice = self._thick_slice_at_level(-1)
-        thumbnail_data = self._project_thick_slice(
-            self.thumbnail_materializer,
-            thumbnail_data_slice,
+        thumbnail = self._materialize_and_project_slice(
+            data_materializer=self.thumbnail_materializer,
+            disp_slice=None,
             level=-1,
         )
-        thumbnail_data = np.transpose(thumbnail_data, order)
-        thumbnail = _ScalarFieldView.from_view(thumbnail_data)
+
+        if self._image_is_thumbnail():
+            # we reuse the thumbnail (and not viceversa) because it would anyways always be
+            # needed for the thumbnail, so the caching is retained _there_, and will not be invalidated
+            # by panning/zooming into smaller tiles (saving us 1 fetch)
+            image = thumbnail
+        else:
+            image = self._materialize_and_project_slice(
+                data_materializer=self.data_materializer,
+                disp_slice=disp_slice,
+                level=self.data_level,
+            )
 
         return _ScalarFieldSliceResponse(
             image=image,
@@ -316,6 +312,36 @@ class _ScalarFieldSliceRequest:
             tile_to_data=tile_to_data,
             slice_input=self.slice_input,
             request_id=self.id,
+        )
+
+    def _materialize_and_project_slice(
+        self, *, data_materializer, disp_slice, level
+    ):
+        data_slice = self._thick_slice_at_level(level)
+        # project the thick slice, cropped to the displayed tile in one index
+        data = self._project_thick_slice(
+            data_materializer,
+            data_slice,
+            disp_slice,
+            level=level,
+        )
+
+        order = self._get_order()
+        data = np.transpose(data, order)
+        return _ScalarFieldView.from_view(data)
+
+    def _image_is_thumbnail(self) -> bool:
+        """Whether the image tile spans the full extent of the thumbnail level."""
+        if self.data_level != len(self.level_shapes) - 1:
+            # not at the thumbnail level
+            return False
+        if self.slice_input.ndisplay == 3:
+            return True  # volume display ignores corner bounds
+        shape = self.level_shapes[self.data_level]
+        return all(
+            self.corner_pixels[0, d] == 0
+            and self.corner_pixels[1, d] == shape[d] - 1
+            for d in self.slice_input.displayed
         )
 
     def _thick_slice_at_level(self, level: int) -> _ThickNDSlice:
