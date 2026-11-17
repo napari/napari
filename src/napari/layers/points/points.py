@@ -95,7 +95,7 @@ class Points(Layer):
     data : array (N, D)
         Coordinates for N points in D dimensions.
     ndim : int
-        Number of dimensions for shapes. When data is not None, ndim must be D.
+        Number of dimensions for points. When data is not None, ndim must be D.
         An empty points layer can be instantiated with arbitrary ndim.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.

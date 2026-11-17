@@ -87,7 +87,8 @@ def _make_viewer_then(
     if isinstance(added, list):
         added = tuple(added)
     for arg_name, arg_val in dims_kwargs.items():
-        setattr(viewer.dims, arg_name, arg_val)
+        if arg_val is not None:
+            setattr(viewer.dims, arg_name, arg_val)
     return viewer, added
 
 
@@ -128,8 +129,8 @@ def imshow(
     visible: bool = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
-    ndisplay: int = ...,
-    order: Sequence[int] = ...,
+    ndisplay: int | None = ...,
+    order: Sequence[int] | None = ...,
     show: bool = ...,
 ) -> tuple[Viewer, Image]: ...
 
@@ -173,8 +174,8 @@ def imshow(
     visible: bool | Sequence[bool] = ...,
     viewer: Viewer | None = ...,
     title: str = ...,
-    ndisplay: int = ...,
-    order: Sequence[int] = ...,
+    ndisplay: int | None = ...,
+    order: Sequence[int] | None = ...,
     show: bool = ...,
 ) -> tuple[Viewer, tuple[Image, ...]]: ...
 
@@ -217,8 +218,8 @@ def imshow(
     visible: bool | Sequence[bool] = True,
     viewer: Viewer | None = None,
     title: str = 'napari',
-    ndisplay: int = 2,
-    order: Sequence[int] = (),
+    ndisplay: int | None = None,
+    order: Sequence[int] | None = None,
     show: bool = True,
 ) -> tuple[Viewer, Image | tuple[Image, ...]]:
     """Load data into an Image layer and return the Viewer and Layer.
@@ -350,7 +351,7 @@ def imshow(
     title : string, optional
         The title of the viewer window. By default 'napari'.
     ndisplay : {2, 3}, optional
-        Number of displayed dimensions. By default 2.
+        Number of displayed dimensions.
     order : tuple of int, optional
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
