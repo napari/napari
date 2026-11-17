@@ -7,9 +7,26 @@ from napari.layers.base import Layer
 
 
 class _Graph(Layer):
+    """Graph layer.
+
+    Parameters
+    ----------
+    data : nx.Graph, optional
+        The graph data to be displayed in the layer. If None, an empty graph is created.
+        Each node in the graph must have a 'coordinates' attribute as an array of length D dimensions.
+    ndim : int
+        Number of dimensions for graph. When data is not None, ndim must be D.
+        An empty points layer can be instantiated with arbitrary ndim.
+
+    """
+
     _data: nxGraph
 
-    def __init__(self, data=None, ndim: int | None = None):
+    def __init__(
+        self,
+        data=None,
+        ndim=None,
+    ) -> None:
 
         data, ndim = fix_graph_data(data, ndim)
 
