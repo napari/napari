@@ -58,6 +58,17 @@ def _mock_pooch(monkeypatch):
     monkeypatch.setattr(core, 'choose_downloader', napari_choose_downloader)
 
 
+@pytest.fixture(autouse=True)
+def _mock_nilearn(monkeypatch):
+    try:
+        from nilearn import datasets
+    except ImportError:
+        return
+    from napari.utils._examples_data import nilearn_download_factory
+
+    monkeypatch.setattr(datasets, 'fetch_surf_nki_enhanced', nilearn_download_factory(datasets.fetch_surf_nki_enhanced))
+
+
 @pytest.fixture
 def _example_monkeypatch(monkeypatch):
     # hide viewer window

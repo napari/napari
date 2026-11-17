@@ -38,44 +38,17 @@ class QApplicationWithTracing(QApplication):
             return QApplication.notify(self, receiver, event)
 
 
-class EventTypes:
-    """Convert event type to a string name.
+def _event_type_name(event_type: QEvent.Type) -> str:
+    """Return a human-readable name for this event type.
 
-    Create event type to string mapping once on startup. We want human-readable
-    event names for our timers. PySide2 does this for you but PyQt5 does not:
-
-    # PySide2
-    str(QEvent.KeyPress) -> 'PySide2.QtCore.QEvent.Type.KeyPress'
-
-    # PyQt5
-    str(QEvent.KeyPress) -> '6'
-
-    We use this class for PyQt5 and PySide2 to be consistent.
+    Qt6 bindings expose event types as Python enums. Event types that are
+    not members of QEvent.Type (for example, registered custom events) have
+    no meaningful name.
     """
-
-    # TODO Check PySide6
-
-    def __init__(self) -> None:
-        """Create mapping for all known event types."""
-        self.string_name = {}
-        for name in vars(QEvent):
-            attribute = getattr(QEvent, name)
-            if type(attribute) is QEvent.Type:
-                self.string_name[attribute] = name
-
-    def as_string(self, event: QEvent.Type) -> str:
-        """Return the string name for this event.
-
-        event : QEvent.Type
-            Return string for this event type.
-        """
-        try:
-            return self.string_name[event]
-        except KeyError:
-            return f'UnknownEvent:{event}'
-
-
-EVENT_TYPES = EventTypes()
+    name = getattr(event_type, 'name', None)
+    if name and not name.isdigit():
+        return name
+    return f'UnknownEvent:{event_type}'
 
 
 def _get_event_label(receiver: QWidget, event: QEvent) -> str:
@@ -101,7 +74,7 @@ def _get_event_label(receiver: QWidget, event: QEvent) -> str:
     Combining the two names with a colon is our own made-up format. The name
     will show up in chrome://tracing and our QtPerformance widget.
     """
-    event_str = EVENT_TYPES.as_string(event.type())
+    event_str = _event_type_name(event.type())
 
     try:
         # There may or may not be a receiver object name.

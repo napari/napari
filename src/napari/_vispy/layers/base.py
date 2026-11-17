@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from vispy.scene import VisualNode
 
     from napari._vispy.utils.qt_font import FontInfo
+    from napari.utils.events import Event
 
 _L = TypeVar('_L', bound=Layer)
 Vector3: TypeAlias = np.ndarray[tuple[Literal[3]], np.dtype[np.floating]]
@@ -64,6 +65,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
 
         self.layer = layer
         self.font_info = font_info
+        self._default_font_size = 9
         self._array_like = False
         self.node = node
         self.first_visible = False
@@ -166,7 +168,7 @@ class VispyBaseLayer(ABC, Generic[_L]):
     def _on_opacity_change(self) -> None:
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self, event=None) -> None:
+    def _on_blending_change(self, event: Event | None = None) -> None:
         blending = self.layer.blending
         blending_kwargs = cast(dict, BLENDING_MODES[blending]).copy()
 
@@ -318,6 +320,14 @@ class VispyBaseLayer(ABC, Generic[_L]):
         up: Vector3 | None = None,
     ) -> None:
         return
+
+    def _on_font_size_change(self):
+        # to be implemented by subclasses that need it
+        pass
+
+    def set_default_font_size(self, font_size) -> None:
+        self._default_font_size = font_size
+        self._on_font_size_change()
 
     def reset(self) -> None:
         self._on_visible_change()

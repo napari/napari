@@ -714,6 +714,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
             }
         )
         self._slicing_state = self._get_layer_slicing_state(data, cache)
+        self._slicing_state.loaded_data.connect(self.events.loaded)
 
     @property
     def _slice_input(self) -> _SliceInput:
@@ -2167,8 +2168,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
     def _update_draw(
         self,
         scale_factor: float,
-        corner_pixels_displayed: np.ndarray,
-        shape_threshold: tuple[int, ...],
+        corner_pixels_displayed: npt.NDArray[np.floating],
+        shape_threshold: tuple[float, float],
     ) -> None:
         """Update canvas scale and corner values on draw.
 
@@ -2182,7 +2183,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC, metaclass=PostInit):
         corner_pixels_displayed : array, shape (2, 2)
             Coordinates of the top-left and bottom-right canvas pixels in
             world coordinates.
-        shape_threshold : tuple
+        shape_threshold : tuple[float, float]
             Requested shape of field of view in data coordinates.
         """
         self.scale_factor = scale_factor

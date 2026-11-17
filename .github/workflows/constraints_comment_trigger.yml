@@ -5,6 +5,7 @@ on:
     types: [ created ]
 
 permissions:
+  contents: read
   pull-requests: write
   issues: write
 
@@ -14,6 +15,28 @@ jobs:
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '@napari-bot update constraints')
     runs-on: ubuntu-slim
     steps:
+      - name: Require the triage role
+        # Only a commenter with the triage role or above starts the called
+        # workflow, which compiles constraints from the pull request's
+        # branch. The query reads role_name, which keeps maintain and triage
+        # where the permission field folds them into write and read.
+        # author_association is no substitute: it reports a private org
+        # member as CONTRIBUTOR.
+        run: |
+          set -o pipefail
+          PERMISSION=$(curl --fail --silent --show-error \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/collaborators/${COMMENTER}/permission" \
+            | jq -r .role_name)
+          echo "${COMMENTER} has ${PERMISSION} permission"
+          case "${PERMISSION}" in
+            admin|maintain|write|triage) ;;
+            *) echo "::error::@napari-bot update constraints needs the triage role or above"; exit 1 ;;
+          esac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENTER: ${{ github.event.comment.user.login }}
       - name: Add eyes reaction
         run: |
           COMMENT_ID=${{ github.event.comment.id }}
