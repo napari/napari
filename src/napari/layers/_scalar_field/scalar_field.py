@@ -108,8 +108,7 @@ def _make_data_materializer(
     (e.g: thumbnail and rendered data).
     """
 
-    if isinstance(data, MultiScaleData):
-        data_multiscale = [data]
+    data_multiscale = [data] if not isinstance(data, MultiScaleData) else data
 
     @lru_cache(maxsize=1)
     def _materialize(level: int, index: _HashableIndex) -> np.ndarray:
