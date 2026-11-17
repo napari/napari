@@ -92,6 +92,9 @@ class _HashableIndex:
     def __hash__(self) -> int:
         return hash(self._key)
 
+    def __eq__(self, other: object) -> bool:
+        return hash(self) == hash(other)
+
 
 def _make_data_materializer(
     data: LayerDataProtocol | MultiScaleData,
