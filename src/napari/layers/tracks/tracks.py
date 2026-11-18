@@ -25,7 +25,8 @@ class Tracks(Layer):
     data : array (N, D+1)
         Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
         axis is the integer ID of the track. D is either 3 or 4 for planar
-        or volumetric timeseries respectively.
+        or volumetric timeseries respectively. If None or empty, an empty
+        layer is created in 2D+t (shape (0, 4)); data can be assigned later.
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
@@ -114,7 +115,7 @@ class Tracks(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
         affine=None,
         axis_labels=None,
@@ -145,6 +146,11 @@ class Tracks(Layer):
         # if not provided with any data, set up an empty layer in 2D+t
         # otherwise convert the data to an np.ndarray
         data = np.empty((0, 4)) if data is None else np.asarray(data)
+
+        # a 1-D empty input (e.g. an empty list) carries no dimensionality,
+        # treat it the same as no data
+        if data.size == 0 and data.ndim == 1:
+            data = np.empty((0, 4))
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -236,7 +242,9 @@ class Tracks(Layer):
         extent_data : array, shape (2, D)
         """
         if len(self.data) == 0:
-            extrema = np.full((2, self.ndim), np.nan)
+            # (2, ndim + 1) so that slicing off the ID column below
+            # leaves (2, ndim), matching the non-empty branch
+            extrema = np.full((2, self.ndim + 1), np.nan)
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
@@ -301,7 +309,11 @@ class Tracks(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
 
-        if self._view_data is not None and self.track_colors is not None:
+        if (
+            self._view_data is not None
+            and len(self._view_data) > 0
+            and self.track_colors is not None
+        ):
             de = self._extent_data
             min_vals = [de[0, i] for i in self._slice_input.displayed]
             shape = np.ceil(
@@ -580,6 +592,11 @@ class Tracks(Layer):
 
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)
+
+        # no vertices to color yet (empty layer)
+        if vertex_properties.size == 0:
+            self._track_colors = np.empty((0, 4))
+            return
 
         def _norm(p):
             return (p - np.min(p)) / np.max([1e-10, np.ptp(p)])
