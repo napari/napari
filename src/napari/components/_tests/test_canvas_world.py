@@ -467,6 +467,58 @@ def test_3d_perspective_zero_is_ortho():
     np.testing.assert_allclose(viewer.world_to_canvas(worlds), ortho)
 
 
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('down', 'right'), (50.0, 100.0)),
+        (('up', 'right'), (-50.0, 100.0)),
+        (('down', 'left'), (50.0, -100.0)),
+        (('up', 'left'), (-50.0, -100.0)),
+    ],
+)
+def test_2d_orientation_flips(orientation, expected_delta):
+    viewer = _make_2d_viewer()
+    viewer.dims.ndisplay = 2
+    viewer.scene.camera.orientation2d = orientation
+    viewer.scene.camera.zoom = 2
+    viewer.canvas.size = (800, 1200)
+    center_px = np.array(viewer.canvas.size) / 2
+    # with zoom=2, the (100, 200) canvas offset maps to (50, 100) before
+    # applying the vertical and horizontal orientation flips.
+    world_delta = viewer.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer.canvas_to_world(center_px)
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
+@pytest.mark.parametrize(
+    ('orientation', 'expected_delta'),
+    [
+        (('towards', 'down', 'right'), (100.0, -50.0)),
+        (('towards', 'up', 'right'), (100.0, 50.0)),
+        (('towards', 'down', 'left'), (-100.0, -50.0)),
+        (('towards', 'up', 'left'), (-100.0, 50.0)),
+        (('away', 'down', 'right'), (100.0, -50.0)),
+        (('away', 'up', 'right'), (100.0, 50.0)),
+        (('away', 'down', 'left'), (-100.0, -50.0)),
+        (('away', 'up', 'left'), (-100.0, 50.0)),
+    ],
+)
+def test_3d_orientation_flips(orientation, expected_delta):
+    viewer = _make_3d_viewer(angles=(90, 0, 0))
+    viewer.dims.ndisplay = 3
+    viewer.scene.camera.orientation = orientation
+    viewer.scene.camera.zoom = 2
+    viewer.canvas.size = (800, 1200)
+    center_px = np.array(viewer.canvas.size) / 2
+    # with angles=(90, 0, 0), the (100, 200) canvas offset maps to (100, -50)
+    # before applying the orientation flips.
+    world_delta = viewer.canvas_to_world(
+        center_px + (100, 200)
+    ) - viewer.canvas_to_world(center_px)
+    np.testing.assert_allclose(world_delta[-2:], expected_delta)
+
+
 def test_batch_shapes():
     viewer2d = _make_2d_viewer()
     out = viewer2d.world_to_canvas(np.ones((4, 3)))
