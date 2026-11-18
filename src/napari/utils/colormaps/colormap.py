@@ -68,6 +68,10 @@ _LabelColors2D: TypeAlias = np.ndarray[
     tuple[int, int, Literal[4]], np.dtype[np.float32]
 ]
 _LabelColorsND: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float32]]
+_ColorSequence: TypeAlias = (
+    Sequence[ColorValueParam] | np.ndarray[tuple[int, int], np.dtype[Any]]
+)
+_LabelColorDict: TypeAlias = MutableMapping[int | None, ColorValueParam]
 
 
 class ColormapInterpolationMode(StrEnum):
@@ -554,7 +558,7 @@ class DirectLabelColormap(LabelColormapBase):
     @classmethod
     def _validate_color_dict(
         cls,
-        v: MutableMapping[int | None, ColorValueParam],
+        v: _LabelColorDict,
         values: ValidationInfo,
     ) -> dict[int | None, _LabelColor]:
         """Ensure colors are RGBA arrays, not strings.
@@ -1075,23 +1079,21 @@ def _normalize_label_colormap(
 
 @overload
 def _normalize_label_colormap(
-    any_colormap_like: Sequence[ColorValueParam]
-    | np.ndarray[tuple[int, int], np.dtype[Any]],
+    any_colormap_like: _ColorSequence,
 ) -> CyclicLabelColormap: ...
 
 
 @overload
 def _normalize_label_colormap(
-    any_colormap_like: MutableMapping[int | None, ColorValueParam],
+    any_colormap_like: _LabelColorDict,
 ) -> DirectLabelColormap: ...
 
 
 def _normalize_label_colormap(
     any_colormap_like: CyclicLabelColormap
     | DirectLabelColormap
-    | Sequence[ColorValueParam]
-    | MutableMapping[int | None, ColorValueParam]
-    | np.ndarray[tuple[int, int], np.dtype[Any]],
+    | _ColorSequence
+    | _LabelColorDict,
 ) -> CyclicLabelColormap | DirectLabelColormap:
     """Convenience function to convert color containers to LabelColormaps.
 

@@ -1,10 +1,11 @@
 from collections.abc import Hashable
-from typing import Any
+from typing import Any, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import Field, field_serializer, model_validator
 
-from napari.utils.color import ColorValue
+from napari.utils.color import ColorValue, ColorValueParam
 from napari.utils.colormaps.categorical_colormap_utils import (
     ColorCycle,
     compare_colormap_dicts,
@@ -125,3 +126,13 @@ class CategoricalColormap(EventedModel):
             if isinstance(fallback_color.values, np.ndarray)
             else fallback_color.values,
         }
+
+
+# inputs accepted for a CategoricalColormap, defined after the class it uses
+# (see ValidColorCycleArg in categorical_colormap_utils for why)
+ValidCategoricalColormapArg: TypeAlias = (
+    CategoricalColormap
+    | dict[Any, Any]
+    | list[ColorValueParam]
+    | npt.NDArray[Any]
+)

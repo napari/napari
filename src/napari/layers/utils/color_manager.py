@@ -26,7 +26,10 @@ from napari.layers.utils.color_transformations import (
     transform_color_with_defaults,
 )
 from napari.utils.colormaps import Colormap
-from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+from napari.utils.colormaps.categorical_colormap import (
+    CategoricalColormap,
+    ValidCategoricalColormapArg,
+)
 from napari.utils.colormaps.colormap_utils import ColorType, ensure_colormap
 from napari.utils.events import EventedModel
 from napari.utils.events.custom_types import Array
@@ -523,11 +526,7 @@ class ColorManager(EventedModel):
         n_colors: int | None = None,
         continuous_colormap: str | Colormap | None = None,
         contrast_limits: tuple[float, float] | None = None,
-        categorical_colormap: CategoricalColormap
-        | dict
-        | list
-        | np.ndarray
-        | None = None,
+        categorical_colormap: ValidCategoricalColormapArg | None = None,
         color_mode: ColorMode | str | None = None,
         current_color: np.ndarray | None = None,
         default_color_cycle: ColorType = None,

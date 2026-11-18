@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, TypeAlias
 
 import numpy as np
 from pydantic_core import core_schema
@@ -52,9 +52,7 @@ class ColorCycle:
         )
 
     @classmethod
-    def validate_type(
-        cls, val: dict | ColorCycle | str | list | np.ndarray
-    ) -> ColorCycle:
+    def validate_type(cls, val: ValidColorCycleArg) -> ColorCycle:
         # turn a generic dict into object
         if isinstance(val, dict):
             return _coerce_colorcycle_from_dict(val)
@@ -81,6 +79,13 @@ class ColorCycle:
 
     def current_color(self) -> np.ndarray:
         return self.values[self.current_index]
+
+
+# inputs accepted by ColorCycle.validate_type, defined after the class so its
+# name can be used directly instead of as a quoted forward reference
+ValidColorCycleArg: TypeAlias = (
+    ColorCycle | dict[str, Any] | str | list | np.ndarray
+)
 
 
 def _coerce_colorcycle_from_dict(val: dict[str, Any]) -> ColorCycle:
