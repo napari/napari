@@ -287,22 +287,20 @@ class _ScalarFieldSliceRequest:
             ndim=self.slice_input.ndim,
         )
 
-        thumbnail = self._materialize_and_project_slice(
-            data_materializer=self.thumbnail_materializer,
-            disp_slice=None,
-            level=-1,
+        image = self._materialize_and_project_slice(
+            data_materializer=self.data_materializer,
+            disp_slice=disp_slice,
+            level=self.data_level,
         )
 
-        if self._image_is_thumbnail():
-            # we reuse the thumbnail (and not viceversa) because it would anyways always be
-            # needed for the thumbnail, so the caching is retained _there_, and will not be invalidated
-            # by panning/zooming into smaller tiles (saving us 1 fetch)
-            image = thumbnail
+        if self._image_can_be_thumbnail():
+            # we reuse the image to avoid an extra fetch for the thumbnail, unless necessary
+            thumbnail = image
         else:
-            image = self._materialize_and_project_slice(
-                data_materializer=self.data_materializer,
-                disp_slice=disp_slice,
-                level=self.data_level,
+            thumbnail = self._materialize_and_project_slice(
+                data_materializer=self.thumbnail_materializer,
+                disp_slice=None,
+                level=-1,
             )
 
         return _ScalarFieldSliceResponse(
@@ -333,11 +331,8 @@ class _ScalarFieldSliceRequest:
         data = np.transpose(data, order)
         return _ScalarFieldView.from_view(data)
 
-    def _image_is_thumbnail(self) -> bool:
-        """Whether the image tile spans the full extent of the thumbnail level."""
-        if self.data_level != len(self.level_shapes) - 1:
-            # not at the thumbnail level
-            return False
+    def _image_can_be_thumbnail(self) -> bool:
+        """Whether the image tile spans the full extent."""
         if self.slice_input.ndisplay == 3:
             return True  # volume display ignores corner bounds
         shape = self.level_shapes[self.data_level]
