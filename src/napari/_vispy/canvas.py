@@ -1209,8 +1209,10 @@ class VispyCanvas:
                     and is_gridded(overlay)
                 ):
                     if viewbox_idx >= len(vispy_overlays):
-                        # this can happen if this method gets called with incomplete scenegraph.
-                        # Simply skip those overlays that are not yet created
+                        # a layer is being added (e.g. a redraw caused by the
+                        # dims sliders updating) and its viewbox has no
+                        # overlays yet; `_update_scenegraph` will position
+                        # them once it is done
                         continue
                     vispy_overlay = cast(
                         'VispyCanvasOverlay', vispy_overlays[viewbox_idx]

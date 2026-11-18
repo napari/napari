@@ -118,7 +118,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install setuptools tox tox-gh-actions tox-min-req tox-uv
+          pip install -r resources/requirements_tox.txt
         env:
           PIP_CONSTRAINT: ""
 

@@ -70,8 +70,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          # tox 4.67.5 rejects --runner virtualenv with an empty runner registry.
-          pip install setuptools "tox!=4.67.5" tox-gh-actions tox-uv tox-min-req
+          pip install -r resources/requirements_tox.txt
 
       - name: Test with tox (with retry)
         timeout-minutes: 50
