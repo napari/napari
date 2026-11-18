@@ -11,6 +11,7 @@ from napari.utils._test_utils import (
     validate_kwargs_sorted,
 )
 
+
 def test_empty_tracks():
     """Test instantiating Tracks layer without data."""
     layer = Tracks()
@@ -86,17 +87,14 @@ def test_empty_tracks_slice_and_value():
 
 def test_fast_points_lookup_empty() -> None:
     """Empty input to _fast_points_lookup returns an empty lookup."""
-    assert (
-        TrackManager._fast_points_lookup(np.array([], dtype=np.uint))
-        == {}
-    )
+    assert TrackManager._fast_points_lookup(np.array([], dtype=np.uint)) == {}
 
 
 def test_fast_points_lookup_single_point() -> None:
     """A single point still produces a one-entry lookup."""
-    assert TrackManager._fast_points_lookup(
-        np.array([0], dtype=np.uint)
-    ) == {0: slice(0, 1)}
+    assert TrackManager._fast_points_lookup(np.array([0], dtype=np.uint)) == {
+        0: slice(0, 1)
+    }
 
 
 data_array_2dt = np.zeros((1, 4))
