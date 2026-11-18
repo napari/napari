@@ -1,0 +1,4 @@
+tox >= 4.20, !=4.67.14, !=4.67.15
+tox-uv
+tox-min-req
+tox-gh-actions

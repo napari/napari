@@ -57,12 +57,33 @@ class IntensityVisualizationMixin:
 
         self._overlays.update({'colorbar': ColorBarOverlay()})
 
-    def reset_contrast_limits(self: 'ScalarFieldBase | Surface', mode=None):
-        """Scale contrast limits to data range"""
-        mode = mode or self._auto_contrast_source
-        self.contrast_limits = self._calc_data_range(mode)
+    def reset_contrast_limits(
+        self: 'ScalarFieldBase | Surface',
+        mode: Literal['data', 'slice'] | None = None,
+        percentiles: tuple[float, float] | None = None,
+    ) -> None:
+        """Scale contrast limits to data range
 
-    def _calc_data_range(self, mode):
+        Parameters
+        ----------
+        mode : 'data' or 'slice', optional
+            If the range should be calculated on the whole data, or only the
+            visible slice.
+        percentiles : pair of floats, optional
+            Lower and upper percentiles (between 0 and 100) to use instead of
+            the minimum and maximum, e.g. ``(1, 99)``, to ignore a few outlier
+            values.
+        """
+        mode = mode or self._auto_contrast_source
+        self.contrast_limits = self._calc_data_range(
+            mode, percentiles=percentiles
+        )
+
+    def _calc_data_range(
+        self,
+        mode: Literal['data', 'slice'],
+        percentiles: tuple[float, float] | None = None,
+    ) -> tuple[float, float]:
         raise NotImplementedError
 
     def reset_contrast_limits_range(
