@@ -394,8 +394,13 @@ class Surface(IntensityVisualizationMixin, Layer):
     def _view_texcoords(self) -> np.ndarray | None:
         return self._slicing_state._view_texcoords
 
-    def _calc_data_range(self, mode='data') -> tuple[float, float]:
-        return calc_data_range(self.vertex_values)  # pyrefly: ignore [bad-argument-type]
+    def _calc_data_range(
+        self, mode='data', percentiles: tuple[float, float] | None = None
+    ) -> tuple[float, float]:
+        return calc_data_range(
+            self.vertex_values,  # pyrefly: ignore[bad-argument-type]
+            percentiles=percentiles,
+        )
 
     @property
     def dtype(self) -> np.dtype:
