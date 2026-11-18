@@ -53,3 +53,14 @@ def test_text_visible_checkbox(qtbot):
     assert not layer.text.visible
     qtctrl._text_visibility_control.text_disp_checkbox.setChecked(True)
     assert layer.text.visible
+
+
+def test_text_scaling_checkbox(qtbot):
+    layer = Shapes(_SHAPES)
+    qtctrl = QtShapesControls(layer)
+    qtbot.addWidget(qtctrl)
+    assert not layer.text.scaling
+    qtctrl._text_visibility_control.text_scaling_checkbox.setChecked(True)
+    assert layer.text.scaling
+    qtctrl._text_visibility_control.text_scaling_checkbox.setChecked(False)
+    assert not layer.text.scaling
