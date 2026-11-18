@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -174,7 +175,14 @@ def first_nonzero_coordinate(data, start_point, end_point):
     length_int = np.round(length).astype(int)
     coords = np.linspace(start_point, end_point, length_int + 1, endpoint=True)
     clipped_coords = np.clip(np.round(coords), 0, shape - 1).astype(int)
-    nonzero = np.flatnonzero(data[tuple(clipped_coords.T)])
+    indices = tuple(clipped_coords.T)
+    dask_array_type = getattr(sys.modules.get('dask.array'), 'Array', ())
+    if isinstance(data, dask_array_type):
+        # Dask needs vectorized indexing to read points across multiple axes.
+        values = data.vindex[indices].compute()
+    else:
+        values = data[indices]
+    nonzero = np.flatnonzero(values)
     return None if len(nonzero) == 0 else clipped_coords[nonzero[0]]
 
 
