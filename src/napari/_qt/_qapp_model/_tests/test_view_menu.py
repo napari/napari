@@ -39,9 +39,7 @@ def check_view_menu_visibility(viewer, qtbot):
 
     assert not viewer.window.view_menu.isVisible()
     qtbot.keyClick(
-        viewer.window._qt_window.menuBar(),
-        Qt.Key.Key_V,
-        modifier=Qt.KeyboardModifier.AltModifier,
+        viewer.window._qt_window.menuBar(), Qt.Key_V, modifier=Qt.AltModifier
     )
     qtbot.waitUntil(viewer.window.view_menu.isVisible)
     viewer.window.view_menu.close()
@@ -69,6 +67,9 @@ def test_toggle_axes_scale_bar_coordinate_grid_attr(
         * `box`
         * `colored`
         * `ticks`
+    * Viewer `grid_lines` attributes:
+        * `visible`
+        * `labels`
     * Viewer `coordinate_grid` attributes:
         * `visible`
         * `labels`
@@ -206,14 +207,24 @@ def _mouse_move_to(widget, pos):
     for testing the event-filter-based menubar toggle behavior.
     """
     global_pos = widget.mapToGlobal(QPoint(pos.x(), pos.y()))
-    event = QMouseEvent(
-        QEvent.Type.MouseMove,
-        QPointF(pos),
-        QPointF(global_pos),
-        Qt.MouseButton.NoButton,
-        Qt.MouseButton.NoButton,
-        Qt.KeyboardModifier.NoModifier,
-    )
+    if QT_VERSION.startswith('5'):
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            pos,
+            global_pos,
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    else:
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(pos),
+            QPointF(global_pos),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
 
     QApplication.sendEvent(widget, event)
 
@@ -294,26 +305,27 @@ def test_toggle_activity_dock(make_napari_viewer):
     app = get_app_model()
     viewer = make_napari_viewer(show=True)
 
+    qt_window = viewer.window._qt_window
     # Check initial activity dock state (hidden)
-    assert not viewer.window._qt_window._activity_dialog.isVisible()
+    assert not qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.UpArrow
     )
 
     # Check activity dock gets visible
     app.commands.execute_command(action_id)
-    assert viewer.window._qt_window._activity_dialog.isVisible()
+    assert qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.DownArrow
     )
 
     # Restore activity dock visibility (hidden)
     app.commands.execute_command(action_id)
-    assert not viewer.window._qt_window._activity_dialog.isVisible()
+    assert not qt_window._activity_dialog.isVisible()
     assert (
-        viewer.window._status_bar._activity_item._activityBtn.arrowType()
+        qt_window.statusBar()._activity_item._activityBtn.arrowType()
         == Qt.ArrowType.UpArrow
     )
 
@@ -376,31 +388,3 @@ def test_toggle_canvas_ndim(initial, expected):
     viewer.dims.ndisplay = initial
     _toggle_canvas_ndim(viewer)
     assert viewer.dims.ndisplay == expected
-
-
-def test_toggle_grid_mode():
-    viewer = ViewerModel()
-    app = get_app_model()
-
-    viewer.add_image(np.ones((10, 10, 10)))
-
-    # Change sub-attribute via action command execution and check value
-    with app.injection_store.register(providers={ViewerModel: viewer}):
-        assert viewer.canvas.grid.enabled is False
-        app.commands.execute_command('napari.canvas.toggle_grid_mode')
-        assert viewer.canvas.grid.enabled is True
-        app.commands.execute_command('napari.canvas.toggle_grid_mode')
-        assert viewer.canvas.grid.enabled is False
-
-
-def test_toggle_crosshair():
-    viewer = ViewerModel()
-    app = get_app_model()
-
-    # Change sub-attribute via action command execution and check value
-    with app.injection_store.register(providers={ViewerModel: viewer}):
-        assert viewer.scene.overlays.crosshair.visible is False
-        app.commands.execute_command('napari.scene.toggle_crosshair')
-        assert viewer.scene.overlays.crosshair.visible is True
-        app.commands.execute_command('napari.scene.toggle_crosshair')
-        assert viewer.scene.overlays.crosshair.visible is False

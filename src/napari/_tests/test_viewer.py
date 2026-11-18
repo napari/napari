@@ -80,8 +80,11 @@ def test_viewer(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
     view = viewer.window._qt_viewer
+    with pytest.warns(FutureWarning):
+        assert viewer.title == 'napari'
+    with pytest.warns(FutureWarning):
+        viewer.title = 'test'
 
-    assert viewer.title == 'napari'
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
@@ -340,9 +343,12 @@ def test_emitting_data_doesnt_change_points_value(make_napari_viewer):
     viewer.layers.selection.active = layer
     layer.mode = 'select'
     assert layer._value is None
-    viewer.mouse_over_canvas = True
-    viewer.cursor.position = tuple(layer.data[1])
-    viewer._calc_status_from_cursor()
+    viewer._calc_status_from_cursor(
+        world_position=tuple(layer.data[1]),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
     assert layer._value == 1
 
     layer.events.data(value=layer.data)

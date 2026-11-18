@@ -25,13 +25,12 @@ from napari.utils.events.event import WarningEmitter
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
-    assert viewer.title == 'napari'
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
-
-    # Create viewer model with custom title
-    viewer = ViewerModel(title='testing')
-    assert viewer.title == 'testing'
+    with pytest.warns(FutureWarning):
+        assert viewer.title == 'napari'
+    with pytest.warns(FutureWarning):
+        viewer.title = 'test'
 
 
 def test_add_image():
@@ -608,12 +607,13 @@ def test_active_layer_status_update():
 
     # wait 1 s to avoid the cursor event throttling
     time.sleep(1)
-    viewer.mouse_over_canvas = True
-    viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer._calc_status_from_cursor()[
-        0
-    ] == viewer.layers.selection.active.get_status(
-        viewer.cursor.position, world=True
+    assert viewer._calc_status_from_cursor(
+        world_position=(1, 1, 1, 1, 1),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )[0] == viewer.layers.selection.active.get_status(
+        (1, 1, 1, 1, 1), world=True
     )
 
 
@@ -838,15 +838,6 @@ def test_not_mutable_fields(field):
     assert 'Field is frozen' in str(err.value)
 
 
-@pytest.mark.parametrize(('Layer', 'data', 'ndim'), layer_test_data)
-def test_status_tooltip(Layer, data, ndim):
-    viewer = ViewerModel()
-    viewer.tooltip.visible = True
-    layer = Layer(data)
-    viewer.layers.append(layer)
-    viewer.cursor.position = (1,) * ndim
-
-
 def test_viewer_object_event_sources():
     viewer = ViewerModel()
     assert viewer.cursor.events.source is viewer.cursor
@@ -1042,30 +1033,55 @@ def test_make_layer_visible_after_slicing():
 
 def test_get_status_text():
     viewer = ViewerModel(ndisplay=2)
-    viewer.mouse_over_canvas = False
-    assert viewer._calc_status_from_cursor() is None
-    viewer.mouse_over_canvas = True
-    assert viewer._calc_status_from_cursor() == (' » [empty]', '')
-    viewer.cursor.position = (1, 2)
     viewer.add_labels(
         np.zeros((10, 10), dtype='uint8'), features={'a': [1, 2]}
     )
     viewer.tooltip.visible = False
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == (
-        sorted(
-            {
-                'coordinates': '[1, 2]: 0; a: 1',
-                'coords': '[1, 2]',
-                'layer_base': 'Labels',
-                'layer_name': 'Labels',
-                'plugin': '',
-                'source_type': '',
-                'value': '0; a: 1',
-            }.items()
-        )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(-10, -10),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[-10, -10]: [empty]',
+            'coords': '[-10, -10]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '',
+        }.items()
+    )
+
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
+        {
+            'coordinates': '[1, 2]: 0; a: 1',
+            'coords': '[1, 2]',
+            'layer_base': 'Labels',
+            'layer_name': 'Labels',
+            'plugin': '',
+            'source_type': '',
+            'value': '0; a: 1',
+        }.items()
     )
     viewer.tooltip.visible = True
-    assert sorted(viewer._calc_status_from_cursor()[0].items()) == sorted(
+    status = viewer._calc_status_from_cursor(
+        world_position=(1, 2),
+        view_direction=None,
+        canvas_position=(0, 0),
+        viewbox=(0, 0),
+    )
+    assert sorted(status[0].items()) == sorted(
         {
             'coordinates': '[1, 2]: 0; a: 1',
             'coords': '[1, 2]',
@@ -1076,20 +1092,7 @@ def test_get_status_text():
             'value': '0; a: 1',
         }.items()
     )
-    assert viewer._calc_status_from_cursor()[1] == '0\na: 1'
-    viewer.update_status_from_cursor()
-    assert sorted(viewer.status.items()) == sorted(
-        {
-            'coordinates': '[1, 2]: 0; a: 1',
-            'coords': '[1, 2]',
-            'layer_base': 'Labels',
-            'layer_name': 'Labels',
-            'plugin': '',
-            'source_type': '',
-            'value': '0; a: 1',
-        }.items()
-    )
-    assert viewer.tooltip.text == '0\na: 1'
+    assert status[1] == '0\na: 1'
 
 
 def test_reset_view():
@@ -1391,3 +1394,16 @@ def test_dims_axis_labels_default_when_all_layers_default():
 
     layer0.axis_labels = ['-4', '-3', '-2', '-1']
     assert viewer.dims.axis_labels == ('-4', '-3', '-2', '-1')  # all default
+
+
+def test_deprecated_title():
+    viewer = ViewerModel()
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        assert viewer.title == 'napari'
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        viewer.title = 'new'
+
+    with pytest.warns(FutureWarning, match='viewer.title'):
+        viewer.events.title.connect(lambda _: None)

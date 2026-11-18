@@ -33,7 +33,7 @@ from qtpy.QtCore import (
     Qt,
     Slot,
 )
-from qtpy.QtGui import QImage, QShortcut
+from qtpy.QtGui import QDragEnterEvent, QImage, QShortcut
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -129,6 +129,7 @@ class _QtMainWindow(QMainWindow):
         viewer: Viewer,
         window: Window,
         parent=None,
+        title='napari',
         show_welcome_screen=True,
     ) -> None:
         super().__init__(parent)
@@ -149,7 +150,7 @@ class _QtMainWindow(QMainWindow):
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
-        self.setWindowTitle(self._qt_viewer.viewer.title)
+        self.setWindowTitle(title)
 
         self._maximized_flag = False
         self._normal_geometry = QRect()
@@ -194,20 +195,26 @@ class _QtMainWindow(QMainWindow):
         # were defined somewhere in the `_qt` module and imported in init_qactions
         init_qactions()
 
-        with contextlib.suppress(IndexError):
-            viewer.cursor.events.position.disconnect(
-                viewer.update_status_from_cursor
-            )
+        self._current_tooltip = 'Ready'
+        self._tooltip_visible = settings.appearance.layer_tooltip_visibility
 
+        self._status_locked = False
         self.status_thread = StatusChecker(viewer, parent=self)
         self.status_thread.status_and_tooltip_changed.connect(
             self.set_status_and_tooltip
         )
-        viewer.cursor.events.position.connect(
-            self.status_thread.trigger_status_update
-        )
+        # if active layer changes, update the status as appropriate
         settings.appearance.events.update_status_based_on_layer.connect(
             self._toggle_status_thread
+        )
+        viewer.layers.selection.events.active.connect(
+            self.status_thread.refresh_status
+        )
+        settings.appearance.events.layer_tooltip_visibility.connect(
+            self._toggle_tooltip
+        )
+        self._qt_viewer._welcome_widget.urls_drag_entered.connect(
+            self._set_drag_help
         )
 
         self._command_palette = QCommandPalette(self)
@@ -225,6 +232,11 @@ class _QtMainWindow(QMainWindow):
             self.status_thread.start()
         else:
             self.status_thread.terminate()
+
+    def _toggle_tooltip(self) -> None:
+        self._tooltip_visible = (
+            get_settings().appearance.layer_tooltip_visibility
+        )
 
     def showEvent(self, event: QShowEvent):
         """Override to handle window state changes."""
@@ -255,18 +267,39 @@ class _QtMainWindow(QMainWindow):
         super().hideEvent(event)
 
     def set_status_and_tooltip(
-        self, status_and_tooltip: tuple[str | dict, str] | None
+        self, status_and_tooltip: tuple[str | dict, str]
     ):
-        if status_and_tooltip is None:
+        if self._status_locked:
             return
-        self._qt_viewer.viewer.status = status_and_tooltip[0]
-        self._qt_viewer.viewer.tooltip.text = status_and_tooltip[1]
-        if (
-            active := self._qt_viewer.viewer.layers.selection.active
-        ) is not None:
-            self._qt_viewer.viewer.help = active.help
+
+        status, tooltip = status_and_tooltip
+        if isinstance(status, str):
+            self.statusBar().setStatusText(status)
+        else:
+            self.statusBar().setStatusText(
+                layer_base=status['layer_base'],
+                source_type=status['source_type'],
+                plugin=status['plugin'],
+                coordinates=status['coordinates'],
+            )
+
+        self._current_tooltip = tooltip
+
+        help_text = self._qt_viewer.viewer._layer_help_from_active()
+        self.statusBar().setHelpText(help_text)
+
+    def set_help(self, help_msg: str) -> None:
+        self.statusBar().setHelpText(help_msg)
+
+    def _set_drag_help(self) -> None:
+        """Set dedicated help message when dragging files into viewer."""
+        self.set_status_and_tooltip(('Ready', ''))
+        self.set_help(
+            'Hold <Alt> key to open plugin selection. Hold <Shift> to open files as stack.'
+        )
 
     def statusBar(self) -> ViewerStatusBar:
+        # here only for typing
         return super().statusBar()
 
     @classmethod
@@ -279,16 +312,11 @@ class _QtMainWindow(QMainWindow):
         return window._qt_viewer.viewer if window else None
 
     def event(self, e: QEvent) -> bool:
-        if (
-            e.type() == QEvent.Type.ToolTip
-            and self._qt_viewer.viewer.tooltip.visible
-        ):
+        if e.type() == QEvent.Type.ToolTip and self._tooltip_visible:
             # ToolTip events are QHelpEvent, which only provides globalPos()
             pnt = e.globalPos()
             rect = QRect(pnt.x() - 5, pnt.y() - 5, 10, 10)
-            QToolTip.showText(
-                pnt, self._qt_viewer.viewer.tooltip.text, self, rect
-            )
+            QToolTip.showText(pnt, self._current_tooltip, self, rect)
         if e.type() in {QEvent.Type.WindowActivate, QEvent.Type.ZOrderChange}:
             # upon activation or raise_, put window at the end of _instances
             with contextlib.suppress(ValueError):
@@ -326,6 +354,24 @@ class _QtMainWindow(QMainWindow):
             )
 
     def eventFilter(self, source, event):
+        # catch enter/leave events for the canvas and update status accordingly
+        if (
+            hasattr(self, '_qt_viewer')
+            and source is self._qt_viewer.canvas._scene_canvas.native
+        ):
+            if event.type() == QEvent.Type.Leave:
+                # Lock the status to "ready" until we come back in.
+                # We have to shortcut it with an instance attribute because
+                # the thread checker might report the status late, when the
+                # mouse is already out, overriding our status
+                self.set_status_and_tooltip(('Ready', ''))
+                self._status_locked = True
+            if (
+                event.type() in (QEvent.Type.MouseMove, QEvent.Type.Enter)
+                and self._qt_viewer.viewer.layers
+            ):
+                # only update status when on the canvas and there are layers
+                self._status_locked = False
         # Handle showing hidden menubar on mouse move event.
         # We do not hide menubar when a menu is being shown or
         # we are not in menubar toggled state
@@ -576,6 +622,27 @@ class _QtMainWindow(QMainWindow):
 
         super().resizeEvent(event)
 
+    def dragEnterEvent(self, a0: QDragEnterEvent | None) -> None:
+        """Ignore event if not dragging & dropping a file or URL to open.
+
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QDragEvent
+            Event from the Qt context.
+        """
+        if a0 is None:
+            return
+        mime = a0.mimeData()
+        if mime is not None and mime.hasUrls():
+            self._set_drag_help()
+            a0.accept()
+        else:
+            a0.ignore()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
@@ -711,6 +778,7 @@ class Window:
         *,
         show: bool = True,
         show_welcome_screen: bool = True,
+        title: str = 'napari',
     ) -> None:
         # create QApplication if it doesn't already exist
         qapp = get_qapp()
@@ -727,7 +795,10 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow(
-            viewer, self, show_welcome_screen=show_welcome_screen
+            viewer,
+            self,
+            show_welcome_screen=show_welcome_screen,
+            title=title,
         )
         qapp.installEventFilter(self._qt_window)
 
@@ -770,10 +841,7 @@ class Window:
                 self._qt_viewer.dockPerformance, menu=self.window_menu
             )
 
-        viewer.events.help.connect(self._help_changed)
-        viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
-        viewer.events.status.connect(self._status_changed)
 
         if show:
             self.show()
@@ -881,11 +949,6 @@ class Window:
     def _qt_viewer(self):
         # this is starting to be "vestigial"... this property could be removed
         return self._qt_window._qt_viewer
-
-    @property
-    def _status_bar(self):
-        # TODO: remove from window
-        return self._qt_window.statusBar()
 
     def _update_menu_state(self, menu: MenuStr):
         """Update enabled/visible state of menu item with context."""
@@ -1642,49 +1705,6 @@ class Window:
             _svg_path_to_icon(self._qt_window._get_window_icon())
         )
 
-    def _status_changed(self, event):
-        """Update status bar.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if not hasattr(self, '_qt_window'):
-            return
-        if isinstance(event.value, str):
-            self._status_bar.setStatusText(event.value)
-        else:
-            status_info = event.value
-            self._status_bar.setStatusText(
-                layer_base=status_info['layer_base'],
-                source_type=status_info['source_type'],
-                plugin=status_info['plugin'],
-                coordinates=status_info['coordinates'],
-            )
-
-    def _title_changed(self, event):
-        """Update window title.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if hasattr(self, '_qt_window'):
-            self._qt_window.setWindowTitle(event.value)
-
-    def _help_changed(self, event):
-        """Update help message on status bar.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if hasattr(self, '_qt_window'):
-            self._status_bar.setHelpText(event.value)
-
     def _restart(self):
         """Restart the napari application."""
         if hasattr(self, '_qt_window'):
@@ -1931,6 +1951,14 @@ class Window:
         )
         if dial.exec():
             update_save_history(dial.selectedFiles()[0])
+
+    @property
+    def title(self) -> str:
+        return self._qt_window.windowTitle()
+
+    @title.setter
+    def title(self, title: str) -> None:
+        self._qt_window.setWindowTitle(title)
 
 
 def _instantiate_dock_widget(wdg_cls, viewer: Viewer):
