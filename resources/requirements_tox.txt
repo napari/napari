@@ -32,15 +32,15 @@ python-discovery==1.9.6
     #   virtualenv
 tomli-w==1.2.0
     # via tox
-tox==4.67.13
+tox==4.67.15
     # via
     #   -r resources/requirements_tox.in
     #   tox-gh-actions
     #   tox-min-req
     #   tox-uv-bare
-tox-gh-actions==3.5.0
+tox-gh-actions==3.5.1
     # via -r resources/requirements_tox.in
-tox-min-req==0.1.0
+tox-min-req==0.1.1
     # via -r resources/requirements_tox.in
 tox-uv==1.37.9
     # via -r resources/requirements_tox.in
@@ -50,5 +50,5 @@ typing-extensions==4.16.0
     # via tox
 uv==0.13.9
     # via tox-uv
-virtualenv==21.15.8
+virtualenv==21.15.9
     # via tox
