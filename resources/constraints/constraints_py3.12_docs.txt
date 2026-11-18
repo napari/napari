@@ -743,21 +743,8 @@ pyqt6-sip==13.13.0
     # via pyqt6
 pyscipopt==6.3.0
     # via ilpy
-pyside6==6.12.0
-    # via napari (pyproject.toml)
-pyside6-addons==6.12.0
-    # via
-    #   pyside6
-    #   pyside6-webengine
 pyside6-essentials==6.12.0
-    # via
-    #   pyside6
-    #   pyside6-addons
-    #   pyside6-pdf
-pyside6-pdf==6.12.0.140
-    # via pyside6
-pyside6-webengine==6.12.0.140
-    # via pyside6
+    # via napari (pyproject.toml)
 pysocks==1.7.1
     # via requests
 pytest==9.2.0
