@@ -106,9 +106,7 @@ class EventedList(TypedMutableSequence[_T]):
         else:
             # otherwise create a new one
             self.events = EmitterGroup(
-                source=self,
-                auto_connect=False,
-                **_events,
+                source=self, auto_connect=False, **_events
             )
         super().__init__(data, basetype=basetype, lookup=lookup)
 
@@ -218,6 +216,21 @@ class EventedList(TypedMutableSequence[_T]):
 
         Both indices refer to the list prior to any object removal
         (pre-move space).
+
+        Parameters
+        ----------
+        src_index : int
+            The index of the object to move.
+        dest_index : int, optional
+            The index to insert the object before, in pre-move space.
+            By default 0, the front of the list. A negative value counts
+            from the end, so ``-1`` moves the object to the end.
+
+        Returns
+        -------
+        bool
+            True if the object was moved. False if nothing changed because
+            ``dest_index`` is ``src_index`` or ``src_index + 1``.
         """
         if dest_index < 0:
             dest_index += len(self) + 1
@@ -308,6 +321,18 @@ class EventedList(TypedMutableSequence[_T]):
             Indices or slices that should be moved to ``dest_index``.
         dest_index : int
             The destination for sources.
+
+        Yields
+        ------
+        tuple[int, int]
+            ``(from_index, to_index)`` for one ``move`` call. The indices
+            already account for the moves yielded before it.
+
+        Raises
+        ------
+        TypeError
+            If the destination index is a slice, or any of the source indices
+            are not ``int`` or ``slice``.
         """
         if isinstance(dest_index, slice):
             raise TypeError('Destination index may not be a slice')
