@@ -8,8 +8,9 @@ Run napari from a terminal and optionally open **Help > Show logs**.
 Use the buttons in the dock widget to compare what appears in the terminal,
 the bottom-right popup area, and the log dock.
 
-Repeated identical Python warnings are deduplicated, so this example includes
-both a repeated-warning button and a unique-warning button.
+napari shows a Python warning once per line of code that raises it, even if
+the message changes. So both ``warnings.warn()`` buttons only show their
+first press; the second one changes its message each time to show that.
 
 .. tags:: gui, dev
 """
@@ -51,19 +52,19 @@ def log_warning() -> None:
 def python_warning() -> None:
     warnings.warn(
         (
-            'warnings.warn(): repeated identical warning; it will appear '
-            'as a napari popup once hooks are installed'
+            'warnings.warn(): repeated warning; shown once, later presses '
+            'are hidden'
         ),
         stacklevel=1,
     )
 
 
-def python_warning_unique() -> None:
+def python_warning_new_message() -> None:
     count_value = next(warning_counter)
     warnings.warn(
         (
-            f'warnings.warn(): unique warning #{count_value}; it may also '
-            'appear as a napari popup once hooks are installed'
+            f'warnings.warn(): new message #{count_value} from the same line; '
+            'shown once, because napari hides warnings by line, not message'
         ),
         stacklevel=1,
     )
@@ -104,14 +105,14 @@ def uncaught_error() -> None:
 @thread_worker(start_thread=True)
 def worker_warning() -> None:
     warnings.warn(
-        'thread_worker warning: forwarded from a worker thread',
+        'thread_worker warning: raised in a worker thread',
         stacklevel=1,
     )
 
 
 @thread_worker(start_thread=True)
 def worker_error() -> None:
-    raise ValueError('thread_worker error: forwarded from a worker thread')
+    raise ValueError('thread_worker error: raised in a worker thread')
 
 
 def _button(text: str, callback) -> QPushButton:
@@ -134,7 +135,9 @@ def _build_controls() -> QWidget:
     layout.addWidget(_button('print()', print_message))
     layout.addWidget(_button('logger.warning()', log_warning))
     layout.addWidget(_button('warnings.warn() repeated', python_warning))
-    layout.addWidget(_button('warnings.warn() unique', python_warning_unique))
+    layout.addWidget(
+        _button('warnings.warn() new message', python_warning_new_message)
+    )
     layout.addWidget(_button('show_info()', napari_info))
     layout.addWidget(_button('show_warning()', napari_warning))
     layout.addWidget(_button('show_error(str(exc))', flattened_error))
@@ -148,6 +151,7 @@ def _build_controls() -> QWidget:
     layout.addWidget(_button('thread_worker error', worker_error))
     layout.addStretch(1)
     return controls
+
 
 viewer = napari.Viewer()
 viewer.window.add_dock_widget(
