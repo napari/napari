@@ -1200,6 +1200,12 @@ class VispyCanvas:
                     and is_visible_tileable(overlay)
                     and is_gridded(overlay)
                 ):
+                    if viewbox_idx >= len(vispy_overlays):
+                        # a layer is being added (e.g. a redraw caused by the
+                        # dims sliders updating) and its viewbox has no
+                        # overlays yet; `_update_scenegraph` will position
+                        # them once it is done
+                        continue
                     canvas_visual = cast(
                         VispyCanvasOverlay, vispy_overlays[viewbox_idx]
                     )
