@@ -394,23 +394,10 @@ pyqt6-qt6==6.12.0
     #   pyqt6
 pyqt6-sip==13.13.0
     # via pyqt6
-pyside6==6.12.0
+pyside6-essentials==6.12.0
     # via
     #   -r resources/constraints/version_denylist.txt
     #   napari (pyproject.toml)
-pyside6-addons==6.12.0
-    # via
-    #   pyside6
-    #   pyside6-webengine
-pyside6-essentials==6.12.0
-    # via
-    #   pyside6
-    #   pyside6-addons
-    #   pyside6-pdf
-pyside6-pdf==6.12.0.140
-    # via pyside6
-pyside6-webengine==6.12.0.140
-    # via pyside6
 pytest==9.2.0
     # via
     #   napari (pyproject.toml)
