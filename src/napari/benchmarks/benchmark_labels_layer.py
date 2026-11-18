@@ -126,6 +126,39 @@ class LabelsDrawing2DSuite:
                 last_coord = (x, x)
 
 
+class LabelsDaskEditingSuite:
+    """Repeated edits and history must not accumulate Dask task graphs."""
+
+    param_names = ['chunks', 'lazy']
+    params = ([8, 24], [False, True])
+    number = 1
+
+    def setup(self, chunks, lazy):
+        import dask.array as da
+
+        data = np.zeros((48, 48, 48), dtype=np.uint8)
+        data[12:36, 12:36, 12:36] = 1
+        array = da.from_array(data, chunks=chunks)
+        if lazy:
+            array = array + 0
+        self.layer = Labels(array)
+        self.layer._slice_dims(Dims(ndim=3, ndisplay=3))
+        self.layer.n_edit_dimensions = 3
+        self.layer.brush_size = 5
+        self.layer.mode = 'paint'
+
+    def time_repeated_draw_undo_redo(self, *_):
+        for label in range(2, 6):
+            last = (35, 14, 14)
+            with self.layer.block_history():
+                for position in range(14, 34):
+                    point = (35, position, position)
+                    self.layer._draw(label, last, point)
+                    last = point
+            self.layer.undo()
+            self.layer.redo()
+
+
 class Labels2DColorDirectSuite(Labels2DSuite):
     skip_params = Skip(if_in_pr=lambda n, dtype: n > 32)
 
