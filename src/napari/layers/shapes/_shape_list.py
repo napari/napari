@@ -1967,7 +1967,7 @@ class ShapeList:
 
     def _inside_3d(self, ray_position: np.ndarray, ray_direction: np.ndarray):
         """Determines if any shape is intersected by a ray by looking inside triangle
-        meshes. Looks only at displayed shapes.
+        meshes. Looks only at displayed shapes. Yields nothing if no shapes are hit.
 
         Parameters
         ----------
@@ -1979,14 +1979,12 @@ class ShapeList:
             the scene. This should be in the same coordinate system as
             the vertices.
 
-        Returns
-        -------
-        shape : int | None
-            Index of shape if any that is at the coordinates. Returns `None`
-            if no shape is found.
-        intersection_point : Optional[np.ndarray]
-            The point where the ray intersects the mesh face. If there was
-            no intersection, returns None.
+        Yields
+        ------
+        shape : int
+            Index of shape hit by the ray cast.
+        intersection_point : np.ndarray
+            The point where the ray intersects the mesh face.
         """
         triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         for triangle_idx, intersection in iter_all_triangle_intersections(

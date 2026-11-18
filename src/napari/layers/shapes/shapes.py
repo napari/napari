@@ -3162,12 +3162,13 @@ class Shapes(Layer):
             end_point=end_point,
             dims_displayed=dims_displayed,
         )
-        try:
-            value, intersection = next(
-                iter(self._data_view._inside_3d(start_position, ray_direction))
-            )
-        except StopIteration:
+        hit = next(
+            self._data_view._inside_3d(start_position, ray_direction), None
+        )
+        if hit is None:
             return None
+
+        value, intersection = hit
 
         # add the full nD coords to intersection
         intersection_point = start_point.copy()
