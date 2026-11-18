@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from math import floor, log
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from vispy.color import Color
 from vispy.scene import MatrixTransform, STTransform
 from vispy.scene.visuals import GridLines, Node
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from napari.utils.color import ColorValue
 
 
-class GridLines3D(Node):
+class CoordinateGrid(Node):
     def __init__(
         self,
         font_info: FontInfo,
@@ -69,7 +69,7 @@ class GridLines3D(Node):
     def _set_clipper(self, node: Node, clipper: Clipper | None) -> None:
         """Propagate the viewbox clipper to all child visuals.
 
-        GridLines3D is just a Node (not VisualNode), so it would otherwise
+        This is just a Node (not VisualNode), so it would otherwise
         ignore the clipper and draw outside its viewbox (like ColorBar).
 
         Unlike ColorBar, which is a child of the ViewBox, this is a child of
@@ -114,6 +114,14 @@ class GridLines3D(Node):
             bounds.append((rng0.start, rng0.stop, rng1.start, rng1.stop))
             self.axis_labels[i].pos = (rng0.stop, 0)
             self.axis_labels[i].text = str(i)
+
+        if ndisplay == 2:
+            # 2D data has a single plane. The second grid is perpendicular to
+            # it, so it floats outside the data when the 3D camera rotates.
+            # It can't be hidden because the second axis' labels are its
+            # children, so give it empty bounds (start > stop), which makes
+            # its shader discard every fragment.
+            bounds[1] = (ranges[1].start, ranges[1].stop, 0, -1)
 
         for grid, bound in zip(self.grids, bounds, strict=False):
             grid.grid_bounds = bound
@@ -227,24 +235,23 @@ class GridLines3D(Node):
                 ticks.visible = False
             return
 
-        # generate tick positions with round values
-        tick_positions = [
-            compute_nice_ticks(r.start, r.stop, target_ticks=n_ticks)
-            for r in ranges
-        ]
-        interval_magnitudes = [
-            floor(log((r.stop - r.start) / len(tick_positions), 10))
-            for r in ranges
-        ]
-
         ndim = len(ranges)
         for axis in range(ndim):
             next_axis = (axis + 1) % ndim
             ticks = self.tick_labels[axis]
-            values = tick_positions[axis]
-            decimals = max(0, -interval_magnitudes[axis])
-            ticks.text = [f'{val:.{decimals}f}' for val in values]
-            ticks.pos = [(val, ranges[next_axis].start, 0) for val in values]
+            # generate tick positions with round values
+            values, decimals = compute_nice_ticks(
+                ranges[axis].start, ranges[axis].stop, target_ticks=n_ticks
+            )
+            text = []
+            pos = []
+            for val in values:
+                text.append(
+                    np.format_float_positional(val, decimals, trim='-')
+                )
+                pos.append((val, ranges[next_axis].start, 0))
+            ticks.text = text
+            ticks.pos = pos
             ticks.color = self.color
             ticks.opacity = self._opacity
             ticks.visible = len(values) > 0

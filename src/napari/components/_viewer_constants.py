@@ -25,29 +25,3 @@ class CanvasPosition(StrEnum):
     BOTTOM_RIGHT = 'bottom_right'
     BOTTOM_CENTER = 'bottom_center'
     BOTTOM_LEFT = 'bottom_left'
-
-
-class CursorStyle(StrEnum):
-    """CursorStyle: Style on the cursor.
-
-    Sets the style of the cursor
-            * square: A square
-            * circle: A circle
-            * circle_frozen:
-                A brush circle with a frozen position along with the standard cursor.
-                It is used to show the brush size change while using Ctrl+Alt + mouse move.
-            * cross: A cross
-            * forbidden: A forbidden symbol
-            * pointing: A finger for pointing
-            * standard: The standard cursor
-            # crosshair: A crosshair
-    """
-
-    SQUARE = 'square'
-    CIRCLE = 'circle'
-    CIRCLE_FROZEN = 'circle_frozen'
-    CROSS = 'cross'
-    FORBIDDEN = 'forbidden'
-    POINTING = 'pointing'
-    STANDARD = 'standard'
-    CROSSHAIR = 'crosshair'

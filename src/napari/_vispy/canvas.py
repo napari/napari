@@ -8,7 +8,7 @@ import warnings
 from functools import partial
 from itertools import zip_longest
 from types import MethodType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard, cast
 from weakref import WeakSet
 
 import numpy as np
@@ -18,12 +18,25 @@ from vispy.scene import Grid, SceneCanvas as SceneCanvas_, ViewBox, Widget
 from vispy.util.event import Event as VispyEvent
 
 from napari._vispy.camera import VispyCamera
-from napari._vispy.utils.cursor import QtCursorVisual
+from napari._vispy.overlays.base import (
+    VispyCanvasOverlay,
+    VispyTiledCanvasOverlay,
+)
+from napari._vispy.utils.cursor import (
+    QtCursorVisual,
+    cursor_style_to_qcursor,
+    get_cursor_style,
+)
 from napari._vispy.utils.gl import get_max_texture_sizes
 from napari._vispy.utils.qt_font import FontInfo, QtFontManager
 from napari._vispy.utils.visual import create_vispy_overlay
 from napari.components._viewer_constants import CanvasPosition
-from napari.components.overlays import CanvasOverlay, TiledCanvasOverlay
+from napari.components.overlays import (
+    CanvasOverlay,
+    SceneOverlay,
+    TiledCanvasOverlay,
+)
+from napari.layers import Labels
 from napari.settings import get_settings
 from napari.utils._proxies import ReadOnlyWrapper
 from napari.utils.events import disconnect_events
@@ -40,10 +53,10 @@ from napari.utils.mouse_event import MouseEvent, MouseEventType
 from napari.utils.notifications import show_warning
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterable, Iterator
 
     import numpy.typing as npt
-    from qtpy.QtCore import Qt, pyqtBoundSignal
+    from qtpy.QtCore import QEvent, Qt, pyqtBoundSignal
     from qtpy.QtGui import QCursor, QImage
     from vispy.app.backends._qt import CanvasBackendDesktop
     from vispy.app.canvas import (
@@ -52,15 +65,13 @@ if TYPE_CHECKING:
         ResizeEvent,
     )
     from vispy.scene import Node
-    from vispy.scene.subscene import SubScene
+    from vispy.util.event import EmitterGroup
 
     from napari._vispy.layers.base import VispyBaseLayer
-    from napari._vispy.overlays.base import (
-        VispyBaseOverlay,
-        VispyCanvasOverlay,
-    )
+    from napari._vispy.mouse_event import VectorF64
+    from napari._vispy.overlays.base import VispyBaseOverlay
     from napari.components import ViewerModel
-    from napari.components.overlays import Overlay
+    from napari.components.overlays import BrushCircleOverlay, Overlay
     from napari.layers import Layer
     from napari.utils.key_bindings import KeymapHandler
 
@@ -68,19 +79,19 @@ if TYPE_CHECKING:
 class NapariSceneCanvas(SceneCanvas_):
     """Vispy SceneCanvas used to allow for ignoring mouse wheel events with modifiers."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.events.add(mouse_leave=VispyEvent)
 
         orig_leaveEvent = self.native.leaveEvent
 
-        def leaveEvent(self_, event):
+        def leaveEvent(self_: CanvasBackendDesktop, event: QEvent) -> None:
             self.events.mouse_leave()
             orig_leaveEvent(event)
 
         self.native.leaveEvent = MethodType(leaveEvent, self.native)
 
-    def _process_mouse_event(self, event: VispyMouseEvent):
+    def _process_mouse_event(self, event: MouseEvent) -> None:
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
@@ -88,7 +99,9 @@ class NapariSceneCanvas(SceneCanvas_):
             return
         super()._process_mouse_event(event)
 
-    def draw_visual(self, visual, event=None):
+    def draw_visual(
+        self, visual: Node, event: DrawEvent | None = None
+    ) -> None:
         try:
             super().draw_visual(visual, event=event)
         except RuntimeError as e:
@@ -140,10 +153,6 @@ class VispyCanvas:
     camera : napari._vispy.VispyCamera
         The camera class which contains both the 2d and 3d camera used to describe the perspective by which a
         scene is viewed and interacted with.
-    _cursors : QtCursorVisual
-        A QtCursorVisual enum with as names the names of particular cursor styles and as value either a staticmethod
-        creating a bitmap or a Qt.CursorShape enum value corresponding to the particular cursor name. This enum only
-        contains cursors supported by Napari in Vispy.
     _key_map_handler : napari.utils.key_bindings.KeymapHandler
         KeymapHandler handling the calling functionality when keys are pressed that have a callback function mapped.
     _last_theme_color : Optional[npt.NDArray[np.float]]
@@ -168,12 +177,13 @@ class VispyCanvas:
         key_map_handler: KeymapHandler,
         font_manager: QtFontManager,
         font_family: str,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self._pause_scene_graph = False
+        self._closing = False
         self.max_texture_sizes = None
         self._last_theme_color = None
         self._drag_press_event = None
@@ -194,8 +204,8 @@ class VispyCanvas:
         self.grid: Grid = self.central_widget.add_grid(
             border_width=0,
         )
-        self.grid_views = []
-        self.grid_cameras = []
+        self.grid_views: list[ViewBox] = []
+        self.grid_cameras: list[VispyCamera] = []
 
         self.layer_to_visual: dict[Layer, VispyBaseLayer[Layer]] = {}
         self._viewer_overlay_to_visual: dict[
@@ -207,7 +217,7 @@ class VispyCanvas:
         self._key_map_handler = key_map_handler
         self._instances.add(self)
 
-        self._overlay_callbacks = {}
+        self._overlay_callbacks: dict[Layer, Callable[[], None]] = {}
         self._last_viewbox_size = np.array((0, 0))
         self._needs_overlay_position_update = False
         self._needs_world_units_update = False
@@ -245,8 +255,10 @@ class VispyCanvas:
         self._scene_canvas.events.mouse_leave.connect(self._on_mouse_leave)
         self._scene_canvas.events.resize.connect(self._on_vispy_size_change)
         self._scene_canvas.events.draw.connect(self.on_draw, position='last')
-        self.viewer.cursor.events.style.connect(self._on_cursor)
-        self.viewer.cursor.events.size.connect(self._on_cursor)
+        self._active_layer: Layer | None = None
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_layer_change
+        )
 
         self.viewer.events.theme.connect(self._on_bgcolor_change)
         self.viewer.canvas.events.background_color_override.connect(
@@ -316,8 +328,10 @@ class VispyCanvas:
         )
         self.destroyed.connect(self._disconnect_events)
 
+        self._on_active_layer_change()
+
     @property
-    def events(self):
+    def events(self) -> EmitterGroup:
         # This is backwards compatible with the old events system
         # https://github.com/napari/napari/issues/7054#issuecomment-2205548968
         return self._scene_canvas.events
@@ -348,7 +362,9 @@ class VispyCanvas:
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.scene.camera.events, self)
         disconnect_events(self.viewer.layers.events, self)
-        disconnect_events(self.viewer.cursor.events, self)
+        disconnect_events(self.viewer.layers.selection.events, self)
+        if self._active_layer is not None:
+            disconnect_events(self._active_layer.events, self)
         disconnect_events(self._scene_canvas.events, self)
         disconnect_events(get_settings().appearance.events, self)
 
@@ -370,7 +386,7 @@ class VispyCanvas:
         return self._scene_canvas.size[::-1]
 
     @size.setter
-    def size(self, size: tuple[int, int]):
+    def size(self, size: tuple[int, int]) -> None:
         self._scene_canvas.size = size[::-1]
 
     @property
@@ -379,44 +395,84 @@ class VispyCanvas:
         return self.native.cursor()
 
     @cursor.setter
-    def cursor(self, q_cursor: QCursor | Qt.CursorShape):
+    def cursor(self, q_cursor: QCursor | Qt.CursorShape) -> None:
         """Setting the cursor of the native widget"""
         self.native.setCursor(q_cursor)
 
-    def _on_cursor(self) -> None:
-        """Create a QCursor based on the napari cursor settings and set in Vispy."""
-        cursor = self.viewer.cursor.style
-        brush_overlay = self.viewer.canvas.overlays._brush_circle
-        brush_overlay.visible = False
+    def _disconnect_labels_cursor(self, layer: Labels) -> None:
+        # on layer init this might not exist yet
+        if brush_circle := layer._overlays.get('brush_circle', None):
+            brush_circle.visible = False
+        layer.events.mode.disconnect(self._on_cursor)
+        layer.events.brush_size.disconnect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.disconnect(self._on_cursor)
 
-        if cursor in {'square', 'circle', 'circle_frozen'}:
-            # Scale size by zoom if needed
-            size = self.viewer.cursor.size
-            if self.viewer.cursor.scaled:
-                size *= self.viewer.scene.camera.zoom
+    def _connect_labels_cursor(self, layer: Labels) -> None:
+        layer.events.brush_size.connect(self._on_cursor)
+        layer.events.brush_size_is_canvas_pixels.connect(self._on_cursor)
 
-            size = int(size)
+    def _on_active_layer_change(self, event=None) -> None:
+        """Track the active layer and rewire its mode event to refresh the cursor."""
+        # at this point, self._active_layer holds the *previously* active layer;
+        # we know that's changed so we make its overlays invisible and disconnect
+        # its events.
+        if self._active_layer is not None:
+            self._active_layer.events.mode.disconnect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._disconnect_labels_cursor(self._active_layer)
+        # Now we update self._active_layer and wire its mode changes
+        # to the cursor state
+        self._active_layer = self.viewer.layers.selection.active
+        if self._active_layer is not None:
+            self._active_layer.events.mode.connect(self._on_cursor)
+            if isinstance(self._active_layer, Labels):
+                self._connect_labels_cursor(self._active_layer)
 
-            # make sure the square fits within the current canvas
-            if (
-                size < 8 or size > (min(*self.size) - 4)
-            ) and cursor != 'circle_frozen':
-                self.cursor = QtCursorVisual['cross'].value
-            elif cursor.startswith('circle'):
-                brush_overlay.size = size
-                if cursor == 'circle_frozen':
-                    self.cursor = QtCursorVisual['standard'].value
-                    brush_overlay.position_is_frozen = True
-                else:
-                    self.cursor = QtCursorVisual.blank()
-                    brush_overlay.position_is_frozen = False
-                brush_overlay.visible = True
-            else:
-                self.cursor = QtCursorVisual.square(size)
-        elif cursor == 'crosshair':
-            self.cursor = QtCursorVisual.crosshair()
+        self._on_cursor()
+
+    def _update_labels_brush_and_get_cursor(
+        self, layer: Labels, cursor: str
+    ) -> QtCursorVisual:
+        # on layer init this might not exist yet
+        if (brush_circle := layer._overlays.get('brush_circle', None)) is None:
+            return QtCursorVisual.standard
+        brush_circle = cast('BrushCircleOverlay', brush_circle)
+
+        if cursor != 'circle':
+            brush_circle.visible = False
+            return QtCursorVisual[cursor]
+
+        size = layer._get_brush_size_canvas(self.viewer.scene.camera.zoom)
+
+        # if too big or small, show a normal cursor instead
+        if size < 8 or size > (min(*self.size) - 4):
+            brush_circle.visible = False
+            qt_cursor = QtCursorVisual.crosshair
+        elif brush_circle._is_resizing:
+            # brush is being resized: also show standard cursor
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.standard
         else:
-            self.cursor = QtCursorVisual[cursor].value
+            brush_circle.visible = True
+            qt_cursor = QtCursorVisual.blank
+
+        return qt_cursor
+
+    def _on_cursor(self) -> None:
+        """Create a QCursor based on the active layer mode and brush overlay."""
+        layer = self.viewer.layers.selection.active
+        if layer is None:
+            cursor = QtCursorVisual.standard
+        else:
+            cursor = get_cursor_style(layer)
+            if isinstance(layer, Labels):
+                cursor = self._update_labels_brush_and_get_cursor(
+                    layer, cursor
+                )
+            else:
+                assert cursor != 'circle'
+                cursor = QtCursorVisual[cursor]
+        self.cursor = cursor_style_to_qcursor(cursor)
 
     def delete(self) -> None:
         """Schedules the native widget for deletion"""
@@ -443,14 +499,16 @@ class VispyCanvas:
         box_size_canvas = np.abs(
             np.diff(self.viewer.canvas.overlays._zoom_box.position, axis=0)
         )
-        box_center_world = np.mean(zoom_area, axis=0)
+        box_center_world = tuple(np.mean(zoom_area, axis=0))
         ratio = np.min(self._current_viewbox_size / box_size_canvas)
         self.viewer.scene.camera.zoom = self.viewer.scene.camera.zoom * np.min(
             ratio
         )
         self.viewer.scene.camera.center = box_center_world
 
-    def _get_viewbox_at(self, position):
+    def _get_viewbox_at(
+        self, position: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> tuple[ViewBox, tuple[int, int]] | tuple[None, None]:
         """Get the viewbox and its grid coordinates from the mouse position.
 
         Returns (None, None) when the view is empty (no layers).
@@ -517,16 +575,20 @@ class VispyCanvas:
         # ensure that events which began in a specific viewbox continue to be
         # calculated based on that viewbox's coordinates
         if event.press_event is not None:
-            viewbox, grid_coords = self._get_viewbox_at(event.press_event.pos)
+            viewbox_at = self._get_viewbox_at(event.press_event.pos)
         else:
-            viewbox, grid_coords = self._get_viewbox_at(event.pos)
+            viewbox_at = self._get_viewbox_at(event.pos)
 
-        self.viewer.cursor.viewbox = grid_coords
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            self.viewer.cursor.viewbox = viewbox_at[1]
 
-        if viewbox is None:
+        if viewbox_at[0] is None:
             # this means we're in an empty viewbox, so do nothing
             event.handled = True
             return
+        # read after the None check so the type checker knows it is set
+        grid_coords = viewbox_at[1]
 
         if (
             event.type == 'mouse_press'
@@ -582,9 +644,11 @@ class VispyCanvas:
                 napari_event if napari_event.type == 'mouse_press' else None
             )
 
-        # Update the cursor position
-        self.viewer.cursor._view_direction = view_direction
-        self.viewer.cursor.position = world_position
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', FutureWarning)
+            # Update the cursor position
+            self.viewer.cursor._view_direction = napari_event.view_direction
+            self.viewer.cursor.position = tuple(napari_event.position)
 
         # Put a read only wrapper on the event
         read_only_event = ReadOnlyWrapper(
@@ -638,8 +702,8 @@ class VispyCanvas:
 
         Parameters
         ----------
-        event : vispy.event.Event
-            The vispy event that triggered this method.
+        event : vispy.app.canvas.MouseEvent
+            The vispy mouse event that triggered this method.
 
         Returns
         -------
@@ -690,7 +754,7 @@ class VispyCanvas:
         self._process_mouse_event(mouse_wheel_callbacks, event)
 
     @property
-    def _viewbox_corners_in_world(self) -> npt.NDArray:
+    def _viewbox_corners_in_world(self) -> npt.NDArray[np.floating]:
         """Location of the corners of canvas in world coordinates.
 
         Returns
@@ -726,7 +790,7 @@ class VispyCanvas:
             self._last_viewbox_size, self._current_viewbox_size
         ):
             self._update_grid_spacing()
-            self._last_viewbox_size = self._current_viewbox_size
+            self._last_viewbox_size = np.array(self._current_viewbox_size)
             self._needs_overlay_position_update = True
 
         if self._needs_overlay_position_update:
@@ -839,11 +903,11 @@ class VispyCanvas:
             vispy_layer._on_view_direction_change(view, up)
             vispy_layer.node.update()
 
-    def _deferred_world_units_update(self):
+    def _deferred_world_units_update(self) -> None:
         """Defer the world units update until the next draw event."""
         self._needs_world_units_update = True
 
-    def _update_world_units(self):
+    def _update_world_units(self) -> None:
         """Update the units of the canvas and all layers."""
         units = self.viewer.layers.extent.units
         if units is None and len(self.viewer.layers) > 0:
@@ -892,7 +956,13 @@ class VispyCanvas:
             return
         self._clean_and_update_scenegraph()
 
-    def _clean_and_update_scenegraph(self):
+    def _clean_and_update_scenegraph(self) -> None:
+        if self._closing:
+            # The canvas is deleted together with the viewer window, so there
+            # is no scene graph to update. This also skips the full garbage
+            # collection below, which is slow when many objects are alive.
+            return
+
         # Critical two-step fix for Windows OpenGL access violation bug
         # This prevents the race condition where scenegraph updates occur while
         # GPU resources from the removed layer are still being processed/deleted.
@@ -929,7 +999,9 @@ class VispyCanvas:
         else:
             self._reorder_layers_in_the_same_view(self.viewer.layers)
 
-    def _reorder_layers_in_the_same_view(self, layers):
+    def _reorder_layers_in_the_same_view(
+        self, layers: Iterable[Layer]
+    ) -> None:
         first_visible_found = False
 
         for i, layer in enumerate(layers):
@@ -949,21 +1021,22 @@ class VispyCanvas:
         self._scene_canvas._draw_order.clear()
         self._scene_canvas.update()
 
-    def _defer_tiled_overlay_position_update(self):
+    def _defer_tiled_overlay_position_update(self) -> None:
         self._needs_overlay_position_update = True
 
-    def _connect_tiled_overlay_events(self, overlay: Overlay) -> None:
+    def _connect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.connect(
             self._update_tiled_overlay_positions, unique=True
         )
         overlay.events.visible.connect(
             self._update_tiled_overlay_positions, unique=True
         )
-        overlay.events.gridded.connect(
-            self._update_viewer_overlays, unique=True
-        )
 
-    def _disconnect_tiled_overlay_events(self, overlay: Overlay) -> None:
+    def _disconnect_tiled_overlay_events(
+        self, overlay: TiledCanvasOverlay
+    ) -> None:
         overlay.events.position.disconnect(
             self._update_tiled_overlay_positions
         )
@@ -973,7 +1046,7 @@ class VispyCanvas:
         self,
         overlay: Overlay,
         vispy_overlay: VispyBaseOverlay | None,
-        parent: ViewBox | SubScene,
+        parent: Node,
         **kwargs: Any,
     ) -> VispyBaseOverlay:
         if vispy_overlay is None:
@@ -989,7 +1062,7 @@ class VispyCanvas:
             )
         else:
             vispy_overlay.node.parent = parent
-            if isinstance(overlay, TiledCanvasOverlay):
+            if isinstance(vispy_overlay, VispyTiledCanvasOverlay):
                 vispy_overlay._on_box_change()
         return vispy_overlay
 
@@ -1018,18 +1091,20 @@ class VispyCanvas:
                 continue
             overlay.events.visible.disconnect(self._update_viewer_overlays)
 
-            canvas_overlay = isinstance(overlay, CanvasOverlay)
-            if canvas_overlay:
+            is_tiled_overlay = isinstance(overlay, TiledCanvasOverlay)
+            if is_tiled_overlay:
                 self._connect_tiled_overlay_events(overlay)
 
             vispy_overlays = self._viewer_overlay_to_visual.setdefault(
                 overlay, []
             )
 
-            # NOTE: scene overlays and nontiling canvas ones are always gridded!
+            # NOTE: scene overlays are always "gridded",
+            #       meaning they are always duplicated in each grid view!
+            is_scene_overlay = isinstance(overlay, SceneOverlay)
             gridded = (
                 self.viewer.canvas.grid.enabled
-                and (not canvas_overlay or overlay.gridded)
+                and (is_scene_overlay or overlay.gridded)
                 and len(self.viewer.layers)
             )
 
@@ -1057,7 +1132,7 @@ class VispyCanvas:
                     vispy_overlay = self._create_or_update_vispy_overlay(
                         overlay=overlay,
                         vispy_overlay=vispy_overlay,
-                        parent=viewbox if canvas_overlay else viewbox.scene,
+                        parent=viewbox if is_tiled_overlay else viewbox.scene,
                     )
                     if vispy_overlay not in vispy_overlays:
                         vispy_overlays.append(vispy_overlay)
@@ -1067,7 +1142,7 @@ class VispyCanvas:
                 vispy_overlay = self._create_or_update_vispy_overlay(
                     overlay=overlay,
                     vispy_overlay=vispy_overlay,
-                    parent=viewbox if canvas_overlay else viewbox.scene,
+                    parent=viewbox.scene if is_scene_overlay else viewbox,
                 )
                 if vispy_overlay not in vispy_overlays:
                     vispy_overlays.append(vispy_overlay)
@@ -1106,7 +1181,7 @@ class VispyCanvas:
             # we're just removing all the overlays of this layer, so we're done here
             return
 
-        callback = self._overlay_callbacks.get(layer)
+        callback = self._overlay_callbacks[layer]
         for overlay in layer._overlays.values():
             # only create overlays when they are visible. If not, we connect the visible
             # event of this overlay to this method until it's finally visible
@@ -1152,7 +1227,7 @@ class VispyCanvas:
 
     def _get_ordered_visible_canvas_overlays(
         self,
-    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, Node | None]]:
+    ) -> Iterator[tuple[CanvasOverlay, VispyCanvasOverlay, int | None]]:
         """
         Iterator over visible canvas overlays by grid viewbox, in tiling order.
 
@@ -1164,7 +1239,9 @@ class VispyCanvas:
         free-floating (such as the cursor overlay), so those are skipped
         """
 
-        def is_visible_tileable(overlay):
+        def is_visible_tileable(
+            overlay: Overlay,
+        ) -> TypeGuard[TiledCanvasOverlay]:
             return overlay.visible and isinstance(overlay, TiledCanvasOverlay)
 
         def is_gridded(overlay: CanvasOverlay) -> bool:
@@ -1182,7 +1259,8 @@ class VispyCanvas:
                 and is_visible_tileable(overlay)
                 and not is_gridded(overlay)
             ):
-                yield overlay, vispy_overlays[0], None
+                vispy_overlay = cast('VispyCanvasOverlay', vispy_overlays[0])
+                yield overlay, vispy_overlay, None
 
         # then gridded viewer overlays and layer overlays, by viewbox, in order
         for viewbox_idx, (_, layer_indices) in enumerate(
@@ -1209,12 +1287,24 @@ class VispyCanvas:
                     and is_visible_tileable(overlay)
                     and is_gridded(overlay)
                 ):
-                    yield overlay, vispy_overlays[viewbox_idx], view
+                    if viewbox_idx >= len(vispy_overlays):
+                        # a layer is being added (e.g. a redraw caused by the
+                        # dims sliders updating) and its viewbox has no
+                        # overlays yet; `_update_scenegraph` will position
+                        # them once it is done
+                        continue
+                    vispy_overlay = cast(
+                        'VispyCanvasOverlay', vispy_overlays[viewbox_idx]
+                    )
+                    yield overlay, vispy_overlay, view
 
             # we want to ensure that the tiling of layer overlays always looks
-            # the same as the llayerlist order, so we reverse the direction for
+            # the same as the layerlist order, so we reverse the direction for
             # some cases
-            overlays_by_tiling_order = {'direct': [], 'reversed': []}
+            overlays_by_tiling_order: dict[
+                str,
+                list[tuple[CanvasOverlay, VispyCanvasOverlay, int | None]],
+            ] = {'direct': [], 'reversed': []}
 
             # layer overlays are always "gridded"
             # (they always appear in the same viewbox as the layer itself)
@@ -1227,6 +1317,7 @@ class VispyCanvas:
                     if not isinstance(overlay, CanvasOverlay):
                         continue
                     if layer.visible and is_visible_tileable(overlay):
+                        canvas_visual = cast(VispyCanvasOverlay, vispy_overlay)
                         if (
                             '_left' in overlay.position
                             and getattr(
@@ -1246,13 +1337,13 @@ class VispyCanvas:
                         else:
                             direction = 'direct'
                         overlays_by_tiling_order[direction].append(
-                            (overlay, vispy_overlay, view)
+                            (overlay, canvas_visual, view)
                         )
 
             yield from reversed(overlays_by_tiling_order['reversed'])
             yield from overlays_by_tiling_order['direct']
 
-    def _update_tiled_overlay_positions(self, event=None):
+    def _update_tiled_overlay_positions(self, event: Event | None = None):
         x_padding, y_padding = self.viewer.canvas.overlay_tiling.padding
         x_offset_total = {}
         y_offset_total = {}
@@ -1294,7 +1385,7 @@ class VispyCanvas:
                 x_max, y_max = self._current_viewbox_size
             position = overlay.position
 
-            x = y = 0
+            x = y = 0.0
             if 'top' in position:
                 y = y_offset
             elif 'middle' in position:
@@ -1313,7 +1404,7 @@ class VispyCanvas:
 
         self._needs_overlay_position_update = False
 
-    def _update_font_sizes(self, *, font_size: float | None = None):
+    def _update_font_sizes(self, *, font_size: int | None = None) -> None:
         if font_size is None:
             font_size = get_settings().appearance.font_size
         for vispy_overlays in self._viewer_overlay_to_visual.values():
@@ -1326,8 +1417,8 @@ class VispyCanvas:
             vispy_layer.set_default_font_size(font_size)
 
     def _calculate_view_direction(
-        self, event_pos: tuple[float, float]
-    ) -> npt.NDArray[np.float64] | None:
+        self, event_pos: np.ndarray[tuple[int], np.dtype[np.number]]
+    ) -> VectorF64 | None:
         """calculate view direction by ray shot from the camera"""
         # this method is only implemented for 3 dimension
         if self.viewer.dims.ndisplay == 2:
@@ -1362,21 +1453,22 @@ class VispyCanvas:
         d = d[0:nd]
         d = d / np.linalg.norm(d)
         # xyz to zyx
-        d: list[float] = list(d[::-1])
+        d_reversed: list[float] = list(d[::-1])
         # convert to nd view direction
         view_direction_nd = np.zeros(self.viewer.dims.ndim, dtype=np.float64)
-        view_direction_nd[list(self.viewer.dims.displayed)] = d
+        view_direction_nd[list(self.viewer.dims.displayed)] = d_reversed
         return view_direction_nd
 
     def screenshot(self) -> QImage:
         """Return a QImage based on what is shown in the viewer."""
-        # ensure on_draw is run to bring everything up to date
-        # needed for some Ubuntu py3.11 pyqt5 tests, but likely inconsistent behavior for other OS.
-        # See: https://github.com/napari/napari/pull/7870#issuecomment-2997167180
+        # Run on_draw before grabbing the frame. grabFramebuffer does fire the draw
+        # event, but on_draw is connected last, so it runs after vispy has rendered
+        # and its updates (e.g. overlay positions, multiscale level)
+        # would miss this frame.
         self.on_draw(None)
         return self.native.grabFramebuffer()
 
-    def enable_dims_play(self, *args) -> None:
+    def enable_dims_play(self, *args: Any) -> None:
         """Enable playing of animation. False if awaiting a draw event"""
         self.viewer.dims._play_ready = True
 
@@ -1413,7 +1505,7 @@ class VispyCanvas:
             self.grid_views.append(view)
             self.grid_cameras.append(camera)
 
-    def _update_scenegraph(self, event=None):
+    def _update_scenegraph(self, event: Event | None = None) -> None:
         if self._pause_scene_graph or any(
             layer not in self.layer_to_visual for layer in self.viewer.layers
         ):
@@ -1433,11 +1525,11 @@ class VispyCanvas:
             self._on_interactive()
         self.on_draw()
 
-    def _setup_single_view(self):
+    def _setup_single_view(self) -> None:
         for vispy_layer in self.layer_to_visual.values():
             vispy_layer.node.parent = self.view.scene
 
-    def _setup_layer_views_in_grid(self):
+    def _setup_layer_views_in_grid(self) -> None:
         for (
             row,
             col,
@@ -1452,7 +1544,7 @@ class VispyCanvas:
                 vispy_layer.node.parent = view.scene
 
     @property
-    def _current_viewbox_size(self):
+    def _current_viewbox_size(self) -> tuple[float, float]:
         """Get the actual size of the viewboxes in pixels.
 
         If grid is not enabled, this returns the size of the canvas.
@@ -1461,7 +1553,7 @@ class VispyCanvas:
 
         Returns
         -------
-        tuple[int, int]
+        tuple[float, float]
             The size of the viewbox(es) in pixels (width, height)
         """
         if self.viewer.canvas.grid.enabled and self.grid_views:
@@ -1469,7 +1561,7 @@ class VispyCanvas:
 
         return self.view.rect.size
 
-    def _update_grid_spacing(self):
+    def _update_grid_spacing(self) -> None:
         """Update the grid spacing with a validated spacing value.
 
         This method computes the raw spacing based on the current canvas size
@@ -1501,10 +1593,10 @@ class VispyCanvas:
 
         self.grid.spacing = safe_spacing
 
-    def _pause_scene_graph_update(self):
+    def _pause_scene_graph_update(self) -> None:
         self._pause_scene_graph = True
 
-    def _resume_scene_graph_update(self):
+    def _resume_scene_graph_update(self) -> None:
         self._pause_scene_graph = False
         self._clean_and_update_scenegraph()
 

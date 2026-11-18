@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 
 from napari.components.overlays import (
@@ -196,6 +198,33 @@ def test_grid_mode(qt_viewer):
     assert len(canvas.grid_views) == 1
 
 
+def test_grid_mode_draw_while_adding_layer(qt_viewer):
+    """Drawing before a new layer's viewbox has overlays should not crash."""
+    viewer = qt_viewer.viewer
+    canvas = qt_viewer.canvas
+
+    viewer.add_image(np.ones((10, 10)))
+    viewer.canvas.grid.enabled = True
+    viewer.canvas.grid.stride = 1
+    scale_bar = viewer.canvas.overlays.scale_bar
+    scale_bar.visible = True
+    scale_bar.gridded = True
+
+    # in the app, the dims sliders updating on a ndim change cause a redraw
+    # (which may update overlay positions) before the canvas knows about
+    # the new layer
+    viewer.dims.events.ndim.connect(canvas._update_overlay_canvas_positions)
+    viewer.add_image(np.ones((2, 10, 10)))
+
+    vispy_scale_bars = canvas._viewer_overlay_to_visual[scale_bar]
+    assert len(vispy_scale_bars) == 2
+    # the new scale bar is positioned like the first one, in its own viewbox
+    np.testing.assert_allclose(
+        vispy_scale_bars[1].node.transform.translate,
+        vispy_scale_bars[0].node.transform.translate,
+    )
+
+
 def test_new_overlays_use_font_size_setting(qt_viewer):
     """Overlays created after the last layer was added follow the setting."""
     viewer = qt_viewer.viewer
@@ -369,3 +398,24 @@ def test_inserted_layer_receives_shared_world_units_when_units_unchanged(
 
     assert viewer.layers.extent.units == (reg.nm, reg.nm)
     assert canvas.layer_to_visual[image_um].world_units == (reg.nm, reg.nm)
+
+
+def test_scene_graph_cleanup_skipped_on_viewer_close(
+    make_napari_viewer, monkeypatch
+):
+    """Removing layers runs the GPU resource cleanup, closing the viewer does not."""
+    gc_mock = MagicMock()
+    monkeypatch.setattr('napari._vispy.canvas.gc', gc_mock)
+    viewer = make_napari_viewer()
+    viewer.add_image(np.zeros((10, 10)))
+    viewer.add_image(np.zeros((10, 10)))
+
+    viewer.layers.pop()
+    assert gc_mock.collect.call_count == 1
+
+    viewer.layers.clear()
+    assert gc_mock.collect.call_count == 2
+
+    viewer.add_image(np.zeros((10, 10)))
+    viewer.close()
+    assert gc_mock.collect.call_count == 2

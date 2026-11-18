@@ -1,6 +1,7 @@
 import numpy as np
+from pydantic import Field, PrivateAttr
+from typing_extensions import deprecated
 
-from napari.components._viewer_constants import CursorStyle
 from napari.utils.events import EventedModel
 
 
@@ -12,34 +13,44 @@ class Cursor(EventedModel):
     position : tuple of float
         Position of the cursor in world coordinates. If the cursor is outside of,
         the canvas, then the last known position is stored instead.
-    viewbox : tuple[int, int] or None
-        Position of the cursor in the grid, or None over an empty grid viewbox.
-    scaled : bool
-        Flag to indicate whether cursor size should be scaled to zoom.
-        Only relevant for circle and square cursors which are drawn
-        with a particular size.
-    size : float
-        Size of the cursor in canvas pixels. Only relevant for circle
-        and square cursors which are drawn with a particular size.
-    style : str
-        Style of the cursor. Must be one of
-            * square: A square
-            * circle: A circle
-            * cross: A cross
-            * forbidden: A forbidden symbol
-            * pointing: A finger for pointing
-            * standard: The standard cursor
-            # crosshair: A crosshair
-    _view_direction : Optional[np.ndarray]
-        The vector describing the direction of the camera in the scene
-        in world coordinates.
-        This is None when viewing in 2D.
+    viewbox : tuple[int, int]
+        Position of the cursor in the grid.
+
+    .. deprecated: 0.11.0
+        Cursor is deprecated; to access cursor information, use mouse callbacks
+        and retrieve this information from the received Event instead.
     """
 
     # fields
-    position: tuple[float, ...] = (1.0, 1.0)
-    viewbox: tuple[int, int] | None = (0, 0)
-    scaled: bool = True
-    size: float = 1.0
-    style: CursorStyle = CursorStyle.STANDARD
-    _view_direction: np.ndarray | None = None
+    position: tuple[float, ...] = Field(
+        (1.0, 1.0),
+        deprecated=deprecated(
+            'Cursor.position is deprecated; use Event.position from a mouse callback instead.'
+        ),
+    )
+    viewbox: tuple[int, int] | None = Field(
+        None,
+        deprecated=deprecated(
+            'Cursor.position is deprecated; use Event.viewbox from a mouse callback instead.'
+        ),
+    )
+    scaled: bool = Field(
+        True,
+        deprecated=deprecated(
+            'Cursor.scaled is deprecated and no longer has an effect; use Labels.brush_size_is_canvas_pixels instead.'
+        ),
+    )
+    size: float = Field(
+        1.0,
+        deprecated=deprecated(
+            'Cursor.size is deprecated and no longer has an effect; use Labels.brush_size instead.'
+        ),
+    )
+    style: str = Field(
+        'default',
+        deprecated=deprecated(
+            'Cursor.style is deprecated and no longer has an effect; use Viewer.window.cursor_style_override instead'
+        ),
+    )
+    # this is here just to support viewermodel.update_status_from_cursor during deprecation
+    _view_direction: np.ndarray | None = PrivateAttr(None)
